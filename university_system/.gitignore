@@ -1,0 +1,119 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+db_files/*.db
+!db_files/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Configuration files with sensitive data
+config/email_config.json
+config/*_config.json
+
+# Email templates with credentials
+templates/email/email_config.json
+
+# Backups
+backups/
+*.bak
+*.backup
+
+# QR Codes
+qr_codes/
+*.png
+*.jpg
+*.jpeg
+
+# Analytics output
+analytics/
+analytics_plots/
+analytics_reports/
+
+# Instance-specific files
+instance/
+*.pid
+*.lock
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Uploads and user data
+uploads/
+media/
+static/uploaded/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Reports and exports
+reports/
+exports/
+*.csv
+*.xlsx
+*.pdf
+
+# Secrets and credentials
+secrets/
+credentials/
+*.pem
+*.key
+*.crt

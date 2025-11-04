@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""
+Script to update all Python files to use centralized email template system
+"""
+
+import re
+import os
+
+# File paths and their email template mappings
+file_updates = {
+    # Student Union GUI
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/student_union_gui.py': {
+        'imports': 'from university_system.infrastructure.email.template_utils import render_template',
+        'replacements': [
+            {
+                'pattern': r'subject = f"🎉 New Club Alert: \{club_name\} Now Available!"\s+for email, first_name, last_name in students:\s+message = f"""Dear \{first_name\} \{last_name\},.*?"""',
+                'replacement': '''template_vars = {'club_name': club_name}
+            subject_template, body_template = render_template('club_announcement', template_vars)
+
+            for email, first_name, last_name in students:
+                template_vars_personal = template_vars.copy()
+                template_vars_personal['recipient_name'] = f"{first_name} {last_name}"
+                subject, message = render_template('club_announcement', template_vars_personal)''',
+                'flags': re.DOTALL
+            }
+        ]
+    }
+}
+
+def update_file_simple(filepath):
+    """Simple approach: Just add the import statement"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Check if import already exists
+        if 'from university_system.infrastructure.email.template_utils import render_template' in content:
+            print(f"✓ {os.path.basename(filepath)}: Already has import")
+            return
+
+        # Find a good place to add the import (after other imports)
+        import_lines = []
+        other_lines = []
+        in_imports = True
+
+        for line in content.split('\n'):
+            if in_imports and (line.startswith('import ') or line.startswith('from ') or line.strip() == '' or line.strip().startswith('#')):
+                import_lines.append(line)
+            else:
+                if in_imports and line.strip() and not line.strip().startswith('#'):
+                    in_imports = False
+                    # Add our import before the first non-import line
+                    import_lines.append('from university_system.infrastructure.email.template_utils import render_template')
+                other_lines.append(line)
+
+        new_content = '\n'.join(import_lines) + '\n' + '\n'.join(other_lines)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+
+        print(f"✓ {os.path.basename(filepath)}: Added import statement")
+
+    except Exception as e:
+        print(f"✗ {os.path.basename(filepath)}: Error - {e}")
+
+# List of all files to update
+files_to_update = [
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/student_union_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/alumni_management_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/internship_management_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/health_portal_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/attendance_tracker_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/library_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/restaurant_management_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/shop_management_gui.py',
+    '/home/seancatchpole989/university_system/modules/interfaces/gui/module_scheduling_gui.py',
+    '/home/seancatchpole989/university_system/modules/domain/student_affairs/student_union/administration/admin_management.py',
+    '/home/seancatchpole989/university_system/modules/core/services/student_union_misc/voting.py',
+]
+
+if __name__ == '__main__':
+    print("Updating files to add template_utils import...\n")
+    for filepath in files_to_update:
+        if os.path.exists(filepath):
+            update_file_simple(filepath)
+        else:
+            print(f"✗ {os.path.basename(filepath)}: File not found")
+    print("\nImport statements added. Manual template conversion still required for each email send location.")

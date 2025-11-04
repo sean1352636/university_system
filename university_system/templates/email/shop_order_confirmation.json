@@ -1,0 +1,4 @@
+{
+    "subject": "Shop Order Confirmation - Transaction #$transaction_id",
+    "body": "Dear $customer_name,\n\nYour shop order has been confirmed!\n\nOrder Details:\n- Transaction ID: $transaction_id\n- Items: $items_text\n- Total Amount: £$total_amount\n- Payment Method: $payment_method\n\nThank you for your purchase!\n\n$signature"
+}

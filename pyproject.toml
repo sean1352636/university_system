@@ -1,0 +1,262 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "university-management-system"
+version = "5.0.0"
+description = "Comprehensive University Management System with CLI and GUI interfaces"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "University System Team"}
+]
+keywords = ["university", "management", "education", "student", "course"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Topic :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    # Data Processing & Analytics
+    "pandas>=1.3.0",
+    "numpy>=1.21.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "plotly>=5.0.0",
+    "scikit-learn>=1.0.0",
+
+    # Document Generation & Reports
+    "reportlab>=3.6.0",
+    "openpyxl>=3.0.9",
+    "fpdf2>=2.5.0",
+
+    # Web & Networking
+    "requests>=2.27.0",
+    "flask>=2.0.0",
+    "urllib3>=1.26.0",
+
+    # Security & Authentication
+    "pyotp>=2.6.0",
+    "qrcode>=7.3.0",
+    "cryptography>=3.4.8",
+    "bcrypt>=3.2.0",
+
+    # Image Processing & Barcodes
+    "Pillow>=8.3.0",
+    "python-barcode>=0.13.0",
+
+    # System Utilities & Scheduling
+    "schedule>=1.1.0",
+    "psutil>=5.8.0",
+
+    # Date/Time & Configuration
+    "pytz>=2021.3",
+    "PyYAML>=6.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+    "ruff>=0.1.0",
+    "isort>=5.12.0",
+    "pre-commit>=3.0.0",
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
+]
+
+ai = [
+    "tensorflow>=2.7.0",
+    "transformers>=4.15.0",
+    "opencv-python>=4.5.0",
+    "torch>=1.10.0",
+    "spacy>=3.4.0",
+]
+
+cloud = [
+    "boto3>=1.20.0",
+    "azure-storage-blob>=12.0.0",
+    "google-cloud-storage>=2.0.0",
+]
+
+remote = [
+    "paramiko>=2.9.0",  # SSH/SFTP support for remote operations
+]
+
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+[project.scripts]
+university-system = "run:main"
+
+[project.urls]
+Homepage = "https://github.com/your-org/university-system"
+Repository = "https://github.com/your-org/university-system.git"
+Issues = "https://github.com/your-org/university-system/issues"
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | \.eggs
+  | __pycache__
+  | \.pytest_cache
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "S",   # flake8-bandit (security)
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "T20", # flake8-print
+]
+ignore = [
+    "E501",   # line too long (handled by black)
+    "B008",   # do not perform function calls in argument defaults
+    "C901",   # too complex
+    "S101",   # use of assert detected
+    "T201",   # print found (we'll gradually remove these)
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    "build",
+    "dist",
+    "migrations",
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]  # imported but unused
+"test_*.py" = ["S101"]     # assert allowed in tests
+
+[tool.ruff.isort]
+known-first-party = ["university_system"]
+force-sort-within-sections = true
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_optional = true
+strict_equality = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["university_system/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gui: marks tests that require GUI",
+    "security: marks security-related tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["university_system"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# Isort configuration
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["university_system"]
+force_sort_within_sections = true
+combine_as_imports = true

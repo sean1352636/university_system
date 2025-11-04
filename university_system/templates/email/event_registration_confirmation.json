@@ -1,0 +1,4 @@
+{
+    "subject": "Event Registration Confirmation - $event_name",
+    "body": "Dear $student_name,\n\nYour registration for the event has been confirmed.\n\nEvent: $event_name\nDate: $event_date\nLocation: $event_location\n\nWe look forward to seeing you there!\n\n$signature"
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Restaurant Order Confirmation - Order #$order_id",
+    "body": "Dear $first_name $last_name,\n\nYour order has been confirmed!\n\nOrder Details:\n- Student ID: $student_id\n- Order ID: $order_id\n- Order Time: $order_time\n- Total Amount: £$total_amount\n\nYour order will be ready soon. Thank you for your purchase!\n\n$signature"
+}

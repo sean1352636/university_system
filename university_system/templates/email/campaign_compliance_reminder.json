@@ -1,0 +1,4 @@
+{
+    "subject": "Campaign Compliance Reminder",
+    "body": "Dear $first_name $last_name,\n\nThis is a reminder about campaign compliance requirements for the election.\n\nPosition: $position\nVoting Ends: $voting_end\n\nPlease ensure you follow all campaign guidelines.\n\n$signature"
+}

@@ -1,0 +1,36 @@
+{
+    "backups": [
+        {
+            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251102_083617.db.gz",
+            "filename": "student_records_manual_full_20251102_083617.db.gz",
+            "type": "full",
+            "manual": true,
+            "operation": null,
+            "timestamp": "20251102_083617",
+            "size": 191601,
+            "file_hash": "c558463196ac55463b5ed7e3abd655c034e9a48490f12117d297916e7966a4c8",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full",
+            "id": 1,
+            "size_formatted": "187.11 KB",
+            "date_formatted": "2025-11-02 08:36:17"
+        }
+    ],
+    "last_full": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251102_083617.db.gz",
+    "statistics": {
+        "total_backups": 1,
+        "total_size": 191601,
+        "backup_types": {
+            "full": 1
+        },
+        "success_rate": 0,
+        "average_size": 191601.0,
+        "storage_usage": {
+            "2025-11": 191601
+        },
+        "recent_activity": 1
+    }
+}

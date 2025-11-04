@@ -1,0 +1,22 @@
+{
+    "academic": {
+        "How do I register for courses?": "You can register through the student portal during registration periods.",
+        "What are the prerequisites for advanced courses?": "Prerequisites vary by course. Check the course catalog for specific requirements.",
+        "How do I calculate my GPA?": "GPA is calculated by dividing total grade points by total credit hours."
+    },
+    "financial": {
+        "When are tuition payments due?": "Tuition is typically due before the start of each semester.",
+        "How do I apply for financial aid?": "Submit the FAFSA form and university scholarship applications.",
+        "What payment methods are accepted?": "We accept credit cards, bank transfers, and payment plans."
+    },
+    "technical": {
+        "How do I reset my password?": "Use the 'Forgot Password' link on the login page or contact IT support.",
+        "How do I connect to campus WiFi?": "Connect to 'UniversityWiFi' and use your student credentials.",
+        "Where can I download campus software?": "Visit the IT services website for software downloads."
+    },
+    "voice": {
+        "How do I use voice commands?": "Say 'start voice mode' to begin voice interaction. You can ask questions naturally and I'll respond with voice and text.",
+        "What voice commands are available?": "You can ask about courses, grades, registration, and general university information using natural speech.",
+        "How do I stop voice mode?": "Say 'stop listening' or 'exit voice mode' to return to text-only interaction."
+    }
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Accommodation $action",
+    "body": "Dear $student_name,\n\nYour accommodation $action has been processed.\n\nRoom: $room_number\nBuilding: $building_name\nAction: $action\nDate: $action_date\n\n$signature"
+}

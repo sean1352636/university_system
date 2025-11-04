@@ -1,0 +1,4 @@
+{
+    "subject": "Support Ticket Created - #$ticket_id",
+    "body": "Your support ticket has been successfully created:\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTICKET CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nTicket ID: #$ticket_id\nSubject: $subject\nCategory: $category\nPriority: $priority\nStatus: Open\n\nYour ticket has been received and will be reviewed by our support team.\nYou will receive updates via email as your ticket is processed.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThank you for contacting support!\nUniversity Support Team"
+}

@@ -1,0 +1,1202 @@
+"""
+Admissions & Recruitment CRM GUI
+
+Comprehensive Tkinter interface for managing prospective students, applications,
+reviews, communication campaigns, campus tours, and yield predictions.
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from datetime import datetime, timedelta
+from typing import Optional
+
+from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.infrastructure.shared_context import get_auth
+from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.modules.domain.admissions.services.admissions_crm_core import (
+    ProspectManager,
+    ApplicationManager,
+    ReviewWorkflowManager,
+    CampaignManager,
+    TourManager
+)
+
+
+class AdmissionsCRMGUI:
+    """Admissions & Recruitment CRM GUI Application"""
+
+    def __init__(self, root, auth):
+        """Initialize the Admissions CRM GUI"""
+        self.root = root
+        self.auth = auth
+
+        if not self.auth or not hasattr(self.auth, 'current_user') or not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access Admissions CRM.")
+            return
+
+        self.window = tk.Toplevel(root)
+        self.window.title("Admissions & Recruitment CRM")
+        self.window.geometry("1200x800")
+        self.window.minsize(1000, 600)
+
+        # Initialize database tables
+        self._init_database()
+
+        # Setup UI
+        self._create_widgets()
+
+        # Log activity
+        log_activity('Accessed Admissions & Recruitment CRM', user=self.auth.current_user.get('username'))
+        print("✅ Admissions & Recruitment CRM GUI opened successfully")
+
+    def _init_database(self):
+        """Initialize database tables if they don't exist"""
+        try:
+            from university_system.infrastructure.database.schemas import init_admissions_crm_system_db
+            init_admissions_crm_system_db()
+        except ImportError as e:
+            print(f"⚠️  Warning: Could not import database schemas: {e}")
+        except Exception as e:
+            print(f"⚠️  Warning: Database initialization error: {e}")
+            messagebox.showwarning("Warning", f"Database initialization issue: {e}")
+
+    def _create_widgets(self):
+        """Create all GUI widgets"""
+        # Main container
+        main_frame = ttk.Frame(self.window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(
+            header_frame,
+            text="Admissions & Recruitment CRM",
+            font=('Arial', 18, 'bold')
+        ).pack(side=tk.LEFT)
+
+        user_label = ttk.Label(
+            header_frame,
+            text=f"User: {self.auth.current_user.get('username', 'Unknown')}",
+            font=('Arial', 10)
+        )
+        user_label.pack(side=tk.RIGHT)
+
+        # Notebook for tabs
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Create tabs
+        self._create_prospects_tab()
+        self._create_applications_tab()
+        self._create_reviews_tab()
+        self._create_campaigns_tab()
+        self._create_tours_tab()
+
+        # Close button
+        ttk.Button(
+            main_frame,
+            text="Close",
+            command=self.window.destroy
+        ).pack(pady=(10, 0))
+
+    def _create_prospects_tab(self):
+        """Create Prospects management tab"""
+        tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(tab, text="Prospects")
+
+        # Top buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Add Prospect", command=self._add_prospect).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Log Interaction", command=self._log_interaction).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=self._load_prospects).pack(side=tk.LEFT, padx=5)
+
+        # Prospects list
+        list_frame = ttk.LabelFrame(tab, text="Prospective Students", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('ID', 'Name', 'Email', 'Phone', 'Intended Major', 'Source', 'Status', 'Last Contact')
+        self.prospects_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        self.prospects_tree.heading('#0', text='')
+        self.prospects_tree.column('#0', width=0, stretch=False)
+
+        for col in columns:
+            self.prospects_tree.heading(col, text=col)
+            if col == 'ID':
+                self.prospects_tree.column(col, width=50)
+            elif col in ['Name', 'Email']:
+                self.prospects_tree.column(col, width=150)
+            else:
+                self.prospects_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.prospects_tree.yview)
+        self.prospects_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.prospects_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._load_prospects()
+
+    def _create_applications_tab(self):
+        """Create Applications management tab"""
+        tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(tab, text="Applications")
+
+        # Top buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Submit Application", command=self._submit_application).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Update Status", command=self._update_application_status).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=self._load_applications).pack(side=tk.LEFT, padx=5)
+
+        # Applications list
+        list_frame = ttk.LabelFrame(tab, text="Applications", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('ID', 'Prospect', 'Type', 'Program', 'Year', 'Semester', 'Status', 'Submitted')
+        self.applications_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        self.applications_tree.heading('#0', text='')
+        self.applications_tree.column('#0', width=0, stretch=False)
+
+        for col in columns:
+            self.applications_tree.heading(col, text=col)
+            if col == 'ID':
+                self.applications_tree.column(col, width=50)
+            elif col in ['Type', 'Semester', 'Status']:
+                self.applications_tree.column(col, width=90)
+            else:
+                self.applications_tree.column(col, width=120)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.applications_tree.yview)
+        self.applications_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.applications_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._load_applications()
+
+    def _create_reviews_tab(self):
+        """Create Reviews workflow tab"""
+        tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(tab, text="Reviews")
+
+        # Top buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Assign Reviewer", command=self._assign_reviewer).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Submit Review", command=self._submit_review).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=self._load_reviews).pack(side=tk.LEFT, padx=5)
+
+        # Reviews list
+        list_frame = ttk.LabelFrame(tab, text="Application Reviews", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('ID', 'Application', 'Reviewer', 'Rating', 'Decision', 'Reviewed', 'Status')
+        self.reviews_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        self.reviews_tree.heading('#0', text='')
+        self.reviews_tree.column('#0', width=0, stretch=False)
+
+        for col in columns:
+            self.reviews_tree.heading(col, text=col)
+            if col in ['ID', 'Rating']:
+                self.reviews_tree.column(col, width=60)
+            elif col in ['Decision', 'Status']:
+                self.reviews_tree.column(col, width=100)
+            else:
+                self.reviews_tree.column(col, width=130)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.reviews_tree.yview)
+        self.reviews_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.reviews_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._load_reviews()
+
+    def _create_campaigns_tab(self):
+        """Create Communication Campaigns tab"""
+        tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(tab, text="Campaigns")
+
+        # Top buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Create Campaign", command=self._create_campaign).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Send Communications", command=self._send_communications).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=self._load_campaigns).pack(side=tk.LEFT, padx=5)
+
+        # Campaigns list
+        list_frame = ttk.LabelFrame(tab, text="Active Campaigns", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('ID', 'Campaign Name', 'Type', 'Target', 'Sent', 'Opened', 'Active')
+        self.campaigns_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        self.campaigns_tree.heading('#0', text='')
+        self.campaigns_tree.column('#0', width=0, stretch=False)
+
+        for col in columns:
+            self.campaigns_tree.heading(col, text=col)
+            if col in ['ID', 'Sent', 'Opened']:
+                self.campaigns_tree.column(col, width=60)
+            elif col in ['Type', 'Active']:
+                self.campaigns_tree.column(col, width=80)
+            else:
+                self.campaigns_tree.column(col, width=180)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.campaigns_tree.yview)
+        self.campaigns_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.campaigns_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._load_campaigns()
+
+    def _create_tours_tab(self):
+        """Create Campus Tours tab"""
+        tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(tab, text="Campus Tours")
+
+        # Top buttons
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(btn_frame, text="Schedule Tour", command=self._schedule_tour).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Register Attendee", command=self._register_for_tour).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=self._load_tours).pack(side=tk.LEFT, padx=5)
+
+        # Tours list
+        list_frame = ttk.LabelFrame(tab, text="Scheduled Tours", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('ID', 'Tour Date', 'Time', 'Type', 'Guide', 'Capacity', 'Registered', 'Status')
+        self.tours_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        self.tours_tree.heading('#0', text='')
+        self.tours_tree.column('#0', width=0, stretch=False)
+
+        for col in columns:
+            self.tours_tree.heading(col, text=col)
+            if col in ['ID', 'Capacity', 'Registered']:
+                self.tours_tree.column(col, width=70)
+            elif col in ['Time', 'Status']:
+                self.tours_tree.column(col, width=90)
+            else:
+                self.tours_tree.column(col, width=130)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tours_tree.yview)
+        self.tours_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tours_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._load_tours()
+
+    # Load methods
+    def _load_prospects(self):
+        """Load all prospects"""
+        try:
+            self.prospects_tree.delete(*self.prospects_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT prospect_id, first_name, last_name, email, phone,
+                           intended_major, source, status, last_contact_date
+                    FROM admission_prospects
+                    ORDER BY created_at DESC
+                    LIMIT 100
+                ''')
+
+                for row in cursor.fetchall():
+                    name = f"{row['first_name']} {row['last_name']}"
+                    values = (
+                        row['prospect_id'],
+                        name,
+                        row['email'],
+                        row['phone'] or 'N/A',
+                        row['intended_major'] or 'Undecided',
+                        row['source'] or 'N/A',
+                        row['status'],
+                        row['last_contact_date'][:10] if row['last_contact_date'] else 'Never'
+                    )
+                    self.prospects_tree.insert('', tk.END, values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load prospects: {e}")
+
+    def _load_applications(self):
+        """Load all applications"""
+        try:
+            self.applications_tree.delete(*self.applications_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT a.application_id, p.first_name, p.last_name,
+                           a.application_type, a.program_applied, a.academic_year,
+                           a.semester, a.status, a.submitted_date
+                    FROM admission_applications a
+                    JOIN admission_prospects p ON a.prospect_id = p.prospect_id
+                    ORDER BY a.submitted_date DESC
+                    LIMIT 100
+                ''')
+
+                for row in cursor.fetchall():
+                    prospect_name = f"{row['first_name']} {row['last_name']}"
+                    values = (
+                        row['application_id'],
+                        prospect_name,
+                        row['application_type'],
+                        row['program_applied'],
+                        row['academic_year'],
+                        row['semester'],
+                        row['status'],
+                        row['submitted_date'][:10] if row['submitted_date'] else ''
+                    )
+                    self.applications_tree.insert('', tk.END, values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load applications: {e}")
+
+    def _load_reviews(self):
+        """Load all reviews"""
+        try:
+            self.reviews_tree.delete(*self.reviews_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT review_id, application_id, reviewer_id, score,
+                           recommendation, review_date
+                    FROM application_reviews
+                    ORDER BY review_date DESC
+                    LIMIT 100
+                ''')
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['review_id'],
+                        row['application_id'],
+                        row['reviewer_id'] or 'Unassigned',
+                        row['score'] if row['score'] else 'N/A',
+                        row['recommendation'] or 'Pending',
+                        row['review_date'][:10] if row['review_date'] else 'Not reviewed',
+                        'Completed'
+                    )
+                    self.reviews_tree.insert('', tk.END, values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load reviews: {e}")
+
+    def _load_campaigns(self):
+        """Load all campaigns"""
+        try:
+            self.campaigns_tree.delete(*self.campaigns_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT campaign_id, campaign_name, campaign_type, target_audience,
+                           messages_sent, messages_opened, is_active
+                    FROM communication_campaigns
+                    ORDER BY created_at DESC
+                    LIMIT 50
+                ''')
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['campaign_id'],
+                        row['campaign_name'],
+                        row['campaign_type'],
+                        row['target_audience'],
+                        row['messages_sent'] or 0,
+                        row['messages_opened'] or 0,
+                        '✓' if row['is_active'] else '✗'
+                    )
+                    self.campaigns_tree.insert('', tk.END, values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load campaigns: {e}")
+
+    def _load_tours(self):
+        """Load all tours"""
+        try:
+            self.tours_tree.delete(*self.tours_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT tour_id, tour_date, tour_time, tour_type, tour_guide,
+                           max_attendees, registered_count, status
+                    FROM campus_tours
+                    WHERE tour_date >= date('now')
+                    ORDER BY tour_date, tour_time
+                    LIMIT 50
+                ''')
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['tour_id'],
+                        row['tour_date'],
+                        row['tour_time'],
+                        row['tour_type'],
+                        row['tour_guide'] or 'TBD',
+                        row['max_attendees'],
+                        row['registered_count'] or 0,
+                        row['status']
+                    )
+                    self.tours_tree.insert('', tk.END, values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load tours: {e}")
+
+    # Action methods
+    def _add_prospect(self):
+        """Add a new prospect"""
+        AddProspectDialog(self.window, self.auth, self._load_prospects)
+
+    def _log_interaction(self):
+        """Log interaction with prospect"""
+        selection = self.prospects_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a prospect")
+            return
+
+        item = self.prospects_tree.item(selection[0])
+        prospect_id = item['values'][0]
+        LogInteractionDialog(self.window, self.auth, prospect_id, self._load_prospects)
+
+    def _submit_application(self):
+        """Submit a new application"""
+        SubmitApplicationDialog(self.window, self.auth, self._load_applications)
+
+    def _update_application_status(self):
+        """Update application status"""
+        selection = self.applications_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an application")
+            return
+
+        item = self.applications_tree.item(selection[0])
+        application_id = item['values'][0]
+        UpdateApplicationStatusDialog(self.window, self.auth, application_id, self._load_applications)
+
+    def _assign_reviewer(self):
+        """Assign reviewer to application"""
+        selection = self.applications_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an application")
+            return
+
+        item = self.applications_tree.item(selection[0])
+        application_id = item['values'][0]
+        AssignReviewerDialog(self.window, self.auth, application_id, self._load_reviews)
+
+    def _submit_review(self):
+        """Submit application review"""
+        selection = self.reviews_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a review to see its application")
+            return
+
+        item = self.reviews_tree.item(selection[0])
+        # Get application_id from the second column (index 1)
+        application_id = item['values'][1]
+        SubmitReviewDialog(self.window, self.auth, application_id, self._load_reviews)
+
+    def _create_campaign(self):
+        """Create communication campaign"""
+        CreateCampaignDialog(self.window, self.auth, self._load_campaigns)
+
+    def _send_communications(self):
+        """Send campaign communications"""
+        selection = self.campaigns_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a campaign")
+            return
+
+        item = self.campaigns_tree.item(selection[0])
+        campaign_id = item['values'][0]
+
+        try:
+            # Simulate sending
+            messagebox.showinfo("Success", f"Campaign {campaign_id} communications queued for sending")
+            log_activity('send', 'campaign_communications', campaign_id=campaign_id,
+                        user=self.auth.current_user.get('username'))
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send communications: {e}")
+
+    def _schedule_tour(self):
+        """Schedule a campus tour"""
+        ScheduleTourDialog(self.window, self.auth, self._load_tours)
+
+    def _register_for_tour(self):
+        """Register prospect for tour"""
+        selection = self.tours_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a tour")
+            return
+
+        item = self.tours_tree.item(selection[0])
+        tour_id = item['values'][0]
+        RegisterForTourDialog(self.window, self.auth, tour_id, self._load_tours)
+
+
+# Dialog Classes (simplified for space - expand as needed)
+
+class AddProspectDialog:
+    """Dialog for adding a new prospect"""
+
+    def __init__(self, parent, auth, callback):
+        self.auth = auth
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Add Prospect")
+        self.dialog.geometry("500x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Add New Prospect", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Form
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Fields
+        fields = [
+            ("First Name:", "first_name"),
+            ("Last Name:", "last_name"),
+            ("Email:", "email"),
+            ("Phone:", "phone"),
+            ("City:", "city"),
+            ("State:", "state"),
+            ("High School:", "high_school"),
+            ("Intended Major:", "intended_major"),
+            ("Source:", "source"),
+        ]
+
+        self.entries = {}
+        for i, (label, field) in enumerate(fields):
+            ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=5)
+            entry = ttk.Entry(form_frame, width=35)
+            entry.grid(row=i, column=1, pady=5, padx=(10, 0))
+            self.entries[field] = entry
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Add", command=self._add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _add(self):
+        try:
+            first_name = self.entries['first_name'].get().strip()
+            last_name = self.entries['last_name'].get().strip()
+            email = self.entries['email'].get().strip()
+
+            if not all([first_name, last_name, email]):
+                messagebox.showerror("Error", "First name, last name, and email are required")
+                return
+
+            prospect_id = ProspectManager.create_prospect(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=self.entries['phone'].get().strip(),
+                city=self.entries['city'].get().strip(),
+                state=self.entries['state'].get().strip(),
+                high_school=self.entries['high_school'].get().strip(),
+                intended_major=self.entries['intended_major'].get().strip(),
+                source=self.entries['source'].get().strip()
+            )
+
+            log_activity('create', 'prospect', prospect_id=prospect_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Prospect added (ID: {prospect_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add prospect: {e}")
+
+
+class LogInteractionDialog:
+    """Dialog for logging prospect interaction"""
+
+    def __init__(self, parent, auth, prospect_id, callback):
+        self.auth = auth
+        self.prospect_id = prospect_id
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Log Interaction")
+        self.dialog.geometry("500x400")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Log Interaction - Prospect {self.prospect_id}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Interaction Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.type_combo = ttk.Combobox(form_frame, width=32, values=[
+            'Email', 'Phone Call', 'Campus Visit', 'Event', 'Meeting', 'Other'
+        ])
+        self.type_combo.set('Email')
+        self.type_combo.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Notes:").grid(row=1, column=0, sticky=tk.NW, pady=5)
+        self.notes_text = scrolledtext.ScrolledText(form_frame, width=33, height=10)
+        self.notes_text.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Follow-up Date (YYYY-MM-DD):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.followup_entry = ttk.Entry(form_frame, width=35)
+        self.followup_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Log", command=self._log).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _log(self):
+        try:
+            interaction_id = ProspectManager.log_interaction(
+                prospect_id=self.prospect_id,
+                interaction_type=self.type_combo.get(),
+                notes=self.notes_text.get('1.0', tk.END).strip(),
+                staff_member=self.auth.current_user.get('username', ''),
+                next_followup_date=self.followup_entry.get().strip()
+            )
+
+            log_activity('create', 'prospect_interaction', interaction_id=interaction_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", "Interaction logged")
+            self.callback()
+            self.dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to log interaction: {e}")
+
+
+class SubmitApplicationDialog:
+    """Dialog for submitting application"""
+
+    def __init__(self, parent, auth, callback):
+        self.auth = auth
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Submit Application")
+        self.dialog.geometry("500x450")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Submit Application", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Prospect ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.prospect_entry = ttk.Entry(form_frame, width=35)
+        self.prospect_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Application Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.type_combo = ttk.Combobox(form_frame, width=32, values=['Undergraduate', 'Graduate', 'Transfer'])
+        self.type_combo.set('Undergraduate')
+        self.type_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Program:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.program_entry = ttk.Entry(form_frame, width=35)
+        self.program_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Academic Year:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.year_entry = ttk.Entry(form_frame, width=35)
+        self.year_entry.insert(0, f"{datetime.now().year + 1}")
+        self.year_entry.grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Semester:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        self.semester_combo = ttk.Combobox(form_frame, width=32, values=['Fall', 'Spring', 'Summer'])
+        self.semester_combo.set('Fall')
+        self.semester_combo.grid(row=4, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Submit", command=self._submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _submit(self):
+        try:
+            prospect_id = int(self.prospect_entry.get())
+            program = self.program_entry.get().strip()
+
+            if not program:
+                messagebox.showerror("Error", "Program is required")
+                return
+
+            application_id = ApplicationManager.submit_application(
+                prospect_id=prospect_id,
+                application_type=self.type_combo.get(),
+                program_applied=program,
+                academic_year=self.year_entry.get(),
+                semester=self.semester_combo.get()
+            )
+
+            log_activity('create', 'application', application_id=application_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Application submitted (ID: {application_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid prospect ID")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit application: {e}")
+
+
+class UpdateApplicationStatusDialog:
+    """Dialog for updating application status"""
+
+    def __init__(self, parent, auth, application_id, callback):
+        self.auth = auth
+        self.application_id = application_id
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Update Application Status")
+        self.dialog.geometry("400x200")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Update Status - Application {self.application_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(main_frame, text="New Status:").pack(pady=5)
+        self.status_combo = ttk.Combobox(main_frame, width=30, values=[
+            'submitted', 'under_review', 'interview_scheduled', 'accepted', 'rejected', 'waitlisted'
+        ])
+        self.status_combo.set('under_review')
+        self.status_combo.pack(pady=10)
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+
+        ttk.Button(btn_frame, text="Update", command=self._update).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _update(self):
+        try:
+            ApplicationManager.update_application_status(
+                application_id=self.application_id,
+                status=self.status_combo.get()
+            )
+
+            log_activity('update', 'application_status', application_id=self.application_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", "Status updated")
+            self.callback()
+            self.dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update status: {e}")
+
+
+class AssignReviewerDialog:
+    """Dialog for assigning reviewer"""
+
+    def __init__(self, parent, auth, application_id, callback):
+        self.auth = auth
+        self.application_id = application_id
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Assign Reviewer")
+        self.dialog.geometry("400x200")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Assign Reviewer - Application {self.application_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(main_frame, text="Reviewer ID:").pack(pady=5)
+        self.reviewer_entry = ttk.Entry(main_frame, width=30)
+        self.reviewer_entry.pack(pady=10)
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+
+        ttk.Button(btn_frame, text="Assign", command=self._assign).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _assign(self):
+        try:
+            reviewer_id = self.reviewer_entry.get().strip()
+            if not reviewer_id:
+                messagebox.showerror("Error", "Reviewer ID is required")
+                return
+
+            review_id = ReviewWorkflowManager.assign_reviewer(
+                application_id=self.application_id,
+                reviewer_id=reviewer_id
+            )
+
+            log_activity('create', 'review_assignment', review_id=review_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Reviewer assigned (Review ID: {review_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to assign reviewer: {e}")
+
+
+class SubmitReviewDialog:
+    """Dialog for submitting review"""
+
+    def __init__(self, parent, auth, application_id, callback):
+        self.auth = auth
+        self.application_id = application_id
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Submit Review")
+        self.dialog.geometry("500x500")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Submit Review - Application {self.application_id}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Review Stage:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.stage_combo = ttk.Combobox(form_frame, width=32, values=['initial', 'committee', 'final'])
+        self.stage_combo.set('initial')
+        self.stage_combo.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Score (1-100):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.score_entry = ttk.Entry(form_frame, width=35)
+        self.score_entry.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Recommendation:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.rec_combo = ttk.Combobox(form_frame, width=32, values=['accept', 'reject', 'waitlist', 'interview'])
+        self.rec_combo.set('accept')
+        self.rec_combo.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Comments:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+        self.comments_text = scrolledtext.ScrolledText(form_frame, width=33, height=10)
+        self.comments_text.grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Submit", command=self._submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _submit(self):
+        try:
+            score = int(self.score_entry.get())
+            if score < 1 or score > 100:
+                messagebox.showerror("Error", "Score must be between 1 and 100")
+                return
+
+            reviewer_id = self.auth.current_user.get('username', 'unknown')
+
+            review_id = ReviewWorkflowManager.create_review(
+                application_id=self.application_id,
+                reviewer_id=reviewer_id,
+                review_stage=self.stage_combo.get(),
+                score=score,
+                recommendation=self.rec_combo.get(),
+                comments=self.comments_text.get('1.0', tk.END).strip()
+            )
+
+            log_activity('create', 'review', review_id=review_id,
+                        application_id=self.application_id,
+                        user_id=reviewer_id)
+
+            messagebox.showinfo("Success", f"Review submitted (ID: {review_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid score")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit review: {e}")
+
+
+class CreateCampaignDialog:
+    """Dialog for creating campaign"""
+
+    def __init__(self, parent, auth, callback):
+        self.auth = auth
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Campaign")
+        self.dialog.geometry("500x400")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Create Communication Campaign", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Campaign Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.name_entry = ttk.Entry(form_frame, width=35)
+        self.name_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.type_combo = ttk.Combobox(form_frame, width=32, values=['Email', 'SMS', 'Mail', 'Multi-channel'])
+        self.type_combo.set('Email')
+        self.type_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Target Audience:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.target_combo = ttk.Combobox(form_frame, width=32, values=[
+            'All Prospects', 'Applicants', 'Accepted', 'Waitlisted', 'Custom'
+        ])
+        self.target_combo.set('All Prospects')
+        self.target_combo.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Message Template:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+        self.template_text = scrolledtext.ScrolledText(form_frame, width=33, height=8)
+        self.template_text.grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Create", command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _create(self):
+        try:
+            name = self.name_entry.get().strip()
+            if not name:
+                messagebox.showerror("Error", "Campaign name is required")
+                return
+
+            # Set default dates (today to 30 days from now)
+            start_date = datetime.now().strftime('%Y-%m-%d')
+            end_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+
+            campaign_id = CampaignManager.create_campaign(
+                campaign_name=name,
+                campaign_type=self.type_combo.get(),
+                target_audience=self.target_combo.get(),
+                start_date=start_date,
+                end_date=end_date,
+                message_template=self.template_text.get('1.0', tk.END).strip()
+            )
+
+            log_activity('create', 'campaign', campaign_id=campaign_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Campaign created (ID: {campaign_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create campaign: {e}")
+
+
+class ScheduleTourDialog:
+    """Dialog for scheduling tour"""
+
+    def __init__(self, parent, auth, callback):
+        self.auth = auth
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Schedule Campus Tour")
+        self.dialog.geometry("500x400")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Schedule Campus Tour", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Tour Date (YYYY-MM-DD):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.date_entry = ttk.Entry(form_frame, width=35)
+        self.date_entry.insert(0, (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d'))
+        self.date_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Time (HH:MM):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.time_entry = ttk.Entry(form_frame, width=35)
+        self.time_entry.insert(0, "10:00")
+        self.time_entry.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Tour Type:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.type_combo = ttk.Combobox(form_frame, width=32, values=['General', 'Academic', 'Athletic', 'Special'])
+        self.type_combo.set('General')
+        self.type_combo.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Tour Guide:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.guide_entry = ttk.Entry(form_frame, width=35)
+        self.guide_entry.grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Max Attendees:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        self.capacity_entry = ttk.Entry(form_frame, width=35)
+        self.capacity_entry.insert(0, "20")
+        self.capacity_entry.grid(row=4, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Schedule", command=self._schedule).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _schedule(self):
+        try:
+            tour_id = TourManager.create_tour(
+                tour_date=self.date_entry.get(),
+                tour_time=self.time_entry.get(),
+                tour_guide=self.guide_entry.get().strip(),
+                max_attendees=int(self.capacity_entry.get())
+            )
+
+            log_activity('create', 'campus_tour', tour_id=tour_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Tour scheduled (ID: {tour_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid max attendees number")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to schedule tour: {e}")
+
+
+class RegisterForTourDialog:
+    """Dialog for registering for tour"""
+
+    def __init__(self, parent, auth, tour_id, callback):
+        self.auth = auth
+        self.tour_id = tour_id
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Register for Tour")
+        self.dialog.geometry("400x200")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Register for Tour {self.tour_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(main_frame, text="Prospect ID:").pack(pady=5)
+        self.prospect_entry = ttk.Entry(main_frame, width=30)
+        self.prospect_entry.pack(pady=10)
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+
+        ttk.Button(btn_frame, text="Register", command=self._register).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _register(self):
+        try:
+            prospect_id = int(self.prospect_entry.get())
+
+            registration_id = TourManager.register_for_tour(
+                tour_id=self.tour_id,
+                prospect_id=prospect_id
+            )
+
+            log_activity('create', 'tour_registration', registration_id=registration_id,
+                        user=self.auth.current_user.get('username'))
+
+            messagebox.showinfo("Success", f"Registered (ID: {registration_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid prospect ID")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to register: {e}")
+
+
+# Launcher function
+def launch_admissions_crm_gui(root, auth):
+    """Launch the Admissions & Recruitment CRM GUI"""
+    try:
+        AdmissionsCRMGUI(root, auth)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to launch Admissions CRM GUI: {e}")
+        print(f"❌ Admissions CRM GUI error: {e}")
+
+
+__all__ = ['AdmissionsCRMGUI', 'launch_admissions_crm_gui']

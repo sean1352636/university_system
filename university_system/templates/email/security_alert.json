@@ -1,0 +1,4 @@
+{
+    "subject": "CRITICAL: Security Alert - $action",
+    "body": "CRITICAL SECURITY ALERT\n\nTimestamp: $timestamp\nUser: $username ($role)\nAction: $action\nModule: $module\nStatus: $status\nIP Address: $ip_address\nSecurity Level: $security_level\n\nDetails: $details\n\nTrace ID: $trace_id\n\nThis is an automated alert from the Enhanced Activity Logger.\nPlease investigate this activity immediately."
+}

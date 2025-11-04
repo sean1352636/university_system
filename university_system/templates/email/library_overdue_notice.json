@@ -1,0 +1,4 @@
+{
+    "subject": "OVERDUE NOTICE - Library Book",
+    "body": "Dear $title $first_name $last_name,\n\nThe book '$book_title' (ID: $book_id) is overdue by $days_overdue days.\nIt was due on $due_date.\nPlease return the book as soon as possible to minimize fines.\n\nThank you for your cooperation.\n\nBest regards,\nLibrary Services"
+}

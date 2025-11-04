@@ -1,0 +1,4 @@
+{
+    "subject": "Club Membership Update - $club_name",
+    "body": "Dear $first_name $last_name,\n\nYou have successfully left $club_name.\n\nYou can rejoin at any time through your student portal.\n\n$signature"
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Overdue Payment Reminder",
+    "body": "Dear $first_name $last_name,\n\nYou have $count overdue fees totaling £$total.\n\nPlease make payment as soon as possible to avoid any service disruptions.\n\n$signature"
+}

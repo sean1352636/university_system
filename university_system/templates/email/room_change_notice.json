@@ -1,0 +1,4 @@
+{
+    "subject": "Room Change Notice - $module_code",
+    "body": "Dear $student_name,\n\nThis is to inform you that there has been a room change for the following session:\n\nModule: $module_code\nDay: $day\nTime: $start_time - $end_time\n\nOld Room: $old_room\nNew Room: $new_room\n\nPlease make note of this change and proceed to the new room for your scheduled session.\n\nIf you have any questions, please contact the academic office.\n\nBest regards,\nUniversity Scheduling System"
+}

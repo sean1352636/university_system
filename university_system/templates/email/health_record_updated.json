@@ -1,0 +1,4 @@
+{
+    "subject": "Health Portal - Health Record Updated",
+    "body": "Dear $student_name,\n\nYour health record has been updated.\n\nRecord Type: $record_type\nUpdated: $updated_date\n\nYou can view the updated record in your Health Portal.\n\n$signature"
+}

@@ -1,0 +1,558 @@
+"""Dashboard display and statistics"""
+
+from university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog, filedialog
+from tkinter.scrolledtext import ScrolledText
+from university_system.infrastructure.database.db import sqlite3
+import sys
+import io
+import os
+import csv
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import json
+import threading
+import warnings
+from pathlib import Path
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+import joblib
+from cryptography.fernet import Fernet
+import logging
+import qrcode
+from io import BytesIO
+import base64
+from university_system.modules.domain.finance.gui.finance_reporting_gui import launch_financial_gui
+
+# Import your existing modules - keep backward compatibility
+try:
+    from university_system.infrastructure.email.email_service import send_email
+    from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
+    from university_system.infrastructure.database.db import get_connection
+    from university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+except ImportError:
+    # Fallback for backward compatibility
+    def send_email(*args, **kwargs):
+        return True
+    
+    class UserAuth:
+        def __init__(self):
+            self.current_user = {"username": "admin"}
+        def check_permission(self, p):
+            return True
+    
+    from pathlib import Path
+    def get_connection():
+        """
+        Fallback database connection for standalone mode.
+        Use the central student_records.db located in the refactored/db_files
+        directory rather than creating an enhanced_student_finance.db in the
+        current working directory. This ensures the application operates on
+        a single database file when the main refactored modules are not
+        available.
+        """
+        # Determine the project root (refactored directory) one level above finance
+        base_dir = Path(__file__).resolve().parents[1]
+        db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
+        return sqlite3.connect(str(DEFAULT_DB_PATH))
+    
+    def configure_logging(name=None):
+        return logging.getLogger(name or __name__)
+    
+    def get_log_file(name):
+        from university_system.modules.shared.constants import paths
+        return str(paths.LOG_DIR / name)
+
+# Import all required finance functions from common_imports module
+from university_system.modules.domain.finance.gui.finance.common_imports import *
+
+# Configure logging
+log_path = get_log_file("analytics.log")
+os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_path),
+        logging.StreamHandler()
+    ]
+)
+
+logger = configure_logging(name=__name__)
+warnings.filterwarnings('ignore')
+
+# Global variables for backward compatibility
+auth = get_global_auth()  # Use centralized auth instance
+ENCRYPTION_KEY = Fernet.generate_key()
+cipher_suite = Fernet(ENCRYPTION_KEY)
+
+# Payment gateway configurations (from original file)
+PAYMENT_GATEWAYS = {
+    'stripe': {
+        'public_key': 'pk_test_...',
+        'secret_key': 'sk_test_...',
+        'webhook_secret': 'whsec_...'
+    },
+    'paypal': {
+        'client_id': 'your_paypal_client_id',
+        'client_secret': 'your_paypal_client_secret',
+        'environment': 'sandbox'
+    }
+}
+
+# WARNING: Never commit real API keys to version control!
+# Set these environment variables in your deployment environment
+SUPPORTED_CURRENCIES = ['GBP', 'USD', 'EUR', 'CAD', 'AUD']
+# Load exchange API key from environment variable
+EXCHANGE_API_KEY = os.getenv('EXCHANGE_API_KEY', '')
+
+
+
+
+class DashboardManager:
+    """Dashboard display and statistics"""
+
+    def __init__(self, gui):
+        """Initialize manager with reference to main GUI"""
+        self.gui = gui
+        self.root = gui.root
+        self.conn = gui.conn
+        try:
+            self.finance_system = gui.finance_system
+        except:
+            self.finance_system = None
+
+    def refresh_dashboard(self):
+        """Refresh dashboard data - stub implementation"""
+        try:
+            # Try to update connection if available
+            if hasattr(self.gui, 'conn') and self.gui.conn:
+                self.conn = self.gui.conn
+            elif not self.conn:
+                self.conn = get_connection()
+
+            # If dashboard is created, update its data
+            print("Dashboard refresh called")
+        except Exception as e:
+            print(f"Dashboard refresh error: {e}")
+
+    def create_dashboard_tab(self):
+        """Create dashboard tab"""
+        dashboard_frame = tk.Frame(self.gui.layout.content_frame, bg='white')
+        self.gui.layout.tab_frames['dashboard'] = dashboard_frame
+        
+        # Create dashboard content
+        main_frame = tk.Frame(dashboard_frame, bg='white')
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Dashboard title
+        title = tk.Label(main_frame, text="Finance Dashboard", 
+                        font=('Arial', 18, 'bold'), bg='white')
+        title.pack(pady=10)
+        
+        # Quick stats frame
+        stats_frame = tk.Frame(main_frame, bg='white')
+        stats_frame.pack(fill='x', pady=10)
+        
+        # Create stat cards
+        self.create_stat_card(stats_frame, "💰 Total Revenue", "Loading...", self.gui.layout.colors['success'], 0, 0)
+        self.create_stat_card(stats_frame, "📋 Active Students", "Loading...", self.gui.layout.colors['secondary'], 0, 1)
+        self.create_stat_card(stats_frame, "⚠️ Overdue Amount", "Loading...", self.gui.layout.colors['danger'], 0, 2)
+        self.create_stat_card(stats_frame, "📈 Collection Rate", "Loading...", self.gui.layout.colors['warning'], 0, 3)
+        
+        # Quick actions frame
+        actions_frame = tk.LabelFrame(main_frame, text="Quick Actions", 
+                                     font=('Arial', 12, 'bold'), bg='white')
+        actions_frame.pack(fill='x', pady=20)
+        
+        # Action buttons
+        btn_frame = tk.Frame(actions_frame, bg='white')
+        btn_frame.pack(padx=10, pady=10)
+        
+        actions = [
+            ("Record Payment", self.show_payment_dialog),
+            ("Add Student", self.show_student_dialog),
+            ("Generate Report", self.show_reports_tab),
+            ("Sync Data", self.refresh_dashboard),
+            ("Advanced Reporting", self.launch_reporting_gui)  # Add this line
+        ]        
+    
+        for i, (text, command) in enumerate(actions):
+            btn = tk.Button(btn_frame, text=text, command=command,
+                           font=('Arial', 10), bg=self.gui.layout.colors['secondary'],
+                           fg='white', padx=20, pady=5)
+            btn.grid(row=0, column=i, padx=5)
+        
+        # Recent activity frame
+        activity_frame = tk.LabelFrame(main_frame, text="Recent Activity",
+                                      font=('Arial', 12, 'bold'), bg='white')
+        activity_frame.pack(fill='both', expand=True, pady=10)
+        
+        # Activity listbox with scrollbar
+        activity_container = tk.Frame(activity_frame, bg='white')
+        activity_container.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        self.activity_listbox = tk.Listbox(activity_container, font=('Arial', 9))
+        scrollbar = ttk.Scrollbar(activity_container, orient='vertical', command=self.activity_listbox.yview)
+        self.activity_listbox.configure(yscrollcommand=scrollbar.set)
+        
+        self.activity_listbox.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Load dashboard data
+        self.refresh_dashboard()
+    
+
+    def create_stat_card(self, parent, title, value, color, row, col):
+        """Create a statistics card"""
+        card_frame = tk.Frame(parent, bg=color, relief='raised', bd=2)
+        card_frame.grid(row=row, column=col, padx=10, pady=5, sticky='ew')
+        parent.grid_columnconfigure(col, weight=1)
+        
+        title_label = tk.Label(card_frame, text=title, font=('Arial', 10, 'bold'),
+                              bg=color, fg='white')
+        title_label.pack(pady=5)
+        
+        value_label = tk.Label(card_frame, text=value, font=('Arial', 14, 'bold'),
+                              bg=color, fg='white')
+        value_label.pack(pady=5)
+        
+        # Store reference for updating
+        setattr(self, f"stat_{col}", value_label)
+    
+
+    def refresh_dashboard(self):
+        """Refresh dashboard data"""
+        def refresh_thread():
+            conn = None
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+    
+                # Get total revenue
+                cursor.execute("SELECT SUM(amount) FROM payments WHERE status = 'completed'")
+                total_revenue = cursor.fetchone()[0] or 0
+    
+                # Get active students
+                cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'active'")
+                active_students = cursor.fetchone()[0] or 0
+    
+                # Get overdue amount
+                cursor.execute('''
+                SELECT SUM(sf.amount) - COALESCE(SUM(pa.amount), 0)
+                FROM student_fees sf
+                LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
+                WHERE sf.status IN ('unpaid', 'partial') AND date(sf.due_date) < date('now')
+                ''')
+                overdue_amount = cursor.fetchone()[0] or 0
+    
+                # Calculate collection rate
+                total_fees = cursor.execute('''
+                SELECT SUM(sf.amount) FROM student_fees sf
+                WHERE sf.status IN ('paid', 'partial', 'unpaid')
+                ''').fetchone()[0] or 1
+    
+                paid_amount = total_revenue
+                collection_rate = (paid_amount / total_fees * 100) if total_fees > 0 else 0
+    
+                # Update UI in main thread
+                self.root.after(0, lambda: self.update_dashboard_stats(
+                    total_revenue, active_students, overdue_amount, collection_rate))
+    
+                # Load recent activity
+                self.root.after(100, self.load_recent_activity)
+    
+            except sqlite3.Error as e:
+                if conn:
+                    conn.rollback()
+                print(f"Database error refreshing dashboard: {e}")
+    
+            except Exception as e:
+                if conn:
+                    conn.rollback()
+                print(f"Error refreshing dashboard: {e}")
+    
+            finally:
+                if conn:
+                    conn.close()
+    
+        refresh_thread()
+    
+
+    def update_dashboard_stats(self, revenue, students, overdue, collection_rate):
+        """Update dashboard statistics"""
+        try:
+            self.stat_0.config(text=f"£{revenue:,.2f}")
+            self.stat_1.config(text=f"{students}")
+            self.stat_2.config(text=f"£{overdue:,.2f}")
+            self.stat_3.config(text=f"{collection_rate:.1f}%")
+        except AttributeError:
+            pass  # Stats not yet created
+    
+
+    def load_recent_activity(self):
+        """Load recent activity for dashboard"""
+        conn = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+    
+            # Get recent payments
+            cursor.execute('''
+            SELECT p.payment_date, s.first_name, s.last_name, p.amount, p.payment_method
+            FROM payments p
+            JOIN students s ON p.student_id = s.student_id
+            WHERE p.status = 'completed'
+            ORDER BY p.payment_date DESC
+            LIMIT 10
+            ''')
+    
+            recent_payments = cursor.fetchall()
+    
+            # Clear and populate activity listbox
+            self.activity_listbox.delete(0, tk.END)
+            for payment_date, first_name, last_name, amount, method in recent_payments:
+                activity_text = f"{payment_date} - {first_name} {last_name} paid £{amount:.2f} via {method}"
+                self.activity_listbox.insert(tk.END, activity_text)
+    
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Database error loading recent activity: {e}")
+    
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            print(f"Error loading recent activity: {e}")
+    
+        finally:
+            if conn:
+                conn.close()
+    
+
+    def load_initial_data(self):
+        """Load initial data for all tabs"""
+        try:
+            self.refresh_dashboard()
+            self.refresh_payments()
+            self.refresh_fees()
+            self.refresh_students()
+            self.refresh_collections()
+            self.refresh_financial_aid()
+            self.refresh_budget()
+            self.load_exchange_rates()
+            self.load_notification_templates()
+        except Exception as e:
+            print(f"Error loading initial data: {e}")
+    
+
+    def gui_generate_financial_dashboard(self):
+        """Generate and display financial dashboard"""
+        try:
+            self.update_status("Generating financial dashboard...")
+            
+            def generate_dashboard():
+                try:
+                    # Update all dashboard charts
+                    self.update_dashboard_charts()
+                    messagebox.showinfo("Success", "Financial dashboard updated successfully!")
+                    self.update_status("Financial dashboard generated")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
+            
+            thread = threading.Thread(target=generate_dashboard)
+            thread.daemon = True
+            thread.start()
+            
+            # Switch to analytics tab
+            self.show_tab('analytics')  # Analytics tab
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
+    
+
+    def update_dashboard_charts(self):
+        """Update all dashboard charts"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            
+            # Clear existing plots
+            for ax in [self.ax1, self.ax2, self.ax3, self.ax4]:
+                ax.clear()
+            
+            # Chart 1: Monthly Revenue Trend
+            current_year = datetime.now().year
+            cursor.execute('''
+            SELECT strftime('%m', payment_date) as month, SUM(amount) as revenue
+            FROM payments
+            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
+            GROUP BY month
+            ORDER BY month
+            ''', (str(current_year),))
+            
+            monthly_data = cursor.fetchall()
+            
+            if monthly_data:
+                months = [f"Month {m[0]}" for m in monthly_data]
+                revenues = [m[1] for m in monthly_data]
+                self.ax1.plot(months, revenues, marker='o', linewidth=2, markersize=6)
+                self.ax1.set_title('Monthly Revenue Trend')
+                self.ax1.set_ylabel('Revenue (£)')
+                self.ax1.tick_params(axis='x', rotation=45)
+            else:
+                self.ax1.text(0.5, 0.5, 'No revenue data available', ha='center', va='center', transform=self.ax1.transAxes)
+                self.ax1.set_title('Monthly Revenue Trend')
+            
+            # Chart 2: Payment Method Distribution
+            cursor.execute('''
+            SELECT payment_method, COUNT(*), SUM(amount)
+            FROM payments 
+            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
+            GROUP BY payment_method
+            ORDER BY SUM(amount) DESC
+            ''', (str(current_year),))
+            
+            payment_methods = cursor.fetchall()
+            
+            if payment_methods:
+                methods = [p[0] for p in payment_methods]
+                amounts = [p[2] for p in payment_methods]
+                self.ax2.pie(amounts, labels=methods, autopct='%1.1f%%')
+                self.ax2.set_title('Payment Methods (by Amount)')
+            else:
+                self.ax2.text(0.5, 0.5, 'No payment data available', ha='center', va='center', transform=self.ax2.transAxes)
+                self.ax2.set_title('Payment Methods Distribution')
+            
+            # Chart 3: Outstanding Fees by Course
+            cursor.execute('''
+            SELECT s.course, SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as outstanding
+            FROM student_fees sf
+            JOIN students s ON sf.student_id = s.student_id
+            LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
+            WHERE sf.status IN ('unpaid', 'partial')
+            GROUP BY s.course
+            HAVING outstanding > 0
+            ORDER BY outstanding DESC
+            LIMIT 10
+            ''')
+            
+            course_outstanding = cursor.fetchall()
+            
+            if course_outstanding:
+                courses = [c[0] for c in course_outstanding]
+                amounts = [c[1] for c in course_outstanding]
+                self.ax3.bar(courses, amounts, color='coral')
+                self.ax3.set_title('Outstanding Fees by Course')
+                self.ax3.set_ylabel('Amount (£)')
+                self.ax3.tick_params(axis='x', rotation=45)
+            else:
+                self.ax3.text(0.5, 0.5, 'No outstanding fees', ha='center', va='center', transform=self.ax3.transAxes)
+                self.ax3.set_title('Outstanding Fees by Course')
+            
+            # Chart 4: Payment Plan Status
+            cursor.execute('''
+            SELECT status, COUNT(*), SUM(total_amount)
+            FROM student_payment_plans
+            GROUP BY status
+            ''')
+            
+            payment_plan_status = cursor.fetchall()
+            
+            if payment_plan_status:
+                statuses = [p[0] for p in payment_plan_status]
+                counts = [p[1] for p in payment_plan_status]
+                colors = ['green' if s == 'completed' else 'orange' if s == 'active' else 'red' for s in statuses]
+                self.ax4.bar(statuses, counts, color=colors)
+                self.ax4.set_title('Payment Plan Status')
+                self.ax4.set_ylabel('Number of Plans')
+            else:
+                self.ax4.text(0.5, 0.5, 'No payment plans', ha='center', va='center', transform=self.ax4.transAxes)
+                self.ax4.set_title('Payment Plan Status')
+            
+            # Refresh the canvas
+            self.fig.tight_layout()
+            self.canvas.draw()
+            
+            conn.close()
+            
+        except Exception as e:
+            # Show error on charts
+            for ax in [self.ax1, self.ax2, self.ax3, self.ax4]:
+                ax.clear()
+                ax.text(0.5, 0.5, f'Error: {str(e)}', ha='center', va='center', transform=ax.transAxes)
+            self.canvas.draw()
+    
+
+    def update_quick_stats(self, parent_frame):
+        """Update quick statistics display"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            
+            # Total revenue this year
+            current_year = datetime.now().year
+            cursor.execute('''
+            SELECT SUM(amount) FROM payments 
+            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
+            ''', (str(current_year),))
+            
+            total_revenue = cursor.fetchone()[0] or 0
+            
+            # Outstanding fees
+            cursor.execute('''
+            SELECT SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as outstanding
+            FROM student_fees sf
+            LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
+            WHERE sf.status IN ('unpaid', 'partial')
+            ''')
+            
+            outstanding_fees = cursor.fetchone()[0] or 0
+            
+            # Active payment plans
+            cursor.execute('''SELECT COUNT(*) FROM student_payment_plans WHERE status = 'active' ''')
+            active_plans = cursor.fetchone()[0] or 0
+            
+            # Total students
+            cursor.execute('''SELECT COUNT(*) FROM students WHERE status = 'active' ''')
+            total_students = cursor.fetchone()[0] or 0
+            
+            # Create or update stats labels
+            stats_data = [
+                ("Total Revenue (YTD)", f"£{total_revenue:,.2f}", "#27ae60"),
+                ("Outstanding Fees", f"£{outstanding_fees:,.2f}", "#e74c3c"),
+                ("Active Payment Plans", str(active_plans), "#3498db"),
+                ("Total Active Students", str(total_students), "#9b59b6")
+            ]
+            
+            # Clear existing widgets
+            for widget in parent_frame.winfo_children():
+                widget.destroy()
+            
+            # Create stats display
+            for i, (label, value, color) in enumerate(stats_data):
+                stat_frame = tk.Frame(parent_frame, bg=color, relief='raised', bd=2)
+                stat_frame.grid(row=i//2, column=i%2, padx=10, pady=10, sticky='ew')
+                
+                tk.Label(stat_frame, text=label, font=('Arial', 12, 'bold'), 
+                        fg='white', bg=color).pack(pady=5)
+                tk.Label(stat_frame, text=value, font=('Arial', 16, 'bold'), 
+                        fg='white', bg=color).pack(pady=5)
+            
+            parent_frame.columnconfigure(0, weight=1)
+            parent_frame.columnconfigure(1, weight=1)
+            
+            conn.close()
+            
+        except Exception as e:
+            # Create error display
+            error_label = tk.Label(parent_frame, text=f"Error loading stats: {e}", 
+                                 fg='red', font=('Arial', 12))
+            error_label.pack(pady=20)
+    

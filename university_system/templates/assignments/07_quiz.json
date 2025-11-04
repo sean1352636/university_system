@@ -1,0 +1,16 @@
+{
+  "template_name": "Online Quiz",
+  "template_type": "quiz",
+  "title": "Chapter Quiz",
+  "description": "Timed online quiz on course material",
+  "instructions": "This is a timed quiz covering chapters 1-5.\n\nDetails:\n- Duration: 60 minutes\n- 25 multiple choice questions\n- No use of notes or textbooks\n- Submit within time limit\n- One attempt only",
+  "max_marks": 100,
+  "assignment_type": "individual",
+  "file_types_allowed": ".pdf",
+  "max_file_size_mb": 5,
+  "allow_late_submission": false,
+  "duration_minutes": 60,
+  "rubric_criteria": [
+    {"name": "Accuracy", "description": "Correct answers", "points": 100, "weight": 100}
+  ]
+}

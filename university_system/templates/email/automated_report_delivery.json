@@ -1,0 +1,4 @@
+{
+    "subject": "Automated Report: $template_name",
+    "body": "Dear Recipient,\n\nPlease find attached the automated report \"$template_name\" generated on $generated_date.\n\nThis is an automated message from the Student Reporting System.\n\nBest regards,\nReporting System"
+}

@@ -1,0 +1,29 @@
+[
+    {
+        "name": "6",
+        "description": "6",
+        "sections": [
+            "student_overview",
+            "course_distribution",
+            "gender_distribution",
+            "age_distribution",
+            "registration_trends",
+            "module_popularity",
+            "grade_distribution",
+            "attendance_summary",
+            "data_quality_report",
+            "predictive_analytics",
+            "correlation_analysis",
+            "anomaly_detection",
+            "performance_benchmarks",
+            "trend_analysis"
+        ],
+        "filters": {
+            "date_range_days": 30
+        },
+        "security_level": "normal",
+        "visualization_type": "standard",
+        "created_at": "2025-10-02T09:19:11.752300",
+        "version": "1.0"
+    }
+]

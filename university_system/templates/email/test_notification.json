@@ -1,0 +1,4 @@
+{
+    "subject": "Test Notification",
+    "body": "This is a test notification.\n\n$signature"
+}

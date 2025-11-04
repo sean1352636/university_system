@@ -1,0 +1,39 @@
+{
+  "template_name": "Essay Assignment",
+  "template_type": "essay",
+  "title": "Research Essay",
+  "description": "Write a comprehensive essay on the given topic",
+  "instructions": "This essay should be 2000-2500 words, properly cited using APA format.\n\nRequirements:\n- Clear thesis statement\n- Well-structured arguments\n- Minimum 5 academic sources\n- Proper citations and bibliography\n- Original work (will be checked for plagiarism)",
+  "max_marks": 100,
+  "assignment_type": "individual",
+  "file_types_allowed": ".pdf,.docx",
+  "max_file_size_mb": 10,
+  "allow_late_submission": true,
+  "late_penalty_per_day": 5,
+  "rubric_criteria": [
+    {
+      "name": "Content & Research",
+      "description": "Depth of research and quality of sources",
+      "points": 40,
+      "weight": 40
+    },
+    {
+      "name": "Structure & Organization",
+      "description": "Logical flow and clear organization",
+      "points": 25,
+      "weight": 25
+    },
+    {
+      "name": "Writing Quality",
+      "description": "Grammar, style, and clarity",
+      "points": 20,
+      "weight": 20
+    },
+    {
+      "name": "Citations & References",
+      "description": "Proper APA formatting and citations",
+      "points": 15,
+      "weight": 15
+    }
+  ]
+}

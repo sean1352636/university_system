@@ -1,0 +1,4 @@
+{
+    "subject": "Test Email from Student Records System",
+    "body": "This is a test email sent from the Student Records System.\n\nConfiguration:\n- Mode: $mode\n- SMTP Server: $smtp_server\n- SMTP Port: $smtp_port\n- Sender: $sender_email\n- TLS Enabled: $tls_enabled\n- Authentication: $authentication_enabled\n\n$mode_message\n\n$signature"
+}

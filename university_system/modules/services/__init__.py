@@ -1,0 +1,34 @@
+"""
+Consolidated University System Services
+
+This module provides easy access to all university system services
+organized by interface type (GUI, CLI, API).
+
+Organization:
+- gui/: All graphical user interface implementations
+- cli/: All command line interface implementations
+- api/: All REST API implementations
+
+This reorganization improves:
+1. Code discoverability - clear separation by interface type
+2. Import paths - shorter, more intuitive imports
+3. Maintenance - easier to find and update related functionality
+4. Testing - can test different interfaces separately
+"""
+
+# Re-export key services for backward compatibility
+from university_system.modules.services.gui import HealthPortalGUI
+from university_system.modules.services.cli import (
+    display_health_portal_menu,
+    view_health_records,
+    schedule_appointment,
+    view_medical_history,
+    manage_emergency_contacts,
+    generate_health_reports,
+    view_vaccination_records
+)
+
+# Version and metadata
+__version__ = "2.0.0"
+__author__ = "University System Team"
+__description__ = "Consolidated University System Services"

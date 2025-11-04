@@ -1,0 +1,4 @@
+{
+    "subject": "Thank You for Your Feedback",
+    "body": "Dear $name,\n\nThank you for providing feedback about your experience at our restaurant.\n\nWe value your input and will use it to improve our services.\n\n$signature"
+}

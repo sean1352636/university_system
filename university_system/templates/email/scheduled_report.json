@@ -1,0 +1,4 @@
+{
+    "subject": "Scheduled Report: $template_name",
+    "body": "<h2>Scheduled Report</h2>\n<p>Your scheduled report has been generated.</p>\n<p><strong>Report:</strong> $template_name</p>\n<p><strong>Generated:</strong> $generated_date</p>\n<p><strong>Period:</strong> $start_date to $end_date</p>"
+}

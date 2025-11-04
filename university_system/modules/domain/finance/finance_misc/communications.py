@@ -1,0 +1,367 @@
+from __future__ import annotations
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
+import ssl
+import requests
+
+from university_system.modules.domain.finance.finance_misc.finance_context import get_connection
+from university_system.modules.domain.finance.core.security_automation import (
+    send_email_notification,
+    send_sms_notification,
+)
+from university_system.infrastructure.email.template_utils import render_template
+
+
+EMAIL_CONFIG = {
+    "sender_email": "finance@university.ac.uk",
+    "sender_password": "",
+    "sender_name": "Finance Department",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+}
+
+SENDGRID_CONFIG = {
+    "api_key": "",
+    "from_email": "finance@university.ac.uk",
+    "from_name": "Finance Department",
+}
+
+AWS_SNS_CONFIG = {
+    "aws_access_key_id": "",
+    "aws_secret_access_key": "",
+    "region_name": "us-east-1",
+}
+
+TWILIO_CONFIG = {
+    "account_sid": "",
+    "auth_token": "",
+    "from_phone": "+447000000000",
+}
+
+def send_email_smtp(to_email, subject, body):
+    """Send email using centralized SMTP system"""
+    try:
+        # Use centralized email system
+        from university_system.infrastructure.email.smtp import send_email_via_smtp
+        from datetime import datetime
+
+        current_time = datetime.now().isoformat()
+        success = send_email_via_smtp(
+            recipient_email=to_email,
+            subject=subject,
+            body=body,
+            cc=None,
+            bcc=None,
+            attachments=None,
+            current_time=current_time
+        )
+
+        if success:
+            print(f"✅ Email sent successfully to {to_email}")
+        else:
+            print(f"⚠️ Email sending failed for {to_email}")
+
+        return success
+
+    except Exception as e:
+        print(f"❌ SMTP email failed: {e}")
+        return False
+
+def send_email_sendgrid(to_email, subject, body):
+    """Send email using SendGrid API"""
+    try:
+        url = "https://api.sendgrid.com/v3/mail/send"
+
+        headers = {
+            "Authorization": f"Bearer {SENDGRID_CONFIG['api_key']}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {
+                "email": SENDGRID_CONFIG['from_email'],
+                "name": SENDGRID_CONFIG['from_name']
+            },
+            "subject": subject,
+            "content": [
+                {
+                    "type": "text/plain",
+                    "value": body
+                },
+                {
+                    "type": "text/html",
+                    "value": f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>University Finance Department</h2>
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                            <pre style="white-space: pre-wrap;">{body}</pre>
+                        </div>
+                    </div>
+                    """
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+
+        if response.status_code == 202:
+            print(f"✅ SendGrid email sent successfully to {to_email}")
+            return True
+        else:
+            print(f"❌ SendGrid email failed: {response.status_code} - {response.text}")
+            return False
+
+    except Exception as e:
+        print(f"❌ SendGrid email failed: {e}")
+        return False
+
+def send_email_aws_ses(to_email, subject, body):
+    """Send email using AWS SES"""
+    try:
+        import boto3
+
+        ses_client = boto3.client(
+            'ses',
+            aws_access_key_id=AWS_SNS_CONFIG['aws_access_key_id'],
+            aws_secret_access_key=AWS_SNS_CONFIG['aws_secret_access_key'],
+            region_name=AWS_SNS_CONFIG['region_name']
+        )
+
+        response = ses_client.send_email(
+            Source=f"{EMAIL_CONFIG['sender_name']} <{EMAIL_CONFIG['sender_email']}>",
+            Destination={'ToAddresses': [to_email]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {
+                    'Text': {'Data': body},
+                    'Html': {'Data': f"""
+                    <div style="font-family: Arial, sans-serif;">
+                        <h2>University Finance Department</h2>
+                        <div style="background-color: #f8f9fa; padding: 20px;">
+                            <pre style="white-space: pre-wrap;">{body}</pre>
+                        </div>
+                    </div>
+                    """}
+                }
+            }
+        )
+
+        print(f"✅ AWS SES email sent successfully to {to_email}")
+        return True
+
+    except Exception as e:
+        print(f"❌ AWS SES email failed: {e}")
+        return False
+
+def setup_email_config():
+    """Interactive setup for email configuration"""
+    print("\n📧 Email Configuration Setup")
+    print("=" * 40)
+
+    print("Choose email service:")
+    print("1. Gmail/SMTP")
+    print("2. SendGrid")
+    print("3. AWS SES")
+
+    choice = input("Select service (1-3): ").strip()
+
+    if choice == '1':
+        EMAIL_CONFIG['sender_email'] = input("Enter sender email: ").strip()
+        EMAIL_CONFIG['sender_password'] = input("Enter app password: ").strip()
+        EMAIL_CONFIG['sender_name'] = input("Enter sender name: ").strip()
+        EMAIL_CONFIG['smtp_server'] = input(f"SMTP server ({EMAIL_CONFIG['smtp_server']}): ").strip() or EMAIL_CONFIG['smtp_server']
+
+    elif choice == '2':
+        SENDGRID_CONFIG['api_key'] = input("Enter SendGrid API key: ").strip()
+        SENDGRID_CONFIG['from_email'] = input("Enter from email: ").strip()
+        SENDGRID_CONFIG['from_name'] = input("Enter from name: ").strip()
+
+    elif choice == '3':
+        AWS_SNS_CONFIG['aws_access_key_id'] = input("Enter AWS Access Key ID: ").strip()
+        AWS_SNS_CONFIG['aws_secret_access_key'] = input("Enter AWS Secret Access Key: ").strip()
+        AWS_SNS_CONFIG['region_name'] = input(f"Enter AWS region ({AWS_SNS_CONFIG['region_name']}): ").strip() or AWS_SNS_CONFIG['region_name']
+
+    print("✅ Email configuration updated!")
+
+def setup_sms_config():
+    """Interactive setup for SMS configuration"""
+    print("\n📱 SMS Configuration Setup")
+    print("=" * 40)
+
+    print("Choose SMS service:")
+    print("1. Twilio")
+    print("2. AWS SNS")
+
+    choice = input("Select service (1-2): ").strip()
+
+    if choice == '1':
+        TWILIO_CONFIG['account_sid'] = input("Enter Twilio Account SID: ").strip()
+        TWILIO_CONFIG['auth_token'] = input("Enter Twilio Auth Token: ").strip()
+        TWILIO_CONFIG['from_phone'] = input("Enter Twilio phone number: ").strip()
+
+    elif choice == '2':
+        AWS_SNS_CONFIG['aws_access_key_id'] = input("Enter AWS Access Key ID: ").strip()
+        AWS_SNS_CONFIG['aws_secret_access_key'] = input("Enter AWS Secret Access Key: ").strip()
+        AWS_SNS_CONFIG['region_name'] = input(f"Enter AWS region ({AWS_SNS_CONFIG['region_name']}): ").strip() or AWS_SNS_CONFIG['region_name']
+
+    print("✅ SMS configuration updated!")
+
+def send_sms_twilio(phone_number, message):
+    """Send SMS using Twilio API"""
+    try:
+        from twilio.rest import Client
+
+        client = Client(TWILIO_CONFIG['account_sid'], TWILIO_CONFIG['auth_token'])
+
+        # Format phone number (ensure it starts with +)
+        if not phone_number.startswith('+'):
+            phone_number = '+44' + phone_number.lstrip('0')  # UK format, adjust as needed
+
+        message_obj = client.messages.create(
+            body=f"University Finance: {message}",
+            from_=TWILIO_CONFIG['from_phone'],
+            to=phone_number
+        )
+
+        print(f"✅ Twilio SMS sent successfully to {phone_number} (SID: {message_obj.sid})")
+        return True
+
+    except Exception as e:
+        print(f"❌ Twilio SMS failed: {e}")
+        return False
+
+def send_sms_aws_sns(phone_number, message):
+    """Send SMS using AWS SNS"""
+    try:
+        import boto3
+
+        sns_client = boto3.client(
+            'sns',
+            aws_access_key_id=AWS_SNS_CONFIG['aws_access_key_id'],
+            aws_secret_access_key=AWS_SNS_CONFIG['aws_secret_access_key'],
+            region_name=AWS_SNS_CONFIG['region_name']
+        )
+
+        # Format phone number
+        if not phone_number.startswith('+'):
+            phone_number = '+44' + phone_number.lstrip('0')  # UK format
+
+        response = sns_client.publish(
+            PhoneNumber=phone_number,
+            Message=f"University Finance: {message}",
+            MessageAttributes={
+                'AWS.SNS.SMS.SenderID': {
+                    'DataType': 'String',
+                    'StringValue': 'UniFinance'
+                },
+                'AWS.SNS.SMS.SMSType': {
+                    'DataType': 'String',
+                    'StringValue': 'Transactional'
+                }
+            }
+        )
+
+        print(f"✅ AWS SNS SMS sent successfully to {phone_number} (MessageId: {response['MessageId']})")
+        return True
+
+    except Exception as e:
+        print(f"❌ AWS SNS SMS failed: {e}")
+        return False
+
+def test_email_service():
+    """Test email service functionality"""
+    print("\n📧 Testing Email Service...")
+
+    try:
+        test_email = input("Enter test email address: ").strip()
+        if not test_email:
+            test_email = "test@example.com"
+
+        # Use email template
+        from university_system.infrastructure.email.template_utils import render_template
+
+        subject, body = render_template('finance_system_test', {})
+
+        if not subject or not body:
+            print("Failed to load email template.")
+            return
+
+        print(f"Sending test email to {test_email}...")
+
+        # Note: This will fail without proper SMTP configuration
+        # but shows the email would be sent
+        success = send_email_notification(test_email, subject, body)
+
+        if success:
+            print("✅ Email test successful!")
+        else:
+            print("❌ Email test failed - check SMTP configuration")
+            print("💡 Configure EMAIL_CONFIG variables for actual email sending")
+
+    except Exception as e:
+        print(f"❌ Email test error: {e}")
+
+def test_sms_service():
+    """Test SMS service functionality"""
+    print("\n📱 Testing SMS Service...")
+
+    try:
+        student_id = input("Enter student ID for SMS test: ").strip()
+        if not student_id:
+            student_id = "STU001"
+
+        message = "This is a test SMS from the Finance Management System."
+
+        print(f"Sending test SMS to student {student_id}...")
+
+        # Note: This will fail without proper SMS configuration
+        # but shows the SMS would be sent
+        success = send_sms_notification(student_id, message)
+
+        if success:
+            print("✅ SMS test successful!")
+        else:
+            print("❌ SMS test failed - check SMS configuration")
+            print("💡 Configure TWILIO_CONFIG or AWS_SNS_CONFIG for actual SMS sending")
+
+    except Exception as e:
+        print(f"❌ SMS test error: {e}")
+
+def send_arrangement_confirmation(student_id, case_id, schedule_info):
+    """Send payment arrangement confirmation to student"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get student details
+        cursor.execute('''
+        SELECT first_name, last_name, email_address
+        FROM students
+        WHERE student_id = ?
+        ''', (student_id,))
+
+        student = cursor.fetchone()
+
+        if student:
+            first_name, last_name, email = student
+            student_name = f"{first_name} {last_name}"
+
+            template_vars = {
+                'name': student_name,
+                'case_id': case_id,
+                'schedule_info': schedule_info
+            }
+            subject, body = render_template('payment_arrangement_confirmation', template_vars)
+
+            if send_email_notification(email, subject, body):
+                print(f"Payment arrangement confirmation sent to {email}")
+            else:
+                print("Failed to send arrangement confirmation")
+
+        conn.close()
+
+    except Exception as e:
+        print(f"Error sending arrangement confirmation: {e}")

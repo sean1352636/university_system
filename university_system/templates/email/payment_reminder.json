@@ -1,0 +1,4 @@
+{
+    "subject": "Payment Reminder - Fees Due Soon",
+    "body": "Dear $student_name,\n\nYour payment of £$amount is due on $due_date. Please ensure timely payment to avoid late fees.\n\n$signature"
+}

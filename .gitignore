@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db-journal
+*.sqlite3-journal
+*.db-shm
+*.db-wal
+
+# Security sensitive files
+.encryption_master_key
+*encryption_master_key*
+
+# Environment variables
+.env
+.env.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# System files
+.cache/
+.config/
+.local/
+.npm/
+.npm-global/
+.Xauthority
+.asoundrc
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.sudo_as_admin_successful
+.gitconfig
+.idlerc/
+.sommelierrc
+.npmrc
+
+# Backups
+*.backup
+backups/
+university_system/backups/
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Claude Code
+.claude/
+.codex/
+.github/
+
+# Archives
+*.zip
+*.tar.gz
+*.tar
