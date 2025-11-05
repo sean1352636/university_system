@@ -4172,122 +4172,159 @@ class AdvancedSearchGUI:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             result = f"📈 CHART DATA: {chart_type.replace('_', ' ').title()}\n"
             result += f"═" * 50 + "\n"
             result += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            
+
             if chart_type == "age_histogram":
-                cursor.execute("SELECT age, COUNT(*) FROM students GROUP BY age ORDER BY age")
+                cursor.execute("SELECT age, COUNT(*) FROM students WHERE age IS NOT NULL GROUP BY age ORDER BY age")
                 age_data = cursor.fetchall()
-                
-                result += "AGE DISTRIBUTION:\n"
-                result += "-" * 20 + "\n"
-                for age, count in age_data:
-                    bar = "█" * min(count, 20)  # Visual bar representation
-                    result += f"Age {age:2d}: {count:3d} students {bar}\n"
-            
+
+                if not age_data:
+                    result += "AGE DISTRIBUTION:\n"
+                    result += "-" * 20 + "\n"
+                    result += "No age data available.\n"
+                else:
+                    result += "AGE DISTRIBUTION:\n"
+                    result += "-" * 20 + "\n"
+                    for age, count in age_data:
+                        age_display = age if age is not None else 0
+                        bar = "█" * min(count, 20)  # Visual bar representation
+                        result += f"Age {age_display:2d}: {count:3d} students {bar}\n"
+
             elif chart_type == "course_pie":
-                cursor.execute("SELECT course, COUNT(*) FROM students GROUP BY course")
+                cursor.execute("SELECT course, COUNT(*) FROM students WHERE course IS NOT NULL GROUP BY course")
                 course_data = cursor.fetchall()
-                
-                total = sum(count for _, count in course_data)
-                result += "COURSE DISTRIBUTION:\n"
-                result += "-" * 20 + "\n"
-                for course, count in course_data:
-                    percentage = (count / total) * 100
-                    result += f"{course}: {count} students ({percentage:.1f}%)\n"
-            
+
+                if not course_data:
+                    result += "COURSE DISTRIBUTION:\n"
+                    result += "-" * 20 + "\n"
+                    result += "No course data available.\n"
+                else:
+                    total = sum(count for _, count in course_data)
+                    result += "COURSE DISTRIBUTION:\n"
+                    result += "-" * 20 + "\n"
+                    for course, count in course_data:
+                        percentage = (count / total * 100) if total > 0 else 0
+                        course_name = course if course else "Not Specified"
+                        result += f"{course_name}: {count} students ({percentage:.1f}%)\n"
+
             elif chart_type == "registration_timeline":
                 cursor.execute("""
                 SELECT strftime('%Y-%m', registration_datetime) as month, COUNT(*)
-                FROM students 
+                FROM students
                 WHERE registration_datetime IS NOT NULL
                 GROUP BY strftime('%Y-%m', registration_datetime)
                 ORDER BY month
                 """)
                 timeline_data = cursor.fetchall()
-                
+
                 result += "REGISTRATION TIMELINE:\n"
                 result += "-" * 25 + "\n"
-                for month, count in timeline_data:
-                    bar = "█" * min(count, 15)
-                    result += f"{month}: {count:3d} registrations {bar}\n"
-            
+                if not timeline_data:
+                    result += "No registration timeline data available.\n"
+                else:
+                    for month, count in timeline_data:
+                        bar = "█" * min(count, 15)
+                        month_display = month if month else "Unknown"
+                        result += f"{month_display}: {count:3d} registrations {bar}\n"
+
             elif chart_type == "gender_course":
                 cursor.execute("""
-                SELECT course, gender, COUNT(*) 
-                FROM students 
+                SELECT course, gender, COUNT(*)
+                FROM students
+                WHERE course IS NOT NULL
                 GROUP BY course, gender
                 ORDER BY course, gender
                 """)
                 gender_course_data = cursor.fetchall()
-                
+
                 result += "GENDER-COURSE DISTRIBUTION:\n"
                 result += "-" * 30 + "\n"
-                for course, gender, count in gender_course_data:
-                    result += f"{course} - {gender.title()}: {count} students\n"
-            
+                if not gender_course_data:
+                    result += "No gender-course data available.\n"
+                else:
+                    for course, gender, count in gender_course_data:
+                        course_name = course if course else "Not Specified"
+                        gender_name = gender.title() if gender else "Not Specified"
+                        result += f"{course_name} - {gender_name}: {count} students\n"
+
             elif chart_type == "module_popularity":
                 cursor.execute("""
                 SELECT module_code, module_name, COUNT(*) as enrollment_count
-                FROM student_modules 
+                FROM student_modules
+                WHERE module_code IS NOT NULL
                 GROUP BY module_code, module_name
                 ORDER BY enrollment_count DESC
                 LIMIT 10
                 """)
                 module_data = cursor.fetchall()
-                
+
                 result += "TOP 10 MOST POPULAR MODULES:\n"
                 result += "-" * 35 + "\n"
-                for i, (code, name, count) in enumerate(module_data, 1):
-                    result += f"{i:2d}. {code} - {name}: {count} enrollments\n"
-            
+                if not module_data:
+                    result += "No module enrollment data available.\n"
+                else:
+                    for i, (code, name, count) in enumerate(module_data, 1):
+                        code_display = code if code else "N/A"
+                        name_display = name if name else "N/A"
+                        result += f"{i:2d}. {code_display} - {name_display}: {count} enrollments\n"
+
             elif chart_type == "grade_distribution":
                 cursor.execute("""
-                SELECT grade, COUNT(*) 
-                FROM student_modules 
+                SELECT grade, COUNT(*)
+                FROM student_modules
                 WHERE grade IS NOT NULL
                 GROUP BY grade
                 ORDER BY grade
                 """)
                 grade_data = cursor.fetchall()
-                
+
                 result += "OVERALL GRADE DISTRIBUTION:\n"
                 result += "-" * 30 + "\n"
-                total_grades = sum(count for _, count in grade_data)
-                for grade, count in grade_data:
-                    percentage = (count / total_grades) * 100
-                    bar = "█" * min(int(percentage), 20)
-                    result += f"Grade {grade}: {count:4d} ({percentage:5.1f}%) {bar}\n"
-            
+                if not grade_data:
+                    result += "No grade data available.\n"
+                else:
+                    total_grades = sum(count for _, count in grade_data)
+                    for grade, count in grade_data:
+                        percentage = (count / total_grades * 100) if total_grades > 0 else 0
+                        bar = "█" * min(int(percentage), 20)
+                        grade_display = grade if grade else "N/A"
+                        result += f"Grade {grade_display}: {count:4d} ({percentage:5.1f}%) {bar}\n"
+
             else:  # custom_chart or enrollment_trends
                 cursor.execute("""
-                SELECT 
+                SELECT
                     strftime('%Y', registration_datetime) as year,
                     course,
                     COUNT(*) as count
-                FROM students 
-                WHERE registration_datetime IS NOT NULL
+                FROM students
+                WHERE registration_datetime IS NOT NULL AND course IS NOT NULL
                 GROUP BY year, course
                 ORDER BY year, course
                 """)
                 trend_data = cursor.fetchall()
-                
+
                 result += "ENROLLMENT TRENDS BY YEAR AND COURSE:\n"
                 result += "-" * 40 + "\n"
-                for year, course, count in trend_data:
-                    result += f"{year} - {course}: {count} enrollments\n"
-            
+                if not trend_data:
+                    result += "No enrollment trend data available.\n"
+                else:
+                    for year, course, count in trend_data:
+                        year_display = year if year else "Unknown"
+                        course_display = course if course else "Not Specified"
+                        result += f"{year_display} - {course_display}: {count} enrollments\n"
+
             conn.close()
-            
+
             result += f"\n📊 CHART RECOMMENDATIONS:\n"
             result += "• Use this data to create visual charts in external tools\n"
             result += "• Consider trends for strategic planning\n"
             result += "• Monitor patterns for quality improvement\n"
-            
+
             return result
-            
+
         except Exception as e:
             raise Exception(f"Chart data creation error: {str(e)}")
 

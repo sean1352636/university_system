@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+**Chart Generation - None Value Formatting Errors**
+- **Issue**: "unsupported format string passed to NoneType.__format__" error when generating charts with missing or NULL data
+- **Location**: `university_system/modules/shared/gui/advanced_search_gui.py:4170-4329`
+- **Charts Fixed**:
+  - Age Histogram: Added NULL check for age values
+  - Course Pie Chart: Handle NULL courses and division by zero
+  - Registration Timeline: Check for NULL months
+  - Gender-Course Distribution: Handle NULL gender and course values
+  - Module Popularity: Check for NULL module codes and names
+  - Grade Distribution: Handle NULL grades and empty datasets
+  - Enrollment Trends: Filter out NULL years and courses
+- **Fix**:
+  - Added `WHERE IS NOT NULL` clauses to SQL queries
+  - Added defensive None checks before formatting
+  - Display "No data available" message for empty datasets
+  - Safe fallback values for NULL fields (e.g., "Not Specified", "N/A")
+- **Impact**: All chart types now generate successfully even with incomplete or missing data
+- **Root Cause**: Chart functions attempted to format None/NULL values directly with format specifiers (`:2d`, `:.1f`, `.title()`)
+
 ### Changed
 
 **Advanced Search GUI - Replace Placeholder Data with Real Database Queries**
