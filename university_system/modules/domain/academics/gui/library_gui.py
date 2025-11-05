@@ -5901,6 +5901,1187 @@ Status: {status.upper()}"""
         except Exception as e:
             print(f"Could not add calendar button: {e}")
 
+    # ============================================================================
+    # MISSING METHOD IMPLEMENTATIONS
+    # ============================================================================
+
+    def import_books_gui(self):
+        """Import books from CSV or Excel file"""
+        try:
+            file_path = filedialog.askopenfilename(
+                title="Select Book File to Import",
+                filetypes=[
+                    ("CSV files", "*.csv"),
+                    ("Excel files", "*.xlsx *.xls"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if not file_path:
+                return
+
+            # Ask user about column mapping
+            dialog = tk.Toplevel(self.master)
+            dialog.title("Import Books")
+            dialog.geometry("600x400")
+            dialog.transient(self.master)
+
+            ttk.Label(dialog, text="Importing books from:", font=('Arial', 10, 'bold')).pack(pady=5)
+            ttk.Label(dialog, text=os.path.basename(file_path)).pack(pady=5)
+
+            # Read file preview
+            import csv
+            try:
+                if file_path.endswith('.csv'):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        reader = csv.reader(f)
+                        headers = next(reader)
+                        preview_rows = [next(reader) for _ in range(min(3, sum(1 for _ in reader)))]
+                else:
+                    # For Excel, would need openpyxl - fallback to CSV-like approach
+                    messagebox.showwarning("Format", "Excel import requires openpyxl. Please convert to CSV.")
+                    dialog.destroy()
+                    return
+
+                # Show column mapping
+                frame = ttk.LabelFrame(dialog, text="Column Mapping")
+                frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                mappings = {}
+                required_fields = ['title', 'author', 'isbn', 'category', 'quantity']
+
+                for i, field in enumerate(required_fields):
+                    ttk.Label(frame, text=f"{field.title()}:").grid(row=i, column=0, sticky='w', padx=5, pady=3)
+                    var = tk.StringVar(value=headers[i] if i < len(headers) else '')
+                    combo = ttk.Combobox(frame, textvariable=var, values=headers, width=30)
+                    combo.grid(row=i, column=1, padx=5, pady=3)
+                    mappings[field] = var
+
+                # Import button
+                def do_import():
+                    try:
+                        imported_count = 0
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            reader = csv.DictReader(f)
+                            for row in reader:
+                                try:
+                                    book_data = {
+                                        'title': row.get(mappings['title'].get(), ''),
+                                        'author': row.get(mappings['author'].get(), ''),
+                                        'isbn': row.get(mappings['isbn'].get(), ''),
+                                        'category': row.get(mappings['category'].get(), ''),
+                                        'quantity': int(row.get(mappings['quantity'].get(), 1))
+                                    }
+
+                                    # Generate book_id
+                                    cursor.execute('SELECT MAX(CAST(SUBSTR(book_id, 2) AS INTEGER)) FROM books')
+                                    result = cursor.fetchone()
+                                    next_num = (result[0] or 10000) + 1
+                                    book_id = f"B{next_num}"
+
+                                    cursor.execute('''
+                                        INSERT INTO books (book_id, title, author, isbn, category,
+                                                         quantity, available_quantity, status, location)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, 'Available', 'Imported')
+                                    ''', (book_id, book_data['title'], book_data['author'],
+                                         book_data['isbn'], book_data['category'],
+                                         book_data['quantity'], book_data['quantity']))
+
+                                    imported_count += 1
+                                except Exception as e:
+                                    print(f"Error importing row: {e}")
+                                    continue
+
+                        conn.commit()
+                        conn.close()
+
+                        messagebox.showinfo("Success", f"Successfully imported {imported_count} books!")
+                        dialog.destroy()
+                        if hasattr(self, 'books_tree'):
+                            self.load_books_data()
+
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Import failed: {str(e)}")
+
+                ttk.Button(dialog, text="Import", command=do_import).pack(pady=10)
+                ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not read file: {str(e)}")
+                dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Import failed: {str(e)}")
+
+    def export_books_gui(self):
+        """Export books to CSV file"""
+        try:
+            file_path = filedialog.asksaveasfilename(
+                title="Export Books",
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+
+            if not file_path:
+                return
+
+            import csv
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT book_id, title, author, isbn, category, publisher,
+                       publication_year, quantity, available_quantity, status, location
+                FROM books
+                ORDER BY title
+            ''')
+
+            books = cursor.fetchall()
+            conn.close()
+
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Book ID', 'Title', 'Author', 'ISBN', 'Category',
+                               'Publisher', 'Year', 'Quantity', 'Available', 'Status', 'Location'])
+                writer.writerows(books)
+
+            messagebox.showinfo("Success", f"Exported {len(books)} books to {os.path.basename(file_path)}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Export failed: {str(e)}")
+
+    def backup_system_gui(self):
+        """Create database backup"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_name = f"library_backup_{timestamp}.db"
+
+            file_path = filedialog.asksaveasfilename(
+                title="Save Backup",
+                defaultextension=".db",
+                initialfile=default_name,
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")]
+            )
+
+            if not file_path:
+                return
+
+            import shutil
+            shutil.copy2(DATABASE_FILE, file_path)
+
+            # Log the backup
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                user_id = get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'system'
+                cursor.execute('''
+                    INSERT INTO audit_log (user_id, action, table_name, timestamp, success)
+                    VALUES (?, 'backup', 'system', ?, 1)
+                ''', (user_id, datetime.now().isoformat()))
+                conn.commit()
+                conn.close()
+            except:
+                pass
+
+            messagebox.showinfo("Success", f"Backup created successfully!\n{os.path.basename(file_path)}")
+            self.update_status("Backup created successfully", "success")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Backup failed: {str(e)}")
+
+    def show_advanced_search(self):
+        """Show advanced search dialog with multiple criteria"""
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Advanced Book Search")
+        dialog.geometry("600x500")
+        dialog.transient(self.master)
+
+        # Search criteria frame
+        criteria_frame = ttk.LabelFrame(dialog, text="Search Criteria")
+        criteria_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Create search fields
+        fields = {
+            'title': tk.StringVar(),
+            'author': tk.StringVar(),
+            'isbn': tk.StringVar(),
+            'category': tk.StringVar(),
+            'publisher': tk.StringVar(),
+            'year_from': tk.StringVar(),
+            'year_to': tk.StringVar(),
+            'status': tk.StringVar(value='Any')
+        }
+
+        row = 0
+        ttk.Label(criteria_frame, text="Title:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['title'], width=40).grid(row=row, column=1, padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Author:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['author'], width=40).grid(row=row, column=1, padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="ISBN:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['isbn'], width=40).grid(row=row, column=1, padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Category:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['category'], width=40).grid(row=row, column=1, padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Publisher:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['publisher'], width=40).grid(row=row, column=1, padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Year From:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['year_from'], width=15).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Year To:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Entry(criteria_frame, textvariable=fields['year_to'], width=15).grid(row=row, column=1, sticky='w', padx=5, pady=5)
+
+        row += 1
+        ttk.Label(criteria_frame, text="Status:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+        ttk.Combobox(criteria_frame, textvariable=fields['status'],
+                    values=['Any', 'Available', 'Checked Out', 'Reserved', 'Maintenance'],
+                    width=37).grid(row=row, column=1, padx=5, pady=5)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(dialog, text="Search Results")
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Results treeview
+        columns = ('ID', 'Title', 'Author', 'Category', 'Year', 'Status')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=8)
+
+        for col in columns:
+            results_tree.heading(col, text=col)
+            results_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=results_tree.yview)
+        results_tree.configure(yscrollcommand=scrollbar.set)
+
+        results_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def execute_advanced_search():
+            try:
+                # Clear previous results
+                for item in results_tree.get_children():
+                    results_tree.delete(item)
+
+                # Build query
+                query = "SELECT book_id, title, author, category, publication_year, status FROM books WHERE 1=1"
+                params = []
+
+                if fields['title'].get():
+                    query += " AND title LIKE ?"
+                    params.append(f"%{fields['title'].get()}%")
+
+                if fields['author'].get():
+                    query += " AND author LIKE ?"
+                    params.append(f"%{fields['author'].get()}%")
+
+                if fields['isbn'].get():
+                    query += " AND isbn LIKE ?"
+                    params.append(f"%{fields['isbn'].get()}%")
+
+                if fields['category'].get():
+                    query += " AND category LIKE ?"
+                    params.append(f"%{fields['category'].get()}%")
+
+                if fields['publisher'].get():
+                    query += " AND publisher LIKE ?"
+                    params.append(f"%{fields['publisher'].get()}%")
+
+                if fields['year_from'].get():
+                    query += " AND publication_year >= ?"
+                    params.append(int(fields['year_from'].get()))
+
+                if fields['year_to'].get():
+                    query += " AND publication_year <= ?"
+                    params.append(int(fields['year_to'].get()))
+
+                if fields['status'].get() != 'Any':
+                    query += " AND status = ?"
+                    params.append(fields['status'].get())
+
+                query += " ORDER BY title LIMIT 100"
+
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+                conn.close()
+
+                for result in results:
+                    results_tree.insert('', 'end', values=result)
+
+                messagebox.showinfo("Search Complete", f"Found {len(results)} matching books")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Search", command=execute_advanced_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear", command=lambda: [v.set('') for v in fields.values()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def show_library_cards_generator(self):
+        """Generate library cards with barcodes for users"""
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Library Card Generator")
+        dialog.geometry("700x600")
+        dialog.transient(self.master)
+
+        ttk.Label(dialog, text="Library Card Generator", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # User selection frame
+        selection_frame = ttk.LabelFrame(dialog, text="Select User")
+        selection_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(selection_frame, text="User ID or Username:").pack(side=tk.LEFT, padx=5)
+        user_var = tk.StringVar()
+        user_entry = ttk.Entry(selection_frame, textvariable=user_var, width=30)
+        user_entry.pack(side=tk.LEFT, padx=5)
+
+        # Card preview frame
+        preview_frame = ttk.LabelFrame(dialog, text="Card Preview")
+        preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        preview_canvas = tk.Canvas(preview_frame, bg='white', height=300)
+        preview_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        def generate_card():
+            try:
+                user_id = user_var.get().strip()
+                if not user_id:
+                    messagebox.showwarning("Warning", "Please enter a user ID or username")
+                    return
+
+                # Get user info
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Try to find user
+                cursor.execute('''
+                    SELECT student_id, first_name, last_name, email, department
+                    FROM students WHERE student_id = ? OR email LIKE ?
+                ''', (user_id, f"%{user_id}%"))
+
+                user = cursor.fetchone()
+                conn.close()
+
+                if not user:
+                    messagebox.showerror("Error", "User not found")
+                    return
+
+                # Clear canvas
+                preview_canvas.delete('all')
+
+                # Draw card (simplified version)
+                card_width = 400
+                card_height = 250
+                x_offset = 50
+                y_offset = 25
+
+                # Card background
+                preview_canvas.create_rectangle(x_offset, y_offset, x_offset + card_width, y_offset + card_height,
+                                              fill='lightblue', outline='darkblue', width=2)
+
+                # University name
+                preview_canvas.create_text(x_offset + card_width//2, y_offset + 30,
+                                         text="UNIVERSITY LIBRARY", font=('Arial', 16, 'bold'))
+
+                # User info
+                y = y_offset + 70
+                preview_canvas.create_text(x_offset + 20, y, text=f"Name: {user[1]} {user[2]}",
+                                         anchor='w', font=('Arial', 12))
+                y += 30
+                preview_canvas.create_text(x_offset + 20, y, text=f"ID: {user[0]}",
+                                         anchor='w', font=('Arial', 12))
+                y += 30
+                preview_canvas.create_text(x_offset + 20, y, text=f"Department: {user[4] or 'N/A'}",
+                                         anchor='w', font=('Arial', 12))
+                y += 30
+
+                # Barcode placeholder (simple representation)
+                barcode_text = f"*{user[0]}*"
+                preview_canvas.create_text(x_offset + card_width//2, y + 20,
+                                         text=barcode_text, font=('Courier', 20, 'bold'))
+
+                messagebox.showinfo("Success", "Library card generated successfully!")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Card generation failed: {str(e)}")
+
+        def save_card():
+            try:
+                file_path = filedialog.asksaveasfilename(
+                    title="Save Library Card",
+                    defaultextension=".png",
+                    filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
+                )
+
+                if file_path:
+                    messagebox.showinfo("Info", "Card save functionality requires PIL/Pillow library")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Save failed: {str(e)}")
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Generate Card", command=generate_card).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Save Card", command=save_card).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def show_help(self):
+        """Show user guide dialog"""
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Library System - User Guide")
+        dialog.geometry("800x600")
+        dialog.transient(self.master)
+
+        # Create notebook for different help sections
+        notebook = ttk.Notebook(dialog)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Getting Started tab
+        getting_started = ScrolledText(notebook, wrap=tk.WORD, width=80, height=30)
+        getting_started.pack(fill=tk.BOTH, expand=True)
+        getting_started.insert('1.0', """
+GETTING STARTED
+===============
+
+Welcome to the Enhanced Library Management System!
+
+This system allows you to:
+- Browse and search the library catalog
+- Check out and return books
+- Make reservations
+- View your borrowing history
+- Generate reports
+
+MAIN FEATURES:
+--------------
+1. Dashboard - Overview of library statistics and recent activity
+2. All Books - Browse the complete catalog
+3. Search - Find books by title, author, or category
+4. Checkout - Borrow books
+5. Return - Return borrowed books
+6. Reservations - Reserve books that are currently unavailable
+7. Reports - Generate various library reports
+
+NAVIGATION:
+-----------
+- Use the sidebar menu to navigate between different sections
+- Double-click on any book to view detailed information
+- Right-click on books in the table for quick actions
+""")
+        getting_started.config(state='disabled')
+        notebook.add(getting_started, text="Getting Started")
+
+        # Features tab
+        features = ScrolledText(notebook, wrap=tk.WORD, width=80, height=30)
+        features.pack(fill=tk.BOTH, expand=True)
+        features.insert('1.0', """
+KEY FEATURES
+============
+
+BOOK MANAGEMENT:
+----------------
+- Add new books with ISBN lookup
+- Edit book information
+- Delete books (with confirmation)
+- Import/export books from CSV
+- Generate barcodes for books
+
+CIRCULATION:
+------------
+- Check out books to users
+- Process returns
+- Calculate and manage fines
+- Track overdue items
+- View loan history
+
+RESERVATIONS:
+-------------
+- Make reservations for unavailable books
+- View all active reservations
+- Cancel reservations
+- Automatic notifications when books become available
+
+REPORTS:
+--------
+- Collection report - Overview of library holdings
+- Circulation report - Borrowing statistics
+- Overdue report - List of overdue items
+- User activity report - Individual user borrowing patterns
+- Popular books report - Most borrowed items
+- Fine report - Outstanding fines
+
+ADVANCED FEATURES:
+------------------
+- Advanced search with multiple criteria
+- Library card generation
+- Database backup and restore
+- System health checks
+- Audit log viewing
+""")
+        features.config(state='disabled')
+        notebook.add(features, text="Features")
+
+        # FAQ tab
+        faq = ScrolledText(notebook, wrap=tk.WORD, width=80, height=30)
+        faq.pack(fill=tk.BOTH, expand=True)
+        faq.insert('1.0', """
+FREQUENTLY ASKED QUESTIONS
+==========================
+
+Q: How do I check out a book?
+A: Go to the "Checkout" section, enter the book ID and user ID, and click "Process Checkout".
+
+Q: How long is the loan period?
+A: The default loan period is configurable in Settings (typically 14 or 21 days).
+
+Q: What happens if a book is overdue?
+A: Overdue books may incur fines based on the library's fine policy. Check the "Overdue Report" for details.
+
+Q: Can I reserve a book that's already checked out?
+A: Yes! Use the Reservations feature to place a hold on the book.
+
+Q: How do I add multiple books at once?
+A: Use the Import feature (File → Import Books) to upload a CSV file with multiple books.
+
+Q: Where are my reports saved?
+A: Reports are generated and displayed on-screen. You can copy the data or use the export features.
+
+Q: Can I undo a checkout?
+A: No, but you can immediately return the book if it was checked out by mistake.
+
+Q: How do I backup the database?
+A: Go to File → Backup System to create a backup of the library database.
+
+Q: What if I encounter an error?
+A: Check the status bar at the bottom of the window for error messages. Contact your system administrator if problems persist.
+""")
+        faq.config(state='disabled')
+        notebook.add(faq, text="FAQ")
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def show_shortcuts(self):
+        """Show keyboard shortcuts dialog"""
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Keyboard Shortcuts")
+        dialog.geometry("600x500")
+        dialog.transient(self.master)
+
+        ttk.Label(dialog, text="Keyboard Shortcuts", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Create scrolled text for shortcuts
+        shortcuts_text = ScrolledText(dialog, wrap=tk.WORD, width=70, height=25)
+        shortcuts_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        shortcuts_content = """
+GLOBAL SHORTCUTS
+================
+
+Navigation:
+-----------
+Ctrl+H          Go to Home/Dashboard
+Ctrl+B          Browse All Books
+Ctrl+S          Search Books
+Ctrl+O          Checkout
+Ctrl+R          Return Books
+Ctrl+V          View Reservations
+Ctrl+P          Reports
+
+File Operations:
+----------------
+Ctrl+I          Import Books
+Ctrl+E          Export Books
+Ctrl+Shift+B    Backup System
+Ctrl+Q          Exit Application
+
+View:
+-----
+F5              Refresh Current View
+Ctrl+F          Find/Search in Current View
+Ctrl++          Zoom In
+Ctrl+-          Zoom Out
+
+Editing:
+--------
+Ctrl+N          Add New Book
+Ctrl+E          Edit Selected Book
+Delete          Delete Selected Book
+F2              Rename/Edit
+
+Help:
+-----
+F1              Show Help
+Ctrl+K          Show Keyboard Shortcuts
+Ctrl+?          About
+
+BOOK TABLE SHORTCUTS
+====================
+
+Enter           View Book Details
+Space           Select/Deselect Book
+Ctrl+A          Select All
+Ctrl+C          Copy Selected
+Right-Click     Show Context Menu
+Double-Click    View Book Details
+
+DIALOG SHORTCUTS
+================
+
+Enter           OK/Confirm
+Escape          Cancel/Close
+Tab             Next Field
+Shift+Tab       Previous Field
+
+SEARCH SHORTCUTS
+================
+
+Ctrl+F          Focus Search Box
+Enter           Execute Search
+Escape          Clear Search
+
+NOTE: Some shortcuts may not work if they conflict with system shortcuts.
+"""
+
+        shortcuts_text.insert('1.0', shortcuts_content)
+        shortcuts_text.config(state='disabled')
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def show_about(self):
+        """Show about dialog"""
+        dialog = tk.Toplevel(self.master)
+        dialog.title("About Library Management System")
+        dialog.geometry("500x600")
+        dialog.transient(self.master)
+
+        # Logo/Title
+        title_frame = ttk.Frame(dialog)
+        title_frame.pack(fill=tk.X, pady=20)
+
+        ttk.Label(title_frame, text="📚", font=('Arial', 48)).pack()
+        ttk.Label(title_frame, text="Enhanced Library Management System",
+                 font=('Arial', 14, 'bold')).pack(pady=5)
+        ttk.Label(title_frame, text="Version 5.0.0", font=('Arial', 10)).pack()
+
+        # Information frame
+        info_frame = ttk.Frame(dialog)
+        info_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        info_text = ScrolledText(info_frame, wrap=tk.WORD, height=20)
+        info_text.pack(fill=tk.BOTH, expand=True)
+
+        about_content = """
+ABOUT
+=====
+
+The Enhanced Library Management System is a comprehensive solution for managing library operations including book cataloging, circulation, reservations, and reporting.
+
+FEATURES:
+---------
+• Complete book catalog management
+• Circulation and loan tracking
+• Reservation system
+• Fine management
+• Advanced search capabilities
+• Comprehensive reporting
+• Database backup and restore
+• Audit logging
+• ISBN lookup integration
+• Barcode generation
+• Library card generation
+
+TECHNICAL DETAILS:
+------------------
+• Built with Python and Tkinter
+• SQLite database backend
+• 4-layer domain-driven architecture
+• Thread-safe connection pooling
+• Transaction management
+• RESTful API integration
+
+SYSTEM INFORMATION:
+-------------------
+Database: SQLite
+Python Version: 3.8+
+Architecture: 4-layer DDD
+Database File: student_records.db
+
+CREDITS:
+--------
+Developed as part of the University Management System
+Architecture: Domain-Driven Design
+Testing: Comprehensive test suite with pytest
+Security: PBKDF2 password hashing, audit logging
+
+COPYRIGHT:
+----------
+© 2025 University Management System
+All rights reserved.
+
+This software is part of an enterprise-grade university management platform
+integrating academic, financial, and administrative operations.
+
+LICENSE:
+--------
+This software is provided for educational and institutional use.
+
+SUPPORT:
+--------
+For support, please contact your system administrator or refer to the
+documentation in the docs/ directory.
+
+ACKNOWLEDGMENTS:
+----------------
+Special thanks to all contributors and testers who helped make this
+system robust and user-friendly.
+"""
+
+        info_text.insert('1.0', about_content)
+        info_text.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Button(button_frame, text="View License",
+                  command=lambda: messagebox.showinfo("License", "Educational and institutional use")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def edit_selected_book(self):
+        """Edit details of selected book"""
+        selection = self.books_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a book to edit")
+            return
+
+        item = self.books_tree.item(selection[0])
+        book_id = item['values'][0]
+
+        try:
+            # Get current book details
+            book_details = self.get_book_details(book_id)
+            if not book_details:
+                messagebox.showerror("Error", "Book not found")
+                return
+
+            # Create edit dialog
+            dialog = tk.Toplevel(self.master)
+            dialog.title(f"Edit Book - {book_id}")
+            dialog.geometry("600x700")
+            dialog.transient(self.master)
+
+            # Create form
+            form_frame = ttk.Frame(dialog)
+            form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            fields = {}
+            field_names = [
+                ('title', 'Title'),
+                ('author', 'Author'),
+                ('isbn', 'ISBN'),
+                ('category', 'Category'),
+                ('publisher', 'Publisher'),
+                ('publication_year', 'Publication Year'),
+                ('quantity', 'Quantity'),
+                ('available_quantity', 'Available Quantity'),
+                ('location', 'Location'),
+                ('status', 'Status')
+            ]
+
+            for i, (field_key, field_label) in enumerate(field_names):
+                ttk.Label(form_frame, text=f"{field_label}:").grid(row=i, column=0, sticky='w', pady=5, padx=5)
+
+                if field_key == 'status':
+                    fields[field_key] = tk.StringVar(value=book_details.get(field_key, ''))
+                    ttk.Combobox(form_frame, textvariable=fields[field_key],
+                               values=['Available', 'Checked Out', 'Reserved', 'Maintenance'],
+                               width=37).grid(row=i, column=1, pady=5, padx=5)
+                else:
+                    fields[field_key] = tk.StringVar(value=book_details.get(field_key, ''))
+                    ttk.Entry(form_frame, textvariable=fields[field_key], width=40).grid(row=i, column=1, pady=5, padx=5)
+
+            def save_changes():
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                        UPDATE books
+                        SET title = ?, author = ?, isbn = ?, category = ?,
+                            publisher = ?, publication_year = ?, quantity = ?,
+                            available_quantity = ?, location = ?, status = ?
+                        WHERE book_id = ?
+                    ''', (
+                        fields['title'].get(),
+                        fields['author'].get(),
+                        fields['isbn'].get(),
+                        fields['category'].get(),
+                        fields['publisher'].get(),
+                        fields['publication_year'].get(),
+                        fields['quantity'].get(),
+                        fields['available_quantity'].get(),
+                        fields['location'].get(),
+                        fields['status'].get(),
+                        book_id
+                    ))
+
+                    conn.commit()
+                    conn.close()
+
+                    # Log the edit
+                    try:
+                        user_id = get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'system'
+                        log_audit_event(user_id, 'update', 'books', book_id, True)
+                    except:
+                        pass
+
+                    messagebox.showinfo("Success", "Book updated successfully!")
+                    dialog.destroy()
+                    self.load_books_data()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Update failed: {str(e)}")
+
+            # Buttons
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Edit failed: {str(e)}")
+
+    def checkout_selected_book(self):
+        """Quick checkout from context menu"""
+        selection = self.books_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a book first")
+            return
+
+        item = self.books_tree.item(selection[0])
+        book_id = item['values'][0]
+
+        # Create quick checkout dialog
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Quick Checkout")
+        dialog.geometry("400x200")
+        dialog.transient(self.master)
+
+        ttk.Label(dialog, text=f"Checkout Book: {book_id}", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Title: {item['values'][1]}").pack(pady=5)
+
+        ttk.Label(dialog, text="User ID or Email:").pack(pady=10)
+        user_var = tk.StringVar()
+        user_entry = ttk.Entry(dialog, textvariable=user_var, width=30)
+        user_entry.pack(pady=5)
+        user_entry.focus()
+
+        def process_quick_checkout():
+            try:
+                user_id = user_var.get().strip()
+                if not user_id:
+                    messagebox.showwarning("Warning", "Please enter a user ID")
+                    return
+
+                # Verify user exists
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT student_id FROM students
+                    WHERE student_id = ? OR email LIKE ?
+                ''', (user_id, f"%{user_id}%"))
+
+                user = cursor.fetchone()
+                if not user:
+                    messagebox.showerror("Error", "User not found")
+                    conn.close()
+                    return
+
+                actual_user_id = user[0]
+
+                # Check if book is available
+                cursor.execute('SELECT available_quantity, status FROM books WHERE book_id = ?', (book_id,))
+                book_info = cursor.fetchone()
+
+                if not book_info or book_info[0] <= 0:
+                    messagebox.showerror("Error", "Book not available for checkout")
+                    conn.close()
+                    return
+
+                # Process checkout
+                due_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+
+                cursor.execute('''
+                    INSERT INTO loans (book_id, user_id, loan_date, due_date, status)
+                    VALUES (?, ?, ?, ?, 'active')
+                ''', (book_id, actual_user_id, datetime.now().strftime('%Y-%m-%d'), due_date))
+
+                cursor.execute('''
+                    UPDATE books
+                    SET available_quantity = available_quantity - 1,
+                        status = CASE WHEN available_quantity - 1 = 0 THEN 'Checked Out' ELSE status END
+                    WHERE book_id = ?
+                ''', (book_id,))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Book checked out successfully!\nDue date: {due_date}")
+                dialog.destroy()
+                self.load_books_data()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Checkout failed: {str(e)}")
+
+        ttk.Button(dialog, text="Checkout", command=process_quick_checkout).pack(pady=10)
+        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+    def reserve_selected_book(self):
+        """Quick reserve from context menu"""
+        selection = self.books_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a book first")
+            return
+
+        item = self.books_tree.item(selection[0])
+        book_id = item['values'][0]
+
+        # Create quick reservation dialog
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Quick Reservation")
+        dialog.geometry("400x200")
+        dialog.transient(self.master)
+
+        ttk.Label(dialog, text=f"Reserve Book: {book_id}", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Title: {item['values'][1]}").pack(pady=5)
+
+        ttk.Label(dialog, text="User ID or Email:").pack(pady=10)
+        user_var = tk.StringVar()
+        user_entry = ttk.Entry(dialog, textvariable=user_var, width=30)
+        user_entry.pack(pady=5)
+        user_entry.focus()
+
+        def process_quick_reservation():
+            try:
+                user_id = user_var.get().strip()
+                if not user_id:
+                    messagebox.showwarning("Warning", "Please enter a user ID")
+                    return
+
+                # Verify user exists
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT student_id FROM students
+                    WHERE student_id = ? OR email LIKE ?
+                ''', (user_id, f"%{user_id}%"))
+
+                user = cursor.fetchone()
+                if not user:
+                    messagebox.showerror("Error", "User not found")
+                    conn.close()
+                    return
+
+                actual_user_id = user[0]
+
+                # Check if already reserved
+                cursor.execute('''
+                    SELECT COUNT(*) FROM reservations
+                    WHERE book_id = ? AND user_id = ? AND status = 'active'
+                ''', (book_id, actual_user_id))
+
+                if cursor.fetchone()[0] > 0:
+                    messagebox.showwarning("Warning", "This book is already reserved by this user")
+                    conn.close()
+                    return
+
+                # Create reservation
+                reservation_date = datetime.now().strftime('%Y-%m-%d')
+
+                cursor.execute('''
+                    INSERT INTO reservations (book_id, user_id, reservation_date, status)
+                    VALUES (?, ?, ?, 'active')
+                ''', (book_id, actual_user_id, reservation_date))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Book reserved successfully!")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Reservation failed: {str(e)}")
+
+        ttk.Button(dialog, text="Reserve", command=process_quick_reservation).pack(pady=10)
+        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+    def delete_selected_book(self):
+        """Delete book with confirmation"""
+        selection = self.books_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a book to delete")
+            return
+
+        item = self.books_tree.item(selection[0])
+        book_id = item['values'][0]
+        title = item['values'][1]
+
+        # Confirm deletion
+        result = messagebox.askyesno(
+            "Confirm Deletion",
+            f"Are you sure you want to delete this book?\n\n"
+            f"Book ID: {book_id}\n"
+            f"Title: {title}\n\n"
+            f"This action cannot be undone!"
+        )
+
+        if not result:
+            return
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Check if book has active loans
+            cursor.execute('''
+                SELECT COUNT(*) FROM loans
+                WHERE book_id = ? AND status = 'active'
+            ''', (book_id,))
+
+            active_loans = cursor.fetchone()[0]
+            if active_loans > 0:
+                messagebox.showerror(
+                    "Cannot Delete",
+                    f"This book has {active_loans} active loan(s).\n"
+                    "Please return all copies before deleting."
+                )
+                conn.close()
+                return
+
+            # Delete the book
+            cursor.execute('DELETE FROM books WHERE book_id = ?', (book_id,))
+            conn.commit()
+            conn.close()
+
+            # Log the deletion
+            try:
+                user_id = get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'system'
+                log_audit_event(user_id, 'delete', 'books', book_id, True)
+            except:
+                pass
+
+            messagebox.showinfo("Success", "Book deleted successfully!")
+            self.load_books_data()
+            self.update_status(f"Deleted book: {book_id}", "success")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Deletion failed: {str(e)}")
+
+    def view_book_loan_history(self):
+        """View loan history for selected book"""
+        selection = self.books_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a book first")
+            return
+
+        item = self.books_tree.item(selection[0])
+        book_id = item['values'][0]
+        title = item['values'][1]
+
+        # Create loan history dialog
+        dialog = tk.Toplevel(self.master)
+        dialog.title(f"Loan History - {title}")
+        dialog.geometry("900x600")
+        dialog.transient(self.master)
+
+        ttk.Label(dialog, text=f"Loan History for: {title}", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Book ID: {book_id}").pack(pady=5)
+
+        # Create treeview for loan history
+        frame = ttk.Frame(dialog)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Loan ID', 'User ID', 'Loan Date', 'Due Date', 'Return Date', 'Status', 'Fine')
+        history_tree = ttk.Treeview(frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            history_tree.heading(col, text=col)
+            history_tree.column(col, width=120)
+
+        # Add scrollbars
+        v_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=history_tree.yview)
+        h_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=history_tree.xview)
+        history_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        history_tree.grid(row=0, column=0, sticky='nsew')
+        v_scrollbar.grid(row=0, column=1, sticky='ns')
+        h_scrollbar.grid(row=1, column=0, sticky='ew')
+
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
+
+        try:
+            # Load loan history
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT loan_id, user_id, loan_date, due_date, return_date, status,
+                       COALESCE(fine_amount, 0) as fine
+                FROM loans
+                WHERE book_id = ?
+                ORDER BY loan_date DESC
+            ''', (book_id,))
+
+            loans = cursor.fetchall()
+            conn.close()
+
+            for loan in loans:
+                history_tree.insert('', 'end', values=loan)
+
+            # Add summary
+            summary_frame = ttk.Frame(dialog)
+            summary_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            total_loans = len(loans)
+            active_loans = sum(1 for loan in loans if loan[5] == 'active')
+            returned_loans = sum(1 for loan in loans if loan[5] == 'returned')
+            total_fines = sum(float(loan[6] or 0) for loan in loans)
+
+            ttk.Label(summary_frame, text=f"Total Loans: {total_loans}").pack(side=tk.LEFT, padx=10)
+            ttk.Label(summary_frame, text=f"Active: {active_loans}").pack(side=tk.LEFT, padx=10)
+            ttk.Label(summary_frame, text=f"Returned: {returned_loans}").pack(side=tk.LEFT, padx=10)
+            ttk.Label(summary_frame, text=f"Total Fines: ${total_fines:.2f}").pack(side=tk.LEFT, padx=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load loan history: {str(e)}")
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
 
 # DATABASE_FILE constant now defined at top of file using centralized path
 
