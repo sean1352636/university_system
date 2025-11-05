@@ -57,7 +57,7 @@ class JobManager:
     @staticmethod
     def get_active_jobs(filters: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
         with get_connection() as conn:
-            query = "SELECT * FROM job_postings WHERE status = 'active'"
+            query = "SELECT * FROM job_postings WHERE is_active = 1"
             params = []
             if filters:
                 if 'job_type' in filters:
@@ -66,7 +66,7 @@ class JobManager:
                 if 'location' in filters:
                     query += " AND location LIKE ?"
                     params.append(f"%{filters['location']}%")
-            query += " ORDER BY posted_date DESC"
+            query += " ORDER BY post_date DESC"
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 

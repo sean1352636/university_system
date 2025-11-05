@@ -498,7 +498,7 @@ class CareerServicesGUI:
                            i.interview_date, i.interview_time, i.status
                     FROM interview_schedules i
                     JOIN job_applications ja ON i.application_id = ja.application_id
-                    WHERE ja.student_id = ?
+                    WHERE ja.applicant_id = ?
                     ORDER BY i.interview_date, i.interview_time
                 ''', (self.current_user.get('student_id') or self.current_user.get('username'),))
 
@@ -545,7 +545,9 @@ class CareerServicesGUI:
                     SELECT m.mentor_id, m.alumni_student_id, m.job_title, m.company,
                            m.industry, m.expertise_areas
                     FROM alumni_mentors m
-                    WHERE m.status = 'active' AND m.current_mentees < m.max_mentees
+                    WHERE m.is_active = 1
+                    AND (SELECT COUNT(*) FROM mentorship_matches mm
+                         WHERE mm.mentor_id = m.mentor_id AND mm.status = 'active') < m.max_mentees
                     ORDER BY m.industry, m.company
                 ''')
 
