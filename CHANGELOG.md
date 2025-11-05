@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**AI Powered Features GUI - Placeholder Dialogs Fully Implemented** (2025-11-05)
+- **Issue**: Multiple functions displayed "dialog would open here" placeholder messages
+- **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py`
+- **Implementations**:
+  - `create_recommendation()`: Full dialog with database insert for user recommendations
+  - `view_recommendation_details()`: Display detailed recommendation information from database
+  - `grade_submission()`: Complete grading form with criteria, feedback, and confidence scores
+  - `view_grading_details()`: Detailed view of grading results with score percentages
+  - `create_content_suggestion()`: Dialog for creating AI content suggestions
+  - `analyze_sentiment()`: Sentiment analysis with basic NLP and database storage
+  - `check_plagiarism()`: Now launches full plagiarism GUI instead of placeholder
+- **Impact**: All AI features now fully functional with proper database integration
+
+**AI Detector GUI - Simplified Styling** (2025-11-05)
+- **Issue**: GUI had elaborate custom styling inconsistent with main application theme
+- **Location**: `university_system/modules/domain/academics/gui/ai_detector_gui.py`
+- **Changes**:
+  - Removed elaborate custom theme configuration
+  - Simplified `setup_styles()` to use basic 'clam' theme matching main_gui.py
+  - Removed emoji from return button (🏠 → ←)
+  - Maintained all functionality with cleaner appearance
+- **Impact**: Consistent look and feel across application
+
+**Plagiarism Checker GUI - NoneType Error Fixed** (2025-11-05)
+- **Issue**: "NoneType object has no attribute 'get_plagiarism_result'" when loading detailed reports
+- **Location**: `university_system/modules/domain/academics/gui/plagiarism_main_gui.py`
+- **Root Cause**: `CheckResultDialog` was passing `None` as checker to `ResultDetailsDialog`
+- **Fix**:
+  - Added `checker` parameter to `CheckResultDialog.__init__`
+  - Store checker as instance variable
+  - Pass `self.checker` to `ResultDetailsDialog` instead of `None`
+  - Updated `show_check_result()` to pass `self.checker`
+- **Impact**: Detailed plagiarism reports now load without errors
+
+**Plagiarism Checker GUI - Placeholder Data Removed** (2025-11-05)
+- **Issue**: GUI displayed hardcoded sample data instead of actual database records
+- **Location**: `university_system/modules/domain/academics/gui/plagiarism_main_gui.py` (PlagiarismCheckDialog class)
+- **Changes**:
+  - `load_documents()`: Replaced 3 sample documents with SQL query to `document_repository` table
+  - `search_documents()`: Implemented LIKE search on title/author/module_code fields
+  - `start_check()`: Replaced placeholder result with actual `self.checker.check_plagiarism()` call
+- **Impact**: All document and plagiarism data now comes from real database
+
+**NLTK Punkt_Tab Download Missing** (2025-11-05)
+- **Issue**: Warning "Resource punkt_tab not found" when performing plagiarism checks
+- **Location**: `university_system/modules/domain/academics/services/plagiarism/plagiarism_main.py`
+- **Root Cause**: Only downloading legacy 'punkt' tokenizer, modern NLTK requires 'punkt_tab'
+- **Fix**: Added `('tokenizers/punkt_tab', 'punkt_tab')` to `required_data` in `download_nltk_data()`
+- **Impact**: NLTK tokenization now works without warnings
+
+### Fixed (Previous)
+
 **AI Powered Features GUI - Invalid Format Specifier Errors**
 - **Issue**: Format specifiers applied to ternary expressions with integer fallback values
 - **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py`
