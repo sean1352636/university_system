@@ -541,12 +541,11 @@ class FacilitiesManagementGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT rb.booking_id, b.building_name || ' - ' || r.room_number as room,
+                    SELECT rb.booking_id, r.building || ' - ' || r.room_number as room,
                            rb.booked_by, rb.booking_type, rb.start_datetime, rb.end_datetime,
                            rb.purpose, rb.booking_status
                     FROM room_bookings rb
                     JOIN rooms r ON rb.room_id = r.id
-                    JOIN buildings b ON r.building_id = b.building_id
                     WHERE rb.start_datetime >= date('now', '-7 days')
                     ORDER BY rb.start_datetime DESC
                     LIMIT 500

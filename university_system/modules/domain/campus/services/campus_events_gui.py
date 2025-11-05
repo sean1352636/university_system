@@ -345,8 +345,9 @@ class CampusEventsGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT registration_id, event_id, user_id, user_type,
-                           registration_date, attendance_status, checked_in_at
+                    SELECT registration_id, event_id, alumni_id,
+                           registration_date, payment_status, check_in_time,
+                           attendance_confirmed
                     FROM event_registrations
                     ORDER BY registration_date DESC
                     LIMIT 100
@@ -356,11 +357,11 @@ class CampusEventsGUI:
                     values = (
                         row['registration_id'],
                         row['event_id'],
-                        row['user_id'],
-                        row['user_type'],
+                        row['alumni_id'],
+                        'Alumni',  # User type - hardcoded since table is for alumni
                         row['registration_date'][:10] if row['registration_date'] else '',
-                        row['attendance_status'],
-                        row['checked_in_at'][:16] if row['checked_in_at'] else 'No'
+                        row['payment_status'] or 'pending',
+                        row['check_in_time'][:16] if row['check_in_time'] else 'No'
                     )
                     self.registrations_tree.insert('', tk.END, values=values)
 
