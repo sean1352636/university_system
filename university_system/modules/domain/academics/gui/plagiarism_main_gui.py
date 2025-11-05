@@ -2481,7 +2481,7 @@ For command-line interface, run the original plagiarism_main.py file.
     
     def show_check_result(self, result):
         """Show plagiarism check result"""
-        dialog = CheckResultDialog(self.root, result)
+        dialog = CheckResultDialog(self.root, self.checker, result)
         dialog.show()
     
     def show_result_details(self, result_data):
@@ -5289,11 +5289,12 @@ class SystemTestingDialog:
 
 class CheckResultDialog:
     """Dialog for showing plagiarism check results"""
-    
-    def __init__(self, parent, result):
+
+    def __init__(self, parent, checker, result):
         self.parent = parent
+        self.checker = checker
         self.result = result
-        
+
         self.dialog = None
     
     def show(self):
@@ -5422,7 +5423,7 @@ class CheckResultDialog:
     def view_full_report(self):
         """View full detailed report"""
         if self.result.get('result_id'):
-            details_dialog = ResultDetailsDialog(self.dialog, None, self.result['result_id'])
+            details_dialog = ResultDetailsDialog(self.dialog, self.checker, self.result['result_id'])
             details_dialog.show()
 
 
@@ -6242,16 +6243,22 @@ class PlagiarismCheckDialog:
         
         def load_task():
             try:
-                # Placeholder document data
-                documents = [
-                    {'id': 1, 'title': 'Sample Document 1', 'author': 'John Doe', 'module_code': 'CS101', 'submission_date': '2024-01-15'},
-                    {'id': 2, 'title': 'Research Paper', 'author': 'Jane Smith', 'module_code': 'CS201', 'submission_date': '2024-01-20'},
-                    {'id': 3, 'title': 'Final Project', 'author': 'Bob Johnson', 'module_code': 'CS301', 'submission_date': '2024-01-25'},
-                ]
-                
+                # Query documents from database
+                from university_system.infrastructure.database.db import get_connection
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT d.id, d.title, u.username as author, d.module_code, d.submission_date
+                        FROM document_repository d
+                        LEFT JOIN users u ON d.author_id = u.id
+                        ORDER BY d.submission_date DESC
+                    ''')
+                    rows = cursor.fetchall()
+                    documents = [dict(row) for row in rows]
+
                 # Update tree in main thread
                 self.dialog.after(0, lambda: self.populate_tree(documents))
-                
+
             except Exception as e:
                 error_msg = str(e)
                 self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Failed to load documents: {err}"))
@@ -6269,14 +6276,23 @@ class PlagiarismCheckDialog:
         
         def search_task():
             try:
-                # Placeholder search results
-                documents = [
-                    {'id': 1, 'title': f'Search Result for "{search_term}"', 'author': 'John Doe', 'module_code': 'CS101', 'submission_date': '2024-01-15'},
-                ]
-                
+                # Search documents in database
+                from university_system.infrastructure.database.db import get_connection
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT d.id, d.title, u.username as author, d.module_code, d.submission_date
+                        FROM document_repository d
+                        LEFT JOIN users u ON d.author_id = u.id
+                        WHERE d.title LIKE ? OR u.username LIKE ? OR d.module_code LIKE ?
+                        ORDER BY d.submission_date DESC
+                    ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
+                    rows = cursor.fetchall()
+                    documents = [dict(row) for row in rows]
+
                 # Update tree in main thread
                 self.dialog.after(0, lambda: self.populate_tree(documents))
-                
+
             except Exception as e:
                 error_msg = str(e)
                 self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Search failed: {err}"))
@@ -6311,21 +6327,18 @@ class PlagiarismCheckDialog:
         
         def check_task():
             try:
-                # Placeholder plagiarism check result
-                result = {
-                    'document_id': doc_id,
-                    'similarity_score': 0.25,
-                    'status': 'LOW_SIMILARITY',
-                    'matches': [],
-                    'check_date': '2024-01-30',
-                    'threshold_used': self.threshold_var.get()
-                }
-                
+                # Perform actual plagiarism check using the checker
+                checker_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
+                threshold = self.threshold_var.get()
+
+                # Call the plagiarism checker
+                result = self.checker.check_plagiarism(doc_id, checker_id=checker_id, threshold=threshold)
+
                 self.task_queue.put(('check_complete', result))
-                
+
                 # Close dialog in main thread
                 self.dialog.after(0, self.dialog.destroy)
-                
+
             except Exception as e:
                 self.task_queue.put(('check_error', str(e)))
         
