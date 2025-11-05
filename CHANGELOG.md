@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+**Library GUI - User Authentication Integration**
+- **Issue**: Multiple authentication and database schema errors:
+  1. `AttributeError: 'LibraryGUI' object has no attribute 'current_user'` when accessing user preferences
+  2. `no such column: email` when sending checkout confirmation emails
+- **Location**: `university_system/modules/domain/academics/gui/library_gui.py`
+- **Root Cause**:
+  1. `show_user_preferences()` was trying to access non-existent `self.current_user` instead of using shared authentication context
+  2. Email queries were using column name `email` but students table uses `email_address`
+- **Fix**:
+  1. Updated `show_user_preferences()` to properly get current user from shared auth context via `get_current_user()` or `self.auth.current_user`
+  2. Fixed all 6 email column references:
+     - Line 5411: Overdue notification email query
+     - Line 5589: Checkout confirmation email query
+     - Line 5647: Return confirmation email query
+     - Line 6282: Library card user lookup
+     - Line 6820: Quick checkout user lookup
+     - Line 6906: Quick reservation user lookup
+- **Impact**: User preferences dialog now opens correctly; email notifications work without database errors; user lookups function properly
+- **Why This Happened**: Library GUI was not fully integrated with the shared authentication system; email column name mismatch between code and actual database schema
+
 ### Added
 
 **Library GUI - Complete Implementation of All Placeholder Methods**

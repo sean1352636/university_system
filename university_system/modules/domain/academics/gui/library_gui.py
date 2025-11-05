@@ -3395,7 +3395,14 @@ Status: {status.upper()}"""
             
     def show_user_preferences(self):
         """Show user preferences dialog"""
-        if not self.current_user:
+        # Get current user from auth system
+        current_user = None
+        if SHARED_AUTH_AVAILABLE:
+            current_user = get_current_user()
+        elif self.auth and hasattr(self.auth, 'current_user'):
+            current_user = self.auth.current_user
+
+        if not current_user:
             messagebox.showwarning("Warning", "Please log in first")
             return
             
@@ -5401,7 +5408,7 @@ Status: {status.upper()}"""
                 conn = get_db_connection()
                 if conn:
                     cursor = conn.cursor()
-                    cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (user_id,))
+                    cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (user_id,))
                     user_info = cursor.fetchone()
                     conn.close()
 
@@ -5579,7 +5586,7 @@ Status: {status.upper()}"""
                     book_info = cursor.fetchone()
 
                     # Get user details and calculate due date
-                    cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (user_id,))
+                    cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (user_id,))
                     user_info = cursor.fetchone()
 
                     # Get the most recent checkout for due date
@@ -5637,7 +5644,7 @@ Status: {status.upper()}"""
                     book_info = cursor.fetchone()
 
                     # Get user details
-                    cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (user_id,))
+                    cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (user_id,))
                     user_info = cursor.fetchone()
 
                     # Check for any fines on the return
@@ -6272,7 +6279,7 @@ Status: {status.upper()}"""
                 # Try to find user
                 cursor.execute('''
                     SELECT student_id, first_name, last_name, email, department
-                    FROM students WHERE student_id = ? OR email LIKE ?
+                    FROM students WHERE student_id = ? OR email_address LIKE ?
                 ''', (user_id, f"%{user_id}%"))
 
                 user = cursor.fetchone()
@@ -6810,7 +6817,7 @@ system robust and user-friendly.
 
                 cursor.execute('''
                     SELECT student_id FROM students
-                    WHERE student_id = ? OR email LIKE ?
+                    WHERE student_id = ? OR email_address LIKE ?
                 ''', (user_id, f"%{user_id}%"))
 
                 user = cursor.fetchone()
@@ -6896,7 +6903,7 @@ system robust and user-friendly.
 
                 cursor.execute('''
                     SELECT student_id FROM students
-                    WHERE student_id = ? OR email LIKE ?
+                    WHERE student_id = ? OR email_address LIKE ?
                 ''', (user_id, f"%{user_id}%"))
 
                 user = cursor.fetchone()
