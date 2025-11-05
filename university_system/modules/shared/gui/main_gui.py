@@ -3018,7 +3018,15 @@ PERMISSIONS:
 
                 # Wait a moment then call compose_email with the recipient
                 email_window.update_idletasks()
-                email_window.after(200, lambda: email_gui.compose_email(recipient=email_address))
+
+                def safe_compose():
+                    try:
+                        if email_window.winfo_exists():
+                            email_gui.compose_email(recipient=email_address)
+                    except Exception:
+                        pass  # Window destroyed
+
+                email_window.after(200, safe_compose)
 
             elif self.email_manager_gui:
                 # Use existing email_manager_gui instance if available
@@ -6986,6 +6994,10 @@ University Administration"""
     def check_session_timer(self):
         """Check session validity periodically"""
         try:
+            # Check if window still exists
+            if not self.root.winfo_exists():
+                return
+
             if self.auth.current_user:
                 if hasattr(self.auth, 'check_session') and not self.auth.check_session():
                     messagebox.showwarning("Session Expired", "Your session has expired. Please log in again.")
@@ -6993,9 +7005,13 @@ University Administration"""
                     self.show_login_screen()
         except Exception as e:
             print(f"Session check error: {e}")
-        
-        # Schedule next check
-        self.root.after(60000, self.check_session_timer)
+
+        # Schedule next check only if window still exists
+        try:
+            if self.root.winfo_exists():
+                self.root.after(60000, self.check_session_timer)
+        except Exception:
+            pass  # Window destroyed, don't schedule
 
     def show_integrated_dashboard(self):
         """Show integrated dashboard with system overview and quick stats"""
