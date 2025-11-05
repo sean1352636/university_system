@@ -71,12 +71,13 @@ def download_nltk_data():
     """Download required NLTK data with error handling"""
     if not NLTK_AVAILABLE:
         return
-        
+
     required_data = [
         ('tokenizers/punkt', 'punkt'),
+        ('tokenizers/punkt_tab', 'punkt_tab'),
         ('corpora/stopwords', 'stopwords')
     ]
-    
+
     for data_path, download_name in required_data:
         try:
             nltk.data.find(data_path)
