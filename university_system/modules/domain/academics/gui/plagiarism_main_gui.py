@@ -707,17 +707,23 @@ class ResultCard(ttk.LabelFrame):
 
 class PlagiarismCheckerGUI:
     """Main GUI application for the plagiarism checker"""
-    
-    def __init__(self):
-        self.root = tk.Tk()
+
+    def __init__(self, parent=None, auth=None):
+        # Use provided parent window or create new root
+        if parent:
+            self.root = parent
+            self.launched_from_main = True
+        else:
+            self.root = tk.Tk()
+            self.launched_from_main = False
+
         self.root.title("Plagiarism Detection System")
         self.root.geometry(f"{GuiConfig.MAIN_WINDOW_WIDTH}x{GuiConfig.MAIN_WINDOW_HEIGHT}")
-        
+
         # Initialize components
         self.checker = None
-        self.auth = None
+        self.auth = auth  # Use provided auth or None
         self.task_queue = queue.Queue()
-        self.launched_from_main = False
         
         # Set up styles
         self.setup_styles()
