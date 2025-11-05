@@ -858,13 +858,13 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
                 row = cursor.fetchone()
                 stats += "CHATBOT STATISTICS:\n"
                 stats += f"  Total Conversations: {row['count'] or 0}\n"
-                stats += f"  Average Messages per Conversation: {row['avg_msgs']:.1f if row['avg_msgs'] else 0.0}\n\n"
+                stats += f"  Average Messages per Conversation: {(row['avg_msgs'] if row['avg_msgs'] else 0.0):.1f}\n\n"
 
                 # Recommendations stats
                 cursor.execute('SELECT COUNT(*) as count, recommendation_type, AVG(confidence_score) as avg_conf FROM ai_recommendations GROUP BY recommendation_type')
                 stats += "RECOMMENDATIONS STATISTICS:\n"
                 for row in cursor.fetchall():
-                    stats += f"  {row['recommendation_type']}: {row['count']} ({row['avg_conf']:.2f if row['avg_conf'] else 0.0} avg confidence)\n"
+                    stats += f"  {row['recommendation_type']}: {row['count']} ({(row['avg_conf'] if row['avg_conf'] else 0.0):.2f} avg confidence)\n"
                 stats += "\n"
 
                 # Grading stats
@@ -872,14 +872,14 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
                 row = cursor.fetchone()
                 stats += "AUTO-GRADING STATISTICS:\n"
                 stats += f"  Total Submissions Graded: {row['count'] or 0}\n"
-                stats += f"  Average Score: {row['avg_pct']:.1f if row['avg_pct'] else 0.0}%\n\n"
+                stats += f"  Average Score: {(row['avg_pct'] if row['avg_pct'] else 0.0):.1f}%\n\n"
 
                 # Plagiarism stats
                 cursor.execute('SELECT COUNT(*) as count, AVG(similarity_score) as avg_sim FROM ai_plagiarism_checks')
                 row = cursor.fetchone()
                 stats += "PLAGIARISM DETECTION STATISTICS:\n"
                 stats += f"  Total Checks: {row['count'] or 0}\n"
-                stats += f"  Average Similarity: {row['avg_sim']*100:.1f if row['avg_sim'] else 0.0}%\n"
+                stats += f"  Average Similarity: {(row['avg_sim']*100 if row['avg_sim'] else 0.0):.1f}%\n"
 
                 cursor.execute('SELECT COUNT(*) as count FROM ai_plagiarism_checks WHERE flagged = 1')
                 row = cursor.fetchone()
