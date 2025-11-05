@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+**Security Dashboard - Missing Encryption Keys Table Columns**
+- **Issue**: `sqlite3.OperationalError: no such column: key_type` when loading Security Dashboard
+- **Location**: `university_system/infrastructure/security/init_security_tables.py:155-167`
+- **Root Cause**: Encryption keys table schema was missing columns that the code expected:
+  1. Missing `encrypted_key` column - stores the encrypted data encryption key
+  2. Missing `version` column - tracks key rotation version
+  3. Code in `data_encryption.py` was trying to INSERT and SELECT these columns that didn't exist
+- **Fix**: Updated encryption_keys table schema to include all required columns:
+  ```sql
+  CREATE TABLE IF NOT EXISTS encryption_keys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_id TEXT UNIQUE NOT NULL,
+      key_type TEXT DEFAULT 'fernet',
+      encrypted_key TEXT,              -- NEW: stores encrypted key
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      rotated_at TIMESTAMP,
+      is_active INTEGER DEFAULT 1,
+      version INTEGER DEFAULT 1         -- NEW: tracks key version
+  )
+  ```
+- **Impact**: Security Dashboard now loads without errors; encryption key management functionality works correctly
+- **Note**: Existing databases need to run `init_security_tables()` or add columns manually with:
+  ```sql
+  ALTER TABLE encryption_keys ADD COLUMN encrypted_key TEXT;
+  ALTER TABLE encryption_keys ADD COLUMN version INTEGER DEFAULT 1;
+  ```
+
 ### Changed
 
 **Integration Marketplace GUI - Updated Styling to Match Program Standards**

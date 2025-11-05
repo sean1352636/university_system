@@ -158,9 +158,11 @@ def init_security_tables(db_path=None):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 key_id TEXT UNIQUE NOT NULL,
                 key_type TEXT DEFAULT 'fernet',
+                encrypted_key TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 rotated_at TIMESTAMP,
-                is_active INTEGER DEFAULT 1
+                is_active INTEGER DEFAULT 1,
+                version INTEGER DEFAULT 1
             )
         """)
 
