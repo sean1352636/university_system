@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Admissions CRM GUI - Database Schema Mismatches**
+- **Issue**: Three SQL errors preventing data loading in Admissions CRM
+- **Location**: `university_system/modules/domain/admissions/gui/admissions_crm_gui.py`
+- **Errors Fixed**:
+  1. **Applications Tab** - Line 345, 348, 362:
+     - Error: `no such column: a.submitted_date`
+     - Fix: Changed `submitted_date` to `submission_date` to match schema
+     - Impact: Applications now load correctly with proper submission dates
+  2. **Campaigns Tab** - Line 407:
+     - Error: `no such table: communication_campaigns`
+     - Fix: Changed table name to `recruitment_campaigns` (correct schema name)
+     - Also updated column names: `messages_sent` → `sent_count`, `messages_opened` → `opened_count`, `is_active` → `status`
+     - Impact: Campaigns now load from correct table with proper column references
+  3. **Tours Tab** - Line 434, 447, 450:
+     - Error: `no such column: tour_type`
+     - Fix: Removed `tour_type` from query (column doesn't exist in schema)
+     - Changed `registered_count` to `current_attendees` (correct column name)
+     - Using 'Standard' as default tour type placeholder
+     - Impact: Campus tours now load successfully
+- **Root Cause**: GUI code referenced column names that didn't match actual database schema definitions
+- **Impact**: All three tabs in Admissions CRM now load data without errors
+
+### Fixed
+
 **Facilities Management GUI - SQL Syntax Errors in JOIN Clauses**
 - **Issue**: `OperationalError: near "as": syntax error` in three different query methods
 - **Location**: `university_system/modules/domain/facilities/gui/facilities_management_gui.py`

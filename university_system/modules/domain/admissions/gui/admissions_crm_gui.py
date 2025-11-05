@@ -342,10 +342,10 @@ class AdmissionsCRMGUI:
                 cursor = conn.execute('''
                     SELECT a.application_id, p.first_name, p.last_name,
                            a.application_type, a.program_applied, a.academic_year,
-                           a.semester, a.status, a.submitted_date
+                           a.semester, a.status, a.submission_date
                     FROM admission_applications a
                     JOIN admission_prospects p ON a.prospect_id = p.prospect_id
-                    ORDER BY a.submitted_date DESC
+                    ORDER BY a.submission_date DESC
                     LIMIT 100
                 ''')
 
@@ -359,7 +359,7 @@ class AdmissionsCRMGUI:
                         row['academic_year'],
                         row['semester'],
                         row['status'],
-                        row['submitted_date'][:10] if row['submitted_date'] else ''
+                        row['submission_date'][:10] if row['submission_date'] else ''
                     )
                     self.applications_tree.insert('', tk.END, values=values)
 
@@ -403,8 +403,8 @@ class AdmissionsCRMGUI:
             with get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT campaign_id, campaign_name, campaign_type, target_audience,
-                           messages_sent, messages_opened, is_active
-                    FROM communication_campaigns
+                           sent_count, opened_count, status
+                    FROM recruitment_campaigns
                     ORDER BY created_at DESC
                     LIMIT 50
                 ''')
@@ -414,10 +414,10 @@ class AdmissionsCRMGUI:
                         row['campaign_id'],
                         row['campaign_name'],
                         row['campaign_type'],
-                        row['target_audience'],
-                        row['messages_sent'] or 0,
-                        row['messages_opened'] or 0,
-                        '✓' if row['is_active'] else '✗'
+                        row['target_audience'] or 'All',
+                        row['sent_count'] or 0,
+                        row['opened_count'] or 0,
+                        '✓' if row['status'] == 'active' else '✗'
                     )
                     self.campaigns_tree.insert('', tk.END, values=values)
 
@@ -431,8 +431,8 @@ class AdmissionsCRMGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT tour_id, tour_date, tour_time, tour_type, tour_guide,
-                           max_attendees, registered_count, status
+                    SELECT tour_id, tour_date, tour_time, tour_guide,
+                           max_attendees, current_attendees, status
                     FROM campus_tours
                     WHERE tour_date >= date('now')
                     ORDER BY tour_date, tour_time
@@ -444,10 +444,10 @@ class AdmissionsCRMGUI:
                         row['tour_id'],
                         row['tour_date'],
                         row['tour_time'],
-                        row['tour_type'],
+                        'Standard',  # Default tour type since column doesn't exist in schema
                         row['tour_guide'] or 'TBD',
                         row['max_attendees'],
-                        row['registered_count'] or 0,
+                        row['current_attendees'] or 0,
                         row['status']
                     )
                     self.tours_tree.insert('', tk.END, values=values)
