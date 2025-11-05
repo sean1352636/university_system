@@ -59,7 +59,12 @@ def init_grade_system_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT,
             module_code TEXT,
+            module_name TEXT,
+            module_type TEXT DEFAULT 'Standard',
             enrollment_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            grade TEXT,
+            completion_date TEXT,
+            status TEXT DEFAULT 'Enrolled',
             FOREIGN KEY (student_id) REFERENCES students (student_id),
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )

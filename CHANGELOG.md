@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Database Schema - Missing student_modules Columns**
+- **Issue**: "no such column: module_type" error when loading modules or using advanced search features
+- **Location**: `university_system/infrastructure/database/schemas.py:58-71`
+- **Missing Columns**:
+  - `module_type`: Type of module (Standard, Elective, etc.)
+  - `module_name`: Name of the module
+  - `grade`: Student's grade in the module
+  - `completion_date`: Date when the module was completed
+  - `status`: Enrollment status (Enrolled, Completed, Withdrawn, etc.)
+- **Fix**:
+  - Updated `student_modules` table schema to include all required columns
+  - Created migration script: `infrastructure/database/migrations/add_student_modules_columns.py`
+  - Applied schema changes to existing database
+  - Auto-populate `module_type` and `module_name` from `modules` table for existing records
+- **Impact**: Advanced search, analytics dashboards, and academic history features now work correctly
+- **Root Cause**: Schema definition was incomplete - queries expected these columns but they were never added to the table
+- **Why This Happened**: Original schema only included minimal columns (student_id, module_code, enrollment_date); denormalized columns (module_name, module_type) and tracking columns (grade, completion_date, status) were added to queries but never migrated to the database schema
+
 **Advanced Search Analytics - None Value Formatting Errors**
 - **Issue**: "unsupported format string passed to NoneType.__format__" error in multiple analytics functions
 - **Locations**:
