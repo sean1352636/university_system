@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Assignment System - File Path Validation Error**
+- **Issue**: "expected str, bytes or os.pathlike object, not nonetype" error when submitting assignment without selecting a file
+- **Location**: `university_system/modules/domain/academics/gui/assignment_system/submission_manager.py:326-332`
+- **Root Cause**: File path was not validated before being passed to os.path operations; when user didn't select a file, None or empty string was passed, causing TypeError in os.path.basename() and other path operations
+- **Fix**: Added early validation check at start of `perform_submission()` to verify file_path is not None, is a string, and is not empty before any file operations are attempted
+- **Impact**: Users now get clear error message "Please select a file to submit" instead of cryptic TypeError; prevents crash and provides better UX
+
+**Notifications - Missing Column Error**
+- **Issue**: "no such column: created_at" error when loading notifications
+- **Locations**:
+  - `university_system/modules/domain/academics/gui/assignment_system/notifications.py:73, 76`
+  - `university_system/modules/domain/academics/gui/assignment_system/notifications.py:184, 206, 220, 229, 232`
+- **Root Cause**: Code referenced `created_at` column but notifications table has `created_datetime` and `created_date` columns instead
+- **Fix**: Changed all references from `created_at` to `created_datetime` in SQL queries and variable names
+- **Impact**: Notifications now load correctly without database errors; all notification queries work properly
+
 **Assignment System - Incorrect Column Index References**
 - **Issue**: Multiple errors due to incorrect column indexes when accessing assignment data
 - **Errors**:

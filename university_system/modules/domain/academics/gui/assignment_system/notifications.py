@@ -70,10 +70,10 @@ class NotificationManager:
             
             user_id = self.auth.current_user['id']
             cursor.execute('''
-            SELECT title, message, created_at, is_read
+            SELECT title, message, created_datetime, is_read
             FROM notifications
             WHERE user_id = ?
-            ORDER BY created_at DESC
+            ORDER BY created_datetime DESC
             LIMIT 50
             ''', (user_id,))
             
@@ -181,33 +181,33 @@ class NotificationManager:
     
             # Build query
             query = '''
-                SELECT id, title, message, type, is_read, created_at
+                SELECT id, title, message, type, is_read, created_datetime
                 FROM notifications
                 WHERE user_id = ?
             '''
             params = [user_id]
-    
+
             # Apply type filter
             if type_filter != "all":
                 query += " AND (type = ? OR notification_type = ?)"
                 params.extend([type_filter, type_filter])
-    
+
             # Apply status filter
             if status_filter == "unread":
                 query += " AND is_read = 0"
             elif status_filter == "read":
                 query += " AND is_read = 1"
-    
+
             # Apply search
             if search_text:
                 query += " AND (title LIKE ? OR message LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
-    
-            query += " ORDER BY created_at DESC"
-    
+
+            query += " ORDER BY created_datetime DESC"
+
             cursor.execute(query, params)
             notifications = cursor.fetchall()
-    
+
             # Type colors
             type_colors = {
                 'info': '#17a2b8',
@@ -215,21 +215,21 @@ class NotificationManager:
                 'success': '#28a745',
                 'error': '#dc3545'
             }
-    
+
             for notif in notifications:
-                notif_id, title, message, notif_type, is_read, created_at = notif
-    
+                notif_id, title, message, notif_type, is_read, created_datetime = notif
+
                 status = "Read" if is_read else "Unread"
-    
+
                 # Truncate message if too long
                 display_message = message[:100] + "..." if len(message) > 100 else message
-    
+
                 # Format date
                 try:
-                    date_obj = datetime.fromisoformat(created_at)
+                    date_obj = datetime.fromisoformat(created_datetime)
                     formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
                 except:
-                    formatted_date = created_at
+                    formatted_date = created_datetime
     
                 # Insert into tree
                 item_id = tree.insert('', 'end', text=notif_id,

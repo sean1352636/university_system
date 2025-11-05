@@ -326,12 +326,17 @@ class SubmissionManager:
     def perform_submission(self, assignment_id, file_path, comments):
         """Perform the actual submission (runs in background thread)"""
         try:
+            # Validate file path first
+            if not file_path or not isinstance(file_path, str) or not file_path.strip():
+                self.root.after(0, lambda: self.show_status_message("Please select a file to submit", "error"))
+                return
+
             # Use the existing assignment system logic
             student_id = self._get_student_id_safe()
             if not student_id:
                 self.root.after(0, lambda: self.show_status_message("No student ID found", "error"))
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
             
