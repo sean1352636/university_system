@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Assignment System - Incorrect Column Index References**
+- **Issue**: Multiple errors due to incorrect column indexes when accessing assignment data
+- **Errors**:
+  1. "Invalid maximum file size value: .pdf,.docx,.txt" - File extensions being parsed as file size
+  2. "time data test does not match format y m d h m s" - Instructions field being parsed as date
+- **Location**: `university_system/modules/domain/academics/gui/assignment_system/submission_manager.py:352-381`
+- **Root Cause**: Column indexes were off by one after JOIN query `SELECT a.*, m.module_name`
+- **Fixes Applied**:
+  - Line 354-355: Changed `assignment[6], assignment[7]` to `assignment[7], assignment[8]` (file_types_allowed, max_file_size_mb)
+  - Line 375: Changed `assignment[4]` to `assignment[5]` (due_date)
+  - Line 381: Changed `assignment[16]` to `assignment[12]` (allow_late_submission)
+- **Column Mapping**:
+  - Index 5: due_date (was incorrectly using 4 which is instructions)
+  - Index 7: file_types_allowed (was incorrectly using 6 which is max_marks)
+  - Index 8: max_file_size_mb (was incorrectly using 7 which is file_types_allowed)
+  - Index 12: allow_late_submission (was incorrectly using 16 which is rubric_id)
+- **Impact**: File validation now works correctly with proper file size limits and allowed types; date parsing no longer fails with invalid data
+
 **Chart Generation - None Value Formatting Errors**
 - **Issue**: "unsupported format string passed to NoneType.__format__" error when generating charts with missing or NULL data
 - **Location**: `university_system/modules/shared/gui/advanced_search_gui.py:4170-4329`

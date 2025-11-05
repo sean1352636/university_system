@@ -350,32 +350,35 @@ class SubmissionManager:
                 return
             
             # Validate file
+            # Column indexes: 7=file_types_allowed, 8=max_file_size_mb
             valid, message = self._validate_file_submission(
-                file_path, assignment[6], assignment[7]
+                file_path, assignment[7], assignment[8]
             )
-            
+
             if not valid:
                 self.root.after(0, lambda: self.show_status_message(f"File validation failed: {message}", "error"))
                 conn.close()
                 return
-            
+
             # Check for existing submissions
             cursor.execute('''
-            SELECT version_number FROM assignment_submissions 
+            SELECT version_number FROM assignment_submissions
             WHERE assignment_id = ? AND student_id = ?
             ORDER BY submission_date DESC LIMIT 1
             ''', (assignment_id, student_id))
-            
+
             existing = cursor.fetchone()
             version_number = (existing[0] + 1) if existing else 1
-            
+
             # Check due date
-            due_date = datetime.strptime(assignment[4], '%Y-%m-%d %H:%M:%S')
+            # Column index: 5=due_date
+            due_date = datetime.strptime(assignment[5], '%Y-%m-%d %H:%M:%S')
             submission_time = datetime.now()
             late_submission = submission_time > due_date
             late_days = (submission_time - due_date).days if late_submission else 0
-            
-            if late_submission and not assignment[16]:  # allow_late_submission
+
+            # Column index: 12=allow_late_submission
+            if late_submission and not assignment[12]:  # allow_late_submission
                 self.root.after(0, lambda: self.show_status_message("Late submissions are not allowed", "error"))
                 conn.close()
                 return
