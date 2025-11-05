@@ -59,7 +59,6 @@ class IntegrationMarketplaceGUI:
         self.root = root
         self.root.title("Integration Marketplace")
         self.root.geometry("1400x900")
-        self.root.configure(bg='#f0f0f0')
 
         # Initialize authentication
         if auth_system:
@@ -103,27 +102,30 @@ class IntegrationMarketplaceGUI:
             messagebox.showerror("Database Error", f"Failed to initialize database: {e}")
 
     def setup_styles(self):
-        """Configure ttk styles"""
+        """Configure ttk styles to match program standards"""
         style = ttk.Style()
-        style.theme_use('clam')
 
+        # Use default theme for consistency
+        try:
+            style.theme_use('default')
+        except:
+            pass
+
+        # Standard header styling (consistent with other modules)
         style.configure('Header.TLabel',
-                       font=('Arial', 16, 'bold'),
-                       background='#2c3e50',
-                       foreground='white',
-                       padding=10)
+                       font=('Arial', 16, 'bold'))
 
         style.configure('Title.TLabel',
-                       font=('Arial', 12, 'bold'),
-                       background='#f0f0f0')
+                       font=('Arial', 12, 'bold'))
+
+        style.configure('Section.TLabel',
+                       font=('Arial', 11, 'bold'))
 
         style.configure('Action.TButton',
-                       font=('Arial', 10),
-                       padding=5)
+                       font=('Arial', 10))
 
-        style.configure('Install.TButton',
-                       font=('Arial', 10, 'bold'),
-                       padding=5)
+        style.configure('Primary.TButton',
+                       font=('Arial', 10, 'bold'))
 
         style.configure('Treeview',
                        font=('Arial', 9),
@@ -152,15 +154,21 @@ class IntegrationMarketplaceGUI:
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Header
+        # Header frame
         header_frame = ttk.Frame(self.root)
-        header_frame.pack(fill='x', padx=10, pady=5)
+        header_frame.pack(fill='x', padx=10, pady=(10, 5))
 
-        ttk.Label(header_frame, text="🔌 Integration Marketplace",
-                 style='Header.TLabel').pack(side='left', fill='x', expand=True)
+        # Title
+        ttk.Label(header_frame, text="Integration Marketplace",
+                 style='Header.TLabel').pack(side='left')
 
+        # Return to homepage button
+        ttk.Button(header_frame, text="← Return to Main Menu",
+                  command=self.return_to_main_menu).pack(side='right', padx=5)
+
+        # User info
         if self.auth.current_user:
-            user_info = f"{self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
+            user_info = f"Logged in as: {self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
             ttk.Label(header_frame, text=user_info,
                      font=('Arial', 10)).pack(side='right', padx=10)
 
@@ -183,19 +191,19 @@ class IntegrationMarketplaceGUI:
     def create_catalog_tab(self):
         """Create integration catalog tab"""
         catalog_frame = ttk.Frame(self.notebook)
-        self.notebook.add(catalog_frame, text="📚 Catalog")
+        self.notebook.add(catalog_frame, text="Catalog")
 
         # Controls
         controls_frame = ttk.Frame(catalog_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="➕ Add Integration",
+        ttk.Button(controls_frame, text="Add Integration",
                   command=self.add_integration, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_catalog, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="📦 Install Selected",
-                  command=self.install_integration, style='Install.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="ℹ️ View Details",
+        ttk.Button(controls_frame, text="Install Selected",
+                  command=self.install_integration, style='Primary.TButton').pack(side='left', padx=5)
+        ttk.Button(controls_frame, text="View Details",
                   command=self.view_integration_details, style='Action.TButton').pack(side='left', padx=5)
 
         # Category filter
@@ -247,19 +255,19 @@ class IntegrationMarketplaceGUI:
     def create_installed_tab(self):
         """Create installed integrations tab"""
         installed_frame = ttk.Frame(self.notebook)
-        self.notebook.add(installed_frame, text="📦 Installed")
+        self.notebook.add(installed_frame, text="Installed")
 
         # Controls
         controls_frame = ttk.Frame(installed_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_installed, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="⚙️ Configure",
+        ttk.Button(controls_frame, text="Configure",
                   command=self.configure_integration, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🔄 Sync Now",
+        ttk.Button(controls_frame, text="Sync Now",
                   command=self.sync_integration, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🗑️ Uninstall",
+        ttk.Button(controls_frame, text="Uninstall",
                   command=self.uninstall_integration, style='Action.TButton').pack(side='left', padx=5)
 
         # Status filter
@@ -300,19 +308,19 @@ class IntegrationMarketplaceGUI:
     def create_credentials_tab(self):
         """Create credentials management tab"""
         cred_frame = ttk.Frame(self.notebook)
-        self.notebook.add(cred_frame, text="🔑 Credentials")
+        self.notebook.add(cred_frame, text="Credentials")
 
         # Controls
         controls_frame = ttk.Frame(cred_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="➕ Add Credentials",
+        ttk.Button(controls_frame, text="Add Credentials",
                   command=self.add_credentials, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_credentials, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="✏️ Edit Selected",
+        ttk.Button(controls_frame, text="Edit Selected",
                   command=self.edit_credentials, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🗑️ Delete",
+        ttk.Button(controls_frame, text="Delete",
                   command=self.delete_credentials, style='Action.TButton').pack(side='left', padx=5)
 
         # Credentials tree
@@ -344,17 +352,17 @@ class IntegrationMarketplaceGUI:
     def create_sync_logs_tab(self):
         """Create sync logs tab"""
         sync_frame = ttk.Frame(self.notebook)
-        self.notebook.add(sync_frame, text="🔄 Sync Logs")
+        self.notebook.add(sync_frame, text="Sync Logs")
 
         # Controls
         controls_frame = ttk.Frame(sync_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_sync_logs, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="ℹ️ View Details",
+        ttk.Button(controls_frame, text="View Details",
                   command=self.view_sync_details, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="📤 Export Logs",
+        ttk.Button(controls_frame, text="Export Logs",
                   command=self.export_sync_logs, style='Action.TButton').pack(side='left', padx=5)
 
         # Status filter
@@ -393,19 +401,19 @@ class IntegrationMarketplaceGUI:
     def create_mappings_tab(self):
         """Create data mappings tab"""
         mappings_frame = ttk.Frame(self.notebook)
-        self.notebook.add(mappings_frame, text="🗂️ Data Mappings")
+        self.notebook.add(mappings_frame, text="Data Mappings")
 
         # Controls
         controls_frame = ttk.Frame(mappings_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="➕ Add Mapping",
+        ttk.Button(controls_frame, text="Add Mapping",
                   command=self.add_mapping, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_mappings, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="✏️ Edit Selected",
+        ttk.Button(controls_frame, text="Edit Selected",
                   command=self.edit_mapping, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🗑️ Delete",
+        ttk.Button(controls_frame, text="Delete",
                   command=self.delete_mapping, style='Action.TButton').pack(side='left', padx=5)
 
         # Mappings tree
@@ -439,19 +447,19 @@ class IntegrationMarketplaceGUI:
     def create_webhooks_tab(self):
         """Create webhooks tab"""
         webhooks_frame = ttk.Frame(self.notebook)
-        self.notebook.add(webhooks_frame, text="🔗 Webhooks")
+        self.notebook.add(webhooks_frame, text="Webhooks")
 
         # Controls
         controls_frame = ttk.Frame(webhooks_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="➕ Add Webhook",
+        ttk.Button(controls_frame, text="Add Webhook",
                   command=self.add_webhook, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_webhooks, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="✏️ Edit Selected",
+        ttk.Button(controls_frame, text="Edit Selected",
                   command=self.edit_webhook, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="🗑️ Delete",
+        ttk.Button(controls_frame, text="Delete",
                   command=self.delete_webhook, style='Action.TButton').pack(side='left', padx=5)
 
         # Webhooks tree
@@ -483,17 +491,17 @@ class IntegrationMarketplaceGUI:
     def create_analytics_tab(self):
         """Create usage analytics tab"""
         analytics_frame = ttk.Frame(self.notebook)
-        self.notebook.add(analytics_frame, text="📊 Analytics")
+        self.notebook.add(analytics_frame, text="Analytics")
 
         # Controls
         controls_frame = ttk.Frame(analytics_frame)
         controls_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text="Refresh",
                   command=self.load_analytics, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="📈 View Summary",
+        ttk.Button(controls_frame, text="View Summary",
                   command=self.view_analytics_summary, style='Action.TButton').pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="📤 Export",
+        ttk.Button(controls_frame, text="Export",
                   command=self.export_analytics, style='Action.TButton').pack(side='left', padx=5)
 
         # Date filter
@@ -1761,6 +1769,22 @@ class IntegrationMarketplaceGUI:
         except Exception as e:
             logger.error(f"Error exporting analytics: {e}")
             messagebox.showerror("Error", f"Failed to export analytics: {e}")
+
+    def return_to_main_menu(self):
+        """Return to main menu by closing the marketplace window"""
+        if messagebox.askyesno("Confirm", "Return to main menu?"):
+            try:
+                # Log the action
+                if self.auth and self.auth.current_user:
+                    log_activity('Closed Integration Marketplace',
+                               user=self.auth.current_user.get('username', 'Unknown'))
+
+                # Close the window
+                self.root.destroy()
+                logger.info("Integration Marketplace closed")
+            except Exception as e:
+                logger.error(f"Error closing Integration Marketplace: {e}")
+                self.root.destroy()
 
 
 def launch_integration_marketplace_gui(auth=None):

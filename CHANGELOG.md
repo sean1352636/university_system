@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+**Integration Marketplace GUI - Updated Styling to Match Program Standards**
+- **Issue**: Integration Marketplace had unique styling with emojis and custom colors that didn't match the rest of the program
+- **Location**: `university_system/modules/services/gui/integration_marketplace_gui.py`
+- **Changes Made**:
+  1. **Removed all emojis** from interface:
+     - Tab names: "📚 Catalog" → "Catalog", "📦 Installed" → "Installed", etc.
+     - Button labels: "🔄 Refresh" → "Refresh", "➕ Add" → "Add", "🗑️ Delete" → "Delete", etc.
+     - Removed emojis from 30+ UI elements
+  2. **Updated styling** to match program standards:
+     - Changed from 'clam' theme to default theme for consistency
+     - Removed custom background color (#2c3e50, #f0f0f0)
+     - Updated button styles from 'Install.TButton' to 'Primary.TButton' (standard)
+     - Standardized header styling without custom colors
+  3. **Added return to homepage button**:
+     - Added "← Return to Main Menu" button in header
+     - Implemented `return_to_main_menu()` method with confirmation dialog
+     - Added activity logging when closing marketplace
+  4. **Improved user info display**:
+     - Changed from simple username to "Logged in as: [username] ([role])"
+     - Consistent with other module headers
+- **Impact**: Integration Marketplace now has consistent look and feel with the rest of the program; users can easily navigate back to main menu
+- **Why This Changed**: Maintains visual consistency across the entire application; improves user experience with familiar interface patterns
+
 ### Fixed
 
 **Admissions CRM GUI - Database Schema Mismatches**
