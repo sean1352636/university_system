@@ -61,6 +61,21 @@ class AIFeaturesGUI:
             style.configure('Section.TLabel', font=('Arial', 12, 'bold'))
             style.configure('Accent.TButton', font=('Arial', 10, 'bold'))
 
+            # Header frame with return button
+            header_frame = ttk.Frame(self.window)
+            header_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+
+            ttk.Label(header_frame, text="AI-Powered Features",
+                     style='Header.TLabel').pack(side=tk.LEFT)
+
+            ttk.Button(header_frame, text="← Return to Main Menu",
+                      command=self.return_to_main_menu).pack(side=tk.RIGHT, padx=5)
+
+            if self.current_user:
+                user_info = f"Logged in as: {self.current_user.get('username', 'User')}"
+                ttk.Label(header_frame, text=user_info,
+                         font=('Arial', 10)).pack(side=tk.RIGHT, padx=10)
+
             # Main container with tabs
             self.notebook = ttk.Notebook(self.window)
             self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -843,13 +858,13 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
                 row = cursor.fetchone()
                 stats += "CHATBOT STATISTICS:\n"
                 stats += f"  Total Conversations: {row['count'] or 0}\n"
-                stats += f"  Average Messages per Conversation: {row['avg_msgs']:.1f if row['avg_msgs'] else 0}\n\n"
+                stats += f"  Average Messages per Conversation: {row['avg_msgs']:.1f if row['avg_msgs'] else 0.0}\n\n"
 
                 # Recommendations stats
                 cursor.execute('SELECT COUNT(*) as count, recommendation_type, AVG(confidence_score) as avg_conf FROM ai_recommendations GROUP BY recommendation_type')
                 stats += "RECOMMENDATIONS STATISTICS:\n"
                 for row in cursor.fetchall():
-                    stats += f"  {row['recommendation_type']}: {row['count']} ({row['avg_conf']:.2f if row['avg_conf'] else 0} avg confidence)\n"
+                    stats += f"  {row['recommendation_type']}: {row['count']} ({row['avg_conf']:.2f if row['avg_conf'] else 0.0} avg confidence)\n"
                 stats += "\n"
 
                 # Grading stats
@@ -857,14 +872,14 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
                 row = cursor.fetchone()
                 stats += "AUTO-GRADING STATISTICS:\n"
                 stats += f"  Total Submissions Graded: {row['count'] or 0}\n"
-                stats += f"  Average Score: {row['avg_pct']:.1f if row['avg_pct'] else 0}%\n\n"
+                stats += f"  Average Score: {row['avg_pct']:.1f if row['avg_pct'] else 0.0}%\n\n"
 
                 # Plagiarism stats
                 cursor.execute('SELECT COUNT(*) as count, AVG(similarity_score) as avg_sim FROM ai_plagiarism_checks')
                 row = cursor.fetchone()
                 stats += "PLAGIARISM DETECTION STATISTICS:\n"
                 stats += f"  Total Checks: {row['count'] or 0}\n"
-                stats += f"  Average Similarity: {row['avg_sim']*100:.1f if row['avg_sim'] else 0}%\n"
+                stats += f"  Average Similarity: {row['avg_sim']*100:.1f if row['avg_sim'] else 0.0}%\n"
 
                 cursor.execute('SELECT COUNT(*) as count FROM ai_plagiarism_checks WHERE flagged = 1')
                 row = cursor.fetchone()
@@ -1001,6 +1016,23 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
         except Exception as e:
             messagebox.showerror("Error", f"Failed to launch Plagiarism Detector GUI: {str(e)}\n\nMake sure the plagiarism detector backend is properly configured.")
             traceback.print_exc()
+
+    def return_to_main_menu(self):
+        """Return to main menu by closing the AI features window"""
+        if messagebox.askyesno("Confirm", "Return to main menu?"):
+            try:
+                # Log the action
+                if self.current_user:
+                    log_activity('Closed AI Features',
+                               user=self.current_user.get('username', 'Unknown'))
+
+                # Close the window
+                self.window.destroy()
+                print("AI Features GUI closed")
+            except Exception as e:
+                print(f"Error closing AI Features GUI: {e}")
+                if self.window:
+                    self.window.destroy()
 
 
 def launch_ai_features_gui(root, auth):

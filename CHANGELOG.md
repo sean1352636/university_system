@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**AI Powered Features GUI - Invalid Format Specifier Errors**
+- **Issue**: Format specifiers applied to ternary expressions with integer fallback values
+- **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py`
+- **Errors Fixed**:
+  - Line 846: `{row['avg_msgs']:.1f if row['avg_msgs'] else 0}` - integer 0 with float format
+  - Line 852: `{row['avg_conf']:.2f if row['avg_conf'] else 0}` - integer 0 with float format
+  - Line 860: `{row['avg_pct']:.1f if row['avg_pct'] else 0}` - integer 0 with float format
+  - Line 867: `{row['avg_sim']*100:.1f if row['avg_sim'] else 0}` - integer 0 with float format
+- **Root Cause**: Format specifiers like `.1f` and `.2f` expect float values, but the else clause returned int (0)
+- **Fix**: Changed all `else 0` to `else 0.0` to ensure float type matches format specifier
+- **Impact**: Statistics display now works without ValueError; proper float formatting throughout
+
+### Added
+
+**Blockchain Credentials GUI - Return to Main Menu Navigation**
+- Added "← Return to Main Menu" button in header
+- Implemented `return_to_main_menu()` method with confirmation dialog
+- Added activity logging when closing GUI
+- Removed emoji from title for consistency
+- Updated user info format to match other modules
+- **Location**: `university_system/modules/domain/academics/gui/blockchain_credentials_gui.py`
+
+**Mobile App (PWA) GUI - Return to Main Menu Navigation**
+- Added "← Return to Main Menu" button in header
+- Implemented `return_to_main_menu()` method with confirmation dialog
+- Added activity logging when closing GUI
+- Removed emoji from title for consistency
+- Updated user info format to match other modules
+- **Location**: `university_system/modules/domain/mobility/gui/mobile_app_pwa_gui.py`
+
+**AI Powered Features GUI - Return to Main Menu Navigation**
+- Added header frame with "← Return to Main Menu" button
+- Implemented `return_to_main_menu()` method with confirmation dialog
+- Added activity logging when closing GUI
+- Added user info display in header
+- **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py`
+
+### Fixed
+
 **Security Dashboard - Missing Encryption Keys Table Columns**
 - **Issue**: `sqlite3.OperationalError: no such column: key_type` when loading Security Dashboard
 - **Location**: `university_system/infrastructure/security/init_security_tables.py:155-167`

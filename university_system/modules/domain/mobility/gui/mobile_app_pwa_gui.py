@@ -139,13 +139,17 @@ class MobileAppPWAGUI:
 
         # Header
         header_frame = ttk.Frame(self.root)
-        header_frame.pack(fill='x', padx=10, pady=5)
+        header_frame.pack(fill='x', padx=10, pady=(10, 5))
 
-        ttk.Label(header_frame, text="📱 Mobile App (PWA) Infrastructure",
-                 style='Header.TLabel').pack(side='left', fill='x', expand=True)
+        ttk.Label(header_frame, text="Mobile App (PWA) Infrastructure",
+                 style='Header.TLabel').pack(side='left')
+
+        # Return to homepage button
+        ttk.Button(header_frame, text="← Return to Main Menu",
+                  command=self.return_to_main_menu).pack(side='right', padx=5)
 
         if self.auth.current_user:
-            user_info = f"{self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
+            user_info = f"Logged in as: {self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
             ttk.Label(header_frame, text=user_info,
                      font=('Arial', 10)).pack(side='right', padx=10)
 
@@ -995,6 +999,22 @@ class MobileAppPWAGUI:
         except Exception as e:
             logger.error(f"Error editing preference: {e}")
             messagebox.showerror("Error", f"Failed to edit preference: {e}")
+
+    def return_to_main_menu(self):
+        """Return to main menu by closing the mobile app management window"""
+        if messagebox.askyesno("Confirm", "Return to main menu?"):
+            try:
+                # Log the action
+                if self.auth and self.auth.current_user:
+                    log_activity('Closed Mobile App Management',
+                               user=self.auth.current_user.get('username', 'Unknown'))
+
+                # Close the window
+                self.root.destroy()
+                logger.info("Mobile App GUI closed")
+            except Exception as e:
+                logger.error(f"Error closing Mobile App GUI: {e}")
+                self.root.destroy()
 
 
 def launch_mobile_app_pwa_gui(auth=None):

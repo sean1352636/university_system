@@ -137,13 +137,17 @@ class BlockchainCredentialsGUI:
 
         # Header
         header_frame = ttk.Frame(self.root)
-        header_frame.pack(fill='x', padx=10, pady=5)
+        header_frame.pack(fill='x', padx=10, pady=(10, 5))
 
-        ttk.Label(header_frame, text="🔗 Blockchain Credentials & Digital Badges",
-                 style='Header.TLabel').pack(side='left', fill='x', expand=True)
+        ttk.Label(header_frame, text="Blockchain Credentials & Digital Badges",
+                 style='Header.TLabel').pack(side='left')
+
+        # Return to homepage button
+        ttk.Button(header_frame, text="← Return to Main Menu",
+                  command=self.return_to_main_menu).pack(side='right', padx=5)
 
         if self.auth.current_user:
-            user_info = f"{self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
+            user_info = f"Logged in as: {self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
             ttk.Label(header_frame, text=user_info,
                      font=('Arial', 10)).pack(side='right', padx=10)
 
@@ -1413,6 +1417,22 @@ class BlockchainCredentialsGUI:
         except Exception as e:
             logger.error(f"Error editing template: {e}")
             messagebox.showerror("Error", f"Failed to edit template: {e}")
+
+    def return_to_main_menu(self):
+        """Return to main menu by closing the blockchain credentials window"""
+        if messagebox.askyesno("Confirm", "Return to main menu?"):
+            try:
+                # Log the action
+                if self.auth and self.auth.current_user:
+                    log_activity('Closed Blockchain Credentials',
+                               user=self.auth.current_user.get('username', 'Unknown'))
+
+                # Close the window
+                self.root.destroy()
+                logger.info("Blockchain Credentials GUI closed")
+            except Exception as e:
+                logger.error(f"Error closing Blockchain Credentials GUI: {e}")
+                self.root.destroy()
 
 
 def launch_blockchain_credentials_gui(auth=None):
