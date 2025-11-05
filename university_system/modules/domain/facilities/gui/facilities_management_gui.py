@@ -68,6 +68,16 @@ class FacilitiesManagementGUI:
             style.configure('Header.TLabel', font=('Arial', 16, 'bold'))
             style.configure('Section.TLabel', font=('Arial', 12, 'bold'))
 
+            # Header frame with return button
+            header_frame = ttk.Frame(self.window)
+            header_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+
+            ttk.Label(header_frame, text="Facilities & Space Management",
+                     style='Header.TLabel').pack(side=tk.LEFT)
+
+            ttk.Button(header_frame, text="← Return to Main Menu",
+                      command=self.return_to_main_menu).pack(side=tk.RIGHT, padx=5)
+
             # Main container with tabs
             self.notebook = ttk.Notebook(self.window)
             self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -535,7 +545,7 @@ class FacilitiesManagementGUI:
                            rb.booked_by, rb.booking_type, rb.start_datetime, rb.end_datetime,
                            rb.purpose, rb.booking_status
                     FROM room_bookings rb
-                    JOIN rooms r ON rb.room_id = r.id as room_id
+                    JOIN rooms r ON rb.room_id = r.id
                     JOIN buildings b ON r.building_id = b.building_id
                     WHERE rb.start_datetime >= date('now', '-7 days')
                     ORDER BY rb.start_datetime DESC
@@ -579,7 +589,7 @@ class FacilitiesManagementGUI:
                            mr.reported_by, mr.reported_date, mr.status
                     FROM maintenance_requests mr
                     LEFT JOIN buildings b ON mr.building_id = b.building_id
-                    LEFT JOIN rooms r ON mr.id as room_id = r.id as room_id
+                    LEFT JOIN rooms r ON mr.room_id = r.id
                     ORDER BY mr.reported_date DESC
                     LIMIT 500
                 ''')
@@ -662,7 +672,7 @@ class FacilitiesManagementGUI:
                            fa.condition, fa.status
                     FROM facility_assets fa
                     LEFT JOIN buildings b ON fa.building_id = b.building_id
-                    LEFT JOIN rooms r ON fa.room_id = r.id as room_id
+                    LEFT JOIN rooms r ON fa.room_id = r.id
                     ORDER BY fa.asset_name
                 ''')
 
@@ -807,6 +817,14 @@ class FacilitiesManagementGUI:
         """Update status bar message"""
         if self.status_bar:
             self.status_bar.config(text=message)
+
+    def return_to_main_menu(self):
+        """Return to main menu by closing the facilities management window"""
+        if messagebox.askyesno("Confirm", "Return to main menu?"):
+            if self.window:
+                self.window.destroy()
+            log_activity('Closed Facilities Management',
+                        user=self.current_user.get('username') if self.current_user else 'Unknown')
 
 
 def launch_facilities_management_gui(root, auth):

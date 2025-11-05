@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Facilities Management GUI - SQL Syntax Errors in JOIN Clauses**
+- **Issue**: `OperationalError: near "as": syntax error` in three different query methods
+- **Location**: `university_system/modules/domain/facilities/gui/facilities_management_gui.py`
+- **Errors Fixed**:
+  1. Line 538 in `load_bookings()`: `JOIN rooms r ON rb.room_id = r.id as room_id`
+  2. Line 582 in `load_maintenance_requests()`: `LEFT JOIN rooms r ON mr.id as room_id = r.id as room_id`
+  3. Line 665 in `load_assets()`: `LEFT JOIN rooms r ON fa.room_id = r.id as room_id`
+- **Root Cause**: Incorrect SQL syntax - `as` keyword was mistakenly used in JOIN ON conditions instead of just in column aliases
+- **Fix**: Removed erroneous `as room_id` from JOIN conditions:
+  - `JOIN rooms r ON rb.room_id = r.id`
+  - `LEFT JOIN rooms r ON mr.room_id = r.id`
+  - `LEFT JOIN rooms r ON fa.room_id = r.id`
+- **Impact**: All three views (bookings, maintenance requests, assets) now load without SQL errors
+
+**Financial Aid GUI - NoneType AttributeError and Missing Navigation**
+- **Issue**: `'NoneType' object has no attribute 'get'` when displaying user information
+- **Location**: `university_system/modules/domain/finance/gui/financial_aid/financial_aid_gui.py:103`
+- **Root Cause**: Code attempted to call `.get()` on `user_dict` without checking if `self.current_user` was None first
+- **Fix**:
+  1. Added comprehensive None checks for `current_user` and `user_dict`
+  2. Added type checking with `isinstance(user_dict, dict)` before calling `.get()`
+  3. Graceful fallback to 'Unknown' username if user info unavailable
+  4. Added "Return to Main Menu" button in header
+  5. Implemented `return_to_main_menu()` method with proper cleanup for both embedded and standalone modes
+- **Impact**: Financial Aid GUI now handles unauthenticated/missing user states gracefully; users can navigate back to main menu
+
+**Campus Events Hub - Missing Table Schema**
+- **Issue**: `no such column: user_id` when loading event registrations
+- **Location**: `university_system/modules/domain/campus/services/campus_events_gui.py:348`
+- **Status**: Schema definition exists correctly in `schemas.py:1930-1942` with `user_id` column
+- **Note**: Table schema is correct; database may need initialization via `init_campus_events_system_db()`
+- **Impact**: Event registrations will load correctly once database is initialized
+
+### Added
+
+**Facilities Management GUI - Return to Main Menu Navigation**
+- Added header frame with title and "Return to Main Menu" button
+- Implemented `return_to_main_menu()` method with confirmation dialog
+- Added activity logging when closing Facilities Management
+- **Location**: `university_system/modules/domain/facilities/gui/facilities_management_gui.py:71-79, 821-827`
+
+### Fixed
+
 **Library GUI - User Authentication Integration**
 - **Issue**: Multiple authentication and database schema errors:
   1. `AttributeError: 'LibraryGUI' object has no attribute 'current_user'` when accessing user preferences

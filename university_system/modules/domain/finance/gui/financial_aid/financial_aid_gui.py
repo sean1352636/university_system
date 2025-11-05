@@ -98,11 +98,28 @@ class FinancialAidGUI:
         title_label.pack(pady=20)
 
         # User info
-        user_dict = self.current_user.to_dict() if hasattr(self.current_user, 'to_dict') else self.current_user
+        if self.current_user:
+            user_dict = self.current_user.to_dict() if hasattr(self.current_user, 'to_dict') else self.current_user
+            if user_dict:
+                username = user_dict.get('username', 'Unknown') if isinstance(user_dict, dict) else 'Unknown'
+            else:
+                username = 'Unknown'
+        else:
+            username = 'Unknown'
+
         user_info = ttk.Label(header_frame,
-                              text=f"Logged in as: {user_dict.get('username', 'Unknown')}",
+                              text=f"Logged in as: {username}",
                               font=('Arial', 10))
         user_info.pack(pady=(0, 20))
+
+        # Return to home button
+        button_frame = ttk.Frame(header_frame)
+        button_frame.pack(pady=(0, 10))
+
+        ttk.Button(button_frame,
+                  text="← Return to Main Menu",
+                  command=self.return_to_main_menu,
+                  style='Secondary.TButton').pack(side='left', padx=5)
 
         # Content frame
         content_frame = ttk.Frame(self.main_frame)
@@ -233,6 +250,20 @@ class FinancialAidGUI:
 
         # Show admin dashboard
         self.admin_portal.show_dashboard()
+
+    def return_to_main_menu(self):
+        """Return to main menu or close window"""
+        if self.parent:
+            # If embedded, destroy the main frame and notify parent
+            if self.main_frame:
+                self.main_frame.destroy()
+            # Try to call parent's return method if it exists
+            if hasattr(self.parent, 'return_to_main_menu'):
+                self.parent.return_to_main_menu()
+        else:
+            # If standalone, close the window
+            if self.root:
+                self.root.destroy()
 
 
 def main():
