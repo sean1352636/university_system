@@ -18,6 +18,9 @@ import json
 from university_system.infrastructure.database.db import sqlite3
 from typing import Dict, List, Optional, Any
 import logging
+import urllib.request
+import urllib.parse
+import urllib.error
 
 # Import all original library functions
 try:
@@ -39,10 +42,16 @@ except ImportError:
 # Import shared authentication system
 try:
     from university_system.infrastructure.auth.user_authentication import UserAuth
+    from university_system.infrastructure.shared_context import get_auth, get_current_user
     SHARED_AUTH_AVAILABLE = True
 except ImportError:
     print("Warning: Shared authentication system not found.")
     SHARED_AUTH_AVAILABLE = False
+    # Provide fallback functions
+    def get_auth():
+        return None
+    def get_current_user():
+        return None
 
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
@@ -448,13 +457,20 @@ class LibraryGUI:
             self.update_status(f"Initialization error: {str(e)}", "error")
             
     def setup_shared_authentication(self):
-        """Setup shared authentication system"""
+        """Setup shared authentication system - connects to global auth context"""
         try:
-            # If auth was not provided in constructor, create one
-            if not self.auth and SHARED_AUTH_AVAILABLE:
-                self.auth = UserAuth()
+            # If auth was not provided in constructor, use the global auth instance
+            if not self.auth:
+                if SHARED_AUTH_AVAILABLE:
+                    # Get the global auth instance from shared_context
+                    self.auth = get_auth()
+                    print(f"Library GUI connected to global auth context")
+                else:
+                    # Create new auth instance if shared context not available
+                    self.auth = UserAuth()
+                    print(f"Library GUI created standalone auth instance")
 
-            # If we have auth, set up global auth for backwards compatibility
+            # Set up global auth for backwards compatibility with original library
             if self.auth and ORIGINAL_LIBRARY_AVAILABLE:
                 global auth
                 auth = self.auth
@@ -476,12 +492,33 @@ class LibraryGUI:
 
                 self.auth = SimpleAuth()
 
+        # Update user display after auth is set up
+        self.update_user_display()
+
     def update_user_display(self):
         """Update user display based on current authentication status"""
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            username = self.auth.current_user.get('username', 'Unknown User')
-            self.user_label.config(text=f"Logged in as: {username}")
-        else:
+        try:
+            # Try to get current user from global context first
+            current_user = None
+            if SHARED_AUTH_AVAILABLE:
+                current_user = get_current_user()
+
+            # Fall back to local auth instance
+            if not current_user and self.auth and hasattr(self.auth, 'current_user'):
+                current_user = self.auth.current_user
+
+            # Update the label based on user info
+            if current_user:
+                username = current_user.get('username', 'Unknown User')
+                role = current_user.get('role', '')
+                if role:
+                    self.user_label.config(text=f"Logged in as: {username} ({role})")
+                else:
+                    self.user_label.config(text=f"Logged in as: {username}")
+            else:
+                self.user_label.config(text="No user authenticated")
+        except Exception as e:
+            print(f"Error updating user display: {e}")
             self.user_label.config(text="No user authenticated")
 
     def initialize_main_content(self):
@@ -490,6 +527,10 @@ class LibraryGUI:
 
         # Always show dashboard - authentication will be handled by the calling system
         self.show_dashboard()
+
+    def refresh_user_display(self):
+        """Public method to refresh user display - call this after login/logout events"""
+        self.update_user_display()
 
     def setup_event_handlers(self):
         """Setup event handlers"""
@@ -1024,6 +1065,8 @@ Overdue: {overdue_books:,}
                 try:
                     barcode = generate_barcode(book_id)
                     qr_code_path = generate_qr_code(book_id, book_title)
+                    # Convert PosixPath to string for database compatibility
+                    qr_code_path = str(qr_code_path) if qr_code_path else None
 
                     # Update database with generated barcode
                     conn = get_db_connection()
@@ -1144,15 +1187,15 @@ Overdue: {overdue_books:,}
         ]
         
         self.add_book_vars = {}
-        
+
         for i, (label, field) in enumerate(fields):
             ttk.Label(main_frame, text=label).grid(row=i, column=0, sticky='w', pady=5)
-            
+
             if field == "category":
                 # Category dropdown
                 var = tk.StringVar()
                 combo = ttk.Combobox(main_frame, textvariable=var, width=40)
-                combo['values'] = ('Fiction', 'Non-Fiction', 'Science', 'History', 'Computer Science', 
+                combo['values'] = ('Fiction', 'Non-Fiction', 'Science', 'History', 'Computer Science',
                                   'Mathematics', 'Philosophy', 'Psychology', 'Business', 'Biography')
                 combo.grid(row=i, column=1, sticky='w', pady=5)
                 self.add_book_vars[field] = var
@@ -1163,6 +1206,21 @@ Overdue: {overdue_books:,}
                 combo['values'] = ('Elementary', 'Middle School', 'High School', 'College', 'Unknown')
                 combo.grid(row=i, column=1, sticky='w', pady=5)
                 self.add_book_vars[field] = var
+            elif field == "isbn":
+                # ISBN field with lookup button
+                isbn_frame = ttk.Frame(main_frame)
+                isbn_frame.grid(row=i, column=1, sticky='w', pady=5)
+
+                var = tk.StringVar()
+                entry = ttk.Entry(isbn_frame, textvariable=var, width=32)
+                entry.pack(side=tk.LEFT)
+                self.add_book_vars[field] = var
+
+                # Add lookup button
+                lookup_btn = ttk.Button(isbn_frame, text="🔍 Lookup",
+                                       command=lambda: self.lookup_isbn_data(dialog),
+                                       width=10)
+                lookup_btn.pack(side=tk.LEFT, padx=5)
             else:
                 # Regular entry
                 var = tk.StringVar()
@@ -1190,7 +1248,169 @@ Overdue: {overdue_books:,}
         
         # Focus on title field
         list(self.add_book_vars.values())[0].get()  # Get title entry and focus
-        
+
+    def lookup_isbn_data(self, dialog):
+        """Lookup book data by ISBN and auto-fill the form"""
+        isbn = self.add_book_vars['isbn'].get().strip()
+
+        if not isbn:
+            messagebox.showwarning("ISBN Required", "Please enter an ISBN number first")
+            return
+
+        # Clean ISBN (remove dashes and spaces)
+        isbn_clean = isbn.replace('-', '').replace(' ', '')
+
+        # Show loading status
+        original_text = dialog.title()
+        dialog.title("Looking up ISBN...")
+
+        def lookup_thread():
+            """Run lookup in background thread to avoid freezing GUI"""
+            try:
+                # Try Open Library API first
+                book_data = self._fetch_from_openlibrary(isbn_clean)
+
+                if not book_data:
+                    # Try Google Books API as fallback
+                    book_data = self._fetch_from_google_books(isbn_clean)
+
+                # Update GUI in main thread
+                dialog.after(0, lambda: self._populate_book_data(book_data, dialog, original_text))
+
+            except Exception as e:
+                dialog.after(0, lambda: self._handle_lookup_error(str(e), dialog, original_text))
+
+        # Start lookup in background thread
+        thread = threading.Thread(target=lookup_thread, daemon=True)
+        thread.start()
+
+    def _fetch_from_openlibrary(self, isbn):
+        """Fetch book data from Open Library API"""
+        try:
+            url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
+
+            with urllib.request.urlopen(url, timeout=10) as response:
+                data = json.loads(response.read().decode())
+
+            key = f"ISBN:{isbn}"
+            if key not in data:
+                return None
+
+            book = data[key]
+
+            # Extract data
+            book_data = {
+                'title': book.get('title', ''),
+                'author': ', '.join([author.get('name', '') for author in book.get('authors', [])]),
+                'publisher': ', '.join([pub.get('name', '') for pub in book.get('publishers', [])]),
+                'year': book.get('publish_date', ''),
+                'description': book.get('notes', '') or book.get('subtitle', ''),
+                'subjects': book.get('subjects', [])
+            }
+
+            return book_data
+
+        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError):
+            return None
+
+    def _fetch_from_google_books(self, isbn):
+        """Fetch book data from Google Books API (fallback)"""
+        try:
+            query = urllib.parse.quote(f"isbn:{isbn}")
+            url = f"https://www.googleapis.com/books/v1/volumes?q={query}"
+
+            with urllib.request.urlopen(url, timeout=10) as response:
+                data = json.loads(response.read().decode())
+
+            if 'items' not in data or len(data['items']) == 0:
+                return None
+
+            volume_info = data['items'][0]['volumeInfo']
+
+            # Extract data
+            book_data = {
+                'title': volume_info.get('title', ''),
+                'author': ', '.join(volume_info.get('authors', [])),
+                'publisher': volume_info.get('publisher', ''),
+                'year': volume_info.get('publishedDate', '')[:4] if volume_info.get('publishedDate') else '',
+                'description': volume_info.get('description', ''),
+                'subjects': volume_info.get('categories', [])
+            }
+
+            return book_data
+
+        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError):
+            return None
+
+    def _populate_book_data(self, book_data, dialog, original_title):
+        """Populate form fields with book data"""
+        dialog.title(original_title)
+
+        if not book_data:
+            messagebox.showinfo("Not Found",
+                              "Book data not found for this ISBN.\n\n" +
+                              "Please enter the details manually.")
+            return
+
+        # Auto-fill fields
+        if book_data.get('title'):
+            self.add_book_vars['title'].set(book_data['title'])
+
+        if book_data.get('author'):
+            self.add_book_vars['author'].set(book_data['author'])
+
+        if book_data.get('publisher'):
+            self.add_book_vars['publisher'].set(book_data['publisher'])
+
+        if book_data.get('year'):
+            year_str = str(book_data['year'])
+            # Extract just the year if it's a full date
+            if len(year_str) >= 4:
+                self.add_book_vars['year_published'].set(year_str[:4])
+
+        # Set description
+        if book_data.get('description'):
+            self.add_book_description.delete("1.0", tk.END)
+            self.add_book_description.insert("1.0", book_data['description'])
+
+        # Set category based on subjects
+        if book_data.get('subjects'):
+            # Try to match subject to our categories
+            subjects_lower = [s.lower() for s in book_data['subjects']]
+            category_mapping = {
+                'fiction': 'Fiction',
+                'science': 'Science',
+                'history': 'History',
+                'computer': 'Computer Science',
+                'mathematics': 'Mathematics',
+                'math': 'Mathematics',
+                'philosophy': 'Philosophy',
+                'psychology': 'Psychology',
+                'business': 'Business',
+                'biography': 'Biography'
+            }
+
+            for subject in subjects_lower:
+                for key, value in category_mapping.items():
+                    if key in subject:
+                        self.add_book_vars['category'].set(value)
+                        break
+
+        # Show success message
+        messagebox.showinfo("Success",
+                          f"Book information found!\n\n" +
+                          f"Title: {book_data.get('title', 'N/A')}\n" +
+                          f"Author: {book_data.get('author', 'N/A')}\n\n" +
+                          f"Please review and adjust the details as needed.")
+
+    def _handle_lookup_error(self, error_msg, dialog, original_title):
+        """Handle lookup errors"""
+        dialog.title(original_title)
+        messagebox.showerror("Lookup Error",
+                           f"Failed to lookup ISBN:\n{error_msg}\n\n" +
+                           "Please check your internet connection and try again,\n" +
+                           "or enter the book details manually.")
+
     def save_new_book(self, dialog):
         """Save new book to database"""
         # Validate required fields
@@ -1252,10 +1472,12 @@ Overdue: {overdue_books:,}
             if ORIGINAL_LIBRARY_AVAILABLE:
                 barcode = generate_barcode(book_id)
                 qr_code_path = generate_qr_code(book_id, book_data['title'])
+                # Convert PosixPath to string for database compatibility
+                qr_code_path = str(qr_code_path) if qr_code_path else None
             else:
                 barcode = f"LIB{book_id}"
                 qr_code_path = None
-            
+
             # Insert book
             cursor.execute('''
             INSERT INTO books VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

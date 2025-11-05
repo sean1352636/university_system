@@ -3735,23 +3735,27 @@ def generate_analytics_dashboard():
     try:
         # Current status overview
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(*) as total_books,
-            SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available,
-            SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END) as checked_out,
-            SUM(CASE WHEN status = 'reserved' THEN 1 ELSE 0 END) as reserved,
-            SUM(CASE WHEN status IN ('lost', 'damaged') THEN 1 ELSE 0 END) as unavailable
+            COALESCE(SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END), 0) as available,
+            COALESCE(SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END), 0) as checked_out,
+            COALESCE(SUM(CASE WHEN status = 'reserved' THEN 1 ELSE 0 END), 0) as reserved,
+            COALESCE(SUM(CASE WHEN status IN ('lost', 'damaged') THEN 1 ELSE 0 END), 0) as unavailable
         FROM books
         ''')
-        
+
         book_stats = cursor.fetchone()
-        
+        total_books = book_stats[0]
+
         print(f"\n📊 COLLECTION OVERVIEW")
-        print(f"Total Books: {book_stats[0]:,}")
-        print(f"Available: {book_stats[1]:,} ({book_stats[1]/book_stats[0]*100:.1f}%)")
-        print(f"Checked Out: {book_stats[2]:,} ({book_stats[2]/book_stats[0]*100:.1f}%)")
-        print(f"Reserved: {book_stats[3]:,}")
-        print(f"Unavailable: {book_stats[4]:,}")
+        print(f"Total Books: {total_books:,}")
+        if total_books > 0:
+            print(f"Available: {book_stats[1]:,} ({book_stats[1]/total_books*100:.1f}%)")
+            print(f"Checked Out: {book_stats[2]:,} ({book_stats[2]/total_books*100:.1f}%)")
+            print(f"Reserved: {book_stats[3]:,}")
+            print(f"Unavailable: {book_stats[4]:,}")
+        else:
+            print("No books in the collection yet.")
         
         # Active loans and reservations
         cursor.execute('SELECT COUNT(*) FROM book_loans WHERE status IN ("active", "overdue")')
