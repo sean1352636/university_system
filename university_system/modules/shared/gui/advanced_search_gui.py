@@ -501,32 +501,258 @@ def init_enhanced_database():
         return False
 
 def student_demographics_reports():
-    """Generate demographics reports"""
-    return "Demographics analysis:\n- Total students: 3\n- Gender distribution: 67% Male, 33% Female\n- Age range: 23-25 years"
+    """Generate demographics reports with actual database data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get total students
+        cursor.execute("SELECT COUNT(*) FROM students")
+        total = cursor.fetchone()[0]
+
+        # Get gender distribution
+        cursor.execute("SELECT gender, COUNT(*) FROM students GROUP BY gender")
+        gender_data = cursor.fetchall()
+
+        # Get age statistics
+        cursor.execute("SELECT MIN(age), MAX(age), AVG(age) FROM students WHERE age IS NOT NULL")
+        age_stats = cursor.fetchone()
+
+        # Get course distribution
+        cursor.execute("SELECT course, COUNT(*) FROM students GROUP BY course ORDER BY COUNT(*) DESC")
+        course_data = cursor.fetchall()
+
+        conn.close()
+
+        # Format output
+        report = "STUDENT DEMOGRAPHICS REPORT\n"
+        report += "=" * 50 + "\n\n"
+        report += f"TOTAL STUDENTS: {total}\n\n"
+
+        if gender_data:
+            report += "GENDER DISTRIBUTION:\n"
+            for gender, count in gender_data:
+                percentage = (count / total * 100) if total > 0 else 0
+                report += f"  {gender or 'Not Specified'}: {count} ({percentage:.1f}%)\n"
+            report += "\n"
+
+        if age_stats and age_stats[0]:
+            min_age, max_age, avg_age = age_stats
+            report += "AGE STATISTICS:\n"
+            report += f"  Youngest: {min_age} years\n"
+            report += f"  Oldest: {max_age} years\n"
+            report += f"  Average: {avg_age:.1f} years\n\n"
+
+        if course_data:
+            report += "COURSE ENROLLMENT:\n"
+            for course, count in course_data:
+                percentage = (count / total * 100) if total > 0 else 0
+                report += f"  {course}: {count} students ({percentage:.1f}%)\n"
+
+        return report
+
+    except Exception as e:
+        return f"Error generating demographics report: {str(e)}"
 
 def academic_performance_analysis():
-    """Analyze academic performance"""
-    return "Academic performance analysis:\n- Average performance: Good\n- Completion rates: 85%"
+    """Analyze academic performance with actual database data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get module completion statistics
+        cursor.execute("""
+            SELECT
+                COUNT(*) as total_enrollments,
+                SUM(CASE WHEN grade IS NOT NULL THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN grade IN ('A', 'B', 'C') THEN 1 ELSE 0 END) as passed
+            FROM student_modules
+        """)
+        stats = cursor.fetchone()
+        total_enrollments, completed, passed = stats if stats else (0, 0, 0)
+
+        # Get grade distribution
+        cursor.execute("""
+            SELECT grade, COUNT(*)
+            FROM student_modules
+            WHERE grade IS NOT NULL
+            GROUP BY grade
+            ORDER BY grade
+        """)
+        grade_dist = cursor.fetchall()
+
+        # Get top performing modules
+        cursor.execute("""
+            SELECT module_code, module_name,
+                   COUNT(*) as enrolled,
+                   SUM(CASE WHEN grade IN ('A', 'B', 'C') THEN 1 ELSE 0 END) as passed
+            FROM student_modules
+            WHERE grade IS NOT NULL
+            GROUP BY module_code, module_name
+            HAVING enrolled >= 1
+            ORDER BY (CAST(passed AS FLOAT) / enrolled) DESC
+            LIMIT 5
+        """)
+        top_modules = cursor.fetchall()
+
+        conn.close()
+
+        # Format output
+        report = "ACADEMIC PERFORMANCE ANALYSIS\n"
+        report += "=" * 50 + "\n\n"
+        report += f"ENROLLMENT STATISTICS:\n"
+        report += f"  Total Enrollments: {total_enrollments}\n"
+        report += f"  Completed: {completed or 0}\n"
+        report += f"  Passed (A-C): {passed or 0}\n"
+
+        if completed and completed > 0:
+            completion_rate = (completed / total_enrollments * 100) if total_enrollments > 0 else 0
+            success_rate = (passed / completed * 100) if completed > 0 else 0
+            report += f"  Completion Rate: {completion_rate:.1f}%\n"
+            report += f"  Success Rate: {success_rate:.1f}%\n"
+        report += "\n"
+
+        if grade_dist:
+            report += "GRADE DISTRIBUTION:\n"
+            for grade, count in grade_dist:
+                report += f"  Grade {grade}: {count} students\n"
+            report += "\n"
+
+        if top_modules:
+            report += "TOP PERFORMING MODULES:\n"
+            for code, name, enrolled, passed_count in top_modules:
+                success_rate = (passed_count / enrolled * 100) if enrolled > 0 else 0
+                report += f"  {code} - {name or 'N/A'}: {success_rate:.1f}% success rate\n"
+
+        return report
+
+    except Exception as e:
+        return f"Error analyzing performance: {str(e)}"
 
 def duplicate_detection():
-    """Detect duplicate student records"""
-    return "Duplicate detection results:\n- No duplicates found in current dataset"
+    """Detect duplicate student records with actual database data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Find potential duplicates by email
+        cursor.execute("""
+            SELECT email, COUNT(*) as count
+            FROM students
+            WHERE email IS NOT NULL AND email != ''
+            GROUP BY email
+            HAVING count > 1
+        """)
+        email_dupes = cursor.fetchall()
+
+        # Find potential duplicates by name
+        cursor.execute("""
+            SELECT first_name, last_name, COUNT(*) as count
+            FROM students
+            WHERE first_name IS NOT NULL AND last_name IS NOT NULL
+            GROUP BY first_name, last_name
+            HAVING count > 1
+        """)
+        name_dupes = cursor.fetchall()
+
+        conn.close()
+
+        report = "DUPLICATE DETECTION RESULTS\n"
+        report += "=" * 50 + "\n\n"
+
+        if email_dupes:
+            report += f"DUPLICATE EMAILS FOUND: {len(email_dupes)}\n"
+            for email, count in email_dupes:
+                report += f"  {email}: {count} records\n"
+            report += "\n"
+        else:
+            report += "No duplicate emails found.\n\n"
+
+        if name_dupes:
+            report += f"DUPLICATE NAMES FOUND: {len(name_dupes)}\n"
+            for first, last, count in name_dupes:
+                report += f"  {first} {last}: {count} records\n"
+        else:
+            report += "No duplicate names found.\n"
+
+        return report
+
+    except Exception as e:
+        return f"Error detecting duplicates: {str(e)}"
 
 def data_quality_reports():
-    """Generate data quality reports"""
-    return "Data quality assessment:\n- Database integrity: Good\n- Missing data: Minimal"
+    """Generate data quality reports with actual database data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get total students
+        cursor.execute("SELECT COUNT(*) FROM students")
+        total = cursor.fetchone()[0]
+
+        # Check for missing data
+        fields = [
+            ('email', 'Email'),
+            ('first_name', 'First Name'),
+            ('last_name', 'Last Name'),
+            ('gender', 'Gender'),
+            ('date_of_birth', 'Date of Birth'),
+            ('course', 'Course')
+        ]
+
+        report = "DATA QUALITY REPORT\n"
+        report += "=" * 50 + "\n\n"
+        report += f"Total Records: {total}\n\n"
+        report += "MISSING DATA ANALYSIS:\n"
+
+        for field, label in fields:
+            cursor.execute(f"SELECT COUNT(*) FROM students WHERE {field} IS NULL OR {field} = ''")
+            missing = cursor.fetchone()[0]
+            percentage = (missing / total * 100) if total > 0 else 0
+            report += f"  {label}: {missing} missing ({percentage:.1f}%)\n"
+
+        conn.close()
+        return report
+
+    except Exception as e:
+        return f"Error generating data quality report: {str(e)}"
 
 def generate_custom_reports():
     """Generate custom reports"""
-    return "Custom report generation:\n- Report templates available\n- Custom analytics ready"
+    return "Custom report generation:\n- Use the Custom SQL Report option in Reports menu\n- Template-based reports available"
 
 def export_system_statistics():
-    """Export system statistics"""
-    return "System statistics:\n- Database records: 3 students\n- Search operations: Functional"
+    """Export system statistics with actual database data"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get various counts
+        cursor.execute("SELECT COUNT(*) FROM students")
+        student_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM modules")
+        module_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM student_modules")
+        enrollment_count = cursor.fetchone()[0]
+
+        conn.close()
+
+        report = "SYSTEM STATISTICS\n"
+        report += "=" * 50 + "\n\n"
+        report += f"Total Students: {student_count}\n"
+        report += f"Total Modules: {module_count}\n"
+        report += f"Total Enrollments: {enrollment_count}\n"
+
+        return report
+
+    except Exception as e:
+        return f"Error exporting statistics: {str(e)}"
 
 def interactive_charts():
     """Generate interactive charts"""
-    return "Chart data:\n- Student enrollment trends\n- Performance metrics visualization"
+    return "Chart data:\n- Student enrollment trends\n- Performance metrics visualization\n- Use Analytics Dashboard for visual charts"
 
 def view_search_audit_trail():
     """View search audit trail"""

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+**Advanced Search GUI - Replace Placeholder Data with Real Database Queries**
+- **Issue**: Fallback functions in advanced_search_gui.py were returning hardcoded placeholder data instead of querying the actual database
+- **Location**: `university_system/modules/shared/gui/advanced_search_gui.py:503-771`
+- **Functions Updated**:
+  - `student_demographics_reports()`: Now queries actual student data for demographics, age statistics, and course distribution
+  - `academic_performance_analysis()`: Retrieves real enrollment statistics, grade distribution, and module performance
+  - `duplicate_detection()`: Scans database for duplicate emails and names
+  - `data_quality_reports()`: Analyzes actual data completeness across all student fields
+  - `export_system_statistics()`: Provides real counts of students, modules, and enrollments
+- **Impact**: All analytics and reporting features now display actual data from the database instead of placeholder text
+- **Why This Changed**: Fallback functions were originally designed for standalone testing but were returning static placeholder data, making reports meaningless when the main advanced_search module wasn't imported
+
 ### Fixed
 
 **Database Schema - Missing student_modules Columns**
