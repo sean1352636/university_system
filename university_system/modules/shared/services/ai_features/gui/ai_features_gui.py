@@ -901,40 +901,449 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load analytics: {str(e)}")
 
-    # Action methods (stubs - would implement full dialogs)
+    # Action methods
     def create_recommendation(self):
         """Create a new recommendation"""
-        messagebox.showinfo("Create Recommendation", "Recommendation creation dialog would open here.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Recommendation")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Main frame
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        # User ID
+        ttk.Label(main_frame, text="User ID:").grid(row=0, column=0, sticky='w', pady=5)
+        user_id_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=user_id_var, width=40).grid(row=0, column=1, pady=5)
+
+        # Recommendation Type
+        ttk.Label(main_frame, text="Type:").grid(row=1, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar()
+        type_combo = ttk.Combobox(main_frame, textvariable=type_var, width=38,
+                                   values=['course', 'resource', 'activity', 'content', 'study_path'])
+        type_combo.grid(row=1, column=1, pady=5)
+
+        # Recommendation Content
+        ttk.Label(main_frame, text="Content:").grid(row=2, column=0, sticky='nw', pady=5)
+        content_text = tk.Text(main_frame, width=40, height=8)
+        content_text.grid(row=2, column=1, pady=5)
+
+        # Algorithm
+        ttk.Label(main_frame, text="Algorithm:").grid(row=3, column=0, sticky='w', pady=5)
+        algo_var = tk.StringVar(value='collaborative_filtering')
+        ttk.Entry(main_frame, textvariable=algo_var, width=40).grid(row=3, column=1, pady=5)
+
+        # Confidence Score
+        ttk.Label(main_frame, text="Confidence (0-1):").grid(row=4, column=0, sticky='w', pady=5)
+        conf_var = tk.StringVar(value='0.85')
+        ttk.Entry(main_frame, textvariable=conf_var, width=40).grid(row=4, column=1, pady=5)
+
+        # Context Data
+        ttk.Label(main_frame, text="Context (JSON):").grid(row=5, column=0, sticky='nw', pady=5)
+        context_text = tk.Text(main_frame, width=40, height=4)
+        context_text.grid(row=5, column=1, pady=5)
+        context_text.insert('1.0', '{}')
+
+        def save_recommendation():
+            try:
+                user_id = user_id_var.get().strip()
+                rec_type = type_var.get().strip()
+                content = content_text.get('1.0', 'end').strip()
+                algorithm = algo_var.get().strip()
+                confidence = float(conf_var.get())
+                context = context_text.get('1.0', 'end').strip()
+
+                if not user_id or not rec_type or not content:
+                    messagebox.showerror("Error", "Please fill in required fields")
+                    return
+
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO ai_recommendations
+                        (user_id, recommendation_type, recommendation_content,
+                         algorithm_used, confidence_score, context_data)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (user_id, rec_type, content, algorithm, confidence, context))
+
+                messagebox.showinfo("Success", "Recommendation created successfully")
+                log_activity('Created AI recommendation', user=self.current_user.get('username', 'Unknown'))
+                dialog.destroy()
+                self.load_recommendations()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create recommendation: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(btn_frame, text="Save", command=save_recommendation).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     def view_recommendation_details(self, event=None):
         """View recommendation details"""
         selection = self.recommendations_tree.selection()
         if not selection:
+            messagebox.showinfo("No Selection", "Please select a recommendation to view")
             return
-        messagebox.showinfo("Recommendation Details", "Details dialog would open here.")
+
+        item = self.recommendations_tree.item(selection[0])
+        rec_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM ai_recommendations
+                    WHERE recommendation_id = ?
+                ''', (rec_id,))
+                rec = cursor.fetchone()
+
+                if not rec:
+                    messagebox.showerror("Error", "Recommendation not found")
+                    return
+
+                # Create details dialog
+                dialog = tk.Toplevel(self.root)
+                dialog.title(f"Recommendation Details - ID: {rec_id}")
+                dialog.geometry("700x600")
+                dialog.transient(self.root)
+
+                main_frame = ttk.Frame(dialog, padding=20)
+                main_frame.pack(fill='both', expand=True)
+
+                details = f"""
+Recommendation ID: {rec['recommendation_id']}
+User ID: {rec['user_id']}
+Type: {rec['recommendation_type']}
+Algorithm: {rec['algorithm_used'] or 'N/A'}
+Confidence Score: {rec['confidence_score']:.2f if rec['confidence_score'] else 'N/A'}
+Created: {rec['created_at']}
+Was Accepted: {rec['was_accepted'] if rec['was_accepted'] is not None else 'Not yet'}
+Feedback Rating: {rec['feedback_rating'] or 'No rating'}
+
+Content:
+{rec['recommendation_content']}
+
+Context Data:
+{rec['context_data'] or 'None'}
+                """
+
+                text_widget = tk.Text(main_frame, wrap='word', width=80, height=30)
+                text_widget.pack(fill='both', expand=True)
+                text_widget.insert('1.0', details.strip())
+                text_widget.config(state='disabled')
+
+                ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load details: {str(e)}")
 
     def grade_submission(self):
         """Grade a submission"""
-        messagebox.showinfo("Grade Submission", "Grading dialog would open here.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Grade Submission")
+        dialog.geometry("600x550")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        # Submission ID
+        ttk.Label(main_frame, text="Submission ID:").grid(row=0, column=0, sticky='w', pady=5)
+        sub_id_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=sub_id_var, width=40).grid(row=0, column=1, pady=5)
+
+        # Assignment Type
+        ttk.Label(main_frame, text="Assignment Type:").grid(row=1, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar()
+        ttk.Combobox(main_frame, textvariable=type_var, width=38,
+                    values=['essay', 'quiz', 'project', 'homework', 'exam']).grid(row=1, column=1, pady=5)
+
+        # Auto Score
+        ttk.Label(main_frame, text="Auto Score:").grid(row=2, column=0, sticky='w', pady=5)
+        score_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=score_var, width=40).grid(row=2, column=1, pady=5)
+
+        # Max Score
+        ttk.Label(main_frame, text="Max Score:").grid(row=3, column=0, sticky='w', pady=5)
+        max_var = tk.StringVar(value='100')
+        ttk.Entry(main_frame, textvariable=max_var, width=40).grid(row=3, column=1, pady=5)
+
+        # Grading Criteria
+        ttk.Label(main_frame, text="Criteria:").grid(row=4, column=0, sticky='nw', pady=5)
+        criteria_text = tk.Text(main_frame, width=40, height=4)
+        criteria_text.grid(row=4, column=1, pady=5)
+
+        # Feedback
+        ttk.Label(main_frame, text="Feedback:").grid(row=5, column=0, sticky='nw', pady=5)
+        feedback_text = tk.Text(main_frame, width=40, height=6)
+        feedback_text.grid(row=5, column=1, pady=5)
+
+        # Confidence
+        ttk.Label(main_frame, text="Confidence (0-1):").grid(row=6, column=0, sticky='w', pady=5)
+        conf_var = tk.StringVar(value='0.8')
+        ttk.Entry(main_frame, textvariable=conf_var, width=40).grid(row=6, column=1, pady=5)
+
+        # Requires Review
+        review_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(main_frame, text="Requires Manual Review",
+                       variable=review_var).grid(row=7, column=1, sticky='w', pady=5)
+
+        def save_grading():
+            try:
+                sub_id = int(sub_id_var.get())
+                asgn_type = type_var.get().strip()
+                auto_score = float(score_var.get())
+                max_score = float(max_var.get())
+                criteria = criteria_text.get('1.0', 'end').strip()
+                feedback = feedback_text.get('1.0', 'end').strip()
+                confidence = float(conf_var.get())
+                requires_review = 1 if review_var.get() else 0
+
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO ai_grading_results
+                        (submission_id, assignment_type, auto_score, max_score,
+                         grading_criteria, feedback_generated, confidence_score, requires_manual_review)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (sub_id, asgn_type, auto_score, max_score, criteria, feedback, confidence, requires_review))
+
+                messagebox.showinfo("Success", "Grading saved successfully")
+                log_activity('Created AI grading result', user=self.current_user.get('username', 'Unknown'))
+                dialog.destroy()
+                self.load_grading_results()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save grading: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=8, column=0, columnspan=2, pady=20)
+        ttk.Button(btn_frame, text="Save", command=save_grading).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     def view_grading_details(self, event=None):
         """View grading details"""
         selection = self.grading_tree.selection()
         if not selection:
+            messagebox.showinfo("No Selection", "Please select a grading result to view")
             return
-        messagebox.showinfo("Grading Details", "Details dialog would open here.")
+
+        item = self.grading_tree.item(selection[0])
+        grading_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM ai_grading_results WHERE grading_id = ?', (grading_id,))
+                grading = cursor.fetchone()
+
+                if not grading:
+                    messagebox.showerror("Error", "Grading result not found")
+                    return
+
+                dialog = tk.Toplevel(self.root)
+                dialog.title(f"Grading Details - ID: {grading_id}")
+                dialog.geometry("700x600")
+                dialog.transient(self.root)
+
+                main_frame = ttk.Frame(dialog, padding=20)
+                main_frame.pack(fill='both', expand=True)
+
+                percentage = (grading['auto_score'] / grading['max_score'] * 100) if grading['max_score'] > 0 else 0
+
+                details = f"""
+Grading ID: {grading['grading_id']}
+Submission ID: {grading['submission_id']}
+Assignment Type: {grading['assignment_type']}
+Auto Score: {grading['auto_score']}/{grading['max_score']} ({percentage:.1f}%)
+Confidence Score: {grading['confidence_score']:.2f if grading['confidence_score'] else 'N/A'}
+Requires Manual Review: {'Yes' if grading['requires_manual_review'] else 'No'}
+Manual Override Score: {grading['manual_override_score'] if grading['manual_override_score'] else 'None'}
+Graded At: {grading['graded_at']}
+
+Grading Criteria:
+{grading['grading_criteria'] or 'Not specified'}
+
+Feedback Generated:
+{grading['feedback_generated'] or 'No feedback'}
+                """
+
+                text_widget = tk.Text(main_frame, wrap='word', width=80, height=30)
+                text_widget.pack(fill='both', expand=True)
+                text_widget.insert('1.0', details.strip())
+                text_widget.config(state='disabled')
+
+                ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load grading details: {str(e)}")
 
     def create_content_suggestion(self):
         """Create content suggestion"""
-        messagebox.showinfo("Content Suggestion", "Suggestion dialog would open here.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Content Suggestion")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        # Content Type
+        ttk.Label(main_frame, text="Content Type:").grid(row=0, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar()
+        ttk.Combobox(main_frame, textvariable=type_var, width=38,
+                    values=['text', 'image', 'video', 'quiz', 'resource']).grid(row=0, column=1, pady=5)
+
+        # Context
+        ttk.Label(main_frame, text="Context:").grid(row=1, column=0, sticky='nw', pady=5)
+        context_text = tk.Text(main_frame, width=40, height=4)
+        context_text.grid(row=1, column=1, pady=5)
+
+        # Suggested Content
+        ttk.Label(main_frame, text="Suggested Content:").grid(row=2, column=0, sticky='nw', pady=5)
+        content_text = tk.Text(main_frame, width=40, height=8)
+        content_text.grid(row=2, column=1, pady=5)
+
+        # Relevance Score
+        ttk.Label(main_frame, text="Relevance (0-1):").grid(row=3, column=0, sticky='w', pady=5)
+        rel_var = tk.StringVar(value='0.9')
+        ttk.Entry(main_frame, textvariable=rel_var, width=40).grid(row=3, column=1, pady=5)
+
+        # Source
+        ttk.Label(main_frame, text="Source:").grid(row=4, column=0, sticky='w', pady=5)
+        source_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=source_var, width=40).grid(row=4, column=1, pady=5)
+
+        # Created For
+        ttk.Label(main_frame, text="Created For:").grid(row=5, column=0, sticky='w', pady=5)
+        for_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=for_var, width=40).grid(row=5, column=1, pady=5)
+
+        def save_suggestion():
+            try:
+                content_type = type_var.get().strip()
+                context = context_text.get('1.0', 'end').strip()
+                content = content_text.get('1.0', 'end').strip()
+                relevance = float(rel_var.get())
+                source = source_var.get().strip()
+                created_for = for_var.get().strip()
+
+                if not content_type or not context or not content:
+                    messagebox.showerror("Error", "Please fill in required fields")
+                    return
+
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO ai_content_suggestions
+                        (content_type, context, suggested_content, relevance_score, source, created_for)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (content_type, context, content, relevance, source, created_for))
+
+                messagebox.showinfo("Success", "Content suggestion created successfully")
+                log_activity('Created content suggestion', user=self.current_user.get('username', 'Unknown'))
+                dialog.destroy()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create suggestion: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(btn_frame, text="Save", command=save_suggestion).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     def analyze_sentiment(self):
         """Analyze sentiment of text"""
-        messagebox.showinfo("Sentiment Analysis", "Analysis dialog would open here.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Sentiment Analysis")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Analyze Text Sentiment", font=('Arial', 12, 'bold')).pack(pady=10)
+
+        # Content ID
+        id_frame = ttk.Frame(main_frame)
+        id_frame.pack(fill='x', pady=5)
+        ttk.Label(id_frame, text="Content ID:").pack(side='left')
+        content_id_var = tk.StringVar()
+        ttk.Entry(id_frame, textvariable=content_id_var, width=30).pack(side='left', padx=5)
+
+        # Content Type
+        type_frame = ttk.Frame(main_frame)
+        type_frame.pack(fill='x', pady=5)
+        ttk.Label(type_frame, text="Content Type:").pack(side='left')
+        type_var = tk.StringVar()
+        ttk.Combobox(type_frame, textvariable=type_var, width=28,
+                    values=['review', 'comment', 'feedback', 'essay', 'post']).pack(side='left', padx=5)
+
+        # Text to analyze
+        ttk.Label(main_frame, text="Text to Analyze:").pack(anchor='w', pady=(10, 5))
+        text_widget = tk.Text(main_frame, width=60, height=12)
+        text_widget.pack(fill='both', expand=True, pady=5)
+
+        result_label = ttk.Label(main_frame, text="", foreground='blue')
+        result_label.pack(pady=10)
+
+        def perform_analysis():
+            try:
+                content_id = content_id_var.get().strip()
+                content_type = type_var.get().strip()
+                text = text_widget.get('1.0', 'end').strip()
+
+                if not content_id or not content_type or not text:
+                    messagebox.showerror("Error", "Please fill in all fields")
+                    return
+
+                # Simple sentiment analysis (placeholder - would use actual NLP library)
+                positive_words = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love']
+                negative_words = ['bad', 'terrible', 'awful', 'hate', 'horrible', 'poor', 'worst']
+
+                text_lower = text.lower()
+                pos_count = sum(word in text_lower for word in positive_words)
+                neg_count = sum(word in text_lower for word in negative_words)
+
+                if pos_count > neg_count:
+                    sentiment = 'positive'
+                    score = 0.6 + (pos_count * 0.1)
+                elif neg_count > pos_count:
+                    sentiment = 'negative'
+                    score = 0.4 - (neg_count * 0.1)
+                else:
+                    sentiment = 'neutral'
+                    score = 0.5
+
+                score = max(0.0, min(1.0, score))
+
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO ai_sentiment_analysis
+                        (content_id, content_type, content_text, sentiment_score, sentiment_category)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (content_id, content_type, text, score, sentiment))
+
+                result_label.config(text=f"Sentiment: {sentiment.upper()} (Score: {score:.2f})")
+                messagebox.showinfo("Success", f"Analysis complete!\n\nSentiment: {sentiment.upper()}\nScore: {score:.2f}")
+                log_activity('Performed sentiment analysis', user=self.current_user.get('username', 'Unknown'))
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Analysis failed: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="Analyze", command=perform_analysis).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
 
     def check_plagiarism(self):
-        """Check document for plagiarism"""
-        messagebox.showinfo("Plagiarism Check", "Check dialog would open here.")
+        """Check document for plagiarism - launches full plagiarism GUI"""
+        self.launch_full_plagiarism_gui()
 
     def update_status(self, message):
         """Update status bar"""

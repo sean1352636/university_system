@@ -132,58 +132,31 @@ class AIDetectorGUI:
             pass  # Icon file not found, continue without it
     
     def setup_styles(self):
-        """Setup modern light theme styles"""
+        """Setup basic theme to match main GUI"""
         self.style = ttk.Style()
-
-        # Configure light theme
         self.style.theme_use('clam')
 
-        # Color scheme
+        # Basic color scheme (simplified to match main GUI)
         self.colors = {
-            'bg_primary': '#f5f5f5',      # Light background
-            'bg_secondary': '#e8e8e8',    # Slightly darker background
-            'bg_tertiary': '#ffffff',     # Card backgrounds
-            'accent': '#0078d4',          # Microsoft blue
-            'accent_hover': '#106ebe',    # Darker blue for hover
-            'success': '#107c10',         # Success green
-            'warning': '#ff8c00',         # Warning orange
-            'danger': '#d13438',          # Danger red
-            'text_primary': '#000000',    # Primary text
-            'text_secondary': '#5a5a5a',  # Secondary text
-            'border': '#d0d0d0'           # Border color
+            'bg_primary': '#f0f0f0',
+            'bg_secondary': '#e0e0e0',
+            'bg_tertiary': '#ffffff',
+            'accent': '#0078d4',
+            'accent_hover': '#106ebe',
+            'success': '#107c10',
+            'warning': '#ff8c00',
+            'danger': '#d13438',
+            'text_primary': '#000000',
+            'text_secondary': '#5a5a5a',
+            'border': '#d0d0d0'
         }
-        
-        # Configure styles
-        self.style.configure('TFrame', background=self.colors['bg_primary'])
-        self.style.configure('Card.TFrame', background=self.colors['bg_tertiary'], relief='solid', borderwidth=1)
-        self.style.configure('TLabel', background=self.colors['bg_primary'], foreground=self.colors['text_primary'])
-        self.style.configure('Title.TLabel', font=('Segoe UI', 14, 'bold'))
-        self.style.configure('Subtitle.TLabel', font=('Segoe UI', 10), foreground=self.colors['text_secondary'])
-        self.style.configure('TButton', focuscolor='none')
-        self.style.configure('Accent.TButton', background=self.colors['accent'])
-        
-        # Configure notebook (tab) styles
-        self.style.configure('TNotebook', background=self.colors['bg_primary'], borderwidth=0)
-        self.style.configure('TNotebook.Tab', padding=[12, 8], background=self.colors['bg_secondary'])
-        self.style.map('TNotebook.Tab', background=[('selected', self.colors['bg_tertiary'])])
-        
-        # Configure treeview
-        self.style.configure('Treeview', background=self.colors['bg_tertiary'], 
-                           foreground=self.colors['text_primary'], fieldbackground=self.colors['bg_tertiary'])
-        self.style.configure('Treeview.Heading', background=self.colors['bg_secondary'])
-        
-        # Configure progressbar
-        self.style.configure('TProgressbar', background=self.colors['accent'])
-        
-        # Set root background
-        self.root.configure(bg=self.colors['bg_primary'])
     
     def create_main_interface(self):
         """Create the main interface with button navigation and scrollbar"""
         # Add return to main menu button at the top
         return_btn = ttk.Button(
             self.root,
-            text="🏠 Return to Main Menu",
+            text="← Return to Main Menu",
             command=self.return_to_main_menu
         )
         return_btn.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
