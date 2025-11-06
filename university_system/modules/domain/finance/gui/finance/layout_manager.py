@@ -37,6 +37,14 @@ except ImportError:
     RESEARCH_GRANTS_AVAILABLE = False
     launch_research_grants_gui = None
 
+# Import Financial Aid & Scholarships GUI
+try:
+    from university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import launch_financial_aid_gui
+    FINANCIAL_AID_GUI_AVAILABLE = True
+except ImportError:
+    FINANCIAL_AID_GUI_AVAILABLE = False
+    launch_financial_aid_gui = None
+
 # Import your existing modules - keep backward compatibility
 try:
     from university_system.infrastructure.email.email_service import send_email
@@ -1356,53 +1364,91 @@ class LayoutManager:
             self._create_placeholder_tab('analytics', '📊 Analytics')
 
     def create_scholarships_tab(self):
-        """Create scholarships management tab"""
+        """Create scholarships management tab - Redirects to Financial Aid GUI"""
         scholarships_frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['scholarships'] = scholarships_frame
 
         # Title
-        title_label = tk.Label(scholarships_frame, text="🎓 Scholarships Management",
-                               font=('Arial', 18, 'bold'), bg='white')
-        title_label.pack(pady=10)
+        title_label = tk.Label(
+            scholarships_frame,
+            text="🎓 Scholarships Management",
+            font=('Arial', 18, 'bold'),
+            bg='white',
+            fg=self.colors['primary']
+        )
+        title_label.pack(pady=20)
 
-        # Toolbar
-        toolbar = tk.Frame(scholarships_frame, bg='white')
-        toolbar.pack(fill='x', padx=10, pady=10)
+        # Description
+        desc_label = tk.Label(
+            scholarships_frame,
+            text="Scholarship management has been integrated with Financial Aid.\nUse the button below to access the full Financial Aid & Scholarships module.",
+            font=('Arial', 11),
+            bg='white',
+            fg='#555',
+            justify='center'
+        )
+        desc_label.pack(pady=(0, 30))
 
-        tk.Button(toolbar, text="➕ Create Scholarship", command=self._create_scholarship,
-                 bg=self.colors['success'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text="👤 Award to Student", command=self._award_scholarship,
-                 bg=self.colors['info'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text="🗑️ Deactivate", command=self._deactivate_scholarship,
-                 bg=self.colors['danger'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text="🔄 Refresh", command=self._refresh_scholarships,
-                 bg=self.colors['secondary'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='right', padx=5)
+        # Launch button
+        if FINANCIAL_AID_GUI_AVAILABLE and launch_financial_aid_gui:
+            launch_btn = tk.Button(
+                scholarships_frame,
+                text="📂 Open Financial Aid & Scholarships Management",
+                command=lambda: launch_financial_aid_gui(self.root, self.gui.auth),
+                font=('Arial', 12, 'bold'),
+                bg=self.colors['success'],
+                fg='white',
+                padx=30,
+                pady=15
+            )
+            launch_btn.pack(pady=10)
+        else:
+            error_label = tk.Label(
+                scholarships_frame,
+                text="⚠️  Financial Aid & Scholarships module not available",
+                font=('Arial', 11),
+                bg='white',
+                fg=self.colors['danger']
+            )
+            error_label.pack(pady=10)
 
-        # Scholarships table
-        table_frame = tk.Frame(scholarships_frame)
-        table_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        # Info text
+        info_text = ScrolledText(scholarships_frame, height=15, width=80, font=('Arial', 10), wrap='word')
+        info_text.pack(padx=20, pady=20, fill='both', expand=True)
 
-        columns = ('scholarship_id', 'scholarship_name', 'amount', 'academic_year', 'deadline', 'is_active')
-        self.scholarships_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+        info_content = """
+SCHOLARSHIP & FINANCIAL AID FEATURES:
 
-        for col in columns:
-            self.scholarships_tree.heading(col, text=col.replace('_', ' ').title())
-            self.scholarships_tree.column(col, width=130)
+The integrated Financial Aid & Scholarships module provides comprehensive management for:
 
-        # Scrollbars
-        v_scroll = ttk.Scrollbar(table_frame, orient='vertical', command=self.scholarships_tree.yview)
-        h_scroll = ttk.Scrollbar(table_frame, orient='horizontal', command=self.scholarships_tree.xview)
-        self.scholarships_tree.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
+📋 Scholarship Management:
+  • Create and manage scholarship programs
+  • Define eligibility criteria and requirements
+  • Set award amounts and deadlines
+  • Track available funding
 
-        self.scholarships_tree.grid(row=0, column=0, sticky='nsew')
-        v_scroll.grid(row=0, column=1, sticky='ns')
-        h_scroll.grid(row=1, column=0, sticky='ew')
+👥 Student Awards:
+  • Award scholarships to eligible students
+  • Track scholarship recipients
+  • Monitor disbursement schedules
+  • Manage renewal requirements
 
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
+💰 Financial Aid Integration:
+  • Combine scholarships with other aid types
+  • Coordinate with grants and loans
+  • Track total aid packages
+  • Generate comprehensive reports
 
-        # Load data
-        self.root.after(100, self._refresh_scholarships)
+📊 Reporting & Analytics:
+  • Scholarship utilization reports
+  • Award distribution analysis
+  • Impact assessments
+  • Compliance tracking
+
+Click the button above to access the full Financial Aid & Scholarships management system.
+        """
+        info_text.insert('1.0', info_content)
+        info_text.config(state='disabled')
 
     def _create_scholarship(self):
         """Create a new scholarship"""
@@ -1759,9 +1805,50 @@ class LayoutManager:
         self.tab_frames['aid'] = aid_frame
 
         # Title
-        title_label = tk.Label(aid_frame, text="🎓 Financial Aid Management",
-                               font=('Arial', 18, 'bold'), bg='white')
-        title_label.pack(pady=10)
+        title_label = tk.Label(aid_frame, text="🎓 Financial Aid & Scholarships",
+                               font=('Arial', 18, 'bold'), bg='white', fg=self.colors['primary'])
+        title_label.pack(pady=20)
+
+        # Description
+        desc_label = tk.Label(
+            aid_frame,
+            text="Manage financial aid applications, scholarships, loans, and disbursements.",
+            font=('Arial', 11),
+            bg='white',
+            fg='#555'
+        )
+        desc_label.pack(pady=(0, 30))
+
+        # Launch full Financial Aid GUI button
+        if FINANCIAL_AID_GUI_AVAILABLE and launch_financial_aid_gui:
+            launch_btn = tk.Button(
+                aid_frame,
+                text="📂 Open Financial Aid & Scholarships Management",
+                command=lambda: launch_financial_aid_gui(self.root, self.gui.auth),
+                font=('Arial', 12, 'bold'),
+                bg=self.colors['success'],
+                fg='white',
+                padx=30,
+                pady=15
+            )
+            launch_btn.pack(pady=10)
+        else:
+            error_label = tk.Label(
+                aid_frame,
+                text="⚠️  Financial Aid & Scholarships module not available",
+                font=('Arial', 11),
+                bg='white',
+                fg=self.colors['danger']
+            )
+            error_label.pack(pady=10)
+
+        # Separator
+        ttk.Separator(aid_frame, orient='horizontal').pack(fill='x', padx=20, pady=20)
+
+        # Quick Actions section
+        quick_actions_label = tk.Label(aid_frame, text="Quick Actions",
+                               font=('Arial', 14, 'bold'), bg='white')
+        quick_actions_label.pack(pady=10)
 
         # Toolbar
         toolbar = tk.Frame(aid_frame, bg='white')

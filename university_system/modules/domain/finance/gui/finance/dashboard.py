@@ -563,3 +563,28 @@ class DashboardManager:
         else:
             messagebox.showwarning("Not Available", "Transaction manager not initialized")
 
+    def show_student_dialog(self):
+        """Wrapper to call main GUI's student dialog"""
+        if hasattr(self.gui, 'show_student_dialog'):
+            self.gui.show_student_dialog()
+        else:
+            messagebox.showwarning("Not Available", "Student management not available")
+
+    def show_reports_tab(self):
+        """Show the reports tab"""
+        try:
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'show_tab'):
+                self.gui.layout.show_tab('reports')
+            else:
+                messagebox.showinfo("Reports", "Please use the Reports tab from the main menu")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show reports: {e}")
+
+    def launch_reporting_gui(self):
+        """Launch the advanced reporting GUI"""
+        try:
+            from university_system.modules.domain.finance.gui.finance_reporting_gui import launch_financial_gui
+            launch_financial_gui(self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to launch reporting GUI: {e}")
+

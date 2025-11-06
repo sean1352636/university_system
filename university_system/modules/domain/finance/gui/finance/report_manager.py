@@ -1121,3 +1121,90 @@ class ReportManager:
         else:
             messagebox.showwarning("Not Available", "Compliance manager not initialized")
 
+    def gui_collection_case_status_report(self):
+        """Wrapper to call compliance manager's collection case status report"""
+        if hasattr(self.gui, 'compliance'):
+            self.gui.compliance.gui_collection_case_status_report()
+        else:
+            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+
+    def gui_recovery_rate_analysis(self):
+        """Wrapper to call compliance manager's recovery rate analysis"""
+        if hasattr(self.gui, 'compliance'):
+            self.gui.compliance.gui_recovery_rate_analysis()
+        else:
+            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+
+    def gui_agency_performance_report(self):
+        """Wrapper to call compliance manager's agency performance report"""
+        if hasattr(self.gui, 'compliance'):
+            self.gui.compliance.gui_agency_performance_report()
+        else:
+            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+
+    def gui_variance_analysis_report(self):
+        """Wrapper to call budget manager's variance analysis report"""
+        if hasattr(self.gui, 'budgets'):
+            self.gui.budgets.gui_variance_analysis_report()
+        else:
+            messagebox.showwarning("Not Available", "Budget manager not initialized")
+
+    def gui_budget_performance_trends(self):
+        """Wrapper to call budget manager's budget performance trends"""
+        if hasattr(self.gui, 'budgets'):
+            self.gui.budgets.gui_budget_performance_trends()
+        else:
+            messagebox.showwarning("Not Available", "Budget manager not initialized")
+
+    def gui_category_performance_report(self):
+        """Wrapper to call budget manager's category performance report"""
+        if hasattr(self.gui, 'budgets'):
+            self.gui.budgets.gui_category_performance_report()
+        else:
+            messagebox.showwarning("Not Available", "Budget manager not initialized")
+
+    def gui_monthly_revenue_trend_report(self):
+        """Generate monthly revenue trend report"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get monthly revenue for the past 12 months
+            cursor.execute('''
+                SELECT
+                    strftime('%Y-%m', payment_date) as month,
+                    SUM(amount) as revenue
+                FROM payments
+                WHERE payment_date >= date('now', '-12 months')
+                AND status = 'completed'
+                GROUP BY strftime('%Y-%m', payment_date)
+                ORDER BY month
+            ''')
+
+            results = cursor.fetchall()
+            conn.close()
+
+            if not results:
+                messagebox.showinfo("No Data", "No revenue data found for the past 12 months")
+                return
+
+            # Format output
+            output = "MONTHLY REVENUE TREND REPORT\n"
+            output += "=" * 60 + "\n\n"
+            output += f"{'Month':<15} {'Revenue':>20}\n"
+            output += "-" * 60 + "\n"
+
+            total_revenue = 0
+            for month, revenue in results:
+                output += f"{month:<15} £{revenue:>18,.2f}\n"
+                total_revenue += revenue
+
+            output += "-" * 60 + "\n"
+            output += f"{'Total':<15} £{total_revenue:>18,.2f}\n"
+            output += f"{'Average':<15} £{total_revenue/len(results):>18,.2f}\n"
+
+            self.show_text_window("Monthly Revenue Trend Report", output)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate monthly revenue report: {e}")
+

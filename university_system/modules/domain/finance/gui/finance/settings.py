@@ -2322,3 +2322,39 @@ class SettingsManager:
         else:
             messagebox.showwarning("Not Available", "Database manager not initialized")
 
+    def clean_database(self):
+        """Wrapper to call database manager's clean function"""
+        if hasattr(self.gui, 'db'):
+            self.gui.db.clean_database()
+        else:
+            messagebox.showwarning("Not Available", "Database manager not initialized")
+
+    def backup_database(self):
+        """Wrapper to call database manager's backup function"""
+        if hasattr(self.gui, 'db'):
+            self.gui.db.backup_database()
+        else:
+            messagebox.showwarning("Not Available", "Database manager not initialized")
+
+    def show_database_stats(self):
+        """Wrapper to call database manager's stats function"""
+        if hasattr(self.gui, 'db'):
+            self.gui.db.show_database_stats()
+        else:
+            messagebox.showwarning("Not Available", "Database manager not initialized")
+
+    def update_system_status(self):
+        """Update system status display"""
+        if hasattr(self, 'status_text'):
+            try:
+                status = "System Status:\n"
+                status += "=" * 50 + "\n"
+                status += f"Database: Connected\n"
+                status += f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+
+                # Add more status info as needed
+                self.status_text.delete('1.0', tk.END)
+                self.status_text.insert('1.0', status)
+            except Exception as e:
+                print(f"Failed to update system status: {e}")
+

@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Finance GUI - Integration with Financial Aid & Scholarships Module** (2025-11-06)
+- **Issue**: Financial Aid and Scholarships functionality duplicated between Finance GUI and standalone module
+- **Location**: `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+- **Changes**:
+  - Added import for `launch_financial_aid_gui` from financial_aid module
+  - Updated "Aid" tab to redirect to full Financial Aid & Scholarships GUI
+  - Updated "Scholarships" tab to redirect to full Financial Aid & Scholarships GUI
+  - Added prominent launch buttons for integrated Financial Aid management
+  - Renamed "Aid" tab title to "Financial Aid & Scholarships" for clarity
+- **Impact**: Single unified interface for financial aid and scholarships, eliminating duplication
+
+**Finance GUI - Manager Class Missing Methods Fixed** (2025-11-06)
+- **Issue**: Multiple AttributeError exceptions when creating tabs: 'DashboardManager' missing show_student_dialog, 'ReportManager' missing gui_collection_case_status_report, 'SettingsManager' missing clean_database
+- **Locations**:
+  - `university_system/modules/domain/finance/gui/finance/dashboard.py`
+  - `university_system/modules/domain/finance/gui/finance/report_manager.py`
+  - `university_system/modules/domain/finance/gui/finance/settings.py`
+- **Fixes**:
+  - **DashboardManager**: Added `show_student_dialog()`, `show_reports_tab()`, and `launch_reporting_gui()` wrapper methods
+  - **ReportManager**: Added wrapper methods for `gui_collection_case_status_report()`, `gui_recovery_rate_analysis()`, `gui_agency_performance_report()`, `gui_variance_analysis_report()`, `gui_budget_performance_trends()`, `gui_category_performance_report()`, and `gui_monthly_revenue_trend_report()`
+  - **SettingsManager**: Added wrapper methods for `clean_database()`, `backup_database()`, `show_database_stats()`, and `update_system_status()`
+- **Impact**: All Finance GUI tabs now load without errors; manager delegation pattern properly implemented
+
+**Financial Aid GUI - Tkinter Window Path Error Fixed** (2025-11-06)
+- **Issue**: TclError "bad window path name" when switching between Student and Admin portals
+- **Location**: `university_system/modules/domain/finance/gui/financial_aid/financial_aid_gui.py`
+- **Root Cause**: Portal instances retained stale parent_frame references after frame recreation
+- **Fix**:
+  - Updated `show_student_portal()` to refresh `parent_frame` reference when portal already exists
+  - Updated `show_admin_portal()` to refresh `parent_frame` reference when portal already exists
+  - Added comments explaining the frame update logic
+- **Impact**: Users can now switch between portals without encountering widget errors
+
+**Financial Aid GUI - Launch Function Added** (2025-11-06)
+- **Issue**: No standardized way to launch Financial Aid GUI from other modules
+- **Location**: `university_system/modules/domain/finance/gui/financial_aid/financial_aid_gui.py`
+- **Addition**: Created `launch_financial_aid_gui(parent, auth)` function matching pattern used by research_grants_gui
+- **Impact**: Financial Aid GUI can now be launched consistently from Finance GUI and other modules
+
 **AI Powered Features GUI - Placeholder Dialogs Fully Implemented** (2025-11-05)
 - **Issue**: Multiple functions displayed "dialog would open here" placeholder messages
 - **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py`

@@ -211,9 +211,12 @@ class FinancialAidGUI:
         content_frame = ttk.Frame(self.main_frame)
         content_frame.pack(fill='both', expand=True)
 
-        # Initialize student portal if not already done
+        # Initialize student portal if not already done, or update parent frame
         if not self.student_portal:
             self.student_portal = StudentPortal(content_frame, self.auth)
+        else:
+            # Update parent frame reference to avoid stale widget errors
+            self.student_portal.parent_frame = content_frame
 
         # Show student dashboard
         self.student_portal.show_dashboard()
@@ -244,9 +247,12 @@ class FinancialAidGUI:
         content_frame = ttk.Frame(self.main_frame)
         content_frame.pack(fill='both', expand=True)
 
-        # Initialize admin portal if not already done
+        # Initialize admin portal if not already done, or update parent frame
         if not self.admin_portal:
             self.admin_portal = AdminPortal(content_frame, self.auth)
+        else:
+            # Update parent frame reference to avoid stale widget errors
+            self.admin_portal.parent_frame = content_frame
 
         # Show admin dashboard
         self.admin_portal.show_dashboard()
@@ -264,6 +270,19 @@ class FinancialAidGUI:
             # If standalone, close the window
             if self.root:
                 self.root.destroy()
+
+
+def launch_financial_aid_gui(parent=None, auth=None):
+    """Launch the Financial Aid & Scholarships GUI"""
+    try:
+        app = FinancialAidGUI(auth_instance=auth, parent=parent)
+        app.run()
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror("Error", f"Failed to launch Financial Aid GUI: {e}")
+        print(f"❌ Financial Aid GUI error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def main():
