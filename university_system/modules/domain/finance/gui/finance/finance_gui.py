@@ -1563,17 +1563,18 @@ class FinanceGUI:
     def log_activity(self, message):
         """Log activity to the activity list"""
         try:
-            if hasattr(self, 'activity_listbox'):
+            # Activity listbox is created in dashboard manager
+            if hasattr(self, 'dashboard') and hasattr(self.dashboard, 'activity_listbox'):
                 timestamp = datetime.now().strftime('%H:%M:%S')
                 activity_text = f"{timestamp} - {message}"
-                
+
                 # Insert at the beginning of the list
-                self.activity_listbox.insert(0, activity_text)
-                
+                self.dashboard.activity_listbox.insert(0, activity_text)
+
                 # Keep only the last 20 activities
-                while self.activity_listbox.size() > 20:
-                    self.activity_listbox.delete(tk.END)
-                    
+                while self.dashboard.activity_listbox.size() > 20:
+                    self.dashboard.activity_listbox.delete(tk.END)
+
         except Exception as e:
             print(f"Error logging activity: {e}")
     

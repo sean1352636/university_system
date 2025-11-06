@@ -748,9 +748,13 @@ class LayoutManager:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, student_id, total_amount, installments, frequency, status, start_date
-                FROM student_payment_plans
-                ORDER BY created_at DESC
+                SELECT spp.payment_plan_id as plan_id, spp.student_id, spp.total_amount,
+                       ppt.number_of_installments as installments,
+                       ppt.installment_frequency as frequency,
+                       spp.status, spp.start_date
+                FROM student_payment_plans spp
+                LEFT JOIN payment_plan_templates ppt ON spp.template_id = ppt.template_id
+                ORDER BY spp.created_at DESC
             ''')
 
             for row in cursor.fetchall():
@@ -1945,7 +1949,7 @@ class LayoutManager:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT sfa.aid_id, sfa.student_id, fat.aid_type_name, sfa.awarded_amount,
+                SELECT sfa.aid_id, sfa.student_id, fat.aid_name, sfa.awarded_amount,
                        sfa.disbursed_amount, sfa.remaining_amount, sfa.status, sfa.application_date
                 FROM student_financial_aid sfa
                 LEFT JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
