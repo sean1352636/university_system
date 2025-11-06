@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Finance GUI - Student Management Functions Removed** (2025-11-06)
+- **Issue**: Finance GUI contained student CRUD operations that should only be in the main GUI
+- **Location**: `university_system/modules/domain/finance/gui/finance/finance_gui.py`
+- **Changes**:
+  - Removed 7 student management functions (create, edit, delete dialogs and helpers)
+  - Functions removed:
+    - `show_student_management_message()` (line 493)
+    - `show_student_dialog()` (line 506)
+    - `edit_selected_student()` (line 819)
+    - `update_student_dialog()` (line 824)
+    - `delete_student_dialog()` (line 1095)
+    - `select_student_for_deletion()` (line 1346)
+    - `delete_selected_student()` (line 1410)
+  - Reduced file from 1,574 lines to 653 lines (921 lines removed)
+- **Impact**: Student management fully centralized in main GUI, cleaner separation of concerns
+
 **Research & Grants GUI - Fixed Import Error** (2025-11-06)
 - **Issue**: Finance GUI's Research & Grants button failed to launch due to incorrect manager import
 - **Location**: `university_system/modules/domain/research/gui/research_grants_gui.py`
