@@ -65,9 +65,9 @@ class AccessibilityToolsGUI:
             self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
             self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-            log_activity('view', 'accessibility_tools',
-                        user_id=self.current_user.get('id'),
-                        details={'action': 'opened_gui'})
+            # Log activity
+            username = self.current_user.get('username') or self.current_user.get('id')
+            log_activity(f"Opened Accessibility Tools GUI", user=username)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create window: {str(e)}")
@@ -533,8 +533,8 @@ class AccessibilityToolsGUI:
                          self.keyboard_nav_var.get()))
 
             messagebox.showinfo("Success", "Accessibility settings saved successfully!")
-            log_activity('update', 'accessibility_settings',
-                        user_id=self.current_user.get('id'))
+            username = self.current_user.get('username') or self.current_user.get('id')
+            log_activity("Updated accessibility settings", user=username)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
@@ -589,7 +589,7 @@ class AccessibilityToolsGUI:
 
     def update_status(self, message):
         """Update status bar"""
-        if self.status_bar:
+        if hasattr(self, 'status_bar') and self.status_bar:
             self.status_bar.config(text=message)
 
 

@@ -671,121 +671,137 @@ class HealthPortalGUI:
         header_frame.columnconfigure(1, weight=1)
     
     def create_navigation(self, parent):
-        """Create the navigation panel"""
+        """Create the navigation panel with buttons and scrollbar"""
         nav_frame = ttk.LabelFrame(parent, text="Navigation", padding="5")
         nav_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 5))
-        
-        # Create tree view for navigation
-        self.nav_tree = ttk.Treeview(nav_frame, height=25)
-        self.nav_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
+        # Create canvas for scrollable button area
+        self.nav_canvas = tk.Canvas(nav_frame, highlightthickness=0, bg='#f0f0f0')
+        self.nav_canvas.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
         # Navigation scrollbar
-        nav_scroll = ttk.Scrollbar(nav_frame, orient=tk.VERTICAL, command=self.nav_tree.yview)
+        nav_scroll = ttk.Scrollbar(nav_frame, orient=tk.VERTICAL, command=self.nav_canvas.yview)
         nav_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        self.nav_tree.configure(yscrollcommand=nav_scroll.set)
-        
+        self.nav_canvas.configure(yscrollcommand=nav_scroll.set)
+
+        # Create frame inside canvas for buttons
+        self.nav_buttons_frame = ttk.Frame(self.nav_canvas)
+        self.nav_canvas_window = self.nav_canvas.create_window((0, 0), window=self.nav_buttons_frame, anchor='nw')
+
+        # Configure canvas scrolling
+        self.nav_buttons_frame.bind('<Configure>', lambda e: self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox('all')))
+        self.nav_canvas.bind('<Configure>', self._on_nav_canvas_configure)
+
+        # Enable mousewheel scrolling
+        self.nav_canvas.bind_all('<MouseWheel>', self._on_nav_mousewheel)
+
         nav_frame.columnconfigure(0, weight=1)
         nav_frame.rowconfigure(0, weight=1)
-        
+
         # Populate navigation based on user permissions
         self.populate_navigation()
-        
-        # Bind navigation selection
-        self.nav_tree.bind('<<TreeviewSelect>>', self.on_nav_select)
+
+    def _on_nav_canvas_configure(self, event):
+        """Handle canvas resize to adjust button frame width"""
+        canvas_width = event.width
+        self.nav_canvas.itemconfig(self.nav_canvas_window, width=canvas_width)
+
+    def _on_nav_mousewheel(self, event):
+        """Handle mousewheel scrolling for navigation"""
+        if self.nav_canvas.winfo_containing(event.x_root, event.y_root) == self.nav_canvas:
+            self.nav_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def populate_navigation(self):
-        """Populate navigation tree based on user permissions"""
-        # Clear existing items
-        for item in self.nav_tree.get_children():
-            self.nav_tree.delete(item)
-        
+        """Populate navigation buttons based on user permissions"""
+        # Clear existing buttons
+        for widget in self.nav_buttons_frame.winfo_children():
+            widget.destroy()
+
+        button_row = 0
+
+        # Helper function to create section header
+        def create_section_header(text):
+            nonlocal button_row
+            header = ttk.Label(self.nav_buttons_frame, text=text, font=('Arial', 10, 'bold'),
+                             background='#e0e0e0', anchor='w', padding=(5, 5))
+            header.grid(row=button_row, column=0, sticky=(tk.W, tk.E), pady=(5, 2), padx=2)
+            button_row += 1
+
+        # Helper function to create navigation button
+        def create_nav_button(text, function_name):
+            nonlocal button_row
+            btn = ttk.Button(self.nav_buttons_frame, text=text,
+                           command=lambda: self.load_function(function_name), width=30)
+            btn.grid(row=button_row, column=0, sticky=(tk.W, tk.E), pady=2, padx=(10, 2))
+            button_row += 1
+
         # Health Records & Clinical Data
-        if (self.auth.check_permission('manage_health_records') or 
-            self.auth.check_permission('view_own_health_record') or 
+        if (self.auth.check_permission('manage_health_records') or
+            self.auth.check_permission('view_own_health_record') or
             self.auth.check_permission('view_any_health_record')):
-            
-            health_records = self.nav_tree.insert('', 'end', text="Health Records & Clinical Data", open=True)
-            
+
+            create_section_header("Health Records & Clinical Data")
+
             if self.auth.check_permission('manage_health_records'):
-                self.nav_tree.insert(health_records, 'end', text="Manage Health Records", 
-                                   values=('manage_health_records',))
-            
-            self.nav_tree.insert(health_records, 'end', text="View Health Records",
-                               values=('view_health_records',))
-            self.nav_tree.insert(health_records, 'end', text="View Medical History",
-                               values=('view_medical_history',))
-            self.nav_tree.insert(health_records, 'end', text="Generate Health Reports",
-                               values=('generate_health_reports',))
-        
+                create_nav_button("Manage Health Records", 'manage_health_records')
+
+            create_nav_button("View Health Records", 'view_health_records')
+            create_nav_button("View Medical History", 'view_medical_history')
+            create_nav_button("Generate Health Reports", 'generate_health_reports')
+
         # Appointments
-        if (self.auth.check_permission('manage_health_appointments') or 
-            self.auth.check_permission('schedule_health_appointment') or 
+        if (self.auth.check_permission('manage_health_appointments') or
+            self.auth.check_permission('schedule_health_appointment') or
             self.auth.check_permission('view_own_appointments')):
-            
-            appointments = self.nav_tree.insert('', 'end', text="Appointments & Scheduling", open=True)
-            
-            if (self.auth.check_permission('schedule_health_appointment') or 
+
+            create_section_header("Appointments & Scheduling")
+
+            if (self.auth.check_permission('schedule_health_appointment') or
                 self.auth.check_permission('manage_health_appointments')):
-                self.nav_tree.insert(appointments, 'end', text="Schedule Appointment", 
-                                   values=('schedule_appointment',))
-            
-            self.nav_tree.insert(appointments, 'end', text="View Appointments", 
-                               values=('view_appointments',))
-        
+                create_nav_button("Schedule Appointment", 'schedule_appointment')
+
+            create_nav_button("View Appointments", 'view_appointments')
+
         # Vaccinations
-        if (self.auth.check_permission('manage_vaccinations') or 
-            self.auth.check_permission('view_own_vaccinations') or 
+        if (self.auth.check_permission('manage_vaccinations') or
+            self.auth.check_permission('view_own_vaccinations') or
             self.auth.check_permission('verify_vaccinations')):
-            
-            vaccinations = self.nav_tree.insert('', 'end', text="Vaccinations", open=True)
-            
+
+            create_section_header("Vaccinations")
+
             if self.auth.check_permission('manage_vaccinations'):
-                self.nav_tree.insert(vaccinations, 'end', text="Record Vaccination", 
-                                   values=('record_vaccination',))
-            
-            self.nav_tree.insert(vaccinations, 'end', text="View Vaccination Records",
-                               values=('view_vaccination_records',))
+                create_nav_button("Record Vaccination", 'record_vaccination')
+
+            create_nav_button("View Vaccination Records", 'view_vaccination_records')
 
         # Emergency Contacts
-        emergency_contacts = self.nav_tree.insert('', 'end', text="Emergency Contacts", open=True)
-        self.nav_tree.insert(emergency_contacts, 'end', text="Manage Emergency Contacts",
-                           values=('manage_emergency_contacts',))
+        create_section_header("Emergency Contacts")
+        create_nav_button("Manage Emergency Contacts", 'manage_emergency_contacts')
 
-        # Student Management (Admin/Provider only)
-        if self.auth.current_user['role'] in ['admin', 'health_provider']:
-            students = self.nav_tree.insert('', 'end', text="Student Management", open=True)
-            self.nav_tree.insert(students, 'end', text="Manage Students", 
-                               values=('manage_students',))
-        
         # Reports and Analytics
         if self.auth.check_permission('view_any_health_record'):
-            reports = self.nav_tree.insert('', 'end', text="Reports & Analytics", open=True)
-            self.nav_tree.insert(reports, 'end', text="Health Reports",
-                               values=('health_reports',))
+            create_section_header("Reports & Analytics")
+            create_nav_button("Health Reports", 'health_reports')
 
         # Integration Services
-        integration_section = self.nav_tree.insert('', 'end', text="Integration Services", open=True)
-        self.nav_tree.insert(integration_section, 'end', text="Email Manager",
-                           values=('email_manager',))
-        self.nav_tree.insert(integration_section, 'end', text="Send Health Report Email",
-                           values=('send_health_report_email',))
-        self.nav_tree.insert(integration_section, 'end', text="Send Health Record Email",
-                           values=('send_health_record_email',))
+        create_section_header("Integration Services")
+        create_nav_button("Email Manager", 'email_manager')
+        create_nav_button("Send Health Report Email", 'send_health_report_email')
+        create_nav_button("Send Health Record Email", 'send_health_record_email')
 
         # Accessibility & Accommodations
-        accessibility_section = self.nav_tree.insert('', 'end', text="Accessibility & Accommodations", open=True)
-        self.nav_tree.insert(accessibility_section, 'end', text="Open Accessibility Tools",
-                           values=('open_accessibility_tools',))
-        self.nav_tree.insert(accessibility_section, 'end', text="Medical Accommodations",
-                           values=('medical_accommodations',))
+        create_section_header("Accessibility & Accommodations")
+        create_nav_button("Open Accessibility Tools", 'open_accessibility_tools')
+        create_nav_button("Medical Accommodations", 'medical_accommodations')
 
         # Administration (Admin only)
         if self.auth.current_user['role'] == 'admin':
-            admin_section = self.nav_tree.insert('', 'end', text="Administration", open=True)
-            self.nav_tree.insert(admin_section, 'end', text="Security Audit",
-                               values=('security_audit',))
-            self.nav_tree.insert(admin_section, 'end', text="Data Management",
-                               values=('data_management',))
+            create_section_header("Administration")
+            create_nav_button("Security Audit", 'security_audit')
+            create_nav_button("Data Management", 'data_management')
+
+        # Configure column weight for button frame
+        self.nav_buttons_frame.columnconfigure(0, weight=1)
     
     def create_content_area(self, parent):
         """Create the main content area"""
@@ -809,16 +825,7 @@ class HealthPortalGUI:
         
         status_bar = ttk.Label(parent, textvariable=self.status_var, relief=tk.SUNKEN, padding="5")
         status_bar.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E))
-    
-    def on_nav_select(self, event):
-        """Handle navigation selection"""
-        selection = self.nav_tree.selection()
-        if selection:
-            item = self.nav_tree.item(selection[0])
-            if item['values']:
-                function_name = item['values'][0]
-                self.load_function(function_name)
-    
+
     def load_function(self, function_name):
         """Load the selected function in the content area"""
         # Clear current content
@@ -2405,309 +2412,7 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to cancel appointment: {str(e)}")
-    
-    # Student Management (for admin/provider roles)
-    def create_manage_students(self):
-        """Create student management interface"""
-        title = ttk.Label(self.content_frame, text="Student Management", style='Title.TLabel')
-        title.grid(row=0, column=0, pady=10)
-        
-        # Split layout
-        main_frame = ttk.Frame(self.content_frame)
-        main_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
-        
-        left_frame = ttk.Frame(main_frame)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        
-        right_frame = ttk.Frame(main_frame)
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
-        
-        # Add Student Section
-        self.create_add_student_form(left_frame)
-        
-        # View Students Section
-        self.create_view_students_form(right_frame)
-        
-        self.content_frame.columnconfigure(0, weight=1)
-        self.content_frame.rowconfigure(1, weight=1)
-    
-    def create_add_student_form(self, parent):
-        """Create form for adding/updating students"""
-        form_frame = ttk.LabelFrame(parent, text="Add/Update Student", padding="10")
-        form_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # Form fields
-        ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=2)
-        self.student_id = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_id, width=20).grid(row=0, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="First Name:").grid(row=1, column=0, sticky=tk.W, pady=2)
-        self.student_first_name = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_first_name, width=20).grid(row=1, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="Last Name:").grid(row=2, column=0, sticky=tk.W, pady=2)
-        self.student_last_name = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_last_name, width=20).grid(row=2, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="Age:").grid(row=3, column=0, sticky=tk.W, pady=2)
-        self.student_age = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_age, width=20).grid(row=3, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="Gender:").grid(row=4, column=0, sticky=tk.W, pady=2)
-        self.student_gender = tk.StringVar()
-        gender_combo = ttk.Combobox(form_frame, textvariable=self.student_gender, 
-                                   values=['Male', 'Female', 'Other', 'Prefer not to say'], width=18)
-        gender_combo.grid(row=4, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="Email:").grid(row=5, column=0, sticky=tk.W, pady=2)
-        self.student_email = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_email, width=20).grid(row=5, column=1, pady=2, padx=(5, 0))
-        
-        ttk.Label(form_frame, text="Phone:").grid(row=6, column=0, sticky=tk.W, pady=2)
-        self.student_phone = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.student_phone, width=20).grid(row=6, column=1, pady=2, padx=(5, 0))
-        
-        # Buttons
-        button_frame = ttk.Frame(form_frame)
-        button_frame.grid(row=7, column=0, columnspan=2, pady=10)
-        
-        ttk.Button(button_frame, text="Add Student", command=self.add_student).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Update Student", command=self.update_student).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Clear", command=self.clear_student_form).pack(side=tk.LEFT, padx=5)
-    
-    def create_view_students_form(self, parent):
-        """Create interface for viewing students"""
-        view_frame = ttk.LabelFrame(parent, text="Student List", padding="10")
-        view_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Search controls
-        search_frame = ttk.Frame(view_frame)
-        search_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
-        self.student_search = tk.StringVar()
-        ttk.Entry(search_frame, textvariable=self.student_search, width=20).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Search", command=self.search_students).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Refresh", command=self.load_students).pack(side=tk.LEFT, padx=5)
-        
-        # Students tree
-        tree_frame = ttk.Frame(view_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-        
-        columns = ('ID', 'First Name', 'Last Name', 'Age', 'Gender', 'Email', 'Phone')
-        self.student_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
-        
-        for col in columns:
-            self.student_tree.heading(col, text=col)
-            self.student_tree.column(col, width=100)
-        
-        self.student_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.student_tree.bind('<<TreeviewSelect>>', self.on_student_select)
-        
-        # Scrollbar
-        student_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.student_tree.yview)
-        student_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.student_tree.configure(yscrollcommand=student_scroll.set)
-        
-        # Load initial data
-        self.load_students()
-    
-    def add_student(self):
-        """Add a new student"""
-        try:
-            # Validate inputs
-            if not all([self.student_id.get().strip(), self.student_first_name.get().strip(),
-                       self.student_last_name.get().strip(), self.student_age.get().strip(),
-                       self.student_gender.get().strip()]):
-                messagebox.showerror("Error", "Please fill in all required fields")
-                return
-            
-            try:
-                age = int(self.student_age.get())
-            except ValueError:
-                messagebox.showerror("Error", "Age must be a number")
-                return
-            
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            # Check if student ID already exists
-            cursor.execute("SELECT COUNT(*) FROM students WHERE student_id = ?", (self.student_id.get().strip(),))
-            if cursor.fetchone()[0] > 0:
-                messagebox.showerror("Error", "Student ID already exists")
-                conn.close()
-                return
-            
-            # Insert student
-            cursor.execute('''
-                INSERT INTO students (student_id, first_name, last_name, age, gender, email, phone)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                self.student_id.get().strip(),
-                self.student_first_name.get().strip(),
-                self.student_last_name.get().strip(),
-                age,
-                self.student_gender.get(),
-                self.student_email.get().strip(),
-                self.student_phone.get().strip()
-            ))
-            
-            conn.commit()
-            conn.close()
-            
-            self.log_audit_event('add_student', 'student', self.student_id.get().strip())
-            messagebox.showinfo("Success", "Student added successfully!")
-            
-            self.clear_student_form()
-            self.load_students()
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to add student: {str(e)}")
-    
-    def update_student(self):
-        """Update selected student"""
-        try:
-            student_id = self.student_id.get().strip()
-            if not student_id:
-                messagebox.showwarning("Warning", "Please enter a student ID to update")
-                return
-            
-            # Validate other required fields
-            if not all([self.student_first_name.get().strip(), self.student_last_name.get().strip(),
-                       self.student_age.get().strip(), self.student_gender.get().strip()]):
-                messagebox.showerror("Error", "Please fill in all required fields")
-                return
-            
-            try:
-                age = int(self.student_age.get())
-            except ValueError:
-                messagebox.showerror("Error", "Age must be a number")
-                return
-            
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            # Check if student exists
-            cursor.execute("SELECT COUNT(*) FROM students WHERE student_id = ?", (student_id,))
-            if cursor.fetchone()[0] == 0:
-                messagebox.showerror("Error", "Student ID not found")
-                conn.close()
-                return
-            
-            # Update student
-            cursor.execute('''
-                UPDATE students 
-                SET first_name = ?, last_name = ?, age = ?, gender = ?, email = ?, phone = ?
-                WHERE student_id = ?
-            ''', (
-                self.student_first_name.get().strip(),
-                self.student_last_name.get().strip(),
-                age,
-                self.student_gender.get(),
-                self.student_email.get().strip(),
-                self.student_phone.get().strip(),
-                student_id
-            ))
-            
-            conn.commit()
-            conn.close()
-            
-            self.log_audit_event('update_student', 'student', student_id)
-            messagebox.showinfo("Success", "Student updated successfully!")
-            
-            self.load_students()
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to update student: {str(e)}")
-    
-    def clear_student_form(self):
-        """Clear the student form"""
-        self.student_id.set("")
-        self.student_first_name.set("")
-        self.student_last_name.set("")
-        self.student_age.set("")
-        self.student_gender.set("")
-        self.student_email.set("")
-        self.student_phone.set("")
-    
-    def load_students(self):
-        """Load students into the tree view"""
-        try:
-            # Clear existing items
-            for item in self.student_tree.get_children():
-                self.student_tree.delete(item)
-            
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT student_id, first_name, last_name, age, gender, email, phone
-                FROM students
-                ORDER BY last_name, first_name
-            ''')
-            
-            students = cursor.fetchall()
-            conn.close()
-            
-            for student in students:
-                self.student_tree.insert("", "end", values=student)
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load students: {str(e)}")
-    
-    def search_students(self):
-        """Search students"""
-        try:
-            search_term = self.student_search.get().strip()
-            if not search_term:
-                self.load_students()
-                return
-            
-            # Clear existing items
-            for item in self.student_tree.get_children():
-                self.student_tree.delete(item)
-            
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT student_id, first_name, last_name, age, gender, email, phone
-                FROM students
-                WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?
-                ORDER BY last_name, first_name
-            ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
-            
-            students = cursor.fetchall()
-            conn.close()
-            
-            for student in students:
-                self.student_tree.insert("", "end", values=student)
-                
-            if not students:
-                messagebox.showinfo("Info", f"No students found matching: {search_term}")
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to search students: {str(e)}")
-    
-    def on_student_select(self, event):
-        """Handle student selection in tree view"""
-        try:
-            selected_item = self.student_tree.selection()
-            if selected_item:
-                values = self.student_tree.item(selected_item[0])['values']
-                
-                # Populate form with selected student data
-                self.student_id.set(values[0])
-                self.student_first_name.set(values[1])
-                self.student_last_name.set(values[2])
-                self.student_age.set(values[3])
-                self.student_gender.set(values[4])
-                self.student_email.set(values[5] if values[5] else '')
-                self.student_phone.set(values[6] if values[6] else '')
-                
-        except Exception as e:
-            pass  # Ignore selection errors
-    
+
     # Reports and Analytics
     def create_health_reports(self):
         """Create health reports interface"""
