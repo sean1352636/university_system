@@ -19,7 +19,7 @@ from university_system.modules.domain.research.services.research_grants_core imp
     PublicationManager,
     MilestoneManager,
     EquipmentManager,
-    IRBManager
+    EthicsReviewManager
 )
 
 

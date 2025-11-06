@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Research & Grants GUI - Fixed Import Error** (2025-11-06)
+- **Issue**: Finance GUI's Research & Grants button failed to launch due to incorrect manager import
+- **Location**: `university_system/modules/domain/research/gui/research_grants_gui.py`
+- **Changes**:
+  - Fixed import to use `EthicsReviewManager` instead of non-existent `IRBManager`
+  - Added `__init__.py` files for proper module structure in research domain
+  - Verified linkage from Finance GUI to Research & Grants GUI
+- **Impact**: Research & Grants Management button in Finance GUI now works correctly
+
 **Finance GUI - Scholarships Tab Removed** (2025-11-06)
 - **Issue**: Scholarships tab was redundant as functionality is now fully integrated into Financial Aid GUI
 - **Location**: `university_system/modules/domain/finance/gui/finance/layout_manager.py`
