@@ -355,7 +355,7 @@ class LayoutManager:
         self.create_students_tab()
         self.create_currency_tab()
         self.create_analytics_tab()
-        self.create_scholarships_tab()
+        # self.create_scholarships_tab()  # Removed - integrated into Financial Aid tab
         self.create_reports_tab()
         self.create_collections_tab()
         self.create_aid_tab()
@@ -385,7 +385,7 @@ class LayoutManager:
             ("🎓 Aid", "aid"),
             ("💼 Budget", "budget"),
             ("🔮 Forecasting", "forecasting"),
-            ("🎓 Scholarships", "scholarships"),
+            # ("🎓 Scholarships", "scholarships"),  # Removed - integrated into Aid tab
             ("🔬 Research & Grants", "research_grants"),
             ("⚙️ Admin", "admin"),
             ("⚙️ Settings", "settings")
@@ -1621,15 +1621,82 @@ Click the button above to access the full Financial Aid & Scholarships managemen
             print(f"Error refreshing scholarships: {e}")
 
     def create_reports_tab(self):
-        """Create reports tab"""
-        try:
-            if hasattr(self.gui, 'reports') and hasattr(self.gui.reports, 'create_reports_tab'):
-                self.gui.reports.create_reports_tab()
-            else:
-                self._create_placeholder_tab('reports', '📈 Reports')
-        except Exception as e:
-            print(f"Error creating reports tab: {e}")
-            self._create_placeholder_tab('reports', '📈 Reports')
+        """Create reports tab - Redirects to Finance Reporting GUI"""
+        reports_frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['reports'] = reports_frame
+
+        # Title
+        title_label = tk.Label(
+            reports_frame,
+            text="📈 Financial Reports & Analytics",
+            font=('Arial', 18, 'bold'),
+            bg='white',
+            fg=self.colors['primary']
+        )
+        title_label.pack(pady=20)
+
+        # Description
+        desc_label = tk.Label(
+            reports_frame,
+            text="Access comprehensive financial reports, analytics, and visualizations.",
+            font=('Arial', 11),
+            bg='white',
+            fg='#555'
+        )
+        desc_label.pack(pady=(0, 30))
+
+        # Launch button
+        launch_btn = tk.Button(
+            reports_frame,
+            text="📂 Open Financial Reporting & Analytics",
+            command=lambda: launch_financial_gui(self.root),
+            font=('Arial', 12, 'bold'),
+            bg=self.colors['success'],
+            fg='white',
+            padx=30,
+            pady=15
+        )
+        launch_btn.pack(pady=10)
+
+        # Info text
+        info_text = ScrolledText(reports_frame, height=15, width=80, font=('Arial', 10), wrap='word')
+        info_text.pack(padx=20, pady=20, fill='both', expand=True)
+
+        info_content = """
+FINANCIAL REPORTING & ANALYTICS FEATURES:
+
+The Financial Reporting & Analytics module provides comprehensive reporting capabilities:
+
+📊 Financial Reports:
+  • Revenue and expense reports
+  • Payment collection analysis
+  • Student account summaries
+  • Fee type analysis
+  • Outstanding fees tracking
+
+📈 Analytics & Visualizations:
+  • Interactive charts and graphs
+  • Trend analysis
+  • Forecasting tools
+  • Comparative analysis
+  • Performance metrics
+
+💼 Budget & Planning:
+  • Budget vs actual analysis
+  • Variance reports
+  • Budget performance trends
+  • Category performance analysis
+
+📋 Compliance & Audit:
+  • Audit reports
+  • Compliance tracking
+  • Historical data analysis
+  • Export capabilities (CSV, Excel, PDF)
+
+Click the button above to access the full Financial Reporting & Analytics system.
+        """
+        info_text.insert('1.0', info_content)
+        info_text.config(state='disabled')
 
     def create_collections_tab(self):
         """Create collections management tab"""

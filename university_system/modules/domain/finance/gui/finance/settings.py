@@ -123,6 +123,7 @@ class SettingsManager:
         self.gui = gui
         self.root = gui.root
         self.conn = gui.conn
+        self.auth = getattr(gui, 'auth', get_global_auth())
         try:
             self.finance_system = gui.finance_system
         except:

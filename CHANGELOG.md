@@ -9,6 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Finance GUI - Scholarships Tab Removed** (2025-11-06)
+- **Issue**: Scholarships tab was redundant as functionality is now fully integrated into Financial Aid GUI
+- **Location**: `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+- **Changes**:
+  - Removed Scholarships tab creation and navigation button
+  - Scholarships functionality now accessible through Financial Aid & Scholarships tab
+- **Impact**: Cleaner Finance GUI navigation without duplicate functionality
+
+**Finance GUI - Reports Tab Linked to Finance Reporting GUI** (2025-11-06)
+- **Issue**: Reports tab was using old delegation pattern instead of launching dedicated reporting GUI
+- **Location**: `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+- **Changes**:
+  - Updated `create_reports_tab()` to launch `finance_reporting_gui`
+  - Added informative interface with feature descriptions
+  - Reports tab now redirects to comprehensive Financial Reporting & Analytics module
+- **Impact**: Users can access full reporting capabilities from Finance GUI
+
+**Finance GUI - Backup Path Fixed** (2025-11-06)
+- **Issue**: Database backups not going to standardized location
+- **Location**: `university_system/modules/domain/finance/gui/finance/db_manager.py`
+- **Changes**:
+  - Updated `backup_database()` to default to `university_system/backups` directory
+  - Automatically creates backup directory if it doesn't exist
+  - Improved path resolution to find university_system root
+- **Impact**: All database backups now organized in centralized location
+
+**Main GUI - Finance Buttons Reorganized** (2025-11-06)
+- **Issue**: Finance Reporting and Financial Aid buttons redundant with integrated Finance GUI
+- **Location**: `university_system/modules/shared/gui/main_gui.py`
+- **Changes**:
+  - Removed standalone Financial Aid & Scholarships button (now in Finance Management)
+  - Removed standalone Finance Reporting button (now in Finance Management)
+  - Updated Finance section title to just "Finance"
+- **Impact**: Cleaner main menu with all finance features consolidated under Finance Management
+
+**Financial Aid GUI - Navigation Buttons Added** (2025-11-06)
+- **Issue**: No easy way to return to Finance GUI or Main Homepage from Financial Aid GUI
+- **Location**: `university_system/modules/domain/finance/gui/financial_aid/financial_aid_gui.py`
+- **Changes**:
+  - Added "← Return to Finance GUI" button to navigate back to Finance Management
+  - Added "🏠 Return to Homepage" button to navigate back to Main GUI
+  - Implemented `return_to_finance_gui()` method
+  - Implemented `return_to_homepage()` method
+  - Proper window cleanup and navigation handling
+- **Impact**: Users can easily navigate between Financial Aid, Finance Management, and Main Homepage
+
+**Settings Manager - Auth Attribute Error Fixed** (2025-11-06)
+- **Issue**: AttributeError: 'SettingsManager' object has no attribute 'auth'
+- **Location**: `university_system/modules/domain/finance/gui/finance/settings.py`
+- **Root Cause**: SettingsManager.__init__ didn't initialize self.auth attribute
+- **Fix**: Added `self.auth = getattr(gui, 'auth', get_global_auth())` to __init__
+- **Impact**: Settings tab system information now displays correctly without errors
+
 **Finance GUI - Integration with Financial Aid & Scholarships Module** (2025-11-06)
 - **Issue**: Financial Aid and Scholarships functionality duplicated between Finance GUI and standalone module
 - **Location**: `university_system/modules/domain/finance/gui/finance/layout_manager.py`
@@ -606,6 +659,39 @@ This release represents a complete restructuring of the codebase to improve main
 - **Code Review Time**: 70% faster reviews due to smaller, focused changes
 - **Test Coverage**: Increased from 45% to 85% overall coverage
 - **System Reliability**: 99.7% uptime (up from 94.3% in v4.x)
+
+---
+
+## Known Issues
+
+### Financial Aid GUI - Database Schema Incomplete (2025-11-06)
+
+The Financial Aid & Scholarships GUI expects certain database tables and columns that may not exist in all database instances:
+
+**Missing Tables:**
+- `disbursements` - For tracking financial aid disbursements
+- `financial_aid_applications` - For storing student aid applications
+
+**Missing Columns:**
+- `sa.submitted_date` in scholarship applications table
+
+**Impact:**
+- Financial Aid GUI loads successfully but shows errors in logs when fetching statistics
+- Application checking and tracking features may not work
+- Dashboard statistics display as "Loading..." or show errors
+
+**Workaround:**
+- The GUI remains functional for viewing existing scholarships and financial aid records
+- Administrative features work if the base financial aid tables exist
+- Database migration script needed to add missing tables/columns
+
+**Resolution Plan:**
+- Create database migration script to add missing tables and columns
+- Add schema validation on Financial Aid GUI startup
+- Implement graceful fallback for missing tables
+- Document required schema in CLAUDE.md
+
+This is tracked for resolution in the next release.
 
 ---
 

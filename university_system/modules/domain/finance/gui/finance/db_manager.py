@@ -412,12 +412,31 @@ class DatabaseManager:
             from datetime import datetime
             from tkinter import filedialog
             from university_system.infrastructure.database.db import get_db_path
+            from pathlib import Path
 
             # Get database path
             db_path = get_db_path()
             if not os.path.exists(db_path):
                 messagebox.showerror("Error", "Database file not found")
                 return
+
+            # Determine backup directory
+            # Find university_system root directory
+            current_file = Path(__file__).resolve()
+            university_system_root = None
+            for parent in current_file.parents:
+                if parent.name == 'university_system':
+                    university_system_root = parent.parent
+                    break
+
+            if university_system_root:
+                backup_dir = university_system_root / 'university_system' / 'backups'
+            else:
+                # Fallback to current directory if can't find university_system
+                backup_dir = Path.cwd() / 'backups'
+
+            # Create backup directory if it doesn't exist
+            backup_dir.mkdir(parents=True, exist_ok=True)
 
             # Create default backup filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -428,6 +447,7 @@ class DatabaseManager:
                 title="Save Database Backup",
                 defaultextension=".db",
                 initialfile=default_filename,
+                initialdir=str(backup_dir),
                 filetypes=[("Database files", "*.db"), ("All files", "*.*")]
             )
 

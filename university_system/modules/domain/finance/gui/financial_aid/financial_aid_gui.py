@@ -112,14 +112,19 @@ class FinancialAidGUI:
                               font=('Arial', 10))
         user_info.pack(pady=(0, 20))
 
-        # Return to home button
+        # Navigation buttons
         button_frame = ttk.Frame(header_frame)
         button_frame.pack(pady=(0, 10))
 
         ttk.Button(button_frame,
-                  text="← Return to Main Menu",
-                  command=self.return_to_main_menu,
+                  text="← Return to Finance GUI",
+                  command=self.return_to_finance_gui,
                   style='Secondary.TButton').pack(side='left', padx=5)
+
+        ttk.Button(button_frame,
+                  text="🏠 Return to Homepage",
+                  command=self.return_to_homepage,
+                  style='Primary.TButton').pack(side='left', padx=5)
 
         # Content frame
         content_frame = ttk.Frame(self.main_frame)
@@ -270,6 +275,66 @@ class FinancialAidGUI:
             # If standalone, close the window
             if self.root:
                 self.root.destroy()
+
+    def return_to_finance_gui(self):
+        """Return to Finance GUI"""
+        try:
+            # Close current window
+            if self.root and isinstance(self.root, tk.Tk):
+                self.root.destroy()
+            elif self.parent:
+                # If we have a parent (embedded mode), destroy this frame
+                if self.main_frame:
+                    self.main_frame.destroy()
+                # Close the parent window (Toplevel)
+                if isinstance(self.parent, tk.Toplevel):
+                    self.parent.destroy()
+
+            # Import and launch Finance GUI
+            from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+            finance_root = tk.Tk()
+            finance_gui = FinanceManagementGUI(finance_root, self.auth)
+            finance_root.mainloop()
+
+        except Exception as e:
+            print(f"Error returning to Finance GUI: {e}")
+            import traceback
+            traceback.print_exc()
+            # If failed, just close this window
+            if self.root:
+                self.root.destroy()
+            elif self.parent and isinstance(self.parent, tk.Toplevel):
+                self.parent.destroy()
+
+    def return_to_homepage(self):
+        """Return to main homepage (main_gui.py)"""
+        try:
+            # Close current window
+            if self.root and isinstance(self.root, tk.Tk):
+                self.root.destroy()
+            elif self.parent:
+                # If we have a parent (embedded mode), destroy this frame
+                if self.main_frame:
+                    self.main_frame.destroy()
+                # Close the parent window (Toplevel)
+                if isinstance(self.parent, tk.Toplevel):
+                    self.parent.destroy()
+
+            # Import and launch main GUI
+            from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
+            main_root = tk.Tk()
+            main_gui = UnifiedManagementGUI(main_root, self.auth)
+            main_gui.run()
+
+        except Exception as e:
+            print(f"Error returning to homepage: {e}")
+            import traceback
+            traceback.print_exc()
+            # If failed, just close this window
+            if self.root:
+                self.root.destroy()
+            elif self.parent and isinstance(self.parent, tk.Toplevel):
+                self.parent.destroy()
 
 
 def launch_financial_aid_gui(parent=None, auth=None):

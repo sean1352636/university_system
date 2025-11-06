@@ -1430,15 +1430,16 @@ class UnifiedManagementGUI:
         self.nav_buttons['attendance'] = ttk.Button(sched_frame, text="Attendance Tracking", command=self.open_attendance_gui)
         self.nav_buttons['attendance'].pack(fill=tk.X, pady=2)
 
-        # ---------- Finance & Financial Aid ----------
-        finance_frame = ttk.LabelFrame(scrollable_frame, text="Finance & Financial Aid", padding="5")
+        # ---------- Finance ----------
+        finance_frame = ttk.LabelFrame(scrollable_frame, text="Finance", padding="5")
         finance_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
         self.nav_buttons['finance_management'] = ttk.Button(finance_frame, text="Finance Management", command=self.show_finance_management)
         self.nav_buttons['finance_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['finance_reporting'] = ttk.Button(finance_frame, text="Finance Reporting", command=self.show_finance_reporting_dashboard)
-        self.nav_buttons['finance_reporting'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['financial_aid'] = ttk.Button(finance_frame, text="Financial Aid & Scholarships", command=self.show_financial_aid)
-        self.nav_buttons['financial_aid'].pack(fill=tk.X, pady=2)
+        # Finance Reporting and Financial Aid are now integrated into Finance Management GUI
+        # self.nav_buttons['finance_reporting'] = ttk.Button(finance_frame, text="Finance Reporting", command=self.show_finance_reporting_dashboard)
+        # self.nav_buttons['finance_reporting'].pack(fill=tk.X, pady=2)
+        # self.nav_buttons['financial_aid'] = ttk.Button(finance_frame, text="Financial Aid & Scholarships", command=self.show_financial_aid)
+        # self.nav_buttons['financial_aid'].pack(fill=tk.X, pady=2)
 
         # ---------- Health & Accommodations ----------
         health_frame = ttk.LabelFrame(scrollable_frame, text="Health & Accommodations", padding="5")
