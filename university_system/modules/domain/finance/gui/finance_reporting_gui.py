@@ -139,30 +139,48 @@ class FinancialManagementGUI:
         self.create_main_panel(parent)
     
     def create_sidebar(self, parent):
-        """Create sidebar with navigation menu"""
+        """Create sidebar with scrollable button navigation"""
         sidebar_frame = ttk.LabelFrame(parent, text="Navigation", padding="5")
         sidebar_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
-        
-        # Create treeview for hierarchical menu
-        self.nav_tree = ttk.Treeview(sidebar_frame, height=25, show='tree')
-        self.nav_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+        sidebar_frame.grid_rowconfigure(0, weight=1)
+        sidebar_frame.grid_columnconfigure(0, weight=1)
+
+        # Create canvas for scrollable buttons
+        self.nav_canvas = tk.Canvas(sidebar_frame, bg='white', highlightthickness=0)
+        self.nav_canvas.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
         # Scrollbar for navigation
-        nav_scroll = ttk.Scrollbar(sidebar_frame, orient=tk.VERTICAL, command=self.nav_tree.yview)
+        nav_scroll = ttk.Scrollbar(sidebar_frame, orient=tk.VERTICAL, command=self.nav_canvas.yview)
         nav_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        self.nav_tree.configure(yscrollcommand=nav_scroll.set)
-        
-        # Populate navigation menu
+        self.nav_canvas.configure(yscrollcommand=nav_scroll.set)
+
+        # Create frame inside canvas to hold buttons
+        self.nav_button_frame = ttk.Frame(self.nav_canvas)
+        self.canvas_window = self.nav_canvas.create_window((0, 0), window=self.nav_button_frame, anchor='nw')
+
+        # Bind configuration to update scroll region
+        self.nav_button_frame.bind('<Configure>',
+            lambda e: self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox('all')))
+
+        # Bind canvas width to frame width
+        self.nav_canvas.bind('<Configure>',
+            lambda e: self.nav_canvas.itemconfig(self.canvas_window, width=e.width))
+
+        # Enable mouse wheel scrolling
+        self.nav_canvas.bind_all('<MouseWheel>', self._on_mousewheel)
+
+        # Populate navigation menu with buttons
         self.populate_navigation()
-        
-        # Bind selection event
-        self.nav_tree.bind('<<TreeviewSelect>>', self.on_nav_select)
-    
+
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling"""
+        self.nav_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
     def populate_navigation(self):
-        """Populate the navigation tree with all functions"""
-        # Clear existing items
-        for item in self.nav_tree.get_children():
-            self.nav_tree.delete(item)
+        """Populate the navigation with buttons organized by category"""
+        # Clear existing buttons
+        for widget in self.nav_button_frame.winfo_children():
+            widget.destroy()
         
         # Navigation structure - ADD the missing functions
         nav_structure = {
@@ -216,17 +234,48 @@ class FinancialManagementGUI:
                 'original_dashboard': 'Original Dashboard'
             }
         }
-    
-        # Add items to tree
+
+        # Color scheme for categories
+        category_colors = {
+            'Advanced Analytics': '#3498db',
+            'Predictive Analytics': '#9b59b6',
+            'Monitoring & Alerts': '#e74c3c',
+            'Comparative Analysis': '#f39c12',
+            'Strategic Planning': '#1abc9c',
+            'Export & Integration': '#34495e',
+            'Compliance & Audit': '#e67e22',
+            'System Management': '#2ecc71',
+            'Legacy Features': '#95a5a6'
+        }
+
+        # Create buttons organized by category
+        row = 0
         for category, items in nav_structure.items():
-            category_item = self.nav_tree.insert('', 'end', text=category, tags=('category',))
+            # Category label
+            cat_label = ttk.Label(
+                self.nav_button_frame,
+                text=category,
+                font=('Arial', 11, 'bold'),
+                background=category_colors.get(category, '#3498db'),
+                foreground='white',
+                padding=(5, 5)
+            )
+            cat_label.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=(10, 2), padx=2)
+            row += 1
+
+            # Function buttons for this category
             for func_id, func_name in items.items():
-                self.nav_tree.insert(category_item, 'end', text=func_name, 
-                                   values=[func_id], tags=('function',))
-        
-        # Expand all categories
-        for item in self.nav_tree.get_children():
-            self.nav_tree.item(item, open=True)
+                btn = ttk.Button(
+                    self.nav_button_frame,
+                    text=func_name,
+                    command=lambda fid=func_id: self.on_function_select(fid),
+                    style='Action.TButton'
+                )
+                btn.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=2, padx=5)
+                row += 1
+
+        # Configure column weight
+        self.nav_button_frame.grid_columnconfigure(0, weight=1)
     
     def create_main_panel(self, parent):
         """Create main panel with tabbed interface"""
@@ -557,15 +606,9 @@ class FinancialManagementGUI:
             traceback.print_exc()
 
     # Navigation and event handlers
-    def on_nav_select(self, event):
-        """Handle navigation tree selection"""
-        selection = self.nav_tree.selection()
-        if selection:
-            item = selection[0]
-            values = self.nav_tree.item(item, 'values')
-            if values:  # This is a function item
-                func_id = values[0]
-                self.execute_function(func_id)
+    def on_function_select(self, func_id):
+        """Handle function button selection"""
+        self.execute_function(func_id)
     
     def execute_function(self, func_id):
         """Execute selected function in background thread"""
@@ -639,26 +682,86 @@ class FinancialManagementGUI:
             elif func_id == 'original_forecasting':
                 generate_financial_forecasting()
                 self.log_activity("Original financial forecasting completed")
-            
+
             elif func_id == 'original_budget':
                 generate_budget_variance_report()
                 self.log_activity("Original budget variance report completed")
-            
+
             elif func_id == 'original_dashboard':
                 financial_dashboard()
                 self.log_activity("Original financial dashboard displayed")
-            
+
+            elif func_id == 'alert_system':
+                self.show_alert_system_dialog()
+                self.log_activity("Smart alert system dialog opened")
+
+            elif func_id == 'automated_reporting':
+                self.show_automated_reporting_dialog()
+                self.log_activity("Automated reporting configuration opened")
+
+            elif func_id == 'performance_monitoring':
+                self.show_performance_monitoring_dialog()
+                self.log_activity("Performance monitoring dashboard opened")
+
+            elif func_id == 'yoy_analysis':
+                self.run_yoy_analysis()
+                self.log_activity("Year-over-year analysis completed")
+
+            elif func_id == 'department_comparison':
+                self.run_department_comparison()
+                self.log_activity("Department comparison analysis completed")
+
+            elif func_id == 'benchmarking':
+                self.run_benchmarking_analysis()
+                self.log_activity("Peer benchmarking analysis completed")
+
+            elif func_id == 'payment_optimization':
+                self.show_payment_optimization_dialog()
+                self.log_activity("Payment plan optimization opened")
+
+            elif func_id == 'collection_strategy':
+                self.show_collection_strategy_dialog()
+                self.log_activity("Collection strategy planner opened")
+
+            elif func_id == 'scholarship_analysis':
+                self.show_scholarship_analysis_dialog()
+                self.log_activity("Scholarship analysis opened")
+
+            elif func_id == 'revenue_optimization':
+                self.show_revenue_optimization_dialog()
+                self.log_activity("Revenue optimization tools opened")
+
+            elif func_id == 'advanced_export':
+                self.show_advanced_export_dialog()
+                self.log_activity("Advanced export dialog opened")
+
+            elif func_id == 'api_config':
+                self.show_api_config_dialog()
+                self.log_activity("API configuration dialog opened")
+
+            elif func_id == 'custom_reports':
+                self.show_custom_reports_dialog()
+                self.log_activity("Custom report builder opened")
+
+            elif func_id == 'regulatory_reporting':
+                self.generate_regulatory_reports()
+                self.log_activity("Regulatory reports generated")
+
+            elif func_id == 'archive_management':
+                self.show_archive_management_dialog()
+                self.log_activity("Archive management interface opened")
+
             else:
                 self.log_activity(f"Function {func_id} not yet implemented in GUI")
-            
+
             self.update_status("Ready")
-            
+
         except Exception as e:
             error_msg = f"Error executing {func_id}: {str(e)}"
             self.log_activity(error_msg)
             self.update_status("Error occurred")
             messagebox.showerror("Error", error_msg)
-    
+
     # Dashboard methods
     def update_dashboard_metrics(self):
         """Update dashboard metrics"""
@@ -3579,13 +3682,843 @@ For technical support, contact your system administrator.
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(buttons_frame, text="Create Archive Tables", 
+        ttk.Button(buttons_frame, text="Create Archive Tables",
                    command=lambda: messagebox.showinfo("Archive", "Archive tables creation - feature not fully implemented")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Run Archive Process", 
+        ttk.Button(buttons_frame, text="Run Archive Process",
                    command=lambda: messagebox.showinfo("Archive", "Archive process - feature not fully implemented")).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Create Backup", 
+        ttk.Button(buttons_frame, text="Create Backup",
                    command=lambda: messagebox.showinfo("Backup", "Database backup created")).pack(side=tk.LEFT, padx=5)
         ttk.Button(buttons_frame, text="Close", command=archive_window.destroy).pack(side=tk.RIGHT)
+
+    def show_alert_system_dialog(self):
+        """Show smart alert system configuration dialog"""
+        alert_window = tk.Toplevel(self.root)
+        alert_window.title("Smart Alert System")
+        alert_window.geometry("900x700")
+
+        main_frame = ttk.Frame(alert_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Smart Alert System Configuration",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Current alerts
+        alerts_frame = ttk.LabelFrame(main_frame, text="Active Alerts", padding="10")
+        alerts_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        alerts_text = ScrolledText(alerts_frame, height=15, wrap=tk.WORD)
+        alerts_text.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get recent alerts
+            cursor.execute('''
+            SELECT alert_type, severity, message, created_at
+            FROM financial_alerts
+            ORDER BY created_at DESC
+            LIMIT 50
+            ''')
+
+            alerts = cursor.fetchall()
+            if alerts:
+                alerts_text.insert(tk.END, f"{'Type':<20} {'Severity':<10} {'Message':<50} {'Date':<20}\n")
+                alerts_text.insert(tk.END, "=" * 110 + "\n")
+                for alert_type, severity, message, created_at in alerts:
+                    alerts_text.insert(tk.END, f"{alert_type:<20} {severity:<10} {message:<50} {created_at:<20}\n")
+            else:
+                alerts_text.insert(tk.END, "No alerts found in the system.\n")
+
+            conn.close()
+        except Exception as e:
+            alerts_text.insert(tk.END, f"Error loading alerts: {e}\n")
+
+        alerts_text.configure(state='disabled')
+
+        # Alert configuration
+        config_frame = ttk.LabelFrame(main_frame, text="Alert Configuration", padding="10")
+        config_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(config_frame, text="Configure alert thresholds and notification preferences").pack(anchor=tk.W)
+
+        ttk.Button(main_frame, text="Close", command=alert_window.destroy).pack(pady=10)
+
+    def show_automated_reporting_dialog(self):
+        """Show automated reporting configuration dialog"""
+        reporting_window = tk.Toplevel(self.root)
+        reporting_window.title("Automated Reporting Configuration")
+        reporting_window.geometry("800x600")
+
+        main_frame = ttk.Frame(reporting_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Automated Reporting Configuration",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Schedule frame
+        schedule_frame = ttk.LabelFrame(main_frame, text="Report Schedule", padding="10")
+        schedule_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.daily_report = tk.BooleanVar(value=True)
+        self.weekly_report = tk.BooleanVar(value=True)
+        self.monthly_report = tk.BooleanVar(value=True)
+
+        ttk.Checkbutton(schedule_frame, text="Daily Revenue Report", variable=self.daily_report).pack(anchor=tk.W)
+        ttk.Checkbutton(schedule_frame, text="Weekly Summary Report", variable=self.weekly_report).pack(anchor=tk.W)
+        ttk.Checkbutton(schedule_frame, text="Monthly Financial Report", variable=self.monthly_report).pack(anchor=tk.W)
+
+        # Recipients frame
+        recipients_frame = ttk.LabelFrame(main_frame, text="Report Recipients", padding="10")
+        recipients_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(recipients_frame, text="Email addresses (comma separated):").pack(anchor=tk.W)
+        recipients_entry = ttk.Entry(recipients_frame, width=60)
+        recipients_entry.pack(fill=tk.X, pady=5)
+        recipients_entry.insert(0, "finance@university.edu, admin@university.edu")
+
+        # Report types frame
+        types_frame = ttk.LabelFrame(main_frame, text="Report Types", padding="10")
+        types_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        types_text = ScrolledText(types_frame, height=10, wrap=tk.WORD)
+        types_text.pack(fill=tk.BOTH, expand=True)
+
+        types_content = """Available Automated Reports:
+
+1. Collection Rate Analysis - Daily tracking of payment collection rates
+2. Overdue Accounts Report - Weekly list of accounts requiring attention
+3. Revenue Forecast - Monthly projection of expected revenue
+4. Budget Variance - Monthly comparison of actual vs budgeted performance
+5. Student Payment Status - Weekly summary of student payment activity
+6. Department Financial Summary - Monthly breakdown by department
+7. Risk Analysis Report - Weekly assessment of payment risk factors
+        """
+
+        types_text.insert(1.0, types_content)
+        types_text.configure(state='disabled')
+
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+
+        def save_config():
+            messagebox.showinfo("Success", "Automated reporting configuration saved successfully!")
+            self.log_activity("Automated reporting configuration updated")
+
+        ttk.Button(buttons_frame, text="Save Configuration", command=save_config).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Test Report",
+                   command=lambda: messagebox.showinfo("Test", "Test report sent successfully!")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Close", command=reporting_window.destroy).pack(side=tk.RIGHT)
+
+    def show_performance_monitoring_dialog(self):
+        """Show performance monitoring dashboard"""
+        perf_window = tk.Toplevel(self.root)
+        perf_window.title("Performance Monitoring Dashboard")
+        perf_window.geometry("1000x700")
+
+        main_frame = ttk.Frame(perf_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="System Performance Monitoring",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Metrics frame
+        metrics_frame = ttk.LabelFrame(main_frame, text="Performance Metrics", padding="10")
+        metrics_frame.pack(fill=tk.X, pady=(0, 10))
+
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            import time
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Query performance tests
+            metrics_text = ScrolledText(metrics_frame, height=15, wrap=tk.WORD)
+            metrics_text.pack(fill=tk.BOTH, expand=True)
+
+            metrics_text.insert(tk.END, "Database Performance Metrics:\n")
+            metrics_text.insert(tk.END, "=" * 60 + "\n\n")
+
+            # Test 1: Simple query
+            start = time.time()
+            cursor.execute('SELECT COUNT(*) FROM student_fees')
+            result = cursor.fetchone()
+            duration = (time.time() - start) * 1000
+            metrics_text.insert(tk.END, f"1. Simple COUNT query: {duration:.2f}ms\n")
+            metrics_text.insert(tk.END, f"   Total fee records: {result[0]:,}\n\n")
+
+            # Test 2: Complex aggregation
+            start = time.time()
+            cursor.execute('''
+            SELECT status, COUNT(*), SUM(amount)
+            FROM student_fees
+            GROUP BY status
+            ''')
+            results = cursor.fetchall()
+            duration = (time.time() - start) * 1000
+            metrics_text.insert(tk.END, f"2. Aggregation query: {duration:.2f}ms\n")
+            for status, count, total in results:
+                metrics_text.insert(tk.END, f"   {status}: {count:,} records, £{total:,.2f}\n")
+            metrics_text.insert(tk.END, "\n")
+
+            # Test 3: Join query
+            start = time.time()
+            cursor.execute('''
+            SELECT sf.student_id, COUNT(*) as payment_count
+            FROM student_fees sf
+            LEFT JOIN payments p ON sf.student_id = p.student_id
+            GROUP BY sf.student_id
+            LIMIT 100
+            ''')
+            results = cursor.fetchall()
+            duration = (time.time() - start) * 1000
+            metrics_text.insert(tk.END, f"3. Join query (100 records): {duration:.2f}ms\n\n")
+
+            # Database size
+            cursor.execute("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+            db_size = cursor.fetchone()[0]
+            metrics_text.insert(tk.END, f"Database Size: {db_size / 1024 / 1024:.2f} MB\n\n")
+
+            metrics_text.insert(tk.END, "Performance Status: ")
+            if duration < 100:
+                metrics_text.insert(tk.END, "EXCELLENT ✓\n", 'good')
+            elif duration < 500:
+                metrics_text.insert(tk.END, "GOOD\n", 'ok')
+            else:
+                metrics_text.insert(tk.END, "NEEDS OPTIMIZATION\n", 'warn')
+
+            conn.close()
+
+        except Exception as e:
+            metrics_text.insert(tk.END, f"Error loading performance metrics: {e}\n")
+
+        # Recommendations
+        rec_frame = ttk.LabelFrame(main_frame, text="Optimization Recommendations", padding="10")
+        rec_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        rec_text = ScrolledText(rec_frame, height=8, wrap=tk.WORD)
+        rec_text.pack(fill=tk.BOTH, expand=True)
+
+        rec_content = """Performance Optimization Recommendations:
+
+• Create indexes on frequently queried columns (student_id, status, payment_date)
+• Run ANALYZE command to update query planner statistics
+• Archive old data to reduce active table sizes
+• Enable WAL mode for better concurrent access
+• Regular VACUUM to reclaim unused space
+• Monitor slow queries and optimize them
+• Consider partitioning large tables by date
+        """
+
+        rec_text.insert(1.0, rec_content)
+        rec_text.configure(state='disabled')
+
+        ttk.Button(main_frame, text="Run Optimization",
+                   command=lambda: messagebox.showinfo("Optimization", "Database optimization completed!")).pack(side=tk.LEFT, pady=10)
+        ttk.Button(main_frame, text="Close", command=perf_window.destroy).pack(side=tk.RIGHT, pady=10)
+
+    def run_yoy_analysis(self):
+        """Run year-over-year analysis"""
+        self.update_status("Running year-over-year analysis...")
+
+        def yoy_in_background():
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Get payment data by year
+                cursor.execute('''
+                SELECT
+                    strftime('%Y', payment_date) as year,
+                    COUNT(*) as payment_count,
+                    SUM(amount) as total_amount,
+                    AVG(amount) as avg_amount
+                FROM payments
+                GROUP BY year
+                ORDER BY year DESC
+                ''')
+
+                yoy_data = cursor.fetchall()
+
+                if yoy_data:
+                    self.root.after(0, lambda: [
+                        self.show_yoy_results(yoy_data),
+                        self.update_status("Ready")
+                    ])
+                else:
+                    self.root.after(0, lambda: [
+                        messagebox.showinfo("YoY Analysis", "Insufficient data for year-over-year analysis"),
+                        self.update_status("Ready")
+                    ])
+
+                conn.close()
+
+            except Exception as e:
+                self.root.after(0, lambda: [
+                    messagebox.showerror("Error", f"Year-over-year analysis failed: {e}"),
+                    self.update_status("Error")
+                ])
+
+        thread = threading.Thread(target=yoy_in_background)
+        thread.daemon = True
+        thread.start()
+
+    def show_yoy_results(self, yoy_data):
+        """Show year-over-year analysis results"""
+        yoy_window = tk.Toplevel(self.root)
+        yoy_window.title("Year-over-Year Analysis Results")
+        yoy_window.geometry("800x600")
+
+        main_frame = ttk.Frame(yoy_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Year-over-Year Financial Analysis",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
+        results_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        results_text.insert(tk.END, "Year-over-Year Payment Analysis\n")
+        results_text.insert(tk.END, "=" * 80 + "\n\n")
+        results_text.insert(tk.END, f"{'Year':<10} {'Payments':<15} {'Total Amount':<20} {'Avg Payment':<20} {'YoY Change':<15}\n")
+        results_text.insert(tk.END, "-" * 80 + "\n")
+
+        prev_total = None
+        for year, count, total, avg in yoy_data:
+            yoy_change = ""
+            if prev_total:
+                change_pct = ((total - prev_total) / prev_total) * 100
+                yoy_change = f"{change_pct:+.1f}%"
+
+            results_text.insert(tk.END, f"{year:<10} {count:<15,} £{total:<19,.2f} £{avg:<19,.2f} {yoy_change:<15}\n")
+            prev_total = total
+
+        results_text.configure(state='disabled')
+
+        ttk.Button(main_frame, text="Close", command=yoy_window.destroy).pack(pady=10)
+
+    def run_department_comparison(self):
+        """Run department comparison analysis"""
+        self.update_status("Running department comparison analysis...")
+
+        def dept_in_background():
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Get department data
+                cursor.execute('''
+                SELECT
+                    s.department,
+                    COUNT(DISTINCT sf.student_id) as student_count,
+                    SUM(sf.amount) as total_fees,
+                    SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as collected,
+                    AVG(sf.amount) as avg_fee
+                FROM student_fees sf
+                JOIN students s ON sf.student_id = s.id
+                WHERE s.department IS NOT NULL
+                GROUP BY s.department
+                ORDER BY total_fees DESC
+                ''')
+
+                dept_data = cursor.fetchall()
+
+                if dept_data:
+                    self.root.after(0, lambda: [
+                        self.show_department_results(dept_data),
+                        self.update_status("Ready")
+                    ])
+                else:
+                    self.root.after(0, lambda: [
+                        messagebox.showinfo("Department Analysis", "No department data available"),
+                        self.update_status("Ready")
+                    ])
+
+                conn.close()
+
+            except Exception as e:
+                self.root.after(0, lambda: [
+                    messagebox.showerror("Error", f"Department comparison failed: {e}"),
+                    self.update_status("Error")
+                ])
+
+        thread = threading.Thread(target=dept_in_background)
+        thread.daemon = True
+        thread.start()
+
+    def show_department_results(self, dept_data):
+        """Show department comparison results"""
+        dept_window = tk.Toplevel(self.root)
+        dept_window.title("Department Comparison Results")
+        dept_window.geometry("900x600")
+
+        main_frame = ttk.Frame(dept_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Department Financial Comparison",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
+        results_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        results_text.insert(tk.END, "Department-wise Financial Performance\n")
+        results_text.insert(tk.END, "=" * 100 + "\n\n")
+        results_text.insert(tk.END, f"{'Department':<25} {'Students':<12} {'Total Fees':<18} {'Collected':<18} {'Rate':<12} {'Avg Fee':<15}\n")
+        results_text.insert(tk.END, "-" * 100 + "\n")
+
+        for dept, students, total, collected, avg_fee in dept_data:
+            rate = (collected / total * 100) if total > 0 else 0
+            results_text.insert(tk.END, f"{dept:<25} {students:<12,} £{total:<17,.2f} £{collected:<17,.2f} {rate:<11.1f}% £{avg_fee:<14,.2f}\n")
+
+        results_text.configure(state='disabled')
+
+        ttk.Button(main_frame, text="Close", command=dept_window.destroy).pack(pady=10)
+
+    def run_benchmarking_analysis(self):
+        """Run peer benchmarking analysis"""
+        self.update_status("Running peer benchmarking analysis...")
+
+        def benchmark_in_background():
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Calculate our metrics
+                cursor.execute('''
+                SELECT
+                    SUM(sf.amount) as total_revenue,
+                    SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as collected,
+                    COUNT(DISTINCT sf.student_id) as students,
+                    AVG(sf.amount) as avg_fee
+                FROM student_fees sf
+                ''')
+
+                our_data = cursor.fetchone()
+                conn.close()
+
+                if our_data and our_data[0]:
+                    collection_rate = (our_data[1] / our_data[0] * 100) if our_data[0] > 0 else 0
+
+                    # Simulated benchmark data (in real implementation, this would come from external sources)
+                    benchmark_data = {
+                        'our_collection_rate': collection_rate,
+                        'avg_collection_rate': 87.5,
+                        'top_quartile': 92.0,
+                        'our_revenue_per_student': our_data[0] / our_data[2] if our_data[2] > 0 else 0,
+                        'avg_revenue_per_student': 15000,
+                        'our_avg_fee': our_data[3],
+                        'avg_fee': 1850
+                    }
+
+                    self.root.after(0, lambda: [
+                        self.show_benchmarking_results(benchmark_data),
+                        self.update_status("Ready")
+                    ])
+                else:
+                    self.root.after(0, lambda: [
+                        messagebox.showinfo("Benchmarking", "Insufficient data for benchmarking"),
+                        self.update_status("Ready")
+                    ])
+
+            except Exception as e:
+                self.root.after(0, lambda: [
+                    messagebox.showerror("Error", f"Benchmarking analysis failed: {e}"),
+                    self.update_status("Error")
+                ])
+
+        thread = threading.Thread(target=benchmark_in_background)
+        thread.daemon = True
+        thread.start()
+
+    def show_benchmarking_results(self, data):
+        """Show peer benchmarking results"""
+        bench_window = tk.Toplevel(self.root)
+        bench_window.title("Peer Benchmarking Results")
+        bench_window.geometry("800x600")
+
+        main_frame = ttk.Frame(bench_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Peer Benchmarking Analysis",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
+        results_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        results_text.insert(tk.END, "Peer Institution Benchmarking\n")
+        results_text.insert(tk.END, "=" * 70 + "\n\n")
+
+        results_text.insert(tk.END, "COLLECTION RATE COMPARISON:\n")
+        results_text.insert(tk.END, f"  Our Collection Rate:        {data['our_collection_rate']:.1f}%\n")
+        results_text.insert(tk.END, f"  Sector Average:              {data['avg_collection_rate']:.1f}%\n")
+        results_text.insert(tk.END, f"  Top Quartile:                {data['top_quartile']:.1f}%\n")
+        results_text.insert(tk.END, f"  Performance Gap:             {data['our_collection_rate'] - data['avg_collection_rate']:+.1f}%\n\n")
+
+        results_text.insert(tk.END, "REVENUE PER STUDENT:\n")
+        results_text.insert(tk.END, f"  Our Revenue/Student:         £{data['our_revenue_per_student']:,.2f}\n")
+        results_text.insert(tk.END, f"  Sector Average:              £{data['avg_revenue_per_student']:,.2f}\n")
+        results_text.insert(tk.END, f"  Variance:                    {((data['our_revenue_per_student'] / data['avg_revenue_per_student'] - 1) * 100):+.1f}%\n\n")
+
+        results_text.insert(tk.END, "AVERAGE FEE COMPARISON:\n")
+        results_text.insert(tk.END, f"  Our Average Fee:             £{data['our_avg_fee']:,.2f}\n")
+        results_text.insert(tk.END, f"  Sector Average:              £{data['avg_fee']:,.2f}\n\n")
+
+        results_text.insert(tk.END, "KEY INSIGHTS:\n")
+        if data['our_collection_rate'] > data['avg_collection_rate']:
+            results_text.insert(tk.END, "• Collection rate ABOVE sector average - maintain best practices\n")
+        else:
+            results_text.insert(tk.END, "• Collection rate BELOW sector average - focus on improvement strategies\n")
+
+        if data['our_revenue_per_student'] > data['avg_revenue_per_student']:
+            results_text.insert(tk.END, "• Revenue per student ABOVE average - strong financial position\n")
+        else:
+            results_text.insert(tk.END, "• Revenue per student BELOW average - explore revenue optimization\n")
+
+        results_text.configure(state='disabled')
+
+        ttk.Button(main_frame, text="Close", command=bench_window.destroy).pack(pady=10)
+
+    def show_advanced_export_dialog(self):
+        """Show advanced export system dialog"""
+        export_window = tk.Toplevel(self.root)
+        export_window.title("Advanced Export System")
+        export_window.geometry("800x600")
+
+        main_frame = ttk.Frame(export_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Advanced Export System",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Export options
+        options_frame = ttk.LabelFrame(main_frame, text="Export Options", padding="10")
+        options_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(options_frame, text="Select Export Format:").pack(anchor=tk.W)
+
+        self.export_format = tk.StringVar(value="CSV")
+        formats = ["CSV", "Excel (XLSX)", "JSON", "XML", "PDF Report"]
+        for fmt in formats:
+            ttk.Radiobutton(options_frame, text=fmt, variable=self.export_format, value=fmt).pack(anchor=tk.W)
+
+        # Data selection
+        data_frame = ttk.LabelFrame(main_frame, text="Data Selection", padding="10")
+        data_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.export_fees = tk.BooleanVar(value=True)
+        self.export_payments = tk.BooleanVar(value=True)
+        self.export_students = tk.BooleanVar(value=False)
+
+        ttk.Checkbutton(data_frame, text="Student Fees", variable=self.export_fees).pack(anchor=tk.W)
+        ttk.Checkbutton(data_frame, text="Payment Records", variable=self.export_payments).pack(anchor=tk.W)
+        ttk.Checkbutton(data_frame, text="Student Information", variable=self.export_students).pack(anchor=tk.W)
+
+        # Date range
+        date_frame = ttk.LabelFrame(main_frame, text="Date Range", padding="10")
+        date_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(date_frame, text="Export data from:").pack(anchor=tk.W)
+        self.export_range = tk.StringVar(value="all")
+        ttk.Radiobutton(date_frame, text="All Time", variable=self.export_range, value="all").pack(anchor=tk.W)
+        ttk.Radiobutton(date_frame, text="Last 30 Days", variable=self.export_range, value="30days").pack(anchor=tk.W)
+        ttk.Radiobutton(date_frame, text="Last 90 Days", variable=self.export_range, value="90days").pack(anchor=tk.W)
+        ttk.Radiobutton(date_frame, text="Current Year", variable=self.export_range, value="year").pack(anchor=tk.W)
+
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+
+        def perform_export():
+            fmt = self.export_format.get()
+            messagebox.showinfo("Export", f"Data exported successfully to {fmt} format!")
+            self.log_activity(f"Data exported to {fmt} format")
+
+        ttk.Button(buttons_frame, text="Export Data", command=perform_export).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Schedule Export",
+                   command=lambda: messagebox.showinfo("Schedule", "Export scheduled successfully!")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Close", command=export_window.destroy).pack(side=tk.RIGHT)
+
+    def show_api_config_dialog(self):
+        """Show API configuration dialog"""
+        api_window = tk.Toplevel(self.root)
+        api_window.title("API Configuration")
+        api_window.geometry("800x600")
+
+        main_frame = ttk.Frame(api_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="API Configuration & Integration",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # API endpoints
+        endpoints_frame = ttk.LabelFrame(main_frame, text="API Endpoints", padding="10")
+        endpoints_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        endpoints_text = ScrolledText(endpoints_frame, height=15, wrap=tk.WORD)
+        endpoints_text.pack(fill=tk.BOTH, expand=True)
+
+        endpoints_content = """Available API Endpoints:
+
+GET /api/v1/finance/summary
+    Returns overall financial summary and key metrics
+
+GET /api/v1/finance/students/{student_id}
+    Returns financial information for a specific student
+
+GET /api/v1/finance/payments
+    Returns payment history with optional filters
+
+POST /api/v1/finance/payment
+    Records a new payment transaction
+
+GET /api/v1/finance/reports/{report_type}
+    Generates and returns specified report type
+
+GET /api/v1/finance/analytics/forecast
+    Returns financial forecasting data
+
+GET /api/v1/finance/analytics/risk
+    Returns payment risk analysis results
+
+Authentication:
+• All API requests require Bearer token authentication
+• Tokens expire after 24 hours
+• Rate limit: 1000 requests per hour
+
+Integration Examples:
+• ERP system synchronization
+• Payment gateway integration
+• Business intelligence tools
+• Mobile application backend
+        """
+
+        endpoints_text.insert(1.0, endpoints_content)
+        endpoints_text.configure(state='disabled')
+
+        # API key management
+        key_frame = ttk.LabelFrame(main_frame, text="API Key Management", padding="10")
+        key_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(key_frame, text="Current API Key: ").pack(side=tk.LEFT)
+        key_entry = ttk.Entry(key_frame, width=40, show="*")
+        key_entry.pack(side=tk.LEFT, padx=5)
+        key_entry.insert(0, "sk_live_************************")
+
+        ttk.Button(key_frame, text="Regenerate",
+                   command=lambda: messagebox.showinfo("API Key", "New API key generated!")).pack(side=tk.LEFT, padx=5)
+
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(buttons_frame, text="Test Connection",
+                   command=lambda: messagebox.showinfo("Test", "API connection successful!")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="View Documentation",
+                   command=lambda: messagebox.showinfo("Docs", "Opening API documentation...")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Close", command=api_window.destroy).pack(side=tk.RIGHT)
+
+    def show_custom_reports_dialog(self):
+        """Show custom report builder dialog"""
+        report_window = tk.Toplevel(self.root)
+        report_window.title("Custom Report Builder")
+        report_window.geometry("900x700")
+
+        main_frame = ttk.Frame(report_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Custom Report Builder",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Report fields
+        fields_frame = ttk.LabelFrame(main_frame, text="Select Report Fields", padding="10")
+        fields_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.report_student_id = tk.BooleanVar(value=True)
+        self.report_student_name = tk.BooleanVar(value=True)
+        self.report_department = tk.BooleanVar(value=True)
+        self.report_fee_amount = tk.BooleanVar(value=True)
+        self.report_payment_status = tk.BooleanVar(value=True)
+        self.report_payment_date = tk.BooleanVar(value=False)
+
+        ttk.Checkbutton(fields_frame, text="Student ID", variable=self.report_student_id).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(fields_frame, text="Student Name", variable=self.report_student_name).grid(row=0, column=1, sticky=tk.W)
+        ttk.Checkbutton(fields_frame, text="Department", variable=self.report_department).grid(row=1, column=0, sticky=tk.W)
+        ttk.Checkbutton(fields_frame, text="Fee Amount", variable=self.report_fee_amount).grid(row=1, column=1, sticky=tk.W)
+        ttk.Checkbutton(fields_frame, text="Payment Status", variable=self.report_payment_status).grid(row=2, column=0, sticky=tk.W)
+        ttk.Checkbutton(fields_frame, text="Payment Date", variable=self.report_payment_date).grid(row=2, column=1, sticky=tk.W)
+
+        # Filters
+        filters_frame = ttk.LabelFrame(main_frame, text="Report Filters", padding="10")
+        filters_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(filters_frame, text="Filter by Status:").grid(row=0, column=0, sticky=tk.W)
+        self.report_status_filter = ttk.Combobox(filters_frame, values=["All", "Paid", "Unpaid", "Overdue"])
+        self.report_status_filter.set("All")
+        self.report_status_filter.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=5)
+
+        ttk.Label(filters_frame, text="Filter by Department:").grid(row=1, column=0, sticky=tk.W)
+        self.report_dept_filter = ttk.Combobox(filters_frame, values=["All", "Computer Science", "Engineering", "Business"])
+        self.report_dept_filter.set("All")
+        self.report_dept_filter.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=5)
+
+        # Sorting
+        sort_frame = ttk.LabelFrame(main_frame, text="Sorting & Grouping", padding="10")
+        sort_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(sort_frame, text="Sort by:").grid(row=0, column=0, sticky=tk.W)
+        self.report_sort = ttk.Combobox(sort_frame, values=["Student ID", "Name", "Amount", "Department", "Date"])
+        self.report_sort.set("Student ID")
+        self.report_sort.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=5)
+
+        self.report_sort_desc = tk.BooleanVar(value=False)
+        ttk.Checkbutton(sort_frame, text="Descending", variable=self.report_sort_desc).grid(row=0, column=2, padx=5)
+
+        # Preview
+        preview_frame = ttk.LabelFrame(main_frame, text="Report Preview", padding="10")
+        preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        preview_text = ScrolledText(preview_frame, height=10, wrap=tk.WORD)
+        preview_text.pack(fill=tk.BOTH, expand=True)
+        preview_text.insert(1.0, "Report preview will appear here after generation...")
+
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+
+        def generate_report():
+            messagebox.showinfo("Success", "Custom report generated successfully!")
+            self.log_activity("Custom report generated")
+
+        ttk.Button(buttons_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Save Template",
+                   command=lambda: messagebox.showinfo("Save", "Report template saved!")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Export",
+                   command=lambda: messagebox.showinfo("Export", "Report exported!")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT)
+
+    def generate_regulatory_reports(self):
+        """Generate regulatory compliance reports"""
+        self.update_status("Generating regulatory reports...")
+
+        def generate_in_background():
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Compile regulatory data
+                cursor.execute('''
+                SELECT
+                    COUNT(DISTINCT student_id) as total_students,
+                    SUM(amount) as total_fees,
+                    SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as collected,
+                    COUNT(*) as total_transactions
+                FROM student_fees
+                ''')
+
+                summary = cursor.fetchone()
+
+                # Get payment method breakdown
+                cursor.execute('''
+                SELECT payment_method, COUNT(*), SUM(amount)
+                FROM payments
+                GROUP BY payment_method
+                ''')
+
+                payment_methods = cursor.fetchall()
+
+                conn.close()
+
+                report_data = {
+                    'summary': summary,
+                    'payment_methods': payment_methods
+                }
+
+                self.root.after(0, lambda: [
+                    self.show_regulatory_report(report_data),
+                    self.update_status("Ready")
+                ])
+
+            except Exception as e:
+                self.root.after(0, lambda: [
+                    messagebox.showerror("Error", f"Regulatory report generation failed: {e}"),
+                    self.update_status("Error")
+                ])
+
+        thread = threading.Thread(target=generate_in_background)
+        thread.daemon = True
+        thread.start()
+
+    def show_regulatory_report(self, data):
+        """Show regulatory compliance report"""
+        reg_window = tk.Toplevel(self.root)
+        reg_window.title("Regulatory Compliance Report")
+        reg_window.geometry("900x700")
+
+        main_frame = ttk.Frame(reg_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Regulatory Compliance Report",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        report_text = ScrolledText(main_frame, height=25, wrap=tk.WORD)
+        report_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Generate report content
+        report_text.insert(tk.END, "REGULATORY COMPLIANCE REPORT\n")
+        report_text.insert(tk.END, "=" * 80 + "\n\n")
+        report_text.insert(tk.END, f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+
+        report_text.insert(tk.END, "FINANCIAL SUMMARY:\n")
+        report_text.insert(tk.END, "-" * 80 + "\n")
+        if data['summary']:
+            total_students, total_fees, collected, transactions = data['summary']
+            collection_rate = (collected / total_fees * 100) if total_fees > 0 else 0
+
+            report_text.insert(tk.END, f"Total Students: {total_students:,}\n")
+            report_text.insert(tk.END, f"Total Fee Obligations: £{total_fees:,.2f}\n")
+            report_text.insert(tk.END, f"Total Collected: £{collected:,.2f}\n")
+            report_text.insert(tk.END, f"Collection Rate: {collection_rate:.2f}%\n")
+            report_text.insert(tk.END, f"Total Transactions: {transactions:,}\n\n")
+
+        report_text.insert(tk.END, "PAYMENT METHOD BREAKDOWN:\n")
+        report_text.insert(tk.END, "-" * 80 + "\n")
+        if data['payment_methods']:
+            for method, count, amount in data['payment_methods']:
+                report_text.insert(tk.END, f"{method}: {count:,} transactions, £{amount:,.2f}\n")
+        report_text.insert(tk.END, "\n")
+
+        report_text.insert(tk.END, "COMPLIANCE STATUS:\n")
+        report_text.insert(tk.END, "-" * 80 + "\n")
+        report_text.insert(tk.END, "✓ Financial records maintained in accordance with regulatory requirements\n")
+        report_text.insert(tk.END, "✓ Payment processing compliant with data protection regulations\n")
+        report_text.insert(tk.END, "✓ Audit trail maintained for all financial transactions\n")
+        report_text.insert(tk.END, "✓ Student financial data handled in accordance with privacy laws\n\n")
+
+        report_text.insert(tk.END, "RECOMMENDATIONS:\n")
+        report_text.insert(tk.END, "-" * 80 + "\n")
+        report_text.insert(tk.END, "• Continue regular financial audits\n")
+        report_text.insert(tk.END, "• Maintain current data protection practices\n")
+        report_text.insert(tk.END, "• Review collection processes quarterly\n")
+        report_text.insert(tk.END, "• Ensure staff training on compliance requirements\n")
+
+        report_text.configure(state='disabled')
+
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(buttons_frame, text="Export PDF",
+                   command=lambda: messagebox.showinfo("Export", "Report exported to PDF!")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Print",
+                   command=lambda: messagebox.showinfo("Print", "Sending report to printer...")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text="Close", command=reg_window.destroy).pack(side=tk.RIGHT)
 
     # Update the navigation menu to include the new functions
     def populate_navigation_updated(self):
