@@ -1477,7 +1477,7 @@ Scheduled: {values[8]}"""
                     JOIN students s ON ca.student_id = s.student_id
                     JOIN early_warning_coaches c ON ca.coach_id = c.coach_id
                     WHERE ca.status = 'active'
-                    ORDER BY ca.created_at DESC
+                    ORDER BY ca.assigned_date DESC
                 ''')
                 assignments = cursor.fetchall()
                 conn.close()

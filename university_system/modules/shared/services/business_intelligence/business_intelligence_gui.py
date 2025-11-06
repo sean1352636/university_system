@@ -378,7 +378,6 @@ class BusinessIntelligenceGUI:
                     SELECT visualization_id, visualization_name, chart_type,
                            data_source, created_by, created_at
                     FROM bi_visualizations
-                    WHERE is_active = 1
                     ORDER BY created_at DESC
                 ''')
 
@@ -532,7 +531,7 @@ class BusinessIntelligenceGUI:
 
         try:
             with transaction() as conn:
-                conn.execute('UPDATE bi_visualizations SET is_active = 0 WHERE visualization_id = ?', (viz_id,))
+                conn.execute('DELETE FROM bi_visualizations WHERE visualization_id = ?', (viz_id,))
 
             messagebox.showinfo("Success", "Visualization deleted successfully")
             self._load_visualizations()
