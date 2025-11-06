@@ -552,7 +552,14 @@ class DashboardManager:
             
         except Exception as e:
             # Create error display
-            error_label = tk.Label(parent_frame, text=f"Error loading stats: {e}", 
+            error_label = tk.Label(parent_frame, text=f"Error loading stats: {e}",
                                  fg='red', font=('Arial', 12))
             error_label.pack(pady=20)
-    
+
+    def show_payment_dialog(self):
+        """Wrapper to call transaction manager's payment dialog"""
+        if hasattr(self.gui, 'transactions'):
+            self.gui.transactions.show_payment_dialog()
+        else:
+            messagebox.showwarning("Not Available", "Transaction manager not initialized")
+

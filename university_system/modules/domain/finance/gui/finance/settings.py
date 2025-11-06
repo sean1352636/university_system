@@ -2314,4 +2314,11 @@ class SettingsManager:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate monthly revenue trend report: {e}")
-    
+
+    def initialize_database(self):
+        """Wrapper to call database manager's initialize function"""
+        if hasattr(self.gui, 'db'):
+            self.gui.db.initialize_database()
+        else:
+            messagebox.showwarning("Not Available", "Database manager not initialized")
+

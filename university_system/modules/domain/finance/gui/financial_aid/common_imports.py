@@ -337,8 +337,12 @@ def get_student_id() -> Optional[str]:
 
 def clear_frame(frame):
     """Clear all widgets from frame"""
-    for widget in frame.winfo_children():
-        widget.destroy()
+    try:
+        if frame.winfo_exists():
+            for widget in frame.winfo_children():
+                widget.destroy()
+    except Exception:
+        pass  # Frame already destroyed
 
 
 # Academic year utilities

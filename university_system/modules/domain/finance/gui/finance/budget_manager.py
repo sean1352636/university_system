@@ -808,4 +808,11 @@ class BudgetManager:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate category performance report: {e}")
-    
+
+    def gui_apply_credit_to_fees(self):
+        """Wrapper to call transaction manager's apply credit function"""
+        if hasattr(self.gui, 'transactions'):
+            self.gui.transactions.gui_apply_credit_to_fees()
+        else:
+            messagebox.showwarning("Not Available", "Transaction manager not initialized")
+

@@ -1113,4 +1113,11 @@ class ReportManager:
                 messagebox.showerror("Error", f"Failed to generate aid report: {e}")
         
         ttk.Button(report_frame, text="Generate Report", command=generate_report).pack(pady=20)
-    
+
+    def gui_aging_analysis_report(self):
+        """Wrapper to call compliance manager's aging analysis report"""
+        if hasattr(self.gui, 'compliance'):
+            self.gui.compliance.gui_aging_analysis_report()
+        else:
+            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+
