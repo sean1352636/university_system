@@ -129,18 +129,107 @@ class DashboardManager:
             self.finance_system = None
 
     def refresh_dashboard(self):
-        """Refresh dashboard data - stub implementation"""
+        """Refresh dashboard data with current statistics"""
         try:
-            # Try to update connection if available
+            # Update connection if available
             if hasattr(self.gui, 'conn') and self.gui.conn:
                 self.conn = self.gui.conn
             elif not self.conn:
                 self.conn = get_connection()
 
-            # If dashboard is created, update its data
-            print("Dashboard refresh called")
+            # Calculate total revenue (sum of all payments)
+            try:
+                cursor = self.conn.cursor()
+                cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM payments')
+                total_revenue = cursor.fetchone()[0]
+            except:
+                total_revenue = 0
+
+            # Count active students
+            try:
+                cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'Active'")
+                active_students = cursor.fetchone()[0]
+            except:
+                active_students = 0
+
+            # Calculate overdue amount (unpaid fees past due date)
+            try:
+                cursor.execute('''
+                    SELECT COALESCE(SUM(sf.amount - COALESCE(pa.paid, 0)), 0)
+                    FROM student_fees sf
+                    LEFT JOIN (
+                        SELECT student_fee_id, SUM(amount) as paid
+                        FROM payment_allocations
+                        GROUP BY student_fee_id
+                    ) pa ON sf.student_fee_id = pa.student_fee_id
+                    WHERE sf.due_date < date('now') AND (sf.amount - COALESCE(pa.paid, 0)) > 0
+                ''')
+                overdue_amount = cursor.fetchone()[0]
+            except:
+                overdue_amount = 0
+
+            # Calculate collection rate (percentage of fees collected)
+            try:
+                cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM student_fees')
+                total_fees = cursor.fetchone()[0]
+                if total_fees > 0:
+                    collection_rate = (total_revenue / total_fees) * 100
+                else:
+                    collection_rate = 0
+            except:
+                collection_rate = 0
+
+            # Update stat cards if they exist in the layout
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'tab_frames'):
+                dashboard_frame = self.gui.layout.tab_frames.get('dashboard')
+                if dashboard_frame:
+                    # Find and update stat card labels
+                    for widget in dashboard_frame.winfo_children():
+                        self._update_stat_cards_recursive(widget, {
+                            '💰 Total Revenue': f'£{total_revenue:,.2f}',
+                            '📋 Active Students': f'{active_students}',
+                            '⚠️ Overdue Amount': f'£{overdue_amount:,.2f}',
+                            '📈 Collection Rate': f'{collection_rate:.1f}%'
+                        })
+
+            # Load recent activity
+            if hasattr(self, 'activity_listbox'):
+                self.activity_listbox.delete(0, tk.END)
+                try:
+                    cursor.execute('''
+                        SELECT payment_date, student_id, amount, payment_method
+                        FROM payments
+                        ORDER BY payment_date DESC
+                        LIMIT 10
+                    ''')
+                    for row in cursor.fetchall():
+                        activity = f"{row[0]} - Student {row[1]}: £{row[2]:.2f} via {row[3]}"
+                        self.activity_listbox.insert(tk.END, activity)
+                except:
+                    self.activity_listbox.insert(tk.END, "No recent activity")
+
+            print("✅ Dashboard refreshed successfully")
         except Exception as e:
             print(f"Dashboard refresh error: {e}")
+
+    def _update_stat_cards_recursive(self, widget, stats):
+        """Recursively update stat card labels"""
+        try:
+            if isinstance(widget, tk.Label):
+                text = widget.cget('text')
+                if text in stats:
+                    # This is a title label, find the next label (value)
+                    parent = widget.master
+                    labels = [w for w in parent.winfo_children() if isinstance(w, tk.Label)]
+                    if len(labels) >= 2:
+                        # Update the value label
+                        labels[1].config(text=stats[text])
+
+            # Recurse into children
+            for child in widget.winfo_children():
+                self._update_stat_cards_recursive(child, stats)
+        except:
+            pass
 
     def create_dashboard_tab(self):
         """Create dashboard tab"""
@@ -177,10 +266,9 @@ class DashboardManager:
         
         actions = [
             ("Record Payment", self.show_payment_dialog),
-            ("Add Student", self.show_student_dialog),
             ("Generate Report", self.show_reports_tab),
             ("Sync Data", self.refresh_dashboard),
-            ("Advanced Reporting", self.launch_reporting_gui)  # Add this line
+            ("Advanced Reporting", self.launch_reporting_gui)
         ]        
     
         for i, (text, command) in enumerate(actions):
@@ -562,13 +650,6 @@ class DashboardManager:
             self.gui.transactions.show_payment_dialog()
         else:
             messagebox.showwarning("Not Available", "Transaction manager not initialized")
-
-    def show_student_dialog(self):
-        """Wrapper to call main GUI's student dialog"""
-        if hasattr(self.gui, 'show_student_dialog'):
-            self.gui.show_student_dialog()
-        else:
-            messagebox.showwarning("Not Available", "Student management not available")
 
     def show_reports_tab(self):
         """Show the reports tab"""

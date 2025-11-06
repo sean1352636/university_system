@@ -440,16 +440,168 @@ class ExpenseManager:
         
 
         def bulk_assign_fees_to_course(self):
-            """Bulk assign fees to course (placeholder function)"""
+            """Bulk assign fees to course with full functionality"""
             try:
-                messagebox.showinfo("Bulk Fee Assignment",
-                    "Bulk fee assignment functionality not fully implemented.\n"
-                    "This would allow:\n"
-                    "• Assigning fees to entire courses\n"
-                    "• Batch fee processing\n"
-                    "• Course-wide fee updates\n"
-                    "• Mass fee notifications")
+                # Create bulk assignment dialog
+                dialog = tk.Toplevel(self.root)
+                dialog.title("Bulk Fee Assignment")
+                dialog.geometry("600x550")
+                dialog.transient(self.root)
+                dialog.grab_set()
+
+                main_frame = ttk.Frame(dialog, padding="20")
+                main_frame.pack(fill=tk.BOTH, expand=True)
+
+                ttk.Label(main_frame, text="Bulk Fee Assignment to Course",
+                         font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+                # Form frame
+                form_frame = ttk.LabelFrame(main_frame, text="Assignment Details", padding=15)
+                form_frame.pack(fill=tk.X, pady=(0, 20))
+
+                # Course selection
+                ttk.Label(form_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W, pady=10)
+                course_var = tk.StringVar()
+
+                # Get available courses
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT DISTINCT course_code FROM courses WHERE status = "active" ORDER BY course_code')
+                courses = [row[0] for row in cursor.fetchall()]
+
+                if not courses:
+                    courses = ['CS', 'DS', 'ENG', 'BUS']  # Fallback
+
+                course_combo = ttk.Combobox(form_frame, textvariable=course_var, values=courses, state='readonly')
+                course_combo.grid(row=0, column=1, sticky=tk.EW, pady=10, padx=(10, 0))
+
+                # Fee type
+                ttk.Label(form_frame, text="Fee Type:").grid(row=1, column=0, sticky=tk.W, pady=10)
+                fee_type_var = tk.StringVar()
+                fee_types = ['Tuition', 'Library', 'Laboratory', 'Sports', 'Technology', 'Registration', 'Examination']
+                fee_combo = ttk.Combobox(form_frame, textvariable=fee_type_var, values=fee_types, state='readonly')
+                fee_combo.grid(row=1, column=1, sticky=tk.EW, pady=10, padx=(10, 0))
+
+                # Amount
+                ttk.Label(form_frame, text="Amount (£):").grid(row=2, column=0, sticky=tk.W, pady=10)
+                amount_var = tk.StringVar()
+                ttk.Entry(form_frame, textvariable=amount_var).grid(row=2, column=1, sticky=tk.EW, pady=10, padx=(10, 0))
+
+                # Due date
+                ttk.Label(form_frame, text="Due Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, pady=10)
+                due_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+                ttk.Entry(form_frame, textvariable=due_date_var).grid(row=3, column=1, sticky=tk.EW, pady=10, padx=(10, 0))
+
+                # Description
+                ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.W, pady=10)
+                desc_var = tk.StringVar()
+                ttk.Entry(form_frame, textvariable=desc_var).grid(row=4, column=1, sticky=tk.EW, pady=10, padx=(10, 0))
+
+                form_frame.columnconfigure(1, weight=1)
+
+                # Preview frame
+                preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding=10)
+                preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+                preview_text = tk.Text(preview_frame, height=6, width=60, wrap=tk.WORD)
+                preview_text.pack(fill=tk.BOTH, expand=True)
+                preview_text.config(state='disabled')
+
+                def update_preview(*args):
+                    """Update preview of students affected"""
+                    try:
+                        course = course_var.get()
+                        if course:
+                            cursor.execute('''
+                                SELECT COUNT(*) FROM students WHERE course = ? AND status = "Active"
+                            ''', (course,))
+                            count = cursor.fetchone()[0]
+                            preview_text.config(state='normal')
+                            preview_text.delete('1.0', tk.END)
+                            preview_text.insert('1.0',
+                                f"Course: {course}\n"
+                                f"Active Students: {count}\n"
+                                f"Fee Type: {fee_type_var.get() or 'Not selected'}\n"
+                                f"Amount per student: £{amount_var.get() or '0.00'}\n"
+                                f"Total fees to assign: £{float(amount_var.get() or 0) * count:,.2f}")
+                            preview_text.config(state='disabled')
+                    except:
+                        pass
+
+                course_var.trace('w', update_preview)
+                fee_type_var.trace('w', update_preview)
+                amount_var.trace('w', update_preview)
+
+                def assign_fees():
+                    """Perform bulk fee assignment"""
+                    try:
+                        course = course_var.get()
+                        fee_type = fee_type_var.get()
+                        amount = amount_var.get()
+                        due_date = due_date_var.get()
+                        description = desc_var.get()
+
+                        if not all([course, fee_type, amount, due_date]):
+                            messagebox.showwarning("Missing Data", "Please fill in all required fields")
+                            return
+
+                        amount_float = float(amount)
+                        if amount_float <= 0:
+                            messagebox.showwarning("Invalid Amount", "Amount must be greater than 0")
+                            return
+
+                        # Get students in the course
+                        cursor.execute('''
+                            SELECT student_id FROM students WHERE course = ? AND status = "Active"
+                        ''', (course,))
+                        students = cursor.fetchall()
+
+                        if not students:
+                            messagebox.showinfo("No Students", f"No active students found in course {course}")
+                            return
+
+                        # Confirm before proceeding
+                        if not messagebox.askyesno("Confirm Assignment",
+                            f"Assign £{amount_float:.2f} {fee_type} fee to {len(students)} students in {course}?"):
+                            return
+
+                        # Assign fees
+                        assigned_count = 0
+                        from datetime import datetime
+                        current_date = datetime.now().strftime('%Y-%m-%d')
+
+                        for student in students:
+                            student_id = student[0]
+                            cursor.execute('''
+                                INSERT INTO student_fees (student_id, fee_type, amount, due_date, description, created_date)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            ''', (student_id, fee_type, amount_float, due_date, description, current_date))
+                            assigned_count += 1
+
+                        conn.commit()
+                        conn.close()
+
+                        messagebox.showinfo("Success",
+                            f"Successfully assigned £{amount_float:.2f} {fee_type} fee to {assigned_count} students in {course}")
+
+                        print(f"✅ Bulk assigned {assigned_count} fees to course {course}")
+                        dialog.destroy()
+
+                    except ValueError:
+                        messagebox.showerror("Invalid Input", "Please enter a valid amount")
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to assign fees: {str(e)}")
+                        print(f"Error in bulk assignment: {e}")
+
+                # Buttons
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(fill=tk.X)
+
+                ttk.Button(button_frame, text="Assign Fees", command=assign_fees).pack(side=tk.LEFT, padx=(0, 10))
+                ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT)
+
             except Exception as e:
+                messagebox.showerror("Error", f"Failed to open bulk assignment dialog: {str(e)}")
                 print(f"Error in bulk_assign_fees_to_course: {e}")
     
 

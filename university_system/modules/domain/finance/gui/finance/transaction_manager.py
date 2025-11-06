@@ -1030,16 +1030,144 @@ class TransactionManager:
     
 
     def analyze_payment_patterns(self):
-        """Analyze payment patterns (placeholder function)"""
+        """Analyze payment patterns and display insights"""
         try:
-            messagebox.showinfo("Payment Analytics",
-                "Payment pattern analysis functionality not fully implemented.\n"
-                "This would analyze:\n"
-                "• Payment timing trends\n"
-                "• Popular payment methods\n"
-                "• Peak payment periods\n"
-                "• Payment failure patterns")
+            # Create analysis dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Payment Pattern Analysis")
+            dialog.geometry("700x600")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text="Payment Pattern Analysis",
+                     font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+            # Create text widget for results
+            results_text = scrolledtext.ScrolledText(main_frame, width=80, height=30,
+                                                    font=('Courier', 10), wrap=tk.WORD)
+            results_text.pack(fill=tk.BOTH, expand=True)
+
+            # Analyze payment data
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            analysis = "PAYMENT PATTERN ANALYSIS REPORT\n"
+            analysis += "=" * 70 + "\n\n"
+
+            # 1. Payment Method Distribution
+            analysis += "1. PAYMENT METHOD DISTRIBUTION\n" + "-" * 70 + "\n"
+            cursor.execute('''
+                SELECT payment_method, COUNT(*) as count, SUM(amount) as total
+                FROM payments
+                GROUP BY payment_method
+                ORDER BY count DESC
+            ''')
+            methods = cursor.fetchall()
+            if methods:
+                for method in methods:
+                    analysis += f"   {method[0]}: {method[1]} payments, £{method[2]:,.2f} total\n"
+            else:
+                analysis += "   No payment data available\n"
+            analysis += "\n"
+
+            # 2. Payment Timing Trends (by day of week)
+            analysis += "2. PAYMENT TIMING (BY DAY OF WEEK)\n" + "-" * 70 + "\n"
+            cursor.execute('''
+                SELECT CASE CAST(strftime('%w', payment_date) AS INTEGER)
+                    WHEN 0 THEN 'Sunday'
+                    WHEN 1 THEN 'Monday'
+                    WHEN 2 THEN 'Tuesday'
+                    WHEN 3 THEN 'Wednesday'
+                    WHEN 4 THEN 'Thursday'
+                    WHEN 5 THEN 'Friday'
+                    WHEN 6 THEN 'Saturday'
+                END as day_name,
+                COUNT(*) as count,
+                AVG(amount) as avg_amount
+                FROM payments
+                WHERE payment_date IS NOT NULL
+                GROUP BY strftime('%w', payment_date)
+                ORDER BY count DESC
+            ''')
+            days = cursor.fetchall()
+            if days:
+                for day in days:
+                    analysis += f"   {day[0]}: {day[1]} payments, £{day[2]:.2f} avg\n"
+            else:
+                analysis += "   No payment timing data available\n"
+            analysis += "\n"
+
+            # 3. Monthly Payment Trends
+            analysis += "3. MONTHLY PAYMENT TRENDS\n" + "-" * 70 + "\n"
+            cursor.execute('''
+                SELECT strftime('%Y-%m', payment_date) as month,
+                       COUNT(*) as count,
+                       SUM(amount) as total
+                FROM payments
+                WHERE payment_date IS NOT NULL
+                GROUP BY month
+                ORDER BY month DESC
+                LIMIT 12
+            ''')
+            months = cursor.fetchall()
+            if months:
+                for month in months:
+                    analysis += f"   {month[0]}: {month[1]} payments, £{month[2]:,.2f}\n"
+            else:
+                analysis += "   No monthly data available\n"
+            analysis += "\n"
+
+            # 4. Average Payment Amount by Status
+            analysis += "4. PAYMENT STATISTICS\n" + "-" * 70 + "\n"
+            cursor.execute('''
+                SELECT
+                    COUNT(*) as total_payments,
+                    SUM(amount) as total_amount,
+                    AVG(amount) as avg_amount,
+                    MIN(amount) as min_amount,
+                    MAX(amount) as max_amount
+                FROM payments
+            ''')
+            stats = cursor.fetchone()
+            if stats and stats[0] > 0:
+                analysis += f"   Total Payments: {stats[0]}\n"
+                analysis += f"   Total Amount: £{stats[1]:,.2f}\n"
+                analysis += f"   Average Payment: £{stats[2]:.2f}\n"
+                analysis += f"   Smallest Payment: £{stats[3]:.2f}\n"
+                analysis += f"   Largest Payment: £{stats[4]:.2f}\n"
+            else:
+                analysis += "   No payment statistics available\n"
+            analysis += "\n"
+
+            # 5. Recent Payment Activity (last 30 days)
+            analysis += "5. RECENT ACTIVITY (LAST 30 DAYS)\n" + "-" * 70 + "\n"
+            cursor.execute('''
+                SELECT COUNT(*) as count, SUM(amount) as total
+                FROM payments
+                WHERE payment_date >= date('now', '-30 days')
+            ''')
+            recent = cursor.fetchone()
+            if recent and recent[0] > 0:
+                analysis += f"   Payments: {recent[0]}\n"
+                analysis += f"   Total Amount: £{recent[1]:,.2f}\n"
+            else:
+                analysis += "   No recent payment activity\n"
+
+            conn.close()
+
+            # Display results
+            results_text.insert('1.0', analysis)
+            results_text.config(state='disabled')
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(10, 0))
+
+            print("✅ Payment pattern analysis completed")
+
         except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze payment patterns: {e}")
             print(f"Error in analyze_payment_patterns: {e}")
     
 
