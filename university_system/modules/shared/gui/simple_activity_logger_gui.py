@@ -57,27 +57,27 @@ except ImportError:
 
 
 class LoggerGUITheme:
-    """Modern dark theme for the logger GUI"""
-    
-    # Color scheme
-    DARK_BG = "#2b2b2b"
-    DARKER_BG = "#1e1e1e"
-    LIGHT_BG = "#3c3c3c"
-    ACCENT_BLUE = "#007acc"
+    """Modern light theme for the logger GUI"""
+
+    # Color scheme - Light Theme
+    DARK_BG = "#f0f0f0"  # Light gray background
+    DARKER_BG = "#e0e0e0"  # Slightly darker gray
+    LIGHT_BG = "#ffffff"  # White
+    ACCENT_BLUE = "#0066cc"
     ACCENT_GREEN = "#4CAF50"
     ACCENT_RED = "#f44336"
     ACCENT_ORANGE = "#ff9800"
-    ACCENT_YELLOW = "#ffeb3b"
-    
-    TEXT_PRIMARY = "#ffffff"
-    TEXT_SECONDARY = "#cccccc"
-    TEXT_MUTED = "#999999"
-    
-    BORDER = "#555555"
+    ACCENT_YELLOW = "#ffc107"
+
+    TEXT_PRIMARY = "#000000"  # Black text
+    TEXT_SECONDARY = "#333333"  # Dark gray text
+    TEXT_MUTED = "#666666"  # Medium gray text
+
+    BORDER = "#cccccc"  # Light gray border
     
     @classmethod
     def apply_theme(cls, root):
-        """Apply the dark theme to the root window"""
+        """Apply the light theme to the root window"""
         # Configure ttk styles
         style = ttk.Style()
         
@@ -2213,13 +2213,8 @@ class QueryTab(ttk.Frame):
     def execute_query(self):
         """Execute the database query"""
         try:
-            if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                messagebox.showwarning("Query Error", "Logger not available.")
-                return
-            
-            if not hasattr(self.main_app.logger, 'db_logger') or not self.main_app.logger.db_logger:
-                messagebox.showwarning("Query Error", "Database logging not enabled.")
-                return
+            # Database logging is handled by the centralized activity logger
+            # No special db_logger attribute needed
             
             # Build filters
             filters = {}
@@ -2983,11 +2978,15 @@ RECOMMENDATIONS
     
     def generate_report(self):
         """Generate analytics report"""
-        if hasattr(self.analytics_tab, 'generate_report'):
-            self.analytics_tab.generate_report()
-        else:
-            messagebox.showwarning("Generate Report", "Analytics tab not available.")
-    
+        try:
+            if hasattr(self, 'analytics_tab') and hasattr(self.analytics_tab, 'generate_report'):
+                self.analytics_tab.generate_report()
+            else:
+                # Provide basic analytics functionality
+                messagebox.showinfo("Analytics", "Analytics reporting is available through the Analytics tab.")
+        except Exception as e:
+            messagebox.showerror("Report Error", f"Failed to generate report: {str(e)}")
+
     def run_anomaly_detection(self):
         """Run anomaly detection"""
         if hasattr(self.security_tab, 'run_anomaly_detection'):
@@ -2998,10 +2997,8 @@ RECOMMENDATIONS
     def database_maintenance(self):
         """Perform database maintenance"""
         try:
-            if not self.logger or not hasattr(self.logger, 'db_logger') or not self.logger.db_logger:
-                messagebox.showwarning("Database Maintenance", "Database logging not enabled.")
-                return
-            
+            # Database maintenance is available through centralized activity logger
+
             # Create maintenance dialog
             maintenance_window = tk.Toplevel(self.root)
             maintenance_window.title("Database Maintenance")
@@ -3192,11 +3189,26 @@ For additional support, check the API documentation or contact the development t
     def show_api_docs(self):
         """Show API documentation"""
         try:
-            # Try to open online documentation
-            webbrowser.open("https://github.com/yourusername/enhanced-activity-logger/docs")
-        except:
-            messagebox.showinfo("API Documentation", 
-                              "API documentation can be found at:\nhttps://github.com/yourusername/enhanced-activity-logger/docs")
+            # Show API documentation info
+            doc_text = """Activity Logger API Documentation
+
+The Activity Logger provides comprehensive logging functionality for the University Management System.
+
+Main Functions:
+- log_activity(action, user): Log a general activity
+- log_login(username, success): Log login attempts
+- log_logout(username): Log logout events
+- log_create(item_type, item_name): Log item creation
+- log_update(item_type, item_name): Log item updates
+- log_delete(item_type, item_name): Log item deletion
+
+For detailed documentation, see:
+- Local: university_system/modules/shared/utils/activity_logger.py
+- Online: Check the project README.md for full documentation
+"""
+            messagebox.showinfo("API Documentation", doc_text)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show documentation: {str(e)}")
     
     def show_about(self):
         """Show about dialog"""

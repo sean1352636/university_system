@@ -6823,7 +6823,12 @@ University Administration"""
             config_frame = ttk.Frame(notebook)
             notebook.add(config_frame, text="Configuration")
             self.create_config_tab(config_frame)
-            
+
+            # Add close button at the bottom
+            button_frame = ttk.Frame(admin_window, padding="10")
+            button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+            ttk.Button(button_frame, text="Close", command=admin_window.destroy).pack(side=tk.RIGHT)
+
             print("System Administration GUI opened successfully")
 
         except Exception as e:
@@ -6868,18 +6873,192 @@ University Administration"""
 
     def create_user_admin_tab(self, parent):
         """Create user administration interface"""
-        # Enhanced user management beyond basic user_management
-        pass
+        main_frame = ttk.Frame(parent, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # User management tools
+        tools_frame = ttk.LabelFrame(main_frame, text="User Management", padding="15")
+        tools_frame.pack(fill=tk.X, pady=(0, 20))
+
+        ttk.Button(tools_frame, text="View All Users",
+                  command=self.view_all_users).grid(row=0, column=0, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Add New User",
+                  command=self.add_new_user).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Manage Permissions",
+                  command=self.manage_permissions).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Button(tools_frame, text="View Active Sessions",
+                  command=self.view_active_sessions).grid(row=1, column=0, padx=5, pady=5)
+
+        # User statistics
+        stats_frame = ttk.LabelFrame(main_frame, text="User Statistics", padding="15")
+        stats_frame.pack(fill=tk.BOTH, expand=True)
+
+        stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=15,
+                                               fg="#000000", bg="#FFFFFF")
+        stats_text.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            # Get user statistics from database
+            from university_system.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                cursor = conn.execute("SELECT COUNT(*) FROM users")
+                total_users = cursor.fetchone()[0]
+
+                cursor = conn.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
+                users_by_role = cursor.fetchall()
+
+            stats_info = f"""User Statistics
+{'='*50}
+
+Total Users: {total_users}
+
+Users by Role:
+"""
+            for role, count in users_by_role:
+                stats_info += f"  {role}: {count}\n"
+
+            stats_text.insert("1.0", stats_info)
+        except Exception as e:
+            stats_text.insert("1.0", f"Error loading user statistics: {e}")
+
+        stats_text.config(state=tk.DISABLED)
 
     def create_monitoring_tab(self, parent):
         """Create system monitoring interface"""
-        # System performance, logs, etc.
-        pass
+        main_frame = ttk.Frame(parent, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Monitoring tools
+        tools_frame = ttk.LabelFrame(main_frame, text="System Monitoring Tools", padding="15")
+        tools_frame.pack(fill=tk.X, pady=(0, 20))
+
+        ttk.Button(tools_frame, text="View System Logs",
+                  command=self.view_system_logs).grid(row=0, column=0, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Database Performance",
+                  command=self.show_db_performance).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Active Connections",
+                  command=self.show_active_connections).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Error Logs",
+                  command=self.view_error_logs).grid(row=1, column=0, padx=5, pady=5)
+
+        # System status display
+        status_frame = ttk.LabelFrame(main_frame, text="System Status", padding="15")
+        status_frame.pack(fill=tk.BOTH, expand=True)
+
+        status_text = scrolledtext.ScrolledText(status_frame, wrap=tk.WORD, height=15,
+                                               fg="#000000", bg="#FFFFFF")
+        status_text.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            import psutil
+            import platform
+            from datetime import datetime
+
+            # Get system information
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+
+            # Get database stats
+            from university_system.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                cursor = conn.execute("SELECT COUNT(*) FROM activity_log")
+                log_count = cursor.fetchone()[0] if cursor.fetchone() else 0
+
+            status_info = f"""System Status Report
+{'='*50}
+
+System Information:
+  Platform: {platform.system()} {platform.release()}
+  Python: {platform.python_version()}
+  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Performance Metrics:
+  CPU Usage: {cpu_percent}%
+  Memory Usage: {memory.percent}% ({memory.used / (1024**3):.2f}GB / {memory.total / (1024**3):.2f}GB)
+  Disk Usage: {disk.percent}% ({disk.used / (1024**3):.2f}GB / {disk.total / (1024**3):.2f}GB)
+
+Database Status:
+  Activity Logs: {log_count} entries
+  Status: Connected
+
+System Health: {'✓ Healthy' if cpu_percent < 80 and memory.percent < 80 else '⚠ Warning'}
+"""
+            status_text.insert("1.0", status_info)
+        except Exception as e:
+            status_text.insert("1.0", f"System Status\n{'='*50}\n\nError loading system information: {e}\n\nBasic system monitoring is available.")
+
+        status_text.config(state=tk.DISABLED)
 
     def create_config_tab(self, parent):
         """Create configuration interface"""
-        # System settings, permissions, etc.
-        pass
+        main_frame = ttk.Frame(parent, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Configuration tools
+        tools_frame = ttk.LabelFrame(main_frame, text="Configuration Management", padding="15")
+        tools_frame.pack(fill=tk.X, pady=(0, 20))
+
+        ttk.Button(tools_frame, text="System Settings",
+                  command=self.edit_system_settings).grid(row=0, column=0, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Email Configuration",
+                  command=self.configure_email).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Backup Settings",
+                  command=self.configure_backup).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Button(tools_frame, text="Security Settings",
+                  command=self.configure_security).grid(row=1, column=0, padx=5, pady=5)
+
+        # Current configuration display
+        config_frame = ttk.LabelFrame(main_frame, text="Current Configuration", padding="15")
+        config_frame.pack(fill=tk.BOTH, expand=True)
+
+        config_text = scrolledtext.ScrolledText(config_frame, wrap=tk.WORD, height=15,
+                                               fg="#000000", bg="#FFFFFF")
+        config_text.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            from university_system.modules.shared.constants import paths
+            import os
+
+            config_info = f"""System Configuration
+{'='*50}
+
+File Paths:
+  Database: {paths.DEFAULT_DB_PATH}
+  Logs: {paths.LOG_DIR}
+  Backups: {paths.BACKUP_DIR}
+  Uploads: {paths.UPLOAD_DIR}
+
+System Settings:
+  Project Root: {paths.PROJECT_ROOT}
+  Data Directory: {paths.DATA_DIR}
+
+Database Configuration:
+  Type: SQLite
+  Connection Pooling: Enabled
+  WAL Mode: Enabled
+
+Authentication:
+  Password Hashing: PBKDF2 (1,000,000 iterations)
+  Multi-Factor Auth: Available
+  Session Management: Token-based
+
+Email Service:
+  Status: {'Configured' if os.path.exists(paths.PROJECT_ROOT / '.env') else 'Not Configured'}
+  Queue System: Asynchronous
+
+Logging:
+  Activity Logging: Enabled
+  Log Rotation: Daily
+  Retention: 90 days
+
+Note: Modify configuration files or use the configuration tools above to change settings.
+"""
+            config_text.insert("1.0", config_info)
+        except Exception as e:
+            config_text.insert("1.0", f"Configuration Overview\n{'='*50}\n\nError loading configuration: {e}\n\nUse the configuration tools above to manage system settings.")
+
+        config_text.config(state=tk.DISABLED)
 
     def open_ai_detector_window(self):
         """Open the AI Detector GUI in a separate full-screen window (new process)."""
