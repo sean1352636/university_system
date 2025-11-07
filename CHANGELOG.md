@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Helper Functions Addition: 8 Utility Methods** (2025-11-07)
+- **Issue**: Document Manager GUI needed reusable helper methods for common operations
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 7179-7887)
+- **Added Helper Methods** (8 reusable utility functions):
+
+  **Activity Logging & Authentication** (2 methods):
+  1. `log_event()` - Log events/activities to database with user attribution, auto-creates activity_log table if needed
+  2. `check_authentication()` - Verify user authentication status with fallback support
+
+  **Selection Dialogs** (3 methods):
+  3. `select_student()` - Interactive student selection dialog with search functionality (600x500)
+  4. `select_document_type()` - Document type selection with detailed info display (700x600)
+  5. `select_tags()` - Multi-select tag picker with create-new-tag capability (600x500)
+
+  **File & Date Utilities** (2 methods):
+  6. `get_file_upload_details()` - File dialog with automatic metadata extraction (path, size, extension, validation)
+  7. `get_expiry_date()` - Expiry date picker with calculated/manual/no-expiry options (450x300)
+
+  **Security** (1 method):
+  8. `ensure_login()` - Enforce login with optional role-based access control, raises PermissionError if unauthorized
+
+- **Features**:
+  - All methods return None on cancellation for clean error handling
+  - Consistent dialog sizing and styling (ttk widgets)
+  - Real-time preview and validation
+  - Database integration with proper error handling
+  - Comprehensive docstrings with Args/Returns documentation
+  - Support for both basic and advanced use cases
+
 **Document Manager GUI - Major Feature Addition: 20 Missing CLI Methods** (2025-11-07)
 - **Issue**: Document Manager GUI was missing 97 methods compared to CLI version, causing frequent AttributeErrors
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py`

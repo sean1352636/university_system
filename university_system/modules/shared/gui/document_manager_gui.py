@@ -7172,6 +7172,720 @@ Total Documents: {doc_count}
             import traceback
             traceback.print_exc()
 
+    # ====================================================================================
+    # HELPER FUNCTIONS (8 methods)
+    # ====================================================================================
+
+    def log_event(self, action, entity_type, entity_id=None, details=None):
+        """
+        Log an event/activity to the database
+
+        Args:
+            action: Action performed (e.g., 'create', 'update', 'delete', 'view')
+            entity_type: Type of entity (e.g., 'document', 'student', 'workflow')
+            entity_id: ID of the entity (optional)
+            details: Additional details as string or dict (optional)
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get current user info
+            username = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
+            user_role = self.current_user.get('role', 'user') if self.current_user else 'user'
+
+            # Convert details to JSON string if it's a dict
+            details_str = json.dumps(details) if isinstance(details, dict) else str(details) if details else None
+
+            # Insert into activity_log table if it exists, otherwise create a log entry
+            try:
+                cursor.execute('''
+                INSERT INTO activity_log (username, user_role, action, entity_type, entity_id, details, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (username, user_role, action, entity_type, entity_id, details_str, datetime.now().isoformat()))
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Table might not exist, create it
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS activity_log (
+                    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT,
+                    user_role TEXT,
+                    action TEXT,
+                    entity_type TEXT,
+                    entity_id TEXT,
+                    details TEXT,
+                    timestamp TEXT
+                )
+                ''')
+                cursor.execute('''
+                INSERT INTO activity_log (username, user_role, action, entity_type, entity_id, details, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (username, user_role, action, entity_type, entity_id, details_str, datetime.now().isoformat()))
+                conn.commit()
+
+            conn.close()
+        except Exception as e:
+            print(f"Error logging event: {e}")
+
+    def check_authentication(self):
+        """
+        Check if user is properly authenticated
+
+        Returns:
+            bool: True if authenticated, False otherwise
+        """
+        try:
+            if not self.current_user:
+                return False
+
+            # Check if user has required fields
+            if not isinstance(self.current_user, dict):
+                return False
+
+            if 'username' not in self.current_user or not self.current_user['username']:
+                return False
+
+            # Optionally check with authentication system
+            try:
+                auth_user = get_current_user()
+                return auth_user is not None
+            except:
+                # Fallback to local check
+                return True
+
+        except Exception as e:
+            print(f"Error checking authentication: {e}")
+            return False
+
+    def select_student(self, title="Select Student", allow_search=True):
+        """
+        Show a dialog to select a student
+
+        Args:
+            title: Dialog title
+            allow_search: Whether to allow searching for students
+
+        Returns:
+            dict: Student info dict with keys: student_id, first_name, last_name, email
+                  or None if cancelled
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title(title)
+            dialog.geometry("600x500")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            result = {'selected': None}
+
+            # Main frame
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Search frame (if enabled)
+            if allow_search:
+                search_frame = ttk.Frame(main_frame)
+                search_frame.pack(fill='x', pady=(0, 10))
+
+                ttk.Label(search_frame, text="Search:").pack(side='left', padx=(0, 5))
+                search_var = tk.StringVar()
+                search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
+                search_entry.pack(side='left', padx=(0, 5))
+
+            # Student list frame
+            list_frame = ttk.Frame(main_frame)
+            list_frame.pack(fill='both', expand=True)
+
+            # Listbox with scrollbar
+            scrollbar = ttk.Scrollbar(list_frame)
+            scrollbar.pack(side='right', fill='y')
+
+            student_listbox = tk.Listbox(list_frame, height=15, font=('Arial', 10),
+                                         yscrollcommand=scrollbar.set)
+            student_listbox.pack(side='left', fill='both', expand=True)
+            scrollbar.config(command=student_listbox.yview)
+
+            # Load students
+            students = self.get_students_list()
+            student_data = []
+
+            for student in students:
+                student_id, first_name, last_name = student[0], student[1], student[2]
+                display_text = f"{student_id} - {last_name}, {first_name}"
+                student_listbox.insert(tk.END, display_text)
+                student_data.append({
+                    'student_id': student_id,
+                    'first_name': first_name,
+                    'last_name': last_name
+                })
+
+            # Search functionality
+            if allow_search:
+                def filter_students(*args):
+                    search_text = search_var.get().lower()
+                    student_listbox.delete(0, tk.END)
+                    for i, student in enumerate(students):
+                        student_id, first_name, last_name = student[0], student[1], student[2]
+                        display_text = f"{student_id} - {last_name}, {first_name}"
+                        if search_text in display_text.lower():
+                            student_listbox.insert(tk.END, display_text)
+
+                search_var.trace('w', filter_students)
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=(20, 0))
+
+            def on_select():
+                selection = student_listbox.curselection()
+                if selection:
+                    index = selection[0]
+                    # Find the corresponding student from filtered list
+                    selected_text = student_listbox.get(index)
+                    student_id = selected_text.split(' - ')[0]
+
+                    # Find full student info
+                    for student in student_data:
+                        if student['student_id'] == student_id:
+                            result['selected'] = student
+                            break
+
+                    dialog.destroy()
+                else:
+                    messagebox.showwarning("Warning", "Please select a student")
+
+            def on_cancel():
+                dialog.destroy()
+
+            ttk.Button(button_frame, text="Select", command=on_select).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+
+            # Double-click to select
+            student_listbox.bind('<Double-Button-1>', lambda e: on_select())
+
+            dialog.wait_window()
+            return result['selected']
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show student selection: {e}")
+            return None
+
+    def select_document_type(self, title="Select Document Type", show_details=True):
+        """
+        Show a dialog to select a document type
+
+        Args:
+            title: Dialog title
+            show_details: Whether to show document type details
+
+        Returns:
+            dict: Document type info dict with keys: type_id, type_name, description, etc.
+                  or None if cancelled
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title(title)
+            dialog.geometry("700x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            result = {'selected': None}
+
+            # Main frame
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Document type list frame
+            list_frame = ttk.Frame(main_frame)
+            list_frame.pack(fill='both', expand=True)
+
+            # Listbox with scrollbar
+            scrollbar = ttk.Scrollbar(list_frame)
+            scrollbar.pack(side='right', fill='y')
+
+            doctype_listbox = tk.Listbox(list_frame, height=15, font=('Arial', 10),
+                                         yscrollcommand=scrollbar.set)
+            doctype_listbox.pack(side='left', fill='both', expand=True)
+            scrollbar.config(command=doctype_listbox.yview)
+
+            # Load document types
+            doc_types = self.get_document_types_with_details()
+            doc_type_data = []
+
+            for doc_type in doc_types:
+                type_id, type_name, description = doc_type[0], doc_type[1], doc_type[2]
+                display_text = f"{type_name}"
+                if show_details and description:
+                    display_text += f" - {description[:50]}"
+                doctype_listbox.insert(tk.END, display_text)
+
+                doc_type_data.append({
+                    'type_id': type_id,
+                    'type_name': type_name,
+                    'description': description,
+                    'is_required': doc_type[3] if len(doc_type) > 3 else False,
+                    'has_expiry': doc_type[4] if len(doc_type) > 4 else False,
+                    'expiry_reminder_days': doc_type[5] if len(doc_type) > 5 else None,
+                    'max_file_size_mb': doc_type[6] if len(doc_type) > 6 else 10,
+                    'allowed_formats': doc_type[7] if len(doc_type) > 7 else None
+                })
+
+            # Details frame
+            if show_details:
+                details_frame = ttk.LabelFrame(main_frame, text="Document Type Details", padding=10)
+                details_frame.pack(fill='x', pady=(10, 0))
+
+                details_text = tk.Text(details_frame, height=6, wrap=tk.WORD, font=('Arial', 9))
+                details_text.pack(fill='x')
+                details_text.config(state='disabled')
+
+                def on_selection_change(event):
+                    selection = doctype_listbox.curselection()
+                    if selection:
+                        index = selection[0]
+                        doc_type = doc_type_data[index]
+
+                        details_text.config(state='normal')
+                        details_text.delete('1.0', tk.END)
+                        details_text.insert('1.0', f"Type: {doc_type['type_name']}\n")
+                        details_text.insert(tk.END, f"Description: {doc_type['description']}\n")
+                        details_text.insert(tk.END, f"Required: {'Yes' if doc_type['is_required'] else 'No'}\n")
+                        details_text.insert(tk.END, f"Has Expiry: {'Yes' if doc_type['has_expiry'] else 'No'}\n")
+                        details_text.insert(tk.END, f"Max Size: {doc_type['max_file_size_mb']}MB\n")
+                        details_text.insert(tk.END, f"Formats: {doc_type['allowed_formats']}\n")
+                        details_text.config(state='disabled')
+
+                doctype_listbox.bind('<<ListboxSelect>>', on_selection_change)
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=(20, 0))
+
+            def on_select():
+                selection = doctype_listbox.curselection()
+                if selection:
+                    index = selection[0]
+                    result['selected'] = doc_type_data[index]
+                    dialog.destroy()
+                else:
+                    messagebox.showwarning("Warning", "Please select a document type")
+
+            def on_cancel():
+                dialog.destroy()
+
+            ttk.Button(button_frame, text="Select", command=on_select).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+
+            # Double-click to select
+            doctype_listbox.bind('<Double-Button-1>', lambda e: on_select())
+
+            dialog.wait_window()
+            return result['selected']
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show document type selection: {e}")
+            return None
+
+    def get_file_upload_details(self, initial_path=None):
+        """
+        Get file upload details through file dialog
+
+        Args:
+            initial_path: Initial directory path (optional)
+
+        Returns:
+            dict: File details with keys: file_path, file_name, file_size, file_size_mb,
+                  file_extension, is_valid
+                  or None if cancelled
+        """
+        try:
+            # Open file dialog
+            file_path = filedialog.askopenfilename(
+                title="Select Document File",
+                initialdir=initial_path,
+                filetypes=[
+                    ("All Supported", "*.pdf;*.jpg;*.jpeg;*.png;*.doc;*.docx;*.txt"),
+                    ("PDF files", "*.pdf"),
+                    ("Image files", "*.jpg;*.jpeg;*.png"),
+                    ("Word documents", "*.doc;*.docx"),
+                    ("Text files", "*.txt"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if not file_path:
+                return None
+
+            # Get file details
+            if not os.path.exists(file_path):
+                messagebox.showerror("Error", "Selected file does not exist")
+                return None
+
+            file_name = os.path.basename(file_path)
+            file_size = os.path.getsize(file_path)
+            file_size_mb = file_size / (1024 * 1024)
+            file_extension = os.path.splitext(file_path)[1][1:].lower()
+
+            # Validate file size (max 50MB by default)
+            is_valid = file_size_mb <= 50
+
+            return {
+                'file_path': file_path,
+                'file_name': file_name,
+                'file_size': file_size,
+                'file_size_mb': round(file_size_mb, 2),
+                'file_extension': file_extension,
+                'is_valid': is_valid
+            }
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to get file details: {e}")
+            return None
+
+    def get_expiry_date(self, doc_type_info=None, allow_manual=True):
+        """
+        Get or calculate expiry date for a document
+
+        Args:
+            doc_type_info: Document type info dict with expiry settings (optional)
+            allow_manual: Whether to allow manual date entry
+
+        Returns:
+            str: Expiry date in YYYY-MM-DD format or None if not applicable
+        """
+        try:
+            # Check if document type has expiry
+            has_expiry = False
+            default_days = 365
+
+            if doc_type_info:
+                has_expiry = doc_type_info.get('has_expiry', False)
+                if doc_type_info.get('expiry_reminder_days'):
+                    default_days = doc_type_info['expiry_reminder_days']
+
+            if not has_expiry and not allow_manual:
+                return None
+
+            # Show dialog to get expiry date
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Set Expiry Date")
+            dialog.geometry("450x300")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            result = {'date': None}
+
+            # Main frame
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Set Document Expiry Date",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Options frame
+            options_frame = ttk.Frame(main_frame)
+            options_frame.pack(fill='both', expand=True)
+
+            # Radio buttons for selection method
+            selection_method = tk.StringVar(value='calculated')
+
+            ttk.Radiobutton(options_frame, text="Calculate from today",
+                           variable=selection_method, value='calculated').pack(anchor='w', pady=5)
+
+            # Days frame
+            days_frame = ttk.Frame(options_frame)
+            days_frame.pack(fill='x', padx=(20, 0), pady=5)
+
+            ttk.Label(days_frame, text="Days from today:").pack(side='left')
+            days_var = tk.StringVar(value=str(default_days))
+            days_entry = ttk.Entry(days_frame, textvariable=days_var, width=10)
+            days_entry.pack(side='left', padx=5)
+
+            if allow_manual:
+                ttk.Radiobutton(options_frame, text="Enter specific date",
+                               variable=selection_method, value='manual').pack(anchor='w', pady=5)
+
+                # Manual date frame
+                manual_frame = ttk.Frame(options_frame)
+                manual_frame.pack(fill='x', padx=(20, 0), pady=5)
+
+                ttk.Label(manual_frame, text="Date (YYYY-MM-DD):").pack(side='left')
+                date_var = tk.StringVar()
+                date_entry = ttk.Entry(manual_frame, textvariable=date_var, width=15)
+                date_entry.pack(side='left', padx=5)
+
+                # Set default to 1 year from now
+                default_date = (datetime.now() + timedelta(days=default_days)).strftime('%Y-%m-%d')
+                date_var.set(default_date)
+
+            ttk.Radiobutton(options_frame, text="No expiry date",
+                           variable=selection_method, value='none').pack(anchor='w', pady=5)
+
+            # Preview
+            preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding=10)
+            preview_frame.pack(fill='x', pady=(20, 10))
+
+            preview_label = ttk.Label(preview_frame, text="", font=('Arial', 10, 'bold'))
+            preview_label.pack()
+
+            def update_preview(*args):
+                method = selection_method.get()
+                if method == 'calculated':
+                    try:
+                        days = int(days_var.get())
+                        expiry = datetime.now() + timedelta(days=days)
+                        preview_label.config(text=f"Expiry Date: {expiry.strftime('%Y-%m-%d')}")
+                    except:
+                        preview_label.config(text="Invalid number of days")
+                elif method == 'manual' and allow_manual:
+                    date_text = date_var.get()
+                    try:
+                        datetime.strptime(date_text, '%Y-%m-%d')
+                        preview_label.config(text=f"Expiry Date: {date_text}")
+                    except:
+                        preview_label.config(text="Invalid date format")
+                else:
+                    preview_label.config(text="No expiry date")
+
+            selection_method.trace('w', update_preview)
+            days_var.trace('w', update_preview)
+            if allow_manual:
+                date_var.trace('w', update_preview)
+
+            update_preview()
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=(10, 0))
+
+            def on_confirm():
+                method = selection_method.get()
+                if method == 'calculated':
+                    try:
+                        days = int(days_var.get())
+                        expiry = datetime.now() + timedelta(days=days)
+                        result['date'] = expiry.strftime('%Y-%m-%d')
+                        dialog.destroy()
+                    except:
+                        messagebox.showerror("Error", "Invalid number of days")
+                elif method == 'manual' and allow_manual:
+                    date_text = date_var.get()
+                    try:
+                        datetime.strptime(date_text, '%Y-%m-%d')
+                        result['date'] = date_text
+                        dialog.destroy()
+                    except:
+                        messagebox.showerror("Error", "Invalid date format (use YYYY-MM-DD)")
+                else:
+                    result['date'] = None
+                    dialog.destroy()
+
+            def on_cancel():
+                result['date'] = None
+                dialog.destroy()
+
+            ttk.Button(button_frame, text="Confirm", command=on_confirm).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+
+            dialog.wait_window()
+            return result['date']
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to get expiry date: {e}")
+            return None
+
+    def select_tags(self, existing_tags=None, allow_create=True):
+        """
+        Show a dialog to select or create tags
+
+        Args:
+            existing_tags: List of existing tag names (optional)
+            allow_create: Whether to allow creating new tags
+
+        Returns:
+            list: List of selected tag names or None if cancelled
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Select Tags")
+            dialog.geometry("600x500")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            result = {'tags': None}
+
+            # Main frame
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Select or Create Tags",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Load existing tags from database
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT tag_name FROM document_tags ORDER BY tag_name')
+                db_tags = [row[0] for row in cursor.fetchall()]
+                conn.close()
+            except:
+                db_tags = []
+
+            # Combine with provided tags
+            if existing_tags:
+                all_tags = list(set(db_tags + existing_tags))
+            else:
+                all_tags = db_tags
+
+            all_tags.sort()
+
+            # Available tags frame
+            available_frame = ttk.LabelFrame(main_frame, text="Available Tags", padding=10)
+            available_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+            # Listbox for available tags
+            available_list = tk.Listbox(available_frame, height=10, selectmode='multiple',
+                                       font=('Arial', 10))
+            available_list.pack(side='left', fill='both', expand=True)
+
+            scrollbar = ttk.Scrollbar(available_frame, orient='vertical',
+                                     command=available_list.yview)
+            scrollbar.pack(side='right', fill='y')
+            available_list.config(yscrollcommand=scrollbar.set)
+
+            # Populate tags
+            for tag in all_tags:
+                available_list.insert(tk.END, tag)
+
+            # New tag frame
+            if allow_create:
+                new_tag_frame = ttk.LabelFrame(main_frame, text="Create New Tag", padding=10)
+                new_tag_frame.pack(fill='x', pady=(0, 10))
+
+                ttk.Label(new_tag_frame, text="Tag Name:").pack(side='left', padx=(0, 5))
+                new_tag_var = tk.StringVar()
+                new_tag_entry = ttk.Entry(new_tag_frame, textvariable=new_tag_var, width=30)
+                new_tag_entry.pack(side='left', padx=(0, 5))
+
+                def add_new_tag():
+                    tag_name = new_tag_var.get().strip()
+                    if tag_name:
+                        if tag_name not in available_list.get(0, tk.END):
+                            available_list.insert(tk.END, tag_name)
+                            available_list.selection_set(tk.END)
+                            new_tag_var.set('')
+                        else:
+                            messagebox.showinfo("Info", "Tag already exists")
+                    else:
+                        messagebox.showwarning("Warning", "Please enter a tag name")
+
+                ttk.Button(new_tag_frame, text="Add", command=add_new_tag).pack(side='left')
+
+            # Selected tags display
+            selected_frame = ttk.LabelFrame(main_frame, text="Selected Tags", padding=10)
+            selected_frame.pack(fill='x')
+
+            selected_label = ttk.Label(selected_frame, text="None selected",
+                                      font=('Arial', 9), foreground='gray')
+            selected_label.pack()
+
+            def update_selected_display(*args):
+                selection = available_list.curselection()
+                if selection:
+                    selected_tags = [available_list.get(i) for i in selection]
+                    selected_label.config(text=', '.join(selected_tags), foreground='black')
+                else:
+                    selected_label.config(text="None selected", foreground='gray')
+
+            available_list.bind('<<ListboxSelect>>', update_selected_display)
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=(20, 0))
+
+            def on_confirm():
+                selection = available_list.curselection()
+                if selection:
+                    result['tags'] = [available_list.get(i) for i in selection]
+                else:
+                    result['tags'] = []
+                dialog.destroy()
+
+            def on_cancel():
+                result['tags'] = None
+                dialog.destroy()
+
+            ttk.Button(button_frame, text="Confirm", command=on_confirm).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+
+            dialog.wait_window()
+            return result['tags']
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show tag selection: {e}")
+            return None
+
+    def ensure_login(self, required_role=None):
+        """
+        Ensure user is logged in with optional role check
+
+        Args:
+            required_role: Required role (e.g., 'admin', 'staff') or None for any logged-in user
+
+        Returns:
+            bool: True if user is logged in (and has required role), False otherwise
+
+        Raises:
+            PermissionError: If role check fails
+        """
+        try:
+            # Check if authenticated
+            if not self.check_authentication():
+                messagebox.showerror("Authentication Required",
+                                   "You must be logged in to perform this action.")
+                return False
+
+            # Check role if required
+            if required_role:
+                user_role = self.current_user.get('role', '').lower()
+                required_role_lower = required_role.lower()
+
+                # Admin has access to everything
+                if user_role == 'admin':
+                    return True
+
+                # Check specific role
+                if user_role != required_role_lower:
+                    messagebox.showerror("Permission Denied",
+                                       f"This action requires '{required_role}' role.\n"
+                                       f"Your role: '{user_role}'")
+                    raise PermissionError(f"User role '{user_role}' does not have access "
+                                        f"(required: '{required_role}')")
+
+            # Log the access
+            self.log_event('access', 'system', details={
+                'action': 'ensure_login',
+                'required_role': required_role,
+                'user_role': self.current_user.get('role', 'unknown')
+            })
+
+            return True
+
+        except PermissionError:
+            raise
+        except Exception as e:
+            messagebox.showerror("Error", f"Authentication check failed: {e}")
+            return False
+
 
 # Backwards compatible wrapper class
 class DocumentManager:
