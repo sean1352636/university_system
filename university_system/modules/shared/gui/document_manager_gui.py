@@ -17538,32 +17538,434 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
         if not self.ensure_login():
             return
 
-        messagebox.showinfo("Export to Excel",
-                          "Excel export functionality.\n\n"
-                          "This would export the current data to an Excel (.xlsx) file.\n\n"
-                          "Requirements:\n"
-                          "- openpyxl library for Excel support\n"
-                          "- Formatted cells with headers\n"
-                          "- Multiple sheets for different data types\n\n"
-                          "For now, please use CSV export which is fully functional.")
+        # Ask for file location
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx"), ("All Files", "*.*")],
+            initialfile="document_export.xlsx"
+        )
 
-        self.log_event('export', 'excel_attempted', details='User attempted Excel export')
+        if not file_path:
+            return
+
+        try:
+            # Try to import openpyxl
+            try:
+                from openpyxl import Workbook
+                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                from openpyxl.utils import get_column_letter
+            except ImportError:
+                messagebox.showerror("Missing Library",
+                                   "The 'openpyxl' library is required for Excel export.\n\n"
+                                   "Install it with:\n"
+                                   "pip install openpyxl\n\n"
+                                   "Would you like to use CSV export instead?")
+                if messagebox.askyesno("Use CSV Instead?", "Export to CSV format instead?"):
+                    self.export_to_csv()
+                return
+
+            # Create workbook
+            wb = Workbook()
+
+            # Sheet 1: Documents
+            ws1 = wb.active
+            ws1.title = "Documents"
+
+            # Header style
+            header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF", size=12)
+            border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+
+            # Headers for documents sheet
+            headers = ['Document ID', 'Student ID', 'Document Type', 'File Name',
+                      'Status', 'Upload Date', 'Expiry Date', 'File Size (KB)', 'Tags', 'Notes']
+
+            for col, header in enumerate(headers, 1):
+                cell = ws1.cell(row=1, column=col)
+                cell.value = header
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.border = border
+
+            # Get documents data
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, student_id, document_type, file_name, status,
+                           upload_date, expiry_date, file_size, tags, notes
+                    FROM documents
+                    ORDER BY upload_date DESC
+                    LIMIT 1000
+                """)
+                documents = cursor.fetchall()
+
+                # Write data
+                for row_idx, row_data in enumerate(documents, 2):
+                    for col_idx, value in enumerate(row_data, 1):
+                        cell = ws1.cell(row=row_idx, column=col_idx)
+
+                        # Convert file size to KB if it's the file_size column
+                        if col_idx == 8 and value:
+                            cell.value = round(value / 1024, 2)
+                        else:
+                            cell.value = value
+
+                        cell.border = border
+
+                        # Align numbers to right, text to left
+                        if isinstance(value, (int, float)):
+                            cell.alignment = Alignment(horizontal='right')
+                        else:
+                            cell.alignment = Alignment(horizontal='left')
+
+                # Auto-adjust column widths
+                for col in range(1, len(headers) + 1):
+                    max_length = 0
+                    column = get_column_letter(col)
+                    for cell in ws1[column]:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)
+                    ws1.column_dimensions[column].width = adjusted_width
+
+                # Sheet 2: Summary Statistics
+                ws2 = wb.create_sheet("Summary Statistics")
+
+                # Get summary statistics
+                cursor.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(DISTINCT student_id) as unique_students,
+                        COUNT(DISTINCT document_type) as unique_types,
+                        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+                        SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
+                        SUM(CASE WHEN DATE(expiry_date) < DATE('now') THEN 1 ELSE 0 END) as expired,
+                        SUM(file_size) as total_size
+                    FROM documents
+                """)
+                stats = cursor.fetchone()
+
+                # Write summary
+                ws2['A1'] = "DOCUMENT MANAGEMENT SYSTEM - SUMMARY REPORT"
+                ws2['A1'].font = Font(bold=True, size=14)
+                ws2.merge_cells('A1:B1')
+
+                ws2['A2'] = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                ws2['A2'].font = Font(italic=True)
+                ws2.merge_cells('A2:B2')
+
+                summary_data = [
+                    ['', ''],
+                    ['OVERALL STATISTICS', ''],
+                    ['Total Documents', stats[0]],
+                    ['Unique Students', stats[1]],
+                    ['Unique Document Types', stats[2]],
+                    ['', ''],
+                    ['STATUS BREAKDOWN', ''],
+                    ['Pending', stats[3]],
+                    ['Approved', stats[4]],
+                    ['Rejected', stats[5]],
+                    ['Expired', stats[6]],
+                    ['', ''],
+                    ['STORAGE', ''],
+                    ['Total Storage', f"{stats[7] / 1024 / 1024 / 1024:.2f} GB" if stats[7] else "0 GB"],
+                ]
+
+                for row_idx, (label, value) in enumerate(summary_data, 4):
+                    ws2.cell(row=row_idx, column=1).value = label
+                    ws2.cell(row=row_idx, column=2).value = value
+
+                    if label and not value and label != '':
+                        # Section headers
+                        ws2.cell(row=row_idx, column=1).font = Font(bold=True, size=11)
+                        ws2.cell(row=row_idx, column=1).fill = PatternFill(start_color="D3D3D3",
+                                                                            end_color="D3D3D3",
+                                                                            fill_type="solid")
+
+                ws2.column_dimensions['A'].width = 30
+                ws2.column_dimensions['B'].width = 20
+
+                # Sheet 3: Document Type Breakdown
+                ws3 = wb.create_sheet("Document Types")
+
+                ws3['A1'] = "Document Type"
+                ws3['B1'] = "Count"
+                ws3['C1'] = "Percentage"
+
+                for col in ['A1', 'B1', 'C1']:
+                    ws3[col].fill = header_fill
+                    ws3[col].font = header_font
+                    ws3[col].alignment = Alignment(horizontal='center')
+                    ws3[col].border = border
+
+                cursor.execute("""
+                    SELECT document_type, COUNT(*) as count
+                    FROM documents
+                    GROUP BY document_type
+                    ORDER BY count DESC
+                """)
+                type_stats = cursor.fetchall()
+
+                total_docs = sum(count for _, count in type_stats)
+
+                for row_idx, (doc_type, count) in enumerate(type_stats, 2):
+                    ws3.cell(row=row_idx, column=1).value = doc_type
+                    ws3.cell(row=row_idx, column=2).value = count
+                    ws3.cell(row=row_idx, column=3).value = f"{count/total_docs*100:.1f}%" if total_docs > 0 else "0%"
+
+                    for col in [1, 2, 3]:
+                        ws3.cell(row=row_idx, column=col).border = border
+
+                ws3.column_dimensions['A'].width = 25
+                ws3.column_dimensions['B'].width = 15
+                ws3.column_dimensions['C'].width = 15
+
+            # Save workbook
+            wb.save(file_path)
+
+            messagebox.showinfo("Export Successful",
+                              f"Data exported to Excel successfully!\n\n"
+                              f"{file_path}\n\n"
+                              f"Sheets included:\n"
+                              f"- Documents ({len(documents)} records)\n"
+                              f"- Summary Statistics\n"
+                              f"- Document Types")
+
+            self.log_event('export', 'excel', details=f'Exported {len(documents)} records to Excel')
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export to Excel: {e}")
 
     def export_to_pdf(self):
         """Export current view/data to PDF"""
         if not self.ensure_login():
             return
 
-        messagebox.showinfo("Export to PDF",
-                          "PDF export functionality.\n\n"
-                          "This would export the current data to a PDF file.\n\n"
-                          "Requirements:\n"
-                          "- reportlab library for PDF generation\n"
-                          "- Formatted tables and headers\n"
-                          "- Page numbering and styling\n\n"
-                          "For now, please use CSV export which is fully functional.")
+        # Ask for file location
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
+            initialfile="document_report.pdf"
+        )
 
-        self.log_event('export', 'pdf_attempted', details='User attempted PDF export')
+        if not file_path:
+            return
+
+        try:
+            # Try to import reportlab
+            try:
+                from reportlab.lib.pagesizes import letter, A4
+                from reportlab.lib import colors
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.lib.units import inch
+                from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+                from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+            except ImportError:
+                messagebox.showerror("Missing Library",
+                                   "The 'reportlab' library is required for PDF export.\n\n"
+                                   "Install it with:\n"
+                                   "pip install reportlab\n\n"
+                                   "Would you like to use CSV export instead?")
+                if messagebox.askyesno("Use CSV Instead?", "Export to CSV format instead?"):
+                    self.export_to_csv()
+                return
+
+            # Create PDF document
+            doc = SimpleDocTemplate(file_path, pagesize=letter,
+                                   rightMargin=0.5*inch, leftMargin=0.5*inch,
+                                   topMargin=0.75*inch, bottomMargin=0.5*inch)
+
+            # Container for the 'Flowable' objects
+            elements = []
+
+            # Define styles
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#1a1a1a'),
+                spaceAfter=30,
+                alignment=TA_CENTER
+            )
+
+            heading_style = ParagraphStyle(
+                'CustomHeading',
+                parent=styles['Heading2'],
+                fontSize=16,
+                textColor=colors.HexColor('#2c3e50'),
+                spaceAfter=12,
+                spaceBefore=12
+            )
+
+            # Title
+            title = Paragraph("Document Management System Report", title_style)
+            elements.append(title)
+
+            # Date
+            date_text = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            date_para = Paragraph(date_text, styles['Normal'])
+            elements.append(date_para)
+            elements.append(Spacer(1, 0.3*inch))
+
+            # Get data from database
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Summary Statistics
+                cursor.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(DISTINCT student_id) as unique_students,
+                        COUNT(DISTINCT document_type) as unique_types,
+                        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+                        SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
+                        SUM(CASE WHEN DATE(expiry_date) < DATE('now') THEN 1 ELSE 0 END) as expired
+                    FROM documents
+                """)
+                stats = cursor.fetchone()
+
+                # Summary section
+                elements.append(Paragraph("Summary Statistics", heading_style))
+
+                summary_data = [
+                    ['Metric', 'Value'],
+                    ['Total Documents', str(stats[0])],
+                    ['Unique Students', str(stats[1])],
+                    ['Unique Document Types', str(stats[2])],
+                    ['Pending', str(stats[3])],
+                    ['Approved', str(stats[4])],
+                    ['Rejected', str(stats[5])],
+                    ['Expired', str(stats[6])],
+                ]
+
+                summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+                summary_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
+                ]))
+
+                elements.append(summary_table)
+                elements.append(Spacer(1, 0.3*inch))
+
+                # Document Type Breakdown
+                elements.append(Paragraph("Document Type Breakdown", heading_style))
+
+                cursor.execute("""
+                    SELECT document_type, COUNT(*) as count
+                    FROM documents
+                    GROUP BY document_type
+                    ORDER BY count DESC
+                    LIMIT 15
+                """)
+                type_stats = cursor.fetchall()
+
+                total_docs = sum(count for _, count in type_stats)
+
+                type_data = [['Document Type', 'Count', 'Percentage']]
+                for doc_type, count in type_stats:
+                    percentage = f"{count/total_docs*100:.1f}%" if total_docs > 0 else "0%"
+                    type_data.append([doc_type, str(count), percentage])
+
+                type_table = Table(type_data, colWidths=[3*inch, 1*inch, 1*inch])
+                type_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 11),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 9),
+                    ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+                ]))
+
+                elements.append(type_table)
+                elements.append(PageBreak())
+
+                # Recent Documents (limited to 50 for PDF size)
+                elements.append(Paragraph("Recent Documents (Last 50)", heading_style))
+
+                cursor.execute("""
+                    SELECT student_id, document_type, file_name, status, upload_date
+                    FROM documents
+                    ORDER BY upload_date DESC
+                    LIMIT 50
+                """)
+                documents = cursor.fetchall()
+
+                doc_data = [['Student ID', 'Type', 'File Name', 'Status', 'Upload Date']]
+                for student_id, doc_type, file_name, status, upload_date in documents:
+                    # Truncate long filenames
+                    if file_name and len(file_name) > 30:
+                        file_name = file_name[:27] + "..."
+                    doc_data.append([
+                        str(student_id),
+                        str(doc_type)[:20],  # Truncate long type names
+                        str(file_name),
+                        str(status),
+                        str(upload_date)
+                    ])
+
+                doc_table = Table(doc_data, colWidths=[1*inch, 1.3*inch, 2*inch, 0.9*inch, 1*inch])
+                doc_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 7),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                ]))
+
+                elements.append(doc_table)
+
+                # Footer note
+                elements.append(Spacer(1, 0.3*inch))
+                footer_text = f"Report generated by Document Management System | Total records in system: {stats[0]}"
+                footer = Paragraph(footer_text, styles['Italic'])
+                elements.append(footer)
+
+            # Build PDF
+            doc.build(elements)
+
+            messagebox.showinfo("Export Successful",
+                              f"PDF report generated successfully!\n\n"
+                              f"{file_path}\n\n"
+                              f"Contents:\n"
+                              f"- Summary Statistics\n"
+                              f"- Document Type Breakdown\n"
+                              f"- Recent Documents (50 records)")
+
+            self.log_event('export', 'pdf', details=f'Exported PDF report with {len(documents)} recent documents')
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export to PDF: {e}\n\n{str(e)}")
 
 
 # Backwards compatible wrapper class

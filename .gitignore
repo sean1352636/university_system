@@ -97,3 +97,4 @@ temp/
 *.zip
 *.tar.gz
 *.tar
+document_manager_missing_methods.txt

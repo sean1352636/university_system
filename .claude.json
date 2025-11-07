@@ -1,5 +1,5 @@
 {
-  "numStartups": 182,
+  "numStartups": 183,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
@@ -7,18 +7,18 @@
     "plan-mode-for-complex-tasks": 181,
     "terminal-setup": 178,
     "memory-command": 168,
-    "theme-command": 162,
+    "theme-command": 183,
     "status-line": 168,
     "prompt-queue": 58,
-    "enter-to-steer-in-relatime": 162,
-    "todo-list": 162,
+    "enter-to-steer-in-relatime": 183,
+    "todo-list": 183,
     "# for memory": 178,
     "install-github-app": 167,
     "drag-and-drop-images": 178,
     "double-esc-code-restore": 178,
     "continue": 178,
     "shift-tab": 179,
-    "image-paste": 162,
+    "image-paste": 183,
     "tab-toggle-thinking": 179,
     "ultrathink-keyword": 180,
     "custom-agents": 168,
@@ -29,7 +29,7 @@
     "stickers-command": 175
   },
   "memoryUsageCount": 2,
-  "promptQueueUseCount": 12,
+  "promptQueueUseCount": 13,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -88,7 +88,7 @@
     "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1762526290430
+      "timestamp": 1762535270582
     }
   },
   "feedbackSurveyState": {

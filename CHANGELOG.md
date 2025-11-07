@@ -9,6 +9,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Full Excel and PDF Export Implementation** (2025-11-07)
+- **Enhancement**: Fully implemented Excel and PDF export methods with professional formatting
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 17536-17968, ~402 lines)
+- **File Size**: Now 18,612 total lines (from 18,210 → 18,612 = +402 lines added)
+- **Fully implemented 2 export methods**:
+
+  1. `export_to_excel()` - Professional Excel export with openpyxl
+     - **3 professionally formatted sheets**:
+       - Sheet 1 "Documents": Up to 1000 records with 10 columns
+         - Columns: ID, Student ID, Type, File Name, Status, Upload Date, Last Modified, File Size, Tags, Notes
+         - Styled headers: Blue background (#366092), white bold text (12pt)
+         - Auto-adjusted column widths based on content
+         - Borders on all cells for clean presentation
+       - Sheet 2 "Summary Statistics": System-wide statistics
+         - Overall stats: Total documents, unique students, unique types
+         - Status breakdown: Pending, Approved, Rejected, Expired counts
+         - Storage info: Average file size, total storage used
+         - Section headers with bold font and gray background
+       - Sheet 3 "Document Types": Type breakdown analysis
+         - Columns: Type, Count, Percentage
+         - Styled headers matching Sheet 1
+         - Complete breakdown of all document types in system
+     - **Library handling**: Import openpyxl with graceful error handling
+       - Clear error message with installation instructions (pip install openpyxl)
+       - Offers CSV export as fallback if library not installed
+       - User can choose Yes/No to use CSV instead
+     - File save dialog defaulting to "document_export.xlsx"
+     - Success message showing sheets included and record count
+     - Activity logging for audit trail
+
+  2. `export_to_pdf()` - Professional PDF report with reportlab
+     - **Multi-page professional report structure**:
+       - **Title section**:
+         - "Document Management System Report" (24pt, centered, bold)
+         - Date generated timestamp
+       - **Summary Statistics Table**: 8 key metrics
+         - Metrics: Total Documents, Students with Documents, Document Types, Pending, Approved, Rejected, Expired
+         - Blue header (#366092), beige alternating rows
+         - Bordered table with grid lines
+       - **Document Type Breakdown Table**: Up to 15 types
+         - Columns: Type, Count, Percentage
+         - Gray alternating rows for readability
+         - Professional styling with borders
+       - **Recent Documents Table**: Last 50 documents
+         - Columns: Student ID, Type, File Name (truncated to 30 chars), Status, Upload Date
+         - Compact font (7pt) for data rows to fit more content
+         - White/grey alternating rows
+         - Headers with dark gray background
+       - **Footer note**: Total records count in italic
+     - **Library handling**: Import reportlab with graceful error handling
+       - Clear error message with installation instructions (pip install reportlab)
+       - Offers CSV export as fallback if library not installed
+       - User can choose Yes/No to use CSV instead
+     - PageBreak for multi-page layout support
+     - File save dialog defaulting to "document_report.pdf"
+     - Success message showing contents included
+     - Activity logging for audit trail
+
+- **Technical Implementation**:
+  - openpyxl features: PatternFill, Font, Alignment, Border, Side for styling
+  - reportlab features: SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+  - Database queries retrieve up to 1000 documents for exports
+  - Aggregations for statistics: COUNT, SUM, AVG functions
+  - File dialogs use filedialog.asksaveasfilename
+  - Error handling with try-except blocks for library imports
+  - Graceful fallback to CSV export if required libraries missing
+  - Professional color schemes: Blue (#366092), beige, gray for visual appeal
+  - Auto-width calculations for optimal column sizing in Excel
+
 **Document Manager GUI - Fix Missing Methods: 4 Additional Methods** (2025-11-07)
 - **Issue**: Fixed AttributeError for 4 missing methods referenced in the GUI
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 17479-17566, ~89 lines)
