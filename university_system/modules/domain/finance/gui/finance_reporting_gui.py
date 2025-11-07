@@ -42,9 +42,16 @@ except ImportError as e:
 class FinancialManagementGUI:
     """Enhanced GUI for Financial Management System"""
     
-    def __init__(self, root, auth=None):
+    def __init__(self, root, auth_instance=None):
         self.root = root
-        self.auth = auth  # Store authentication instance
+        self.auth = auth_instance  # Store authentication instance
+
+        # Set global auth for backward compatibility with standalone functions
+        global auth
+        auth = self.auth
+        if HAS_AUTH and self.auth:
+            set_auth_instance(self.auth)
+
         self.root.title("Enhanced Financial Management System")
         # Make window bigger - use 90% of screen size
         screen_width = self.root.winfo_screenwidth()
