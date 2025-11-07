@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed incorrect nltk_data folder location - moved from `university_system/nltk_data/` to correct location `university_system/data/nltk_data/` as specified in paths.py
+- Fixed "No auth instance configured" warning during GUI startup by registering auth instance with shared_context
+- Fixed "Academic calendar module not available" warning - changed from warning to debug level since it's expected when optional dependencies (numpy) are missing
+- Improved import error handling in trip_management_gui.py and trip_management.py for better error diagnosis
+
+### Changed
+- NLTK data is now correctly stored in centralized location defined by paths.NLTK_DATA_DIR
+
 ### Added
 
 **Enhanced Reporting GUI - Completed All Stub Functions** (2025-11-07)

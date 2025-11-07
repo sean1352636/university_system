@@ -697,6 +697,13 @@ def init_gui(session_user=None):
             auth = UserAuth()
             safe_auth_check(auth)
 
+        # Register auth instance with shared_context to prevent "No auth instance" warnings
+        try:
+            from university_system.infrastructure.shared_context import set_auth
+            set_auth(auth)
+        except ImportError:
+            pass  # shared_context not available, that's ok
+
     # If session_user is provided, set it as the current user
     if session_user is not None:
         auth.current_user = session_user

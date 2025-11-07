@@ -1,5 +1,5 @@
 {
-  "numStartups": 183,
+  "numStartups": 185,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
@@ -21,7 +21,7 @@
     "image-paste": 183,
     "tab-toggle-thinking": 179,
     "ultrathink-keyword": 180,
-    "custom-agents": 168,
+    "custom-agents": 184,
     "permissions": 178,
     "custom-commands": 176,
     "git-worktrees": 178,
@@ -88,7 +88,7 @@
     "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1762535270582
+      "timestamp": 1762552482993
     }
   },
   "feedbackSurveyState": {

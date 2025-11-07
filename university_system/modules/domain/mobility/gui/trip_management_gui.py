@@ -19,12 +19,19 @@ try:
     from university_system.modules.shared.utils.simple_activity_logger import (
         log_create, log_read, log_update, log_delete, log_menu_navigation,
     )
-    from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager, CalendarConfig
     from university_system.infrastructure.auth.user_authentication import UserAuth
+except ImportError as e:
+    logging.error(f"Required module import failed: {e}")
+    raise
+
+# Academic calendar is optional - may not be available if dependencies missing
+try:
+    from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager, CalendarConfig
     CALENDAR_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     CALENDAR_AVAILABLE = False
-    logging.warning("Academic calendar module not available")
+    # Use debug level since this is expected when optional dependencies are missing
+    logging.debug(f"Academic calendar module not available (optional): {e}")
 
 try:
     from reportlab.lib.pagesizes import letter, A4

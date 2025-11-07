@@ -26,13 +26,14 @@ except ImportError:
     PDF_AVAILABLE = False
     logging.warning("ReportLab not available. PDF generation will be disabled.")
     
+# Academic calendar is optional - may not be available if dependencies missing
 try:
-    # Use the refactored academic calendar service
     from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager, CalendarConfig
     CALENDAR_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     CALENDAR_AVAILABLE = False
-    logging.warning("Academic calendar module not available")
+    # Use debug level since this is expected when optional dependencies (numpy) are missing
+    logging.debug(f"Academic calendar module not available (optional): {e}")
 
 # Import auth instance management from user_authentication
 try:
