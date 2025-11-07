@@ -706,10 +706,10 @@ class MobileAppPWAGUI:
                         cursor.execute('''
                             INSERT INTO mobile_devices
                             (user_id, device_type, device_name, push_token,
-                             os_version, app_version, last_active, is_active)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                             os_version, app_version)
+                            VALUES (?, ?, ?, ?, ?, ?)
                         ''', (user_id, device_type, device_name, push_token,
-                              os_version, app_version, datetime.now().isoformat()))
+                              os_version, app_version))
 
                         device_id = cursor.lastrowid
 

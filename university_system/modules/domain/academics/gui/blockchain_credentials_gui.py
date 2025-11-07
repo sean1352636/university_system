@@ -736,8 +736,8 @@ class BlockchainCredentialsGUI:
                         cursor.execute('''
                             INSERT INTO blockchain_credentials
                             (student_id, credential_type, credential_name, issue_date,
-                             blockchain_hash, blockchain_address, ipfs_hash, metadata, is_revoked)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                             blockchain_hash, blockchain_address, ipfs_hash, metadata)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (student_id, cred_type, cred_name, issue_date,
                               blockchain_hash, blockchain_address, ipfs_hash, metadata))
 
@@ -1070,8 +1070,8 @@ class BlockchainCredentialsGUI:
                         cursor.execute('''
                             INSERT INTO badge_issuances
                             (badge_id, student_id, issued_date, blockchain_hash,
-                             evidence_url, expires_at, is_revoked)
-                            VALUES (?, ?, ?, ?, ?, ?, 0)
+                             evidence_url, expires_at)
+                            VALUES (?, ?, ?, ?, ?, ?)
                         ''', (badge_id, student_id, datetime.now().isoformat(),
                               blockchain_hash, evidence_url, expires_at))
 
@@ -1316,8 +1316,8 @@ class BlockchainCredentialsGUI:
                         cursor = conn.cursor()
                         cursor.execute('''
                             INSERT INTO credential_templates
-                            (template_name, credential_type, fields, is_active)
-                            VALUES (?, ?, ?, 1)
+                            (template_name, credential_type, fields)
+                            VALUES (?, ?, ?)
                         ''', (template_name, cred_type, fields))
 
                         template_id = cursor.lastrowid

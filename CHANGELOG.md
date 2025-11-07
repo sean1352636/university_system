@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Blockchain Credentials & Mobile App GUI - Fix Database Insert Errors** (2025-11-07)
+- **Issue**: "Fill in columns" errors despite all fields being filled in
+  - Blockchain Credentials GUI: Error inserting credentials, badges, templates
+  - Mobile App GUI: Error registering devices
+- **Location**:
+  - `university_system/modules/domain/academics/gui/blockchain_credentials_gui.py`
+  - `university_system/modules/domain/mobility/gui/mobile_app_pwa_gui.py`
+- **Root Cause**: Mismatch between number of column placeholders (?) and tuple values in INSERT statements
+  - Hardcoded default values (e.g., `is_revoked`, `is_active`) included in column list but not in tuple
+  - Database expects exact match between columns and VALUES
+- **Bug Fixes**:
+  1. **blockchain_credentials INSERT** (line 737-742):
+     - Removed `is_revoked` from column list (uses DEFAULT 0)
+     - Changed from 9 columns + hardcoded value → 8 columns with 8 placeholders
+  2. **badge_issuances INSERT** (line 1071-1076):
+     - Removed `is_revoked` from column list (uses DEFAULT 0)
+     - Changed from 7 columns + hardcoded value → 6 columns with 6 placeholders
+  3. **credential_templates INSERT** (line 1318-1321):
+     - Removed `is_active` from column list (uses DEFAULT 1)
+     - Changed from 4 columns + hardcoded value → 3 columns with 3 placeholders
+  4. **mobile_devices INSERT** (line 707-712):
+     - Removed `last_active` and `is_active` from column list (use DEFAULT values)
+     - Changed from 8 columns (7 placeholders + hardcoded) → 6 columns with 6 placeholders
+- **Result**:
+  - All database inserts now have matching column counts and tuple values
+  - Blockchain credentials, badges, and templates can be created successfully
+  - Mobile devices can be registered without errors
+  - No more "fill in columns" errors when all fields are properly filled
+
 **AI Powered Features GUI - Fix Row Attribute Error** (2025-11-07)
 - **Issue**: "Failed to load recommendations: sqlite3.Row object has no attribute 'get'"
 - **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py` (line 686)
