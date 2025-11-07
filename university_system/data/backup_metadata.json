@@ -1,6 +1,78 @@
 {
     "backups": [
         {
+            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_incremental_20251107_140205.db.gz",
+            "filename": "student_records_manual_incremental_20251107_140205.db.gz",
+            "type": "incremental",
+            "manual": true,
+            "operation": null,
+            "timestamp": "20251107_140205",
+            "size": 232394,
+            "file_hash": "39d1ff6051d22661015ae70a8894800d52c4480bb52ab8f1d268f9a50cef0430",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "incremental",
+            "id": 1,
+            "size_formatted": "226.95 KB",
+            "date_formatted": "2025-11-07 14:02:05"
+        },
+        {
+            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251107_140100.db.gz",
+            "filename": "student_records_manual_full_20251107_140100.db.gz",
+            "type": "full",
+            "manual": true,
+            "operation": null,
+            "timestamp": "20251107_140100",
+            "size": 232387,
+            "file_hash": "39d1ff6051d22661015ae70a8894800d52c4480bb52ab8f1d268f9a50cef0430",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full",
+            "id": 2,
+            "size_formatted": "226.94 KB",
+            "date_formatted": "2025-11-07 14:01:00"
+        },
+        {
+            "path": "/home/seancatchpole989/university_system/backups/student_records_before_restore_20251107_140056.db.gz",
+            "filename": "student_records_before_restore_20251107_140056.db.gz",
+            "type": "full",
+            "manual": true,
+            "operation": "restore",
+            "timestamp": "20251107_140056",
+            "size": 232390,
+            "file_hash": "39d1ff6051d22661015ae70a8894800d52c4480bb52ab8f1d268f9a50cef0430",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full",
+            "id": 3,
+            "size_formatted": "226.94 KB",
+            "date_formatted": "2025-11-07 14:00:56"
+        },
+        {
+            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251107_140039.db.gz",
+            "filename": "student_records_manual_full_20251107_140039.db.gz",
+            "type": "full",
+            "manual": true,
+            "operation": null,
+            "timestamp": "20251107_140039",
+            "size": 232387,
+            "file_hash": "39d1ff6051d22661015ae70a8894800d52c4480bb52ab8f1d268f9a50cef0430",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full",
+            "id": 4,
+            "size_formatted": "226.94 KB",
+            "date_formatted": "2025-11-07 14:00:39"
+        },
+        {
             "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251102_083617.db.gz",
             "filename": "student_records_manual_full_20251102_083617.db.gz",
             "type": "full",
@@ -14,23 +86,24 @@
             "cloud_uploaded": false,
             "remote_uploaded": false,
             "backup_type": "full",
-            "id": 1,
+            "id": 5,
             "size_formatted": "187.11 KB",
             "date_formatted": "2025-11-02 08:36:17"
         }
     ],
-    "last_full": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251102_083617.db.gz",
+    "last_full": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20251107_140100.db.gz",
     "statistics": {
-        "total_backups": 1,
-        "total_size": 191601,
+        "total_backups": 5,
+        "total_size": 1121159,
         "backup_types": {
-            "full": 1
+            "incremental": 1,
+            "full": 4
         },
         "success_rate": 0,
-        "average_size": 191601.0,
+        "average_size": 224231.8,
         "storage_usage": {
-            "2025-11": 191601
+            "2025-11": 1121159
         },
-        "recent_activity": 1
+        "recent_activity": 5
     }
 }

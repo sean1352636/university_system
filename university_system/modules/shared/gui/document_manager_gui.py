@@ -669,7 +669,7 @@ class DocumentManagerGUI:
         """Process a workflow step in GUI"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Process Workflow Step")
-        dialog.geometry("500x400")
+        dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -790,7 +790,7 @@ class DocumentManagerGUI:
         """Show upload document dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Upload Document")
-        dialog.geometry("500x600")
+        dialog.geometry("700x800")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -1176,7 +1176,7 @@ class DocumentManagerGUI:
         """OCR integration menu in GUI"""
         dialog = tk.Toplevel(self.root)
         dialog.title("OCR Integration")
-        dialog.geometry("400x300")
+        dialog.geometry("600x450")
         dialog.transient(self.root)
         
         main_frame = ttk.Frame(dialog, padding=20)
@@ -1226,7 +1226,7 @@ class DocumentManagerGUI:
             # Show processing dialog
             progress_dialog = tk.Toplevel(self.root)
             progress_dialog.title("OCR Processing")
-            progress_dialog.geometry("300x100")
+            progress_dialog.geometry("450x150")
             progress_dialog.transient(self.root)
             
             ttk.Label(progress_dialog, text="Processing document with OCR...").pack(pady=20)
@@ -1249,7 +1249,7 @@ class DocumentManagerGUI:
         # Create results window
         results_window = tk.Toplevel(self.root)
         results_window.title("OCR Results")
-        results_window.geometry("600x500")
+        results_window.geometry("850x700")
         
         main_frame = ttk.Frame(results_window, padding=20)
         main_frame.pack(fill='both', expand=True)
@@ -1318,7 +1318,7 @@ class DocumentManagerGUI:
         """Enhanced bulk status update with GUI"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Bulk Status Update")
-        dialog.geometry("600x500")
+        dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -1440,7 +1440,7 @@ class DocumentManagerGUI:
         """Show export data dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Export Data")
-        dialog.geometry("400x300")
+        dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -1565,7 +1565,7 @@ class DocumentManagerGUI:
         """Show document details in a new window"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Document Details")
-        dialog.geometry("600x500")
+        dialog.geometry("850x700")
         dialog.transient(self.root)
         
         main_frame = ttk.Frame(dialog, padding=20)
@@ -1633,7 +1633,7 @@ Notes:
         # Status dialog
         dialog = tk.Toplevel(self.root)
         dialog.title("Edit Document Status")
-        dialog.geometry("400x300")
+        dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -1722,7 +1722,7 @@ Notes:
         """Show document versions in a new window"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Document Versions")
-        dialog.geometry("700x400")
+        dialog.geometry("950x600")
         dialog.transient(self.root)
         
         main_frame = ttk.Frame(dialog, padding=20)
@@ -1801,7 +1801,7 @@ Notes:
         
         dialog = tk.Toplevel(self.root)
         dialog.title("Send Document Notification")
-        dialog.geometry("400x300")
+        dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -1901,7 +1901,7 @@ Notes:
         """Show student profile in new window"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Student Profile")
-        dialog.geometry("500x400")
+        dialog.geometry("700x550")
         dialog.transient(self.root)
         
         main_frame = ttk.Frame(dialog, padding=20)
@@ -2022,7 +2022,7 @@ Total Documents: {doc_count}
         
         dialog = tk.Toplevel(self.root)
         dialog.title("Send Student Notification")
-        dialog.geometry("400x350")
+        dialog.geometry("600x500")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -2108,7 +2108,7 @@ Total Documents: {doc_count}
             # Create report window
             report_window = tk.Toplevel(self.root)
             report_window.title(f"Student Report - {student_name}")
-            report_window.geometry("600x500")
+            report_window.geometry("850x700")
             
             report_frame = ttk.Frame(report_window, padding=20)
             report_frame.pack(fill='both', expand=True)
@@ -2169,7 +2169,7 @@ Total Documents: {doc_count}
             
             dialog = tk.Toplevel(self.root)
             dialog.title("Edit Student")
-            dialog.geometry("400x500")
+            dialog.geometry("600x700")
             dialog.transient(self.root)
             dialog.grab_set()
             
@@ -2272,7 +2272,7 @@ Total Documents: {doc_count}
         """Workflow management with GUI interface"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Workflow Management")
-        dialog.geometry("500x400")
+        dialog.geometry("700x550")
         dialog.transient(self.root)
         
         main_frame = ttk.Frame(dialog, padding=20)
@@ -2377,7 +2377,7 @@ Total Documents: {doc_count}
         """Add new document type with full form"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Document Type")
-        dialog.geometry("500x600")
+        dialog.geometry("700x800")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -2495,7 +2495,7 @@ Total Documents: {doc_count}
             # Create edit dialog (similar to add dialog but pre-populated)
             dialog = tk.Toplevel(self.root)
             dialog.title("Edit Document Type")
-            dialog.geometry("500x600")
+            dialog.geometry("700x800")
             dialog.transient(self.root)
             dialog.grab_set()
             
@@ -3179,7 +3179,7 @@ Total Documents: {doc_count}
         """Create standard workflow template"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Standard Workflow")
-        dialog.geometry("500x400")
+        dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -3278,7 +3278,7 @@ Total Documents: {doc_count}
         """Create express workflow template"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Express Workflow")
-        dialog.geometry("500x350")
+        dialog.geometry("950x700")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -3372,7 +3372,7 @@ Total Documents: {doc_count}
         """Create multi-stage workflow template"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Multi-Stage Workflow")
-        dialog.geometry("600x500")
+        dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -3756,7 +3756,7 @@ Total Documents: {doc_count}
         """Student report generation dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Generate Student Report")
-        dialog.geometry("400x300")
+        dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -4692,7 +4692,7 @@ Total Documents: {doc_count}
         """Show bulk operations dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Bulk Operations")
-        dialog.geometry("500x400")
+        dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -4825,7 +4825,7 @@ Total Documents: {doc_count}
         """Show system settings dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("System Settings")
-        dialog.geometry("600x500")
+        dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -5063,7 +5063,7 @@ Total Documents: {doc_count}
         """Show bulk import dialog for importing multiple documents"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Bulk Document Import")
-        dialog.geometry("700x500")
+        dialog.geometry("950x700")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -5211,7 +5211,7 @@ Total Documents: {doc_count}
         """Add new document type"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Document Type")
-        dialog.geometry("500x600")
+        dialog.geometry("700x800")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -5336,7 +5336,7 @@ Total Documents: {doc_count}
             # Create edit dialog
             dialog = tk.Toplevel(self.root)
             dialog.title("Edit Document Type")
-            dialog.geometry("500x600")
+            dialog.geometry("700x800")
             dialog.transient(self.root)
             dialog.grab_set()
 
@@ -5496,24 +5496,24 @@ Total Documents: {doc_count}
                 conn = get_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
-                SELECT id as user_id, username, role, email, created_date,
+                SELECT id as user_id, username, role, email, created_at,
                        COALESCE(is_active, 1) as is_active
                 FROM users
                 ORDER BY username
                 ''')
                 users = cursor.fetchall()
                 conn.close()
-                
+
                 # Clear existing items
                 for item in self.users_tree.get_children():
                     self.users_tree.delete(item)
-                
+
                 # Insert new items
                 for user in users:
-                    user_id, username, role, email, created_date, is_active = user
+                    user_id, username, role, email, created_at, is_active = user
                     active_text = "Yes" if is_active else "No"
                     self.users_tree.insert('', 'end', values=(
-                        user_id, username, role, email, created_date, active_text
+                        user_id, username, role, email, created_at, active_text
                     ))
             except Exception as e:
                 print(f"Error loading users: {e}")
@@ -5923,7 +5923,7 @@ Total Documents: {doc_count}
             # Create report window
             report_window = tk.Toplevel(self.root)
             report_window.title("Document Status Report")
-            report_window.geometry("600x400")
+            report_window.geometry("850x600")
 
             main_frame = ttk.Frame(report_window, padding=20)
             main_frame.pack(fill='both', expand=True)
@@ -5961,7 +5961,7 @@ Total Documents: {doc_count}
             # Create dialog
             dialog = tk.Toplevel(self.root)
             dialog.title("Bulk Tag Assignment")
-            dialog.geometry("400x300")
+            dialog.geometry("600x450")
             dialog.transient(self.root)
             dialog.grab_set()
 
@@ -6021,7 +6021,7 @@ Total Documents: {doc_count}
             # Create progress dialog
             progress_dialog = tk.Toplevel(self.root)
             progress_dialog.title("Batch OCR Processing")
-            progress_dialog.geometry("500x300")
+            progress_dialog.geometry("700x450")
             progress_dialog.transient(self.root)
 
             main_frame = ttk.Frame(progress_dialog, padding=20)
@@ -6105,6 +6105,187 @@ Total Documents: {doc_count}
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export search results: {e}")
+
+    def generate_expiry_report(self):
+        """Generate report of documents expiring soon"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get documents expiring within 30 days
+            cursor.execute('''
+                SELECT
+                    sd.document_id,
+                    sd.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    dt.type_name,
+                    sd.upload_date,
+                    sd.expiry_date,
+                    CAST((julianday(sd.expiry_date) - julianday('now')) AS INTEGER) as days_until_expiry
+                FROM student_documents sd
+                JOIN students s ON sd.student_id = s.student_id
+                JOIN document_types dt ON sd.document_type_id = dt.type_id
+                WHERE sd.expiry_date IS NOT NULL
+                    AND sd.expiry_date > date('now')
+                    AND sd.expiry_date <= date('now', '+30 days')
+                ORDER BY sd.expiry_date ASC
+            ''')
+
+            results = cursor.fetchall()
+            conn.close()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title("Document Expiry Report")
+            report_window.geometry("1000x600")
+
+            main_frame = ttk.Frame(report_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Documents Expiring Within 30 Days",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Create treeview for results
+            columns = ('Doc ID', 'Student ID', 'Student Name', 'Document Type', 'Upload Date', 'Expiry Date', 'Days Left')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            # Column widths
+            tree.column('Doc ID', width=80)
+            tree.column('Student ID', width=100)
+            tree.column('Student Name', width=150)
+            tree.column('Document Type', width=150)
+            tree.column('Upload Date', width=120)
+            tree.column('Expiry Date', width=120)
+            tree.column('Days Left', width=100)
+
+            for col in columns:
+                tree.heading(col, text=col)
+
+            for row in results:
+                tree.insert('', 'end', values=row)
+
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Summary label
+            summary_text = f"Total: {len(results)} document(s) expiring soon"
+            ttk.Label(report_window, text=summary_text, font=('Arial', 10)).pack(pady=10)
+
+            ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=(0, 10))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate expiry report: {e}")
+
+    def bulk_notification_send(self):
+        """Send notifications to multiple students"""
+        try:
+            # Create dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Bulk Notification Send")
+            dialog.geometry("850x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Send Bulk Notifications",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Recipient selection
+            ttk.Label(main_frame, text="Select Recipients:", font=('Arial', 10, 'bold')).pack(anchor='w')
+
+            recipient_frame = ttk.Frame(main_frame)
+            recipient_frame.pack(fill='x', pady=10)
+
+            recipient_var = tk.StringVar(value="all_students")
+            ttk.Radiobutton(recipient_frame, text="All Students", variable=recipient_var,
+                           value="all_students").pack(anchor='w')
+            ttk.Radiobutton(recipient_frame, text="Students with Expiring Documents",
+                           variable=recipient_var, value="expiring_docs").pack(anchor='w')
+            ttk.Radiobutton(recipient_frame, text="Students with Missing Documents",
+                           variable=recipient_var, value="missing_docs").pack(anchor='w')
+
+            # Notification type
+            ttk.Label(main_frame, text="Notification Type:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            notification_type = ttk.Combobox(main_frame, values=['Email', 'SMS', 'In-App'], state='readonly', width=30)
+            notification_type.set('Email')
+            notification_type.pack(anchor='w')
+
+            # Subject
+            ttk.Label(main_frame, text="Subject:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            subject_entry = tk.Entry(main_frame, width=50)
+            subject_entry.pack(fill='x')
+
+            # Message
+            ttk.Label(main_frame, text="Message:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            message_text = tk.Text(main_frame, height=8, width=50)
+            message_text.pack(fill='both', expand=True)
+
+            def send_notifications():
+                subject = subject_entry.get().strip()
+                message = message_text.get("1.0", tk.END).strip()
+
+                if not subject or not message:
+                    messagebox.showwarning("Warning", "Please enter both subject and message")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Get recipients based on selection
+                    recipient_type = recipient_var.get()
+                    if recipient_type == "all_students":
+                        cursor.execute('SELECT student_id, email FROM students WHERE email IS NOT NULL')
+                    elif recipient_type == "expiring_docs":
+                        cursor.execute('''
+                            SELECT DISTINCT s.student_id, s.email
+                            FROM students s
+                            JOIN student_documents sd ON s.student_id = sd.student_id
+                            WHERE sd.expiry_date <= date('now', '+30 days')
+                                AND sd.expiry_date > date('now')
+                                AND s.email IS NOT NULL
+                        ''')
+                    elif recipient_type == "missing_docs":
+                        cursor.execute('''
+                            SELECT DISTINCT s.student_id, s.email
+                            FROM students s
+                            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+                            WHERE sd.document_id IS NULL AND s.email IS NOT NULL
+                        ''')
+
+                    recipients = cursor.fetchall()
+
+                    # Log notifications (in real system, would send actual emails/SMS)
+                    for student_id, email in recipients:
+                        cursor.execute('''
+                            INSERT INTO notifications (student_id, notification_type, subject, message, sent_date)
+                            VALUES (?, ?, ?, ?, datetime('now'))
+                        ''', (student_id, notification_type.get(), subject, message))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Notifications sent to {len(recipients)} recipient(s)")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to send notifications: {e}")
+
+            # Buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Send Notifications", command=send_notifications).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open notification dialog: {e}")
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -6329,7 +6510,7 @@ class DocumentManager:
                 # Create report window
                 report_window = tk.Toplevel(self.root)
                 report_window.title("Status Report")
-                report_window.geometry("700x500")
+                report_window.geometry("950x700")
     
                 # Report frame
                 report_frame = ttk.Frame(report_window, padding=20)
@@ -6420,7 +6601,7 @@ class DocumentManager:
             """GUI for batch OCR processing"""
             dialog = tk.Toplevel(self.root)
             dialog.title("Batch OCR Processing")
-            dialog.geometry("600x400")
+            dialog.geometry("850x600")
     
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)
@@ -6537,7 +6718,7 @@ class DocumentManager:
                 # Create progress dialog
                 progress_dialog = tk.Toplevel(dialog)
                 progress_dialog.title("OCR Processing")
-                progress_dialog.geometry("400x200")
+                progress_dialog.geometry("600x300")
                 progress_dialog.transient(dialog)
                 progress_dialog.grab_set()
     
@@ -6628,7 +6809,7 @@ class DocumentManager:
             """Assign tags to multiple documents"""
             dialog = tk.Toplevel(self.root)
             dialog.title("Bulk Tag Assignment")
-            dialog.geometry("600x400")
+            dialog.geometry("850x600")
     
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)

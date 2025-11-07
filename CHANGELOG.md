@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Fix Missing Methods and Schema Issues** (2025-11-07)
+- **Issues**:
+  1. AttributeError: 'DocumentManagerGUI' object has no attribute 'generate_expiry_report' (line 4478)
+  2. AttributeError: 'DocumentManagerGUI' object has no attribute 'bulk_notification_send' (line 4717)
+  3. Error loading users: no such column: created_date
+  4. Popup windows too small to view all information
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py`
+- **Bug Fixes**:
+  1. **Added generate_expiry_report() Method** (lines 6109-6181):
+     - Queries documents expiring within 30 days
+     - Shows document details with days until expiry
+     - Displays results in expandable treeview (1000x600 window)
+     - Includes scrollbar and summary count
+     - Proper error handling with user-friendly messages
+
+  2. **Added bulk_notification_send() Method** (lines 6183-6288):
+     - Allows sending notifications to multiple students
+     - Three recipient options: all students, students with expiring docs, students with missing docs
+     - Supports Email, SMS, and In-App notification types
+     - Stores notifications in database with timestamp
+     - Full dialog with subject, message, and recipient selection (600x500 window)
+
+  3. **Fixed Users Table Column Name** (lines 5499, 5513, 5516):
+     - Changed `created_date` to `created_at` in SELECT query
+     - Updated variable names to match actual database column
+     - Users table has `created_at` not `created_date`
+     - Prevents "no such column" error when loading users
+
+  4. **Increased All Popup Window Sizes** (multiple lines):
+     - 400x300 → 600x450 (50% increase)
+     - 500x400 → 700x550 (40% increase)
+     - 600x500 → 850x700 (42% increase)
+     - 500x600 → 700x800 (33% increase)
+     - 700x400 → 950x600 (36% increase)
+     - Progress dialogs: 300x100 → 450x150, 400x200 → 600x300, 500x300 → 700x450
+     - Report windows: 600x400 → 850x600, 600x500 → 850x700, 700x500 → 950x700
+     - All dialogs now show full content without cramped layouts
+- **Result**:
+  - All report generation features work correctly
+  - Bulk notification system functional with flexible recipient targeting
+  - Users load successfully without schema errors
+  - All popup windows provide better visibility and usability
+  - Improved user experience across all dialogs
+
 **Document Manager GUI - Fix Missing document_types Columns** (2025-11-07)
 - **Issue**: "failed to load document types no such column category"
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 100-123)
