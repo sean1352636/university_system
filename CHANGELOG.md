@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**AI Powered Features GUI - Fix Row Attribute Error** (2025-11-07)
+- **Issue**: "Failed to load recommendations: sqlite3.Row object has no attribute 'get'"
+- **Location**: `university_system/modules/shared/services/ai_features/gui/ai_features_gui.py` (line 686)
+- **Bug Fix**:
+  - **Root Cause**: Code was calling `row.get('was_accepted')` on a sqlite3.Row object
+  - sqlite3.Row objects don't have a `.get()` method like dictionaries
+  - Changed from: `status = 'accepted' if row.get('was_accepted') else 'pending'`
+  - Changed to: `status = 'accepted' if row['was_accepted'] else 'pending'`
+  - Now uses bracket notation to access Row object columns (consistent with line 1023)
+- **Result**:
+  - AI recommendations now load successfully without AttributeError
+  - Recommendations tab displays correctly with acceptance status
+  - All AI Features functionality restored
+
 **Data Backup GUI - Critical Bug Fixes** (2025-11-07)
 - **Issue**: Multiple critical errors preventing Data Backup GUI functionality
   1. NameError: 'list_backup_templates' is not defined (line 1808)

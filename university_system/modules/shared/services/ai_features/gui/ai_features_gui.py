@@ -683,7 +683,7 @@ Click the 'Launch Full AI Detector' button above to access the complete detectio
                                      else (row['recommendation_content'] or '')
 
                     # Determine status based on was_accepted field
-                    status = 'accepted' if row.get('was_accepted') else 'pending'
+                    status = 'accepted' if row['was_accepted'] else 'pending'
 
                     values = (
                         row['recommendation_id'],
