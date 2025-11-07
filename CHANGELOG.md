@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Student & Admin Features: 11 Methods (Reports, Student Portal, Backup)** (2025-11-07)
+- **Issue**: Document Manager GUI needed student-facing features, comprehensive reporting, and backup/restore capabilities
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 9541-11138, ~1600 lines)
+- **File Size**: Now 11,781 total lines (from 9540 → 11,781 = +2241 lines added total)
+- **Added 11 Methods across 3 categories**:
+
+  **REPORTS** (2 GUI methods):
+  1. `generate_student_progress_report()` - Comprehensive student report generator (900x750)
+     - Select student, customizable report sections (docs/workflow/requirements/notifications)
+     - Live preview with formatted text output, export to TXT/PDF
+     - Activity logging integration
+
+  2. `custom_report_builder()` - Flexible report builder with live preview (1000x800)
+     - 5 report types: Documents Summary, Student Overview, Workflow Analytics, Document Types, Custom Query
+     - Dynamic field selection, date range & status filters
+     - Split-panel design: config (left) + preview table (right)
+     - CSV/Excel export with 1000-record limit
+
+  **STUDENT FEATURES** (6 GUI methods for student self-service):
+  3. `view_my_documents()` - Student document viewer (1100x700) with stat cards & sortable list
+  4. `student_upload_document()` - Student upload interface (700x650) with file validation
+  5. `student_dashboard()` - Comprehensive student portal (1200x800) with 3 tabs: Recent Docs, Requirements, Notifications
+  6. `check_my_requirements()` - Requirements compliance checker (900x700) with ✓/✗ status & compliance %
+  7. `my_document_status()` - Document status tracker (1000x700) with review status breakdown
+  8. `my_notifications()` - Notification center (1000x700) with mark-as-read & priority filtering
+
+  **BACKUP & RESTORE** (3 GUI methods):
+  9. `create_full_backup()` - Database backup creator with threaded execution, progress dialog
+  10. `backup_settings()` - Backup configuration manager (700x600) with auto-backup schedule, retention, compression
+  11. `restore_from_backup()` - Database restore with safety backup, warning confirmations, threaded execution
+
+- **Technical Features**:
+  - All student methods support optional `student_id` (defaults to current_user)
+  - Stat cards integration using existing `create_stat_card()` helper
+  - CSV/TXT export for all reports
+  - Threading for long-running operations (backup/restore)
+  - Safety mechanisms: confirmation dialogs, pre-restore backups
+  - Activity logging for all operations
+
 **Document Manager GUI - Advanced Features: 13 Methods (Workflow, Analytics, Maintenance, DB Ops)** (2025-11-07)
 - **Issue**: Document Manager GUI missing advanced workflow, analytics, and database management features
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 7889-9540, ~1650 lines)

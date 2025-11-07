@@ -9538,6 +9538,1604 @@ Total Documents: {doc_count}
             print(f"Error restoring version: {e}")
             return False
 
+    # ====================================================================================
+    # REPORTS (2 methods)
+    # ====================================================================================
+
+    def generate_student_progress_report(self):
+        """
+        Generate comprehensive student progress report
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Student Progress Report")
+            dialog.geometry("900x750")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Generate Student Progress Report",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Student selection
+            student_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+            student_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(student_frame, text="Student:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            student_combo = ttk.Combobox(student_frame, width=40, state='readonly')
+            student_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+
+            # Load students
+            students = self.get_students_list()
+            student_combo['values'] = [f"{s[0]} - {s[1]} {s[2]}" for s in students]
+
+            student_frame.grid_columnconfigure(1, weight=1)
+
+            # Report options
+            options_frame = ttk.LabelFrame(main_frame, text="Report Options", padding=10)
+            options_frame.pack(fill='x', pady=(0, 15))
+
+            include_docs = tk.BooleanVar(value=True)
+            include_workflow = tk.BooleanVar(value=True)
+            include_requirements = tk.BooleanVar(value=True)
+            include_notifications = tk.BooleanVar(value=False)
+
+            ttk.Checkbutton(options_frame, text="Include Documents Summary", variable=include_docs).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text="Include Workflow Status", variable=include_workflow).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text="Include Requirements Check", variable=include_requirements).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text="Include Notifications", variable=include_notifications).pack(anchor='w', pady=3)
+
+            # Report preview
+            preview_frame = ttk.LabelFrame(main_frame, text="Report Preview", padding=10)
+            preview_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            preview_text = tk.Text(preview_frame, wrap=tk.WORD, font=('Courier', 9))
+            preview_text.pack(fill='both', expand=True)
+
+            scrollbar = ttk.Scrollbar(preview_text, orient='vertical', command=preview_text.yview)
+            preview_text.configure(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side='right', fill='y')
+
+            def generate_report():
+                if not student_combo.get():
+                    messagebox.showerror("Error", "Please select a student")
+                    return
+
+                student_id = student_combo.get().split(' - ')[0]
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Get student info
+                    cursor.execute('''
+                    SELECT first_name, last_name, email, course, year, enrollment_date, status
+                    FROM students WHERE student_id = ?
+                    ''', (student_id,))
+                    student_info = cursor.fetchone()
+
+                    if not student_info:
+                        messagebox.showerror("Error", "Student not found")
+                        return
+
+                    report = []
+                    report.append("=" * 80)
+                    report.append("STUDENT PROGRESS REPORT")
+                    report.append("=" * 80)
+                    report.append(f"\nStudent ID: {student_id}")
+                    report.append(f"Name: {student_info[0]} {student_info[1]}")
+                    report.append(f"Email: {student_info[2]}")
+                    report.append(f"Course: {student_info[3]}")
+                    report.append(f"Year: {student_info[4]}")
+                    report.append(f"Enrollment Date: {student_info[5]}")
+                    report.append(f"Status: {student_info[6]}")
+                    report.append(f"\nReport Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    report.append("\n" + "=" * 80 + "\n")
+
+                    # Documents summary
+                    if include_docs.get():
+                        report.append("\nDOCUMENTS SUMMARY")
+                        report.append("-" * 80)
+                        cursor.execute('''
+                        SELECT dt.type_name, sd.upload_date, sd.status, sd.version_number
+                        FROM student_documents sd
+                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        WHERE sd.student_id = ? AND sd.is_current_version = 1
+                        ORDER BY sd.upload_date DESC
+                        ''', (student_id,))
+                        docs = cursor.fetchall()
+
+                        if docs:
+                            for doc in docs:
+                                report.append(f"\n  • {doc[0]}")
+                                report.append(f"    Uploaded: {doc[1]}")
+                                report.append(f"    Status: {doc[2]}")
+                                report.append(f"    Version: {doc[3]}")
+                        else:
+                            report.append("\n  No documents uploaded yet.")
+
+                        cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ?', (student_id,))
+                        total_docs = cursor.fetchone()[0]
+                        report.append(f"\n  Total Documents: {total_docs}")
+
+                    # Workflow status
+                    if include_workflow.get():
+                        report.append("\n\nWORKFLOW STATUS")
+                        report.append("-" * 80)
+                        cursor.execute('''
+                        SELECT dw.step_name, dw.status, dw.assigned_to, dw.completed_date
+                        FROM document_workflow dw
+                        JOIN student_documents sd ON dw.document_id = sd.document_id
+                        WHERE sd.student_id = ?
+                        ORDER BY dw.step_order
+                        ''', (student_id,))
+                        workflows = cursor.fetchall()
+
+                        if workflows:
+                            pending = sum(1 for w in workflows if w[1] == 'pending')
+                            completed = sum(1 for w in workflows if w[1] == 'completed')
+                            report.append(f"\n  Pending Steps: {pending}")
+                            report.append(f"  Completed Steps: {completed}")
+                            report.append("\n  Recent Workflows:")
+                            for wf in workflows[:10]:
+                                report.append(f"\n    • {wf[0]}")
+                                report.append(f"      Status: {wf[1]}")
+                                report.append(f"      Assigned To: {wf[2]}")
+                                if wf[3]:
+                                    report.append(f"      Completed: {wf[3]}")
+                        else:
+                            report.append("\n  No active workflows.")
+
+                    # Requirements check
+                    if include_requirements.get():
+                        report.append("\n\nREQUIREMENTS CHECK")
+                        report.append("-" * 80)
+                        cursor.execute('''
+                        SELECT dt.type_name, dt.is_required
+                        FROM document_types dt
+                        WHERE dt.is_required = 1
+                        ''')
+                        required_docs = cursor.fetchall()
+
+                        if required_docs:
+                            report.append("\n  Required Documents:")
+                            for req in required_docs:
+                                cursor.execute('''
+                                SELECT COUNT(*) FROM student_documents
+                                WHERE student_id = ? AND type_id = (
+                                    SELECT type_id FROM document_types WHERE type_name = ?
+                                )
+                                ''', (student_id, req[0]))
+                                has_doc = cursor.fetchone()[0] > 0
+                                status = "✓ Submitted" if has_doc else "✗ Missing"
+                                report.append(f"    {status} - {req[0]}")
+
+                    # Notifications
+                    if include_notifications.get():
+                        report.append("\n\nRECENT NOTIFICATIONS")
+                        report.append("-" * 80)
+                        cursor.execute('''
+                        SELECT title, message, created_date, is_read
+                        FROM notifications
+                        WHERE recipient_id = ?
+                        ORDER BY created_date DESC
+                        LIMIT 10
+                        ''', (student_id,))
+                        notifications = cursor.fetchall()
+
+                        if notifications:
+                            for notif in notifications:
+                                read_status = "[Read]" if notif[3] else "[Unread]"
+                                report.append(f"\n  {read_status} {notif[0]}")
+                                report.append(f"    Date: {notif[2]}")
+                                report.append(f"    Message: {notif[1][:100]}...")
+                        else:
+                            report.append("\n  No notifications.")
+
+                    conn.close()
+
+                    # Display report
+                    preview_text.delete('1.0', tk.END)
+                    preview_text.insert('1.0', '\n'.join(report))
+
+                    self.log_event('generate', 'student_report', student_id, {
+                        'report_type': 'progress',
+                        'options': {
+                            'docs': include_docs.get(),
+                            'workflow': include_workflow.get(),
+                            'requirements': include_requirements.get(),
+                            'notifications': include_notifications.get()
+                        }
+                    })
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+            def export_report():
+                if not preview_text.get('1.0', tk.END).strip():
+                    messagebox.showwarning("Warning", "Please generate report first")
+                    return
+
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".txt",
+                    filetypes=[("Text files", "*.txt"), ("PDF files", "*.pdf"), ("All files", "*.*")],
+                    initialfile=f"student_progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                )
+
+                if file_path:
+                    try:
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(preview_text.get('1.0', tk.END))
+                        messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to export report: {e}")
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x')
+
+            ttk.Button(action_frame, text="Generate Report", command=generate_report).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Export Report", command=export_report).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open report generator: {e}")
+
+    def custom_report_builder(self):
+        """
+        Custom report builder with flexible options
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Custom Report Builder")
+            dialog.geometry("1000x800")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Custom Report Builder",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Left panel - Configuration
+            config_panel = ttk.Frame(main_frame)
+            config_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
+
+            # Report type
+            type_frame = ttk.LabelFrame(config_panel, text="Report Type", padding=10)
+            type_frame.pack(fill='x', pady=(0, 10))
+
+            report_type = tk.StringVar(value="documents")
+            ttk.Radiobutton(type_frame, text="Documents Summary", variable=report_type, value="documents").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text="Student Overview", variable=report_type, value="students").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text="Workflow Analytics", variable=report_type, value="workflow").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text="Document Types", variable=report_type, value="doc_types").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text="Custom Query", variable=report_type, value="custom").pack(anchor='w', pady=3)
+
+            # Filters
+            filter_frame = ttk.LabelFrame(config_panel, text="Filters", padding=10)
+            filter_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Label(filter_frame, text="Date Range:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            date_range = ttk.Combobox(filter_frame, values=['All Time', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'This Year'], width=20, state='readonly')
+            date_range.set('All Time')
+            date_range.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+            ttk.Label(filter_frame, text="Status:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            status_filter = ttk.Combobox(filter_frame, values=['All', 'Pending', 'Approved', 'Rejected', 'Verified'], width=20, state='readonly')
+            status_filter.set('All')
+            status_filter.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+
+            # Fields to include
+            fields_frame = ttk.LabelFrame(config_panel, text="Fields to Include", padding=10)
+            fields_frame.pack(fill='both', expand=True)
+
+            fields_list = tk.Listbox(fields_frame, selectmode='multiple', height=10)
+            fields_list.pack(fill='both', expand=True)
+
+            # Populate fields based on report type
+            def update_fields(*args):
+                fields_list.delete(0, tk.END)
+                rtype = report_type.get()
+                if rtype == "documents":
+                    fields = ['Document ID', 'Student Name', 'Document Type', 'Upload Date', 'Status', 'File Size', 'Version']
+                elif rtype == "students":
+                    fields = ['Student ID', 'Name', 'Email', 'Course', 'Year', 'Enrollment Date', 'Status', 'Documents Count']
+                elif rtype == "workflow":
+                    fields = ['Workflow ID', 'Document ID', 'Step Name', 'Assigned To', 'Status', 'Completed Date']
+                elif rtype == "doc_types":
+                    fields = ['Type ID', 'Type Name', 'Description', 'Required', 'Has Expiry', 'Max Size', 'Formats']
+                else:
+                    fields = ['Custom - Enter SQL Query']
+
+                for field in fields:
+                    fields_list.insert(tk.END, field)
+                    if rtype != "custom":
+                        fields_list.selection_set(0, tk.END)
+
+            report_type.trace('w', update_fields)
+            update_fields()
+
+            # Right panel - Preview
+            preview_panel = ttk.Frame(main_frame)
+            preview_panel.pack(side='right', fill='both', expand=True)
+
+            preview_label = ttk.Label(preview_panel, text="Report Preview", font=('Arial', 12, 'bold'))
+            preview_label.pack(pady=(0, 10))
+
+            # Preview table
+            preview_frame = ttk.Frame(preview_panel)
+            preview_frame.pack(fill='both', expand=True)
+
+            preview_tree = ttk.Treeview(preview_frame, show='headings', height=25)
+            preview_scrollbar_y = ttk.Scrollbar(preview_frame, orient='vertical', command=preview_tree.yview)
+            preview_scrollbar_x = ttk.Scrollbar(preview_frame, orient='horizontal', command=preview_tree.xview)
+            preview_tree.configure(yscrollcommand=preview_scrollbar_y.set, xscrollcommand=preview_scrollbar_x.set)
+
+            preview_tree.grid(row=0, column=0, sticky='nsew')
+            preview_scrollbar_y.grid(row=0, column=1, sticky='ns')
+            preview_scrollbar_x.grid(row=1, column=0, sticky='ew')
+
+            preview_frame.grid_rowconfigure(0, weight=1)
+            preview_frame.grid_columnconfigure(0, weight=1)
+
+            stats_label = ttk.Label(preview_panel, text="", font=('Arial', 9), foreground='blue')
+            stats_label.pack(pady=(10, 0))
+
+            def generate_custom_report():
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    rtype = report_type.get()
+                    selected_fields = [fields_list.get(i) for i in fields_list.curselection()]
+
+                    if not selected_fields and rtype != "custom":
+                        messagebox.showwarning("Warning", "Please select at least one field")
+                        return
+
+                    # Clear preview
+                    for item in preview_tree.get_children():
+                        preview_tree.delete(item)
+
+                    # Build query based on report type
+                    if rtype == "documents":
+                        query = '''
+                        SELECT sd.document_id, s.first_name || ' ' || s.last_name as student_name,
+                               dt.type_name, sd.upload_date, sd.status, sd.file_size, sd.version_number
+                        FROM student_documents sd
+                        JOIN students s ON sd.student_id = s.student_id
+                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        WHERE sd.is_current_version = 1
+                        '''
+                    elif rtype == "students":
+                        query = '''
+                        SELECT s.student_id, s.first_name || ' ' || s.last_name as name,
+                               s.email, s.course, s.year, s.enrollment_date, s.status,
+                               COUNT(sd.document_id) as doc_count
+                        FROM students s
+                        LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+                        GROUP BY s.student_id
+                        '''
+                    elif rtype == "workflow":
+                        query = '''
+                        SELECT workflow_id, document_id, step_name, assigned_to, status, completed_date
+                        FROM document_workflow
+                        '''
+                    elif rtype == "doc_types":
+                        query = '''
+                        SELECT type_id, type_name, description, is_required, has_expiry,
+                               max_file_size_mb, allowed_formats
+                        FROM document_types
+                        WHERE is_active = 1
+                        '''
+                    else:
+                        messagebox.showinfo("Info", "Custom query mode - enter SQL manually")
+                        return
+
+                    # Apply status filter
+                    if status_filter.get() != 'All':
+                        if 'WHERE' in query:
+                            query += f" AND status = '{status_filter.get()}'"
+                        else:
+                            query += f" WHERE status = '{status_filter.get()}'"
+
+                    # Apply date filter
+                    date_range_val = date_range.get()
+                    if date_range_val != 'All Time' and 'upload_date' in query:
+                        days_map = {'Last 7 Days': 7, 'Last 30 Days': 30, 'Last 90 Days': 90, 'This Year': 365}
+                        days = days_map.get(date_range_val, 0)
+                        if days:
+                            cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+                            if 'WHERE' in query:
+                                query += f" AND upload_date >= '{cutoff}'"
+                            else:
+                                query += f" WHERE upload_date >= '{cutoff}'"
+
+                    query += " LIMIT 1000"
+
+                    cursor.execute(query)
+                    results = cursor.fetchall()
+                    conn.close()
+
+                    if results:
+                        # Set columns
+                        columns = selected_fields if selected_fields else [f"Col{i}" for i in range(len(results[0]))]
+                        preview_tree['columns'] = columns
+
+                        for col in columns:
+                            preview_tree.heading(col, text=col)
+                            preview_tree.column(col, width=120)
+
+                        # Insert data
+                        for row in results:
+                            preview_tree.insert('', 'end', values=row)
+
+                        stats_label.config(text=f"Total Records: {len(results)}")
+                    else:
+                        stats_label.config(text="No records found")
+
+                    self.log_event('generate', 'custom_report', None, {
+                        'report_type': rtype,
+                        'records_count': len(results)
+                    })
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+            def export_custom_report():
+                if len(preview_tree.get_children()) == 0:
+                    messagebox.showwarning("Warning", "Please generate report first")
+                    return
+
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx"), ("All files", "*.*")],
+                    initialfile=f"custom_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+
+                if file_path:
+                    try:
+                        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                            writer = csv.writer(f)
+                            # Write headers
+                            writer.writerow(preview_tree['columns'])
+                            # Write data
+                            for item in preview_tree.get_children():
+                                writer.writerow(preview_tree.item(item)['values'])
+
+                        messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to export: {e}")
+
+            # Bottom buttons
+            button_frame = ttk.Frame(config_panel)
+            button_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Button(button_frame, text="Generate", command=generate_custom_report).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Export", command=export_custom_report).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open custom report builder: {e}")
+
+    # ====================================================================================
+    # STUDENT FEATURES (6 methods)
+    # ====================================================================================
+
+    def view_my_documents(self, student_id=None):
+        """
+        Student view of their own documents
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("My Documents")
+            dialog.geometry("1100x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="My Documents",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary cards
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Total documents
+                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ?', (student_id,))
+                total = cursor.fetchone()[0]
+
+                # Pending
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                pending = cursor.fetchone()[0]
+
+                # Approved
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'approved'", (student_id,))
+                approved = cursor.fetchone()[0]
+
+                # Current versions
+                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND is_current_version = 1', (student_id,))
+                current = cursor.fetchone()[0]
+
+                conn.close()
+
+                self.create_stat_card(summary_frame, "Total Documents", total, '#3498db', 0)
+                self.create_stat_card(summary_frame, "Pending", pending, '#f39c12', 1)
+                self.create_stat_card(summary_frame, "Approved", approved, '#27ae60', 2)
+                self.create_stat_card(summary_frame, "Current Versions", current, '#9b59b6', 3)
+
+            except Exception as e:
+                pass
+
+            # Documents list
+            docs_frame = ttk.LabelFrame(main_frame, text="My Document List", padding=10)
+            docs_frame.pack(fill='both', expand=True)
+
+            columns = ('Document Type', 'Upload Date', 'Status', 'Version', 'File Name', 'Notes')
+            docs_tree = ttk.Treeview(docs_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                docs_tree.heading(col, text=col)
+                if col == 'Version':
+                    docs_tree.column(col, width=60)
+                elif col == 'Status':
+                    docs_tree.column(col, width=80)
+                else:
+                    docs_tree.column(col, width=150)
+
+            scrollbar = ttk.Scrollbar(docs_frame, orient='vertical', command=docs_tree.yview)
+            docs_tree.configure(yscrollcommand=scrollbar.set)
+            docs_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load documents
+            def load_documents():
+                docs_tree.delete(*docs_tree.get_children())
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    SELECT dt.type_name, sd.upload_date, sd.status, sd.version_number,
+                           sd.file_name, sd.notes
+                    FROM student_documents sd
+                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    WHERE sd.student_id = ? AND sd.is_current_version = 1
+                    ORDER BY sd.upload_date DESC
+                    ''', (student_id,))
+
+                    docs = cursor.fetchall()
+                    conn.close()
+
+                    for doc in docs:
+                        docs_tree.insert('', 'end', values=doc)
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load documents: {e}")
+
+            load_documents()
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(action_frame, text="Upload New Document",
+                      command=lambda: self.student_upload_document(student_id)).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Refresh", command=load_documents).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open my documents: {e}")
+
+    def student_upload_document(self, student_id=None):
+        """
+        Student document upload interface
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Upload Document")
+            dialog.geometry("700x650")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Upload New Document",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Document type
+            type_frame = ttk.LabelFrame(main_frame, text="Document Type", padding=10)
+            type_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(type_frame, text="Select Document Type:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            doc_type_combo = ttk.Combobox(type_frame, width=40, state='readonly')
+            doc_type_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+
+            # Load document types
+            doc_types = self.get_document_types_with_details()
+            doc_type_combo['values'] = [f"{dt[1]}" for dt in doc_types]
+
+            type_frame.grid_columnconfigure(1, weight=1)
+
+            # File selection
+            file_frame = ttk.LabelFrame(main_frame, text="Select File", padding=10)
+            file_frame.pack(fill='x', pady=(0, 15))
+
+            file_path_var = tk.StringVar()
+            ttk.Label(file_frame, text="File:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Entry(file_frame, textvariable=file_path_var, width=40, state='readonly').grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+
+            def browse_file():
+                file_path = filedialog.askopenfilename(
+                    title="Select Document",
+                    filetypes=[
+                        ("PDF files", "*.pdf"),
+                        ("Image files", "*.jpg;*.jpeg;*.png"),
+                        ("Word documents", "*.doc;*.docx"),
+                        ("All files", "*.*")
+                    ]
+                )
+                if file_path:
+                    file_path_var.set(file_path)
+                    # Show file info
+                    size = os.path.getsize(file_path) / (1024 * 1024)
+                    file_info_label.config(text=f"Size: {size:.2f} MB")
+
+            ttk.Button(file_frame, text="Browse...", command=browse_file).grid(row=0, column=2, padx=5, pady=5)
+
+            file_info_label = ttk.Label(file_frame, text="", font=('Arial', 9), foreground='gray')
+            file_info_label.grid(row=1, column=0, columnspan=3, sticky='w', padx=5)
+
+            file_frame.grid_columnconfigure(1, weight=1)
+
+            # Notes
+            notes_frame = ttk.LabelFrame(main_frame, text="Notes (Optional)", padding=10)
+            notes_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            notes_text = tk.Text(notes_frame, height=6, wrap=tk.WORD)
+            notes_text.pack(fill='both', expand=True)
+
+            # Upload info
+            info_frame = ttk.Frame(main_frame)
+            info_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(info_frame, text="ℹ️ Your document will be reviewed by staff",
+                     font=('Arial', 9), foreground='blue').pack()
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x')
+
+            def perform_upload():
+                doc_type = doc_type_combo.get()
+                file_path = file_path_var.get()
+
+                if not doc_type:
+                    messagebox.showerror("Error", "Please select document type")
+                    return
+
+                if not file_path:
+                    messagebox.showerror("Error", "Please select a file")
+                    return
+
+                try:
+                    # Get type_id
+                    type_id = None
+                    for dt in doc_types:
+                        if dt[1] == doc_type:
+                            type_id = dt[0]
+                            break
+
+                    if not type_id:
+                        messagebox.showerror("Error", "Invalid document type")
+                        return
+
+                    # Upload document
+                    notes = notes_text.get('1.0', tk.END).strip()
+                    result = self.upload_document_to_db(student_id, type_id, file_path, None, '', notes)
+
+                    if result:
+                        messagebox.showinfo("Success",
+                                          "Document uploaded successfully!\n"
+                                          "It will be reviewed by staff shortly.")
+                        dialog.destroy()
+                    else:
+                        messagebox.showerror("Error", "Failed to upload document")
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Upload failed: {e}")
+
+            ttk.Button(action_frame, text="Upload Document", command=perform_upload).pack(side='right', padx=5)
+            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open upload dialog: {e}")
+
+    def student_dashboard(self, student_id=None):
+        """
+        Comprehensive student dashboard
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Student Dashboard")
+            dialog.geometry("1200x800")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title with student name
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT first_name, last_name, course FROM students WHERE student_id = ?', (student_id,))
+                student_info = cursor.fetchone()
+                conn.close()
+
+                if student_info:
+                    title_text = f"Dashboard - {student_info[0]} {student_info[1]} ({student_info[2]})"
+                else:
+                    title_text = "Student Dashboard"
+            except:
+                title_text = "Student Dashboard"
+
+            ttk.Label(main_frame, text=title_text,
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Quick stats
+            stats_frame = ttk.Frame(main_frame)
+            stats_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Documents
+                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND is_current_version = 1', (student_id,))
+                doc_count = cursor.fetchone()[0]
+
+                # Pending approvals
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                pending_count = cursor.fetchone()[0]
+
+                # Notifications
+                cursor.execute('SELECT COUNT(*) FROM notifications WHERE recipient_id = ? AND is_read = 0', (student_id,))
+                notif_count = cursor.fetchone()[0]
+
+                # Missing required docs
+                cursor.execute('''
+                SELECT COUNT(*) FROM document_types dt
+                WHERE dt.is_required = 1
+                AND NOT EXISTS (
+                    SELECT 1 FROM student_documents sd
+                    WHERE sd.student_id = ? AND sd.type_id = dt.type_id
+                )
+                ''', (student_id,))
+                missing_count = cursor.fetchone()[0]
+
+                conn.close()
+
+                self.create_stat_card(stats_frame, "My Documents", doc_count, '#3498db', 0)
+                self.create_stat_card(stats_frame, "Pending Approval", pending_count, '#f39c12', 1)
+                self.create_stat_card(stats_frame, "Unread Notices", notif_count, '#e74c3c', 2)
+                self.create_stat_card(stats_frame, "Missing Required", missing_count, '#e67e22', 3)
+
+            except Exception as e:
+                pass
+
+            # Notebook with tabs
+            notebook = ttk.Notebook(main_frame)
+            notebook.pack(fill='both', expand=True)
+
+            # Tab 1: Recent Documents
+            docs_tab = ttk.Frame(notebook, padding=10)
+            notebook.add(docs_tab, text="Recent Documents")
+
+            columns = ('Type', 'Upload Date', 'Status', 'Version')
+            docs_tree = ttk.Treeview(docs_tab, columns=columns, show='headings', height=15)
+            for col in columns:
+                docs_tree.heading(col, text=col)
+                docs_tree.column(col, width=150)
+            docs_tree.pack(fill='both', expand=True)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT dt.type_name, sd.upload_date, sd.status, sd.version_number
+                FROM student_documents sd
+                JOIN document_types dt ON sd.type_id = dt.type_id
+                WHERE sd.student_id = ? AND sd.is_current_version = 1
+                ORDER BY sd.upload_date DESC
+                LIMIT 20
+                ''', (student_id,))
+                docs = cursor.fetchall()
+                conn.close()
+                for doc in docs:
+                    docs_tree.insert('', 'end', values=doc)
+            except:
+                pass
+
+            # Tab 2: Requirements
+            req_tab = ttk.Frame(notebook, padding=10)
+            notebook.add(req_tab, text="Requirements")
+
+            ttk.Label(req_tab, text="Required Documents Status", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+            req_tree = ttk.Treeview(req_tab, columns=('Document', 'Status'), show='headings', height=15)
+            req_tree.heading('Document', text='Document Type')
+            req_tree.heading('Status', text='Status')
+            req_tree.column('Document', width=300)
+            req_tree.column('Status', width=150)
+            req_tree.pack(fill='both', expand=True)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT type_name FROM document_types WHERE is_required = 1')
+                required = cursor.fetchall()
+
+                for req in required:
+                    cursor.execute('''
+                    SELECT COUNT(*) FROM student_documents
+                    WHERE student_id = ? AND type_id = (
+                        SELECT type_id FROM document_types WHERE type_name = ?
+                    )
+                    ''', (student_id, req[0]))
+                    has_doc = cursor.fetchone()[0] > 0
+                    status = "✓ Submitted" if has_doc else "✗ Missing"
+                    req_tree.insert('', 'end', values=(req[0], status))
+
+                conn.close()
+            except:
+                pass
+
+            # Tab 3: Notifications
+            notif_tab = ttk.Frame(notebook, padding=10)
+            notebook.add(notif_tab, text="Notifications")
+
+            notif_tree = ttk.Treeview(notif_tab, columns=('Date', 'Title', 'Message'), show='headings', height=15)
+            notif_tree.heading('Date', text='Date')
+            notif_tree.heading('Title', text='Title')
+            notif_tree.heading('Message', text='Message')
+            notif_tree.column('Date', width=150)
+            notif_tree.column('Title', width=200)
+            notif_tree.column('Message', width=400)
+            notif_tree.pack(fill='both', expand=True)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT created_date, title, message
+                FROM notifications
+                WHERE recipient_id = ?
+                ORDER BY created_date DESC
+                LIMIT 50
+                ''', (student_id,))
+                notifs = cursor.fetchall()
+                conn.close()
+                for notif in notifs:
+                    notif_tree.insert('', 'end', values=notif)
+            except:
+                pass
+
+            # Quick action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(action_frame, text="Upload Document",
+                      command=lambda: self.student_upload_document(student_id)).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="View All Documents",
+                      command=lambda: self.view_my_documents(student_id)).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Check Requirements",
+                      command=lambda: self.check_my_requirements(student_id)).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open dashboard: {e}")
+
+    def check_my_requirements(self, student_id=None):
+        """
+        Check document requirements for student
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("My Requirements")
+            dialog.geometry("900x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Document Requirements Check",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Total required
+                cursor.execute('SELECT COUNT(*) FROM document_types WHERE is_required = 1')
+                total_required = cursor.fetchone()[0]
+
+                # Submitted
+                cursor.execute('''
+                SELECT COUNT(DISTINCT sd.type_id)
+                FROM student_documents sd
+                JOIN document_types dt ON sd.type_id = dt.type_id
+                WHERE sd.student_id = ? AND dt.is_required = 1
+                ''', (student_id,))
+                submitted = cursor.fetchone()[0]
+
+                # Missing
+                missing = total_required - submitted
+
+                # Compliance percentage
+                compliance = round((submitted / total_required * 100) if total_required > 0 else 0, 1)
+
+                conn.close()
+
+                self.create_stat_card(summary_frame, "Total Required", total_required, '#3498db', 0)
+                self.create_stat_card(summary_frame, "Submitted", submitted, '#27ae60', 1)
+                self.create_stat_card(summary_frame, "Missing", missing, '#e74c3c', 2)
+                self.create_stat_card(summary_frame, f"Compliance", f"{compliance}%", '#9b59b6', 3)
+
+            except Exception as e:
+                pass
+
+            # Requirements list
+            req_frame = ttk.LabelFrame(main_frame, text="Requirements Details", padding=10)
+            req_frame.pack(fill='both', expand=True)
+
+            columns = ('Document Type', 'Status', 'Last Upload', 'Expiry Date', 'Actions')
+            req_tree = ttk.Treeview(req_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                req_tree.heading(col, text=col)
+                if col == 'Status':
+                    req_tree.column(col, width=100)
+                elif col == 'Actions':
+                    req_tree.column(col, width=80)
+                else:
+                    req_tree.column(col, width=150)
+
+            scrollbar = ttk.Scrollbar(req_frame, orient='vertical', command=req_tree.yview)
+            req_tree.configure(yscrollcommand=scrollbar.set)
+            req_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load requirements
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT type_id, type_name FROM document_types WHERE is_required = 1 ORDER BY type_name')
+                required_types = cursor.fetchall()
+
+                for type_id, type_name in required_types:
+                    cursor.execute('''
+                    SELECT upload_date, expiry_date, status
+                    FROM student_documents
+                    WHERE student_id = ? AND type_id = ? AND is_current_version = 1
+                    ORDER BY upload_date DESC
+                    LIMIT 1
+                    ''', (student_id, type_id))
+                    doc = cursor.fetchone()
+
+                    if doc:
+                        upload_date, expiry_date, status = doc
+                        status_text = f"✓ {status.title()}"
+                        action = "Update"
+                    else:
+                        upload_date = "Not uploaded"
+                        expiry_date = "-"
+                        status_text = "✗ Missing"
+                        action = "Upload"
+
+                    req_tree.insert('', 'end', values=(
+                        type_name,
+                        status_text,
+                        upload_date,
+                        expiry_date or "-",
+                        action
+                    ))
+
+                conn.close()
+            except Exception as e:
+                pass
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(action_frame, text="Upload Document",
+                      command=lambda: self.student_upload_document(student_id)).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Export Report",
+                      command=lambda: self.generate_student_progress_report()).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to check requirements: {e}")
+
+    def my_document_status(self, student_id=None):
+        """
+        Track document processing status
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Document Status Tracker")
+            dialog.geometry("1000x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="My Document Status Tracker",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Status summary
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Status counts
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                pending = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'approved'", (student_id,))
+                approved = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'rejected'", (student_id,))
+                rejected = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'verified'", (student_id,))
+                verified = cursor.fetchone()[0]
+
+                conn.close()
+
+                self.create_stat_card(summary_frame, "Pending Review", pending, '#f39c12', 0)
+                self.create_stat_card(summary_frame, "Approved", approved, '#27ae60', 1)
+                self.create_stat_card(summary_frame, "Rejected", rejected, '#e74c3c', 2)
+                self.create_stat_card(summary_frame, "Verified", verified, '#3498db', 3)
+
+            except:
+                pass
+
+            # Document status list
+            status_frame = ttk.LabelFrame(main_frame, text="Document Status Details", padding=10)
+            status_frame.pack(fill='both', expand=True)
+
+            columns = ('Document Type', 'Upload Date', 'Current Status', 'Last Updated', 'Reviewer Notes')
+            status_tree = ttk.Treeview(status_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                status_tree.heading(col, text=col)
+                if col == 'Current Status':
+                    status_tree.column(col, width=100)
+                else:
+                    status_tree.column(col, width=150)
+
+            scrollbar = ttk.Scrollbar(status_frame, orient='vertical', command=status_tree.yview)
+            status_tree.configure(yscrollcommand=scrollbar.set)
+            status_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load status data
+            def load_status():
+                status_tree.delete(*status_tree.get_children())
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    SELECT dt.type_name, sd.upload_date, sd.status,
+                           sd.verification_date, sd.notes
+                    FROM student_documents sd
+                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    WHERE sd.student_id = ? AND sd.is_current_version = 1
+                    ORDER BY sd.upload_date DESC
+                    ''', (student_id,))
+
+                    docs = cursor.fetchall()
+                    conn.close()
+
+                    for doc in docs:
+                        status_tree.insert('', 'end', values=doc)
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load status: {e}")
+
+            load_status()
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(action_frame, text="Refresh", command=load_status).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open status tracker: {e}")
+
+    def my_notifications(self, student_id=None):
+        """
+        View student notifications
+        """
+        try:
+            if not student_id:
+                student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("My Notifications")
+            dialog.geometry("1000x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="My Notifications",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Unread
+                cursor.execute('SELECT COUNT(*) FROM notifications WHERE recipient_id = ? AND is_read = 0', (student_id,))
+                unread = cursor.fetchone()[0]
+
+                # Total
+                cursor.execute('SELECT COUNT(*) FROM notifications WHERE recipient_id = ?', (student_id,))
+                total = cursor.fetchone()[0]
+
+                # High priority
+                cursor.execute("SELECT COUNT(*) FROM notifications WHERE recipient_id = ? AND priority = 'high'", (student_id,))
+                high_priority = cursor.fetchone()[0]
+
+                conn.close()
+
+                self.create_stat_card(summary_frame, "Unread", unread, '#e74c3c', 0)
+                self.create_stat_card(summary_frame, "Total Notifications", total, '#3498db', 1)
+                self.create_stat_card(summary_frame, "High Priority", high_priority, '#f39c12', 2)
+
+            except:
+                pass
+
+            # Notifications list
+            notif_frame = ttk.LabelFrame(main_frame, text="Notifications", padding=10)
+            notif_frame.pack(fill='both', expand=True)
+
+            columns = ('Status', 'Date', 'Priority', 'Title', 'Message')
+            notif_tree = ttk.Treeview(notif_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                notif_tree.heading(col, text=col)
+                if col == 'Status':
+                    notif_tree.column(col, width=70)
+                elif col == 'Priority':
+                    notif_tree.column(col, width=80)
+                elif col == 'Date':
+                    notif_tree.column(col, width=150)
+                else:
+                    notif_tree.column(col, width=200)
+
+            scrollbar = ttk.Scrollbar(notif_frame, orient='vertical', command=notif_tree.yview)
+            notif_tree.configure(yscrollcommand=scrollbar.set)
+            notif_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load notifications
+            def load_notifications():
+                notif_tree.delete(*notif_tree.get_children())
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    SELECT notification_id, is_read, created_date, priority, title, message
+                    FROM notifications
+                    WHERE recipient_id = ?
+                    ORDER BY created_date DESC
+                    LIMIT 100
+                    ''', (student_id,))
+
+                    notifs = cursor.fetchall()
+                    conn.close()
+
+                    for notif in notifs:
+                        notif_id, is_read, created_date, priority, title, message = notif
+                        read_status = "Read" if is_read else "Unread"
+                        # Truncate message for display
+                        short_message = message[:100] + "..." if len(message) > 100 else message
+                        notif_tree.insert('', 'end', values=(
+                            read_status, created_date, priority or 'normal', title, short_message
+                        ), tags=(notif_id,))
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load notifications: {e}")
+
+            load_notifications()
+
+            def mark_as_read():
+                selection = notif_tree.selection()
+                if not selection:
+                    messagebox.showwarning("Warning", "Please select a notification")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    for item in selection:
+                        notif_id = notif_tree.item(item)['tags'][0]
+                        cursor.execute('UPDATE notifications SET is_read = 1 WHERE notification_id = ?', (notif_id,))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Marked {len(selection)} notification(s) as read")
+                    load_notifications()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to mark as read: {e}")
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(action_frame, text="Mark as Read", command=mark_as_read).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Refresh", command=load_notifications).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+            load_notifications()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open notifications: {e}")
+
+    # ====================================================================================
+    # BACKUP & RESTORE (3 methods)
+    # ====================================================================================
+
+    def create_full_backup(self):
+        """
+        Create full database backup
+        """
+        try:
+            # Ask for backup location
+            backup_path = filedialog.asksaveasfilename(
+                defaultextension=".db",
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                initialfile=f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db",
+                initialdir="backups"
+            )
+
+            if not backup_path:
+                return
+
+            # Create backup directory if needed
+            backup_dir = os.path.dirname(backup_path)
+            if backup_dir:
+                os.makedirs(backup_dir, exist_ok=True)
+
+            # Show progress dialog
+            progress_dialog = tk.Toplevel(self.root)
+            progress_dialog.title("Creating Backup")
+            progress_dialog.geometry("400x150")
+            progress_dialog.transient(self.root)
+            progress_dialog.grab_set()
+
+            ttk.Label(progress_dialog, text="Creating database backup...",
+                     font=('Arial', 12)).pack(pady=20)
+
+            progress_bar = ttk.Progressbar(progress_dialog, mode='indeterminate', length=300)
+            progress_bar.pack(pady=10)
+            progress_bar.start()
+
+            status_label = ttk.Label(progress_dialog, text="", font=('Arial', 9))
+            status_label.pack(pady=10)
+
+            def perform_backup():
+                try:
+                    status_label.config(text="Copying database file...")
+                    progress_dialog.update()
+
+                    # Copy database file
+                    shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+
+                    # Get backup size
+                    backup_size = os.path.getsize(backup_path) / (1024 * 1024)
+
+                    progress_bar.stop()
+
+                    self.log_event('create', 'backup', None, {
+                        'backup_path': backup_path,
+                        'size_mb': round(backup_size, 2)
+                    })
+
+                    progress_dialog.destroy()
+                    messagebox.showinfo("Success",
+                                      f"Backup created successfully!\n\n"
+                                      f"Location: {backup_path}\n"
+                                      f"Size: {backup_size:.2f} MB")
+
+                except Exception as e:
+                    progress_bar.stop()
+                    progress_dialog.destroy()
+                    messagebox.showerror("Error", f"Backup failed: {e}")
+
+            # Run backup in separate thread to keep UI responsive
+            import threading
+            backup_thread = threading.Thread(target=perform_backup)
+            backup_thread.start()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create backup: {e}")
+
+    def backup_settings(self):
+        """
+        Configure automatic backup settings
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Backup Settings")
+            dialog.geometry("700x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Backup Settings",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Auto backup settings
+            auto_frame = ttk.LabelFrame(main_frame, text="Automatic Backup", padding=15)
+            auto_frame.pack(fill='x', pady=(0, 15))
+
+            enable_auto = tk.BooleanVar(value=False)
+            ttk.Checkbutton(auto_frame, text="Enable automatic backups", variable=enable_auto).pack(anchor='w', pady=5)
+
+            # Frequency
+            freq_frame = ttk.Frame(auto_frame)
+            freq_frame.pack(fill='x', pady=10)
+
+            ttk.Label(freq_frame, text="Frequency:").pack(side='left', padx=(20, 5))
+            frequency = ttk.Combobox(freq_frame, values=['Daily', 'Weekly', 'Monthly'], width=15, state='readonly')
+            frequency.set('Daily')
+            frequency.pack(side='left', padx=5)
+
+            # Time
+            time_frame = ttk.Frame(auto_frame)
+            time_frame.pack(fill='x', pady=5)
+
+            ttk.Label(time_frame, text="Time:").pack(side='left', padx=(20, 5))
+            backup_time = ttk.Combobox(time_frame, values=[f"{h:02d}:00" for h in range(24)], width=10, state='readonly')
+            backup_time.set('02:00')
+            backup_time.pack(side='left', padx=5)
+
+            # Backup location
+            location_frame = ttk.LabelFrame(main_frame, text="Backup Location", padding=15)
+            location_frame.pack(fill='x', pady=(0, 15))
+
+            location_var = tk.StringVar(value="backups/")
+            ttk.Label(location_frame, text="Directory:").pack(anchor='w', pady=5)
+            location_entry = ttk.Entry(location_frame, textvariable=location_var, width=50)
+            location_entry.pack(fill='x', pady=5)
+
+            def browse_location():
+                directory = filedialog.askdirectory(initialdir="backups", title="Select Backup Directory")
+                if directory:
+                    location_var.set(directory)
+
+            ttk.Button(location_frame, text="Browse...", command=browse_location).pack(anchor='w', pady=5)
+
+            # Retention settings
+            retention_frame = ttk.LabelFrame(main_frame, text="Backup Retention", padding=15)
+            retention_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(retention_frame, text="Keep backups for:").pack(anchor='w', pady=5)
+            retention_days = tk.StringVar(value="30")
+            retention_entry = ttk.Entry(retention_frame, textvariable=retention_days, width=10)
+            retention_entry.pack(anchor='w', pady=5)
+            ttk.Label(retention_frame, text="days (older backups will be automatically deleted)",
+                     font=('Arial', 9), foreground='gray').pack(anchor='w')
+
+            # Compression
+            compress_frame = ttk.Frame(main_frame)
+            compress_frame.pack(fill='x', pady=(0, 15))
+
+            compress_backups = tk.BooleanVar(value=True)
+            ttk.Checkbutton(compress_frame, text="Compress backups (saves disk space)",
+                          variable=compress_backups).pack(anchor='w')
+
+            # Recent backups
+            recent_frame = ttk.LabelFrame(main_frame, text="Recent Backups", padding=10)
+            recent_frame.pack(fill='both', expand=True)
+
+            backup_list = tk.Listbox(recent_frame, height=8)
+            backup_list.pack(fill='both', expand=True)
+
+            # Load recent backups
+            try:
+                backup_dir = "backups"
+                if os.path.exists(backup_dir):
+                    backups = [f for f in os.listdir(backup_dir) if f.endswith('.db')]
+                    backups.sort(reverse=True)
+                    for backup in backups[:10]:
+                        backup_path = os.path.join(backup_dir, backup)
+                        size = os.path.getsize(backup_path) / (1024 * 1024)
+                        backup_list.insert(tk.END, f"{backup} ({size:.2f} MB)")
+            except:
+                pass
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(15, 0))
+
+            def save_settings():
+                try:
+                    # Save settings (in production, save to config file or database)
+                    settings = {
+                        'auto_backup': enable_auto.get(),
+                        'frequency': frequency.get(),
+                        'time': backup_time.get(),
+                        'location': location_var.get(),
+                        'retention_days': int(retention_days.get()),
+                        'compress': compress_backups.get()
+                    }
+
+                    self.log_event('update', 'backup_settings', None, settings)
+
+                    messagebox.showinfo("Success", "Backup settings saved successfully")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save settings: {e}")
+
+            ttk.Button(action_frame, text="Save Settings", command=save_settings).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Create Backup Now", command=self.create_full_backup).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open backup settings: {e}")
+
+    def restore_from_backup(self):
+        """
+        Restore database from backup file
+        """
+        try:
+            # Warning dialog
+            response = messagebox.askyesno("Confirm Restore",
+                                         "⚠️ WARNING ⚠️\n\n"
+                                         "Restoring from backup will REPLACE the current database.\n"
+                                         "All current data will be lost!\n\n"
+                                         "Do you want to continue?",
+                                         icon='warning')
+
+            if not response:
+                return
+
+            # Select backup file
+            backup_file = filedialog.askopenfilename(
+                title="Select Backup File",
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                initialdir="backups"
+            )
+
+            if not backup_file:
+                return
+
+            # Verify backup file
+            if not os.path.exists(backup_file):
+                messagebox.showerror("Error", "Backup file not found")
+                return
+
+            # Create safety backup of current database
+            safety_backup = f"backups/pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            os.makedirs('backups', exist_ok=True)
+
+            # Show progress dialog
+            progress_dialog = tk.Toplevel(self.root)
+            progress_dialog.title("Restoring Database")
+            progress_dialog.geometry("400x200")
+            progress_dialog.transient(self.root)
+            progress_dialog.grab_set()
+
+            ttk.Label(progress_dialog, text="Restoring database from backup...",
+                     font=('Arial', 12)).pack(pady=20)
+
+            progress_bar = ttk.Progressbar(progress_dialog, mode='indeterminate', length=300)
+            progress_bar.pack(pady=10)
+            progress_bar.start()
+
+            status_label = ttk.Label(progress_dialog, text="", font=('Arial', 9))
+            status_label.pack(pady=10)
+
+            def perform_restore():
+                try:
+                    # Create safety backup
+                    status_label.config(text="Creating safety backup...")
+                    progress_dialog.update()
+                    shutil.copy2(paths.DEFAULT_DB_PATH, safety_backup)
+
+                    # Restore from backup
+                    status_label.config(text="Restoring database...")
+                    progress_dialog.update()
+                    shutil.copy2(backup_file, paths.DEFAULT_DB_PATH)
+
+                    progress_bar.stop()
+
+                    self.log_event('restore', 'database', None, {
+                        'backup_file': backup_file,
+                        'safety_backup': safety_backup
+                    })
+
+                    progress_dialog.destroy()
+                    messagebox.showinfo("Success",
+                                      f"Database restored successfully!\n\n"
+                                      f"Safety backup created at:\n{safety_backup}\n\n"
+                                      f"Please restart the application for changes to take effect.")
+
+                except Exception as e:
+                    progress_bar.stop()
+                    progress_dialog.destroy()
+                    messagebox.showerror("Error",
+                                       f"Restore failed: {e}\n\n"
+                                       f"Your original database was backed up to:\n{safety_backup}")
+
+            # Run restore in separate thread
+            import threading
+            restore_thread = threading.Thread(target=perform_restore)
+            restore_thread.start()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to restore from backup: {e}")
+
 
 # Backwards compatible wrapper class
 class DocumentManager:
