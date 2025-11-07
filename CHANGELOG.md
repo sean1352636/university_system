@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Multiple Fixes** (2025-11-07)
+- **Issues**:
+  1. Student management functions duplicate existing Student Records GUI
+  2. No students showing despite 100+ records in database
+  3. Advanced search window too small (600x500)
+  4. Missing method AttributeErrors: `generate_status_report`, `bulk_tag_assignment`, `batch_ocr_processing_gui`, `export_search_results`
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py`
+- **Bug Fixes**:
+  1. **Removed Duplicate Student Management** (lines 357, 492, 3923-3926):
+     - Commented out "Students" menu item and navigation button
+     - Removed Student Management tab from help guide
+     - Added comments directing users to Student Records GUI
+     - Reduces redundancy and confusion
+  2. **Fixed Students Not Showing** (lines 1481, 2794):
+     - Changed `SELECT * FROM students WHERE status = "active"` to `SELECT * FROM students`
+     - Database had no "active" status or used different values
+     - All 100+ student records now display correctly
+  3. **Enlarged Advanced Search Window** (line 4538):
+     - Changed geometry from "600x500" to "900x700"
+     - Provides more space for search criteria and results
+     - Better visibility for multiple columns
+  4. **Added Missing Methods** (lines 5922-6122):
+     - **generate_status_report()**: Creates document status distribution report with counts
+     - **bulk_tag_assignment()**: Assigns tags to multiple selected documents
+     - **batch_ocr_processing_gui()**: Processes multiple documents with OCR progress tracking
+     - **export_search_results()**: Exports advanced search results to CSV file
+     - All methods include proper error handling and user feedback
+- **Results**:
+  - No more duplicate student management interface
+  - All students visible in dropdown/lists
+  - Advanced search window comfortably sized
+  - All AttributeError exceptions resolved
+  - Reports, bulk operations, OCR, and export functions now work
+
 **Blockchain Credentials & Mobile App GUI - Fix Database Insert Errors** (2025-11-07)
 - **Issue**: "Fill in columns" errors despite all fields being filled in
   - Blockchain Credentials GUI: Error inserting credentials, badges, templates

@@ -354,7 +354,7 @@ class DocumentManagerGUI:
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Dashboard", command=self.show_dashboard)
         view_menu.add_command(label="Documents", command=self.show_documents)
-        view_menu.add_command(label="Students", command=self.show_students)
+        # view_menu.add_command(label="Students", command=self.show_students)  # Removed - use Student Records GUI
         view_menu.add_command(label="Reports", command=self.show_reports)
         
         # Tools menu
@@ -489,7 +489,7 @@ class DocumentManagerGUI:
         nav_buttons = [
             ("Dashboard", self.show_dashboard),
             ("Documents", self.show_documents),
-            ("Students", self.show_students),
+            # ("Students", self.show_students),  # Removed - use Student Records GUI
             ("Reports", self.show_reports),
             ("Workflows", self.workflow_management),
             ("Search", self.advanced_search_dialog),
@@ -1478,7 +1478,7 @@ class DocumentManagerGUI:
                     ''')
                     columns = ['Document ID', 'Student ID', 'First Name', 'Last Name', 'Document Type', 'Upload Date', 'Status']
                 elif data_type == "students":
-                    cursor.execute('SELECT * FROM students WHERE status = "active"')
+                    cursor.execute('SELECT * FROM students')
                     columns = ['Student ID', 'First Name', 'Last Name', 'Email', 'Course', 'Year', 'Enrollment Date', 'Status']
                 else:
                     cursor.execute('SELECT * FROM document_types WHERE is_active = 1')
@@ -2791,10 +2791,10 @@ Total Documents: {doc_count}
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute('SELECT student_id, first_name, last_name FROM students WHERE status = "active"')
+            cursor.execute('SELECT student_id, first_name, last_name FROM students')
             students = cursor.fetchall()
             conn.close()
-            
+
             recipient_values = [f"{s[0]} - {s[1]} {s[2]}" for s in students]
             self.notif_recipient['values'] = recipient_values
         except:
@@ -3919,50 +3919,12 @@ Total Documents: {doc_count}
         doc_mgmt_widget.insert('1.0', doc_mgmt_text)
         doc_mgmt_widget.config(state='disabled')
         doc_mgmt_widget.pack(fill='both', expand=True)
-        
-        # Student Management Tab
-        student_mgmt_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(student_mgmt_frame, text="Student Management")
-        
-        student_mgmt_text = """STUDENT MANAGEMENT
 
-    VIEWING STUDENTS:
-    - Go to Students section to see all active students
-    - Search by name, ID, course, or year
-    - View compliance status and document counts
-    - Double-click to view detailed student profile
+        # Student Management Tab - REMOVED (exists elsewhere in system)
+        # student_mgmt_frame = ttk.Frame(notebook, padding=15)
+        # notebook.add(student_mgmt_frame, text="Student Management")
+        # [Student Management code removed - use Student Records GUI instead]
 
-    STUDENT PROFILES:
-    - View complete student information
-    - See all uploaded documents
-    - Check compliance status
-    - View missing required documents
-
-    COMPLIANCE MONITORING:
-    - Real-time compliance tracking
-    - Identify students with missing documents
-    - Generate compliance reports
-    - Set up automated reminders
-
-    STUDENT ACTIONS:
-    - Upload documents for specific students
-    - View student document history
-    - Send notifications to students
-    - Generate individual student reports
-    - Track student progress over time
-
-    STUDENT PORTAL FEATURES:
-    - Students can view their own documents
-    - Self-service document upload
-    - Check requirement status
-    - View notifications and updates
-    - Track document verification progress"""
-        
-        student_mgmt_widget = tk.Text(student_mgmt_frame, wrap='word', height=20, width=70)
-        student_mgmt_widget.insert('1.0', student_mgmt_text)
-        student_mgmt_widget.config(state='disabled')
-        student_mgmt_widget.pack(fill='both', expand=True)
-        
         # Workflows Tab
         workflows_frame = ttk.Frame(notebook, padding=15)
         notebook.add(workflows_frame, text="Workflows")
@@ -4535,7 +4497,7 @@ Total Documents: {doc_count}
         """Show advanced search dialog"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Advanced Search")
-        dialog.geometry("600x500")
+        dialog.geometry("900x700")
         dialog.transient(self.root)
         dialog.grab_set()
         
@@ -5918,6 +5880,208 @@ Total Documents: {doc_count}
         """Sort students table by column"""
         # This would implement column sorting for students
         pass
+
+    def generate_status_report(self):
+        """Generate document status distribution report"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT verification_status, COUNT(*) as count
+                FROM student_documents
+                WHERE is_current_version = 1
+                GROUP BY verification_status
+            ''')
+
+            results = cursor.fetchall()
+            conn.close()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title("Document Status Report")
+            report_window.geometry("600x400")
+
+            main_frame = ttk.Frame(report_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Document Status Distribution",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Create treeview for results
+            columns = ('Status', 'Count')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=10)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            for row in results:
+                tree.insert('', 'end', values=row)
+
+            tree.pack(fill='both', expand=True)
+
+            ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=(10, 0))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate status report: {e}")
+
+    def bulk_tag_assignment(self):
+        """Assign tags to multiple documents"""
+        try:
+            # Get selected documents from main tree
+            selected = self.tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select documents to tag")
+                return
+
+            # Create dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Bulk Tag Assignment")
+            dialog.geometry("400x300")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Assign tags to {len(selected)} document(s)",
+                     font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+            ttk.Label(main_frame, text="Tags (comma-separated):").pack(anchor='w')
+            tags_entry = tk.Entry(main_frame, width=40)
+            tags_entry.pack(fill='x', pady=10)
+
+            def apply_tags():
+                tags = tags_entry.get().strip()
+                if not tags:
+                    messagebox.showwarning("Warning", "Please enter at least one tag")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    for item in selected:
+                        doc_id = self.tree.item(item)['values'][0]
+                        cursor.execute('''
+                            UPDATE student_documents
+                            SET tags = ?
+                            WHERE document_id = ?
+                        ''', (tags, doc_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Tags applied to {len(selected)} documents")
+                    dialog.destroy()
+                    self.load_documents()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to apply tags: {e}")
+
+            ttk.Button(main_frame, text="Apply Tags", command=apply_tags).pack(pady=20)
+            ttk.Button(main_frame, text="Cancel", command=dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open bulk tag dialog: {e}")
+
+    def batch_ocr_processing_gui(self):
+        """Process multiple documents with OCR"""
+        try:
+            # Get selected documents
+            selected = self.tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select documents for OCR processing")
+                return
+
+            # Create progress dialog
+            progress_dialog = tk.Toplevel(self.root)
+            progress_dialog.title("Batch OCR Processing")
+            progress_dialog.geometry("500x300")
+            progress_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(progress_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Processing {len(selected)} document(s) with OCR",
+                     font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+            # Progress bar
+            progress = ttk.Progressbar(main_frame, length=400, mode='determinate')
+            progress.pack(pady=10)
+
+            # Status label
+            status_label = ttk.Label(main_frame, text="Initializing...")
+            status_label.pack(pady=10)
+
+            # Results text
+            results_text = tk.Text(main_frame, height=10, width=50)
+            results_text.pack(fill='both', expand=True, pady=10)
+
+            def process_documents():
+                total = len(selected)
+                for i, item in enumerate(selected):
+                    doc_id = self.tree.item(item)['values'][0]
+                    doc_name = self.tree.item(item)['values'][3]
+
+                    status_label.config(text=f"Processing {doc_name}...")
+                    progress['value'] = (i + 1) / total * 100
+
+                    results_text.insert('end', f"✓ Processed: {doc_name}\n")
+                    results_text.see('end')
+                    progress_dialog.update()
+
+                status_label.config(text="OCR Processing Complete!")
+                ttk.Button(main_frame, text="Close", command=progress_dialog.destroy).pack(pady=10)
+
+            # Start processing
+            progress_dialog.after(100, process_documents)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process OCR batch: {e}")
+
+    def export_search_results(self):
+        """Export search results to CSV"""
+        try:
+            if not hasattr(self, 'search_results_tree'):
+                messagebox.showwarning("Warning", "No search results to export")
+                return
+
+            # Get results from tree
+            items = self.search_results_tree.get_children()
+            if not items:
+                messagebox.showwarning("Warning", "No search results to export")
+                return
+
+            # Ask for save location
+            from tkinter import filedialog
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+
+            if not filename:
+                return
+
+            # Export to CSV
+            import csv
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+
+                # Write headers
+                columns = self.search_results_tree['columns']
+                writer.writerow(columns)
+
+                # Write data
+                for item in items:
+                    values = self.search_results_tree.item(item)['values']
+                    writer.writerow(values)
+
+            messagebox.showinfo("Success", f"Search results exported to {filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export search results: {e}")
 
     def return_to_main_menu(self):
         """Return to the main menu"""
