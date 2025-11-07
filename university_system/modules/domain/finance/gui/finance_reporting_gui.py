@@ -611,22 +611,34 @@ class FinancialManagementGUI:
                 # Running standalone, return to main finance GUI
                 self.root.destroy()
                 try:
-                    # Import the main finance management GUI wrapper
-                    from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+                    # Try to open the main Finance GUI directly
+                    from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
                     root = tk.Tk()
                     root.title("Finance Management System")
-                    app = FinanceManagementGUI(root, self.auth)
-                    app.show_finance_management()
+                    app = FinanceGUI(root)  # FinanceGUI only takes root as argument
+                    # Set auth if available
+                    if self.auth and hasattr(app, 'set_auth'):
+                        app.set_auth(self.auth)
                     root.mainloop()
-                except ImportError as e:
-                    print(f"Could not import main finance GUI: {e}")
-                    # If main finance GUI not available, try unified GUI
+                except (ImportError, TypeError) as e:
+                    print(f"Could not open FinanceGUI directly: {e}")
+                    # If Finance GUI not available, try finance management wrapper
                     try:
-                        from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
-                        app = UnifiedManagementGUI(self.auth)
-                        app.run()
-                    except ImportError:
-                        messagebox.showerror("Error", "Could not return to main finance GUI")
+                        from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+                        root = tk.Tk()
+                        root.title("Finance Management System")
+                        app = FinanceManagementGUI(root, self.auth)
+                        app.show_finance_management()
+                        root.mainloop()
+                    except (ImportError, TypeError) as e2:
+                        print(f"Could not open FinanceManagementGUI: {e2}")
+                        # Last resort: try unified GUI
+                        try:
+                            from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
+                            app = UnifiedManagementGUI(self.auth)
+                            app.run()
+                        except ImportError:
+                            messagebox.showerror("Error", "Could not return to main finance GUI")
         except Exception as e:
             print(f"Error returning to main finance GUI: {e}")
             import traceback
