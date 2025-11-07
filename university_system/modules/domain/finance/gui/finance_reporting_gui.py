@@ -248,11 +248,6 @@ class FinancialManagementGUI:
                 'ml_training': 'ML Model Training',
                 'performance_optimization': 'Performance Optimization',  # ADD GUI function above
                 'archive_management': 'Archive Management'
-            },
-            'Legacy Features': {
-                'original_forecasting': 'Original Forecasting',
-                'original_budget': 'Original Budget Variance',
-                'original_dashboard': 'Original Dashboard'
             }
         }
 
@@ -265,8 +260,7 @@ class FinancialManagementGUI:
             'Strategic Planning': '#1abc9c',
             'Export & Integration': '#34495e',
             'Compliance & Audit': '#e67e22',
-            'System Management': '#2ecc71',
-            'Legacy Features': '#95a5a6'
+            'System Management': '#2ecc71'
         }
 
         # Create buttons organized by category
@@ -1414,18 +1408,6 @@ class FinancialManagementGUI:
                     self.log_activity("ML models trained successfully")
                 else:
                     self.log_activity("ML model training failed - insufficient data")
-            
-            elif func_id == 'original_forecasting':
-                generate_financial_forecasting()
-                self.log_activity("Original financial forecasting completed")
-
-            elif func_id == 'original_budget':
-                generate_budget_variance_report()
-                self.log_activity("Original budget variance report completed")
-
-            elif func_id == 'original_dashboard':
-                financial_dashboard()
-                self.log_activity("Original financial dashboard displayed")
 
             elif func_id == 'alert_system':
                 self.show_alert_system_dialog()
@@ -4029,19 +4011,7 @@ For technical support, contact your system administrator.
             elif func_id == 'archive_management':
                 # Archive management
                 self.log_activity("Archive management - feature to be implemented")
-            
-            elif func_id == 'original_forecasting':
-                generate_financial_forecasting()
-                self.log_activity("Original financial forecasting completed")
-            
-            elif func_id == 'original_budget':
-                generate_budget_variance_report()
-                self.log_activity("Original budget variance report completed")
-            
-            elif func_id == 'original_dashboard':
-                financial_dashboard()
-                self.log_activity("Original financial dashboard displayed")
-            
+
             else:
                 self.log_activity(f"Function {func_id} not yet implemented in GUI")
             
@@ -6432,12 +6402,7 @@ Integration Examples:
             'enhanced_backup': lambda: self.run_enhanced_backup_system(),
             'system_info': lambda: self.show_enhanced_system_info(),
             'health_check': lambda: self.run_comprehensive_health_check(),
-            'comprehensive_export': lambda: self.export_comprehensive_report(),
-            
-            # Legacy Features
-            'original_forecasting': lambda: self.run_function_background_updated('original_forecasting'),
-            'original_budget': lambda: self.run_function_background_updated('original_budget'),
-            'original_dashboard': lambda: self.run_function_background_updated('original_dashboard')
+            'comprehensive_export': lambda: self.export_comprehensive_report()
         }
 
     # Additional utility functions that were missing
