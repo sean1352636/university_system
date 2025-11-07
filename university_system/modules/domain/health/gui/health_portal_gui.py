@@ -802,6 +802,9 @@ class HealthPortalGUI:
 
         # Configure column weight for button frame
         self.nav_buttons_frame.columnconfigure(0, weight=1)
+
+        # Reset canvas scroll position to top
+        self.nav_canvas.yview_moveto(0)
     
     def create_content_area(self, parent):
         """Create the main content area"""

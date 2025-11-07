@@ -57,6 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Health Portal GUI - Navigation Scroll Position Reset** (2025-11-06)
+- **Issue**: Health Portal GUI main page displayed halfway down the screen on load instead of at the top
+- **Location**: `university_system/modules/domain/health/gui/health_portal_gui.py:807`
+- **Root Cause**: Navigation canvas scroll position was not reset to top after populating buttons
+- **Fix**: Added `self.nav_canvas.yview_moveto(0)` at end of `populate_navigation()` method
+- **Impact**: Health Portal now consistently opens with navigation scrolled to the top
+
 **Finance GUI - Stub Functions Fully Implemented** (2025-11-06)
 - **Issue**: Several placeholder/stub functions only displayed "not implemented" messages
 - **Locations**:
