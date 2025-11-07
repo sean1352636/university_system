@@ -13,6 +13,7 @@ from typing import Optional
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.infrastructure.email.email_service import send_email
 from university_system.modules.domain.admissions.services.admissions_crm_core import (
     ProspectManager,
     ApplicationManager,
@@ -524,10 +525,76 @@ class AdmissionsCRMGUI:
         campaign_id = item['values'][0]
 
         try:
-            # Simulate sending
-            messagebox.showinfo("Success", f"Campaign {campaign_id} communications queued for sending")
-            log_activity('send', 'campaign_communications', campaign_id=campaign_id,
+            # Get campaign details
+            with get_connection() as conn:
+                campaign = conn.execute('''
+                    SELECT campaign_name, campaign_type, target_audience, message_template
+                    FROM recruitment_campaigns
+                    WHERE campaign_id = ?
+                ''', (campaign_id,)).fetchone()
+
+                if not campaign:
+                    messagebox.showerror("Error", "Campaign not found")
+                    return
+
+                # Get recipients based on target audience
+                if campaign['target_audience'] == 'All Prospects':
+                    recipients = conn.execute('''
+                        SELECT email, first_name, last_name FROM admission_prospects
+                        WHERE email IS NOT NULL AND email != ''
+                    ''').fetchall()
+                elif campaign['target_audience'] == 'Applicants':
+                    recipients = conn.execute('''
+                        SELECT DISTINCT p.email, p.first_name, p.last_name
+                        FROM admission_prospects p
+                        JOIN admission_applications a ON p.prospect_id = a.prospect_id
+                        WHERE p.email IS NOT NULL AND p.email != ''
+                    ''').fetchall()
+                elif campaign['target_audience'] == 'Accepted':
+                    recipients = conn.execute('''
+                        SELECT DISTINCT p.email, p.first_name, p.last_name
+                        FROM admission_prospects p
+                        JOIN admission_applications a ON p.prospect_id = a.prospect_id
+                        WHERE a.status = 'accepted' AND p.email IS NOT NULL AND p.email != ''
+                    ''').fetchall()
+                else:
+                    recipients = conn.execute('''
+                        SELECT email, first_name, last_name FROM admission_prospects
+                        WHERE email IS NOT NULL AND email != ''
+                    ''').fetchall()
+
+            # Send emails
+            sent_count = 0
+            for recipient in recipients:
+                try:
+                    # Personalize message
+                    message = campaign['message_template'].replace('{first_name}', recipient['first_name'])
+                    message = message.replace('{last_name}', recipient['last_name'])
+
+                    # Send email
+                    send_email(
+                        recipient_email=recipient['email'],
+                        subject=f"{campaign['campaign_name']}",
+                        body=message
+                    )
+                    sent_count += 1
+
+                    # Log in campaign messages
+                    with transaction() as conn:
+                        conn.execute('''
+                            UPDATE recruitment_campaigns
+                            SET sent_count = sent_count + 1
+                            WHERE campaign_id = ?
+                        ''', (campaign_id,))
+
+                except Exception as e:
+                    print(f"Failed to send to {recipient['email']}: {e}")
+
+            messagebox.showinfo("Success", f"Campaign sent to {sent_count} recipients")
+            log_activity(f'Sent campaign communications (Campaign ID: {campaign_id}) to {sent_count} recipients',
                         user=self.auth.current_user.get('username'))
+            self._load_campaigns()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send communications: {e}")
 
@@ -623,7 +690,7 @@ class AddProspectDialog:
                 source=self.entries['source'].get().strip()
             )
 
-            log_activity('create', 'prospect', prospect_id=prospect_id,
+            log_activity(f'Created prospect (ID: {prospect_id})',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Prospect added (ID: {prospect_id})")
@@ -691,7 +758,7 @@ class LogInteractionDialog:
                 next_followup_date=self.followup_entry.get().strip()
             )
 
-            log_activity('create', 'prospect_interaction', interaction_id=interaction_id,
+            log_activity(f'Logged interaction (ID: {interaction_id}) for prospect {self.prospect_id}',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", "Interaction logged")
@@ -772,7 +839,7 @@ class SubmitApplicationDialog:
                 semester=self.semester_combo.get()
             )
 
-            log_activity('create', 'application', application_id=application_id,
+            log_activity(f'Submitted application (ID: {application_id}) for prospect {prospect_id}',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Application submitted (ID: {application_id})")
@@ -795,7 +862,7 @@ class UpdateApplicationStatusDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Update Application Status")
-        self.dialog.geometry("400x200")
+        self.dialog.geometry("500x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
@@ -828,7 +895,7 @@ class UpdateApplicationStatusDialog:
                 status=self.status_combo.get()
             )
 
-            log_activity('update', 'application_status', application_id=self.application_id,
+            log_activity(f'Updated application status (ID: {self.application_id}) to {self.status_combo.get()}',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", "Status updated")
@@ -884,7 +951,7 @@ class AssignReviewerDialog:
                 reviewer_id=reviewer_id
             )
 
-            log_activity('create', 'review_assignment', review_id=review_id,
+            log_activity(f'Assigned reviewer to application {self.application_id} (Review ID: {review_id})',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Reviewer assigned (Review ID: {review_id})")
@@ -963,9 +1030,8 @@ class SubmitReviewDialog:
                 comments=self.comments_text.get('1.0', tk.END).strip()
             )
 
-            log_activity('create', 'review', review_id=review_id,
-                        application_id=self.application_id,
-                        user_id=reviewer_id)
+            log_activity(f'Submitted review (ID: {review_id}) for application {self.application_id}',
+                        user=reviewer_id)
 
             messagebox.showinfo("Success", f"Review submitted (ID: {review_id})")
             self.callback()
@@ -1047,7 +1113,7 @@ class CreateCampaignDialog:
                 message_template=self.template_text.get('1.0', tk.END).strip()
             )
 
-            log_activity('create', 'campaign', campaign_id=campaign_id,
+            log_activity(f'Created campaign (ID: {campaign_id}): {name}',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Campaign created (ID: {campaign_id})")
@@ -1121,7 +1187,7 @@ class ScheduleTourDialog:
                 max_attendees=int(self.capacity_entry.get())
             )
 
-            log_activity('create', 'campus_tour', tour_id=tour_id,
+            log_activity(f'Scheduled campus tour (ID: {tour_id}) for {self.date_entry.get()}',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Tour scheduled (ID: {tour_id})")
@@ -1176,7 +1242,7 @@ class RegisterForTourDialog:
                 prospect_id=prospect_id
             )
 
-            log_activity('create', 'tour_registration', registration_id=registration_id,
+            log_activity(f'Registered prospect {prospect_id} for tour {self.tour_id} (Registration ID: {registration_id})',
                         user=self.auth.current_user.get('username'))
 
             messagebox.showinfo("Success", f"Registered (ID: {registration_id})")

@@ -106,6 +106,20 @@ class ApplicationManager:
             raise Exception(f"Error uploading document: {e}")
 
     @staticmethod
+    def update_application_status(application_id: int, status: str) -> bool:
+        """Update the status of an application"""
+        try:
+            with transaction() as conn:
+                conn.execute('''
+                    UPDATE admission_applications
+                    SET status = ?
+                    WHERE application_id = ?
+                ''', (status, application_id))
+                return True
+        except Exception as e:
+            raise Exception(f"Error updating application status: {e}")
+
+    @staticmethod
     def make_decision(application_id: int, decision: str, decision_date: str = "") -> bool:
         try:
             with transaction() as conn:
@@ -123,6 +137,21 @@ class ApplicationManager:
 
 class ReviewWorkflowManager:
     """Manages application review workflow"""
+
+    @staticmethod
+    def assign_reviewer(application_id: int, reviewer_id: str, review_stage: str = "initial") -> int:
+        """Assign a reviewer to an application"""
+        try:
+            with transaction() as conn:
+                cursor = conn.execute('''
+                    INSERT INTO application_reviews (
+                        application_id, reviewer_id, review_stage
+                    ) VALUES (?, ?, ?)
+                ''', (application_id, reviewer_id, review_stage))
+                review_id = cursor.lastrowid
+                return review_id
+        except Exception as e:
+            raise Exception(f"Error assigning reviewer: {e}")
 
     @staticmethod
     def create_review(application_id: int, reviewer_id: str, review_stage: str,

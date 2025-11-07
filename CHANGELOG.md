@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Admissions CRM GUI - Critical Bug Fixes & Feature Enhancements** (2025-11-07)
+- **Issue**: Multiple critical errors in Admissions CRM GUI preventing proper functionality
+- **Location**:
+  - `university_system/modules/domain/admissions/gui/admissions_crm_gui.py`
+  - `university_system/modules/domain/admissions/services/admissions_crm_core.py`
+- **Bug Fixes**:
+  1. **Activity Logger Parameter Errors** (lines 626-627, 694-695, 775-776, 831-832, 887-888, 966-967, 1049-1050, 529-530, 1123-1124, 1178-1179):
+     - Fixed "log_activity() got an unexpected keyword argument" errors for:
+       - `interaction_id` → Changed to descriptive action string
+       - `application_id` → Incorporated into action message
+       - `campaign_id` → Included in action description
+       - `tour_id` → Added to action text
+     - Updated all 10 log_activity calls to use correct signature: `log_activity(action, user)`
+     - Now includes IDs and details in the action string instead of as keyword arguments
+  2. **Missing ApplicationManager Method** (lines 108-120 in admissions_crm_core.py):
+     - Added `update_application_status()` method to ApplicationManager class
+     - Fixes "AttributeError: type object 'ApplicationManager' has no attribute 'update_application_status'"
+     - Properly updates application status in database with transaction support
+  3. **Missing ReviewWorkflowManager Method** (lines 141-154 in admissions_crm_core.py):
+     - Added `assign_reviewer()` method to ReviewWorkflowManager class
+     - Creates initial review record with application_id, reviewer_id, and review_stage
+     - Returns review_id for tracking
+- **Feature Enhancements**:
+  1. **Email Service Integration** (lines 16, 517-599):
+     - Imported `send_email` from infrastructure email service
+     - Implemented full email sending functionality in `_send_communications()`
+     - Fetches campaign details and target audience from database
+     - Sends personalized emails to prospects based on campaign targeting:
+       - All Prospects
+       - Applicants (those with applications)
+       - Accepted (those with accepted status)
+     - Personalizes messages with {first_name} and {last_name} placeholders
+     - Tracks sent count in database
+     - Shows success message with number of recipients
+  2. **Update Status Window Size** (line 798):
+     - Increased window size from 400x200 to 500x300 for better visibility
+     - Provides more space for status selection and user interaction
+- **Results**:
+  - All activity logging now works without errors
+  - Application status updates function properly
+  - Reviewer assignment is fully operational
+  - Email campaigns actually send to targeted prospects
+  - Improved user experience with larger dialog windows
+
 **Finance Reporting GUI - Stub Implementation & Chart Visualization** (2025-11-07)
 - **Issue**: All stub functions printed to CLI instead of displaying charts in GUI windows
 - **Location**: `university_system/modules/domain/finance/gui/finance_reporting_gui.py`
