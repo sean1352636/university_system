@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Fix Missing document_types Columns** (2025-11-07)
+- **Issue**: "failed to load document types no such column category"
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 100-123)
+- **Root Cause**:
+  - Existing document_types table created with old schema (only 9 columns)
+  - Code expects 12 columns including: category, has_expiry, expiry_reminder_days, max_file_size_mb, allowed_formats, requires_approval, sort_order, is_active
+  - CREATE TABLE IF NOT EXISTS doesn't modify existing tables
+- **Bug Fix**:
+  - Added backward compatibility migration code after CREATE TABLE
+  - Checks existing columns with PRAGMA table_info
+  - Uses ALTER TABLE to add 8 missing columns if they don't exist:
+    1. has_expiry BOOLEAN DEFAULT 0
+    2. expiry_reminder_days INTEGER
+    3. max_file_size_mb INTEGER DEFAULT 10
+    4. allowed_formats TEXT DEFAULT ".pdf,.jpg,.jpeg,.png,.doc,.docx"
+    5. requires_approval BOOLEAN DEFAULT 1
+    6. category TEXT
+    7. sort_order INTEGER DEFAULT 0
+    8. is_active BOOLEAN DEFAULT 1
+  - Graceful error handling if migration fails
+- **Result**:
+  - Document types load successfully
+  - All queries referencing category, is_active, and other columns now work
+  - Backward compatible with existing databases
+  - No data loss during schema migration
+
 **Document Manager GUI - Multiple Fixes** (2025-11-07)
 - **Issues**:
   1. Student management functions duplicate existing Student Records GUI

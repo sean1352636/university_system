@@ -96,7 +96,32 @@ class DocumentManagerGUI:
                 is_active BOOLEAN DEFAULT 1
             )
             ''')
-            
+
+            # Add missing columns to existing document_types table (for backward compatibility)
+            try:
+                # Check if columns exist and add them if they don't
+                cursor.execute("PRAGMA table_info(document_types)")
+                existing_columns = {col[1] for col in cursor.fetchall()}
+
+                if 'has_expiry' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN has_expiry BOOLEAN DEFAULT 0')
+                if 'expiry_reminder_days' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN expiry_reminder_days INTEGER')
+                if 'max_file_size_mb' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN max_file_size_mb INTEGER DEFAULT 10')
+                if 'allowed_formats' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN allowed_formats TEXT DEFAULT ".pdf,.jpg,.jpeg,.png,.doc,.docx"')
+                if 'requires_approval' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN requires_approval BOOLEAN DEFAULT 1')
+                if 'category' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN category TEXT')
+                if 'sort_order' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN sort_order INTEGER DEFAULT 0')
+                if 'is_active' not in existing_columns:
+                    cursor.execute('ALTER TABLE document_types ADD COLUMN is_active BOOLEAN DEFAULT 1')
+            except Exception as e:
+                logger.warning(f"Error adding missing columns to document_types: {e}")
+
             # Enhanced student_documents table with versioning
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS student_documents (
