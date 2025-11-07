@@ -17476,6 +17476,95 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
         self.log_event('generate', 'mobile_qr_code',
                       details='Generated mobile app QR code')
 
+    # ============================================================================
+    # ADDITIONAL MISSING METHODS
+    # ============================================================================
+
+    def ocr_settings_gui(self):
+        """OCR settings GUI - redirects to ocr_settings()"""
+        # This is a wrapper that redirects to the existing ocr_settings method
+        self.ocr_settings()
+
+    def export_to_csv(self):
+        """Export current view/data to CSV"""
+        if not self.ensure_login():
+            return
+
+        # Ask for file location
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+            initialfile="document_export.csv"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            import csv
+
+            # Determine what to export based on current context
+            # For now, export all documents
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Document ID', 'Student ID', 'Document Type', 'File Name',
+                               'Status', 'Upload Date', 'Expiry Date', 'File Size'])
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT id, student_id, document_type, file_name, status,
+                               upload_date, expiry_date, file_size
+                        FROM documents
+                        ORDER BY upload_date DESC
+                        LIMIT 1000
+                    """)
+                    results = cursor.fetchall()
+
+                    writer.writerows(results)
+
+            messagebox.showinfo("Export Successful",
+                              f"Data exported to CSV successfully!\n\n"
+                              f"{file_path}\n\n"
+                              f"Total records: {len(results)}")
+
+            self.log_event('export', 'csv', details=f'Exported {len(results)} records to CSV')
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export to CSV: {e}")
+
+    def export_to_excel(self):
+        """Export current view/data to Excel"""
+        if not self.ensure_login():
+            return
+
+        messagebox.showinfo("Export to Excel",
+                          "Excel export functionality.\n\n"
+                          "This would export the current data to an Excel (.xlsx) file.\n\n"
+                          "Requirements:\n"
+                          "- openpyxl library for Excel support\n"
+                          "- Formatted cells with headers\n"
+                          "- Multiple sheets for different data types\n\n"
+                          "For now, please use CSV export which is fully functional.")
+
+        self.log_event('export', 'excel_attempted', details='User attempted Excel export')
+
+    def export_to_pdf(self):
+        """Export current view/data to PDF"""
+        if not self.ensure_login():
+            return
+
+        messagebox.showinfo("Export to PDF",
+                          "PDF export functionality.\n\n"
+                          "This would export the current data to a PDF file.\n\n"
+                          "Requirements:\n"
+                          "- reportlab library for PDF generation\n"
+                          "- Formatted tables and headers\n"
+                          "- Page numbering and styling\n\n"
+                          "For now, please use CSV export which is fully functional.")
+
+        self.log_event('export', 'pdf_attempted', details='User attempted PDF export')
+
 
 # Backwards compatible wrapper class
 class DocumentManager:

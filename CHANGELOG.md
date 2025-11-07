@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Fix Missing Methods: 4 Additional Methods** (2025-11-07)
+- **Issue**: Fixed AttributeError for 4 missing methods referenced in the GUI
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 17479-17566, ~89 lines)
+- **File Size**: Now 18,210 total lines (from 18,121 → 18,210 = +89 lines added)
+- **Fixed 4 missing method references**:
+
+  1. `ocr_settings_gui()` - Wrapper that redirects to existing ocr_settings() method
+
+  2. `export_to_csv()` - Full CSV export implementation
+     - File save dialog
+     - Exports up to 1000 documents with 8 fields
+     - Shows success message with record count
+     - Activity logging
+
+  3. `export_to_excel()` - Excel export placeholder
+     - Info dialog explaining requirements (openpyxl library)
+     - Suggests using CSV export as alternative
+     - Activity logging
+
+  4. `export_to_pdf()` - PDF export placeholder
+     - Info dialog explaining requirements (reportlab library)
+     - Suggests using CSV export as alternative
+     - Activity logging
+
+- **Technical Details**:
+  - Fixed AttributeError: 'DocumentManagerGUI' object has no attribute 'ocr_settings_gui'
+  - Fixed AttributeError: 'DocumentManagerGUI' object has no attribute 'export_to_csv'
+  - Fixed AttributeError: 'DocumentManagerGUI' object has no attribute 'export_to_excel'
+  - Fixed AttributeError: 'DocumentManagerGUI' object has no attribute 'export_to_pdf'
+  - CSV export fully functional with database query and file writing
+  - Excel/PDF exports provide informative placeholders until libraries are added
+
 **Document Manager GUI - Stub Methods Implementation: 18 Methods Made Fully Functional** (2025-11-07)
 - **Issue**: 18 placeholder stub methods needed full implementation with complete GUI functionality
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 13289-14319, ~1030 lines)
