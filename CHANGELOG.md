@@ -9,6 +9,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Data Backup GUI - Critical Bug Fixes** (2025-11-07)
+- **Issue**: Multiple critical errors preventing Data Backup GUI functionality
+  1. NameError: 'list_backup_templates' is not defined (line 1808)
+  2. Export failed - only supported CSV, JSON, XML (missing PDF and TXT)
+  3. Schema backup error: "object name reserved for internal use: sqlite_sequence"
+  4. Backup comparison error: "file is not a database" (comparing wrong files)
+- **Location**: `university_system/infrastructure/database/gui/data_backup_gui.py`
+- **Bug Fixes**:
+  1. **Missing Template Functions** (lines 912-1003):
+     - Added module-level definitions for `list_backup_templates()`, `save_backup_template()`, and `load_backup_template()`
+     - Functions were defined inside a class (indented) and not accessible at module scope
+     - Now properly defined at module level before ProgressTracker class
+     - Template loading and management now works correctly
+  2. **Export Format Support** (lines 1005-1186, 4793-4798, 4831-4847, 4865-4875):
+     - **Added PDF Export** (`export_to_pdf()`):
+       - Uses ReportLab to create formatted PDF documents
+       - Landscape orientation for better table viewing
+       - Limits to 100 rows per table for performance
+       - Professional styling with headers and pagination
+     - **Added TXT Export** (`export_to_txt()`):
+       - Plain text format with pipe-delimited columns
+       - Includes all tables with headers
+       - Human-readable formatting
+     - **Updated CSV Export** (`export_to_csv()`): Module-level implementation
+     - **Updated JSON Export** (`export_to_json()`): Module-level implementation with proper encoding
+     - **Updated XML Export** (`export_to_xml()`): Module-level implementation
+     - Updated ExportDialog to include PDF and TXT radio buttons
+     - Updated browse_output() to handle new file types
+     - Updated export() method to call new export functions
+  3. **Schema Backup Fix** (lines 1188-1215):
+     - Fixed "object name reserved for internal use: sqlite_sequence" error
+     - Added filtering to exclude internal SQLite tables:
+       - Skips `sqlite_sequence`, `sqlite_stat1`, `sqlite_stat2`, etc.
+       - Filters out CREATE TABLE statements for internal tables
+     - Schema backups now create cleanly without errors
+     - Properly excludes INSERT statements (data) while keeping schema
+  4. **Backup Comparison Fix** (lines 1217-1287):
+     - Fixed critical bug: function was comparing DEFAULT_DB_PATH twice instead of backup files
+     - Changed from connecting to same database twice to connecting to actual backup paths
+     - Added file existence checks before attempting comparison
+     - Added database validation with proper error handling:
+       - Verifies files are valid SQLite databases
+       - Provides clear error messages for invalid files
+       - Prevents "file is not a database" errors
+     - Implemented actual table comparison logic:
+       - Compares row counts to detect changes
+       - Properly identifies added/removed tables
+       - Calculates record differences per table
+     - Proper resource cleanup (closes connections)
+- **Results**:
+  - Template loading and saving works without NameError
+  - Export functionality supports all 5 formats: CSV, JSON, XML, PDF, TXT
+  - Schema backups create successfully without SQLite errors
+  - Backup comparison actually compares the selected backups
+  - All 4 critical errors resolved, Data Backup GUI fully functional
+
 **Main GUI - Export Functionality Fixes** (2025-11-07)
 - **Issue**: Two critical export errors in main_gui.py
   1. Excel export failing with "export failed no engine for filetype excel"

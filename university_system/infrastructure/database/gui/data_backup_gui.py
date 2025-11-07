@@ -909,6 +909,383 @@ def get_log_file(filename):
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     return LOG_DIR / filename
 
+def list_backup_templates():
+    """List all available backup templates from JSON files and config"""
+    templates = {}
+
+    try:
+        # Load templates from BACKUP_TEMPLATES_DIR
+        if BACKUP_TEMPLATES_DIR.exists():
+            for template_file in BACKUP_TEMPLATES_DIR.glob("*.json"):
+                try:
+                    with open(template_file, 'r') as f:
+                        template_data = json.load(f)
+                        template_name = template_data.get("name", template_file.stem.replace('_', ' ').title())
+                        templates[template_name] = {
+                            "source": "file",
+                            "path": str(template_file),
+                            "description": template_data.get("description", "No description available")
+                        }
+                except Exception as e:
+                    logger.error(f"Error loading template from {template_file}: {e}")
+
+        # Also include templates from config (backward compatibility)
+        config_templates = config.get("backup_templates", {})
+        for name in config_templates:
+            if name not in templates:
+                templates[name] = {
+                    "source": "config",
+                    "description": "User-created template"
+                }
+
+    except Exception as e:
+        logger.error(f"Error listing backup templates: {e}")
+
+    return templates
+
+def save_backup_template(name, settings):
+    """Save backup configuration as a template to JSON file"""
+    try:
+        # Save to both config (backward compatibility) and JSON file
+        if "backup_templates" not in config:
+            config["backup_templates"] = {}
+
+        config["backup_templates"][name] = settings.copy()
+        save_config()
+
+        # Also save to JSON file in BACKUP_TEMPLATES_DIR
+        BACKUP_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+        template_file = BACKUP_TEMPLATES_DIR / f"{name.lower().replace(' ', '_')}.json"
+
+        template_data = settings.copy()
+        template_data["name"] = name
+
+        with open(template_file, 'w') as f:
+            json.dump(template_data, f, indent=2)
+
+        logger.info(f"Template '{name}' saved to {template_file}")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving backup template: {e}")
+        return False
+
+def load_backup_template(name):
+    """Load backup configuration from template (JSON file or config)"""
+    try:
+        # First, try to load from JSON file in BACKUP_TEMPLATES_DIR
+        template_file = BACKUP_TEMPLATES_DIR / f"{name.lower().replace(' ', '_')}.json"
+
+        if template_file.exists():
+            with open(template_file, 'r') as f:
+                template = json.load(f)
+                # Remove 'name' and 'description' fields before updating config
+                template_settings = {k: v for k, v in template.items()
+                                   if k not in ['name', 'description']}
+                config.update(template_settings)
+                save_config()
+                logger.info(f"Template '{name}' loaded from {template_file}")
+                return True
+
+        # Fallback: try to load from config (backward compatibility)
+        templates = config.get("backup_templates", {})
+        if name in templates:
+            template = templates[name]
+            config.update(template)
+            save_config()
+            logger.info(f"Template '{name}' loaded from config")
+            return True
+
+        logger.warning(f"Template '{name}' not found")
+        return False
+
+    except Exception as e:
+        logger.error(f"Error loading backup template: {e}")
+        return False
+
+def export_to_csv(backup_path, output_dir):
+    """Export backup to CSV files"""
+    try:
+        import csv
+        conn = sqlite3.connect(backup_path)
+        tables = get_database_tables_from_connection(conn)
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        for table in tables:
+            cursor = conn.execute(f"SELECT * FROM {table}")
+            with open(os.path.join(output_dir, f"{table}.csv"), 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                # Write headers
+                writer.writerow([description[0] for description in cursor.description])
+                # Write data
+                writer.writerows(cursor.fetchall())
+
+        conn.close()
+        logger.info(f"Exported backup to CSV: {output_dir}")
+        return True
+    except Exception as e:
+        logger.error(f"Error exporting to CSV: {e}")
+        return False
+
+def export_to_json(backup_path, output_file):
+    """Export backup to JSON file"""
+    try:
+        conn = sqlite3.connect(backup_path)
+        tables = get_database_tables_from_connection(conn)
+
+        data = {}
+        for table in tables:
+            cursor = conn.execute(f"SELECT * FROM {table}")
+            columns = [description[0] for description in cursor.description]
+            rows = cursor.fetchall()
+            data[table] = [dict(zip(columns, row)) for row in rows]
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, default=str)
+
+        conn.close()
+        logger.info(f"Exported backup to JSON: {output_file}")
+        return True
+    except Exception as e:
+        logger.error(f"Error exporting to JSON: {e}")
+        return False
+
+def export_to_xml(backup_path, output_file):
+    """Export backup to XML file"""
+    try:
+        conn = sqlite3.connect(backup_path)
+        tables = get_database_tables_from_connection(conn)
+
+        root = ET.Element("database")
+
+        for table in tables:
+            table_elem = ET.SubElement(root, "table", name=table)
+            cursor = conn.execute(f"SELECT * FROM {table}")
+            columns = [description[0] for description in cursor.description]
+
+            for row in cursor.fetchall():
+                row_elem = ET.SubElement(table_elem, "row")
+                for col, val in zip(columns, row):
+                    col_elem = ET.SubElement(row_elem, col)
+                    col_elem.text = str(val) if val is not None else ""
+
+        tree = ET.ElementTree(root)
+        tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
+        conn.close()
+        logger.info(f"Exported backup to XML: {output_file}")
+        return True
+    except Exception as e:
+        logger.error(f"Error exporting to XML: {e}")
+        return False
+
+def export_to_pdf(backup_path, output_file):
+    """Export backup to PDF file"""
+    try:
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.units import inch
+
+        conn = sqlite3.connect(backup_path)
+        tables = get_database_tables_from_connection(conn)
+
+        doc = SimpleDocTemplate(output_file, pagesize=landscape(letter),
+                               leftMargin=0.5*inch, rightMargin=0.5*inch,
+                               topMargin=0.5*inch, bottomMargin=0.5*inch)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Title
+        title = Paragraph("<b>Database Backup Export</b>", styles['Title'])
+        elements.append(title)
+        elements.append(Spacer(1, 0.3*inch))
+
+        for table in tables:
+            # Table title
+            table_title = Paragraph(f"<b>Table: {table}</b>", styles['Heading2'])
+            elements.append(table_title)
+            elements.append(Spacer(1, 0.1*inch))
+
+            # Get table data
+            cursor = conn.execute(f"SELECT * FROM {table} LIMIT 100")  # Limit rows for PDF
+            columns = [description[0] for description in cursor.description]
+            rows = cursor.fetchall()
+
+            if rows:
+                # Prepare table data
+                table_data = [columns]
+                for row in rows:
+                    table_data.append([str(val) if val is not None else "" for val in row])
+
+                # Create table with auto column widths
+                pdf_table = Table(table_data)
+                pdf_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
+                    ('FONTSIZE', (0, 1), (-1, -1), 7),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ]))
+                elements.append(pdf_table)
+            else:
+                elements.append(Paragraph("<i>No data</i>", styles['Normal']))
+
+            elements.append(PageBreak())
+
+        doc.build(elements)
+        conn.close()
+        logger.info(f"Exported backup to PDF: {output_file}")
+        return True
+    except ImportError:
+        logger.error("ReportLab is required for PDF export. Install with: pip install reportlab")
+        return False
+    except Exception as e:
+        logger.error(f"Error exporting to PDF: {e}")
+        return False
+
+def export_to_txt(backup_path, output_file):
+    """Export backup to TXT file"""
+    try:
+        conn = sqlite3.connect(backup_path)
+        tables = get_database_tables_from_connection(conn)
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write("DATABASE BACKUP EXPORT\n")
+            f.write("=" * 80 + "\n\n")
+
+            for table in tables:
+                f.write(f"\nTABLE: {table}\n")
+                f.write("-" * 80 + "\n")
+
+                cursor = conn.execute(f"SELECT * FROM {table}")
+                columns = [description[0] for description in cursor.description]
+                rows = cursor.fetchall()
+
+                # Write column headers
+                f.write(" | ".join(columns) + "\n")
+                f.write("-" * 80 + "\n")
+
+                # Write rows
+                for row in rows:
+                    f.write(" | ".join(str(val) if val is not None else "" for val in row) + "\n")
+
+                f.write("\n")
+
+        conn.close()
+        logger.info(f"Exported backup to TXT: {output_file}")
+        return True
+    except Exception as e:
+        logger.error(f"Error exporting to TXT: {e}")
+        return False
+
+def create_schema_only_backup(backup_path):
+    """Create backup of database schema only (no data), excluding internal SQLite tables"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            logger.error("Failed to get database connection for schema backup")
+            return False
+
+        # Create schema-only backup
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            for line in conn.iterdump():
+                # Skip INSERT statements (data)
+                if line.startswith('INSERT'):
+                    continue
+                # Skip internal SQLite tables (sqlite_sequence, sqlite_stat1, etc.)
+                if 'sqlite_sequence' in line or 'sqlite_stat' in line:
+                    continue
+                # Skip CREATE statements for internal tables
+                if line.startswith('CREATE TABLE') and ('sqlite_' in line.lower()):
+                    continue
+                f.write(f"{line}\n")
+
+        conn.close()
+        logger.info(f"Schema backup created successfully: {backup_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error creating schema backup: {e}")
+        return False
+
+def compare_backups(backup1_path, backup2_path):
+    """Compare two backup database files and return differences"""
+    try:
+        differences = {
+            "tables_added": [],
+            "tables_removed": [],
+            "tables_modified": [],
+            "record_changes": {}
+        }
+
+        # Check if files exist
+        if not os.path.exists(backup1_path):
+            logger.error(f"Backup 1 not found: {backup1_path}")
+            return None
+        if not os.path.exists(backup2_path):
+            logger.error(f"Backup 2 not found: {backup2_path}")
+            return None
+
+        # Check if files are SQLite databases
+        try:
+            conn1 = sqlite3.connect(backup1_path)
+            # Try a simple query to verify it's a valid database
+            conn1.execute("SELECT name FROM sqlite_master LIMIT 1")
+        except sqlite3.DatabaseError as e:
+            logger.error(f"Backup 1 is not a valid database file: {e}")
+            return None
+
+        try:
+            conn2 = sqlite3.connect(backup2_path)
+            # Try a simple query to verify it's a valid database
+            conn2.execute("SELECT name FROM sqlite_master LIMIT 1")
+        except sqlite3.DatabaseError as e:
+            logger.error(f"Backup 2 is not a valid database file: {e}")
+            if conn1:
+                conn1.close()
+            return None
+
+        # Get table lists
+        tables1 = set(get_database_tables_from_connection(conn1))
+        tables2 = set(get_database_tables_from_connection(conn2))
+
+        differences["tables_added"] = list(tables2 - tables1)
+        differences["tables_removed"] = list(tables1 - tables2)
+
+        # Check common tables for changes
+        common_tables = tables1 & tables2
+
+        for table in common_tables:
+            # Compare row counts as a simple check
+            try:
+                count1 = conn1.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                count2 = conn2.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+
+                if count1 != count2:
+                    differences["tables_modified"].append(table)
+                    differences["record_changes"][table] = {
+                        'records_added': max(0, count2 - count1),
+                        'records_removed': max(0, count1 - count2),
+                        'records_modified': 0
+                    }
+            except Exception as e:
+                logger.warning(f"Could not compare table {table}: {e}")
+
+        conn1.close()
+        conn2.close()
+
+        return differences
+
+    except Exception as e:
+        logger.error(f"Error comparing backups: {e}")
+        return None
+
 class ProgressTracker:
     """Progress tracking for backup operations - missing from GUI"""
     def __init__(self, total_size: int):
@@ -4513,11 +4890,13 @@ class ExportDialog:
         # Export format
         format_frame = ttk.LabelFrame(self.dialog, text="Export Format", padding=10)
         format_frame.pack(fill="x", padx=10, pady=5)
-        
+
         self.format_var = tk.StringVar(value="csv")
         ttk.Radiobutton(format_frame, text="CSV Files", variable=self.format_var, value="csv").pack(anchor="w")
         ttk.Radiobutton(format_frame, text="JSON File", variable=self.format_var, value="json").pack(anchor="w")
         ttk.Radiobutton(format_frame, text="XML File", variable=self.format_var, value="xml").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text="PDF File", variable=self.format_var, value="pdf").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text="Text File", variable=self.format_var, value="txt").pack(anchor="w")
         
         # Output location
         output_frame = ttk.LabelFrame(self.dialog, text="Output Location", padding=10)
@@ -4555,9 +4934,16 @@ class ExportDialog:
         if self.format_var.get() == "csv":
             path = filedialog.askdirectory(title="Select output directory for CSV files")
         else:
-            filetypes = [("JSON files", "*.json")] if self.format_var.get() == "json" else [("XML files", "*.xml")]
+            format_type = self.format_var.get()
+            filetypes_map = {
+                "json": [("JSON files", "*.json")],
+                "xml": [("XML files", "*.xml")],
+                "pdf": [("PDF files", "*.pdf")],
+                "txt": [("Text files", "*.txt")]
+            }
+            filetypes = filetypes_map.get(format_type, [("All files", "*.*")])
             path = filedialog.asksaveasfilename(title="Save export file", filetypes=filetypes)
-        
+
         if path:
             self.output_var.set(path)
     
@@ -4566,17 +4952,17 @@ class ExportDialog:
         if not self.backup_combo.get():
             messagebox.showwarning("No Selection", "Please select a backup to export")
             return
-        
+
         if not self.output_var.get():
             messagebox.showwarning("No Output", "Please specify output location")
             return
-        
+
         try:
             index = self.backup_combo.current()
             backup = self.backups[index]
             format_type = self.format_var.get()
             output_path = self.output_var.get()
-            
+
             success = False
             if format_type == "csv":
                 success = export_to_csv(backup['path'], output_path)
@@ -4584,13 +4970,17 @@ class ExportDialog:
                 success = export_to_json(backup['path'], output_path)
             elif format_type == "xml":
                 success = export_to_xml(backup['path'], output_path)
-            
+            elif format_type == "pdf":
+                success = export_to_pdf(backup['path'], output_path)
+            elif format_type == "txt":
+                success = export_to_txt(backup['path'], output_path)
+
             if success:
                 messagebox.showinfo("Success", f"Backup exported successfully to {output_path}")
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Export operation failed")
-        
+                messagebox.showerror("Error", "Export operation failed. Check logs for details.")
+
         except Exception as e:
             messagebox.showerror("Error", f"Export failed: {e}")
 
