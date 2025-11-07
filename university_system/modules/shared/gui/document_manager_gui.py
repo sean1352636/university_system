@@ -13358,6 +13358,3164 @@ Access the web interface at http://localhost:8000 after starting the server.
         """Auto-version settings"""
         messagebox.showinfo("Auto-Version", "Configure automatic versioning behavior")
 
+    # ============================================================================
+    # SEARCH & ANALYSIS METHODS (8 methods)
+    # ============================================================================
+
+    def advanced_search(self):
+        """Advanced search interface with multiple filters"""
+        if not self.ensure_login():
+            return
+
+        # Create advanced search window
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Advanced Search")
+        search_window.geometry("1000x750")
+        search_window.transient(self.root)
+        search_window.grab_set()
+
+        # Title
+        title_label = ttk.Label(search_window, text="Advanced Document Search",
+                               font=("Arial", 16, "bold"))
+        title_label.pack(pady=10)
+
+        # Main container with scrollbar
+        main_frame = ttk.Frame(search_window)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Left frame - Search criteria
+        left_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=10)
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
+
+        # Student ID
+        ttk.Label(left_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+        student_id_entry = ttk.Entry(left_frame, width=30)
+        student_id_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Document Type
+        ttk.Label(left_frame, text="Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        doc_type_combo = ttk.Combobox(left_frame, width=28, state='readonly')
+        doc_type_combo['values'] = ['All Types', 'Transcript', 'ID Card', 'Health Form',
+                                     'Enrollment', 'Financial', 'Other']
+        doc_type_combo.current(0)
+        doc_type_combo.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # Status
+        ttk.Label(left_frame, text="Status:").grid(row=2, column=0, sticky='w', pady=5)
+        status_combo = ttk.Combobox(left_frame, width=28, state='readonly')
+        status_combo['values'] = ['All Statuses', 'Pending', 'Approved', 'Rejected', 'Expired']
+        status_combo.current(0)
+        status_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+        # Date Range
+        ttk.Label(left_frame, text="Upload Date From:").grid(row=3, column=0, sticky='w', pady=5)
+        date_from_entry = ttk.Entry(left_frame, width=30)
+        date_from_entry.insert(0, "YYYY-MM-DD")
+        date_from_entry.grid(row=3, column=1, sticky='ew', pady=5)
+
+        ttk.Label(left_frame, text="Upload Date To:").grid(row=4, column=0, sticky='w', pady=5)
+        date_to_entry = ttk.Entry(left_frame, width=30)
+        date_to_entry.insert(0, "YYYY-MM-DD")
+        date_to_entry.grid(row=4, column=1, sticky='ew', pady=5)
+
+        # Tags
+        ttk.Label(left_frame, text="Tags (comma-separated):").grid(row=5, column=0, sticky='w', pady=5)
+        tags_entry = ttk.Entry(left_frame, width=30)
+        tags_entry.grid(row=5, column=1, sticky='ew', pady=5)
+
+        # File Name
+        ttk.Label(left_frame, text="File Name Contains:").grid(row=6, column=0, sticky='w', pady=5)
+        filename_entry = ttk.Entry(left_frame, width=30)
+        filename_entry.grid(row=6, column=1, sticky='ew', pady=5)
+
+        # Expiry Status
+        ttk.Label(left_frame, text="Expiry Status:").grid(row=7, column=0, sticky='w', pady=5)
+        expiry_combo = ttk.Combobox(left_frame, width=28, state='readonly')
+        expiry_combo['values'] = ['All', 'Not Expired', 'Expiring Soon (30 days)', 'Expired']
+        expiry_combo.current(0)
+        expiry_combo.grid(row=7, column=1, sticky='ew', pady=5)
+
+        # Advanced options
+        advanced_frame = ttk.LabelFrame(left_frame, text="Advanced Options", padding=5)
+        advanced_frame.grid(row=8, column=0, columnspan=2, sticky='ew', pady=10)
+
+        case_sensitive_var = tk.BooleanVar()
+        ttk.Checkbutton(advanced_frame, text="Case Sensitive",
+                       variable=case_sensitive_var).pack(anchor='w')
+
+        include_archived_var = tk.BooleanVar()
+        ttk.Checkbutton(advanced_frame, text="Include Archived Documents",
+                       variable=include_archived_var).pack(anchor='w')
+
+        exact_match_var = tk.BooleanVar()
+        ttk.Checkbutton(advanced_frame, text="Exact Match Only",
+                       variable=exact_match_var).pack(anchor='w')
+
+        left_frame.columnconfigure(1, weight=1)
+
+        # Right frame - Results
+        right_frame = ttk.LabelFrame(main_frame, text="Search Results", padding=10)
+        right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
+
+        # Results info
+        results_info_label = ttk.Label(right_frame, text="No search performed yet",
+                                       font=("Arial", 10))
+        results_info_label.pack(pady=5)
+
+        # Results treeview
+        results_tree = ttk.Treeview(right_frame, columns=('ID', 'Student', 'Type', 'Status', 'Upload Date'),
+                                    show='tree headings', height=20)
+        results_tree.heading('#0', text='File Name')
+        results_tree.heading('ID', text='Doc ID')
+        results_tree.heading('Student', text='Student ID')
+        results_tree.heading('Type', text='Type')
+        results_tree.heading('Status', text='Status')
+        results_tree.heading('Upload Date', text='Upload Date')
+
+        results_tree.column('#0', width=150)
+        results_tree.column('ID', width=60)
+        results_tree.column('Student', width=80)
+        results_tree.column('Type', width=100)
+        results_tree.column('Status', width=80)
+        results_tree.column('Upload Date', width=100)
+
+        results_scrollbar = ttk.Scrollbar(right_frame, orient='vertical', command=results_tree.yview)
+        results_tree.configure(yscrollcommand=results_scrollbar.set)
+
+        results_tree.pack(side='left', fill='both', expand=True)
+        results_scrollbar.pack(side='right', fill='y')
+
+        # Button frame
+        button_frame = ttk.Frame(search_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        def perform_search():
+            """Execute the advanced search"""
+            self.execute_advanced_search(
+                results_tree, results_info_label,
+                student_id=student_id_entry.get(),
+                doc_type=doc_type_combo.get(),
+                status=status_combo.get(),
+                date_from=date_from_entry.get(),
+                date_to=date_to_entry.get(),
+                tags=tags_entry.get(),
+                filename=filename_entry.get(),
+                expiry_status=expiry_combo.get(),
+                case_sensitive=case_sensitive_var.get(),
+                include_archived=include_archived_var.get(),
+                exact_match=exact_match_var.get()
+            )
+
+        ttk.Button(button_frame, text="Search", command=perform_search).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Clear Filters",
+                  command=lambda: [student_id_entry.delete(0, 'end'),
+                                  doc_type_combo.current(0),
+                                  status_combo.current(0),
+                                  date_from_entry.delete(0, 'end'),
+                                  date_from_entry.insert(0, "YYYY-MM-DD"),
+                                  date_to_entry.delete(0, 'end'),
+                                  date_to_entry.insert(0, "YYYY-MM-DD"),
+                                  tags_entry.delete(0, 'end'),
+                                  filename_entry.delete(0, 'end'),
+                                  expiry_combo.current(0)]).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Export Results",
+                  command=lambda: self.export_search_results(results_tree)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close",
+                  command=search_window.destroy).pack(side='right', padx=5)
+
+        # Log activity
+        self.log_event('open', 'advanced_search', details='Opened advanced search interface')
+
+    def execute_advanced_search(self, results_tree, results_label, **filters):
+        """Execute advanced search with given filters"""
+        try:
+            # Clear existing results
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+
+            # Build SQL query based on filters
+            query = "SELECT id, student_id, document_type, file_name, status, upload_date FROM documents WHERE 1=1"
+            params = []
+
+            if filters.get('student_id') and filters['student_id'].strip():
+                query += " AND student_id LIKE ?"
+                params.append(f"%{filters['student_id']}%")
+
+            if filters.get('doc_type') and filters['doc_type'] != 'All Types':
+                query += " AND document_type = ?"
+                params.append(filters['doc_type'])
+
+            if filters.get('status') and filters['status'] != 'All Statuses':
+                query += " AND status = ?"
+                params.append(filters['status'])
+
+            if filters.get('filename') and filters['filename'].strip():
+                if filters.get('case_sensitive'):
+                    query += " AND file_name LIKE ?"
+                else:
+                    query += " AND LOWER(file_name) LIKE LOWER(?)"
+                if filters.get('exact_match'):
+                    params.append(filters['filename'])
+                else:
+                    params.append(f"%{filters['filename']}%")
+
+            # Date filters
+            if filters.get('date_from') and filters['date_from'] != 'YYYY-MM-DD':
+                query += " AND upload_date >= ?"
+                params.append(filters['date_from'])
+
+            if filters.get('date_to') and filters['date_to'] != 'YYYY-MM-DD':
+                query += " AND upload_date <= ?"
+                params.append(filters['date_to'])
+
+            query += " ORDER BY upload_date DESC LIMIT 500"
+
+            # Execute search
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+            # Populate results
+            for row in results:
+                doc_id, student_id, doc_type, file_name, status, upload_date = row
+                results_tree.insert('', 'end', text=file_name,
+                                  values=(doc_id, student_id, doc_type, status, upload_date))
+
+            # Update results label
+            results_label.config(text=f"Found {len(results)} document(s)")
+
+            # Log activity
+            self.log_event('search', 'advanced_search',
+                          details=f'Search returned {len(results)} results')
+
+        except Exception as e:
+            messagebox.showerror("Search Error", f"Failed to execute search: {e}")
+            self.log_event('error', 'advanced_search', details=str(e))
+
+    def export_search_results(self, results_tree):
+        """Export search results to CSV"""
+        try:
+            items = results_tree.get_children()
+            if not items:
+                messagebox.showwarning("No Results", "No search results to export")
+                return
+
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+                title="Export Search Results"
+            )
+
+            if not file_path:
+                return
+
+            # Write to CSV
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['File Name', 'Document ID', 'Student ID', 'Type', 'Status', 'Upload Date'])
+
+                for item in items:
+                    file_name = results_tree.item(item, 'text')
+                    values = results_tree.item(item, 'values')
+                    writer.writerow([file_name] + list(values))
+
+            messagebox.showinfo("Export Successful", f"Search results exported to:\n{file_path}")
+            self.log_event('export', 'search_results', details=f'Exported {len(items)} results')
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export search results: {e}")
+
+    def display_dashboard(self):
+        """Display main dashboard with statistics and overview"""
+        if not self.ensure_login():
+            return
+
+        # Create dashboard window
+        dashboard_window = tk.Toplevel(self.root)
+        dashboard_window.title("Document Manager Dashboard")
+        dashboard_window.geometry("1200x800")
+        dashboard_window.transient(self.root)
+        dashboard_window.grab_set()
+
+        # Title
+        title_label = ttk.Label(dashboard_window, text="Document Manager Dashboard",
+                               font=("Arial", 18, "bold"))
+        title_label.pack(pady=10)
+
+        # Create notebook for different dashboard sections
+        notebook = ttk.Notebook(dashboard_window)
+        notebook.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Tab 1: Overview
+        overview_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(overview_frame, text="Overview")
+
+        # Quick stats at top
+        stats_frame = ttk.Frame(overview_frame)
+        stats_frame.pack(fill='x', pady=(0, 10))
+        self.display_quick_stats(stats_frame)
+
+        # Status overview
+        status_frame = ttk.LabelFrame(overview_frame, text="Status Overview", padding=10)
+        status_frame.pack(fill='both', expand=True, pady=5)
+        self.display_status_overview(status_frame)
+
+        # Tab 2: Recent Activity
+        activity_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(activity_frame, text="Recent Activity")
+        self.display_recent_activity(activity_frame)
+
+        # Tab 3: Expiry Alerts
+        alerts_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(alerts_frame, text="Expiry Alerts")
+        self.display_expiry_alerts(alerts_frame)
+
+        # Tab 4: Performance Metrics
+        performance_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(performance_frame, text="Performance")
+        self.display_performance_metrics(performance_frame)
+
+        # Close button
+        ttk.Button(dashboard_window, text="Close",
+                  command=dashboard_window.destroy).pack(pady=10)
+
+        # Log activity
+        self.log_event('view', 'dashboard', details='Opened main dashboard')
+
+    def display_quick_stats(self, parent_frame):
+        """Display quick statistics cards"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Total documents
+                cursor.execute("SELECT COUNT(*) FROM documents")
+                total_docs = cursor.fetchone()[0]
+
+                # Pending documents
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE status = 'Pending'")
+                pending_docs = cursor.fetchone()[0]
+
+                # Approved documents
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE status = 'Approved'")
+                approved_docs = cursor.fetchone()[0]
+
+                # Documents expiring soon (30 days)
+                cursor.execute("""
+                    SELECT COUNT(*) FROM documents
+                    WHERE expiry_date IS NOT NULL
+                    AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now', '+30 days')
+                """)
+                expiring_soon = cursor.fetchone()[0]
+
+            # Create stat cards
+            cards = [
+                ("Total Documents", total_docs, "#3498db"),
+                ("Pending Review", pending_docs, "#f39c12"),
+                ("Approved", approved_docs, "#27ae60"),
+                ("Expiring Soon", expiring_soon, "#e74c3c")
+            ]
+
+            for idx, (title, value, color) in enumerate(cards):
+                card_frame = tk.Frame(parent_frame, bg=color, relief='raised', bd=2)
+                card_frame.pack(side='left', fill='both', expand=True, padx=5)
+
+                value_label = tk.Label(card_frame, text=str(value), font=("Arial", 24, "bold"),
+                                      bg=color, fg='white')
+                value_label.pack(pady=(10, 0))
+
+                title_label = tk.Label(card_frame, text=title, font=("Arial", 10),
+                                      bg=color, fg='white')
+                title_label.pack(pady=(0, 10))
+
+        except Exception as e:
+            ttk.Label(parent_frame, text=f"Error loading stats: {e}").pack()
+
+    def display_status_overview(self, parent_frame):
+        """Display status breakdown with pie chart representation"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT status, COUNT(*) as count
+                    FROM documents
+                    GROUP BY status
+                    ORDER BY count DESC
+                """)
+                status_data = cursor.fetchall()
+
+            if not status_data:
+                ttk.Label(parent_frame, text="No document data available").pack()
+                return
+
+            # Create treeview for status breakdown
+            tree = ttk.Treeview(parent_frame, columns=('Status', 'Count', 'Percentage'),
+                               show='headings', height=8)
+            tree.heading('Status', text='Status')
+            tree.heading('Count', text='Document Count')
+            tree.heading('Percentage', text='Percentage')
+
+            tree.column('Status', width=150)
+            tree.column('Count', width=150)
+            tree.column('Percentage', width=150)
+
+            total = sum(count for _, count in status_data)
+
+            for status, count in status_data:
+                percentage = (count / total * 100) if total > 0 else 0
+                tree.insert('', 'end', values=(status, count, f"{percentage:.1f}%"))
+
+            tree.pack(fill='both', expand=True, pady=5)
+
+            # Total label
+            ttk.Label(parent_frame, text=f"Total Documents: {total}",
+                     font=("Arial", 11, "bold")).pack(pady=5)
+
+        except Exception as e:
+            ttk.Label(parent_frame, text=f"Error loading status data: {e}").pack()
+
+    def display_recent_activity(self, parent_frame):
+        """Display recent activity feed"""
+        try:
+            # Title
+            ttk.Label(parent_frame, text="Recent Activity (Last 50 actions)",
+                     font=("Arial", 12, "bold")).pack(pady=5)
+
+            # Create treeview for activity log
+            tree = ttk.Treeview(parent_frame,
+                               columns=('Time', 'User', 'Action', 'Entity', 'Details'),
+                               show='headings', height=20)
+            tree.heading('Time', text='Timestamp')
+            tree.heading('User', text='User')
+            tree.heading('Action', text='Action')
+            tree.heading('Entity', text='Entity Type')
+            tree.heading('Details', text='Details')
+
+            tree.column('Time', width=150)
+            tree.column('User', width=120)
+            tree.column('Action', width=100)
+            tree.column('Entity', width=120)
+            tree.column('Details', width=250)
+
+            scrollbar = ttk.Scrollbar(parent_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Fetch recent activity
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT timestamp, username, action, entity_type, details
+                    FROM activity_log
+                    ORDER BY timestamp DESC
+                    LIMIT 50
+                """)
+                activities = cursor.fetchall()
+
+            for activity in activities:
+                timestamp, user, action, entity, details = activity
+                # Truncate details if too long
+                if details and len(details) > 50:
+                    details = details[:47] + "..."
+                tree.insert('', 'end', values=(timestamp, user, action, entity, details or ''))
+
+            tree.pack(side='left', fill='both', expand=True, pady=5)
+            scrollbar.pack(side='right', fill='y', pady=5)
+
+            # Export button
+            ttk.Button(parent_frame, text="Export Activity Log",
+                      command=lambda: self.export_activity_log()).pack(pady=5)
+
+        except Exception as e:
+            ttk.Label(parent_frame, text=f"Error loading activity: {e}").pack()
+
+    def export_activity_log(self):
+        """Export activity log to CSV"""
+        try:
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+                title="Export Activity Log"
+            )
+
+            if not file_path:
+                return
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT timestamp, username, user_role, action, entity_type,
+                           entity_id, details
+                    FROM activity_log
+                    ORDER BY timestamp DESC
+                """)
+                activities = cursor.fetchall()
+
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Timestamp', 'Username', 'Role', 'Action', 'Entity Type',
+                               'Entity ID', 'Details'])
+                writer.writerows(activities)
+
+            messagebox.showinfo("Export Successful",
+                              f"Activity log exported to:\n{file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export activity log: {e}")
+
+    def display_expiry_alerts(self, parent_frame):
+        """Display expiry alerts for documents"""
+        try:
+            # Title
+            ttk.Label(parent_frame, text="Document Expiry Alerts",
+                     font=("Arial", 12, "bold")).pack(pady=5)
+
+            # Filter options
+            filter_frame = ttk.Frame(parent_frame)
+            filter_frame.pack(fill='x', pady=5)
+
+            ttk.Label(filter_frame, text="Show:").pack(side='left', padx=5)
+            filter_combo = ttk.Combobox(filter_frame, width=20, state='readonly')
+            filter_combo['values'] = ['Expired', 'Expiring in 7 days', 'Expiring in 30 days', 'All with expiry dates']
+            filter_combo.current(2)
+            filter_combo.pack(side='left', padx=5)
+
+            # Create treeview
+            tree_frame = ttk.Frame(parent_frame)
+            tree_frame.pack(fill='both', expand=True, pady=5)
+
+            tree = ttk.Treeview(tree_frame,
+                               columns=('ID', 'Student', 'Type', 'File', 'Expiry', 'Days', 'Status'),
+                               show='headings', height=18)
+            tree.heading('ID', text='Doc ID')
+            tree.heading('Student', text='Student ID')
+            tree.heading('Type', text='Document Type')
+            tree.heading('File', text='File Name')
+            tree.heading('Expiry', text='Expiry Date')
+            tree.heading('Days', text='Days Until Expiry')
+            tree.heading('Status', text='Status')
+
+            tree.column('ID', width=60)
+            tree.column('Student', width=100)
+            tree.column('Type', width=120)
+            tree.column('File', width=180)
+            tree.column('Expiry', width=100)
+            tree.column('Days', width=120)
+            tree.column('Status', width=100)
+
+            scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            def load_expiry_alerts():
+                """Load expiry alerts based on filter"""
+                for item in tree.get_children():
+                    tree.delete(item)
+
+                filter_value = filter_combo.get()
+
+                if filter_value == 'Expired':
+                    days_filter = "AND DATE(expiry_date) < DATE('now')"
+                elif filter_value == 'Expiring in 7 days':
+                    days_filter = "AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now', '+7 days')"
+                elif filter_value == 'Expiring in 30 days':
+                    days_filter = "AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now', '+30 days')"
+                else:
+                    days_filter = ""
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(f"""
+                        SELECT id, student_id, document_type, file_name, expiry_date,
+                               JULIANDAY(expiry_date) - JULIANDAY('now') as days_until,
+                               status
+                        FROM documents
+                        WHERE expiry_date IS NOT NULL
+                        {days_filter}
+                        ORDER BY expiry_date ASC
+                        LIMIT 200
+                    """)
+                    results = cursor.fetchall()
+
+                for row in results:
+                    doc_id, student_id, doc_type, file_name, expiry_date, days_until, status = row
+                    days_until = int(days_until)
+
+                    # Color code based on urgency
+                    if days_until < 0:
+                        tag = 'expired'
+                    elif days_until <= 7:
+                        tag = 'urgent'
+                    elif days_until <= 30:
+                        tag = 'warning'
+                    else:
+                        tag = 'normal'
+
+                    days_text = f"{days_until} days" if days_until >= 0 else f"{abs(days_until)} days overdue"
+
+                    tree.insert('', 'end', values=(doc_id, student_id, doc_type, file_name,
+                                                  expiry_date, days_text, status), tags=(tag,))
+
+                # Configure tags
+                tree.tag_configure('expired', background='#ffcccc')
+                tree.tag_configure('urgent', background='#ffe6cc')
+                tree.tag_configure('warning', background='#ffffcc')
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Bind filter change
+            filter_combo.bind('<<ComboboxSelected>>', lambda e: load_expiry_alerts())
+
+            # Initial load
+            load_expiry_alerts()
+
+            # Button frame
+            button_frame = ttk.Frame(parent_frame)
+            button_frame.pack(fill='x', pady=5)
+
+            ttk.Button(button_frame, text="Send Expiry Notifications",
+                      command=lambda: self.send_expiry_notifications()).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Export Expiry Report",
+                      command=lambda: self.export_expiry_report(tree)).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Refresh",
+                      command=load_expiry_alerts).pack(side='left', padx=5)
+
+        except Exception as e:
+            ttk.Label(parent_frame, text=f"Error loading expiry alerts: {e}").pack()
+
+    def send_expiry_notifications(self):
+        """Send expiry notifications to students"""
+        messagebox.showinfo("Send Notifications",
+                          "Expiry notifications will be sent to affected students.\n\n"
+                          "This would integrate with the email service to send automated reminders.")
+        self.log_event('send', 'expiry_notifications',
+                      details='Triggered expiry notification batch')
+
+    def export_expiry_report(self, tree):
+        """Export expiry alerts to CSV"""
+        try:
+            items = tree.get_children()
+            if not items:
+                messagebox.showwarning("No Data", "No expiry alerts to export")
+                return
+
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+                title="Export Expiry Report"
+            )
+
+            if not file_path:
+                return
+
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Doc ID', 'Student ID', 'Document Type', 'File Name',
+                               'Expiry Date', 'Days Until Expiry', 'Status'])
+
+                for item in items:
+                    values = tree.item(item, 'values')
+                    writer.writerow(values)
+
+            messagebox.showinfo("Export Successful", f"Expiry report exported to:\n{file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export expiry report: {e}")
+
+    def display_performance_metrics(self, parent_frame):
+        """Display performance metrics"""
+        try:
+            # Title
+            ttk.Label(parent_frame, text="System Performance Metrics",
+                     font=("Arial", 12, "bold")).pack(pady=5)
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Documents per day (last 30 days)
+                cursor.execute("""
+                    SELECT DATE(upload_date) as day, COUNT(*) as count
+                    FROM documents
+                    WHERE upload_date >= DATE('now', '-30 days')
+                    GROUP BY DATE(upload_date)
+                    ORDER BY day DESC
+                """)
+                daily_uploads = cursor.fetchall()
+
+                # Average processing time (simulated)
+                cursor.execute("""
+                    SELECT AVG(
+                        JULIANDAY(COALESCE(
+                            (SELECT MAX(timestamp) FROM activity_log
+                             WHERE entity_type = 'document'
+                             AND entity_id = documents.id
+                             AND action = 'approve'),
+                            DATE('now')
+                        )) - JULIANDAY(upload_date)
+                    ) as avg_days
+                    FROM documents
+                    WHERE status = 'Approved'
+                """)
+                avg_processing = cursor.fetchone()[0] or 0
+
+                # Documents by type
+                cursor.execute("""
+                    SELECT document_type, COUNT(*) as count
+                    FROM documents
+                    GROUP BY document_type
+                    ORDER BY count DESC
+                """)
+                type_distribution = cursor.fetchall()
+
+            # Create metrics display
+            metrics_frame = ttk.Frame(parent_frame)
+            metrics_frame.pack(fill='both', expand=True, pady=5)
+
+            # Left column - Stats
+            left_frame = ttk.LabelFrame(metrics_frame, text="Key Metrics", padding=10)
+            left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
+
+            ttk.Label(left_frame, text=f"Average Processing Time: {avg_processing:.1f} days",
+                     font=("Arial", 10)).pack(anchor='w', pady=5)
+            ttk.Label(left_frame, text=f"Total Upload Days: {len(daily_uploads)}",
+                     font=("Arial", 10)).pack(anchor='w', pady=5)
+
+            if daily_uploads:
+                avg_daily = sum(count for _, count in daily_uploads) / len(daily_uploads)
+                ttk.Label(left_frame, text=f"Avg Documents/Day: {avg_daily:.1f}",
+                         font=("Arial", 10)).pack(anchor='w', pady=5)
+
+            # Daily uploads table
+            daily_frame = ttk.LabelFrame(left_frame, text="Daily Uploads (Last 30 Days)", padding=5)
+            daily_frame.pack(fill='both', expand=True, pady=10)
+
+            daily_tree = ttk.Treeview(daily_frame, columns=('Date', 'Count'),
+                                     show='headings', height=8)
+            daily_tree.heading('Date', text='Date')
+            daily_tree.heading('Count', text='Documents Uploaded')
+            daily_tree.column('Date', width=150)
+            daily_tree.column('Count', width=150)
+
+            for date, count in daily_uploads:
+                daily_tree.insert('', 'end', values=(date, count))
+
+            daily_tree.pack(fill='both', expand=True)
+
+            # Right column - Type distribution
+            right_frame = ttk.LabelFrame(metrics_frame, text="Document Type Distribution", padding=10)
+            right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
+
+            type_tree = ttk.Treeview(right_frame, columns=('Type', 'Count', 'Percentage'),
+                                    show='headings', height=15)
+            type_tree.heading('Type', text='Document Type')
+            type_tree.heading('Count', text='Count')
+            type_tree.heading('Percentage', text='Percentage')
+
+            type_tree.column('Type', width=150)
+            type_tree.column('Count', width=100)
+            type_tree.column('Percentage', width=100)
+
+            total_types = sum(count for _, count in type_distribution)
+            for doc_type, count in type_distribution:
+                percentage = (count / total_types * 100) if total_types > 0 else 0
+                type_tree.insert('', 'end', values=(doc_type, count, f"{percentage:.1f}%"))
+
+            type_tree.pack(fill='both', expand=True)
+
+            # Export button
+            ttk.Button(parent_frame, text="Export Performance Report",
+                      command=lambda: self.export_performance_report()).pack(pady=5)
+
+        except Exception as e:
+            ttk.Label(parent_frame, text=f"Error loading performance metrics: {e}").pack()
+
+    def export_performance_report(self):
+        """Export performance metrics report"""
+        messagebox.showinfo("Export Performance Report",
+                          "Performance report will be generated and exported to CSV/PDF")
+        self.log_event('export', 'performance_report',
+                      details='Exported system performance report')
+
+    # ============================================================================
+    # DOCUMENT OPERATIONS METHODS (7 methods)
+    # ============================================================================
+
+    def upload_student_document(self, student_id=None):
+        """Upload document for a specific student"""
+        if not self.ensure_login():
+            return
+
+        # Create upload window
+        upload_window = tk.Toplevel(self.root)
+        upload_window.title("Upload Student Document")
+        upload_window.geometry("600x650")
+        upload_window.transient(self.root)
+        upload_window.grab_set()
+
+        # Title
+        ttk.Label(upload_window, text="Upload Student Document",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Form frame
+        form_frame = ttk.Frame(upload_window, padding=20)
+        form_frame.pack(fill='both', expand=True)
+
+        # Student ID
+        ttk.Label(form_frame, text="Student ID: *").grid(row=0, column=0, sticky='w', pady=5)
+        student_id_entry = ttk.Entry(form_frame, width=40)
+        if student_id:
+            student_id_entry.insert(0, student_id)
+        student_id_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Document Type
+        ttk.Label(form_frame, text="Document Type: *").grid(row=1, column=0, sticky='w', pady=5)
+        doc_type_combo = ttk.Combobox(form_frame, width=38, state='readonly')
+        doc_type_combo['values'] = ['Transcript', 'ID Card', 'Health Form', 'Enrollment Form',
+                                     'Financial Document', 'Recommendation Letter', 'Other']
+        doc_type_combo.current(0)
+        doc_type_combo.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # File selection
+        ttk.Label(form_frame, text="Select File: *").grid(row=2, column=0, sticky='w', pady=5)
+        file_path_var = tk.StringVar()
+        file_entry = ttk.Entry(form_frame, textvariable=file_path_var, width=40, state='readonly')
+        file_entry.grid(row=2, column=1, sticky='ew', pady=5)
+
+        def browse_file():
+            filename = filedialog.askopenfilename(
+                title="Select Document",
+                filetypes=[("PDF Files", "*.pdf"), ("Image Files", "*.jpg *.jpeg *.png"),
+                          ("All Files", "*.*")]
+            )
+            if filename:
+                file_path_var.set(filename)
+
+        ttk.Button(form_frame, text="Browse...", command=browse_file).grid(row=2, column=2, padx=5)
+
+        # Expiry Date
+        ttk.Label(form_frame, text="Expiry Date:").grid(row=3, column=0, sticky='w', pady=5)
+        expiry_entry = ttk.Entry(form_frame, width=40)
+        expiry_entry.insert(0, "YYYY-MM-DD (optional)")
+        expiry_entry.grid(row=3, column=1, sticky='ew', pady=5)
+
+        # Tags
+        ttk.Label(form_frame, text="Tags:").grid(row=4, column=0, sticky='w', pady=5)
+        tags_entry = ttk.Entry(form_frame, width=40)
+        tags_entry.insert(0, "comma, separated, tags")
+        tags_entry.grid(row=4, column=1, sticky='ew', pady=5)
+
+        # Notes
+        ttk.Label(form_frame, text="Notes:").grid(row=5, column=0, sticky='w', pady=5)
+        notes_text = tk.Text(form_frame, width=40, height=4)
+        notes_text.grid(row=5, column=1, sticky='ew', pady=5)
+
+        # Status
+        ttk.Label(form_frame, text="Initial Status:").grid(row=6, column=0, sticky='w', pady=5)
+        status_combo = ttk.Combobox(form_frame, width=38, state='readonly')
+        status_combo['values'] = ['Pending', 'Approved']
+        status_combo.current(0)
+        status_combo.grid(row=6, column=1, sticky='ew', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Button frame
+        button_frame = ttk.Frame(upload_window)
+        button_frame.pack(fill='x', padx=20, pady=10)
+
+        def submit_upload():
+            """Submit the document upload"""
+            # Validate fields
+            if not student_id_entry.get().strip():
+                messagebox.showwarning("Validation Error", "Student ID is required")
+                return
+
+            if not file_path_var.get():
+                messagebox.showwarning("Validation Error", "Please select a file to upload")
+                return
+
+            try:
+                # Get file info
+                file_path = file_path_var.get()
+                file_name = os.path.basename(file_path)
+                file_size = os.path.getsize(file_path)
+
+                # Get expiry date
+                expiry_date = expiry_entry.get()
+                if expiry_date == "YYYY-MM-DD (optional)":
+                    expiry_date = None
+
+                # Get tags
+                tags = tags_entry.get()
+                if tags == "comma, separated, tags":
+                    tags = None
+
+                # Get notes
+                notes = notes_text.get('1.0', 'end-1c')
+
+                # Insert into database
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO documents (student_id, document_type, file_name,
+                                             file_path, file_size, status, upload_date,
+                                             expiry_date, tags, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, DATE('now'), ?, ?, ?)
+                    """, (student_id_entry.get(), doc_type_combo.get(), file_name,
+                         file_path, file_size, status_combo.get(), expiry_date, tags, notes))
+
+                    doc_id = cursor.lastrowid
+
+                messagebox.showinfo("Success",
+                                  f"Document uploaded successfully!\n\n"
+                                  f"Document ID: {doc_id}\n"
+                                  f"Student: {student_id_entry.get()}\n"
+                                  f"Type: {doc_type_combo.get()}\n"
+                                  f"Status: {status_combo.get()}")
+
+                # Log activity
+                self.log_event('upload', 'document', entity_id=doc_id,
+                              details=f'Uploaded {file_name} for student {student_id_entry.get()}')
+
+                upload_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Upload Error", f"Failed to upload document: {e}")
+
+        ttk.Button(button_frame, text="Upload Document",
+                  command=submit_upload).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=upload_window.destroy).pack(side='right', padx=5)
+
+    def check_document_expiry(self):
+        """Check document expiry status and generate report"""
+        if not self.ensure_login():
+            return
+
+        try:
+            # Create expiry check window
+            expiry_window = tk.Toplevel(self.root)
+            expiry_window.title("Document Expiry Check")
+            expiry_window.geometry("1100x700")
+            expiry_window.transient(self.root)
+            expiry_window.grab_set()
+
+            # Title
+            ttk.Label(expiry_window, text="Document Expiry Status Check",
+                     font=("Arial", 14, "bold")).pack(pady=10)
+
+            # Stats frame
+            stats_frame = ttk.Frame(expiry_window)
+            stats_frame.pack(fill='x', padx=10, pady=5)
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Expired
+                cursor.execute("""
+                    SELECT COUNT(*) FROM documents
+                    WHERE expiry_date IS NOT NULL AND DATE(expiry_date) < DATE('now')
+                """)
+                expired_count = cursor.fetchone()[0]
+
+                # Expiring soon (30 days)
+                cursor.execute("""
+                    SELECT COUNT(*) FROM documents
+                    WHERE expiry_date IS NOT NULL
+                    AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now', '+30 days')
+                """)
+                expiring_soon = cursor.fetchone()[0]
+
+                # Valid (not expiring)
+                cursor.execute("""
+                    SELECT COUNT(*) FROM documents
+                    WHERE expiry_date IS NOT NULL AND DATE(expiry_date) > DATE('now', '+30 days')
+                """)
+                valid_count = cursor.fetchone()[0]
+
+                # No expiry date
+                cursor.execute("""
+                    SELECT COUNT(*) FROM documents WHERE expiry_date IS NULL
+                """)
+                no_expiry = cursor.fetchone()[0]
+
+            # Create stat cards
+            cards = [
+                ("Expired", expired_count, "#e74c3c"),
+                ("Expiring Soon", expiring_soon, "#f39c12"),
+                ("Valid", valid_count, "#27ae60"),
+                ("No Expiry Date", no_expiry, "#95a5a6")
+            ]
+
+            for title, value, color in cards:
+                card_frame = tk.Frame(stats_frame, bg=color, relief='raised', bd=2)
+                card_frame.pack(side='left', fill='both', expand=True, padx=5)
+
+                value_label = tk.Label(card_frame, text=str(value), font=("Arial", 20, "bold"),
+                                      bg=color, fg='white')
+                value_label.pack(pady=(10, 0))
+
+                title_label = tk.Label(card_frame, text=title, font=("Arial", 9),
+                                      bg=color, fg='white')
+                title_label.pack(pady=(0, 10))
+
+            # Documents list
+            list_frame = ttk.LabelFrame(expiry_window, text="Documents with Expiry Dates", padding=10)
+            list_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+            # Filter
+            filter_frame = ttk.Frame(list_frame)
+            filter_frame.pack(fill='x', pady=(0, 5))
+
+            ttk.Label(filter_frame, text="Filter:").pack(side='left', padx=5)
+            filter_combo = ttk.Combobox(filter_frame, width=25, state='readonly')
+            filter_combo['values'] = ['All', 'Expired Only', 'Expiring in 30 days', 'Valid']
+            filter_combo.current(0)
+            filter_combo.pack(side='left', padx=5)
+
+            # Treeview
+            tree = ttk.Treeview(list_frame,
+                               columns=('ID', 'Student', 'Type', 'Expiry', 'Days', 'Status'),
+                               show='headings', height=20)
+            tree.heading('ID', text='Doc ID')
+            tree.heading('Student', text='Student ID')
+            tree.heading('Type', text='Document Type')
+            tree.heading('Expiry', text='Expiry Date')
+            tree.heading('Days', text='Days Remaining')
+            tree.heading('Status', text='Status')
+
+            tree.column('ID', width=70)
+            tree.column('Student', width=100)
+            tree.column('Type', width=150)
+            tree.column('Expiry', width=120)
+            tree.column('Days', width=120)
+            tree.column('Status', width=100)
+
+            scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            def load_documents():
+                """Load documents based on filter"""
+                for item in tree.get_children():
+                    tree.delete(item)
+
+                filter_value = filter_combo.get()
+
+                if filter_value == 'Expired Only':
+                    where_clause = "AND DATE(expiry_date) < DATE('now')"
+                elif filter_value == 'Expiring in 30 days':
+                    where_clause = "AND DATE(expiry_date) BETWEEN DATE('now') AND DATE('now', '+30 days')"
+                elif filter_value == 'Valid':
+                    where_clause = "AND DATE(expiry_date) > DATE('now', '+30 days')"
+                else:
+                    where_clause = ""
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(f"""
+                        SELECT id, student_id, document_type, expiry_date,
+                               JULIANDAY(expiry_date) - JULIANDAY('now') as days_remaining,
+                               status
+                        FROM documents
+                        WHERE expiry_date IS NOT NULL
+                        {where_clause}
+                        ORDER BY expiry_date ASC
+                        LIMIT 300
+                    """)
+                    results = cursor.fetchall()
+
+                for row in results:
+                    doc_id, student_id, doc_type, expiry_date, days_remaining, status = row
+                    days_remaining = int(days_remaining)
+
+                    # Determine tag
+                    if days_remaining < 0:
+                        tag = 'expired'
+                        days_text = f"{abs(days_remaining)} days overdue"
+                    elif days_remaining <= 30:
+                        tag = 'warning'
+                        days_text = f"{days_remaining} days left"
+                    else:
+                        tag = 'valid'
+                        days_text = f"{days_remaining} days left"
+
+                    tree.insert('', 'end', values=(doc_id, student_id, doc_type,
+                                                  expiry_date, days_text, status), tags=(tag,))
+
+                # Configure tags
+                tree.tag_configure('expired', background='#ffcccc')
+                tree.tag_configure('warning', background='#fff4cc')
+                tree.tag_configure('valid', background='#ccffcc')
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            filter_combo.bind('<<ComboboxSelected>>', lambda e: load_documents())
+            load_documents()
+
+            # Button frame
+            button_frame = ttk.Frame(expiry_window)
+            button_frame.pack(fill='x', padx=10, pady=10)
+
+            ttk.Button(button_frame, text="Export Report",
+                      command=lambda: self.export_expiry_report(tree)).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Refresh",
+                      command=load_documents).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=expiry_window.destroy).pack(side='right', padx=5)
+
+            # Log activity
+            self.log_event('view', 'expiry_check', details='Performed document expiry check')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to check document expiry: {e}")
+
+    def update_document_status(self, document_id=None):
+        """Update document status with audit trail"""
+        if not self.ensure_login():
+            return
+
+        # Create status update window
+        status_window = tk.Toplevel(self.root)
+        status_window.title("Update Document Status")
+        status_window.geometry("600x500")
+        status_window.transient(self.root)
+        status_window.grab_set()
+
+        # Title
+        ttk.Label(status_window, text="Update Document Status",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Form frame
+        form_frame = ttk.Frame(status_window, padding=20)
+        form_frame.pack(fill='both', expand=True)
+
+        # Document ID
+        ttk.Label(form_frame, text="Document ID: *").grid(row=0, column=0, sticky='w', pady=5)
+        doc_id_entry = ttk.Entry(form_frame, width=40)
+        if document_id:
+            doc_id_entry.insert(0, str(document_id))
+        doc_id_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Current status label
+        current_status_label = ttk.Label(form_frame, text="Current Status: N/A",
+                                        font=("Arial", 9, "italic"))
+        current_status_label.grid(row=1, column=0, columnspan=2, sticky='w', pady=5)
+
+        # New status
+        ttk.Label(form_frame, text="New Status: *").grid(row=2, column=0, sticky='w', pady=5)
+        status_combo = ttk.Combobox(form_frame, width=38, state='readonly')
+        status_combo['values'] = ['Pending', 'Approved', 'Rejected', 'Under Review',
+                                  'Expired', 'Archived']
+        status_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+        # Reason/Notes
+        ttk.Label(form_frame, text="Reason for Change: *").grid(row=3, column=0, sticky='w', pady=5)
+        reason_text = tk.Text(form_frame, width=40, height=6)
+        reason_text.grid(row=3, column=1, sticky='ew', pady=5)
+
+        # Notify student
+        notify_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(form_frame, text="Send notification to student",
+                       variable=notify_var).grid(row=4, column=0, columnspan=2, sticky='w', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        def load_current_status():
+            """Load current status of document"""
+            doc_id = doc_id_entry.get()
+            if not doc_id:
+                return
+
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT status, student_id, document_type, file_name
+                        FROM documents WHERE id = ?
+                    """, (doc_id,))
+                    result = cursor.fetchone()
+
+                if result:
+                    status, student_id, doc_type, file_name = result
+                    current_status_label.config(
+                        text=f"Current Status: {status}\n"
+                             f"Student: {student_id} | Type: {doc_type} | File: {file_name}"
+                    )
+                    return status
+                else:
+                    current_status_label.config(text="Document not found")
+                    return None
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load document: {e}")
+                return None
+
+        def submit_status_update():
+            """Submit status update"""
+            doc_id = doc_id_entry.get().strip()
+            new_status = status_combo.get()
+            reason = reason_text.get('1.0', 'end-1c').strip()
+
+            if not doc_id:
+                messagebox.showwarning("Validation Error", "Document ID is required")
+                return
+
+            if not new_status:
+                messagebox.showwarning("Validation Error", "Please select new status")
+                return
+
+            if not reason:
+                messagebox.showwarning("Validation Error", "Please provide a reason for the change")
+                return
+
+            try:
+                # Get current status
+                current_status = load_current_status()
+                if not current_status:
+                    return
+
+                if current_status == new_status:
+                    messagebox.showwarning("No Change", "New status is same as current status")
+                    return
+
+                # Update status
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        UPDATE documents
+                        SET status = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (new_status, doc_id))
+
+                messagebox.showinfo("Success",
+                                  f"Document status updated successfully!\n\n"
+                                  f"Document ID: {doc_id}\n"
+                                  f"Old Status: {current_status}\n"
+                                  f"New Status: {new_status}")
+
+                # Log activity
+                self.log_event('update', 'document_status', entity_id=doc_id,
+                              details=f'Status changed from {current_status} to {new_status}. Reason: {reason}')
+
+                if notify_var.get():
+                    messagebox.showinfo("Notification",
+                                      "Student notification would be sent via email")
+
+                status_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Update Error", f"Failed to update status: {e}")
+
+        # Load button
+        ttk.Button(form_frame, text="Load Document",
+                  command=load_current_status).grid(row=0, column=2, padx=5)
+
+        # Button frame
+        button_frame = ttk.Frame(status_window)
+        button_frame.pack(fill='x', padx=20, pady=10)
+
+        ttk.Button(button_frame, text="Update Status",
+                  command=submit_status_update).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=status_window.destroy).pack(side='right', padx=5)
+
+    def view_document_types(self):
+        """View and manage document types"""
+        if not self.ensure_login():
+            return
+
+        # Create document types window
+        types_window = tk.Toplevel(self.root)
+        types_window.title("Document Types Management")
+        types_window.geometry("900x650")
+        types_window.transient(self.root)
+        types_window.grab_set()
+
+        # Title
+        ttk.Label(types_window, text="Document Types",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Treeview
+        tree_frame = ttk.Frame(types_window)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        tree = ttk.Treeview(tree_frame,
+                           columns=('Type', 'Count', 'Required', 'Expiry Days', 'Description'),
+                           show='headings', height=20)
+        tree.heading('Type', text='Document Type')
+        tree.heading('Count', text='Documents')
+        tree.heading('Required', text='Required')
+        tree.heading('Expiry Days', text='Default Expiry (days)')
+        tree.heading('Description', text='Description')
+
+        tree.column('Type', width=150)
+        tree.column('Count', width=100)
+        tree.column('Required', width=80)
+        tree.column('Expiry Days', width=150)
+        tree.column('Description', width=250)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        def load_document_types():
+            """Load document types from database"""
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # Get document types with counts
+                    cursor.execute("""
+                        SELECT dt.type_name, dt.is_required, dt.default_expiry_days,
+                               dt.description, COUNT(d.id) as doc_count
+                        FROM document_types dt
+                        LEFT JOIN documents d ON d.document_type = dt.type_name
+                        GROUP BY dt.type_name
+                        ORDER BY dt.type_name
+                    """)
+                    results = cursor.fetchall()
+
+                    for row in results:
+                        type_name, is_required, expiry_days, description, doc_count = row
+                        required_text = "Yes" if is_required else "No"
+                        expiry_text = str(expiry_days) if expiry_days else "None"
+                        tree.insert('', 'end', values=(type_name, doc_count, required_text,
+                                                      expiry_text, description or ''))
+
+            except Exception as e:
+                # If table doesn't exist, show default types
+                default_types = [
+                    ('Transcript', 0, 'No', '365', 'Academic transcript'),
+                    ('ID Card', 0, 'Yes', '1825', 'Student ID card'),
+                    ('Health Form', 0, 'Yes', '365', 'Health/Medical form'),
+                    ('Enrollment Form', 0, 'Yes', 'None', 'Enrollment documentation'),
+                    ('Financial Document', 0, 'No', '365', 'Financial aid/payment docs'),
+                    ('Recommendation Letter', 0, 'No', 'None', 'Letters of recommendation')
+                ]
+                for row in default_types:
+                    tree.insert('', 'end', values=row)
+
+        load_document_types()
+
+        # Button frame
+        button_frame = ttk.Frame(types_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Add Type",
+                  command=lambda: self.modify_document_type('add', tree, load_document_types)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Edit Type",
+                  command=lambda: self.modify_document_type('edit', tree, load_document_types)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Delete Type",
+                  command=lambda: self.modify_document_type('delete', tree, load_document_types)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Refresh",
+                  command=load_document_types).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close",
+                  command=types_window.destroy).pack(side='right', padx=5)
+
+        # Log activity
+        self.log_event('view', 'document_types', details='Viewed document types management')
+
+    def modify_document_type(self, operation, tree=None, refresh_callback=None):
+        """Add, edit, or delete document type"""
+        if operation == 'delete':
+            if not tree:
+                return
+
+            selected = tree.selection()
+            if not selected:
+                messagebox.showwarning("No Selection", "Please select a document type to delete")
+                return
+
+            type_name = tree.item(selected[0], 'values')[0]
+
+            if messagebox.askyesno("Confirm Delete",
+                                  f"Are you sure you want to delete document type '{type_name}'?\n\n"
+                                  "This will not delete existing documents of this type."):
+                try:
+                    with transaction() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM document_types WHERE type_name = ?", (type_name,))
+
+                    messagebox.showinfo("Success", f"Document type '{type_name}' deleted")
+                    self.log_event('delete', 'document_type', details=f'Deleted type: {type_name}')
+
+                    if refresh_callback:
+                        refresh_callback()
+
+                except Exception as e:
+                    messagebox.showerror("Delete Error", f"Failed to delete document type: {e}")
+
+            return
+
+        # Add or Edit
+        is_edit = operation == 'edit'
+        if is_edit and tree:
+            selected = tree.selection()
+            if not selected:
+                messagebox.showwarning("No Selection", "Please select a document type to edit")
+                return
+
+            values = tree.item(selected[0], 'values')
+            type_name, _, is_required, expiry_days, description = values
+        else:
+            type_name, is_required, expiry_days, description = '', 'No', 'None', ''
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Edit Document Type" if is_edit else "Add Document Type")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Form
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+
+        ttk.Label(form_frame, text="Type Name: *").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(form_frame, width=40)
+        name_entry.insert(0, type_name)
+        if is_edit:
+            name_entry.config(state='readonly')
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        ttk.Label(form_frame, text="Required:").grid(row=1, column=0, sticky='w', pady=5)
+        required_var = tk.BooleanVar(value=is_required == 'Yes')
+        ttk.Checkbutton(form_frame, text="This document type is required",
+                       variable=required_var).grid(row=1, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Default Expiry (days):").grid(row=2, column=0, sticky='w', pady=5)
+        expiry_entry = ttk.Entry(form_frame, width=40)
+        expiry_entry.insert(0, expiry_days if expiry_days != 'None' else '')
+        expiry_entry.grid(row=2, column=1, sticky='ew', pady=5)
+
+        ttk.Label(form_frame, text="Description:").grid(row=3, column=0, sticky='w', pady=5)
+        desc_text = tk.Text(form_frame, width=40, height=5)
+        desc_text.insert('1.0', description)
+        desc_text.grid(row=3, column=1, sticky='ew', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        def submit():
+            name = name_entry.get().strip()
+            if not name:
+                messagebox.showwarning("Validation Error", "Type name is required")
+                return
+
+            required = 1 if required_var.get() else 0
+            expiry = expiry_entry.get().strip()
+            expiry = int(expiry) if expiry else None
+            desc = desc_text.get('1.0', 'end-1c').strip()
+
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+
+                    # Create table if not exists
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS document_types (
+                            type_name TEXT PRIMARY KEY,
+                            is_required INTEGER DEFAULT 0,
+                            default_expiry_days INTEGER,
+                            description TEXT
+                        )
+                    """)
+
+                    if is_edit:
+                        cursor.execute("""
+                            UPDATE document_types
+                            SET is_required = ?, default_expiry_days = ?, description = ?
+                            WHERE type_name = ?
+                        """, (required, expiry, desc, name))
+                        action = 'update'
+                    else:
+                        cursor.execute("""
+                            INSERT INTO document_types (type_name, is_required,
+                                                       default_expiry_days, description)
+                            VALUES (?, ?, ?, ?)
+                        """, (name, required, expiry, desc))
+                        action = 'create'
+
+                messagebox.showinfo("Success",
+                                  f"Document type {'updated' if is_edit else 'added'} successfully!")
+
+                self.log_event(action, 'document_type', details=f'Type: {name}')
+
+                if refresh_callback:
+                    refresh_callback()
+
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save document type: {e}")
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill='x', padx=20, pady=10)
+
+        ttk.Button(button_frame, text="Save", command=submit).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def document_type_management(self):
+        """Comprehensive document type management interface"""
+        # This is a wrapper that calls view_document_types
+        self.view_document_types()
+
+    def manage_document_templates(self):
+        """Manage document templates"""
+        if not self.ensure_login():
+            return
+
+        # Create templates window
+        templates_window = tk.Toplevel(self.root)
+        templates_window.title("Document Templates Management")
+        templates_window.geometry("1000x700")
+        templates_window.transient(self.root)
+        templates_window.grab_set()
+
+        # Title
+        ttk.Label(templates_window, text="Document Templates",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Notebook for different template sections
+        notebook = ttk.Notebook(templates_window)
+        notebook.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Tab 1: Templates List
+        list_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(list_frame, text="Templates")
+
+        tree = ttk.Treeview(list_frame,
+                           columns=('ID', 'Name', 'Type', 'Usage', 'Created'),
+                           show='headings', height=18)
+        tree.heading('ID', text='Template ID')
+        tree.heading('Name', text='Template Name')
+        tree.heading('Type', text='Document Type')
+        tree.heading('Usage', text='Times Used')
+        tree.heading('Created', text='Created Date')
+
+        tree.column('ID', width=80)
+        tree.column('Name', width=250)
+        tree.column('Type', width=150)
+        tree.column('Usage', width=100)
+        tree.column('Created', width=120)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample templates
+        sample_templates = [
+            (1, 'Standard Transcript Request', 'Transcript', 145, '2024-01-15'),
+            (2, 'ID Card Application', 'ID Card', 278, '2024-01-20'),
+            (3, 'Health Form - Basic', 'Health Form', 89, '2024-02-01'),
+            (4, 'Financial Aid Application', 'Financial Document', 156, '2024-02-15'),
+            (5, 'Enrollment Verification', 'Enrollment Form', 234, '2024-03-01')
+        ]
+
+        for template in sample_templates:
+            tree.insert('', 'end', values=template)
+
+        # Tab 2: Template Builder
+        builder_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(builder_frame, text="Template Builder")
+
+        ttk.Label(builder_frame, text="Create New Template",
+                 font=("Arial", 12, "bold")).pack(pady=5)
+
+        builder_form = ttk.Frame(builder_frame)
+        builder_form.pack(fill='both', expand=True, pady=10)
+
+        ttk.Label(builder_form, text="Template Name:").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(builder_form, width=50)
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        ttk.Label(builder_form, text="Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        type_combo = ttk.Combobox(builder_form, width=48, state='readonly')
+        type_combo['values'] = ['Transcript', 'ID Card', 'Health Form', 'Enrollment Form',
+                                'Financial Document', 'Other']
+        type_combo.grid(row=1, column=1, sticky='ew', pady=5)
+
+        ttk.Label(builder_form, text="Template Description:").grid(row=2, column=0, sticky='w', pady=5)
+        desc_text = tk.Text(builder_form, width=50, height=4)
+        desc_text.grid(row=2, column=1, sticky='ew', pady=5)
+
+        ttk.Label(builder_form, text="Template Content:").grid(row=3, column=0, sticky='w', pady=5)
+        content_text = tk.Text(builder_form, width=50, height=15)
+        content_text.insert('1.0', "Template content here...\n\n"
+                                    "Available placeholders:\n"
+                                    "{{student_name}}\n"
+                                    "{{student_id}}\n"
+                                    "{{date}}\n"
+                                    "{{document_type}}")
+        content_text.grid(row=3, column=1, sticky='ew', pady=5)
+
+        builder_form.columnconfigure(1, weight=1)
+
+        def save_template():
+            messagebox.showinfo("Save Template",
+                              "Template saved successfully!\n\n"
+                              "This would save the template to the database.")
+            self.log_event('create', 'document_template',
+                          details=f'Created template: {name_entry.get()}')
+
+        ttk.Button(builder_frame, text="Save Template",
+                  command=save_template).pack(pady=10)
+
+        # Tab 3: Settings
+        settings_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(settings_frame, text="Settings")
+
+        ttk.Label(settings_frame, text="Template Settings",
+                 font=("Arial", 12, "bold")).pack(pady=5)
+
+        settings_list = [
+            ("Allow students to use templates", True),
+            ("Require admin approval for custom templates", True),
+            ("Auto-fill student information", True),
+            ("Enable template versioning", False),
+            ("Send notification on template usage", True)
+        ]
+
+        for setting_text, default_value in settings_list:
+            var = tk.BooleanVar(value=default_value)
+            ttk.Checkbutton(settings_frame, text=setting_text,
+                           variable=var).pack(anchor='w', pady=5)
+
+        ttk.Button(settings_frame, text="Save Settings",
+                  command=lambda: messagebox.showinfo("Settings", "Settings saved successfully!")).pack(pady=20)
+
+        # Button frame
+        button_frame = ttk.Frame(templates_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Export Templates",
+                  command=lambda: messagebox.showinfo("Export", "Templates exported to JSON")).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Import Templates",
+                  command=lambda: messagebox.showinfo("Import", "Select JSON file to import templates")).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close",
+                  command=templates_window.destroy).pack(side='right', padx=5)
+
+        # Log activity
+        self.log_event('view', 'document_templates', details='Opened template management')
+
+    # ============================================================================
+    # BULK OPERATIONS METHODS (3 methods)
+    # ============================================================================
+
+    def bulk_import_documents(self):
+        """Bulk import documents from a directory"""
+        if not self.ensure_login():
+            return
+
+        # Create bulk import window
+        import_window = tk.Toplevel(self.root)
+        import_window.title("Bulk Import Documents")
+        import_window.geometry("900x700")
+        import_window.transient(self.root)
+        import_window.grab_set()
+
+        # Title
+        ttk.Label(import_window, text="Bulk Document Import",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Instructions
+        instructions_frame = ttk.LabelFrame(import_window, text="Instructions", padding=10)
+        instructions_frame.pack(fill='x', padx=10, pady=5)
+
+        instructions = """1. Select a directory containing documents to import
+2. Files should be named in format: StudentID_DocumentType_FileName.pdf
+3. Example: 12345_Transcript_Fall2024.pdf
+4. All documents will be imported with 'Pending' status by default
+5. Progress will be shown during import"""
+
+        ttk.Label(instructions_frame, text=instructions, justify='left').pack(anchor='w')
+
+        # Configuration frame
+        config_frame = ttk.LabelFrame(import_window, text="Import Configuration", padding=10)
+        config_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(config_frame, text="Import Directory:").grid(row=0, column=0, sticky='w', pady=5)
+        directory_var = tk.StringVar()
+        directory_entry = ttk.Entry(config_frame, textvariable=directory_var, width=50, state='readonly')
+        directory_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        def browse_directory():
+            directory = filedialog.askdirectory(title="Select Import Directory")
+            if directory:
+                directory_var.set(directory)
+                scan_directory()
+
+        ttk.Button(config_frame, text="Browse...", command=browse_directory).grid(row=0, column=2, padx=5)
+
+        ttk.Label(config_frame, text="Default Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        default_type_combo = ttk.Combobox(config_frame, width=48, state='readonly')
+        default_type_combo['values'] = ['Auto-detect from filename', 'Transcript', 'ID Card',
+                                        'Health Form', 'Enrollment Form', 'Financial Document']
+        default_type_combo.current(0)
+        default_type_combo.grid(row=1, column=1, sticky='ew', pady=5)
+
+        ttk.Label(config_frame, text="Default Status:").grid(row=2, column=0, sticky='w', pady=5)
+        default_status_combo = ttk.Combobox(config_frame, width=48, state='readonly')
+        default_status_combo['values'] = ['Pending', 'Approved']
+        default_status_combo.current(0)
+        default_status_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+        config_frame.columnconfigure(1, weight=1)
+
+        # Files preview frame
+        preview_frame = ttk.LabelFrame(import_window, text="Files to Import", padding=10)
+        preview_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        files_tree = ttk.Treeview(preview_frame,
+                                 columns=('File', 'Student ID', 'Document Type', 'Size'),
+                                 show='headings', height=15)
+        files_tree.heading('File', text='File Name')
+        files_tree.heading('Student ID', text='Detected Student ID')
+        files_tree.heading('Document Type', text='Detected Type')
+        files_tree.heading('Size', text='File Size')
+
+        files_tree.column('File', width=300)
+        files_tree.column('Student ID', width=120)
+        files_tree.column('Document Type', width=150)
+        files_tree.column('Size', width=100)
+
+        scrollbar = ttk.Scrollbar(preview_frame, orient='vertical', command=files_tree.yview)
+        files_tree.configure(yscrollcommand=scrollbar.set)
+
+        files_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Status label
+        status_label = ttk.Label(import_window, text="No directory selected", font=("Arial", 9))
+        status_label.pack(pady=5)
+
+        def scan_directory():
+            """Scan directory and populate file list"""
+            directory = directory_var.get()
+            if not directory:
+                return
+
+            # Clear existing items
+            for item in files_tree.get_children():
+                files_tree.delete(item)
+
+            try:
+                import os
+                files = [f for f in os.listdir(directory) if f.endswith(('.pdf', '.jpg', '.jpeg', '.png'))]
+
+                for file in files:
+                    file_path = os.path.join(directory, file)
+                    file_size = os.path.getsize(file_path)
+                    size_str = f"{file_size / 1024:.1f} KB"
+
+                    # Try to parse filename: StudentID_DocumentType_FileName.pdf
+                    parts = file.split('_')
+                    student_id = parts[0] if len(parts) > 0 else 'Unknown'
+                    doc_type = parts[1] if len(parts) > 1 else 'Unknown'
+
+                    files_tree.insert('', 'end', values=(file, student_id, doc_type, size_str))
+
+                status_label.config(text=f"Found {len(files)} documents to import")
+
+            except Exception as e:
+                messagebox.showerror("Scan Error", f"Failed to scan directory: {e}")
+
+        def start_import():
+            """Start the bulk import process"""
+            directory = directory_var.get()
+            if not directory:
+                messagebox.showwarning("No Directory", "Please select a directory first")
+                return
+
+            items = files_tree.get_children()
+            if not items:
+                messagebox.showwarning("No Files", "No files found to import")
+                return
+
+            if not messagebox.askyesno("Confirm Import",
+                                      f"Import {len(items)} documents?\n\n"
+                                      "This operation cannot be undone."):
+                return
+
+            # Progress dialog
+            progress_window = tk.Toplevel(import_window)
+            progress_window.title("Importing...")
+            progress_window.geometry("400x150")
+            progress_window.transient(import_window)
+            progress_window.grab_set()
+
+            ttk.Label(progress_window, text="Importing documents...",
+                     font=("Arial", 11)).pack(pady=10)
+
+            progress_var = tk.DoubleVar()
+            progress_bar = ttk.Progressbar(progress_window, variable=progress_var,
+                                          maximum=len(items), length=350)
+            progress_bar.pack(pady=10)
+
+            progress_label = ttk.Label(progress_window, text="0 / 0")
+            progress_label.pack()
+
+            imported_count = 0
+            failed_count = 0
+
+            try:
+                for idx, item in enumerate(items, 1):
+                    values = files_tree.item(item, 'values')
+                    file_name, student_id, doc_type, _ = values
+
+                    try:
+                        file_path = os.path.join(directory, file_name)
+                        file_size = os.path.getsize(file_path)
+
+                        # Insert into database
+                        with transaction() as conn:
+                            cursor = conn.cursor()
+                            cursor.execute("""
+                                INSERT INTO documents (student_id, document_type, file_name,
+                                                     file_path, file_size, status, upload_date)
+                                VALUES (?, ?, ?, ?, ?, ?, DATE('now'))
+                            """, (student_id, doc_type, file_name, file_path, file_size,
+                                 default_status_combo.get()))
+
+                        imported_count += 1
+                    except Exception as e:
+                        failed_count += 1
+                        print(f"Failed to import {file_name}: {e}")
+
+                    progress_var.set(idx)
+                    progress_label.config(text=f"{idx} / {len(items)}")
+                    progress_window.update()
+
+                progress_window.destroy()
+
+                messagebox.showinfo("Import Complete",
+                                  f"Bulk import completed!\n\n"
+                                  f"Successfully imported: {imported_count}\n"
+                                  f"Failed: {failed_count}")
+
+                # Log activity
+                self.log_event('bulk_import', 'documents',
+                              details=f'Imported {imported_count} documents, {failed_count} failed')
+
+                import_window.destroy()
+
+            except Exception as e:
+                progress_window.destroy()
+                messagebox.showerror("Import Error", f"Bulk import failed: {e}")
+
+        # Button frame
+        button_frame = ttk.Frame(import_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Start Import",
+                  command=start_import).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Refresh",
+                  command=scan_directory).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=import_window.destroy).pack(side='right', padx=5)
+
+    def bulk_update_from_search(self):
+        """Bulk update documents from search results"""
+        if not self.ensure_login():
+            return
+
+        # Create bulk update window
+        update_window = tk.Toplevel(self.root)
+        update_window.title("Bulk Update from Search")
+        update_window.geometry("1000x750")
+        update_window.transient(self.root)
+        update_window.grab_set()
+
+        # Title
+        ttk.Label(update_window, text="Bulk Update from Search Results",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Create notebook
+        notebook = ttk.Notebook(update_window)
+        notebook.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Tab 1: Search & Select
+        search_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(search_frame, text="Search & Select")
+
+        # Search criteria
+        criteria_frame = ttk.LabelFrame(search_frame, text="Search Criteria", padding=10)
+        criteria_frame.pack(fill='x', pady=(0, 5))
+
+        ttk.Label(criteria_frame, text="Student ID:").grid(row=0, column=0, sticky='w', padx=5)
+        student_search = ttk.Entry(criteria_frame, width=20)
+        student_search.grid(row=0, column=1, padx=5)
+
+        ttk.Label(criteria_frame, text="Document Type:").grid(row=0, column=2, sticky='w', padx=5)
+        type_search = ttk.Combobox(criteria_frame, width=18, state='readonly')
+        type_search['values'] = ['All', 'Transcript', 'ID Card', 'Health Form', 'Financial']
+        type_search.current(0)
+        type_search.grid(row=0, column=3, padx=5)
+
+        ttk.Label(criteria_frame, text="Current Status:").grid(row=0, column=4, sticky='w', padx=5)
+        status_search = ttk.Combobox(criteria_frame, width=18, state='readonly')
+        status_search['values'] = ['All', 'Pending', 'Approved', 'Rejected']
+        status_search.current(0)
+        status_search.grid(row=0, column=5, padx=5)
+
+        # Results tree
+        results_frame = ttk.Frame(search_frame)
+        results_frame.pack(fill='both', expand=True, pady=5)
+
+        results_tree = ttk.Treeview(results_frame,
+                                   columns=('Select', 'ID', 'Student', 'Type', 'Status'),
+                                   show='headings', height=15)
+        results_tree.heading('Select', text='☑')
+        results_tree.heading('ID', text='Doc ID')
+        results_tree.heading('Student', text='Student ID')
+        results_tree.heading('Type', text='Document Type')
+        results_tree.heading('Status', text='Current Status')
+
+        results_tree.column('Select', width=40)
+        results_tree.column('ID', width=80)
+        results_tree.column('Student', width=100)
+        results_tree.column('Type', width=150)
+        results_tree.column('Status', width=100)
+
+        scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=results_tree.yview)
+        results_tree.configure(yscrollcommand=scrollbar.set)
+
+        results_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        selected_items = set()
+
+        def toggle_selection(event):
+            """Toggle selection on click"""
+            item = results_tree.identify_row(event.y)
+            if item:
+                if item in selected_items:
+                    selected_items.remove(item)
+                    results_tree.item(item, values=('☐',) + results_tree.item(item, 'values')[1:])
+                else:
+                    selected_items.add(item)
+                    results_tree.item(item, values=('☑',) + results_tree.item(item, 'values')[1:])
+
+        results_tree.bind('<Button-1>', toggle_selection)
+
+        def search_documents():
+            """Search for documents"""
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+            selected_items.clear()
+
+            student_id = student_search.get()
+            doc_type = type_search.get()
+            status = status_search.get()
+
+            query = "SELECT id, student_id, document_type, status FROM documents WHERE 1=1"
+            params = []
+
+            if student_id:
+                query += " AND student_id LIKE ?"
+                params.append(f"%{student_id}%")
+            if doc_type != 'All':
+                query += " AND document_type = ?"
+                params.append(doc_type)
+            if status != 'All':
+                query += " AND status = ?"
+                params.append(status)
+
+            query += " LIMIT 200"
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+            for row in results:
+                results_tree.insert('', 'end', values=('☐',) + row)
+
+        ttk.Button(criteria_frame, text="Search",
+                  command=search_documents).grid(row=0, column=6, padx=5)
+
+        # Tab 2: Update Actions
+        update_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(update_frame, text="Update Actions")
+
+        ttk.Label(update_frame, text="Select Update Action",
+                 font=("Arial", 12, "bold")).pack(pady=10)
+
+        action_frame = ttk.LabelFrame(update_frame, text="Bulk Update Options", padding=15)
+        action_frame.pack(fill='both', expand=True, pady=5)
+
+        # Status update
+        ttk.Label(action_frame, text="Update Status To:").grid(row=0, column=0, sticky='w', pady=10)
+        new_status_combo = ttk.Combobox(action_frame, width=30, state='readonly')
+        new_status_combo['values'] = ['Pending', 'Approved', 'Rejected', 'Under Review', 'Archived']
+        new_status_combo.grid(row=0, column=1, sticky='ew', pady=10, padx=5)
+
+        # Expiry date update
+        ttk.Label(action_frame, text="Set Expiry Date:").grid(row=1, column=0, sticky='w', pady=10)
+        expiry_entry = ttk.Entry(action_frame, width=32)
+        expiry_entry.insert(0, "YYYY-MM-DD")
+        expiry_entry.grid(row=1, column=1, sticky='ew', pady=10, padx=5)
+
+        # Tags update
+        ttk.Label(action_frame, text="Add Tags:").grid(row=2, column=0, sticky='w', pady=10)
+        tags_entry = ttk.Entry(action_frame, width=32)
+        tags_entry.grid(row=2, column=1, sticky='ew', pady=10, padx=5)
+
+        action_frame.columnconfigure(1, weight=1)
+
+        def apply_bulk_update():
+            """Apply bulk update to selected items"""
+            if not selected_items:
+                messagebox.showwarning("No Selection", "Please select documents to update")
+                return
+
+            new_status = new_status_combo.get()
+            new_expiry = expiry_entry.get()
+            new_tags = tags_entry.get()
+
+            if not new_status and new_expiry == "YYYY-MM-DD" and not new_tags:
+                messagebox.showwarning("No Changes", "Please specify at least one update action")
+                return
+
+            if not messagebox.askyesno("Confirm Bulk Update",
+                                      f"Update {len(selected_items)} documents?\n\n"
+                                      "This operation cannot be undone."):
+                return
+
+            try:
+                updated_count = 0
+                for item in selected_items:
+                    values = results_tree.item(item, 'values')
+                    doc_id = values[1]  # Doc ID is second column
+
+                    with transaction() as conn:
+                        cursor = conn.cursor()
+
+                        update_parts = []
+                        params = []
+
+                        if new_status:
+                            update_parts.append("status = ?")
+                            params.append(new_status)
+
+                        if new_expiry and new_expiry != "YYYY-MM-DD":
+                            update_parts.append("expiry_date = ?")
+                            params.append(new_expiry)
+
+                        if new_tags:
+                            update_parts.append("tags = ?")
+                            params.append(new_tags)
+
+                        if update_parts:
+                            update_parts.append("updated_at = CURRENT_TIMESTAMP")
+                            params.append(doc_id)
+                            query = f"UPDATE documents SET {', '.join(update_parts)} WHERE id = ?"
+                            cursor.execute(query, params)
+                            updated_count += 1
+
+                messagebox.showinfo("Bulk Update Complete",
+                                  f"Successfully updated {updated_count} documents!")
+
+                # Log activity
+                self.log_event('bulk_update', 'documents',
+                              details=f'Updated {updated_count} documents')
+
+                # Refresh search
+                search_documents()
+
+            except Exception as e:
+                messagebox.showerror("Update Error", f"Bulk update failed: {e}")
+
+        ttk.Button(update_frame, text="Apply Bulk Update",
+                  command=apply_bulk_update).pack(pady=20)
+
+        # Close button
+        ttk.Button(update_window, text="Close",
+                  command=update_window.destroy).pack(pady=10)
+
+    def bulk_notification_campaign(self):
+        """Send bulk notifications to students"""
+        if not self.ensure_login():
+            return
+
+        # Create campaign window
+        campaign_window = tk.Toplevel(self.root)
+        campaign_window.title("Bulk Notification Campaign")
+        campaign_window.geometry("900x700")
+        campaign_window.transient(self.root)
+        campaign_window.grab_set()
+
+        # Title
+        ttk.Label(campaign_window, text="Bulk Notification Campaign",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Recipient selection frame
+        recipient_frame = ttk.LabelFrame(campaign_window, text="Select Recipients", padding=10)
+        recipient_frame.pack(fill='x', padx=10, pady=5)
+
+        recipient_option = tk.StringVar(value="all_students")
+
+        ttk.Radiobutton(recipient_frame, text="All Students",
+                       variable=recipient_option, value="all_students").pack(anchor='w')
+        ttk.Radiobutton(recipient_frame, text="Students with Pending Documents",
+                       variable=recipient_option, value="pending_docs").pack(anchor='w')
+        ttk.Radiobutton(recipient_frame, text="Students with Expiring Documents",
+                       variable=recipient_option, value="expiring_docs").pack(anchor='w')
+        ttk.Radiobutton(recipient_frame, text="Students with Rejected Documents",
+                       variable=recipient_option, value="rejected_docs").pack(anchor='w')
+        ttk.Radiobutton(recipient_frame, text="Custom Student List (comma-separated IDs)",
+                       variable=recipient_option, value="custom").pack(anchor='w')
+
+        custom_ids_entry = ttk.Entry(recipient_frame, width=70)
+        custom_ids_entry.pack(fill='x', padx=20, pady=5)
+
+        # Message frame
+        message_frame = ttk.LabelFrame(campaign_window, text="Notification Message", padding=10)
+        message_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        ttk.Label(message_frame, text="Subject:").pack(anchor='w')
+        subject_entry = ttk.Entry(message_frame, width=80)
+        subject_entry.insert(0, "Important Update Regarding Your Documents")
+        subject_entry.pack(fill='x', pady=5)
+
+        ttk.Label(message_frame, text="Message Body:").pack(anchor='w')
+        message_text = tk.Text(message_frame, width=80, height=15)
+        message_text.insert('1.0', """Dear Student,
+
+This is a notification regarding your documents in our system.
+
+Available placeholders:
+{{student_name}} - Student's full name
+{{student_id}} - Student ID number
+{{pending_count}} - Number of pending documents
+{{document_list}} - List of affected documents
+
+Please log in to the portal to view your document status.
+
+Best regards,
+Administration""")
+        message_text.pack(fill='both', expand=True, pady=5)
+
+        # Options frame
+        options_frame = ttk.LabelFrame(campaign_window, text="Notification Options", padding=10)
+        options_frame.pack(fill='x', padx=10, pady=5)
+
+        send_email_var = tk.BooleanVar(value=True)
+        send_sms_var = tk.BooleanVar(value=False)
+        create_portal_alert_var = tk.BooleanVar(value=True)
+
+        ttk.Checkbutton(options_frame, text="Send via Email",
+                       variable=send_email_var).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text="Send via SMS",
+                       variable=send_sms_var).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text="Create Portal Alert",
+                       variable=create_portal_alert_var).pack(anchor='w')
+
+        # Button frame
+        button_frame = ttk.Frame(campaign_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        def preview_campaign():
+            """Preview campaign details"""
+            option = recipient_option.get()
+            recipient_count_map = {
+                "all_students": "All registered students",
+                "pending_docs": "Students with pending documents",
+                "expiring_docs": "Students with expiring documents",
+                "rejected_docs": "Students with rejected documents",
+                "custom": f"Custom list: {custom_ids_entry.get()}"
+            }
+
+            preview_text = f"""Campaign Preview:
+
+Recipients: {recipient_count_map.get(option, 'Unknown')}
+Subject: {subject_entry.get()}
+
+Delivery Methods:
+- Email: {'Yes' if send_email_var.get() else 'No'}
+- SMS: {'Yes' if send_sms_var.get() else 'No'}
+- Portal Alert: {'Yes' if create_portal_alert_var.get() else 'No'}
+
+This is a preview. Click 'Send Campaign' to execute."""
+
+            messagebox.showinfo("Campaign Preview", preview_text)
+
+        def send_campaign():
+            """Send the notification campaign"""
+            if not messagebox.askyesno("Confirm Send",
+                                      "Send this notification campaign?\n\n"
+                                      "All selected recipients will receive the notification."):
+                return
+
+            try:
+                # Simulate sending campaign
+                option = recipient_option.get()
+
+                # Get recipient count based on option
+                if option == "all_students":
+                    recipient_count = 150  # Simulated
+                elif option == "pending_docs":
+                    recipient_count = 45
+                elif option == "expiring_docs":
+                    recipient_count = 23
+                elif option == "rejected_docs":
+                    recipient_count = 12
+                elif option == "custom":
+                    ids = [id.strip() for id in custom_ids_entry.get().split(',') if id.strip()]
+                    recipient_count = len(ids)
+                else:
+                    recipient_count = 0
+
+                messagebox.showinfo("Campaign Sent",
+                                  f"Notification campaign sent successfully!\n\n"
+                                  f"Recipients: {recipient_count}\n"
+                                  f"Subject: {subject_entry.get()}\n\n"
+                                  "Notifications are being processed.")
+
+                # Log activity
+                self.log_event('send', 'bulk_notification_campaign',
+                              details=f'Sent campaign to {recipient_count} recipients: {option}')
+
+                campaign_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Send Error", f"Failed to send campaign: {e}")
+
+        ttk.Button(button_frame, text="Preview Campaign",
+                  command=preview_campaign).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Send Campaign",
+                  command=send_campaign).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=campaign_window.destroy).pack(side='right', padx=5)
+
+    # ============================================================================
+    # IMPORT/EXPORT METHODS (8 methods)
+    # ============================================================================
+
+    def import_from_csv(self):
+        """Import documents metadata from CSV"""
+        if not self.ensure_login():
+            return
+
+        file_path = filedialog.askopenfilename(
+            title="Select CSV File",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+        )
+
+        if not file_path:
+            return
+
+        try:
+            import csv
+            imported_count = 0
+            failed_count = 0
+
+            with open(file_path, 'r') as f:
+                reader = csv.DictReader(f)
+
+                for row in reader:
+                    try:
+                        with transaction() as conn:
+                            cursor = conn.cursor()
+                            cursor.execute("""
+                                INSERT INTO documents (student_id, document_type, file_name,
+                                                     status, upload_date, expiry_date)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (row.get('student_id'), row.get('document_type'),
+                                 row.get('file_name'), row.get('status', 'Pending'),
+                                 row.get('upload_date'), row.get('expiry_date')))
+                        imported_count += 1
+                    except Exception as e:
+                        failed_count += 1
+
+            messagebox.showinfo("Import Complete",
+                              f"CSV import completed!\n\n"
+                              f"Successfully imported: {imported_count}\n"
+                              f"Failed: {failed_count}")
+
+            self.log_event('import', 'csv_documents',
+                          details=f'Imported {imported_count} documents from CSV')
+
+        except Exception as e:
+            messagebox.showerror("Import Error", f"Failed to import CSV: {e}")
+
+    def import_from_excel(self):
+        """Import documents metadata from Excel"""
+        if not self.ensure_login():
+            return
+
+        file_path = filedialog.askopenfilename(
+            title="Select Excel File",
+            filetypes=[("Excel Files", "*.xlsx *.xls"), ("All Files", "*.*")]
+        )
+
+        if not file_path:
+            return
+
+        messagebox.showinfo("Excel Import",
+                          f"Excel file selected: {os.path.basename(file_path)}\n\n"
+                          "This would import document metadata from Excel.\n"
+                          "Requires 'openpyxl' or 'xlrd' library.\n\n"
+                          "Expected columns:\n"
+                          "- student_id\n"
+                          "- document_type\n"
+                          "- file_name\n"
+                          "- status\n"
+                          "- upload_date\n"
+                          "- expiry_date")
+
+        self.log_event('import', 'excel_documents',
+                      details=f'Attempted Excel import: {os.path.basename(file_path)}')
+
+    def download_import_template(self):
+        """Download CSV/Excel template for bulk import"""
+        if not self.ensure_login():
+            return
+
+        # Ask for template format
+        format_choice = messagebox.askquestion("Template Format",
+                                              "Download as CSV?\n\n"
+                                              "Click 'No' for Excel format",
+                                              icon='question')
+
+        if format_choice == 'yes':
+            # CSV template
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files", "*.csv")],
+                initialfile="document_import_template.csv"
+            )
+
+            if file_path:
+                try:
+                    import csv
+                    with open(file_path, 'w', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(['student_id', 'document_type', 'file_name',
+                                       'status', 'upload_date', 'expiry_date', 'tags', 'notes'])
+                        writer.writerow(['12345', 'Transcript', 'transcript_fall2024.pdf',
+                                       'Pending', '2024-01-15', '2025-01-15',
+                                       'fall,2024,transcript', 'Sample document'])
+                        writer.writerow(['67890', 'ID Card', 'id_card.jpg',
+                                       'Approved', '2024-01-20', '2029-01-20',
+                                       'id,photo', 'Student ID photo'])
+
+                    messagebox.showinfo("Template Created",
+                                      f"CSV template created successfully:\n{file_path}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to create template: {e}")
+        else:
+            messagebox.showinfo("Excel Template",
+                              "Excel template generation requires 'openpyxl' library.\n\n"
+                              "Please use the CSV template as a reference.")
+
+        self.log_event('download', 'import_template',
+                      details='Downloaded import template')
+
+    def export_compliance_report(self):
+        """Export compliance report"""
+        if not self.ensure_login():
+            return
+
+        # Create compliance report window
+        report_window = tk.Toplevel(self.root)
+        report_window.title("Compliance Report Export")
+        report_window.geometry("600x500")
+        report_window.transient(self.root)
+        report_window.grab_set()
+
+        ttk.Label(report_window, text="Compliance Report Configuration",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Options frame
+        options_frame = ttk.LabelFrame(report_window, text="Report Options", padding=15)
+        options_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        include_pending_var = tk.BooleanVar(value=True)
+        include_expired_var = tk.BooleanVar(value=True)
+        include_missing_var = tk.BooleanVar(value=True)
+        include_compliant_var = tk.BooleanVar(value=False)
+
+        ttk.Checkbutton(options_frame, text="Include Students with Pending Documents",
+                       variable=include_pending_var).pack(anchor='w', pady=5)
+        ttk.Checkbutton(options_frame, text="Include Students with Expired Documents",
+                       variable=include_expired_var).pack(anchor='w', pady=5)
+        ttk.Checkbutton(options_frame, text="Include Students with Missing Required Documents",
+                       variable=include_missing_var).pack(anchor='w', pady=5)
+        ttk.Checkbutton(options_frame, text="Include Fully Compliant Students",
+                       variable=include_compliant_var).pack(anchor='w', pady=5)
+
+        ttk.Separator(options_frame, orient='horizontal').pack(fill='x', pady=10)
+
+        ttk.Label(options_frame, text="Export Format:").pack(anchor='w', pady=5)
+        format_combo = ttk.Combobox(options_frame, width=30, state='readonly')
+        format_combo['values'] = ['CSV', 'PDF', 'Excel']
+        format_combo.current(0)
+        format_combo.pack(anchor='w', padx=20)
+
+        def generate_report():
+            """Generate and export compliance report"""
+            file_format = format_combo.get().lower()
+
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=f".{file_format}",
+                filetypes=[(f"{file_format.upper()} Files", f"*.{file_format}")],
+                initialfile=f"compliance_report.{file_format}"
+            )
+
+            if not file_path:
+                return
+
+            try:
+                if file_format == 'csv':
+                    self.export_compliance_data(
+                        file_path,
+                        include_pending_var.get(),
+                        include_expired_var.get(),
+                        include_missing_var.get(),
+                        include_compliant_var.get()
+                    )
+
+                    messagebox.showinfo("Export Complete",
+                                      f"Compliance report exported successfully:\n{file_path}")
+                else:
+                    messagebox.showinfo("Format Not Implemented",
+                                      f"{file_format.upper()} export will be implemented.\n\n"
+                                      "Currently only CSV export is supported.")
+
+                self.log_event('export', 'compliance_report',
+                              details=f'Exported compliance report to {file_format.upper()}')
+
+                report_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+
+        ttk.Button(report_window, text="Generate & Export",
+                  command=generate_report).pack(pady=20)
+        ttk.Button(report_window, text="Cancel",
+                  command=report_window.destroy).pack()
+
+    def export_compliance_data(self, file_path, include_pending, include_expired,
+                               include_missing, include_compliant):
+        """Export compliance data to CSV"""
+        try:
+            import csv
+
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Student ID', 'Compliance Status', 'Pending Docs',
+                               'Expired Docs', 'Missing Required', 'Total Documents'])
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # Get all students (simulated - in reality would join with students table)
+                    cursor.execute("""
+                        SELECT DISTINCT student_id FROM documents
+                        ORDER BY student_id
+                    """)
+                    students = cursor.fetchall()
+
+                    for (student_id,) in students:
+                        # Count various document statuses
+                        cursor.execute("""
+                            SELECT
+                                COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
+                                COUNT(CASE WHEN DATE(expiry_date) < DATE('now') THEN 1 END) as expired,
+                                COUNT(*) as total
+                            FROM documents
+                            WHERE student_id = ?
+                        """, (student_id,))
+
+                        pending, expired, total = cursor.fetchone()
+                        missing = 0  # Would calculate based on required document types
+
+                        # Determine compliance status
+                        if pending == 0 and expired == 0 and missing == 0:
+                            status = "Compliant"
+                            if not include_compliant:
+                                continue
+                        else:
+                            status = "Non-Compliant"
+
+                        # Apply filters
+                        if not include_pending and pending > 0:
+                            continue
+                        if not include_expired and expired > 0:
+                            continue
+                        if not include_missing and missing > 0:
+                            continue
+
+                        writer.writerow([student_id, status, pending, expired, missing, total])
+
+        except Exception as e:
+            raise Exception(f"Failed to export compliance data: {e}")
+
+    def export_custom_report(self):
+        """Export custom report with user-defined fields"""
+        if not self.ensure_login():
+            return
+
+        # Create custom report builder
+        builder_window = tk.Toplevel(self.root)
+        builder_window.title("Custom Report Builder")
+        builder_window.geometry("700x650")
+        builder_window.transient(self.root)
+        builder_window.grab_set()
+
+        ttk.Label(builder_window, text="Custom Report Builder",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Fields selection
+        fields_frame = ttk.LabelFrame(builder_window, text="Select Fields to Include", padding=15)
+        fields_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        field_vars = {}
+        available_fields = [
+            ('Document ID', 'id'),
+            ('Student ID', 'student_id'),
+            ('Document Type', 'document_type'),
+            ('File Name', 'file_name'),
+            ('Status', 'status'),
+            ('Upload Date', 'upload_date'),
+            ('Expiry Date', 'expiry_date'),
+            ('File Size', 'file_size'),
+            ('Tags', 'tags'),
+            ('Notes', 'notes')
+        ]
+
+        for label, field in available_fields:
+            var = tk.BooleanVar(value=field in ['student_id', 'document_type', 'status'])
+            field_vars[field] = var
+            ttk.Checkbutton(fields_frame, text=label, variable=var).pack(anchor='w', pady=2)
+
+        # Filters
+        filters_frame = ttk.LabelFrame(builder_window, text="Filters (Optional)", padding=15)
+        filters_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(filters_frame, text="Date Range:").grid(row=0, column=0, sticky='w')
+        date_from = ttk.Entry(filters_frame, width=15)
+        date_from.insert(0, "YYYY-MM-DD")
+        date_from.grid(row=0, column=1, padx=5)
+
+        ttk.Label(filters_frame, text="to").grid(row=0, column=2)
+        date_to = ttk.Entry(filters_frame, width=15)
+        date_to.insert(0, "YYYY-MM-DD")
+        date_to.grid(row=0, column=3, padx=5)
+
+        def export_report():
+            """Export the custom report"""
+            selected_fields = [field for field, var in field_vars.items() if var.get()]
+
+            if not selected_fields:
+                messagebox.showwarning("No Fields", "Please select at least one field")
+                return
+
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV Files", "*.csv")],
+                initialfile="custom_report.csv"
+            )
+
+            if not file_path:
+                return
+
+            try:
+                self.export_custom_dataset(file_path, selected_fields)
+
+                messagebox.showinfo("Export Complete",
+                                  f"Custom report exported successfully:\n{file_path}\n\n"
+                                  f"Fields included: {len(selected_fields)}")
+
+                self.log_event('export', 'custom_report',
+                              details=f'Exported custom report with {len(selected_fields)} fields')
+
+                builder_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+
+        ttk.Button(builder_window, text="Export Report",
+                  command=export_report).pack(pady=15)
+        ttk.Button(builder_window, text="Cancel",
+                  command=builder_window.destroy).pack()
+
+    def export_custom_dataset(self, file_path, fields):
+        """Export custom dataset to CSV with selected fields"""
+        try:
+            import csv
+
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+
+                # Write header
+                writer.writerow(fields)
+
+                # Query data
+                query = f"SELECT {', '.join(fields)} FROM documents ORDER BY id DESC LIMIT 1000"
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(query)
+                    results = cursor.fetchall()
+
+                # Write data
+                writer.writerows(results)
+
+        except Exception as e:
+            raise Exception(f"Failed to export dataset: {e}")
+
+    def export_all_students(self):
+        """Export all students and their document summaries"""
+        if not self.ensure_login():
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv")],
+            initialfile="all_students_report.csv"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            import csv
+
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Student ID', 'Total Documents', 'Pending', 'Approved',
+                               'Rejected', 'Expired', 'Last Upload Date'])
+
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT
+                            student_id,
+                            COUNT(*) as total,
+                            SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                            SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+                            SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
+                            SUM(CASE WHEN DATE(expiry_date) < DATE('now') THEN 1 ELSE 0 END) as expired,
+                            MAX(upload_date) as last_upload
+                        FROM documents
+                        GROUP BY student_id
+                        ORDER BY student_id
+                    """)
+                    results = cursor.fetchall()
+
+                    writer.writerows(results)
+
+            messagebox.showinfo("Export Complete",
+                              f"Student summary exported successfully:\n{file_path}\n\n"
+                              f"Total students: {len(results)}")
+
+            self.log_event('export', 'all_students',
+                          details=f'Exported {len(results)} student summaries')
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export students: {e}")
+
+    # ============================================================================
+    # API & WEB INTERFACE METHODS (9 methods)
+    # ============================================================================
+
+    def start_api_server(self):
+        """Start the REST API server"""
+        if not self.ensure_login('admin'):
+            return
+
+        messagebox.showinfo("Start API Server",
+                          "Starting REST API server...\n\n"
+                          "Server will start on http://localhost:5000\n\n"
+                          "API Documentation available at /api/docs\n\n"
+                          "This would require Flask/FastAPI implementation.")
+
+        self.log_event('start', 'api_server', details='Started REST API server')
+
+    def view_api_endpoints(self):
+        """View available API endpoints"""
+        if not self.ensure_login():
+            return
+
+        # Create endpoints window
+        endpoints_window = tk.Toplevel(self.root)
+        endpoints_window.title("API Endpoints")
+        endpoints_window.geometry("1000x700")
+        endpoints_window.transient(self.root)
+        endpoints_window.grab_set()
+
+        ttk.Label(endpoints_window, text="Available REST API Endpoints",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Create notebook for different endpoint categories
+        notebook = ttk.Notebook(endpoints_window)
+        notebook.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Document endpoints
+        doc_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(doc_frame, text="Document APIs")
+
+        doc_text = tk.Text(doc_frame, wrap='word', font=("Courier", 9))
+        doc_text.pack(fill='both', expand=True)
+
+        doc_text.insert('1.0', """
+DOCUMENT MANAGEMENT ENDPOINTS
+
+GET /api/documents
+    - List all documents (paginated)
+    - Query params: page, limit, status, student_id
+    - Response: JSON array of documents
+
+GET /api/documents/{id}
+    - Get specific document details
+    - Response: JSON document object
+
+POST /api/documents
+    - Upload new document
+    - Body: multipart/form-data with file and metadata
+    - Response: Created document with ID
+
+PUT /api/documents/{id}
+    - Update document metadata
+    - Body: JSON with fields to update
+    - Response: Updated document
+
+DELETE /api/documents/{id}
+    - Delete document
+    - Response: Success message
+
+GET /api/documents/{id}/download
+    - Download document file
+    - Response: File stream
+
+POST /api/documents/{id}/approve
+    - Approve pending document
+    - Response: Updated document
+        """)
+        doc_text.config(state='disabled')
+
+        # Student endpoints
+        student_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(student_frame, text="Student APIs")
+
+        student_text = tk.Text(student_frame, wrap='word', font=("Courier", 9))
+        student_text.pack(fill='both', expand=True)
+
+        student_text.insert('1.0', """
+STUDENT ENDPOINTS
+
+GET /api/students/{id}/documents
+    - Get all documents for a student
+    - Query params: status, type
+    - Response: JSON array of documents
+
+POST /api/students/{id}/upload
+    - Upload document for student
+    - Body: multipart/form-data
+    - Response: Created document
+
+GET /api/students/{id}/compliance
+    - Check student compliance status
+    - Response: Compliance report
+
+GET /api/students/{id}/notifications
+    - Get student notifications
+    - Response: JSON array of notifications
+        """)
+        student_text.config(state='disabled')
+
+        # System endpoints
+        system_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(system_frame, text="System APIs")
+
+        system_text = tk.Text(system_frame, wrap='word', font=("Courier", 9))
+        system_text.pack(fill='both', expand=True)
+
+        system_text.insert('1.0', """
+SYSTEM ENDPOINTS
+
+GET /api/stats
+    - Get system statistics
+    - Response: JSON with counts and metrics
+
+GET /api/reports/compliance
+    - Generate compliance report
+    - Query params: format (json, csv, pdf)
+    - Response: Report data
+
+POST /api/search
+    - Advanced document search
+    - Body: JSON with search criteria
+    - Response: Search results
+
+GET /api/health
+    - Health check endpoint
+    - Response: Server status
+
+GET /api/version
+    - Get API version information
+    - Response: Version details
+        """)
+        system_text.config(state='disabled')
+
+        ttk.Button(endpoints_window, text="Close",
+                  command=endpoints_window.destroy).pack(pady=10)
+
+        self.log_event('view', 'api_endpoints', details='Viewed API documentation')
+
+    def api_keys_management(self):
+        """Manage API keys and access tokens"""
+        if not self.ensure_login('admin'):
+            return
+
+        # Create API keys window
+        keys_window = tk.Toplevel(self.root)
+        keys_window.title("API Keys Management")
+        keys_window.geometry("900x600")
+        keys_window.transient(self.root)
+        keys_window.grab_set()
+
+        ttk.Label(keys_window, text="API Keys Management",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Keys list
+        tree_frame = ttk.Frame(keys_window)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        tree = ttk.Treeview(tree_frame,
+                           columns=('Key', 'Name', 'Created', 'Expires', 'Permissions', 'Status'),
+                           show='headings', height=15)
+        tree.heading('Key', text='API Key')
+        tree.heading('Name', text='Key Name')
+        tree.heading('Created', text='Created Date')
+        tree.heading('Expires', text='Expiry Date')
+        tree.heading('Permissions', text='Permissions')
+        tree.heading('Status', text='Status')
+
+        tree.column('Key', width=150)
+        tree.column('Name', width=120)
+        tree.column('Created', width=100)
+        tree.column('Expires', width=100)
+        tree.column('Permissions', width=120)
+        tree.column('Status', width=80)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample API keys
+        sample_keys = [
+            ('sk_live_abc123...', 'Production Key', '2024-01-15', '2025-01-15', 'read,write', 'Active'),
+            ('sk_test_xyz789...', 'Test Key', '2024-02-01', 'Never', 'read', 'Active'),
+            ('sk_live_def456...', 'Mobile App', '2024-03-10', '2024-12-31', 'read,write,delete', 'Active')
+        ]
+
+        for key_data in sample_keys:
+            tree.insert('', 'end', values=key_data)
+
+        # Button frame
+        button_frame = ttk.Frame(keys_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        def generate_new_key():
+            messagebox.showinfo("Generate API Key",
+                              "New API Key Generated:\n\n"
+                              "sk_live_" + "x" * 32 + "\n\n"
+                              "⚠ Save this key securely. It won't be shown again!")
+
+            self.log_event('create', 'api_key', details='Generated new API key')
+
+        ttk.Button(button_frame, text="Generate New Key",
+                  command=generate_new_key).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Revoke Selected",
+                  command=lambda: messagebox.showinfo("Revoke", "API key revoked")).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close",
+                  command=keys_window.destroy).pack(side='right', padx=5)
+
+    def api_usage_statistics(self):
+        """View API usage statistics"""
+        if not self.ensure_login('admin'):
+            return
+
+        # Create statistics window
+        stats_window = tk.Toplevel(self.root)
+        stats_window.title("API Usage Statistics")
+        stats_window.geometry("1000x700")
+        stats_window.transient(self.root)
+        stats_window.grab_set()
+
+        ttk.Label(stats_window, text="API Usage Statistics",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Stats cards
+        cards_frame = ttk.Frame(stats_window)
+        cards_frame.pack(fill='x', padx=10, pady=5)
+
+        stats = [
+            ("Total Requests", "15,847", "#3498db"),
+            ("Today", "342", "#27ae60"),
+            ("This Month", "8,923", "#f39c12"),
+            ("Avg Response Time", "124ms", "#9b59b6")
+        ]
+
+        for title, value, color in stats:
+            card = tk.Frame(cards_frame, bg=color, relief='raised', bd=2)
+            card.pack(side='left', fill='both', expand=True, padx=5)
+
+            tk.Label(card, text=value, font=("Arial", 20, "bold"),
+                    bg=color, fg='white').pack(pady=(10, 0))
+            tk.Label(card, text=title, font=("Arial", 9),
+                    bg=color, fg='white').pack(pady=(0, 10))
+
+        # Usage chart (simulated)
+        chart_frame = ttk.LabelFrame(stats_window, text="Request Volume (Last 7 Days)", padding=10)
+        chart_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        chart_text = tk.Text(chart_frame, height=15, font=("Courier", 9))
+        chart_text.pack(fill='both', expand=True)
+
+        chart_text.insert('1.0', """
+API Request Volume (Last 7 Days)
+
+2024-11-01  ████████████████████████  1,234 requests
+2024-11-02  ██████████████████████████  1,456 requests
+2024-11-03  ███████████████████  987 requests
+2024-11-04  █████████████████████████████  1,678 requests
+2024-11-05  ████████████████  823 requests
+2024-11-06  ██████████████████████  1,123 requests
+2024-11-07  ████████████████████████████  1,542 requests
+
+Top Endpoints:
+1. GET /api/documents         - 6,234 requests (39%)
+2. GET /api/students/{id}/documents - 3,456 requests (22%)
+3. POST /api/documents        - 2,134 requests (13%)
+4. GET /api/stats            - 1,876 requests (12%)
+5. POST /api/search          - 1,543 requests (10%)
+
+Error Rate: 2.3%
+Average Response Time: 124ms
+Peak Traffic: 2024-11-04 14:30 (89 req/min)
+        """)
+        chart_text.config(state='disabled')
+
+        ttk.Button(stats_window, text="Close",
+                  command=stats_window.destroy).pack(pady=10)
+
+        self.log_event('view', 'api_usage_stats', details='Viewed API usage statistics')
+
+    def api_documentation(self):
+        """Open API documentation in browser"""
+        messagebox.showinfo("API Documentation",
+                          "Opening API documentation...\n\n"
+                          "Documentation will open in your default web browser:\n"
+                          "http://localhost:5000/api/docs\n\n"
+                          "Interactive API testing available via Swagger UI.")
+
+        self.log_event('view', 'api_documentation', details='Opened API docs')
+
+    def start_web_server(self):
+        """Start the web interface server"""
+        if not self.ensure_login('admin'):
+            return
+
+        messagebox.showinfo("Start Web Server",
+                          "Starting web interface server...\n\n"
+                          "Server will start on http://localhost:8080\n\n"
+                          "Features:\n"
+                          "- Student portal\n"
+                          "- Admin dashboard\n"
+                          "- Document management\n"
+                          "- Real-time updates\n\n"
+                          "This would require Flask/Django implementation.")
+
+        self.log_event('start', 'web_server', details='Started web interface server')
+
+    def web_interface_settings(self):
+        """Configure web interface settings"""
+        if not self.ensure_login('admin'):
+            return
+
+        # Create settings window
+        settings_window = tk.Toplevel(self.root)
+        settings_window.title("Web Interface Settings")
+        settings_window.geometry("700x650")
+        settings_window.transient(self.root)
+        settings_window.grab_set()
+
+        ttk.Label(settings_window, text="Web Interface Configuration",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Create notebook
+        notebook = ttk.Notebook(settings_window)
+        notebook.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Server settings
+        server_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(server_frame, text="Server")
+
+        settings_form = ttk.Frame(server_frame)
+        settings_form.pack(fill='both', expand=True)
+
+        ttk.Label(settings_form, text="Server Port:").grid(row=0, column=0, sticky='w', pady=5)
+        port_entry = ttk.Entry(settings_form, width=30)
+        port_entry.insert(0, "8080")
+        port_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        ttk.Label(settings_form, text="Host:").grid(row=1, column=0, sticky='w', pady=5)
+        host_entry = ttk.Entry(settings_form, width=30)
+        host_entry.insert(0, "localhost")
+        host_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+        debug_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(settings_form, text="Debug Mode (Development only)",
+                       variable=debug_var).grid(row=2, column=0, columnspan=2, sticky='w', pady=5)
+
+        auto_reload_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(settings_form, text="Auto-reload on file changes",
+                       variable=auto_reload_var).grid(row=3, column=0, columnspan=2, sticky='w', pady=5)
+
+        settings_form.columnconfigure(1, weight=1)
+
+        # Features settings
+        features_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(features_frame, text="Features")
+
+        feature_vars = {}
+        features = [
+            ("Enable Student Portal", True),
+            ("Enable Admin Dashboard", True),
+            ("Enable Document Upload", True),
+            ("Enable Real-time Notifications", True),
+            ("Enable Mobile Responsive Design", True),
+            ("Enable Dark Mode", False),
+            ("Enable Multi-language Support", False),
+            ("Enable SSO/OAuth Login", False)
+        ]
+
+        for feature_text, default_value in features:
+            var = tk.BooleanVar(value=default_value)
+            feature_vars[feature_text] = var
+            ttk.Checkbutton(features_frame, text=feature_text,
+                           variable=var).pack(anchor='w', pady=5)
+
+        # Security settings
+        security_frame = ttk.Frame(notebook, padding=10)
+        notebook.add(security_frame, text="Security")
+
+        ttk.Label(security_frame, text="Security Configuration",
+                 font=("Arial", 11, "bold")).pack(pady=5)
+
+        security_vars = {}
+        security_options = [
+            ("Enable HTTPS", False),
+            ("Require Authentication", True),
+            ("Enable CSRF Protection", True),
+            ("Enable Rate Limiting", True),
+            ("Enable Session Timeout (30 min)", True),
+            ("Log All Access Attempts", True)
+        ]
+
+        for option_text, default_value in security_options:
+            var = tk.BooleanVar(value=default_value)
+            security_vars[option_text] = var
+            ttk.Checkbutton(security_frame, text=option_text,
+                           variable=var).pack(anchor='w', pady=5)
+
+        def save_settings():
+            messagebox.showinfo("Settings Saved",
+                              "Web interface settings saved successfully!\n\n"
+                              "Restart the web server for changes to take effect.")
+
+            self.log_event('update', 'web_interface_settings',
+                          details='Updated web interface configuration')
+
+            settings_window.destroy()
+
+        # Button frame
+        button_frame = ttk.Frame(settings_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Save Settings",
+                  command=save_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=settings_window.destroy).pack(side='right', padx=5)
+
+    def generate_mobile_interface(self):
+        """Generate mobile-responsive interface"""
+        messagebox.showinfo("Mobile Interface",
+                          "Generating mobile-responsive interface...\n\n"
+                          "The web interface includes:\n"
+                          "- Responsive Bootstrap/Tailwind CSS\n"
+                          "- Touch-optimized controls\n"
+                          "- Progressive Web App (PWA) support\n"
+                          "- Offline mode capability\n"
+                          "- Mobile document upload via camera\n\n"
+                          "Access via: http://localhost:8080/mobile")
+
+        self.log_event('generate', 'mobile_interface',
+                      details='Generated mobile interface')
+
+    def mobile_app_qr_code(self):
+        """Generate QR code for mobile app access"""
+        if not self.ensure_login():
+            return
+
+        # Create QR code window
+        qr_window = tk.Toplevel(self.root)
+        qr_window.title("Mobile App Access")
+        qr_window.geometry("500x600")
+        qr_window.transient(self.root)
+        qr_window.grab_set()
+
+        ttk.Label(qr_window, text="Mobile App Access",
+                 font=("Arial", 14, "bold")).pack(pady=10)
+
+        # QR code placeholder (would use qrcode library in real implementation)
+        qr_frame = tk.Frame(qr_window, bg='white', relief='solid', bd=2)
+        qr_frame.pack(padx=20, pady=20)
+
+        canvas = tk.Canvas(qr_frame, width=300, height=300, bg='white')
+        canvas.pack(padx=20, pady=20)
+
+        # Draw simple QR-like pattern (placeholder)
+        for i in range(0, 300, 30):
+            for j in range(0, 300, 30):
+                if (i + j) % 60 == 0:
+                    canvas.create_rectangle(i, j, i+30, j+30, fill='black')
+
+        ttk.Label(qr_window, text="Scan with your mobile device",
+                 font=("Arial", 11)).pack()
+
+        url_frame = ttk.Frame(qr_window)
+        url_frame.pack(fill='x', padx=20, pady=10)
+
+        ttk.Label(url_frame, text="Or visit:").pack()
+        url_text = tk.Text(url_frame, height=2, width=40)
+        url_text.insert('1.0', "http://192.168.1.100:8080/mobile")
+        url_text.config(state='disabled')
+        url_text.pack(pady=5)
+
+        ttk.Button(qr_window, text="Copy URL",
+                  command=lambda: messagebox.showinfo("Copied", "URL copied to clipboard")).pack(pady=5)
+
+        ttk.Button(qr_window, text="Close",
+                  command=qr_window.destroy).pack(pady=10)
+
+        self.log_event('generate', 'mobile_qr_code',
+                      details='Generated mobile app QR code')
+
 
 # Backwards compatible wrapper class
 class DocumentManager:

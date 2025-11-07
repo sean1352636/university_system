@@ -9,6 +9,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Advanced Features: 35 Methods (Search, Operations, Bulk, Import/Export, API)** (2025-11-07)
+- **Issue**: Document Manager GUI needed advanced search, document operations, bulk operations, import/export capabilities, and API/Web interface management
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 13361-16517, ~3158 lines)
+- **File Size**: Now 17,161 total lines (from 14,003 → 17,161 = +3158 lines added)
+- **Added 35 comprehensive methods across 5 major categories**:
+
+  **SEARCH & ANALYSIS (8 methods)**:
+  - `advanced_search()` - Multi-criteria search interface (Student ID, Type, Status, Date Range, Tags, Filename, Expiry)
+  - `execute_advanced_search()` - Execute search with dynamic SQL query building
+  - `display_dashboard()` - Main dashboard with 4-tab notebook (Overview, Activity, Alerts, Performance)
+  - `display_quick_stats()` - Stat cards display (Total, Pending, Approved, Expiring Soon)
+  - `display_status_overview()` - Status breakdown with percentages
+  - `display_recent_activity()` - Activity feed (last 50 actions)
+  - `display_expiry_alerts()` - Expiry alerts with color coding and filters
+  - `display_performance_metrics()` - System metrics (daily uploads, processing time, type distribution)
+
+  **DOCUMENT OPERATIONS (7 methods)**:
+  - `upload_student_document()` - Upload interface with file browser, metadata, tags, notes
+  - `check_document_expiry()` - Expiry checker with 4 stat cards and filterable list
+  - `update_document_status()` - Status updater with audit trail and notifications
+  - `view_document_types()` - Document types manager (list/add/edit/delete)
+  - `modify_document_type()` - Add/Edit/Delete document types with validation
+  - `document_type_management()` - Wrapper for view_document_types
+  - `manage_document_templates()` - Template manager with builder and placeholders
+
+  **BULK OPERATIONS (3 methods)**:
+  - `bulk_import_documents()` - Directory scanner with auto-detect filename parsing
+  - `bulk_update_from_search()` - Search & select documents for bulk status/expiry/tags update
+  - `bulk_notification_campaign()` - Send bulk notifications with recipient filters and message templates
+
+  **IMPORT/EXPORT (8 methods)**:
+  - `import_from_csv()` - Import document metadata from CSV with success/failure counts
+  - `import_from_excel()` - Excel import (requires openpyxl/xlrd)
+  - `download_import_template()` - Generate CSV template with sample data
+  - `export_compliance_report()` - Configurable compliance report (Pending/Expired/Missing/Compliant)
+  - `export_compliance_data()` - Export compliance data to CSV
+  - `export_custom_report()` - Custom field selector with date filters
+  - `export_custom_dataset()` - Export selected fields to CSV (up to 1000 records)
+  - `export_all_students()` - Student summaries with document counts and statuses
+
+  **API & WEB INTERFACE (9 methods)**:
+  - `start_api_server()` - Start REST API server (Flask/FastAPI placeholder)
+  - `view_api_endpoints()` - API documentation viewer with 15 endpoints across 3 categories
+  - `api_keys_management()` - Generate/revoke API keys with metadata tracking
+  - `api_usage_statistics()` - Usage stats with request volume charts and top endpoints
+  - `api_documentation()` - Open Swagger UI documentation
+  - `start_web_server()` - Start web interface (Flask/Django placeholder)
+  - `web_interface_settings()` - 3-tab config (Server, Features, Security)
+  - `generate_mobile_interface()` - Mobile responsive interface info
+  - `mobile_app_qr_code()` - QR code generator for mobile access
+
+- **Technical Highlights**:
+  - Advanced search: 8 filter criteria with parameterized SQL queries
+  - Color-coded treeview rows (red/orange/yellow for urgency)
+  - Progress bars for long operations (import, bulk update)
+  - Stat cards for visual metrics throughout
+  - CSV export capabilities on all data views
+  - Bulk operations with checkbox multi-select
+  - Template system with {{placeholder}} support
+  - API documentation with REST endpoints
+  - Web server configuration with security options
+  - QR code canvas for mobile access
+  - Activity logging for all CRUD operations
+  - Modal dialogs with transient/grab_set pattern
+  - Notebook widgets for organized multi-tab interfaces
+
 **Document Manager GUI - Menu Systems & Navigation: 10 Methods (Role-Based Menu System)** (2025-11-07)
 - **Issue**: Document Manager GUI needed organized navigation and role-based menu systems to access all 53+ features
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 12502-13360, ~858 lines)
