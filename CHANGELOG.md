@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Database & Path Fixes** (2025-11-07)
+- **Issue**: Multiple database schema mismatches and incorrect file paths in Document Manager
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py`
+- **Bug Fixes**:
+  1. **Notification INSERT Errors** (lines 1074-1078, 2035-2037):
+     - Fixed "no such column: user_id" error in notifications table
+     - Removed non-existent `user_id` column from INSERT statements
+     - Changed `created_datetime` → `created_date` (matches actual schema)
+     - Before: `INSERT INTO notifications (user_id, recipient_id, ..., created_datetime, ...)`
+     - After: `INSERT INTO notifications (recipient_id, ..., created_date, ...)`
+     - Fixed in both upload notification and general notification functions
+  2. **Database Connection Fallback** (lines 23-26):
+     - Fixed incorrect fallback database path construction
+     - Removed complex path calculation that could create wrong database location
+     - Now properly uses `DEFAULT_DB_PATH` from infrastructure
+     - Ensures single centralized database is used
+  3. **Document Storage Paths** (lines 17, 1022-1023, 4130-4136):
+     - Added import of centralized paths module
+     - Changed hardcoded `'student_documents'` → `paths.UPLOAD_DIR / 'student_documents'`
+     - Fixed document upload storage location (line 1022)
+     - Fixed backup function to use centralized path (line 4130)
+     - All document files now stored in correct centralized location
+
+**Database Schema Reference:**
+- notifications table columns: recipient_id, notification_type, title, message, created_date, sent_date, is_read, is_sent, priority, related_document_id
+- No user_id column exists in notifications table
+
+**Results:**
+- Document Manager now correctly connected to centralized database
+- All notification operations work without SQL errors
+- Documents stored in proper centralized upload directory
+- Backups include documents from correct location
+- No more "no such column" or "unable to open database" errors
+
 **Security Dashboard - Fix Encryption Data Loading Error** (2025-11-07)
 - **Issue**: `sqlite3.OperationalError: no such column: key_type` when loading encryption data
 - **Location**: `university_system/infrastructure/security/data_encryption.py` (lines 605-632)

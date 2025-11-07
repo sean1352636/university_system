@@ -14,20 +14,16 @@ import threading
 import time
 from PIL import Image, ImageTk
 import webbrowser
+from university_system.modules.shared.constants import paths
 
 # Import the original classes to maintain backwards compatibility
 try:
     from university_system.infrastructure.database.db import DatabaseManager, get_connection
     from university_system.infrastructure.auth.user_authentication import UserAuth, get_current_user
 except ImportError:
-    # Fallback for backwards compatibility. Compute the central database path
-    # relative to this file so that a single student_records.db is used
-    # throughout the application. Avoid creating a local database in the
-    # current working directory.
-    from pathlib import Path
+    # Fallback for backwards compatibility
+    # Use the centralized database path defined in the infrastructure
     def get_connection():
-        base_dir = Path(__file__).resolve().parents[1]  # refactored
-        db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
     def get_current_user():
@@ -1023,7 +1019,7 @@ class DocumentManagerGUI:
             existing_doc = cursor.fetchone()
             
             # Create document directory if it doesn't exist
-            doc_dir = os.path.join('student_documents', student_id)
+            doc_dir = paths.UPLOAD_DIR / 'student_documents' / student_id
             os.makedirs(doc_dir, exist_ok=True)
             
             # Copy file to document directory
@@ -1071,9 +1067,9 @@ class DocumentManagerGUI:
             
             # Create notification
             cursor.execute('''
-            INSERT INTO notifications (user_id, recipient_id, notification_type, title, message, created_datetime, related_document_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (student_id, student_id, 'document_uploaded', 'Document Uploaded',
+            INSERT INTO notifications (recipient_id, notification_type, title, message, created_date, related_document_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''', (student_id, 'document_uploaded', 'Document Uploaded',
                   f'Your document has been uploaded and is pending verification.',
                   datetime.now().strftime('%Y-%m-%d %H:%M:%S'), document_id))
             
@@ -2032,9 +2028,9 @@ Total Documents: {doc_count}
                 cursor = conn.cursor()
                 
                 cursor.execute('''
-                INSERT INTO notifications (user_id, recipient_id, notification_type, title, message, created_datetime)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (student_id, student_id, 'general', subject, message, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO notifications (recipient_id, notification_type, title, message, created_date)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (student_id, 'general', subject, message, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                 
                 conn.commit()
                 conn.close()
@@ -4131,12 +4127,13 @@ Total Documents: {doc_count}
                     backup_zip.write(str(DEFAULT_DB_PATH), 'database/student_records.db')
                     
                     # Backup document files
-                    if os.path.exists('student_documents'):
-                        for root, dirs, files in os.walk('student_documents'):
+                    student_docs_dir = paths.UPLOAD_DIR / 'student_documents'
+                    if os.path.exists(student_docs_dir):
+                        for root, dirs, files in os.walk(student_docs_dir):
                             for file in files:
                                 file_path = os.path.join(root, file)
-                                arc_path = os.path.relpath(file_path)
-                                backup_zip.write(file_path, arc_path)
+                                arc_path = os.path.relpath(file_path, student_docs_dir)
+                                backup_zip.write(file_path, f'student_documents/{arc_path}')
                 
                 messagebox.showinfo("Success", f"System backup created successfully!\nLocation: {backup_path}")
         
