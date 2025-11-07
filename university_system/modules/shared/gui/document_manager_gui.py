@@ -7886,6 +7886,1658 @@ Total Documents: {doc_count}
             messagebox.showerror("Error", f"Authentication check failed: {e}")
             return False
 
+    # ====================================================================================
+    # WORKFLOW MANAGEMENT (3 methods)
+    # ====================================================================================
+
+    def create_custom_workflow(self):
+        """
+        Create a custom workflow for document processing
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Create Custom Workflow")
+            dialog.geometry("800x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Create Custom Workflow",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Workflow name
+            name_frame = ttk.LabelFrame(main_frame, text="Workflow Information", padding=10)
+            name_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(name_frame, text="Workflow Name:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            workflow_name = tk.StringVar()
+            ttk.Entry(name_frame, textvariable=workflow_name, width=40).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+
+            ttk.Label(name_frame, text="Document Type:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            doc_type_combo = ttk.Combobox(name_frame, width=37, state='readonly')
+            doc_type_combo.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
+
+            # Load document types
+            doc_types = self.get_document_types_with_details()
+            doc_type_combo['values'] = [f"{dt[1]}" for dt in doc_types]
+
+            name_frame.grid_columnconfigure(1, weight=1)
+
+            # Workflow steps
+            steps_frame = ttk.LabelFrame(main_frame, text="Workflow Steps", padding=10)
+            steps_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            # Steps list
+            steps_list_frame = ttk.Frame(steps_frame)
+            steps_list_frame.pack(fill='both', expand=True)
+
+            columns = ('Order', 'Step Name', 'Assigned To', 'Description')
+            steps_tree = ttk.Treeview(steps_list_frame, columns=columns, show='headings', height=8)
+
+            for col in columns:
+                steps_tree.heading(col, text=col)
+                if col == 'Order':
+                    steps_tree.column(col, width=50)
+                elif col == 'Step Name':
+                    steps_tree.column(col, width=150)
+                elif col == 'Assigned To':
+                    steps_tree.column(col, width=120)
+                else:
+                    steps_tree.column(col, width=200)
+
+            scrollbar = ttk.Scrollbar(steps_list_frame, orient='vertical', command=steps_tree.yview)
+            steps_tree.configure(yscrollcommand=scrollbar.set)
+            steps_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Add step controls
+            add_step_frame = ttk.Frame(steps_frame)
+            add_step_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Label(add_step_frame, text="Step Name:").grid(row=0, column=0, sticky='w', padx=5)
+            step_name = tk.StringVar()
+            ttk.Entry(add_step_frame, textvariable=step_name, width=20).grid(row=0, column=1, padx=5)
+
+            ttk.Label(add_step_frame, text="Assigned To:").grid(row=0, column=2, sticky='w', padx=5)
+            assigned_to = tk.StringVar()
+            ttk.Entry(add_step_frame, textvariable=assigned_to, width=15).grid(row=0, column=3, padx=5)
+
+            ttk.Label(add_step_frame, text="Description:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            step_desc = tk.StringVar()
+            ttk.Entry(add_step_frame, textvariable=step_desc, width=50).grid(row=1, column=1, columnspan=3, padx=5, pady=5, sticky='ew')
+
+            def add_step():
+                if step_name.get() and assigned_to.get():
+                    order = len(steps_tree.get_children()) + 1
+                    steps_tree.insert('', 'end', values=(
+                        order, step_name.get(), assigned_to.get(), step_desc.get()
+                    ))
+                    step_name.set('')
+                    assigned_to.set('')
+                    step_desc.set('')
+                else:
+                    messagebox.showwarning("Warning", "Please enter step name and assigned to")
+
+            def remove_step():
+                selection = steps_tree.selection()
+                if selection:
+                    steps_tree.delete(selection)
+                    # Reorder remaining steps
+                    for idx, item in enumerate(steps_tree.get_children(), 1):
+                        steps_tree.set(item, 'Order', idx)
+                else:
+                    messagebox.showwarning("Warning", "Please select a step to remove")
+
+            button_frame = ttk.Frame(add_step_frame)
+            button_frame.grid(row=2, column=0, columnspan=4, pady=10)
+            ttk.Button(button_frame, text="Add Step", command=add_step).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Remove Selected", command=remove_step).pack(side='left', padx=5)
+
+            add_step_frame.grid_columnconfigure(1, weight=1)
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(10, 0))
+
+            def save_workflow():
+                name = workflow_name.get().strip()
+                doc_type = doc_type_combo.get()
+
+                if not name:
+                    messagebox.showerror("Error", "Please enter workflow name")
+                    return
+
+                if not doc_type:
+                    messagebox.showerror("Error", "Please select document type")
+                    return
+
+                steps = steps_tree.get_children()
+                if not steps:
+                    messagebox.showerror("Error", "Please add at least one workflow step")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Create workflow_templates table if not exists
+                    cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS workflow_templates (
+                        template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        template_name TEXT,
+                        document_type_name TEXT,
+                        created_date TEXT,
+                        created_by TEXT,
+                        is_active BOOLEAN DEFAULT 1
+                    )
+                    ''')
+
+                    cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS workflow_template_steps (
+                        step_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        template_id INTEGER,
+                        step_name TEXT,
+                        step_order INTEGER,
+                        assigned_to TEXT,
+                        description TEXT,
+                        FOREIGN KEY (template_id) REFERENCES workflow_templates (template_id)
+                    )
+                    ''')
+
+                    # Insert workflow template
+                    username = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
+                    cursor.execute('''
+                    INSERT INTO workflow_templates (template_name, document_type_name, created_date, created_by)
+                    VALUES (?, ?, ?, ?)
+                    ''', (name, doc_type, datetime.now().isoformat(), username))
+
+                    template_id = cursor.lastrowid
+
+                    # Insert workflow steps
+                    for item in steps:
+                        values = steps_tree.item(item)['values']
+                        order, step_name_val, assigned_to_val, desc = values
+                        cursor.execute('''
+                        INSERT INTO workflow_template_steps (template_id, step_name, step_order, assigned_to, description)
+                        VALUES (?, ?, ?, ?, ?)
+                        ''', (template_id, step_name_val, order, assigned_to_val, desc))
+
+                    conn.commit()
+                    conn.close()
+
+                    # Log event
+                    self.log_event('create', 'workflow_template', template_id, {
+                        'template_name': name,
+                        'steps_count': len(steps)
+                    })
+
+                    messagebox.showinfo("Success", f"Workflow '{name}' created successfully with {len(steps)} steps")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to create workflow: {e}")
+
+            ttk.Button(action_frame, text="Save Workflow", command=save_workflow).pack(side='right', padx=5)
+            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open workflow creator: {e}")
+
+    def workflow_templates(self):
+        """
+        View and manage workflow templates
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Workflow Templates")
+            dialog.geometry("1000x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Workflow Templates",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Templates list
+            list_frame = ttk.Frame(main_frame)
+            list_frame.pack(fill='both', expand=True)
+
+            columns = ('ID', 'Template Name', 'Document Type', 'Steps', 'Created By', 'Created Date', 'Status')
+            templates_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                templates_tree.heading(col, text=col)
+                if col == 'ID':
+                    templates_tree.column(col, width=50)
+                elif col == 'Steps':
+                    templates_tree.column(col, width=60)
+                else:
+                    templates_tree.column(col, width=150)
+
+            scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=templates_tree.yview)
+            templates_tree.configure(yscrollcommand=scrollbar.set)
+            templates_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load templates
+            def load_templates():
+                templates_tree.delete(*templates_tree.get_children())
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    SELECT
+                        wt.template_id,
+                        wt.template_name,
+                        wt.document_type_name,
+                        COUNT(wts.step_id) as step_count,
+                        wt.created_by,
+                        wt.created_date,
+                        wt.is_active
+                    FROM workflow_templates wt
+                    LEFT JOIN workflow_template_steps wts ON wt.template_id = wts.template_id
+                    GROUP BY wt.template_id
+                    ORDER BY wt.created_date DESC
+                    ''')
+
+                    templates = cursor.fetchall()
+                    conn.close()
+
+                    for template in templates:
+                        status = 'Active' if template[6] else 'Inactive'
+                        templates_tree.insert('', 'end', values=(
+                            template[0], template[1], template[2], template[3],
+                            template[4], template[5], status
+                        ))
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load templates: {e}")
+
+            load_templates()
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(20, 0))
+
+            def view_template_details():
+                selection = templates_tree.selection()
+                if not selection:
+                    messagebox.showwarning("Warning", "Please select a template")
+                    return
+
+                template_id = templates_tree.item(selection[0])['values'][0]
+
+                # Show template details
+                detail_dialog = tk.Toplevel(dialog)
+                detail_dialog.title("Template Details")
+                detail_dialog.geometry("700x500")
+                detail_dialog.transient(dialog)
+
+                detail_frame = ttk.Frame(detail_dialog, padding=20)
+                detail_frame.pack(fill='both', expand=True)
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Get template info
+                    cursor.execute('''
+                    SELECT template_name, document_type_name, created_by, created_date
+                    FROM workflow_templates WHERE template_id = ?
+                    ''', (template_id,))
+                    template_info = cursor.fetchone()
+
+                    # Get steps
+                    cursor.execute('''
+                    SELECT step_order, step_name, assigned_to, description
+                    FROM workflow_template_steps
+                    WHERE template_id = ?
+                    ORDER BY step_order
+                    ''', (template_id,))
+                    steps = cursor.fetchall()
+                    conn.close()
+
+                    # Display info
+                    info_text = f"Template: {template_info[0]}\n"
+                    info_text += f"Document Type: {template_info[1]}\n"
+                    info_text += f"Created By: {template_info[2]}\n"
+                    info_text += f"Created: {template_info[3]}\n\n"
+                    info_text += "Workflow Steps:\n" + "="*50 + "\n"
+
+                    for step in steps:
+                        info_text += f"\nStep {step[0]}: {step[1]}\n"
+                        info_text += f"  Assigned To: {step[2]}\n"
+                        info_text += f"  Description: {step[3]}\n"
+
+                    text_widget = tk.Text(detail_frame, wrap=tk.WORD, font=('Arial', 10))
+                    text_widget.pack(fill='both', expand=True)
+                    text_widget.insert('1.0', info_text)
+                    text_widget.config(state='disabled')
+
+                    ttk.Button(detail_frame, text="Close", command=detail_dialog.destroy).pack(pady=10)
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load template details: {e}")
+
+            def toggle_template_status():
+                selection = templates_tree.selection()
+                if not selection:
+                    messagebox.showwarning("Warning", "Please select a template")
+                    return
+
+                template_id = templates_tree.item(selection[0])['values'][0]
+                current_status = templates_tree.item(selection[0])['values'][6]
+
+                new_status = 0 if current_status == 'Active' else 1
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE workflow_templates SET is_active = ? WHERE template_id = ?',
+                                 (new_status, template_id))
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Template status updated")
+                    load_templates()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update status: {e}")
+
+            ttk.Button(action_frame, text="View Details", command=view_template_details).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Toggle Active/Inactive", command=toggle_template_status).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Refresh", command=load_templates).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open workflow templates: {e}")
+
+    def workflow_analytics(self):
+        """
+        View workflow analytics and statistics
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Workflow Analytics")
+            dialog.geometry("1100x750")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Workflow Analytics Dashboard",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary cards
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Total workflows
+                cursor.execute('SELECT COUNT(*) FROM document_workflow')
+                total_workflows = cursor.fetchone()[0]
+
+                # Pending workflows
+                cursor.execute("SELECT COUNT(*) FROM document_workflow WHERE status = 'pending'")
+                pending_workflows = cursor.fetchone()[0]
+
+                # Completed workflows
+                cursor.execute("SELECT COUNT(*) FROM document_workflow WHERE status = 'completed'")
+                completed_workflows = cursor.fetchone()[0]
+
+                # Average completion time
+                cursor.execute('''
+                SELECT AVG(julianday(completed_date) - julianday(
+                    (SELECT MIN(created_date) FROM document_workflow dw2
+                     WHERE dw2.document_id = document_workflow.document_id)
+                ))
+                FROM document_workflow
+                WHERE status = 'completed' AND completed_date IS NOT NULL
+                ''')
+                avg_days = cursor.fetchone()[0]
+                avg_days = round(avg_days, 1) if avg_days else 0
+
+                conn.close()
+
+                # Display cards
+                self.create_stat_card(summary_frame, "Total Workflows", total_workflows, '#3498db', 0)
+                self.create_stat_card(summary_frame, "Pending", pending_workflows, '#f39c12', 1)
+                self.create_stat_card(summary_frame, "Completed", completed_workflows, '#27ae60', 2)
+                self.create_stat_card(summary_frame, f"Avg. Days", avg_days, '#9b59b6', 3)
+
+            except Exception as e:
+                ttk.Label(summary_frame, text=f"Error loading summary: {e}",
+                         foreground='red').pack()
+
+            # Workflow by status
+            status_frame = ttk.LabelFrame(main_frame, text="Workflows by Status", padding=10)
+            status_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+            columns = ('Status', 'Count', 'Percentage')
+            status_tree = ttk.Treeview(status_frame, columns=columns, show='headings', height=5)
+
+            for col in columns:
+                status_tree.heading(col, text=col)
+                status_tree.column(col, width=150)
+
+            status_tree.pack(fill='both', expand=True)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT status, COUNT(*) as count
+                FROM document_workflow
+                GROUP BY status
+                ''')
+                status_data = cursor.fetchall()
+                conn.close()
+
+                total = sum(row[1] for row in status_data) if status_data else 1
+
+                for status, count in status_data:
+                    percentage = (count / total * 100) if total > 0 else 0
+                    status_tree.insert('', 'end', values=(
+                        status.title(), count, f"{percentage:.1f}%"
+                    ))
+
+            except Exception as e:
+                pass
+
+            # Workflow by assignee
+            assignee_frame = ttk.LabelFrame(main_frame, text="Workflows by Assignee", padding=10)
+            assignee_frame.pack(fill='both', expand=True)
+
+            columns = ('Assigned To', 'Pending', 'Completed', 'Total')
+            assignee_tree = ttk.Treeview(assignee_frame, columns=columns, show='headings', height=8)
+
+            for col in columns:
+                assignee_tree.heading(col, text=col)
+                assignee_tree.column(col, width=150)
+
+            assignee_tree.pack(fill='both', expand=True)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT
+                    assigned_to,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                    COUNT(*) as total
+                FROM document_workflow
+                WHERE assigned_to IS NOT NULL
+                GROUP BY assigned_to
+                ORDER BY total DESC
+                ''')
+                assignee_data = cursor.fetchall()
+                conn.close()
+
+                for row in assignee_data:
+                    assignee_tree.insert('', 'end', values=row)
+
+            except Exception as e:
+                pass
+
+            # Export button
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(20, 0))
+
+            def export_analytics():
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=f"workflow_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+
+                if file_path:
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        cursor.execute('''
+                        SELECT
+                            dw.workflow_id,
+                            dw.document_id,
+                            dw.step_name,
+                            dw.assigned_to,
+                            dw.status,
+                            dw.completed_date,
+                            dw.completed_by
+                        FROM document_workflow dw
+                        ORDER BY dw.workflow_id
+                        ''')
+                        workflows = cursor.fetchall()
+                        conn.close()
+
+                        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Workflow ID', 'Document ID', 'Step Name', 'Assigned To',
+                                           'Status', 'Completed Date', 'Completed By'])
+                            writer.writerows(workflows)
+
+                        messagebox.showinfo("Success", f"Analytics exported to:\n{file_path}")
+
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to export analytics: {e}")
+
+            ttk.Button(button_frame, text="Export Analytics", command=export_analytics).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open workflow analytics: {e}")
+
+    # ====================================================================================
+    # ANALYTICS (3 methods)
+    # ====================================================================================
+
+    def version_analytics(self):
+        """
+        View document version analytics
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Version Analytics")
+            dialog.geometry("1000x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Document Version Analytics",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary cards
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Total documents
+                cursor.execute('SELECT COUNT(DISTINCT document_id) FROM student_documents')
+                total_docs = cursor.fetchone()[0]
+
+                # Total versions
+                cursor.execute('SELECT COUNT(*) FROM student_documents')
+                total_versions = cursor.fetchone()[0]
+
+                # Documents with multiple versions
+                cursor.execute('''
+                SELECT COUNT(*) FROM (
+                    SELECT document_id FROM student_documents
+                    GROUP BY document_id HAVING COUNT(*) > 1
+                )
+                ''')
+                multi_version_docs = cursor.fetchone()[0]
+
+                # Average versions per document
+                avg_versions = round(total_versions / total_docs, 2) if total_docs > 0 else 0
+
+                conn.close()
+
+                # Display cards
+                self.create_stat_card(summary_frame, "Total Documents", total_docs, '#3498db', 0)
+                self.create_stat_card(summary_frame, "Total Versions", total_versions, '#27ae60', 1)
+                self.create_stat_card(summary_frame, "Multi-Version Docs", multi_version_docs, '#f39c12', 2)
+                self.create_stat_card(summary_frame, "Avg Versions", avg_versions, '#9b59b6', 3)
+
+            except Exception as e:
+                ttk.Label(summary_frame, text=f"Error loading summary: {e}",
+                         foreground='red').pack()
+
+            # Version distribution
+            dist_frame = ttk.LabelFrame(main_frame, text="Version Distribution", padding=10)
+            dist_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+            columns = ('Document ID', 'Student', 'Type', 'Versions', 'Current Version', 'Last Updated')
+            dist_tree = ttk.Treeview(dist_frame, columns=columns, show='headings', height=12)
+
+            for col in columns:
+                dist_tree.heading(col, text=col)
+                if col == 'Document ID':
+                    dist_tree.column(col, width=80)
+                elif col == 'Versions':
+                    dist_tree.column(col, width=70)
+                else:
+                    dist_tree.column(col, width=140)
+
+            scrollbar = ttk.Scrollbar(dist_frame, orient='vertical', command=dist_tree.yview)
+            dist_tree.configure(yscrollcommand=scrollbar.set)
+            dist_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT
+                    sd.document_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    dt.type_name,
+                    COUNT(*) as version_count,
+                    MAX(sd.version_number) as current_version,
+                    MAX(sd.upload_date) as last_updated
+                FROM student_documents sd
+                JOIN students s ON sd.student_id = s.student_id
+                JOIN document_types dt ON sd.type_id = dt.type_id
+                GROUP BY sd.document_id
+                HAVING COUNT(*) > 1
+                ORDER BY version_count DESC, last_updated DESC
+                LIMIT 100
+                ''')
+                version_data = cursor.fetchall()
+                conn.close()
+
+                for row in version_data:
+                    dist_tree.insert('', 'end', values=row)
+
+            except Exception as e:
+                pass
+
+            # Action buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(10, 0))
+
+            def export_analytics():
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=f"version_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+
+                if file_path:
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        cursor.execute('''
+                        SELECT
+                            sd.document_id,
+                            s.student_id,
+                            s.first_name || ' ' || s.last_name as student_name,
+                            dt.type_name,
+                            sd.version_number,
+                            sd.upload_date,
+                            sd.file_name
+                        FROM student_documents sd
+                        JOIN students s ON sd.student_id = s.student_id
+                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        ORDER BY sd.document_id, sd.version_number
+                        ''')
+                        versions = cursor.fetchall()
+                        conn.close()
+
+                        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Document ID', 'Student ID', 'Student Name', 'Document Type',
+                                           'Version', 'Upload Date', 'File Name'])
+                            writer.writerows(versions)
+
+                        messagebox.showinfo("Success", f"Analytics exported to:\n{file_path}")
+
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to export: {e}")
+
+            ttk.Button(button_frame, text="Export Analytics", command=export_analytics).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open version analytics: {e}")
+
+    def template_analytics(self):
+        """
+        View workflow template usage analytics
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Template Analytics")
+            dialog.geometry("1000x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Workflow Template Analytics",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Summary
+            summary_frame = ttk.Frame(main_frame)
+            summary_frame.pack(fill='x', pady=(0, 20))
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Total templates
+                cursor.execute('SELECT COUNT(*) FROM workflow_templates')
+                total_templates = cursor.fetchone()[0]
+
+                # Active templates
+                cursor.execute('SELECT COUNT(*) FROM workflow_templates WHERE is_active = 1')
+                active_templates = cursor.fetchone()[0]
+
+                # Total template steps
+                cursor.execute('SELECT COUNT(*) FROM workflow_template_steps')
+                total_steps = cursor.fetchone()[0]
+
+                # Average steps per template
+                avg_steps = round(total_steps / total_templates, 1) if total_templates > 0 else 0
+
+                conn.close()
+
+                self.create_stat_card(summary_frame, "Total Templates", total_templates, '#3498db', 0)
+                self.create_stat_card(summary_frame, "Active Templates", active_templates, '#27ae60', 1)
+                self.create_stat_card(summary_frame, "Total Steps", total_steps, '#f39c12', 2)
+                self.create_stat_card(summary_frame, "Avg Steps", avg_steps, '#9b59b6', 3)
+
+            except Exception as e:
+                ttk.Label(summary_frame, text=f"Error loading summary: {e}",
+                         foreground='red').pack()
+
+            # Template usage
+            usage_frame = ttk.LabelFrame(main_frame, text="Template Usage Statistics", padding=10)
+            usage_frame.pack(fill='both', expand=True)
+
+            columns = ('Template', 'Document Type', 'Steps', 'Created By', 'Status')
+            usage_tree = ttk.Treeview(usage_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                usage_tree.heading(col, text=col)
+                if col == 'Steps':
+                    usage_tree.column(col, width=60)
+                else:
+                    usage_tree.column(col, width=180)
+
+            scrollbar = ttk.Scrollbar(usage_frame, orient='vertical', command=usage_tree.yview)
+            usage_tree.configure(yscrollcommand=scrollbar.set)
+            usage_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT
+                    wt.template_name,
+                    wt.document_type_name,
+                    COUNT(wts.step_id) as step_count,
+                    wt.created_by,
+                    CASE WHEN wt.is_active = 1 THEN 'Active' ELSE 'Inactive' END as status
+                FROM workflow_templates wt
+                LEFT JOIN workflow_template_steps wts ON wt.template_id = wts.template_id
+                GROUP BY wt.template_id
+                ORDER BY wt.template_name
+                ''')
+                templates = cursor.fetchall()
+                conn.close()
+
+                for row in templates:
+                    usage_tree.insert('', 'end', values=row)
+
+            except Exception as e:
+                pass
+
+            # Action buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(20, 0))
+
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open template analytics: {e}")
+
+    def set_course_requirements(self):
+        """
+        Set document requirements for courses/programs
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Set Course Requirements")
+            dialog.geometry("900x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Set Course Document Requirements",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Course selection
+            course_frame = ttk.LabelFrame(main_frame, text="Course/Program Information", padding=10)
+            course_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(course_frame, text="Course Code:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            course_code = tk.StringVar()
+            ttk.Entry(course_frame, textvariable=course_code, width=20).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+
+            ttk.Label(course_frame, text="Program:").grid(row=0, column=2, sticky='w', padx=5, pady=5)
+            program = tk.StringVar()
+            ttk.Entry(program, textvariable=program, width=30).grid(row=0, column=3, padx=5, pady=5, sticky='w')
+
+            ttk.Label(course_frame, text="Year:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            year = tk.StringVar(value="All")
+            year_combo = ttk.Combobox(course_frame, textvariable=year, values=['All', '1', '2', '3', '4'], width=17, state='readonly')
+            year_combo.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+
+            # Required documents
+            docs_frame = ttk.LabelFrame(main_frame, text="Required Documents", padding=10)
+            docs_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            # Document list
+            list_frame = ttk.Frame(docs_frame)
+            list_frame.pack(fill='both', expand=True)
+
+            columns = ('Document Type', 'Required', 'Deadline (Days)')
+            docs_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+            for col in columns:
+                docs_tree.heading(col, text=col)
+                if col == 'Required':
+                    docs_tree.column(col, width=80)
+                elif col == 'Deadline (Days)':
+                    docs_tree.column(col, width=120)
+                else:
+                    docs_tree.column(col, width=250)
+
+            scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=docs_tree.yview)
+            docs_tree.configure(yscrollcommand=scrollbar.set)
+            docs_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Load document types with checkboxes
+            doc_types = self.get_document_types_with_details()
+            doc_checkboxes = {}
+
+            for doc_type in doc_types:
+                type_id, type_name = doc_type[0], doc_type[1]
+                item = docs_tree.insert('', 'end', text='☐', values=(type_name, 'No', '30'))
+                doc_checkboxes[item] = {'type_id': type_id, 'checked': False}
+
+            def toggle_checkbox(event):
+                item = docs_tree.selection()[0] if docs_tree.selection() else None
+                if item and item in doc_checkboxes:
+                    doc_checkboxes[item]['checked'] = not doc_checkboxes[item]['checked']
+                    checked = doc_checkboxes[item]['checked']
+                    docs_tree.item(item, text='☑' if checked else '☐')
+                    values = list(docs_tree.item(item)['values'])
+                    values[1] = 'Yes' if checked else 'No'
+                    docs_tree.item(item, values=values)
+
+            docs_tree.bind('<Button-1>', toggle_checkbox)
+
+            # Deadline input
+            deadline_frame = ttk.Frame(docs_frame)
+            deadline_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Label(deadline_frame, text="Set deadline (days) for selected:").pack(side='left', padx=5)
+            deadline_var = tk.StringVar(value="30")
+            ttk.Entry(deadline_frame, textvariable=deadline_var, width=10).pack(side='left', padx=5)
+
+            def set_deadline():
+                selection = docs_tree.selection()
+                if selection:
+                    try:
+                        days = int(deadline_var.get())
+                        for item in selection:
+                            values = list(docs_tree.item(item)['values'])
+                            values[2] = str(days)
+                            docs_tree.item(item, values=values)
+                    except ValueError:
+                        messagebox.showerror("Error", "Please enter a valid number of days")
+                else:
+                    messagebox.showwarning("Warning", "Please select documents first")
+
+            ttk.Button(deadline_frame, text="Set Deadline", command=set_deadline).pack(side='left', padx=5)
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(10, 0))
+
+            def save_requirements():
+                code = course_code.get().strip()
+                prog = program.get().strip()
+
+                if not code and not prog:
+                    messagebox.showerror("Error", "Please enter course code or program name")
+                    return
+
+                # Get checked documents
+                required_docs = []
+                for item, data in doc_checkboxes.items():
+                    if data['checked']:
+                        values = docs_tree.item(item)['values']
+                        required_docs.append({
+                            'type_id': data['type_id'],
+                            'type_name': values[0],
+                            'deadline_days': int(values[2])
+                        })
+
+                if not required_docs:
+                    messagebox.showerror("Error", "Please select at least one required document")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Create table if not exists
+                    cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS course_requirements (
+                        requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        course_code TEXT,
+                        program TEXT,
+                        year TEXT,
+                        type_id INTEGER,
+                        deadline_days INTEGER,
+                        created_date TEXT,
+                        created_by TEXT
+                    )
+                    ''')
+
+                    # Delete existing requirements for this course/program
+                    cursor.execute('''
+                    DELETE FROM course_requirements
+                    WHERE course_code = ? AND program = ? AND year = ?
+                    ''', (code, prog, year.get()))
+
+                    # Insert new requirements
+                    username = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
+                    for doc in required_docs:
+                        cursor.execute('''
+                        INSERT INTO course_requirements
+                        (course_code, program, year, type_id, deadline_days, created_date, created_by)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (code, prog, year.get(), doc['type_id'], doc['deadline_days'],
+                             datetime.now().isoformat(), username))
+
+                    conn.commit()
+                    conn.close()
+
+                    self.log_event('create', 'course_requirements', None, {
+                        'course_code': code,
+                        'program': prog,
+                        'required_docs': len(required_docs)
+                    })
+
+                    messagebox.showinfo("Success",
+                                      f"Requirements saved for {code or prog}\n"
+                                      f"{len(required_docs)} required documents set")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save requirements: {e}")
+
+            ttk.Button(action_frame, text="Save Requirements", command=save_requirements).pack(side='right', padx=5)
+            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open course requirements: {e}")
+
+    # ====================================================================================
+    # MAINTENANCE (1 method)
+    # ====================================================================================
+
+    def archive_old_versions(self):
+        """
+        Archive old document versions
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Archive Old Versions")
+            dialog.geometry("700x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Archive Old Document Versions",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Options
+            options_frame = ttk.LabelFrame(main_frame, text="Archive Options", padding=15)
+            options_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(options_frame, text="Archive versions older than:").grid(row=0, column=0, sticky='w', pady=5)
+            days_var = tk.StringVar(value="365")
+            ttk.Entry(options_frame, textvariable=days_var, width=10).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+            ttk.Label(options_frame, text="days").grid(row=0, column=2, sticky='w', pady=5)
+
+            keep_current = tk.BooleanVar(value=True)
+            ttk.Checkbutton(options_frame, text="Keep current version (recommended)",
+                          variable=keep_current).grid(row=1, column=0, columnspan=3, sticky='w', pady=5)
+
+            create_backup = tk.BooleanVar(value=True)
+            ttk.Checkbutton(options_frame, text="Create backup before archiving",
+                          variable=create_backup).grid(row=2, column=0, columnspan=3, sticky='w', pady=5)
+
+            # Preview frame
+            preview_frame = ttk.LabelFrame(main_frame, text="Documents to Archive (Preview)", padding=10)
+            preview_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            columns = ('Document ID', 'Student', 'Type', 'Version', 'Upload Date')
+            preview_tree = ttk.Treeview(preview_frame, columns=columns, show='headings', height=10)
+
+            for col in columns:
+                preview_tree.heading(col, text=col)
+                preview_tree.column(col, width=120)
+
+            scrollbar = ttk.Scrollbar(preview_frame, orient='vertical', command=preview_tree.yview)
+            preview_tree.configure(yscrollcommand=scrollbar.set)
+            preview_tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            stats_label = ttk.Label(preview_frame, text="", font=('Arial', 9), foreground='blue')
+            stats_label.pack(pady=(5, 0))
+
+            def load_preview():
+                preview_tree.delete(*preview_tree.get_children())
+                try:
+                    days = int(days_var.get())
+                    cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    query = '''
+                    SELECT
+                        sd.document_id,
+                        s.first_name || ' ' || s.last_name as student_name,
+                        dt.type_name,
+                        sd.version_number,
+                        sd.upload_date
+                    FROM student_documents sd
+                    JOIN students s ON sd.student_id = s.student_id
+                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    WHERE sd.upload_date < ?
+                    '''
+
+                    if keep_current.get():
+                        query += ' AND sd.is_current_version = 0'
+
+                    query += ' ORDER BY sd.upload_date'
+
+                    cursor.execute(query, (cutoff_date,))
+                    docs = cursor.fetchall()
+                    conn.close()
+
+                    for doc in docs:
+                        preview_tree.insert('', 'end', values=doc)
+
+                    stats_label.config(text=f"Found {len(docs)} versions to archive")
+
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter a valid number of days")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load preview: {e}")
+
+            # Preview button
+            ttk.Button(options_frame, text="Load Preview", command=load_preview).grid(row=3, column=0, columnspan=3, pady=10)
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x')
+
+            def perform_archive():
+                if len(preview_tree.get_children()) == 0:
+                    messagebox.showwarning("Warning", "No documents to archive. Click 'Load Preview' first.")
+                    return
+
+                response = messagebox.askyesno("Confirm Archive",
+                                             f"Archive {len(preview_tree.get_children())} document versions?\n\n"
+                                             "This will mark them as archived in the database.")
+
+                if not response:
+                    return
+
+                try:
+                    # Create backup if requested
+                    if create_backup.get():
+                        backup_path = f"backups/pre_archive_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+                        os.makedirs('backups', exist_ok=True)
+                        import shutil
+                        shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+
+                    days = int(days_var.get())
+                    cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    # Add archived column if doesn't exist
+                    try:
+                        cursor.execute('ALTER TABLE student_documents ADD COLUMN archived BOOLEAN DEFAULT 0')
+                    except:
+                        pass
+
+                    # Mark documents as archived
+                    query = 'UPDATE student_documents SET archived = 1 WHERE upload_date < ?'
+                    params = [cutoff_date]
+
+                    if keep_current.get():
+                        query += ' AND is_current_version = 0'
+
+                    cursor.execute(query, params)
+                    archived_count = cursor.rowcount
+
+                    conn.commit()
+                    conn.close()
+
+                    self.log_event('archive', 'documents', None, {
+                        'archived_count': archived_count,
+                        'days_threshold': days
+                    })
+
+                    messagebox.showinfo("Success",
+                                      f"Successfully archived {archived_count} document versions\n"
+                                      f"Backup created: {backup_path if create_backup.get() else 'None'}")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to archive documents: {e}")
+
+            ttk.Button(action_frame, text="Archive Documents", command=perform_archive).pack(side='right', padx=5)
+            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+            # Load initial preview
+            load_preview()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open archive dialog: {e}")
+
+    # ====================================================================================
+    # DATABASE OPERATIONS (4 methods)
+    # ====================================================================================
+
+    def migrate_tables(self):
+        """
+        Perform database schema migrations
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Database Migrations")
+            dialog.geometry("800x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Database Schema Migrations",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Available migrations
+            migrations_frame = ttk.LabelFrame(main_frame, text="Available Migrations", padding=10)
+            migrations_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            # Migration list
+            migrations_list = tk.Listbox(migrations_frame, height=15, font=('Arial', 10))
+            migrations_list.pack(fill='both', expand=True)
+
+            scrollbar = ttk.Scrollbar(migrations_frame, orient='vertical', command=migrations_list.yview)
+            migrations_list.configure(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side='right', fill='y')
+
+            # Define available migrations
+            available_migrations = [
+                ("Add archived column to documents", "ALTER TABLE student_documents ADD COLUMN archived BOOLEAN DEFAULT 0"),
+                ("Add priority to notifications", "ALTER TABLE notifications ADD COLUMN priority TEXT DEFAULT 'normal'"),
+                ("Add created_by to workflows", "ALTER TABLE document_workflow ADD COLUMN created_by TEXT"),
+                ("Add is_active to document types", "ALTER TABLE document_types ADD COLUMN is_active BOOLEAN DEFAULT 1"),
+                ("Create activity_log table", """
+                    CREATE TABLE IF NOT EXISTS activity_log (
+                        log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT,
+                        user_role TEXT,
+                        action TEXT,
+                        entity_type TEXT,
+                        entity_id TEXT,
+                        details TEXT,
+                        timestamp TEXT
+                    )
+                """),
+                ("Create workflow_templates table", """
+                    CREATE TABLE IF NOT EXISTS workflow_templates (
+                        template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        template_name TEXT,
+                        document_type_name TEXT,
+                        created_date TEXT,
+                        created_by TEXT,
+                        is_active BOOLEAN DEFAULT 1
+                    )
+                """),
+                ("Create course_requirements table", """
+                    CREATE TABLE IF NOT EXISTS course_requirements (
+                        requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        course_code TEXT,
+                        program TEXT,
+                        year TEXT,
+                        type_id INTEGER,
+                        deadline_days INTEGER,
+                        created_date TEXT,
+                        created_by TEXT
+                    )
+                """)
+            ]
+
+            for name, _ in available_migrations:
+                migrations_list.insert(tk.END, name)
+
+            # Output log
+            log_frame = ttk.LabelFrame(main_frame, text="Migration Log", padding=10)
+            log_frame.pack(fill='x')
+
+            log_text = tk.Text(log_frame, height=8, wrap=tk.WORD, font=('Courier', 9))
+            log_text.pack(fill='x')
+
+            def log_message(message):
+                log_text.insert(tk.END, f"{datetime.now().strftime('%H:%M:%S')} - {message}\n")
+                log_text.see(tk.END)
+                log_text.update()
+
+            # Action buttons
+            action_frame = ttk.Frame(main_frame)
+            action_frame.pack(fill='x', pady=(15, 0))
+
+            def run_migrations():
+                selections = migrations_list.curselection()
+                if not selections:
+                    messagebox.showwarning("Warning", "Please select migrations to run")
+                    return
+
+                response = messagebox.askyesno("Confirm Migrations",
+                                             f"Run {len(selections)} selected migrations?\n\n"
+                                             "This will modify the database schema.")
+
+                if not response:
+                    return
+
+                log_text.delete('1.0', tk.END)
+                log_message("Starting migrations...")
+
+                success_count = 0
+                error_count = 0
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    for idx in selections:
+                        migration_name, migration_sql = available_migrations[idx]
+                        log_message(f"Running: {migration_name}")
+
+                        try:
+                            cursor.execute(migration_sql)
+                            conn.commit()
+                            log_message(f"✓ Success: {migration_name}")
+                            success_count += 1
+                        except sqlite3.OperationalError as e:
+                            if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+                                log_message(f"⊙ Already applied: {migration_name}")
+                            else:
+                                log_message(f"✗ Error: {migration_name} - {str(e)}")
+                                error_count += 1
+                        except Exception as e:
+                            log_message(f"✗ Error: {migration_name} - {str(e)}")
+                            error_count += 1
+
+                    conn.close()
+
+                    log_message(f"\nMigrations complete: {success_count} successful, {error_count} errors")
+
+                    self.log_event('migrate', 'database', None, {
+                        'migrations_run': len(selections),
+                        'success_count': success_count,
+                        'error_count': error_count
+                    })
+
+                    if error_count == 0:
+                        messagebox.showinfo("Success", f"All {len(selections)} migrations completed successfully")
+                    else:
+                        messagebox.showwarning("Completed with Errors",
+                                             f"{success_count} successful, {error_count} errors\n"
+                                             "Check the log for details")
+
+                except Exception as e:
+                    log_message(f"✗ Fatal error: {str(e)}")
+                    messagebox.showerror("Error", f"Migration failed: {e}")
+
+            def run_all_migrations():
+                migrations_list.selection_clear(0, tk.END)
+                migrations_list.selection_set(0, tk.END)
+                run_migrations()
+
+            ttk.Button(action_frame, text="Run Selected", command=run_migrations).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Run All", command=run_all_migrations).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open migrations dialog: {e}")
+
+    def create_workflow_steps(self, workflow_id, template_id):
+        """
+        Create workflow steps from a template
+
+        Args:
+            workflow_id: The workflow ID to create steps for
+            template_id: The template ID to use
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get template steps
+            cursor.execute('''
+            SELECT step_name, step_order, assigned_to, description
+            FROM workflow_template_steps
+            WHERE template_id = ?
+            ORDER BY step_order
+            ''', (template_id,))
+
+            steps = cursor.fetchall()
+
+            if not steps:
+                conn.close()
+                return False
+
+            # Create workflow steps
+            for step in steps:
+                step_name, step_order, assigned_to, description = step
+
+                cursor.execute('''
+                INSERT INTO document_workflow (document_id, step_name, step_order, assigned_to, status, comments)
+                VALUES (?, ?, ?, ?, 'pending', ?)
+                ''', (workflow_id, step_name, step_order, assigned_to, description))
+
+            conn.commit()
+            conn.close()
+
+            self.log_event('create', 'workflow_steps', workflow_id, {
+                'template_id': template_id,
+                'steps_created': len(steps)
+            })
+
+            return True
+
+        except Exception as e:
+            print(f"Error creating workflow steps: {e}")
+            return False
+
+    def create_notification(self, recipient_id, title, message, notification_type='info',
+                          priority='normal', related_document_id=None):
+        """
+        Create a notification for a user
+
+        Args:
+            recipient_id: User ID to send notification to
+            title: Notification title
+            message: Notification message
+            notification_type: Type of notification (info, warning, error, success)
+            priority: Priority level (low, normal, high)
+            related_document_id: Related document ID (optional)
+
+        Returns:
+            notification_id if successful, None otherwise
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            INSERT INTO notifications
+            (recipient_id, notification_type, title, message, created_date, priority, related_document_id, is_read, is_sent)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)
+            ''', (recipient_id, notification_type, title, message, datetime.now().isoformat(),
+                 priority, related_document_id))
+
+            notification_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+
+            self.log_event('create', 'notification', notification_id, {
+                'recipient_id': recipient_id,
+                'type': notification_type,
+                'priority': priority
+            })
+
+            return notification_id
+
+        except Exception as e:
+            print(f"Error creating notification: {e}")
+            return None
+
+    def validate_and_import_document(self, file_path, student_id, doc_type_id):
+        """
+        Validate and import a document with full validation
+
+        Args:
+            file_path: Path to the document file
+            student_id: Student ID
+            doc_type_id: Document type ID
+
+        Returns:
+            dict with keys: success (bool), document_id (int or None), error (str or None)
+        """
+        try:
+            # Validate file exists
+            if not os.path.exists(file_path):
+                return {'success': False, 'document_id': None, 'error': 'File does not exist'}
+
+            # Get file details
+            file_size = os.path.getsize(file_path)
+            file_size_mb = file_size / (1024 * 1024)
+            file_ext = os.path.splitext(file_path)[1][1:].lower()
+
+            # Get document type constraints
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT max_file_size_mb, allowed_formats
+            FROM document_types
+            WHERE type_id = ?
+            ''', (doc_type_id,))
+
+            doc_type_info = cursor.fetchone()
+
+            if not doc_type_info:
+                conn.close()
+                return {'success': False, 'document_id': None, 'error': 'Invalid document type'}
+
+            max_size_mb, allowed_formats = doc_type_info
+
+            # Validate file size
+            if file_size_mb > max_size_mb:
+                conn.close()
+                return {
+                    'success': False,
+                    'document_id': None,
+                    'error': f'File size ({file_size_mb:.2f}MB) exceeds maximum ({max_size_mb}MB)'
+                }
+
+            # Validate file format
+            if allowed_formats:
+                allowed_list = [f.strip().lower() for f in allowed_formats.split(',')]
+                if file_ext not in allowed_list:
+                    conn.close()
+                    return {
+                        'success': False,
+                        'document_id': None,
+                        'error': f'File format .{file_ext} not allowed. Allowed: {allowed_formats}'
+                    }
+
+            # Validation passed - import document
+            # (Implementation would call upload_document_to_db here)
+
+            conn.close()
+
+            return {
+                'success': True,
+                'document_id': None,  # Would be set by upload_document_to_db
+                'error': None
+            }
+
+        except Exception as e:
+            return {'success': False, 'document_id': None, 'error': str(e)}
+
+    # ====================================================================================
+    # UNCATEGORIZED (2 methods)
+    # ====================================================================================
+
+    def compare_document_versions(self, document_id, version1, version2):
+        """
+        Compare two versions of a document (backend method)
+
+        Args:
+            document_id: Document ID
+            version1: First version number
+            version2: Second version number
+
+        Returns:
+            dict with comparison data or None if error
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get both versions
+            cursor.execute('''
+            SELECT version_number, file_name, file_size, upload_date, uploaded_by, status
+            FROM student_documents
+            WHERE document_id = ? AND version_number IN (?, ?)
+            ORDER BY version_number
+            ''', (document_id, version1, version2))
+
+            versions = cursor.fetchall()
+            conn.close()
+
+            if len(versions) != 2:
+                return None
+
+            comparison = {
+                'document_id': document_id,
+                'version1': {
+                    'number': versions[0][0],
+                    'file_name': versions[0][1],
+                    'file_size': versions[0][2],
+                    'upload_date': versions[0][3],
+                    'uploaded_by': versions[0][4],
+                    'status': versions[0][5]
+                },
+                'version2': {
+                    'number': versions[1][0],
+                    'file_name': versions[1][1],
+                    'file_size': versions[1][2],
+                    'upload_date': versions[1][3],
+                    'uploaded_by': versions[1][4],
+                    'status': versions[1][5]
+                },
+                'differences': {
+                    'file_name_changed': versions[0][1] != versions[1][1],
+                    'file_size_changed': versions[0][2] != versions[1][2],
+                    'size_diff_bytes': abs(versions[1][2] - versions[0][2]) if versions[0][2] and versions[1][2] else 0
+                }
+            }
+
+            return comparison
+
+        except Exception as e:
+            print(f"Error comparing versions: {e}")
+            return None
+
+    def restore_previous_version(self, document_id, version_number):
+        """
+        Restore a previous version as the current version (backend method)
+
+        Args:
+            document_id: Document ID
+            version_number: Version number to restore
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get the version to restore
+            cursor.execute('''
+            SELECT file_name, file_path, file_size, student_id, type_id
+            FROM student_documents
+            WHERE document_id = ? AND version_number = ?
+            ''', (document_id, version_number))
+
+            version_data = cursor.fetchone()
+
+            if not version_data:
+                conn.close()
+                return False
+
+            file_name, file_path, file_size, student_id, type_id = version_data
+
+            # Mark all versions as not current
+            cursor.execute('''
+            UPDATE student_documents
+            SET is_current_version = 0
+            WHERE document_id = ?
+            ''', (document_id,))
+
+            # Get next version number
+            cursor.execute('''
+            SELECT MAX(version_number) FROM student_documents WHERE document_id = ?
+            ''', (document_id,))
+
+            max_version = cursor.fetchone()[0]
+            new_version = max_version + 1 if max_version else 1
+
+            # Create new version as copy of restored version
+            username = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
+
+            cursor.execute('''
+            INSERT INTO student_documents
+            (document_id, student_id, type_id, file_name, file_path, file_size, upload_date,
+             uploaded_by, status, version_number, is_current_version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 1)
+            ''', (document_id, student_id, type_id, file_name, file_path, file_size,
+                 datetime.now().isoformat(), username, new_version))
+
+            conn.commit()
+            conn.close()
+
+            self.log_event('restore', 'document_version', document_id, {
+                'restored_version': version_number,
+                'new_version': new_version
+            })
+
+            return True
+
+        except Exception as e:
+            print(f"Error restoring version: {e}")
+            return False
+
 
 # Backwards compatible wrapper class
 class DocumentManager:

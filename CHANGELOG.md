@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Document Manager GUI - Advanced Features: 13 Methods (Workflow, Analytics, Maintenance, DB Ops)** (2025-11-07)
+- **Issue**: Document Manager GUI missing advanced workflow, analytics, and database management features
+- **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 7889-9540, ~1650 lines)
+- **Added 13 Methods across 4 categories**:
+
+  **WORKFLOW MANAGEMENT** (3 methods):
+  1. `create_custom_workflow()` - Interactive workflow designer (800x700) with step management, assignment, and template creation
+  2. `workflow_templates()` - Template manager (1000x700) with view details, toggle active/inactive, and template listing
+  3. `workflow_analytics()` - Workflow analytics dashboard (1100x750) with status breakdown, assignee statistics, CSV export
+
+  **ANALYTICS** (3 methods):
+  4. `version_analytics()` - Document version analytics (1000x700) with multi-version docs tracking and distribution analysis
+  5. `template_analytics()` - Template usage statistics (1000x700) with step counts and activity status
+  6. `set_course_requirements()` - Course document requirements (900x700) with checkbox selection, deadline setting per document type
+
+  **MAINTENANCE** (1 method):
+  7. `archive_old_versions()` - Archive old documents (700x600) with preview, age threshold, keep-current option, auto-backup
+
+  **DATABASE OPERATIONS** (4 methods):
+  8. `migrate_tables()` - Database schema migrations (800x600) with 7 predefined migrations, run selected/all, real-time log
+  9. `create_workflow_steps()` - Backend: Create workflow steps from template (programmatic, no GUI)
+  10. `create_notification()` - Backend: Create user notifications with priority levels (programmatic, no GUI)
+  11. `validate_and_import_document()` - Backend: Validate file size, format before import (programmatic, no GUI)
+
+  **UNCATEGORIZED** (2 backend methods):
+  12. `compare_document_versions()` - Backend: Compare 2 versions metadata (programmatic, no GUI)
+  13. `restore_previous_version()` - Backend: Restore version as current (programmatic, no GUI)
+
+- **Features**:
+  - 10 GUI methods with full dialog interfaces (avg 850x680 windows)
+  - 5 backend/programmatic methods for internal use
+  - Real-time data loading from database
+  - Summary stat cards using existing `create_stat_card()` helper
+  - CSV export capabilities for analytics
+  - Migration logging with success/error tracking
+  - Confirmation dialogs for destructive operations
+  - Activity logging integration for all operations
+  - Auto-table creation where needed (workflow_templates, course_requirements)
+
 **Document Manager GUI - Helper Functions Addition: 8 Utility Methods** (2025-11-07)
 - **Issue**: Document Manager GUI needed reusable helper methods for common operations
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 7179-7887)
