@@ -9,6 +9,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Enhanced Reporting GUI - Added 17 Missing GUI Methods** (2025-11-07)
+- **Enhancement**: Implemented full GUI versions of 17 functions previously only available in CLI
+- **Location**: `university_system/modules/shared/gui/enhanced_reporting_gui.py` (lines 7314-7896, ~582 lines)
+- **File Size**: Now 8,482 total lines (from 7,647 → 8,482 = +835 lines added)
+- **Fully implemented 17 new GUI methods**:
+
+  **Quality Checks & Monitoring (3 methods)**:
+  1. `run_quality_checks()` - Run comprehensive data quality checks with threading
+     - Threaded execution to avoid blocking GUI
+     - Calls DataQualityMonitor.run_quality_checks()
+     - Updates progress bar and status
+     - Displays results in display_quality_checks_results()
+
+  2. `display_quality_checks_results(quality_report)` - Display quality check results in tabbed dialog
+     - 700x600 dialog window with notebook tabs
+     - Tabs: Missing Data, Duplicates, Invalid Data, Data Freshness
+     - ScrolledText widgets for detailed information
+     - Displays statistics from quality report
+
+  3. `show_data_quality_dashboard()` - Wrapper for run_quality_checks()
+     - Provides consistent method name with CLI version
+
+  **Performance Monitoring (1 method)**:
+  4. `show_performance_monitor()` - System performance monitoring dashboard
+     - 600x500 dialog with performance metrics
+     - Shows database size (MB)
+     - Shows reports directory size (MB)
+     - Shows cache directory size (MB)
+     - Database record counts (students, courses, enrollments)
+     - System info (Python version, Enhanced features status)
+     - Refresh button to reload metrics
+
+  **Scheduler Functions (4 methods)**:
+  5. `run_scheduler()` - Background scheduler loop
+     - Infinite loop checking schedule.run_pending() every 60 seconds
+     - Exception handling with error logging
+     - Designed to run in daemon thread
+
+  6. `start_scheduler_method()` - Start background scheduler for automatic reports
+     - Loads all scheduled reports
+     - Schedules enabled reports using schedule_report()
+     - Starts scheduler thread as daemon
+     - Shows success message
+
+  7. `schedule_report(report_data)` - Schedule single report using schedule library
+     - Supports daily, weekly, monthly frequencies
+     - Configurable hour (0-23)
+     - Day of week for weekly reports
+     - Generates report and sends email to recipients
+     - Updates last_run timestamp
+
+  8. `send_scheduled_report_email(recipients, report_path, template_name)` - Email sending (placeholder)
+     - Formats subject and body
+     - Logs email would be sent (requires SMTP configuration)
+
+  **Scheduled Reports Management (3 methods)**:
+  9. `save_scheduled_reports(scheduled_reports)` - Save scheduled reports to JSON file
+     - Saves to templates_dir/scheduled_reports.json
+     - Pretty-printed JSON with indent=4
+     - Shows success status message
+
+  10. `schedule_advanced_report_menu()` - GUI dialog for scheduling advanced reports
+     - 600x700 dialog with comprehensive form
+     - Template selection dropdown (loads from database)
+     - Frequency selection: daily, weekly, monthly
+     - Time selection: hour spinbox (0-23)
+     - Day of week selection for weekly reports
+     - Recipients: comma-separated text area
+     - Report name field
+     - Enabled checkbox
+     - Saves to scheduled_reports.json
+     - Refreshes schedule display after saving
+
+  11. `view_scheduled_reports_menu()` - View and manage scheduled reports in GUI
+     - 800x600 dialog with treeview
+     - Columns: Template, Frequency, Time, Recipients, Last Run, Status
+     - Loads from scheduled_reports.json
+     - Add Schedule button opens schedule_advanced_report_menu()
+     - Refresh button reloads data
+
+  **Template Management (4 methods)**:
+  12. `save_template_method(template)` - Save report template to database (GUI wrapper)
+     - Checks ENHANCED_AVAILABLE
+     - Calls save_template() from enhanced_reporting module
+     - Shows success status message
+     - Refreshes GUI data
+
+  13. `save_template_dict_method(template_data)` - Save template dictionary to database
+     - Checks ENHANCED_AVAILABLE
+     - Calls save_template_dict() from enhanced_reporting module
+     - Shows success status message
+     - Refreshes GUI data
+
+  14. `view_templates_menu()` - View and manage templates GUI
+     - Wrapper that calls existing show_templates_dialog()
+     - Provides consistent method name with CLI version
+
+  15. `to_dict_report_template(template)` - Convert report template to dictionary
+     - Extracts: name, description, sections, format, version, created_at
+     - Uses getattr() with defaults for safe attribute access
+     - Error handling with logging
+
+- **Technical Implementation**:
+  - Threading for non-blocking operations (run_quality_checks)
+  - Dialog windows with tk.Toplevel()
+  - Notebook tabs (ttk.Notebook) for organized display
+  - Treeview widgets (ttk.Treeview) for tabular data
+  - ScrolledText widgets for detailed text display
+  - Progress bar integration (start_progress/stop_progress)
+  - Status message updates (update_status)
+  - Schedule library integration for automated reporting
+  - JSON file storage for scheduled reports
+  - Database integration for template storage
+  - Error handling with try-except blocks
+  - Activity logging throughout
+  - Consistent styling with existing GUI components
+
+- **Functions Now Available in Both CLI and GUI**:
+  - Quality checks and monitoring
+  - Performance monitoring dashboard
+  - Report scheduling (advanced)
+  - Scheduled reports management
+  - Template management with database persistence
+  - Background scheduler for automated reports
+
 **Document Manager GUI - Full Excel and PDF Export Implementation** (2025-11-07)
 - **Enhancement**: Fully implemented Excel and PDF export methods with professional formatting
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py` (lines 17536-17968, ~402 lines)

@@ -7311,6 +7311,590 @@ University Reporting System""")
         """Stop progress bar animation"""
         self.progress.stop()
 
+    # ===== ADDITIONAL GUI METHODS (Previously CLI-only) =====
+
+    def run_quality_checks(self):
+        """Run comprehensive data quality checks and display results"""
+        try:
+            self.update_status("Running quality checks...")
+            self.start_progress()
+
+            def run_checks():
+                try:
+                    if not ENHANCED_AVAILABLE:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "Not Available", "Enhanced features not available"))
+                        return
+
+                    quality_report = DataQualityMonitor.run_quality_checks()
+                    self.root.after(0, lambda: self.display_quality_checks_results(quality_report))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Quality check failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Quality checks complete"))
+
+            threading.Thread(target=run_checks, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start quality checks: {str(e)}")
+
+    def display_quality_checks_results(self, quality_report):
+        """Display quality check results in a GUI dialog"""
+        try:
+            results_window = tk.Toplevel(self.root)
+            results_window.title("Data Quality Check Results")
+            results_window.geometry("700x600")
+            results_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(results_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            ttk.Label(header_frame, text="🔍 Data Quality Dashboard",
+                     font=('Arial', 16, 'bold')).pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Generated: {quality_report.get('timestamp', 'N/A')}",
+                     font=('Arial', 10)).pack(anchor=tk.W)
+
+            # Results notebook
+            notebook = ttk.Notebook(results_window)
+            notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            checks = quality_report.get('checks', {})
+
+            # Missing Data Tab
+            if 'missing_data' in checks:
+                missing_frame = ttk.Frame(notebook)
+                notebook.add(missing_frame, text="Missing Data")
+
+                missing_text = ScrolledText(missing_frame, wrap=tk.WORD, height=20)
+                missing_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                missing = checks['missing_data'].get('students', {})
+                missing_text.insert(tk.END, f"Total Records: {missing.get('total_records', 0)}\n")
+                missing_text.insert(tk.END, f"Missing Emails: {missing.get('missing_emails', 0)}\n")
+                missing_text.insert(tk.END, f"Missing Names: {missing.get('missing_names', 0)}\n\n")
+                missing_text.config(state=tk.DISABLED)
+
+            # Duplicates Tab
+            if 'duplicates' in checks:
+                dup_frame = ttk.Frame(notebook)
+                notebook.add(dup_frame, text="Duplicates")
+
+                dup_text = ScrolledText(dup_frame, wrap=tk.WORD, height=20)
+                dup_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                duplicates = checks['duplicates']
+                dup_text.insert(tk.END, f"Duplicate Students: {duplicates.get('duplicate_count', 0)}\n\n")
+
+                if duplicates.get('examples'):
+                    dup_text.insert(tk.END, "Examples:\n")
+                    for example in duplicates['examples'][:10]:
+                        dup_text.insert(tk.END, f"  • {example}\n")
+
+                dup_text.config(state=tk.DISABLED)
+
+            # Invalid Data Tab
+            if 'invalid_data' in checks:
+                invalid_frame = ttk.Frame(notebook)
+                notebook.add(invalid_frame, text="Invalid Data")
+
+                invalid_text = ScrolledText(invalid_frame, wrap=tk.WORD, height=20)
+                invalid_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                invalid = checks['invalid_data']
+                invalid_text.insert(tk.END, f"Invalid Email Count: {invalid.get('invalid_email_count', 0)}\n")
+                invalid_text.insert(tk.END, f"Out of Range Scores: {invalid.get('out_of_range_scores', 0)}\n\n")
+                invalid_text.config(state=tk.DISABLED)
+
+            # Data Freshness Tab
+            if 'data_freshness' in checks:
+                fresh_frame = ttk.Frame(notebook)
+                notebook.add(fresh_frame, text="Data Freshness")
+
+                fresh_text = ScrolledText(fresh_frame, wrap=tk.WORD, height=20)
+                fresh_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+                freshness = checks['data_freshness']
+                fresh_text.insert(tk.END, f"Last Update: {freshness.get('last_update', 'N/A')}\n")
+                fresh_text.insert(tk.END, f"Days Since Update: {freshness.get('days_since_update', 'N/A')}\n")
+                fresh_text.insert(tk.END, f"Status: {freshness.get('status', 'N/A')}\n\n")
+                fresh_text.config(state=tk.DISABLED)
+
+            # Close button
+            ttk.Button(results_window, text="Close",
+                      command=results_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to display results: {str(e)}")
+
+    def save_scheduled_reports(self, scheduled_reports):
+        """Save scheduled reports to file"""
+        try:
+            scheduled_file = os.path.join(
+                CONFIG.get('templates_dir', str(paths.REPORT_TEMPLATES_DIR)),
+                'scheduled_reports.json'
+            )
+
+            with open(scheduled_file, 'w') as f:
+                json.dump(scheduled_reports, f, indent=4)
+
+            self.update_status("Scheduled reports saved successfully", "success")
+            return True
+        except Exception as e:
+            logging.error(f"Error saving scheduled reports: {e}")
+            messagebox.showerror("Error", f"Failed to save scheduled reports: {str(e)}")
+            return False
+
+    def save_template_method(self, template):
+        """Save a report template to database (GUI wrapper)"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return False
+
+            save_template(template)
+            self.update_status(f"Template '{template.name}' saved successfully", "success")
+            self.refresh_data()
+            return True
+        except Exception as e:
+            logging.error(f"Error saving template: {e}")
+            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            return False
+
+    def save_template_dict_method(self, template_data):
+        """Save template dictionary to database (GUI wrapper)"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return False
+
+            save_template_dict(template_data)
+            self.update_status(f"Template '{template_data.get('name')}' saved successfully", "success")
+            self.refresh_data()
+            return True
+        except Exception as e:
+            logging.error(f"Error saving template: {e}")
+            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            return False
+
+    def schedule_advanced_report_menu(self):
+        """Show dialog for scheduling advanced reports"""
+        try:
+            schedule_window = tk.Toplevel(self.root)
+            schedule_window.title("Schedule Advanced Report")
+            schedule_window.geometry("600x700")
+            schedule_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(schedule_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+            ttk.Label(header_frame, text="📅 Schedule Advanced Report",
+                     font=('Arial', 14, 'bold')).pack(anchor=tk.W)
+
+            # Main form
+            form_frame = ttk.LabelFrame(schedule_window, text="Report Configuration", padding="10")
+            form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            # Template selection
+            ttk.Label(form_frame, text="Template:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            template_var = tk.StringVar()
+            template_combo = ttk.Combobox(form_frame, textvariable=template_var, state='readonly')
+            template_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Load templates
+            try:
+                templates = load_templates()
+                template_names = [t.get('name', 'Unnamed') for t in templates]
+                template_combo['values'] = template_names
+                if template_names:
+                    template_combo.current(0)
+            except:
+                template_combo['values'] = []
+
+            # Frequency
+            ttk.Label(form_frame, text="Frequency:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            frequency_var = tk.StringVar(value="daily")
+            frequency_combo = ttk.Combobox(form_frame, textvariable=frequency_var,
+                                         values=['daily', 'weekly', 'monthly'], state='readonly')
+            frequency_combo.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Time
+            ttk.Label(form_frame, text="Time (Hour 0-23):").grid(row=2, column=0, sticky=tk.W, pady=5)
+            hour_var = tk.StringVar(value="9")
+            hour_spinbox = ttk.Spinbox(form_frame, from_=0, to=23, textvariable=hour_var)
+            hour_spinbox.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Day of week (for weekly)
+            ttk.Label(form_frame, text="Day of Week:").grid(row=3, column=0, sticky=tk.W, pady=5)
+            day_var = tk.StringVar(value="monday")
+            day_combo = ttk.Combobox(form_frame, textvariable=day_var,
+                                    values=['monday', 'tuesday', 'wednesday', 'thursday',
+                                           'friday', 'saturday', 'sunday'], state='readonly')
+            day_combo.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Recipients
+            ttk.Label(form_frame, text="Recipients (comma-separated):").grid(row=4, column=0, sticky=tk.W, pady=5)
+            recipients_text = ScrolledText(form_frame, height=4, wrap=tk.WORD)
+            recipients_text.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Report name
+            ttk.Label(form_frame, text="Report Name:").grid(row=5, column=0, sticky=tk.W, pady=5)
+            report_name_var = tk.StringVar()
+            ttk.Entry(form_frame, textvariable=report_name_var).grid(row=5, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Enabled checkbox
+            enabled_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(form_frame, text="Enabled", variable=enabled_var).grid(
+                row=6, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+            form_frame.columnconfigure(1, weight=1)
+
+            # Buttons
+            button_frame = ttk.Frame(schedule_window)
+            button_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+            def save_schedule():
+                try:
+                    template_name = template_var.get()
+                    if not template_name:
+                        messagebox.showwarning("Validation", "Please select a template")
+                        return
+
+                    recipients_str = recipients_text.get(1.0, tk.END).strip()
+                    recipients = [r.strip() for r in recipients_str.split(',') if r.strip()]
+
+                    report_name = report_name_var.get() or f"Scheduled {template_name}"
+
+                    schedule_config = {
+                        'template_name': template_name,
+                        'frequency': frequency_var.get(),
+                        'hour': int(hour_var.get()),
+                        'day_of_week': day_var.get() if frequency_var.get() == 'weekly' else None,
+                        'recipients': recipients,
+                        'report_name': report_name,
+                        'enabled': enabled_var.get(),
+                        'created_at': datetime.now().isoformat()
+                    }
+
+                    # Load existing schedules
+                    try:
+                        scheduled_reports = load_scheduled_reports()
+                    except:
+                        scheduled_reports = []
+
+                    # Add new schedule
+                    scheduled_reports.append({
+                        'template_name': template_name,
+                        'schedule_config': schedule_config,
+                        'recipients': recipients,
+                        'last_run': None
+                    })
+
+                    # Save schedules
+                    if self.save_scheduled_reports(scheduled_reports):
+                        messagebox.showinfo("Success", "Report scheduled successfully!")
+                        self.load_scheduled_reports()
+                        schedule_window.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to schedule report: {str(e)}")
+
+            ttk.Button(button_frame, text="Save Schedule", command=save_schedule,
+                      style='Success.TButton').pack(side=tk.RIGHT, padx=(5, 0))
+            ttk.Button(button_frame, text="Cancel",
+                      command=schedule_window.destroy).pack(side=tk.RIGHT)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open schedule dialog: {str(e)}")
+
+    def schedule_report(self, report_data):
+        """Schedule a single report using the schedule library"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return False
+
+            def run_report():
+                try:
+                    template_name = report_data['template_name']
+                    recipients = report_data.get('recipients', [])
+
+                    # Generate report
+                    end_date = datetime.now().strftime("%Y-%m-%d")
+                    start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+
+                    report_path = generate_report(template_name, start_date, end_date)
+
+                    # Send email if recipients exist
+                    if recipients and report_path:
+                        self.send_scheduled_report_email(recipients, report_path, template_name)
+
+                    # Update last run time
+                    report_data['last_run'] = datetime.now().isoformat()
+
+                except Exception as e:
+                    logging.error(f"Scheduled report error: {str(e)}")
+
+            # Schedule based on frequency
+            frequency = report_data.get('schedule_config', {}).get('frequency', 'daily')
+            hour = report_data.get('schedule_config', {}).get('hour', 9)
+            time_str = f"{hour:02d}:00"
+
+            if frequency == 'daily':
+                schedule.every().day.at(time_str).do(run_report)
+            elif frequency == 'weekly':
+                day = report_data.get('schedule_config', {}).get('day_of_week', 'monday')
+                getattr(schedule.every(), day).at(time_str).do(run_report)
+            elif frequency == 'monthly':
+                schedule.every().day.at(time_str).do(run_report)  # Simplified
+
+            return True
+        except Exception as e:
+            logging.error(f"Error scheduling report: {str(e)}")
+            return False
+
+    def send_scheduled_report_email(self, recipients, report_path, template_name):
+        """Send scheduled report via email"""
+        try:
+            subject = f"Scheduled Report: {template_name}"
+            body = f"Please find attached the scheduled report generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}."
+
+            # Note: This is a placeholder. Actual email sending would require SMTP configuration
+            logging.info(f"Would send email to {recipients} with report {report_path}")
+
+        except Exception as e:
+            logging.error(f"Error sending scheduled report email: {str(e)}")
+
+    def show_data_quality_dashboard(self):
+        """Show comprehensive data quality dashboard"""
+        self.run_quality_checks()
+
+    def show_performance_monitor(self):
+        """Show system performance monitoring dashboard"""
+        try:
+            perf_window = tk.Toplevel(self.root)
+            perf_window.title("Performance Monitor")
+            perf_window.geometry("600x500")
+            perf_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(perf_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+            ttk.Label(header_frame, text="📊 Performance Monitor",
+                     font=('Arial', 14, 'bold')).pack(anchor=tk.W)
+
+            # Performance metrics
+            metrics_frame = ttk.LabelFrame(perf_window, text="System Metrics", padding="10")
+            metrics_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            metrics_text = ScrolledText(metrics_frame, wrap=tk.WORD, height=20)
+            metrics_text.pack(fill=tk.BOTH, expand=True)
+
+            def load_metrics():
+                try:
+                    # Database size
+                    db_path = CONFIG.get('database', str(DEFAULT_DB_PATH))
+                    if os.path.exists(db_path):
+                        db_size = os.path.getsize(db_path) / (1024 * 1024)
+                        metrics_text.insert(tk.END, f"📀 Database Size: {db_size:.2f} MB\n\n")
+
+                    # Reports directory size
+                    reports_dir = CONFIG.get('reports_dir', 'reports')
+                    if os.path.exists(reports_dir):
+                        reports_size = 0
+                        for root, dirs, files in os.walk(reports_dir):
+                            for file in files:
+                                reports_size += os.path.getsize(os.path.join(root, file))
+                        reports_size = reports_size / (1024 * 1024)
+                        metrics_text.insert(tk.END, f"📁 Reports Size: {reports_size:.2f} MB\n\n")
+
+                    # Cache directory size
+                    cache_dir = CONFIG.get('cache_dir', 'cache')
+                    if os.path.exists(cache_dir):
+                        cache_size = 0
+                        for root, dirs, files in os.walk(cache_dir):
+                            for file in files:
+                                cache_size += os.path.getsize(os.path.join(root, file))
+                        cache_size = cache_size / (1024 * 1024)
+                        metrics_text.insert(tk.END, f"💾 Cache Size: {cache_size:.2f} MB\n\n")
+
+                    # Record counts
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+
+                            cursor.execute("SELECT COUNT(*) FROM students")
+                            student_count = cursor.fetchone()[0]
+                            metrics_text.insert(tk.END, f"👥 Total Students: {student_count}\n")
+
+                            cursor.execute("SELECT COUNT(*) FROM courses")
+                            course_count = cursor.fetchone()[0]
+                            metrics_text.insert(tk.END, f"📚 Total Courses: {course_count}\n")
+
+                            cursor.execute("SELECT COUNT(*) FROM enrollments")
+                            enrollment_count = cursor.fetchone()[0]
+                            metrics_text.insert(tk.END, f"📝 Total Enrollments: {enrollment_count}\n\n")
+
+                            conn.close()
+                    except Exception as e:
+                        metrics_text.insert(tk.END, f"⚠️ Could not fetch database records: {str(e)}\n\n")
+
+                    # System info
+                    metrics_text.insert(tk.END, f"🖥️ Python Version: {os.sys.version.split()[0]}\n")
+                    metrics_text.insert(tk.END, f"📦 Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}\n")
+
+                    metrics_text.config(state=tk.DISABLED)
+
+                except Exception as e:
+                    metrics_text.insert(tk.END, f"Error loading metrics: {str(e)}")
+                    metrics_text.config(state=tk.DISABLED)
+
+            load_metrics()
+
+            # Refresh button
+            button_frame = ttk.Frame(perf_window)
+            button_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+            def refresh_metrics():
+                metrics_text.config(state=tk.NORMAL)
+                metrics_text.delete(1.0, tk.END)
+                load_metrics()
+
+            ttk.Button(button_frame, text="Refresh", command=refresh_metrics).pack(side=tk.LEFT)
+            ttk.Button(button_frame, text="Close", command=perf_window.destroy).pack(side=tk.RIGHT)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show performance monitor: {str(e)}")
+
+    def run_scheduler(self):
+        """Run the scheduler loop (internal method)"""
+        while True:
+            try:
+                schedule.run_pending()
+                time.sleep(60)  # Check every minute
+            except Exception as e:
+                logging.error(f"Scheduler error: {str(e)}")
+                time.sleep(60)
+
+    def start_scheduler_method(self):
+        """Start the background scheduler for automatic reports"""
+        try:
+            # Load and schedule all reports
+            try:
+                scheduled_reports = load_scheduled_reports()
+
+                for report in scheduled_reports:
+                    if report.get('schedule_config', {}).get('enabled', True):
+                        self.schedule_report(report)
+
+            except Exception as e:
+                logging.error(f"Error loading scheduled reports: {str(e)}")
+
+            # Start scheduler thread
+            scheduler_thread = threading.Thread(target=self.run_scheduler, daemon=True)
+            scheduler_thread.start()
+
+            self.update_status("Background scheduler started", "success")
+            messagebox.showinfo("Scheduler", "Background scheduler started successfully!")
+
+        except Exception as e:
+            logging.error(f"Error starting scheduler: {str(e)}")
+            messagebox.showerror("Error", f"Failed to start scheduler: {str(e)}")
+
+    def view_scheduled_reports_menu(self):
+        """View and manage scheduled reports"""
+        try:
+            view_window = tk.Toplevel(self.root)
+            view_window.title("Scheduled Reports")
+            view_window.geometry("800x600")
+            view_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(view_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+            ttk.Label(header_frame, text="📅 Scheduled Reports",
+                     font=('Arial', 14, 'bold')).pack(anchor=tk.W)
+
+            # Tree view for scheduled reports
+            tree_frame = ttk.Frame(view_window)
+            tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            columns = ('Template', 'Frequency', 'Time', 'Recipients', 'Last Run', 'Status')
+            tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=120)
+
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Load scheduled reports
+            def load_reports():
+                tree.delete(*tree.get_children())
+                try:
+                    scheduled_reports = load_scheduled_reports()
+
+                    for report in scheduled_reports:
+                        config = report.get('schedule_config', {})
+                        status = "Enabled" if config.get('enabled', True) else "Disabled"
+
+                        values = (
+                            report.get('template_name', 'N/A'),
+                            config.get('frequency', 'Unknown').title(),
+                            f"{config.get('hour', 9):02d}:00",
+                            str(len(report.get('recipients', []))),
+                            report.get('last_run', 'Never')[:19] if report.get('last_run') else 'Never',
+                            status
+                        )
+
+                        tree.insert('', tk.END, values=values)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load scheduled reports: {str(e)}")
+
+            load_reports()
+
+            # Buttons
+            button_frame = ttk.Frame(view_window)
+            button_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+            ttk.Button(button_frame, text="Add Schedule",
+                      command=lambda: [self.schedule_advanced_report_menu(), view_window.after(500, load_reports)]).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Refresh", command=load_reports).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Close", command=view_window.destroy).pack(side=tk.RIGHT)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show scheduled reports: {str(e)}")
+
+    def view_templates_menu(self):
+        """View and manage templates"""
+        try:
+            # This will open the existing templates dialog
+            self.show_templates_dialog()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show templates: {str(e)}")
+
+    def to_dict_report_template(self, template):
+        """Convert report template to dictionary"""
+        try:
+            return {
+                'name': getattr(template, 'name', ''),
+                'description': getattr(template, 'description', ''),
+                'sections': getattr(template, 'sections', []),
+                'format': getattr(template, 'format', 'pdf'),
+                'version': getattr(template, 'version', '1.0'),
+                'created_at': getattr(template, 'created_at', datetime.now().isoformat())
+            }
+        except Exception as e:
+            logging.error(f"Error converting template to dict: {str(e)}")
+            return {}
+
 
 class TemplateDialog:
     """Dialog for creating and editing templates"""
