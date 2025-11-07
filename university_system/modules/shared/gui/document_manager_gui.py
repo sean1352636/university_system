@@ -6287,6 +6287,872 @@ Total Documents: {doc_count}
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open notification dialog: {e}")
 
+    def view_document_history(self):
+        """View complete version history of a document"""
+        try:
+            # Get selected document
+            selected = self.tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select a document to view history")
+                return
+
+            doc_id = self.tree.item(selected[0])['values'][0]
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get document and all its versions
+            cursor.execute('''
+            SELECT sd.document_id, sd.student_id, s.first_name || ' ' || s.last_name as student_name,
+                   dt.type_name, sd.version_number, sd.upload_date,
+                   sd.verification_status, sd.uploaded_by, sd.is_current_version,
+                   sd.original_filename, sd.file_size, sd.verification_notes
+            FROM student_documents sd
+            JOIN students s ON sd.student_id = s.student_id
+            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            WHERE sd.document_id = ? OR sd.parent_document_id = ?
+            ORDER BY sd.version_number ASC
+            ''', (doc_id, doc_id))
+
+            versions = cursor.fetchall()
+            conn.close()
+
+            if not versions:
+                messagebox.showinfo("Info", "No version history found for this document")
+                return
+
+            # Create history window
+            history_window = tk.Toplevel(self.root)
+            history_window.title("Document Version History")
+            history_window.geometry("1200x700")
+
+            main_frame = ttk.Frame(history_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Header
+            ttk.Label(main_frame, text=f"Version History: {versions[0][3]} - {versions[0][2]}",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Create treeview
+            columns = ('Doc ID', 'Version', 'Upload Date', 'Status', 'Uploaded By', 'Current', 'Filename', 'Size', 'Notes')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            # Configure columns
+            tree.column('Doc ID', width=80)
+            tree.column('Version', width=60)
+            tree.column('Upload Date', width=100)
+            tree.column('Status', width=100)
+            tree.column('Uploaded By', width=120)
+            tree.column('Current', width=60)
+            tree.column('Filename', width=200)
+            tree.column('Size', width=80)
+            tree.column('Notes', width=200)
+
+            for col in columns:
+                tree.heading(col, text=col)
+
+            # Populate data
+            for version in versions:
+                doc_id, student_id, student_name, type_name, version_num, upload_date, status, uploaded_by, is_current, filename, file_size, notes = version
+
+                upload_display = upload_date[:10] if upload_date else "N/A"
+                current_display = "Yes" if is_current else "No"
+                size_display = f"{file_size//1024}KB" if file_size else "N/A"
+                notes_display = notes[:30] if notes else ""
+
+                tree.insert('', 'end', values=(
+                    doc_id, version_num, upload_display, status, uploaded_by,
+                    current_display, filename, size_display, notes_display
+                ))
+
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Buttons
+            button_frame = ttk.Frame(history_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Compare Versions",
+                      command=lambda: self.compare_document_versions_dialog(tree)).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Restore Version",
+                      command=lambda: self.restore_previous_version_dialog(tree)).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=history_window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view document history: {e}")
+
+    def compare_document_versions_dialog(self, history_tree):
+        """Compare two versions from history"""
+        try:
+            selected = history_tree.selection()
+            if len(selected) != 2:
+                messagebox.showwarning("Warning", "Please select exactly 2 versions to compare")
+                return
+
+            doc_id1 = history_tree.item(selected[0])['values'][0]
+            doc_id2 = history_tree.item(selected[1])['values'][0]
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get both documents
+            cursor.execute('''
+            SELECT sd.document_id, sd.version_number, sd.upload_date,
+                   sd.verification_status, sd.file_size, sd.uploaded_by,
+                   sd.original_filename, dt.type_name, sd.verification_notes
+            FROM student_documents sd
+            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            WHERE sd.document_id IN (?, ?)
+            ORDER BY sd.version_number
+            ''', (doc_id1, doc_id2))
+
+            docs = cursor.fetchall()
+            conn.close()
+
+            if len(docs) != 2:
+                messagebox.showerror("Error", "Could not find both documents")
+                return
+
+            # Create comparison window
+            compare_window = tk.Toplevel()
+            compare_window.title("Version Comparison")
+            compare_window.geometry("900x600")
+
+            main_frame = ttk.Frame(compare_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Version Comparison",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Create comparison table
+            columns = ('Attribute', f'Version {docs[0][1]}', f'Version {docs[1][1]}', 'Difference')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=12)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            # Compare attributes
+            comparisons = [
+                ("Upload Date", docs[0][2][:10] if docs[0][2] else "N/A", docs[1][2][:10] if docs[1][2] else "N/A"),
+                ("Status", docs[0][3], docs[1][3]),
+                ("File Size", f"{docs[0][4]//1024}KB" if docs[0][4] else "N/A", f"{docs[1][4]//1024}KB" if docs[1][4] else "N/A"),
+                ("Uploaded By", docs[0][5], docs[1][5]),
+                ("Filename", docs[0][6], docs[1][6]),
+                ("Document Type", docs[0][7], docs[1][7]),
+                ("Notes", docs[0][8][:50] if docs[0][8] else "", docs[1][8][:50] if docs[1][8] else "")
+            ]
+
+            for attr_name, val1, val2 in comparisons:
+                diff = "⚠️ Different" if val1 != val2 else "✓ Same"
+                tree.insert('', 'end', values=(attr_name, val1, val2, diff))
+
+            tree.pack(fill='both', expand=True, pady=10)
+
+            ttk.Button(compare_window, text="Close", command=compare_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to compare versions: {e}")
+
+    def restore_previous_version_dialog(self, history_tree):
+        """Restore a previous version as current"""
+        try:
+            selected = history_tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select a version to restore")
+                return
+
+            doc_id = history_tree.item(selected[0])['values'][0]
+            version_num = history_tree.item(selected[0])['values'][1]
+
+            confirm = messagebox.askyesno("Confirm Restore",
+                                         f"Are you sure you want to restore version {version_num} as the current version?")
+            if not confirm:
+                return
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get document info
+            cursor.execute('''
+            SELECT student_id, document_type_id
+            FROM student_documents
+            WHERE document_id = ?
+            ''', (doc_id,))
+
+            doc_info = cursor.fetchone()
+            if not doc_info:
+                messagebox.showerror("Error", "Document not found")
+                conn.close()
+                return
+
+            student_id, type_id = doc_info
+
+            # Mark all versions as non-current
+            cursor.execute('''
+            UPDATE student_documents
+            SET is_current_version = 0
+            WHERE student_id = ? AND document_type_id = ?
+            ''', (student_id, type_id))
+
+            # Mark selected version as current
+            cursor.execute('''
+            UPDATE student_documents
+            SET is_current_version = 1
+            WHERE document_id = ?
+            ''', (doc_id,))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Version {version_num} has been restored as current")
+            self.load_documents_data()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to restore version: {e}")
+
+    def bulk_document_download(self):
+        """Download multiple documents"""
+        try:
+            selected = self.tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select documents to download")
+                return
+
+            # Ask for download directory
+            download_dir = filedialog.askdirectory(title="Select Download Directory")
+            if not download_dir:
+                return
+
+            # Progress dialog
+            progress_dialog = tk.Toplevel(self.root)
+            progress_dialog.title("Downloading Documents")
+            progress_dialog.geometry("600x300")
+            progress_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(progress_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Downloading {len(selected)} document(s)",
+                     font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+            progress = ttk.Progressbar(main_frame, length=500, mode='determinate')
+            progress.pack(pady=10)
+
+            status_label = ttk.Label(main_frame, text="Preparing...")
+            status_label.pack(pady=10)
+
+            # Download documents
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            success_count = 0
+            fail_count = 0
+
+            for i, item in enumerate(selected):
+                doc_id = self.tree.item(item)['values'][0]
+
+                cursor.execute('''
+                SELECT original_filename, file_path
+                FROM student_documents
+                WHERE document_id = ?
+                ''', (doc_id,))
+
+                result = cursor.fetchone()
+                if result:
+                    filename, file_path = result
+                    try:
+                        import shutil
+                        import os
+
+                        if file_path and os.path.exists(file_path):
+                            dest_path = os.path.join(download_dir, filename)
+                            shutil.copy2(file_path, dest_path)
+                            success_count += 1
+                        else:
+                            fail_count += 1
+                    except Exception as e:
+                        fail_count += 1
+                        print(f"Error downloading {filename}: {e}")
+                else:
+                    fail_count += 1
+
+                progress['value'] = ((i + 1) / len(selected)) * 100
+                status_label.config(text=f"Downloaded {i + 1}/{len(selected)}")
+                progress_dialog.update()
+
+            conn.close()
+            progress_dialog.destroy()
+
+            messagebox.showinfo("Download Complete",
+                              f"Successfully downloaded: {success_count}\nFailed: {fail_count}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to download documents: {e}")
+
+    def bulk_expiry_update(self):
+        """Update expiry dates for multiple documents"""
+        try:
+            selected = self.tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select documents to update")
+                return
+
+            # Create dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Bulk Expiry Update")
+            dialog.geometry("600x450")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Update Expiry for {len(selected)} document(s)",
+                     font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+            # Date selection
+            ttk.Label(main_frame, text="New Expiry Date:", font=('Arial', 10, 'bold')).pack(anchor='w')
+
+            date_frame = ttk.Frame(main_frame)
+            date_frame.pack(fill='x', pady=10)
+
+            ttk.Label(date_frame, text="Year:").grid(row=0, column=0, padx=5)
+            year_var = tk.StringVar(value="2025")
+            year_entry = ttk.Spinbox(date_frame, from_=2024, to=2030, textvariable=year_var, width=10)
+            year_entry.grid(row=0, column=1, padx=5)
+
+            ttk.Label(date_frame, text="Month:").grid(row=0, column=2, padx=5)
+            month_var = tk.StringVar(value="12")
+            month_entry = ttk.Spinbox(date_frame, from_=1, to=12, textvariable=month_var, width=10)
+            month_entry.grid(row=0, column=3, padx=5)
+
+            ttk.Label(date_frame, text="Day:").grid(row=0, column=4, padx=5)
+            day_var = tk.StringVar(value="31")
+            day_entry = ttk.Spinbox(date_frame, from_=1, to=31, textvariable=day_var, width=10)
+            day_entry.grid(row=0, column=5, padx=5)
+
+            def apply_expiry_update():
+                year = year_var.get()
+                month = month_var.get().zfill(2)
+                day = day_var.get().zfill(2)
+                new_expiry = f"{year}-{month}-{day}"
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    for item in selected:
+                        doc_id = self.tree.item(item)['values'][0]
+                        cursor.execute('''
+                            UPDATE student_documents
+                            SET expiry_date = ?
+                            WHERE document_id = ?
+                        ''', (new_expiry, doc_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Expiry date updated for {len(selected)} documents")
+                    dialog.destroy()
+                    self.load_documents_data()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update expiry dates: {e}")
+
+            ttk.Button(main_frame, text="Apply Update", command=apply_expiry_update).pack(pady=20)
+            ttk.Button(main_frame, text="Cancel", command=dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open expiry update dialog: {e}")
+
+    def export_activity_log(self):
+        """Export activity log to CSV"""
+        try:
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"activity_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not filename:
+                return
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT id, timestamp, action, entity_type, entity_id, user_id, details
+            FROM activity_log
+            ORDER BY timestamp DESC
+            ''')
+
+            activities = cursor.fetchall()
+            conn.close()
+
+            import csv
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['ID', 'Timestamp', 'Action', 'Entity Type', 'Entity ID', 'User ID', 'Details'])
+                writer.writerows(activities)
+
+            messagebox.showinfo("Success", f"Activity log exported to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export activity log: {e}")
+
+    def export_all_documents(self):
+        """Export all document records to CSV"""
+        try:
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not filename:
+                return
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+                   dt.type_name, sd.upload_date, sd.expiry_date,
+                   sd.verification_status, sd.workflow_status, sd.uploaded_by,
+                   sd.original_filename, sd.file_size, sd.version_number
+            FROM student_documents sd
+            JOIN students s ON sd.student_id = s.student_id
+            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            WHERE sd.is_current_version = 1
+            ORDER BY sd.upload_date DESC
+            ''')
+
+            documents = cursor.fetchall()
+            conn.close()
+
+            import csv
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Doc ID', 'Student ID', 'First Name', 'Last Name', 'Document Type',
+                               'Upload Date', 'Expiry Date', 'Verification Status', 'Workflow Status',
+                               'Uploaded By', 'Filename', 'Size (bytes)', 'Version'])
+                writer.writerows(documents)
+
+            messagebox.showinfo("Success", f"All documents exported to:\n{filename}\nTotal: {len(documents)} records")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export documents: {e}")
+
+    def generate_monthly_summary(self):
+        """Generate monthly summary report"""
+        try:
+            # Create dialog
+            report_window = tk.Toplevel(self.root)
+            report_window.title("Monthly Summary Report")
+            report_window.geometry("1000x700")
+
+            main_frame = ttk.Frame(report_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Monthly Summary Report",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get current month stats
+            cursor.execute('''
+            SELECT COUNT(*) as total_uploads,
+                   SUM(CASE WHEN verification_status = 'Verified' THEN 1 ELSE 0 END) as verified,
+                   SUM(CASE WHEN verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                   SUM(CASE WHEN verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected
+            FROM student_documents
+            WHERE strftime('%Y-%m', upload_date) = strftime('%Y-%m', 'now')
+            ''')
+
+            stats = cursor.fetchone()
+
+            # Stats display
+            stats_frame = ttk.LabelFrame(main_frame, text="This Month's Statistics", padding=15)
+            stats_frame.pack(fill='x', pady=(0, 15))
+
+            labels = [
+                ("Total Uploads:", stats[0]),
+                ("Verified:", stats[1]),
+                ("Pending:", stats[2]),
+                ("Rejected:", stats[3])
+            ]
+
+            for i, (label, value) in enumerate(labels):
+                ttk.Label(stats_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky='w', padx=5, pady=2)
+                ttk.Label(stats_frame, text=str(value), font=('Arial', 10)).grid(row=i, column=1, sticky='w', padx=5, pady=2)
+
+            # Monthly breakdown
+            cursor.execute('''
+            SELECT strftime('%Y-%m', upload_date) as month,
+                   COUNT(*) as count
+            FROM student_documents
+            WHERE upload_date >= date('now', '-12 months')
+            GROUP BY month
+            ORDER BY month DESC
+            LIMIT 12
+            ''')
+
+            monthly_data = cursor.fetchall()
+            conn.close()
+
+            # Monthly table
+            table_frame = ttk.LabelFrame(main_frame, text="Last 12 Months", padding=15)
+            table_frame.pack(fill='both', expand=True)
+
+            columns = ('Month', 'Total Uploads')
+            tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=12)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            for row in monthly_data:
+                tree.insert('', 'end', values=row)
+
+            tree.pack(fill='both', expand=True)
+
+            # Export button
+            def export_summary():
+                try:
+                    filename = filedialog.asksaveasfilename(
+                        defaultextension=".csv",
+                        filetypes=[("CSV files", "*.csv")],
+                        initialfile=f"monthly_summary_{datetime.now().strftime('%Y%m%d')}.csv"
+                    )
+                    if filename:
+                        import csv
+                        with open(filename, 'w', newline='') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Metric', 'Value'])
+                            writer.writerows([
+                                ['Total Uploads This Month', stats[0]],
+                                ['Verified', stats[1]],
+                                ['Pending', stats[2]],
+                                ['Rejected', stats[3]]
+                            ])
+                            writer.writerow([])
+                            writer.writerow(['Month', 'Total Uploads'])
+                            writer.writerows(monthly_data)
+                        messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to export: {e}")
+
+            button_frame = ttk.Frame(report_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Export to CSV", command=export_summary).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate monthly summary: {e}")
+
+    def generate_department_analysis(self):
+        """Generate department analysis report"""
+        try:
+            report_window = tk.Toplevel(self.root)
+            report_window.title("Department Analysis Report")
+            report_window.geometry("1000x700")
+
+            main_frame = ttk.Frame(report_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Department Analysis Report",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get department stats
+            cursor.execute('''
+            SELECT s.program as department,
+                   COUNT(DISTINCT sd.student_id) as total_students,
+                   COUNT(sd.document_id) as total_documents,
+                   SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified_docs,
+                   ROUND(AVG(sd.file_size)/1024.0, 2) as avg_file_size_kb
+            FROM student_documents sd
+            JOIN students s ON sd.student_id = s.student_id
+            WHERE sd.is_current_version = 1
+            GROUP BY s.program
+            ORDER BY total_documents DESC
+            ''')
+
+            dept_data = cursor.fetchall()
+            conn.close()
+
+            # Create table
+            columns = ('Department', 'Students', 'Total Docs', 'Verified', 'Avg Size (KB)')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            widths = [250, 100, 100, 100, 120]
+            for i, col in enumerate(columns):
+                tree.heading(col, text=col)
+                tree.column(col, width=widths[i])
+
+            for row in dept_data:
+                tree.insert('', 'end', values=row)
+
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Export button
+            def export_dept_analysis():
+                try:
+                    filename = filedialog.asksaveasfilename(
+                        defaultextension=".csv",
+                        filetypes=[("CSV files", "*.csv")],
+                        initialfile=f"department_analysis_{datetime.now().strftime('%Y%m%d')}.csv"
+                    )
+                    if filename:
+                        import csv
+                        with open(filename, 'w', newline='') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(columns)
+                            writer.writerows(dept_data)
+                        messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to export: {e}")
+
+            button_frame = ttk.Frame(report_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Export to CSV", command=export_dept_analysis).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate department analysis: {e}")
+
+    def view_backup_history(self):
+        """View backup history"""
+        try:
+            history_window = tk.Toplevel(self.root)
+            history_window.title("Backup History")
+            history_window.geometry("1000x700")
+
+            main_frame = ttk.Frame(history_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Backup History",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Read backup metadata
+            backup_metadata_path = "/home/seancatchpole989/university_system/data/backup_metadata.json"
+            backups = []
+
+            try:
+                import json
+                if os.path.exists(backup_metadata_path):
+                    with open(backup_metadata_path, 'r') as f:
+                        backup_data = json.load(f)
+                        backups = backup_data.get('backups', [])
+            except Exception as e:
+                print(f"Error reading backup metadata: {e}")
+
+            # Create table
+            columns = ('Date', 'Type', 'Size', 'Location', 'Status')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            widths = [150, 100, 100, 400, 100]
+            for i, col in enumerate(columns):
+                tree.heading(col, text=col)
+                tree.column(col, width=widths[i])
+
+            for backup in backups:
+                tree.insert('', 'end', values=(
+                    backup.get('timestamp', 'N/A'),
+                    backup.get('type', 'N/A'),
+                    backup.get('size', 'N/A'),
+                    backup.get('path', 'N/A'),
+                    backup.get('status', 'N/A')
+                ))
+
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Buttons
+            button_frame = ttk.Frame(history_window)
+            button_frame.pack(pady=10)
+
+            def restore_selected():
+                selected = tree.selection()
+                if not selected:
+                    messagebox.showwarning("Warning", "Please select a backup to restore")
+                    return
+
+                backup_path = tree.item(selected[0])['values'][3]
+                confirm = messagebox.askyesno("Confirm Restore",
+                                             f"Are you sure you want to restore from:\n{backup_path}\n\nThis will replace the current database!")
+                if confirm:
+                    self.restore_backup_from_path(backup_path)
+
+            ttk.Button(button_frame, text="Restore Selected", command=restore_selected).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Refresh", command=lambda: self.view_backup_history()).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=history_window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view backup history: {e}")
+
+    def schedule_automatic_backup(self):
+        """Configure automatic backup schedule"""
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Schedule Automatic Backup")
+            dialog.geometry("700x550")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Automatic Backup Schedule",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Enable/disable
+            enable_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(main_frame, text="Enable Automatic Backups",
+                           variable=enable_var).pack(anchor='w', pady=10)
+
+            # Frequency
+            freq_frame = ttk.LabelFrame(main_frame, text="Backup Frequency", padding=15)
+            freq_frame.pack(fill='x', pady=10)
+
+            frequency_var = tk.StringVar(value="daily")
+            ttk.Radiobutton(freq_frame, text="Daily", variable=frequency_var, value="daily").pack(anchor='w')
+            ttk.Radiobutton(freq_frame, text="Weekly", variable=frequency_var, value="weekly").pack(anchor='w')
+            ttk.Radiobutton(freq_frame, text="Monthly", variable=frequency_var, value="monthly").pack(anchor='w')
+
+            # Time
+            time_frame = ttk.LabelFrame(main_frame, text="Backup Time", padding=15)
+            time_frame.pack(fill='x', pady=10)
+
+            ttk.Label(time_frame, text="Hour (0-23):").grid(row=0, column=0, padx=5)
+            hour_var = tk.StringVar(value="2")
+            hour_spin = ttk.Spinbox(time_frame, from_=0, to=23, textvariable=hour_var, width=10)
+            hour_spin.grid(row=0, column=1, padx=5)
+
+            ttk.Label(time_frame, text="Minute (0-59):").grid(row=0, column=2, padx=5)
+            minute_var = tk.StringVar(value="0")
+            minute_spin = ttk.Spinbox(time_frame, from_=0, to=59, textvariable=minute_var, width=10)
+            minute_spin.grid(row=0, column=3, padx=5)
+
+            # Retention
+            retention_frame = ttk.LabelFrame(main_frame, text="Backup Retention", padding=15)
+            retention_frame.pack(fill='x', pady=10)
+
+            ttk.Label(retention_frame, text="Keep backups for (days):").grid(row=0, column=0, padx=5)
+            retention_var = tk.StringVar(value="30")
+            retention_spin = ttk.Spinbox(retention_frame, from_=1, to=365, textvariable=retention_var, width=10)
+            retention_spin.grid(row=0, column=1, padx=5)
+
+            def save_schedule():
+                config = {
+                    'enabled': enable_var.get(),
+                    'frequency': frequency_var.get(),
+                    'hour': int(hour_var.get()),
+                    'minute': int(minute_var.get()),
+                    'retention_days': int(retention_var.get())
+                }
+
+                # Save configuration
+                config_path = "/home/seancatchpole989/university_system/data/backup_schedule.json"
+                try:
+                    import json
+                    with open(config_path, 'w') as f:
+                        json.dump(config, f, indent=2)
+
+                    messagebox.showinfo("Success", "Backup schedule saved successfully!")
+                    dialog.destroy()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save schedule: {e}")
+
+            ttk.Button(main_frame, text="Save Schedule", command=save_schedule).pack(pady=20)
+            ttk.Button(main_frame, text="Cancel", command=dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open schedule dialog: {e}")
+
+    def notification_templates(self):
+        """Manage notification templates"""
+        try:
+            templates_window = tk.Toplevel(self.root)
+            templates_window.title("Notification Templates")
+            templates_window.geometry("900x700")
+
+            main_frame = ttk.Frame(templates_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Notification Templates",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Pre-defined templates
+            templates = [
+                ("Document Expiring Soon", "Your {document_type} will expire on {expiry_date}. Please renew it soon."),
+                ("Document Verified", "Your {document_type} has been verified and approved."),
+                ("Document Rejected", "Your {document_type} was rejected. Reason: {reason}"),
+                ("Missing Document", "You are missing a required {document_type}. Please upload it."),
+                ("Workflow Step Complete", "Workflow step '{step_name}' has been completed for your {document_type}.")
+            ]
+
+            # Create list
+            list_frame = ttk.Frame(main_frame)
+            list_frame.pack(fill='both', expand=True)
+
+            # Listbox
+            template_listbox = tk.Listbox(list_frame, height=15, font=('Arial', 10))
+            template_listbox.pack(side='left', fill='both', expand=True)
+
+            for name, _ in templates:
+                template_listbox.insert(tk.END, name)
+
+            scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=template_listbox.yview)
+            template_listbox.configure(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side='right', fill='y')
+
+            # Template preview
+            preview_frame = ttk.LabelFrame(main_frame, text="Template Preview", padding=10)
+            preview_frame.pack(fill='x', pady=10)
+
+            preview_text = tk.Text(preview_frame, height=5, wrap=tk.WORD)
+            preview_text.pack(fill='x')
+
+            def show_template(event):
+                selection = template_listbox.curselection()
+                if selection:
+                    _, template_text = templates[selection[0]]
+                    preview_text.delete('1.0', tk.END)
+                    preview_text.insert('1.0', template_text)
+
+            template_listbox.bind('<<ListboxSelect>>', show_template)
+
+            # Buttons
+            button_frame = ttk.Frame(templates_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Use Template",
+                      command=lambda: self.use_notification_template(
+                          templates[template_listbox.curselection()[0]][1] if template_listbox.curselection() else None
+                      )).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=templates_window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open templates: {e}")
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
