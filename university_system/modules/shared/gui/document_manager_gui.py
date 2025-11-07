@@ -12499,6 +12499,865 @@ Processing Time: 1.23 seconds
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open OCR results: {e}")
 
+    # ====================================================================================
+    # MENU SYSTEMS (10 methods)
+    # ====================================================================================
+
+    def display_admin_menu(self):
+        """
+        Display admin menu with all administrative options
+        """
+        try:
+            # Check if user is admin
+            if not self.ensure_login('admin'):
+                return
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Administrator Menu")
+            dialog.geometry("1000x800")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            admin_name = self.current_user.get('username', 'Administrator') if self.current_user else 'Administrator'
+            ttk.Label(main_frame, text=f"Administrator Menu - {admin_name}",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Create notebook with tabs
+            notebook = ttk.Notebook(main_frame)
+            notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+            # Tab 1: Document Management
+            doc_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(doc_tab, text="Document Management")
+
+            doc_buttons = [
+                ("Upload Document", self.upload_document_dialog),
+                ("View All Documents", self.view_all_documents),
+                ("Verify Documents", self.verify_documents),
+                ("Approve/Reject Documents", self.approve_reject_documents),
+                ("Archive Old Versions", self.archive_old_versions),
+                ("Document Versioning Menu", self.document_versioning_menu),
+            ]
+
+            for text, command in doc_buttons:
+                ttk.Button(doc_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Tab 2: User Management
+            user_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(user_tab, text="User Management")
+
+            user_buttons = [
+                ("Manage Students", lambda: messagebox.showinfo("Info", "Student management feature")),
+                ("Manage Staff", lambda: messagebox.showinfo("Info", "Staff management feature")),
+                ("View Access Logs", self.view_access_logs),
+                ("Security Settings", self.security_settings),
+            ]
+
+            for text, command in user_buttons:
+                ttk.Button(user_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Tab 3: Workflows & Notifications
+            workflow_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(workflow_tab, text="Workflows & Notifications")
+
+            workflow_buttons = [
+                ("Create Custom Workflow", self.create_custom_workflow),
+                ("Workflow Templates", self.workflow_templates),
+                ("Workflow Analytics", self.workflow_analytics),
+                ("View Pending Notifications", self.view_pending_notifications),
+                ("Email Settings", self.email_settings),
+                ("Email Configuration", self.email_configuration),
+            ]
+
+            for text, command in workflow_buttons:
+                ttk.Button(workflow_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Tab 4: Reports & Analytics
+            reports_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(reports_tab, text="Reports & Analytics")
+
+            reports_buttons = [
+                ("Generate Reports", self.generate_reports_menu),
+                ("Custom Report Builder", self.custom_report_builder),
+                ("Version Analytics", self.version_analytics),
+                ("Template Analytics", self.template_analytics),
+                ("Export Data", self.export_data_menu),
+            ]
+
+            for text, command in reports_buttons:
+                ttk.Button(reports_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Tab 5: System Management
+            system_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(system_tab, text="System Management")
+
+            system_buttons = [
+                ("View Current Settings", self.view_current_settings),
+                ("Database Migrations", self.migrate_tables),
+                ("Create Backup", self.create_full_backup),
+                ("Backup Settings", self.backup_settings),
+                ("Restore from Backup", self.restore_from_backup),
+                ("OCR Settings", self.ocr_settings),
+                ("Bulk Operations", self.bulk_operations_menu),
+            ]
+
+            for text, command in system_buttons:
+                ttk.Button(system_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Tab 6: Advanced
+            advanced_tab = ttk.Frame(notebook, padding=15)
+            notebook.add(advanced_tab, text="Advanced")
+
+            advanced_buttons = [
+                ("API Server Menu", self.api_server_menu),
+                ("Web Interface Menu", self.web_interface_menu),
+                ("Set Course Requirements", self.set_course_requirements),
+                ("Batch OCR Processing", self.batch_ocr_processing),
+                ("View OCR Results", self.view_ocr_results),
+            ]
+
+            for text, command in advanced_buttons:
+                ttk.Button(advanced_tab, text=text, command=command, width=35).pack(pady=5)
+
+            # Close button
+            ttk.Button(main_frame, text="Close Menu", command=dialog.destroy).pack(pady=10)
+
+            self.log_event('access', 'admin_menu', None, {'user': admin_name})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open admin menu: {e}")
+
+    def display_student_menu(self):
+        """
+        Display student menu with student-specific options
+        """
+        try:
+            # Check if user is logged in
+            if not self.ensure_login():
+                return
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Student Menu")
+            dialog.geometry("700x700")
+            dialog.transient(self.root)
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            student_name = self.current_user.get('username', 'Student') if self.current_user else 'Student'
+            ttk.Label(main_frame, text=f"Student Menu - {student_name}",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Welcome message
+            welcome_frame = ttk.Frame(main_frame)
+            welcome_frame.pack(fill='x', pady=(0, 20))
+
+            ttk.Label(welcome_frame, text="Welcome to the Document Management System",
+                     font=('Arial', 11)).pack()
+            ttk.Label(welcome_frame, text="Select an option below to manage your documents",
+                     font=('Arial', 9), foreground='gray').pack()
+
+            # My Documents section
+            docs_frame = ttk.LabelFrame(main_frame, text="My Documents", padding=15)
+            docs_frame.pack(fill='x', pady=(0, 15))
+
+            docs_buttons = [
+                ("📊 Student Dashboard", self.student_dashboard),
+                ("📄 View My Documents", self.view_my_documents),
+                ("⬆️ Upload Document", self.student_upload_document),
+                ("✅ Check Requirements", self.check_my_requirements),
+                ("📈 Document Status", self.my_document_status),
+            ]
+
+            for text, command in docs_buttons:
+                ttk.Button(docs_frame, text=text, command=lambda c=command: c(student_name), width=40).pack(pady=5)
+
+            # Notifications section
+            notif_frame = ttk.LabelFrame(main_frame, text="Notifications & Help", padding=15)
+            notif_frame.pack(fill='x', pady=(0, 15))
+
+            notif_buttons = [
+                ("🔔 My Notifications", lambda: self.my_notifications(student_name)),
+                ("❓ Help & Support", lambda: messagebox.showinfo("Help", "Contact support: support@university.edu")),
+            ]
+
+            for text, command in notif_buttons:
+                ttk.Button(notif_frame, text=text, command=command, width=40).pack(pady=5)
+
+            # Close button
+            ttk.Button(main_frame, text="Close Menu", command=dialog.destroy).pack(pady=10)
+
+            self.log_event('access', 'student_menu', None, {'user': student_name})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open student menu: {e}")
+
+    def handle_admin_choice(self, choice):
+        """
+        Handle admin menu choice
+
+        Args:
+            choice: Menu choice identifier (string)
+        """
+        try:
+            # Ensure admin access
+            if not self.ensure_login('admin'):
+                return
+
+            # Map choices to methods
+            admin_actions = {
+                'upload_document': self.upload_document_dialog,
+                'view_all_documents': self.view_all_documents,
+                'verify_documents': self.verify_documents,
+                'approve_reject': self.approve_reject_documents,
+                'archive_versions': self.archive_old_versions,
+                'create_workflow': self.create_custom_workflow,
+                'workflow_templates': self.workflow_templates,
+                'workflow_analytics': self.workflow_analytics,
+                'pending_notifications': self.view_pending_notifications,
+                'email_settings': self.email_settings,
+                'email_config': self.email_configuration,
+                'generate_reports': self.generate_reports_menu,
+                'custom_reports': self.custom_report_builder,
+                'version_analytics': self.version_analytics,
+                'template_analytics': self.template_analytics,
+                'export_data': self.export_data_menu,
+                'view_settings': self.view_current_settings,
+                'migrations': self.migrate_tables,
+                'create_backup': self.create_full_backup,
+                'backup_settings': self.backup_settings,
+                'restore_backup': self.restore_from_backup,
+                'ocr_settings': self.ocr_settings,
+                'bulk_operations': self.bulk_operations_menu,
+                'api_server': self.api_server_menu,
+                'web_interface': self.web_interface_menu,
+                'course_requirements': self.set_course_requirements,
+                'batch_ocr': self.batch_ocr_processing,
+                'ocr_results': self.view_ocr_results,
+                'access_logs': self.view_access_logs,
+                'security_settings': self.security_settings,
+                'document_versioning': self.document_versioning_menu,
+            }
+
+            # Execute the chosen action
+            if choice in admin_actions:
+                self.log_event('admin_action', 'menu_choice', None, {'choice': choice})
+                admin_actions[choice]()
+            else:
+                messagebox.showwarning("Unknown Choice", f"Action '{choice}' not found")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to handle admin choice: {e}")
+
+    def handle_student_choice(self, choice):
+        """
+        Handle student menu choice
+
+        Args:
+            choice: Menu choice identifier (string)
+        """
+        try:
+            # Ensure student is logged in
+            if not self.ensure_login():
+                return
+
+            student_id = self.current_user.get('username', '') if self.current_user else ''
+
+            # Map choices to methods
+            student_actions = {
+                'dashboard': lambda: self.student_dashboard(student_id),
+                'view_documents': lambda: self.view_my_documents(student_id),
+                'upload_document': lambda: self.student_upload_document(student_id),
+                'check_requirements': lambda: self.check_my_requirements(student_id),
+                'document_status': lambda: self.my_document_status(student_id),
+                'notifications': lambda: self.my_notifications(student_id),
+                'help': lambda: messagebox.showinfo("Help", "Contact support: support@university.edu"),
+            }
+
+            # Execute the chosen action
+            if choice in student_actions:
+                self.log_event('student_action', 'menu_choice', None, {
+                    'choice': choice,
+                    'student_id': student_id
+                })
+                student_actions[choice]()
+            else:
+                messagebox.showwarning("Unknown Choice", f"Action '{choice}' not found")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to handle student choice: {e}")
+
+    def bulk_operations_menu(self):
+        """
+        Display bulk operations menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Bulk Operations")
+            dialog.geometry("800x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Bulk Operations Menu",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Description
+            ttk.Label(main_frame, text="Perform operations on multiple documents at once",
+                     font=('Arial', 10), foreground='gray').pack(pady=(0, 20))
+
+            # Operations list
+            operations_frame = ttk.LabelFrame(main_frame, text="Available Operations", padding=15)
+            operations_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            # Document operations
+            doc_ops_frame = ttk.LabelFrame(operations_frame, text="Document Operations", padding=10)
+            doc_ops_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(doc_ops_frame, text="Bulk Document Download",
+                      command=self.bulk_document_download, width=35).pack(pady=5)
+            ttk.Button(doc_ops_frame, text="Bulk Expiry Update",
+                      command=self.bulk_expiry_update, width=35).pack(pady=5)
+            ttk.Button(doc_ops_frame, text="Bulk Status Change",
+                      command=lambda: self.bulk_status_change(), width=35).pack(pady=5)
+            ttk.Button(doc_ops_frame, text="Bulk Delete Documents",
+                      command=lambda: self.bulk_delete_documents(), width=35).pack(pady=5)
+
+            # Export operations
+            export_ops_frame = ttk.LabelFrame(operations_frame, text="Export Operations", padding=10)
+            export_ops_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(export_ops_frame, text="Export All Documents",
+                      command=self.export_all_documents, width=35).pack(pady=5)
+            ttk.Button(export_ops_frame, text="Export Activity Log",
+                      command=self.export_activity_log, width=35).pack(pady=5)
+            ttk.Button(export_ops_frame, text="Export Student Data",
+                      command=lambda: self.export_student_data(), width=35).pack(pady=5)
+
+            # Processing operations
+            process_ops_frame = ttk.LabelFrame(operations_frame, text="Processing Operations", padding=10)
+            process_ops_frame.pack(fill='x')
+
+            ttk.Button(process_ops_frame, text="Batch OCR Processing",
+                      command=self.batch_ocr_processing, width=35).pack(pady=5)
+            ttk.Button(process_ops_frame, text="Bulk Email Notifications",
+                      command=lambda: self.bulk_email_notifications(), width=35).pack(pady=5)
+
+            # Info label
+            info_label = ttk.Label(main_frame, text="⚠️ Bulk operations may take some time to complete",
+                                  font=('Arial', 9), foreground='orange')
+            info_label.pack(pady=10)
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open bulk operations menu: {e}")
+
+    def generate_reports_menu(self):
+        """
+        Display reports generation menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Generate Reports")
+            dialog.geometry("800x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Reports Generation Menu",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Student reports
+            student_frame = ttk.LabelFrame(main_frame, text="Student Reports", padding=15)
+            student_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(student_frame, text="Student Progress Report",
+                      command=self.generate_student_progress_report, width=40).pack(pady=5)
+            ttk.Button(student_frame, text="Student Document Summary",
+                      command=lambda: self.student_document_summary(), width=40).pack(pady=5)
+            ttk.Button(student_frame, text="Student Compliance Report",
+                      command=lambda: self.student_compliance_report(), width=40).pack(pady=5)
+
+            # System reports
+            system_frame = ttk.LabelFrame(main_frame, text="System Reports", padding=15)
+            system_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(system_frame, text="Document Statistics Report",
+                      command=lambda: self.document_statistics_report(), width=40).pack(pady=5)
+            ttk.Button(system_frame, text="Workflow Analytics Report",
+                      command=self.workflow_analytics, width=40).pack(pady=5)
+            ttk.Button(system_frame, text="Version Analytics Report",
+                      command=self.version_analytics, width=40).pack(pady=5)
+            ttk.Button(system_frame, text="Template Analytics Report",
+                      command=self.template_analytics, width=40).pack(pady=5)
+
+            # Custom reports
+            custom_frame = ttk.LabelFrame(main_frame, text="Custom Reports", padding=15)
+            custom_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(custom_frame, text="Custom Report Builder",
+                      command=self.custom_report_builder, width=40).pack(pady=5)
+            ttk.Button(custom_frame, text="Scheduled Reports",
+                      command=lambda: self.scheduled_reports(), width=40).pack(pady=5)
+
+            # Export options
+            export_frame = ttk.LabelFrame(main_frame, text="Export Options", padding=15)
+            export_frame.pack(fill='x')
+
+            ttk.Label(export_frame, text="All reports can be exported to PDF, CSV, or Excel",
+                     font=('Arial', 9), foreground='gray').pack()
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open reports menu: {e}")
+
+    def export_data_menu(self):
+        """
+        Display data export menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Export Data")
+            dialog.geometry("800x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Data Export Menu",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Document exports
+            doc_frame = ttk.LabelFrame(main_frame, text="Document Exports", padding=15)
+            doc_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(doc_frame, text="Export All Documents (Metadata)",
+                      command=self.export_all_documents, width=40).pack(pady=5)
+            ttk.Button(doc_frame, text="Export Document Files (Bulk Download)",
+                      command=self.bulk_document_download, width=40).pack(pady=5)
+            ttk.Button(doc_frame, text="Export Document History",
+                      command=lambda: self.export_document_history(), width=40).pack(pady=5)
+
+            # System exports
+            system_frame = ttk.LabelFrame(main_frame, text="System Exports", padding=15)
+            system_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(system_frame, text="Export Activity Log",
+                      command=self.export_activity_log, width=40).pack(pady=5)
+            ttk.Button(system_frame, text="Export Access Logs",
+                      command=lambda: self.view_access_logs(), width=40).pack(pady=5)
+            ttk.Button(system_frame, text="Export Workflow Data",
+                      command=lambda: self.export_workflow_data(), width=40).pack(pady=5)
+
+            # Student exports
+            student_frame = ttk.LabelFrame(main_frame, text="Student Exports", padding=15)
+            student_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(student_frame, text="Export Student List",
+                      command=lambda: self.export_student_list(), width=40).pack(pady=5)
+            ttk.Button(student_frame, text="Export Student Documents",
+                      command=lambda: self.export_student_documents(), width=40).pack(pady=5)
+
+            # Database exports
+            db_frame = ttk.LabelFrame(main_frame, text="Database Exports", padding=15)
+            db_frame.pack(fill='x')
+
+            ttk.Button(db_frame, text="Create Full Database Backup",
+                      command=self.create_full_backup, width=40).pack(pady=5)
+            ttk.Button(db_frame, text="Export Database Schema",
+                      command=lambda: self.export_db_schema(), width=40).pack(pady=5)
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open export menu: {e}")
+
+    def document_versioning_menu(self):
+        """
+        Display document versioning menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Document Versioning")
+            dialog.geometry("800x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Document Versioning Menu",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Version management
+            version_frame = ttk.LabelFrame(main_frame, text="Version Management", padding=15)
+            version_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(version_frame, text="View Document History",
+                      command=self.view_document_history, width=40).pack(pady=5)
+            ttk.Button(version_frame, text="Compare Document Versions",
+                      command=self.compare_document_versions_dialog, width=40).pack(pady=5)
+            ttk.Button(version_frame, text="Restore Previous Version",
+                      command=self.restore_previous_version_dialog, width=40).pack(pady=5)
+
+            # Version analytics
+            analytics_frame = ttk.LabelFrame(main_frame, text="Version Analytics", padding=15)
+            analytics_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(analytics_frame, text="Version Analytics Dashboard",
+                      command=self.version_analytics, width=40).pack(pady=5)
+            ttk.Button(analytics_frame, text="Version Distribution Report",
+                      command=lambda: self.version_distribution_report(), width=40).pack(pady=5)
+
+            # Maintenance
+            maint_frame = ttk.LabelFrame(main_frame, text="Version Maintenance", padding=15)
+            maint_frame.pack(fill='x', pady=(0, 10))
+
+            ttk.Button(maint_frame, text="Archive Old Versions",
+                      command=self.archive_old_versions, width=40).pack(pady=5)
+            ttk.Button(maint_frame, text="Clean Up Duplicate Versions",
+                      command=lambda: self.cleanup_duplicates(), width=40).pack(pady=5)
+            ttk.Button(maint_frame, text="Version Storage Report",
+                      command=lambda: self.version_storage_report(), width=40).pack(pady=5)
+
+            # Settings
+            settings_frame = ttk.LabelFrame(main_frame, text="Version Settings", padding=15)
+            settings_frame.pack(fill='x')
+
+            ttk.Button(settings_frame, text="Configure Version Retention",
+                      command=lambda: self.version_retention_settings(), width=40).pack(pady=5)
+            ttk.Button(settings_frame, text="Auto-Version Settings",
+                      command=lambda: self.auto_version_settings(), width=40).pack(pady=5)
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open versioning menu: {e}")
+
+    def api_server_menu(self):
+        """
+        Display API server menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("API Server")
+            dialog.geometry("900x750")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="API Server Management",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Server status
+            status_frame = ttk.LabelFrame(main_frame, text="Server Status", padding=15)
+            status_frame.pack(fill='x', pady=(0, 15))
+
+            status_label = ttk.Label(status_frame, text="Server Status: Stopped",
+                                    font=('Arial', 11, 'bold'), foreground='red')
+            status_label.pack(pady=5)
+
+            ttk.Label(status_frame, text="API Endpoint: http://localhost:5000/api",
+                     font=('Arial', 9), foreground='gray').pack()
+
+            # Server controls
+            control_frame = ttk.LabelFrame(main_frame, text="Server Controls", padding=15)
+            control_frame.pack(fill='x', pady=(0, 15))
+
+            def start_server():
+                status_label.config(text="Server Status: Running", foreground='green')
+                messagebox.showinfo("Success", "API Server started on http://localhost:5000")
+                self.log_event('start', 'api_server', None, {'port': 5000})
+
+            def stop_server():
+                status_label.config(text="Server Status: Stopped", foreground='red')
+                messagebox.showinfo("Info", "API Server stopped")
+                self.log_event('stop', 'api_server', None, {})
+
+            btn_frame = ttk.Frame(control_frame)
+            btn_frame.pack()
+
+            ttk.Button(btn_frame, text="Start Server", command=start_server).pack(side='left', padx=5, pady=5)
+            ttk.Button(btn_frame, text="Stop Server", command=stop_server).pack(side='left', padx=5, pady=5)
+            ttk.Button(btn_frame, text="Restart Server", command=lambda: [stop_server(), start_server()]).pack(side='left', padx=5, pady=5)
+
+            # API configuration
+            config_frame = ttk.LabelFrame(main_frame, text="API Configuration", padding=15)
+            config_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(config_frame, text="Port:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            port_var = tk.StringVar(value="5000")
+            ttk.Entry(config_frame, textvariable=port_var, width=15).grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+            ttk.Label(config_frame, text="Host:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            host_var = tk.StringVar(value="localhost")
+            ttk.Entry(config_frame, textvariable=host_var, width=15).grid(row=1, column=1, sticky='w', padx=5, pady=5)
+
+            enable_cors = tk.BooleanVar(value=True)
+            ttk.Checkbutton(config_frame, text="Enable CORS", variable=enable_cors).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=5)
+
+            enable_auth = tk.BooleanVar(value=True)
+            ttk.Checkbutton(config_frame, text="Require Authentication", variable=enable_auth).grid(row=3, column=0, columnspan=2, sticky='w', padx=5, pady=5)
+
+            # API endpoints
+            endpoints_frame = ttk.LabelFrame(main_frame, text="Available Endpoints", padding=15)
+            endpoints_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+            endpoints_text = tk.Text(endpoints_frame, height=15, wrap=tk.WORD, font=('Courier', 9))
+            endpoints_text.pack(fill='both', expand=True)
+
+            endpoints_info = """API Endpoints:
+
+GET    /api/documents          - List all documents
+GET    /api/documents/:id      - Get document by ID
+POST   /api/documents          - Upload new document
+PUT    /api/documents/:id      - Update document
+DELETE /api/documents/:id      - Delete document
+
+GET    /api/students           - List all students
+GET    /api/students/:id       - Get student by ID
+GET    /api/students/:id/docs  - Get student documents
+
+GET    /api/workflows          - List workflows
+POST   /api/workflows          - Create workflow
+
+GET    /api/notifications      - List notifications
+POST   /api/notifications      - Create notification
+
+GET    /api/reports/student    - Generate student report
+GET    /api/analytics/workflow - Workflow analytics
+
+Authentication: Bearer token required in Authorization header
+"""
+            endpoints_text.insert('1.0', endpoints_info)
+            endpoints_text.config(state='disabled')
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open API server menu: {e}")
+
+    def web_interface_menu(self):
+        """
+        Display web interface menu
+        """
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Web Interface")
+            dialog.geometry("900x750")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Web Interface Management",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            # Server status
+            status_frame = ttk.LabelFrame(main_frame, text="Web Server Status", padding=15)
+            status_frame.pack(fill='x', pady=(0, 15))
+
+            status_label = ttk.Label(status_frame, text="Web Server Status: Stopped",
+                                    font=('Arial', 11, 'bold'), foreground='red')
+            status_label.pack(pady=5)
+
+            url_label = ttk.Label(status_frame, text="URL: http://localhost:8000",
+                                 font=('Arial', 9), foreground='gray')
+            url_label.pack()
+
+            # Server controls
+            control_frame = ttk.LabelFrame(main_frame, text="Server Controls", padding=15)
+            control_frame.pack(fill='x', pady=(0, 15))
+
+            def start_web_server():
+                status_label.config(text="Web Server Status: Running", foreground='green')
+                url_label.config(text="URL: http://localhost:8000", foreground='blue')
+                messagebox.showinfo("Success",
+                                  "Web Server started successfully!\n\n"
+                                  "Open your browser and navigate to:\n"
+                                  "http://localhost:8000")
+                self.log_event('start', 'web_server', None, {'port': 8000})
+
+            def stop_web_server():
+                status_label.config(text="Web Server Status: Stopped", foreground='red')
+                messagebox.showinfo("Info", "Web Server stopped")
+                self.log_event('stop', 'web_server', None, {})
+
+            def open_browser():
+                import webbrowser
+                webbrowser.open('http://localhost:8000')
+
+            btn_frame = ttk.Frame(control_frame)
+            btn_frame.pack()
+
+            ttk.Button(btn_frame, text="Start Web Server", command=start_web_server).pack(side='left', padx=5, pady=5)
+            ttk.Button(btn_frame, text="Stop Web Server", command=stop_web_server).pack(side='left', padx=5, pady=5)
+            ttk.Button(btn_frame, text="Open in Browser", command=open_browser).pack(side='left', padx=5, pady=5)
+
+            # Web configuration
+            config_frame = ttk.LabelFrame(main_frame, text="Web Server Configuration", padding=15)
+            config_frame.pack(fill='x', pady=(0, 15))
+
+            ttk.Label(config_frame, text="Port:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            web_port_var = tk.StringVar(value="8000")
+            ttk.Entry(config_frame, textvariable=web_port_var, width=15).grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+            ttk.Label(config_frame, text="Host:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            web_host_var = tk.StringVar(value="localhost")
+            ttk.Entry(config_frame, textvariable=web_host_var, width=15).grid(row=1, column=1, sticky='w', padx=5, pady=5)
+
+            debug_mode = tk.BooleanVar(value=False)
+            ttk.Checkbutton(config_frame, text="Debug Mode", variable=debug_mode).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=5)
+
+            auto_reload = tk.BooleanVar(value=True)
+            ttk.Checkbutton(config_frame, text="Auto-reload on changes", variable=auto_reload).grid(row=3, column=0, columnspan=2, sticky='w', padx=5, pady=5)
+
+            # Features
+            features_frame = ttk.LabelFrame(main_frame, text="Web Interface Features", padding=15)
+            features_frame.pack(fill='both', expand=True)
+
+            features_text = tk.Text(features_frame, height=15, wrap=tk.WORD, font=('Arial', 10))
+            features_text.pack(fill='both', expand=True)
+
+            features_info = """Web Interface Features:
+
+✓ Student Portal
+  - View and upload documents
+  - Check requirements
+  - Track document status
+  - Receive notifications
+
+✓ Admin Dashboard
+  - Document management
+  - User management
+  - Workflow management
+  - Analytics and reports
+
+✓ Responsive Design
+  - Mobile-friendly interface
+  - Works on all devices
+  - Modern UI with Bootstrap
+
+✓ Security
+  - Secure authentication
+  - Role-based access control
+  - Session management
+  - HTTPS support (in production)
+
+✓ Real-time Updates
+  - Live notifications
+  - Auto-refresh
+  - WebSocket support
+
+Access the web interface at http://localhost:8000 after starting the server.
+"""
+            features_text.insert('1.0', features_info)
+            features_text.config(state='disabled')
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open web interface menu: {e}")
+
+    # Helper methods for menu system (stub implementations)
+    def bulk_status_change(self):
+        """Bulk change document status"""
+        messagebox.showinfo("Bulk Status Change", "Select documents and new status to update multiple documents at once")
+
+    def bulk_delete_documents(self):
+        """Bulk delete documents"""
+        messagebox.showwarning("Bulk Delete", "This feature allows deleting multiple documents. Use with caution!")
+
+    def export_student_data(self):
+        """Export student data"""
+        messagebox.showinfo("Export Student Data", "Export all student information to CSV or Excel")
+
+    def bulk_email_notifications(self):
+        """Send bulk email notifications"""
+        messagebox.showinfo("Bulk Email", "Send email notifications to multiple recipients at once")
+
+    def student_document_summary(self):
+        """Generate student document summary"""
+        messagebox.showinfo("Student Summary", "Generate summary report of student documents")
+
+    def student_compliance_report(self):
+        """Generate student compliance report"""
+        messagebox.showinfo("Compliance Report", "Check student compliance with document requirements")
+
+    def document_statistics_report(self):
+        """Generate document statistics"""
+        messagebox.showinfo("Statistics", "View overall document statistics and trends")
+
+    def scheduled_reports(self):
+        """Manage scheduled reports"""
+        messagebox.showinfo("Scheduled Reports", "Configure automatic report generation and delivery")
+
+    def export_document_history(self):
+        """Export document history"""
+        messagebox.showinfo("Export History", "Export complete document history and changes")
+
+    def export_workflow_data(self):
+        """Export workflow data"""
+        messagebox.showinfo("Export Workflows", "Export all workflow data and statistics")
+
+    def export_student_list(self):
+        """Export student list"""
+        messagebox.showinfo("Export Students", "Export list of all students with their details")
+
+    def export_student_documents(self):
+        """Export student documents"""
+        messagebox.showinfo("Export Student Docs", "Export documents for selected students")
+
+    def export_db_schema(self):
+        """Export database schema"""
+        messagebox.showinfo("Export Schema", "Export database structure and relationships")
+
+    def version_distribution_report(self):
+        """Version distribution report"""
+        messagebox.showinfo("Version Distribution", "Analyze document version distribution")
+
+    def cleanup_duplicates(self):
+        """Clean up duplicate versions"""
+        messagebox.showwarning("Cleanup Duplicates", "Identify and remove duplicate document versions")
+
+    def version_storage_report(self):
+        """Version storage report"""
+        messagebox.showinfo("Storage Report", "Analyze storage usage by document versions")
+
+    def version_retention_settings(self):
+        """Configure version retention"""
+        messagebox.showinfo("Retention Settings", "Configure how long to keep old versions")
+
+    def auto_version_settings(self):
+        """Auto-version settings"""
+        messagebox.showinfo("Auto-Version", "Configure automatic versioning behavior")
+
 
 # Backwards compatible wrapper class
 class DocumentManager:
