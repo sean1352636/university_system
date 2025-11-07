@@ -3561,9 +3561,9 @@ class ReportingSystemGUI:
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
-            print(f"Error returning to main menu: {e}")
+            logging.error(f"Error returning to main menu: {e}")
             import traceback
-            traceback.print_exc()
+            logging.debug(traceback.format_exc())
 
     def refresh_data(self):
         """Refresh all data in the GUI"""
@@ -5757,7 +5757,7 @@ Thank you for using our system.
                         self.overview_templates.config(text=str(template_count))
                     if hasattr(self, 'overview_reports') and self.overview_reports:
                         self.overview_reports.config(text=str(report_count))
-                    print(f"✓ Updated overview cards: Students={student_count}, Courses={course_count}, Templates={template_count}, Reports={report_count}")
+                    logging.debug(f"✓ Updated overview cards: Students={student_count}, Courses={course_count}, Templates={template_count}, Reports={report_count}")
                 except Exception as e:
                     logging.error(f"Error in update_labels: {e}")
 
@@ -5824,11 +5824,11 @@ Thank you for using our system.
             self.auth = auth_obj
             if auth_obj and auth_obj.current_user:
                 self.current_user = auth_obj.current_user
-                print(f"Enhanced reporting authenticated for: {auth_obj.current_user['username']}")
+                logging.info(f"Enhanced reporting authenticated for: {auth_obj.current_user['username']}")
             else:
-                print("No authentication context provided")
+                logging.warning("No authentication context provided")
         except Exception as e:
-            print(f"Error setting auth context: {e}")
+            logging.error(f"Error setting auth context: {e}")
     
     def display_template_details(self, template_data):
         """Display template details in the text widget"""
@@ -7159,7 +7159,7 @@ University Reporting System""")
                     loaded_settings = json.load(f)
                     default_settings.update(loaded_settings)
         except Exception as e:
-            print(f"Could not load settings: {e}")
+            logging.warning(f"Could not load settings: {e}")
 
         # General settings
         general_frame = ttk.Frame(settings_notebook, padding="10")
@@ -8610,7 +8610,234 @@ University Reporting System""")
 
     def display_enhanced_reporting_menu(self):
         """Display main enhanced reporting menu (compatibility wrapper)"""
-        pass
+        try:
+            # Show GUI help/welcome dialog
+            help_window = tk.Toplevel(self.root)
+            help_window.title("Enhanced Reporting System - Help")
+            help_window.geometry("700x600")
+            help_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(help_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            ttk.Label(header_frame, text="📊 Enhanced Reporting System",
+                     font=('Arial', 16, 'bold')).pack(anchor=tk.W)
+            ttk.Label(header_frame, text="Welcome to the GUI Interface",
+                     font=('Arial', 10)).pack(anchor=tk.W)
+
+            # Create tabbed interface for help sections
+            help_notebook = ttk.Notebook(help_window)
+            help_notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            # Getting Started Tab
+            start_frame = ttk.Frame(help_notebook)
+            help_notebook.add(start_frame, text="Getting Started")
+
+            start_text = ScrolledText(start_frame, wrap=tk.WORD, height=20)
+            start_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            getting_started = """Getting Started with Enhanced Reporting
+
+Welcome to the Enhanced Reporting System GUI! This interface provides comprehensive
+reporting and analytics capabilities for your university management system.
+
+Main Features:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 Templates Tab
+   • Create custom report templates
+   • Edit existing templates
+   • Manage template library
+   • Import/export templates
+
+📊 Reports Tab
+   • Generate reports from templates
+   • View report history
+   • Export reports (PDF, Excel, HTML)
+   • Share reports via email
+
+📈 Analytics Tab
+   • Data quality monitoring
+   • Predictive analytics
+   • Anomaly detection
+   • Correlation analysis
+   • Interactive visualizations
+
+⏰ Schedule Tab
+   • Schedule automatic reports
+   • Manage scheduled jobs
+   • Configure email recipients
+   • Set frequency (daily/weekly/monthly)
+
+⚙️ System Tab
+   • Performance monitoring
+   • Cache management
+   • Configuration settings
+   • System maintenance
+
+Quick Start:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Create a Template
+   • Go to Templates tab
+   • Click "Create Template"
+   • Select report sections
+   • Save template
+
+2. Generate Report
+   • Go to Reports tab
+   • Select template
+   • Choose date range
+   • Click "Generate"
+
+3. View Analytics
+   • Go to Analytics tab
+   • Select analysis type
+   • View results
+   • Export if needed
+
+Need Help?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Hover over buttons for tooltips
+• Check the System tab for requirements
+• Use the status bar for operation feedback
+• Check logs for detailed information
+"""
+
+            start_text.insert(1.0, getting_started)
+            start_text.config(state=tk.DISABLED)
+
+            # Features Tab
+            features_frame = ttk.Frame(help_notebook)
+            help_notebook.add(features_frame, text="Features")
+
+            features_text = ScrolledText(features_frame, wrap=tk.WORD, height=20)
+            features_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            features_info = """Available Features
+
+REPORT GENERATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PDF Reports: Professional formatted reports with charts and tables
+• Excel Reports: Multi-sheet workbooks with data and analytics
+• Interactive Reports: HTML dashboards with interactive visualizations
+• Custom Templates: Create templates with specific sections
+• Batch Generation: Generate multiple reports at once
+
+DATA ANALYTICS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Data Quality Monitoring: Check for missing, duplicate, or invalid data
+• Predictive Analytics: Dropout risk prediction and trend analysis
+• Anomaly Detection: Identify unusual patterns in student data
+• Correlation Analysis: Discover relationships between variables
+• Statistical Summaries: Comprehensive statistics on all data
+
+VISUALIZATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Bar Charts: Compare categorical data
+• Line Charts: Show trends over time
+• Pie Charts: Display proportions
+• Heatmaps: Show correlations between variables
+• Interactive Dashboards: Plotly-based interactive visualizations
+
+SCHEDULING & AUTOMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Scheduled Reports: Automatically generate reports
+• Email Delivery: Send reports to recipients
+• Multiple Frequencies: Daily, weekly, monthly schedules
+• Configurable Times: Set specific times for generation
+
+SYSTEM MANAGEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Cache Management: Optimize performance with caching
+• Performance Monitoring: Track system resources
+• Configuration: Customize system settings
+• Backup & Restore: Protect your data
+• Logs Export: Download system logs for analysis
+"""
+
+            features_text.insert(1.0, features_info)
+            features_text.config(state=tk.DISABLED)
+
+            # Keyboard Shortcuts Tab
+            shortcuts_frame = ttk.Frame(help_notebook)
+            help_notebook.add(shortcuts_frame, text="Shortcuts")
+
+            shortcuts_text = ScrolledText(shortcuts_frame, wrap=tk.WORD, height=20)
+            shortcuts_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            shortcuts_info = """Keyboard Shortcuts & Tips
+
+GENERAL SHORTCUTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• F5: Refresh current view
+• Ctrl+N: Create new template
+• Ctrl+R: Generate report
+• Ctrl+S: Save current item
+• Ctrl+Q: Quit application
+• Esc: Close dialog windows
+
+NAVIGATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Tab: Move between fields
+• Shift+Tab: Move backward
+• Enter: Confirm/OK
+• Esc: Cancel
+
+TIPS & TRICKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Performance:
+• Use cache for faster report generation
+• Clean cache regularly to save space
+• Schedule reports during off-peak hours
+
+Templates:
+• Create reusable templates for common reports
+• Use descriptive names for easy identification
+• Include all necessary sections initially
+
+Reports:
+• Use appropriate date ranges for better performance
+• Export to Excel for further analysis
+• Share reports via email for collaboration
+
+Analytics:
+• Run quality checks regularly
+• Monitor anomalies for data issues
+• Use correlation analysis for insights
+
+Troubleshooting:
+• Check system requirements if features are unavailable
+• View logs for detailed error messages
+• Ensure database connection is active
+• Clear cache if experiencing issues
+"""
+
+            shortcuts_text.insert(1.0, shortcuts_info)
+            shortcuts_text.config(state=tk.DISABLED)
+
+            # Close button
+            button_frame = ttk.Frame(help_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Close", command=help_window.destroy,
+                      style='TButton').pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="View Documentation Online",
+                      command=lambda: webbrowser.open("https://github.com")).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            logging.error(f"Error showing enhanced reporting menu: {str(e)}")
+            messagebox.showerror("Error", f"Failed to show help: {str(e)}")
 
     def manage_schedule_menu(self):
         """Manage scheduled reports (wrapper for view_scheduled_reports_menu)"""
