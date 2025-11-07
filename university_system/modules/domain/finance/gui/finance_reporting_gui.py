@@ -40,7 +40,14 @@ class FinancialManagementGUI:
         self.root = root
         self.auth = auth  # Store authentication instance
         self.root.title("Enhanced Financial Management System")
-        self.root.geometry("1400x900")
+        # Make window bigger - use 90% of screen size
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        window_width = int(screen_width * 0.9)
+        window_height = int(screen_height * 0.9)
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.root.configure(bg='#f0f0f0')
 
         # Ensure database tables exist
@@ -588,20 +595,27 @@ class FinancialManagementGUI:
         self.activity_text.see(tk.END)
 
     def return_to_main_menu(self):
-        """Return to the main menu"""
+        """Return to the main finance GUI"""
         try:
             # Check if this is a child window (Toplevel) or standalone (Tk)
             if isinstance(self.root, tk.Toplevel):
                 # Just close the child window
                 self.root.destroy()
             else:
-                # Running standalone, need to create main GUI
+                # Running standalone, return to main finance GUI
                 self.root.destroy()
-                from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
-                app = UnifiedManagementGUI(self.auth)
-                app.run()
+                try:
+                    from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+                    root = tk.Tk()
+                    app = FinanceGUI(root, self.auth)
+                    root.mainloop()
+                except ImportError:
+                    # If main finance GUI not available, try unified GUI
+                    from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
+                    app = UnifiedManagementGUI(self.auth)
+                    app.run()
         except Exception as e:
-            print(f"Error returning to main menu: {e}")
+            print(f"Error returning to main finance GUI: {e}")
             import traceback
             traceback.print_exc()
 
@@ -2308,13 +2322,210 @@ RECOMMENDATIONS:
         """Export quick summary report"""
         filename = filedialog.asksaveasfilename(
             defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("PDF files", "*.pdf"), ("All files", "*.*")],
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("PDF files", "*.pdf"),
+                ("Excel files", "*.xlsx"),
+                ("CSV files", "*.csv"),
+                ("HTML files", "*.html"),
+                ("All files", "*.*")
+            ],
             title="Export Quick Report"
         )
-        
+
         if filename:
-            self.generate_quick_report()
-            messagebox.showinfo("Export Complete", f"Quick report will be saved to {filename}")
+            try:
+                # Get financial data
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Get summary data
+                cursor.execute('''
+                    SELECT
+                        SUM(amount) as total_collected,
+                        COUNT(*) as payment_count,
+                        COUNT(DISTINCT student_id) as student_count
+                    FROM payments
+                    WHERE payment_date >= date('now', '-365 days')
+                ''')
+                summary = cursor.fetchone()
+                total_collected = summary[0] or 0
+                payment_count = summary[1] or 0
+                student_count = summary[2] or 0
+
+                conn.close()
+
+                # Export based on file extension
+                ext = filename.split('.')[-1].lower()
+
+                if ext == 'txt':
+                    self._export_txt(filename, total_collected, payment_count, student_count)
+                elif ext == 'csv':
+                    self._export_csv(filename, total_collected, payment_count, student_count)
+                elif ext == 'html':
+                    self._export_html(filename, total_collected, payment_count, student_count)
+                elif ext == 'xlsx':
+                    self._export_excel(filename, total_collected, payment_count, student_count)
+                elif ext == 'pdf':
+                    self._export_pdf(filename, total_collected, payment_count, student_count)
+                else:
+                    self._export_txt(filename, total_collected, payment_count, student_count)
+
+                messagebox.showinfo("Export Complete", f"Quick report saved to {filename}")
+                self.log_activity(f"Quick report exported to {filename}")
+
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+
+    def _export_txt(self, filename, total_collected, payment_count, student_count):
+        """Export report as text file"""
+        with open(filename, 'w') as f:
+            f.write("FINANCIAL QUICK REPORT\n")
+            f.write("=" * 50 + "\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(f"Total Collected (Last Year): £{total_collected:,.2f}\n")
+            f.write(f"Payment Count: {payment_count:,}\n")
+            f.write(f"Student Count: {student_count:,}\n")
+            f.write(f"Average per Student: £{total_collected/student_count if student_count > 0 else 0:,.2f}\n")
+
+    def _export_csv(self, filename, total_collected, payment_count, student_count):
+        """Export report as CSV file"""
+        import csv
+        with open(filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Metric', 'Value'])
+            writer.writerow(['Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+            writer.writerow(['Total Collected (Last Year)', f'£{total_collected:,.2f}'])
+            writer.writerow(['Payment Count', payment_count])
+            writer.writerow(['Student Count', student_count])
+            writer.writerow(['Average per Student', f'£{total_collected/student_count if student_count > 0 else 0:,.2f}'])
+
+    def _export_html(self, filename, total_collected, payment_count, student_count):
+        """Export report as HTML file"""
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Quick Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        h1 {{ color: #2c3e50; }}
+        table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
+        th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+        th {{ background-color: #3498db; color: white; }}
+        tr:nth-child(even) {{ background-color: #f2f2f2; }}
+    </style>
+</head>
+<body>
+    <h1>Financial Quick Report</h1>
+    <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Total Collected (Last Year)</td><td>£{total_collected:,.2f}</td></tr>
+        <tr><td>Payment Count</td><td>{payment_count:,}</td></tr>
+        <tr><td>Student Count</td><td>{student_count:,}</td></tr>
+        <tr><td>Average per Student</td><td>£{total_collected/student_count if student_count > 0 else 0:,.2f}</td></tr>
+    </table>
+</body>
+</html>
+"""
+        with open(filename, 'w') as f:
+            f.write(html_content)
+
+    def _export_excel(self, filename, total_collected, payment_count, student_count):
+        """Export report as Excel file"""
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, PatternFill, Alignment
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Financial Report"
+
+            # Header
+            ws['A1'] = "FINANCIAL QUICK REPORT"
+            ws['A1'].font = Font(size=16, bold=True)
+            ws.merge_cells('A1:B1')
+
+            ws['A2'] = "Generated:"
+            ws['B2'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Data
+            ws['A4'] = "Metric"
+            ws['B4'] = "Value"
+            ws['A4'].font = Font(bold=True)
+            ws['B4'].font = Font(bold=True)
+
+            ws['A5'] = "Total Collected (Last Year)"
+            ws['B5'] = f'£{total_collected:,.2f}'
+
+            ws['A6'] = "Payment Count"
+            ws['B6'] = payment_count
+
+            ws['A7'] = "Student Count"
+            ws['B7'] = student_count
+
+            ws['A8'] = "Average per Student"
+            ws['B8'] = f'£{total_collected/student_count if student_count > 0 else 0:,.2f}'
+
+            # Column widths
+            ws.column_dimensions['A'].width = 30
+            ws.column_dimensions['B'].width = 20
+
+            wb.save(filename)
+        except ImportError:
+            # Fallback to CSV if openpyxl not available
+            self._export_csv(filename.replace('.xlsx', '.csv'), total_collected, payment_count, student_count)
+
+    def _export_pdf(self, filename, total_collected, payment_count, student_count):
+        """Export report as PDF file"""
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib import colors
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet
+
+            doc = SimpleDocTemplate(filename, pagesize=letter)
+            elements = []
+            styles = getSampleStyleSheet()
+
+            # Title
+            title = Paragraph("FINANCIAL QUICK REPORT", styles['Title'])
+            elements.append(title)
+            elements.append(Spacer(1, 12))
+
+            # Generated date
+            gen_date = Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal'])
+            elements.append(gen_date)
+            elements.append(Spacer(1, 12))
+
+            # Data table
+            data = [
+                ['Metric', 'Value'],
+                ['Total Collected (Last Year)', f'£{total_collected:,.2f}'],
+                ['Payment Count', f'{payment_count:,}'],
+                ['Student Count', f'{student_count:,}'],
+                ['Average per Student', f'£{total_collected/student_count if student_count > 0 else 0:,.2f}']
+            ]
+
+            table = Table(data)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 14),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+
+            elements.append(table)
+            doc.build(elements)
+        except ImportError:
+            # Fallback to HTML if reportlab not available
+            self._export_html(filename.replace('.pdf', '.html'), total_collected, payment_count, student_count)
     
     # Settings methods
     def browse_export_path(self):
@@ -3716,7 +3927,7 @@ For technical support, contact your system administrator.
 
             # Get recent alerts
             cursor.execute('''
-            SELECT alert_type, severity, message, created_at
+            SELECT alert_type, priority, message, created_at
             FROM financial_alerts
             ORDER BY created_at DESC
             LIMIT 50
@@ -3724,10 +3935,10 @@ For technical support, contact your system administrator.
 
             alerts = cursor.fetchall()
             if alerts:
-                alerts_text.insert(tk.END, f"{'Type':<20} {'Severity':<10} {'Message':<50} {'Date':<20}\n")
+                alerts_text.insert(tk.END, f"{'Type':<20} {'Priority':<10} {'Message':<50} {'Date':<20}\n")
                 alerts_text.insert(tk.END, "=" * 110 + "\n")
-                for alert_type, severity, message, created_at in alerts:
-                    alerts_text.insert(tk.END, f"{alert_type:<20} {severity:<10} {message:<50} {created_at:<20}\n")
+                for alert_type, priority, message, created_at in alerts:
+                    alerts_text.insert(tk.END, f"{alert_type:<20} {priority:<10} {message:<50} {created_at:<20}\n")
             else:
                 alerts_text.insert(tk.END, "No alerts found in the system.\n")
 
@@ -3749,7 +3960,12 @@ For technical support, contact your system administrator.
         """Show automated reporting configuration dialog"""
         reporting_window = tk.Toplevel(self.root)
         reporting_window.title("Automated Reporting Configuration")
-        reporting_window.geometry("800x600")
+        # Make window full screen
+        reporting_window.state('zoomed')  # For Linux/Windows
+        try:
+            reporting_window.attributes('-zoomed', True)  # For Linux
+        except:
+            pass
 
         main_frame = ttk.Frame(reporting_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -3816,7 +4032,12 @@ For technical support, contact your system administrator.
         """Show performance monitoring dashboard"""
         perf_window = tk.Toplevel(self.root)
         perf_window.title("Performance Monitoring Dashboard")
-        perf_window.geometry("1000x700")
+        # Make window full screen
+        perf_window.state('zoomed')  # For Linux/Windows
+        try:
+            perf_window.attributes('-zoomed', True)  # For Linux
+        except:
+            pass
 
         main_frame = ttk.Frame(perf_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -4042,8 +4263,9 @@ For technical support, contact your system administrator.
                 conn.close()
 
             except Exception as e:
-                self.root.after(0, lambda: [
-                    messagebox.showerror("Error", f"Department comparison failed: {e}"),
+                error_msg = str(e)
+                self.root.after(0, lambda msg=error_msg: [
+                    messagebox.showerror("Error", f"Department comparison failed: {msg}"),
                     self.update_status("Error")
                 ])
 
@@ -6379,23 +6601,54 @@ class ComparativeAnalyzer:
         print("📅 Performing year-over-year analysis...")
         try:
             from university_system.infrastructure.database.db import get_connection
+            from datetime import datetime
             conn = get_connection()
             cursor = conn.cursor()
 
-            cursor.execute('SELECT SUM(amount) FROM payments WHERE payment_date >= date("now", "-365 days")')
-            this_year = cursor.fetchone()[0] or 0
+            # Get current and previous year data with detailed metrics
+            cursor.execute('''
+                SELECT
+                    strftime('%Y', payment_date) as year,
+                    SUM(amount) as total_collected,
+                    COUNT(DISTINCT student_id) as student_count
+                FROM payments
+                WHERE payment_date >= date('now', '-730 days')
+                GROUP BY strftime('%Y', payment_date)
+                ORDER BY year DESC
+            ''')
 
-            cursor.execute('SELECT SUM(amount) FROM payments WHERE payment_date >= date("now", "-730 days") AND payment_date < date("now", "-365 days")')
-            last_year = cursor.fetchone()[0] or 0
-
+            year_data = cursor.fetchall()
             conn.close()
 
-            growth = ((this_year - last_year) / last_year * 100) if last_year > 0 else 0
+            # Build year-over-year comparison dict
+            yoy_dict = {}
+            for row in year_data:
+                year, total_collected, student_count = row
+                # Calculate expected revenue (assuming average £5000 per student)
+                total_expected = student_count * 5000
+                collection_rate = (total_collected / total_expected * 100) if total_expected > 0 else 0
 
-            print(f"✓ YoY Growth: {growth:.1f}%")
-            return {'this_year': this_year, 'last_year': last_year, 'growth': growth}
+                yoy_dict[year] = {
+                    'total_expected': total_expected,
+                    'total_collected': total_collected,
+                    'collection_rate': collection_rate,
+                    'student_count': student_count
+                }
+
+            # Calculate growth if we have data
+            if len(year_data) >= 2:
+                this_year_total = year_data[0][1]
+                last_year_total = year_data[1][1]
+                growth = ((this_year_total - last_year_total) / last_year_total * 100) if last_year_total > 0 else 0
+                print(f"✓ YoY Growth: {growth:.1f}%")
+            else:
+                print("✓ YoY Growth: 0.0%")
+
+            return yoy_dict
         except Exception as e:
             print(f"Error in YoY analysis: {e}")
+            import traceback
+            traceback.print_exc()
             return {}
 
     def department_comparison(self):
@@ -6672,12 +6925,12 @@ def display_finance_menu(auth_instance=None):
 def financial_dashboard():
     """Original financial dashboard function (backwards compatible)"""
     global auth
-    
-    if not auth or not auth.current_user:
+
+    if not auth or not hasattr(auth, 'current_user') or not auth.current_user:
         print("You must be logged in to access the financial dashboard.")
         return
-    
-    if not auth.check_permission('manage_finances'):
+
+    if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to access the financial dashboard.")
         return
     
@@ -6752,12 +7005,12 @@ def financial_dashboard():
 def generate_financial_forecasting():
     """Original financial forecasting function (backwards compatible)"""
     global auth
-    
-    if not auth or not auth.current_user:
+
+    if not auth or not hasattr(auth, 'current_user') or not auth.current_user:
         print("You must be logged in to generate financial forecasting.")
         return
-    
-    if not auth.check_permission('manage_finances'):
+
+    if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to generate financial forecasting.")
         return
     
@@ -6840,12 +7093,12 @@ def generate_financial_forecasting():
 def generate_budget_variance_report():
     """Original budget variance report function (backwards compatible)"""
     global auth
-    
-    if not auth or not auth.current_user:
+
+    if not auth or not hasattr(auth, 'current_user') or not auth.current_user:
         print("You must be logged in to generate budget variance report.")
         return
-    
-    if not auth.check_permission('manage_finances'):
+
+    if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to generate budget variance report.")
         return
     

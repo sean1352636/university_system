@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Finance Reporting GUI - Critical Bug Fixes & Feature Enhancements** (2025-11-07)
+- **Issue**: Multiple critical errors in Finance Reporting GUI affecting functionality
+- **Location**: `university_system/modules/domain/finance/gui/finance_reporting_gui.py`
+- **Bug Fixes**:
+  1. **Database Schema Error** (lines 3719-3730):
+     - Fixed "no such column: severity" error in financial_alerts query
+     - Changed column name from `severity` to `priority` to match actual database schema
+     - Updated all references including column headers and variable names
+  2. **Lambda Scope Error** (lines 4044-4049):
+     - Fixed NameError with variable 'e' in exception handler lambda
+     - Changed to capture error message in variable before lambda: `error_msg = str(e)`
+     - Updated lambda to use default argument: `lambda msg=error_msg:`
+  3. **Authentication Errors** (lines 6676-6683, 6756-6763, 6844-6851):
+     - Fixed "toplevel object has no attribute current_user" errors
+     - Added `hasattr()` checks before accessing `auth.current_user` and `auth.check_permission()`
+     - Prevents crashes when auth object doesn't have expected attributes
+  4. **TypeError in Comparative Analysis** (lines 6378-6431):
+     - Fixed "'int' object is not subscriptable" error in `show_comparative_results()`
+     - Rewrote `year_over_year_analysis()` to return proper dictionary structure
+     - Now returns dict with year keys containing: `total_expected`, `total_collected`, `collection_rate`, `student_count`
+     - Added proper grouping by year from payments table
+- **Feature Enhancements**:
+  1. **Window Size Improvements** (lines 39-50):
+     - Increased main window from 1400x900 to 90% of screen size
+     - Centered window on screen with proper positioning
+  2. **Full Screen Windows** (lines 3759-3764, 3831-3836):
+     - Made Automated Reporting window full screen using `state('zoomed')`
+     - Made Performance Monitoring window full screen
+     - Added fallback for different OS with `attributes('-zoomed', True)`
+  3. **Home Button Navigation** (lines 597-620):
+     - Changed home button from returning to main menu to returning to main finance GUI
+     - Now attempts to load `FinanceGUI` first, then falls back to `UnifiedManagementGUI`
+     - Updated function docstring to reflect new behavior
+  4. **Export Functionality** (lines 2321-2528):
+     - Implemented full export functionality for all formats (TXT, CSV, HTML, Excel, PDF)
+     - Added 5 new helper methods: `_export_txt()`, `_export_csv()`, `_export_html()`, `_export_excel()`, `_export_pdf()`
+     - Exports now pull real data from database payments table
+     - Excel export uses openpyxl with proper formatting (fonts, column widths, merged cells)
+     - PDF export uses reportlab with professional table styling
+     - Graceful fallbacks when optional libraries not available (openpyxl, reportlab)
+     - All exports include: total collected, payment count, student count, average per student
+
 **Finance Reporting GUI - Navigation UI Redesign & Complete Function Implementations** (2025-11-06)
 - **Issue**: Finance reporting GUI had tree-based navigation and 15 stub functions showing "not yet implemented" messages
 - **Location**: `university_system/modules/domain/finance/gui/finance_reporting_gui.py`
