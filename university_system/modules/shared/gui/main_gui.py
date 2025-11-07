@@ -5702,7 +5702,14 @@ University Administration"""
                             return
 
                         df = pd.DataFrame(processed_rows, columns=headers)
-                        df.to_excel(filename, index=False)
+                        try:
+                            df.to_excel(filename, index=False, engine='openpyxl')
+                        except ImportError:
+                            messagebox.showerror(
+                                "Export Failed",
+                                "openpyxl is required for Excel export. Please install it: pip install openpyxl"
+                            )
+                            return
 
                     elif export_format == "PDF":
                         try:
@@ -5722,41 +5729,50 @@ University Administration"""
                         doc = SimpleDocTemplate(
                             filename,
                             pagesize=landscape(letter),
-                            leftMargin=0.5*inch,
-                            rightMargin=0.5*inch,
+                            leftMargin=0.4*inch,
+                            rightMargin=0.4*inch,
                             topMargin=0.5*inch,
                             bottomMargin=0.5*inch
                         )
                         styles = getSampleStyleSheet()
                         body_style = styles['BodyText']
                         body_style.wordWrap = 'CJK'
-                        body_style.fontSize = 7
+                        body_style.fontSize = 8
 
                         table_data = [headers]
                         for row in processed_rows:
-                            # Convert all values to strings
-                            pdf_row = [str(value) if value else "" for value in row]
+                            # Convert all values to strings and truncate if too long
+                            pdf_row = []
+                            for i, value in enumerate(row):
+                                val_str = str(value) if value else ""
+                                # Truncate emails and long strings to prevent overflow
+                                if i == 3 and len(val_str) > 25:  # Email column
+                                    val_str = val_str[:22] + "..."
+                                elif len(val_str) > 30:
+                                    val_str = val_str[:27] + "..."
+                                pdf_row.append(val_str)
                             table_data.append(pdf_row)
 
                         # Calculate available width
-                        page_width = landscape(letter)[0] - (1.0 * inch)  # Subtract margins
+                        page_width = landscape(letter)[0] - (0.8 * inch)  # Subtract margins (0.4 * 2)
 
-                        # Define column widths: smaller for ID, larger for modules
+                        # Define column widths to fit within available space (~10.2 inches)
                         # Total columns: 12 (Student ID, First Name, Last Name, Email, Course, Reg Date, 6 Modules)
                         col_widths = [
-                            0.6*inch,   # Student ID
-                            0.7*inch,   # First Name
-                            0.7*inch,   # Last Name
-                            1.2*inch,   # Email
-                            0.9*inch,   # Course
-                            0.8*inch,   # Registration Date
-                            1.0*inch,   # Module 1
-                            1.0*inch,   # Module 2
-                            1.0*inch,   # Module 3
-                            1.0*inch,   # Module 4
-                            1.0*inch,   # Module 5
-                            1.0*inch    # Module 6
+                            0.55*inch,  # Student ID
+                            0.65*inch,  # First Name
+                            0.65*inch,  # Last Name
+                            1.0*inch,   # Email
+                            0.75*inch,  # Course
+                            0.75*inch,  # Registration Date
+                            0.95*inch,  # Module 1
+                            0.95*inch,  # Module 2
+                            0.95*inch,  # Module 3
+                            0.95*inch,  # Module 4
+                            0.95*inch,  # Module 5
+                            0.95*inch   # Module 6
                         ]
+                        # Total: ~10.05 inches (fits within 10.2 available)
 
                         table = Table(table_data, colWidths=col_widths, repeatRows=1)
                         table.setStyle(TableStyle([
@@ -5764,12 +5780,14 @@ University Administration"""
                             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                            ('FONTSIZE', (0, 0), (-1, 0), 7),
-                            ('FONTSIZE', (0, 1), (-1, -1), 6),
-                            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                            ('TOPPADDING', (0, 0), (-1, -1), 3),
-                            ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
-                            ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+                            ('FONTSIZE', (0, 0), (-1, 0), 8),
+                            ('FONTSIZE', (0, 1), (-1, -1), 7),
+                            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                            ('TOPPADDING', (0, 0), (-1, -1), 4),
+                            ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                             ('WORDWRAP', (0, 0), (-1, -1), True)
                         ]))

@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Main GUI - Export Functionality Fixes** (2025-11-07)
+- **Issue**: Two critical export errors in main_gui.py
+  1. Excel export failing with "export failed no engine for filetype excel"
+  2. PDF export causing text overlap and blurry output
+- **Location**: `university_system/modules/shared/gui/main_gui.py`
+- **Bug Fixes**:
+  1. **Excel Export Engine Error** (lines 5705-5712):
+     - Added explicit `engine='openpyxl'` parameter to `pandas.DataFrame.to_excel()`
+     - Added proper error handling for missing openpyxl dependency
+     - Before: `df.to_excel(filename, index=False)`
+     - After: `df.to_excel(filename, index=False, engine='openpyxl')`
+     - Provides clear error message directing users to install openpyxl
+  2. **PDF Export Text Overlap** (lines 5728-5795):
+     - Reduced page margins from 0.5" to 0.4" for more usable space
+     - Recalculated column widths to fit within available ~10.2" (was ~10.6")
+     - Increased font sizes for better readability:
+       - Header font: 7pt → 8pt
+       - Body font: 6pt → 7pt
+     - Added text truncation for long values to prevent overflow:
+       - Email addresses truncated to 25 characters
+       - Other fields truncated to 30 characters
+     - Improved cell padding for better text spacing:
+       - Added left/right padding of 4 points
+       - Increased top/bottom padding from 3 to 4 points
+     - Enhanced grid visibility (0.25 → 0.5 line width)
+- **Results**:
+  - Excel exports now work correctly with proper engine specification
+  - PDF exports display cleanly without text overlap
+  - Text is clearer and more readable in PDF format
+  - All 12 columns fit properly on landscape letter page
+  - Export functionality fully operational for all formats
+
 **Document Manager GUI - Database & Path Fixes** (2025-11-07)
 - **Issue**: Multiple database schema mismatches and incorrect file paths in Document Manager
 - **Location**: `university_system/modules/shared/gui/document_manager_gui.py`
