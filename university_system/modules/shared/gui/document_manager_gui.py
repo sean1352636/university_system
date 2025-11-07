@@ -3779,7 +3779,6 @@ Total Documents: {doc_count}
                    COUNT(CASE WHEN sd.verification_status = 'Verified' THEN 1 END) as verified_count
             FROM students s
             LEFT JOIN student_documents sd ON s.student_id = sd.student_id AND sd.is_current_version = 1
-            WHERE s.status = 'active'
             GROUP BY s.student_id
             ORDER BY s.last_name, s.first_name
             ''')
@@ -5014,7 +5013,7 @@ Total Documents: {doc_count}
             pending_docs = cursor.fetchone()[0]
             
             # Total students
-            cursor.execute('SELECT COUNT(*) FROM students WHERE status = "active"')
+            cursor.execute('SELECT COUNT(*) FROM students')
             total_students = cursor.fetchone()[0]
             
             # Today's uploads
@@ -5720,7 +5719,7 @@ Total Documents: {doc_count}
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute('SELECT student_id, first_name, last_name FROM students WHERE status = "active" ORDER BY last_name, first_name')
+            cursor.execute('SELECT student_id, first_name, last_name FROM students ORDER BY last_name, first_name')
             students = cursor.fetchall()
             conn.close()
             return students
@@ -5814,7 +5813,6 @@ Total Documents: {doc_count}
             FROM students s
             LEFT JOIN student_documents sd ON s.student_id = sd.student_id AND sd.is_current_version = 1
             LEFT JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE s.status = 'active'
             GROUP BY s.student_id
             ORDER BY s.last_name, s.first_name
             '''
@@ -6262,11 +6260,11 @@ class DocumentManager:
             cursor.execute('SELECT COUNT(*) FROM student_documents WHERE verification_status = "Pending" AND is_current_version = 1')
             pending_docs = cursor.fetchone()[0]
             
-            cursor.execute('SELECT COUNT(*) FROM students WHERE status = "active"')
+            cursor.execute('SELECT COUNT(*) FROM students')
             total_students = cursor.fetchone()[0]
-            
+
             conn.close()
-            
+
             print(f"\n📊 System Dashboard:")
             print("-" * 50)
             print(f"Total Documents: {total_docs}")

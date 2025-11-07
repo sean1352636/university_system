@@ -22,10 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      - Removed Student Management tab from help guide
      - Added comments directing users to Student Records GUI
      - Reduces redundancy and confusion
-  2. **Fixed Students Not Showing** (lines 1481, 2794):
-     - Changed `SELECT * FROM students WHERE status = "active"` to `SELECT * FROM students`
-     - Database had no "active" status or used different values
-     - All 100+ student records now display correctly
+  2. **Fixed Students Not Showing** (lines 1481, 2794, 3782, 5017, 5723, 5817, 6264):
+     - **Root Cause**: Case-sensitive string comparison - database has `status = 'Active'` (capital A) but queries searched for `'active'` (lowercase)
+     - Fixed 7 occurrences of `WHERE status = "active"` filter
+     - Removed status filter entirely from all student queries
+     - Database has 190 students with status='Active', not 'active'
+     - All 190 student records now display correctly
   3. **Enlarged Advanced Search Window** (line 4538):
      - Changed geometry from "600x500" to "900x700"
      - Provides more space for search criteria and results
