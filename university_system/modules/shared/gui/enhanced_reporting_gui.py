@@ -7895,6 +7895,727 @@ University Reporting System""")
             logging.error(f"Error converting template to dict: {str(e)}")
             return {}
 
+    # ===== CACHE MANAGEMENT METHODS =====
+
+    def cache_report(self, cache_key, report_data):
+        """Cache a report for faster retrieval"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return False
+
+            CacheManager.cache_report(cache_key, report_data)
+            self.update_status(f"Report cached successfully", "success")
+            return True
+        except Exception as e:
+            logging.error(f"Error caching report: {str(e)}")
+            return False
+
+    def get_cached_report(self, cache_key):
+        """Retrieve a cached report"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            return CacheManager.get_cached_report(cache_key)
+        except Exception as e:
+            logging.error(f"Error getting cached report: {str(e)}")
+            return None
+
+    def get_cache_key(self, template_name, start_date, end_date, filters=None):
+        """Generate cache key for report"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            return CacheManager.get_cache_key(template_name, start_date, end_date, filters)
+        except Exception as e:
+            logging.error(f"Error generating cache key: {str(e)}")
+            return None
+
+    def cleanup_cache_dialog(self):
+        """Clean up old cache files"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Cleaning up cache...")
+            CacheManager.cleanup_cache()
+            self.update_status("Cache cleaned successfully", "success")
+            messagebox.showinfo("Success", "Cache cleaned successfully!")
+        except Exception as e:
+            logging.error(f"Error cleaning cache: {str(e)}")
+            messagebox.showerror("Error", f"Failed to clean cache: {str(e)}")
+
+    def show_cache_management_dialog(self):
+        """Show cache management dialog"""
+        try:
+            cache_window = tk.Toplevel(self.root)
+            cache_window.title("Cache Management")
+            cache_window.geometry("600x500")
+            cache_window.transient(self.root)
+
+            # Header
+            header_frame = ttk.Frame(cache_window)
+            header_frame.pack(fill=tk.X, padx=20, pady=10)
+            ttk.Label(header_frame, text="💾 Cache Management",
+                     font=('Arial', 14, 'bold')).pack(anchor=tk.W)
+
+            # Cache info
+            info_frame = ttk.LabelFrame(cache_window, text="Cache Information", padding="10")
+            info_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            info_text = ScrolledText(info_frame, wrap=tk.WORD, height=15)
+            info_text.pack(fill=tk.BOTH, expand=True)
+
+            def load_cache_info():
+                try:
+                    cache_dir = CONFIG.get('cache_dir', 'cache')
+                    if os.path.exists(cache_dir):
+                        cache_files = [f for f in os.listdir(cache_dir) if f.endswith('.json')]
+                        total_size = sum(os.path.getsize(os.path.join(cache_dir, f))
+                                       for f in cache_files)
+
+                        info_text.insert(tk.END, f"Cache Directory: {cache_dir}\n")
+                        info_text.insert(tk.END, f"Total Cached Reports: {len(cache_files)}\n")
+                        info_text.insert(tk.END, f"Total Size: {total_size / (1024 * 1024):.2f} MB\n")
+                        info_text.insert(tk.END, f"Max Cache Size: {CONFIG.get('max_cache_size_mb', 100)} MB\n")
+                        info_text.insert(tk.END, f"Cache Expiry: {CONFIG.get('cache_expiry_hours', 24)} hours\n\n")
+
+                        if cache_files:
+                            info_text.insert(tk.END, "Cached Reports:\n")
+                            for cache_file in cache_files[:20]:  # Show first 20
+                                file_path = os.path.join(cache_dir, cache_file)
+                                file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+                                age = datetime.now() - file_time
+                                info_text.insert(tk.END, f"  • {cache_file} (Age: {age.seconds // 3600}h)\n")
+
+                            if len(cache_files) > 20:
+                                info_text.insert(tk.END, f"\n  ... and {len(cache_files) - 20} more\n")
+                    else:
+                        info_text.insert(tk.END, "Cache directory does not exist yet.\n")
+
+                    info_text.config(state=tk.DISABLED)
+                except Exception as e:
+                    info_text.insert(tk.END, f"Error loading cache info: {str(e)}")
+                    info_text.config(state=tk.DISABLED)
+
+            load_cache_info()
+
+            # Buttons
+            button_frame = ttk.Frame(cache_window)
+            button_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+            def refresh_info():
+                info_text.config(state=tk.NORMAL)
+                info_text.delete(1.0, tk.END)
+                load_cache_info()
+
+            def cleanup_action():
+                if messagebox.askyesno("Confirm", "Clean up old cache files?"):
+                    self.cleanup_cache_dialog()
+                    refresh_info()
+
+            ttk.Button(button_frame, text="Cleanup Cache", command=cleanup_action).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Refresh", command=refresh_info).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Close", command=cache_window.destroy).pack(side=tk.RIGHT)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show cache management: {str(e)}")
+
+    # ===== DATA QUALITY CHECK METHODS =====
+
+    def check_missing_data(self):
+        """Check for missing data in the database"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            conn = get_db_connection()
+            if not conn:
+                return None
+
+            return DataQualityMonitor.check_missing_data(conn)
+        except Exception as e:
+            logging.error(f"Error checking missing data: {str(e)}")
+            return None
+
+    def check_duplicates(self):
+        """Check for duplicate records"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            conn = get_db_connection()
+            if not conn:
+                return None
+
+            return DataQualityMonitor.check_duplicates(conn)
+        except Exception as e:
+            logging.error(f"Error checking duplicates: {str(e)}")
+            return None
+
+    def check_invalid_data(self):
+        """Check for invalid data"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            conn = get_db_connection()
+            if not conn:
+                return None
+
+            return DataQualityMonitor.check_invalid_data(conn)
+        except Exception as e:
+            logging.error(f"Error checking invalid data: {str(e)}")
+            return None
+
+    def check_data_freshness(self):
+        """Check data freshness"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            conn = get_db_connection()
+            if not conn:
+                return None
+
+            return DataQualityMonitor.check_data_freshness(conn)
+        except Exception as e:
+            logging.error(f"Error checking data freshness: {str(e)}")
+            return None
+
+    # ===== ANALYTICS & VISUALIZATION METHODS =====
+
+    def create_correlation_matrix(self):
+        """Create and display correlation matrix"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Creating correlation matrix...")
+            self.start_progress()
+
+            def create_matrix():
+                try:
+                    conn = get_db_connection()
+                    if not conn:
+                        self.root.after(0, lambda: messagebox.showerror("Error", "Database connection failed"))
+                        return
+
+                    chart_path = AdvancedVisualization.create_correlation_matrix(conn)
+
+                    if chart_path:
+                        self.root.after(0, lambda: self.show_visualization_result(
+                            chart_path, "Correlation Matrix"))
+                    else:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "No Data", "Insufficient data to create correlation matrix"))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Failed to create correlation matrix: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Ready"))
+
+            threading.Thread(target=create_matrix, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start correlation analysis: {str(e)}")
+
+    def create_heatmap(self, data, title, x_col, y_col, value_col):
+        """Create heatmap visualization"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return None
+
+            chart_path = AdvancedVisualization.create_heatmap(data, title, x_col, y_col, value_col)
+
+            if chart_path:
+                self.show_visualization_result(chart_path, title)
+
+            return chart_path
+        except Exception as e:
+            logging.error(f"Error creating heatmap: {str(e)}")
+            return None
+
+    def create_interactive_dashboard(self):
+        """Create interactive dashboard"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Creating interactive dashboard...")
+            self.start_progress()
+
+            def create_dashboard():
+                try:
+                    conn = get_db_connection()
+                    if not conn:
+                        self.root.after(0, lambda: messagebox.showerror("Error", "Database connection failed"))
+                        return
+
+                    # Gather data for dashboard
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT course, COUNT(*) as student_count FROM students GROUP BY course")
+                    course_data = cursor.fetchall()
+
+                    data_dict = {
+                        'course_distribution': {
+                            'course': [row[0] for row in course_data],
+                            'student_count': [row[1] for row in course_data]
+                        }
+                    }
+
+                    dashboard_path = AdvancedVisualization.create_interactive_dashboard(data_dict)
+
+                    if dashboard_path:
+                        self.root.after(0, lambda: self.show_visualization_result(
+                            dashboard_path, "Interactive Dashboard", is_html=True))
+                    else:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "No Data", "Could not create dashboard"))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Failed to create dashboard: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Ready"))
+
+            threading.Thread(target=create_dashboard, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start dashboard creation: {str(e)}")
+
+    def show_visualization_result(self, file_path, title, is_html=False):
+        """Show visualization result in browser or viewer"""
+        try:
+            result_window = tk.Toplevel(self.root)
+            result_window.title(title)
+            result_window.geometry("500x200")
+            result_window.transient(self.root)
+
+            ttk.Label(result_window, text=f"✅ {title} Created Successfully!",
+                     font=('Arial', 12, 'bold')).pack(pady=20)
+
+            ttk.Label(result_window, text=f"File: {os.path.basename(file_path)}").pack(pady=10)
+
+            button_frame = ttk.Frame(result_window)
+            button_frame.pack(pady=20)
+
+            def open_file():
+                try:
+                    webbrowser.open(f"file://{os.path.abspath(file_path)}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to open file: {str(e)}")
+
+            ttk.Button(button_frame, text="Open File", command=open_file,
+                      style='Success.TButton').pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Close", command=result_window.destroy).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show result: {str(e)}")
+
+    def detect_anomalies(self):
+        """Detect anomalies in student data"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Detecting anomalies...")
+            self.start_progress()
+
+            def detect():
+                try:
+                    anomalies = PredictiveAnalytics.detect_anomalies()
+                    self.root.after(0, lambda: self.display_comprehensive_anomalies(anomalies))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Anomaly detection failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Anomaly detection complete"))
+
+            threading.Thread(target=detect, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start anomaly detection: {str(e)}")
+
+    def predict_dropout_risk(self):
+        """Predict student dropout risk"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Predicting dropout risk...")
+            self.start_progress()
+
+            def predict():
+                try:
+                    predictions = PredictiveAnalytics.predict_dropout_risk()
+                    self.root.after(0, lambda: self.display_comprehensive_predictions(predictions))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Prediction failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Prediction complete"))
+
+            threading.Thread(target=predict, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start prediction: {str(e)}")
+
+    # ===== TEMPLATE MANAGEMENT METHODS =====
+
+    def create_advanced_template_menu(self):
+        """Show advanced template creation dialog"""
+        try:
+            self.create_template()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create template: {str(e)}")
+
+    def delete_template_from_db(self, template_name):
+        """Delete template from database"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                return False
+
+            delete_template_from_db(template_name)
+            self.update_status(f"Template '{template_name}' deleted", "success")
+            self.refresh_data()
+            return True
+        except Exception as e:
+            logging.error(f"Error deleting template: {str(e)}")
+            messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+            return False
+
+    def delete_template_menu(self):
+        """Show delete template dialog"""
+        try:
+            templates = load_templates()
+            if not templates:
+                messagebox.showinfo("No Templates", "No templates available to delete")
+                return
+
+            # Create selection dialog
+            delete_window = tk.Toplevel(self.root)
+            delete_window.title("Delete Template")
+            delete_window.geometry("500x400")
+            delete_window.transient(self.root)
+
+            ttk.Label(delete_window, text="Select Template to Delete",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Listbox for templates
+            listbox_frame = ttk.Frame(delete_window)
+            listbox_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            scrollbar = ttk.Scrollbar(listbox_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            template_listbox = tk.Listbox(listbox_frame, yscrollcommand=scrollbar.set)
+            template_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=template_listbox.yview)
+
+            for template in templates:
+                template_listbox.insert(tk.END, template.get('name', 'Unnamed'))
+
+            def delete_selected():
+                selection = template_listbox.curselection()
+                if not selection:
+                    messagebox.showwarning("No Selection", "Please select a template to delete")
+                    return
+
+                template_name = template_listbox.get(selection[0])
+                if messagebox.askyesno("Confirm Delete", f"Delete template '{template_name}'?"):
+                    if self.delete_template_from_db(template_name):
+                        messagebox.showinfo("Success", "Template deleted successfully")
+                        delete_window.destroy()
+
+            # Buttons
+            button_frame = ttk.Frame(delete_window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Delete", command=delete_selected).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=delete_window.destroy).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show delete dialog: {str(e)}")
+
+    # ===== REPORT GENERATION METHODS =====
+
+    def generate_report_method(self, template_name, start_date, end_date, format='pdf'):
+        """Generate a report (wrapper method)"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return None
+
+            self.update_status(f"Generating {format.upper()} report...")
+            self.start_progress()
+
+            def generate():
+                try:
+                    report_path = generate_report(template_name, start_date, end_date)
+
+                    if report_path:
+                        self.root.after(0, lambda: messagebox.showinfo(
+                            "Success", f"Report generated successfully!\n\nLocation: {report_path}"))
+                        self.root.after(0, lambda: self.update_status("Report generated", "success"))
+                    else:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "Failed", "Report generation failed"))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Report generation failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+
+            threading.Thread(target=generate, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to start report generation: {str(e)}")
+
+    def generate_enhanced_excel_report(self, template_name, start_date, end_date):
+        """Generate enhanced Excel report"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Generating Excel report...")
+            self.start_progress()
+
+            def generate():
+                try:
+                    report_path = generate_enhanced_excel_report(template_name, start_date, end_date)
+
+                    if report_path:
+                        self.root.after(0, lambda: messagebox.showinfo(
+                            "Success", f"Excel report generated!\n\nLocation: {report_path}"))
+                    else:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "Failed", "Excel report generation failed"))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Excel generation failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Ready"))
+
+            threading.Thread(target=generate, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to generate Excel report: {str(e)}")
+
+    def generate_interactive_report(self, template_name, start_date, end_date):
+        """Generate interactive HTML report"""
+        try:
+            if not ENHANCED_AVAILABLE:
+                messagebox.showwarning("Not Available", "Enhanced features not available")
+                return
+
+            self.update_status("Generating interactive report...")
+            self.start_progress()
+
+            def generate():
+                try:
+                    report_path = generate_interactive_report(template_name, start_date, end_date)
+
+                    if report_path:
+                        self.root.after(0, lambda: self.show_visualization_result(
+                            report_path, "Interactive Report", is_html=True))
+                    else:
+                        self.root.after(0, lambda: messagebox.showwarning(
+                            "Failed", "Interactive report generation failed"))
+                except Exception as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "Error", f"Interactive report failed: {str(e)}"))
+                finally:
+                    self.root.after(0, self.stop_progress)
+                    self.root.after(0, lambda: self.update_status("Ready"))
+
+            threading.Thread(target=generate, daemon=True).start()
+        except Exception as e:
+            self.stop_progress()
+            messagebox.showerror("Error", f"Failed to generate interactive report: {str(e)}")
+
+    def generate_advanced_report_menu(self):
+        """Show advanced report generation dialog"""
+        try:
+            self.generate_report_dialog()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show report generation: {str(e)}")
+
+    def generate_interactive_report_menu(self):
+        """Show interactive report generation menu"""
+        try:
+            gen_window = tk.Toplevel(self.root)
+            gen_window.title("Generate Interactive Report")
+            gen_window.geometry("500x400")
+            gen_window.transient(self.root)
+
+            ttk.Label(gen_window, text="Generate Interactive Report",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Form
+            form_frame = ttk.LabelFrame(gen_window, text="Report Configuration", padding="10")
+            form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            # Template selection
+            ttk.Label(form_frame, text="Template:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            template_var = tk.StringVar()
+            template_combo = ttk.Combobox(form_frame, textvariable=template_var, state='readonly')
+            template_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            # Load templates
+            try:
+                templates = load_templates()
+                template_names = [t.get('name', 'Unnamed') for t in templates]
+                template_combo['values'] = template_names
+                if template_names:
+                    template_combo.current(0)
+            except:
+                template_combo['values'] = []
+
+            # Date range
+            ttk.Label(form_frame, text="Start Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=5)
+            start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
+            ttk.Entry(form_frame, textvariable=start_date_var).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            ttk.Label(form_frame, text="End Date (YYYY-MM-DD):").grid(row=2, column=0, sticky=tk.W, pady=5)
+            end_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
+            ttk.Entry(form_frame, textvariable=end_date_var).grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
+
+            form_frame.columnconfigure(1, weight=1)
+
+            # Buttons
+            button_frame = ttk.Frame(gen_window)
+            button_frame.pack(pady=10)
+
+            def generate_action():
+                template_name = template_var.get()
+                if not template_name:
+                    messagebox.showwarning("Validation", "Please select a template")
+                    return
+
+                self.generate_interactive_report(template_name, start_date_var.get(), end_date_var.get())
+                gen_window.destroy()
+
+            ttk.Button(button_frame, text="Generate", command=generate_action,
+                      style='Success.TButton').pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=gen_window.destroy).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show generation dialog: {str(e)}")
+
+    # ===== UTILITY & CONFIGURATION METHODS =====
+
+    def configure_logging(self, level='INFO'):
+        """Configure logging level"""
+        try:
+            logging.basicConfig(level=getattr(logging, level))
+            self.update_status(f"Logging level set to {level}", "success")
+        except Exception as e:
+            logging.error(f"Error configuring logging: {str(e)}")
+
+    def load_config(self):
+        """Load system configuration"""
+        try:
+            return CONFIG
+        except Exception as e:
+            logging.error(f"Error loading config: {str(e)}")
+            return {}
+
+    def get_log_file(self):
+        """Get log file path"""
+        try:
+            return CONFIG.get('log_file', 'logs/enhanced_reporting.log')
+        except Exception as e:
+            logging.error(f"Error getting log file: {str(e)}")
+            return None
+
+    def get_reporting_db_connection(self):
+        """Get database connection for reporting"""
+        try:
+            return get_db_connection()
+        except Exception as e:
+            logging.error(f"Error getting database connection: {str(e)}")
+            return None
+
+    def export_logs_menu(self):
+        """Export logs to file"""
+        try:
+            log_file = self.get_log_file()
+
+            if not log_file or not os.path.exists(log_file):
+                messagebox.showinfo("No Logs", "No log file found")
+                return
+
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                title="Export Logs"
+            )
+
+            if save_path:
+                import shutil
+                shutil.copy2(log_file, save_path)
+                messagebox.showinfo("Success", f"Logs exported to:\n{save_path}")
+                self.update_status("Logs exported successfully", "success")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export logs: {str(e)}")
+
+    def run_maintenance_menu(self):
+        """Show system maintenance menu"""
+        try:
+            maint_window = tk.Toplevel(self.root)
+            maint_window.title("System Maintenance")
+            maint_window.geometry("600x500")
+            maint_window.transient(self.root)
+
+            ttk.Label(maint_window, text="🔧 System Maintenance",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Maintenance options
+            options_frame = ttk.LabelFrame(maint_window, text="Maintenance Tasks", padding="10")
+            options_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            tasks = [
+                ("Clean Cache", self.show_cache_management_dialog, "Manage and clean cache files"),
+                ("Export Logs", self.export_logs_menu, "Export system logs"),
+                ("View Performance", self.show_performance_monitor, "Show system performance metrics"),
+                ("Database Integrity", self.run_quality_checks, "Check database integrity"),
+            ]
+
+            for i, (task_name, task_func, description) in enumerate(tasks):
+                task_frame = ttk.Frame(options_frame)
+                task_frame.pack(fill=tk.X, pady=5)
+
+                ttk.Label(task_frame, text=f"• {task_name}:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+                ttk.Label(task_frame, text=f"  {description}", foreground='gray').pack(anchor=tk.W)
+                ttk.Button(task_frame, text="Run", command=task_func).pack(anchor=tk.E)
+                ttk.Separator(options_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
+
+            ttk.Button(maint_window, text="Close", command=maint_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show maintenance menu: {str(e)}")
+
+    def display_enhanced_reporting_menu(self):
+        """Display main enhanced reporting menu (compatibility wrapper)"""
+        pass
+
+    def manage_schedule_menu(self):
+        """Manage scheduled reports (wrapper for view_scheduled_reports_menu)"""
+        self.view_scheduled_reports_menu()
+
 
 class TemplateDialog:
     """Dialog for creating and editing templates"""
