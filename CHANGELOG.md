@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Security Dashboard - Fix Encryption Data Loading Error** (2025-11-07)
+- **Issue**: `sqlite3.OperationalError: no such column: key_type` when loading encryption data
+- **Location**: `university_system/infrastructure/security/data_encryption.py` (lines 605-632)
+- **Bug Fix**:
+  - Fixed SQL query in `get_key_rotation_status()` method (line 606)
+  - Changed `key_type` → `algorithm` (matches actual database schema)
+  - Changed `version` → `id` (uses primary key as version number)
+  - Actual database schema for encryption_keys table:
+    - Columns: id, key_id, public_key, private_key_encrypted, created_at, rotated_at, is_active, algorithm, status
+  - Query was using non-existent columns: key_type, version
+  - Now uses: algorithm (or defaults to 'AES-256'), id (as version number)
+- **Result**:
+  - Security Dashboard now loads without errors
+  - Encryption key rotation status displays correctly
+  - All encryption management features functional
+
 **Activity Logger GUI & System Administration - Complete Overhaul** (2025-11-07)
 - **Issue**: Multiple critical errors and missing functionality in Activity Logger GUI and System Administration
 - **Locations**:

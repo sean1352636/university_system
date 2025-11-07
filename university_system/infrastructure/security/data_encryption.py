@@ -603,14 +603,14 @@ class EncryptionManager:
 
         try:
             cursor.execute("""
-                SELECT key_id, key_type, created_at, rotated_at, is_active, version
+                SELECT key_id, algorithm, created_at, rotated_at, is_active, id
                 FROM encryption_keys
                 ORDER BY created_at DESC
             """)
 
             keys = []
             for row in cursor.fetchall():
-                key_id, key_type, created_at, rotated_at, is_active, version = row
+                key_id, algorithm, created_at, rotated_at, is_active, version = row
 
                 created_dt = datetime.fromisoformat(created_at)
                 age_days = (datetime.now() - created_dt).days
@@ -620,7 +620,7 @@ class EncryptionManager:
 
                 keys.append({
                     'key_id': key_id,
-                    'type': key_type,
+                    'type': algorithm or 'AES-256',
                     'created_at': created_at,
                     'rotated_at': rotated_at,
                     'is_active': bool(is_active),
