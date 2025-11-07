@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Log Management GUI - Critical Bug Fixes & UI Improvements** (2025-11-07)
+- **Issue**: Multiple critical errors and usability issues in Log Management GUI
+- **Location**: `university_system/utils/logging/gui/log_management_gui.py`
+- **Bug Fixes**:
+  1. **Database Schema Error - 'role' Column** (lines 1978, 2139, 2393, 3727, 3813, 3902, 4537):
+     - Fixed "table logs has no column named role" sync errors
+     - Removed 'role' field from 5 log insert operations:
+       - `sync_student_data()` function (line 3902)
+       - `_test_insert_operation()` function (line 1978)
+       - `test_insert_performance()` function (line 4537)
+     - Removed 'role' from search filters (line 2139)
+     - Removed 'role' from export field lists (lines 2393, 3727)
+     - Changed role display to user_id in formatted reports (line 3813)
+  2. **UI Cleanup** (lines 480-481, 703):
+     - Removed "Open Student System" button from Student Integration tab
+     - Removed "Open Student System" menu item from Tools menu
+     - Streamlined student system integration controls
+- **UI Enhancements**:
+  1. **Text Readability Improvements** (lines 489-490, 748-750, 980-982, 2019-2021, 4069-4071):
+     - Added dark text color (`fg="#000000"`) to all ScrolledText widgets
+     - Added white background (`bg="#FFFFFF"`) for better contrast
+     - Updated 5 main text display areas:
+       - Student stats text widget
+       - Analytics results text widget
+       - Maintenance results text widget
+       - Security analysis text widget
+       - Live activity monitor text widget
+     - Significantly improved text readability across all tabs
+- **Verification**:
+  - Confirmed database path uses correct `DEFAULT_DB_PATH` from infrastructure (line 1, 164)
+  - Confirmed log files use correct `LOG_DIR` from centralized paths (line 10)
+  - Confirmed config tab scrollbar is properly implemented (lines 802-923)
+- **Results**:
+  - All database sync operations now work without schema errors
+  - Cleaner, more focused UI without unused student system integration
+  - Much improved text readability with proper contrast
+  - All paths correctly reference centralized configuration
+
 **Admissions CRM GUI - Critical Bug Fixes & Feature Enhancements** (2025-11-07)
 - **Issue**: Multiple critical errors in Admissions CRM GUI preventing proper functionality
 - **Location**:

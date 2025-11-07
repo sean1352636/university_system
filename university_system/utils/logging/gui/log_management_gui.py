@@ -476,9 +476,7 @@ class LogManagementGUI:
         
         button_frame = ttk.Frame(controls_frame)
         button_frame.pack(padx=10, pady=10)
-        
-        ttk.Button(button_frame, text="Open Student System",
-                   command=self.open_student_system).pack(side=tk.LEFT, padx=(0, 5))
+
         ttk.Button(button_frame, text="View Student Logs",
                    command=self.view_student_logs).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(button_frame, text="Sync Student Data",
@@ -488,7 +486,8 @@ class LogManagementGUI:
         stats_frame = ttk.LabelFrame(self.student_frame, text="Student System Quick Stats")
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.student_stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=20)
+        self.student_stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=20,
+                                                             fg="#000000", bg="#FFFFFF")
         self.student_stats_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         # Load initial stats
@@ -702,7 +701,6 @@ class LogManagementGUI:
         if STUDENT_SYSTEM_AVAILABLE:
             tools_menu = self.root.nametowidget(self.root['menu']).children['!menu2']
             tools_menu.add_separator()
-            tools_menu.add_command(label="Open Student System", command=self.open_student_system)
             tools_menu.add_command(label="Student Activity Logs", command=self.view_student_logs)
     
     def setup_analytics_tab(self):
@@ -747,8 +745,9 @@ class LogManagementGUI:
         results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         # Text widget for results
-        self.analytics_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD, 
-                                                       font=("Courier", 10))
+        self.analytics_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
+                                                       font=("Courier", 10),
+                                                       fg="#000000", bg="#FFFFFF")
         self.analytics_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     
     def setup_alerts_tab(self):
@@ -978,8 +977,9 @@ class LogManagementGUI:
         results_frame = ttk.LabelFrame(self.maintenance_frame, text="Maintenance Results")
         results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.maintenance_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD, 
-                                                         font=("Courier", 10))
+        self.maintenance_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
+                                                         font=("Courier", 10),
+                                                         fg="#000000", bg="#FFFFFF")
         self.maintenance_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     
     def setup_status_bar(self):
@@ -1975,13 +1975,12 @@ Modules Used:
             'timestamp': datetime.now().isoformat(),
             'user_id': 'perf_test',
             'username': 'performance_test',
-            'role': 'test',
             'action': 'test',
             'module': 'test',
             'details': 'Performance test entry',
             'status': 'success'
         }
-        
+
         self.log_manager.db.insert_log(test_log)
         
         # Clean up immediately
@@ -2017,7 +2016,9 @@ Modules Used:
         results_frame = ttk.LabelFrame(security_window, text="Analysis Results")
         results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.security_results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD, font=("Courier", 10))
+        self.security_results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
+                                                              font=("Courier", 10),
+                                                              fg="#000000", bg="#FFFFFF")
         self.security_results_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def analyze_failed_logins_gui(self, parent_window):
@@ -2136,10 +2137,9 @@ Top users with failed logins:
             
             # Get admin actions from last 30 days
             filters = {
-                'date_from': (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'),
-                'role': 'admin'
+                'date_from': (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
             }
-            
+
             admin_actions = self.log_manager.db.search_logs(filters, limit=1000)
             
             if not admin_actions:
@@ -2392,7 +2392,7 @@ Analysis for {len(sorted_users)} users:
         
         # Create checkboxes for fields
         field_vars = {}
-        fields = ["timestamp", "user_id", "username", "role", "action", "module", "details", "status", "ip_address"]
+        fields = ["timestamp", "user_id", "username", "action", "module", "details", "status", "ip_address"]
         
         for i, field in enumerate(fields):
             var = tk.BooleanVar(value=True)
@@ -3726,7 +3726,7 @@ Configuration:
         columns_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         column_vars = {}
-        default_columns = ['timestamp', 'user_id', 'username', 'role', 'action',
+        default_columns = ['timestamp', 'user_id', 'username', 'action',
                           'module', 'details', 'ip_address', 'status']
 
         for i, col in enumerate(default_columns):
@@ -3812,7 +3812,7 @@ Configuration:
 
                         for log in logs:
                             f.write(f"Timestamp: {log.get('timestamp', 'N/A')}\n")
-                            f.write(f"User: {log.get('username', 'N/A')} ({log.get('role', 'N/A')})\n")
+                            f.write(f"User: {log.get('username', 'N/A')} (ID: {log.get('user_id', 'N/A')})\n")
                             f.write(f"Action: {log.get('action', 'N/A')}\n")
                             f.write(f"Module: {log.get('module', 'N/A')}\n")
                             f.write(f"Details: {log.get('details', 'N/A')}\n")
@@ -3899,7 +3899,6 @@ Configuration:
                         'timestamp': datetime.now().isoformat(),
                         'user_id': 'system',
                         'username': 'log_system',
-                        'role': 'system',
                         'action': 'sync',
                         'module': 'student_integration',
                         'details': f'Synced {len(students)} student records',
@@ -4067,8 +4066,9 @@ Configuration:
         log_frame = ttk.LabelFrame(monitor_window, text="Live Activity Feed")
         log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.monitor_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, 
-                                                     font=("Courier", 9))
+        self.monitor_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD,
+                                                     font=("Courier", 9),
+                                                     fg="#000000", bg="#FFFFFF")
         self.monitor_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         # Control buttons
@@ -4537,13 +4537,12 @@ Success rate: {((checked_count - corrupted_count) / max(checked_count, 1)) * 100
                         'timestamp': datetime.now().isoformat(),
                         'user_id': f'test_user_{i}',
                         'username': f'testuser{i}',
-                        'role': 'test',
                         'action': 'test_action',
                         'module': 'performance_test',
                         'details': f'Test entry {i}',
                         'status': 'success'
                     }
-                    
+
                     self.log_manager.db.insert_log(test_log)
                 
                 end_time = time.time()
