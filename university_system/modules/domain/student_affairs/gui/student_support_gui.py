@@ -2814,253 +2814,1410 @@ class StudentSupportGUI:
     def show_manage_templates(self):
         """Show template management interface (staff only)"""
         self.clear_content()
-        
+
         templates_frame = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(templates_frame, text="🔧 Manage Templates")
-        
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(templates_frame, text="❌ Staff access required", 
+            ttk.Label(templates_frame, text="❌ Staff access required",
                      style='Title.TLabel').pack(pady=20)
             return
-        
-        ttk.Label(templates_frame, text="🔧 Template Management", 
+
+        ttk.Label(templates_frame, text="🔧 Template Management",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
-        # Template management UI
-        templates_controls = ttk.Frame(templates_frame)
-        templates_controls.pack(fill=tk.X, pady=10)
 
-        ttk.Button(templates_controls, text="Create Template", command=self.create_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(templates_controls, text="Edit Template", command=self.edit_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(templates_controls, text="Delete Template", command=self.delete_template).pack(side=tk.LEFT, padx=5)
+        # Create notebook for ticket and response templates
+        template_notebook = ttk.Notebook(templates_frame)
+        template_notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Templates list
-        templates_list_frame = ttk.LabelFrame(templates_frame, text="Available Templates", padding=10)
-        templates_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        # Ticket Templates Tab
+        ticket_template_frame = ttk.Frame(template_notebook, padding=10)
+        template_notebook.add(ticket_template_frame, text="🎫 Ticket Templates")
 
-        columns = ("Name", "Category", "Last Modified", "Usage Count")
-        templates_tree = ttk.Treeview(templates_list_frame, columns=columns, show="headings", height=12)
+        # Ticket templates controls
+        ticket_controls = ttk.Frame(ticket_template_frame)
+        ticket_controls.pack(fill=tk.X, pady=10)
+
+        ttk.Button(ticket_controls, text="➕ Create Ticket Template",
+                  command=lambda: self.create_ticket_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(ticket_controls, text="✏️ Edit Template",
+                  command=lambda: self.edit_ticket_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(ticket_controls, text="🗑️ Delete Template",
+                  command=lambda: self.delete_ticket_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(ticket_controls, text="🔄 Refresh",
+                  command=lambda: self.refresh_ticket_templates()).pack(side=tk.LEFT, padx=5)
+
+        # Ticket templates list
+        ticket_list_frame = ttk.LabelFrame(ticket_template_frame, text="Ticket Templates", padding=10)
+        ticket_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ("ID", "Name", "Category", "Priority", "Created By", "Created Date", "Usage Count")
+        self.ticket_templates_tree = ttk.Treeview(ticket_list_frame, columns=columns, show="headings", height=12)
+
+        # Configure columns
+        self.ticket_templates_tree.column("ID", width=50)
+        self.ticket_templates_tree.column("Name", width=200)
+        self.ticket_templates_tree.column("Category", width=120)
+        self.ticket_templates_tree.column("Priority", width=80)
+        self.ticket_templates_tree.column("Created By", width=100)
+        self.ticket_templates_tree.column("Created Date", width=150)
+        self.ticket_templates_tree.column("Usage Count", width=100)
+
         for col in columns:
-            templates_tree.heading(col, text=col)
-            templates_tree.column(col, width=150)
+            self.ticket_templates_tree.heading(col, text=col)
 
-        scrollbar = ttk.Scrollbar(templates_list_frame, orient=tk.VERTICAL, command=templates_tree.yview)
-        templates_tree.configure(yscrollcommand=scrollbar.set)
-        templates_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = ttk.Scrollbar(ticket_list_frame, orient=tk.VERTICAL, command=self.ticket_templates_tree.yview)
+        self.ticket_templates_tree.configure(yscrollcommand=scrollbar.set)
+        self.ticket_templates_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Sample templates
-        sample_templates = [
-            ("Welcome Email", "Email", "2024-01-15", "45"),
-            ("Follow-up Response", "Email", "2024-01-10", "32"),
-            ("Meeting Reminder", "Notification", "2024-01-05", "28"),
-        ]
-        for template in sample_templates:
-            templates_tree.insert('', tk.END, values=template)
+        # Response Templates Tab
+        response_template_frame = ttk.Frame(template_notebook, padding=10)
+        template_notebook.add(response_template_frame, text="💬 Response Templates")
 
-    def create_template(self):
-        messagebox.showinfo("Create Template", "Create template dialog would open here")
+        # Response templates controls
+        response_controls = ttk.Frame(response_template_frame)
+        response_controls.pack(fill=tk.X, pady=10)
 
-    def edit_template(self):
-        messagebox.showinfo("Edit Template", "Edit template dialog would open here")
+        ttk.Button(response_controls, text="➕ Create Response Template",
+                  command=lambda: self.create_response_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(response_controls, text="✏️ Edit Template",
+                  command=lambda: self.edit_response_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(response_controls, text="🗑️ Delete Template",
+                  command=lambda: self.delete_response_template()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(response_controls, text="🔄 Refresh",
+                  command=lambda: self.refresh_response_templates()).pack(side=tk.LEFT, padx=5)
 
-    def delete_template(self):
-        messagebox.showinfo("Delete Template", "Delete template confirmation would appear here")
+        # Response templates list
+        response_list_frame = ttk.LabelFrame(response_template_frame, text="Response Templates", padding=10)
+        response_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ("ID", "Name", "Subject", "Category", "Created By", "Created Date", "Usage Count")
+        self.response_templates_tree = ttk.Treeview(response_list_frame, columns=columns, show="headings", height=12)
+
+        # Configure columns
+        self.response_templates_tree.column("ID", width=50)
+        self.response_templates_tree.column("Name", width=180)
+        self.response_templates_tree.column("Subject", width=200)
+        self.response_templates_tree.column("Category", width=120)
+        self.response_templates_tree.column("Created By", width=100)
+        self.response_templates_tree.column("Created Date", width=150)
+        self.response_templates_tree.column("Usage Count", width=100)
+
+        for col in columns:
+            self.response_templates_tree.heading(col, text=col)
+
+        scrollbar = ttk.Scrollbar(response_list_frame, orient=tk.VERTICAL, command=self.response_templates_tree.yview)
+        self.response_templates_tree.configure(yscrollcommand=scrollbar.set)
+        self.response_templates_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load templates
+        self.refresh_ticket_templates()
+        self.refresh_response_templates()
+
+    def refresh_ticket_templates(self):
+        """Refresh ticket templates list"""
+        try:
+            # Clear existing items
+            for item in self.ticket_templates_tree.get_children():
+                self.ticket_templates_tree.delete(item)
+
+            # Load from database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT template_id, name, category, priority, created_by,
+                       created_datetime, usage_count
+                FROM ticket_templates
+                ORDER BY created_datetime DESC
+            ''')
+
+            templates = cursor.fetchall()
+            conn.close()
+
+            # Add to tree
+            for template in templates:
+                self.ticket_templates_tree.insert('', tk.END, values=(
+                    template['template_id'],
+                    template['name'],
+                    template['category'],
+                    template['priority'],
+                    template['created_by'],
+                    template['created_datetime'],
+                    template['usage_count'] or 0
+                ))
+
+            self.update_status(f"Loaded {len(templates)} ticket templates")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load ticket templates: {e}")
+
+    def refresh_response_templates(self):
+        """Refresh response templates list"""
+        try:
+            # Clear existing items
+            for item in self.response_templates_tree.get_children():
+                self.response_templates_tree.delete(item)
+
+            # Load from database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT template_id, name, subject, category, created_by,
+                       created_datetime, usage_count
+                FROM response_templates
+                ORDER BY created_datetime DESC
+            ''')
+
+            templates = cursor.fetchall()
+            conn.close()
+
+            # Add to tree
+            for template in templates:
+                self.response_templates_tree.insert('', tk.END, values=(
+                    template['template_id'],
+                    template['name'],
+                    template['subject'],
+                    template['category'] or 'General',
+                    template['created_by'],
+                    template['created_datetime'],
+                    template['usage_count'] or 0
+                ))
+
+            self.update_status(f"Loaded {len(templates)} response templates")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load response templates: {e}")
+
+    def create_ticket_template(self):
+        """Create a new ticket template"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("➕ Create Ticket Template")
+        dialog.geometry("600x550")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text="➕ Create Ticket Template", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Name
+        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        name_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
+        category_combo.pack(fill="x", pady=(5, 10))
+        if SUPPORT_CATEGORIES:
+            category_combo.current(0)
+
+        # Priority
+        ttk.Label(form_frame, text="Priority:").pack(anchor="w")
+        priority_var = tk.StringVar()
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, values=TICKET_PRIORITIES, state="readonly", width=47)
+        priority_combo.pack(fill="x", pady=(5, 10))
+        if TICKET_PRIORITIES:
+            priority_combo.current(1)  # Default to Medium
+
+        # Title Template
+        ttk.Label(form_frame, text="Title Template:").pack(anchor="w")
+        title_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=title_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Description Template
+        ttk.Label(form_frame, text="Description Template:").pack(anchor="w")
+        desc_text = scrolledtext.ScrolledText(form_frame, height=8, width=50)
+        desc_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_template():
+            name = name_var.get().strip()
+            category = category_var.get()
+            priority = priority_var.get()
+            title_template = title_var.get().strip()
+            description_template = desc_text.get("1.0", tk.END).strip()
+
+            if not all([name, category, priority, title_template, description_template]):
+                messagebox.showerror("Error", "All fields are required")
+                return
+
+            try:
+                template_id = self.support.create_ticket_template(
+                    name, title_template, description_template, category, priority
+                )
+                messagebox.showinfo("Success", f"Ticket template created successfully (ID: {template_id})")
+                dialog.destroy()
+                self.refresh_ticket_templates()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create template: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save", command=save_template).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+
+    def edit_ticket_template(self):
+        """Edit selected ticket template"""
+        selection = self.ticket_templates_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a template to edit")
+            return
+
+        item = self.ticket_templates_tree.item(selection[0])
+        template_id = item['values'][0]
+
+        # Load template data
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM ticket_templates WHERE template_id = ?', (template_id,))
+            template = cursor.fetchone()
+            conn.close()
+
+            if not template:
+                messagebox.showerror("Error", "Template not found")
+                return
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load template: {e}")
+            return
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"✏️ Edit Ticket Template #{template_id}")
+        dialog.geometry("600x550")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text=f"✏️ Edit Ticket Template #{template_id}", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Name
+        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        name_var = tk.StringVar(value=template['name'])
+        ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        category_var = tk.StringVar(value=template['category'])
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
+        category_combo.pack(fill="x", pady=(5, 10))
+
+        # Priority
+        ttk.Label(form_frame, text="Priority:").pack(anchor="w")
+        priority_var = tk.StringVar(value=template['priority'])
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, values=TICKET_PRIORITIES, state="readonly", width=47)
+        priority_combo.pack(fill="x", pady=(5, 10))
+
+        # Title Template
+        ttk.Label(form_frame, text="Title Template:").pack(anchor="w")
+        title_var = tk.StringVar(value=template['title_template'])
+        ttk.Entry(form_frame, textvariable=title_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Description Template
+        ttk.Label(form_frame, text="Description Template:").pack(anchor="w")
+        desc_text = scrolledtext.ScrolledText(form_frame, height=8, width=50)
+        desc_text.insert("1.0", template['description_template'])
+        desc_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_changes():
+            name = name_var.get().strip()
+            category = category_var.get()
+            priority = priority_var.get()
+            title_template = title_var.get().strip()
+            description_template = desc_text.get("1.0", tk.END).strip()
+
+            if not all([name, category, priority, title_template, description_template]):
+                messagebox.showerror("Error", "All fields are required")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE ticket_templates
+                    SET name = ?, title_template = ?, description_template = ?,
+                        category = ?, priority = ?
+                    WHERE template_id = ?
+                ''', (name, title_template, description_template, category, priority, template_id))
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Template updated successfully")
+                dialog.destroy()
+                self.refresh_ticket_templates()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update template: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+
+    def delete_ticket_template(self):
+        """Delete selected ticket template"""
+        selection = self.ticket_templates_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a template to delete")
+            return
+
+        item = self.ticket_templates_tree.item(selection[0])
+        template_id = item['values'][0]
+        template_name = item['values'][1]
+
+        if not messagebox.askyesno("Confirm Delete",
+                                   f"Are you sure you want to delete template '{template_name}'?\n\nThis action cannot be undone."):
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM ticket_templates WHERE template_id = ?', (template_id,))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Template deleted successfully")
+            self.refresh_ticket_templates()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete template: {e}")
+
+    def create_response_template(self):
+        """Create a new response template"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("➕ Create Response Template")
+        dialog.geometry("600x550")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text="➕ Create Response Template", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Name
+        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        name_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Subject
+        ttk.Label(form_frame, text="Subject:").pack(anchor="w")
+        subject_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=subject_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category (optional):").pack(anchor="w")
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
+        category_combo.pack(fill="x", pady=(5, 10))
+
+        # Content
+        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        ttk.Label(form_frame, text="Use variables: {student_name}, {ticket_id}, {ticket_title}",
+                 font=('Segoe UI', 8), foreground='gray').pack(anchor="w")
+        content_text = scrolledtext.ScrolledText(form_frame, height=10, width=50)
+        content_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_template():
+            name = name_var.get().strip()
+            subject = subject_var.get().strip()
+            category = category_var.get() or None
+            content = content_text.get("1.0", tk.END).strip()
+
+            if not all([name, subject, content]):
+                messagebox.showerror("Error", "Name, subject, and content are required")
+                return
+
+            try:
+                template_id = self.support.create_response_template(
+                    name, subject, content, category, ['student_name', 'ticket_id', 'ticket_title']
+                )
+                messagebox.showinfo("Success", f"Response template created successfully (ID: {template_id})")
+                dialog.destroy()
+                self.refresh_response_templates()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create template: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save", command=save_template).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+
+    def edit_response_template(self):
+        """Edit selected response template"""
+        selection = self.response_templates_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a template to edit")
+            return
+
+        item = self.response_templates_tree.item(selection[0])
+        template_id = item['values'][0]
+
+        # Load template data
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM response_templates WHERE template_id = ?', (template_id,))
+            template = cursor.fetchone()
+            conn.close()
+
+            if not template:
+                messagebox.showerror("Error", "Template not found")
+                return
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load template: {e}")
+            return
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"✏️ Edit Response Template #{template_id}")
+        dialog.geometry("600x550")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text=f"✏️ Edit Response Template #{template_id}", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Name
+        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        name_var = tk.StringVar(value=template['name'])
+        ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Subject
+        ttk.Label(form_frame, text="Subject:").pack(anchor="w")
+        subject_var = tk.StringVar(value=template['subject'])
+        ttk.Entry(form_frame, textvariable=subject_var, width=50).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category (optional):").pack(anchor="w")
+        category_var = tk.StringVar(value=template['category'] or '')
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
+        category_combo.pack(fill="x", pady=(5, 10))
+
+        # Content
+        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        content_text = scrolledtext.ScrolledText(form_frame, height=10, width=50)
+        content_text.insert("1.0", template['content'])
+        content_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_changes():
+            name = name_var.get().strip()
+            subject = subject_var.get().strip()
+            category = category_var.get() or None
+            content = content_text.get("1.0", tk.END).strip()
+
+            if not all([name, subject, content]):
+                messagebox.showerror("Error", "Name, subject, and content are required")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE response_templates
+                    SET name = ?, subject = ?, content = ?, category = ?
+                    WHERE template_id = ?
+                ''', (name, subject, content, category, template_id))
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Template updated successfully")
+                dialog.destroy()
+                self.refresh_response_templates()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update template: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+
+    def delete_response_template(self):
+        """Delete selected response template"""
+        selection = self.response_templates_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a template to delete")
+            return
+
+        item = self.response_templates_tree.item(selection[0])
+        template_id = item['values'][0]
+        template_name = item['values'][1]
+
+        if not messagebox.askyesno("Confirm Delete",
+                                   f"Are you sure you want to delete template '{template_name}'?\n\nThis action cannot be undone."):
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM response_templates WHERE template_id = ?', (template_id,))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Template deleted successfully")
+            self.refresh_response_templates()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete template: {e}")
     
     def show_manage_kb(self):
         """Show knowledge base management interface (staff only)"""
         self.clear_content()
-        
+
         kb_mgmt_frame = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(kb_mgmt_frame, text="📖 Manage KB")
-        
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(kb_mgmt_frame, text="❌ Staff access required", 
+            ttk.Label(kb_mgmt_frame, text="❌ Staff access required",
                      style='Title.TLabel').pack(pady=20)
             return
-        
-        ttk.Label(kb_mgmt_frame, text="📖 Knowledge Base Management", 
+
+        ttk.Label(kb_mgmt_frame, text="📖 Knowledge Base Management",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Knowledge base management UI
         kb_controls = ttk.Frame(kb_mgmt_frame)
         kb_controls.pack(fill=tk.X, pady=10)
 
-        ttk.Button(kb_controls, text="Add Article", command=self.add_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="Edit Article", command=self.edit_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="Delete Article", command=self.delete_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text="➕ Add Article", command=self.add_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text="✏️ Edit Article", command=self.edit_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text="📢 Publish Article", command=self.publish_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text="🗑️ Delete Article", command=self.delete_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text="🔄 Refresh", command=self.refresh_kb_articles).pack(side=tk.LEFT, padx=5)
 
-        # Search frame
+        # Search and filter frame
         search_frame = ttk.Frame(kb_mgmt_frame)
         search_frame.pack(fill=tk.X, pady=10)
 
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
-        search_var = tk.StringVar()
-        ttk.Entry(search_frame, textvariable=search_var, width=40).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Search", command=lambda: self.search_kb(search_var.get())).pack(side=tk.LEFT, padx=5)
+        self.kb_search_var = tk.StringVar()
+        ttk.Entry(search_frame, textvariable=self.kb_search_var, width=30).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text="🔍 Search", command=self.search_kb_articles).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text="🔄 Clear", command=self.clear_kb_search).pack(side=tk.LEFT, padx=5)
+
+        # Show all toggle
+        self.kb_show_all_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(search_frame, text="Show Unpublished", variable=self.kb_show_all_var,
+                       command=self.refresh_kb_articles).pack(side=tk.LEFT, padx=10)
 
         # KB articles list
         kb_list_frame = ttk.LabelFrame(kb_mgmt_frame, text="Knowledge Base Articles", padding=10)
         kb_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        columns = ("Title", "Category", "Views", "Last Updated", "Author")
-        kb_tree = ttk.Treeview(kb_list_frame, columns=columns, show="headings", height=12)
-        for col in columns:
-            kb_tree.heading(col, text=col)
-            kb_tree.column(col, width=130)
+        columns = ("ID", "Title", "Category", "Status", "Views", "Helpful", "Author", "Last Updated")
+        self.kb_tree = ttk.Treeview(kb_list_frame, columns=columns, show="headings", height=12)
 
-        scrollbar = ttk.Scrollbar(kb_list_frame, orient=tk.VERTICAL, command=kb_tree.yview)
-        kb_tree.configure(yscrollcommand=scrollbar.set)
-        kb_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Configure columns
+        self.kb_tree.column("ID", width=50)
+        self.kb_tree.column("Title", width=250)
+        self.kb_tree.column("Category", width=120)
+        self.kb_tree.column("Status", width=100)
+        self.kb_tree.column("Views", width=70)
+        self.kb_tree.column("Helpful", width=70)
+        self.kb_tree.column("Author", width=100)
+        self.kb_tree.column("Last Updated", width=150)
+
+        for col in columns:
+            self.kb_tree.heading(col, text=col)
+
+        # Double-click to view
+        self.kb_tree.bind('<Double-1>', lambda e: self.view_kb_article_details())
+
+        scrollbar = ttk.Scrollbar(kb_list_frame, orient=tk.VERTICAL, command=self.kb_tree.yview)
+        self.kb_tree.configure(yscrollcommand=scrollbar.set)
+        self.kb_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Sample KB articles
-        sample_articles = [
-            ("How to Reset Password", "Account", "234", "2024-01-15", "Admin"),
-            ("Registration Process", "Enrollment", "189", "2024-01-10", "Staff"),
-            ("Campus Map Guide", "General", "456", "2024-01-05", "Admin"),
-        ]
-        for article in sample_articles:
-            kb_tree.insert('', tk.END, values=article)
+        # Load articles
+        self.refresh_kb_articles()
+
+    def refresh_kb_articles(self):
+        """Refresh KB articles list"""
+        try:
+            # Clear existing items
+            for item in self.kb_tree.get_children():
+                self.kb_tree.delete(item)
+
+            # Load from database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            # Build query based on filters
+            show_unpublished = self.kb_show_all_var.get()
+            if show_unpublished:
+                query = 'SELECT * FROM kb_articles ORDER BY created_datetime DESC'
+            else:
+                query = 'SELECT * FROM kb_articles WHERE is_published = 1 ORDER BY created_datetime DESC'
+
+            cursor.execute(query)
+            articles = cursor.fetchall()
+            conn.close()
+
+            # Add to tree
+            for article in articles:
+                status = "Published" if article['is_published'] else "Draft"
+                self.kb_tree.insert('', tk.END, values=(
+                    article['article_id'],
+                    article['title'],
+                    article['category'],
+                    status,
+                    article['view_count'] or 0,
+                    article['helpful_votes'] or 0,
+                    article['author_id'],
+                    article['created_datetime']
+                ))
+
+            self.update_status(f"Loaded {len(articles)} KB articles")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load KB articles: {e}")
+
+    def search_kb_articles(self):
+        """Search KB articles"""
+        query = self.kb_search_var.get().strip()
+        if not query:
+            self.refresh_kb_articles()
+            return
+
+        try:
+            # Clear existing items
+            for item in self.kb_tree.get_children():
+                self.kb_tree.delete(item)
+
+            # Search in database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            search_query = f"%{query}%"
+            show_unpublished = self.kb_show_all_var.get()
+
+            if show_unpublished:
+                cursor.execute('''
+                    SELECT * FROM kb_articles
+                    WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?
+                    ORDER BY created_datetime DESC
+                ''', (search_query, search_query, search_query, search_query))
+            else:
+                cursor.execute('''
+                    SELECT * FROM kb_articles
+                    WHERE (title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?)
+                    AND is_published = 1
+                    ORDER BY created_datetime DESC
+                ''', (search_query, search_query, search_query, search_query))
+
+            articles = cursor.fetchall()
+            conn.close()
+
+            # Add to tree
+            for article in articles:
+                status = "Published" if article['is_published'] else "Draft"
+                self.kb_tree.insert('', tk.END, values=(
+                    article['article_id'],
+                    article['title'],
+                    article['category'],
+                    status,
+                    article['view_count'] or 0,
+                    article['helpful_votes'] or 0,
+                    article['author_id'],
+                    article['created_datetime']
+                ))
+
+            self.update_status(f"Found {len(articles)} articles matching '{query}'")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to search KB articles: {e}")
+
+    def clear_kb_search(self):
+        """Clear KB search"""
+        self.kb_search_var.set('')
+        self.refresh_kb_articles()
 
     def add_kb_article(self):
-        messagebox.showinfo("Add Article", "Add KB article dialog would open here")
+        """Create a new KB article"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("➕ Create KB Article")
+        dialog.geometry("700x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text="➕ Create Knowledge Base Article", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Title
+        ttk.Label(form_frame, text="Title:").pack(anchor="w")
+        title_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=title_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
+        category_combo.pack(fill="x", pady=(5, 10))
+        if SUPPORT_CATEGORIES:
+            category_combo.current(0)
+
+        # Summary
+        ttk.Label(form_frame, text="Summary (optional):").pack(anchor="w")
+        summary_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=summary_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Tags
+        ttk.Label(form_frame, text="Tags (comma-separated):").pack(anchor="w")
+        tags_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=tags_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Content
+        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        content_text = scrolledtext.ScrolledText(form_frame, height=12, width=60)
+        content_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Publish immediately checkbox
+        publish_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(form_frame, text="Publish immediately", variable=publish_var).pack(anchor="w", pady=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_article():
+            title = title_var.get().strip()
+            category = category_var.get()
+            summary = summary_var.get().strip() or None
+            tags_str = tags_var.get().strip()
+            tags = [t.strip() for t in tags_str.split(',') if t.strip()] if tags_str else None
+            content = content_text.get("1.0", tk.END).strip()
+            is_published = publish_var.get()
+
+            if not all([title, category, content]):
+                messagebox.showerror("Error", "Title, category, and content are required")
+                return
+
+            try:
+                article_id = self.support.create_kb_article(
+                    title, content, category, summary, tags, is_published
+                )
+                status = "published" if is_published else "created as draft"
+                messagebox.showinfo("Success", f"KB article {status} successfully (ID: {article_id})")
+                dialog.destroy()
+                self.refresh_kb_articles()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create article: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save", command=save_article).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
 
     def edit_kb_article(self):
-        messagebox.showinfo("Edit Article", "Edit KB article dialog would open here")
+        """Edit selected KB article"""
+        selection = self.kb_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an article to edit")
+            return
+
+        item = self.kb_tree.item(selection[0])
+        article_id = item['values'][0]
+
+        # Load article data
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM kb_articles WHERE article_id = ?', (article_id,))
+            article = cursor.fetchone()
+            conn.close()
+
+            if not article:
+                messagebox.showerror("Error", "Article not found")
+                return
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load article: {e}")
+            return
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"✏️ Edit KB Article #{article_id}")
+        dialog.geometry("700x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text=f"✏️ Edit KB Article #{article_id}", style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Title
+        ttk.Label(form_frame, text="Title:").pack(anchor="w")
+        title_var = tk.StringVar(value=article['title'])
+        ttk.Entry(form_frame, textvariable=title_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Category
+        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        category_var = tk.StringVar(value=article['category'])
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
+        category_combo.pack(fill="x", pady=(5, 10))
+
+        # Summary
+        ttk.Label(form_frame, text="Summary (optional):").pack(anchor="w")
+        summary_var = tk.StringVar(value=article['summary'] or '')
+        ttk.Entry(form_frame, textvariable=summary_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Tags
+        ttk.Label(form_frame, text="Tags (comma-separated):").pack(anchor="w")
+        try:
+            tags_list = json.loads(article['tags']) if article['tags'] else []
+            tags_str = ', '.join(tags_list)
+        except:
+            tags_str = ''
+        tags_var = tk.StringVar(value=tags_str)
+        ttk.Entry(form_frame, textvariable=tags_var, width=60).pack(fill="x", pady=(5, 10))
+
+        # Content
+        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        content_text = scrolledtext.ScrolledText(form_frame, height=12, width=60)
+        content_text.insert("1.0", article['content'])
+        content_text.pack(fill="both", expand=True, pady=(5, 10))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x", pady=(10, 0))
+
+        def save_changes():
+            title = title_var.get().strip()
+            category = category_var.get()
+            summary = summary_var.get().strip() or None
+            tags_str = tags_var.get().strip()
+            tags = [t.strip() for t in tags_str.split(',') if t.strip()] if tags_str else []
+            content = content_text.get("1.0", tk.END).strip()
+
+            if not all([title, category, content]):
+                messagebox.showerror("Error", "Title, category, and content are required")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE kb_articles
+                    SET title = ?, content = ?, summary = ?, category = ?, tags = ?
+                    WHERE article_id = ?
+                ''', (title, content, summary, category, json.dumps(tags), article_id))
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Article updated successfully")
+                dialog.destroy()
+                self.refresh_kb_articles()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update article: {e}")
+
+        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+
+    def publish_kb_article(self):
+        """Publish selected KB article"""
+        selection = self.kb_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an article to publish")
+            return
+
+        item = self.kb_tree.item(selection[0])
+        article_id = item['values'][0]
+        article_title = item['values'][1]
+        status = item['values'][3]
+
+        if status == "Published":
+            messagebox.showinfo("Info", "This article is already published")
+            return
+
+        if not messagebox.askyesno("Confirm Publish",
+                                   f"Publish article '{article_title}'?\n\nThis will make it visible to all users."):
+            return
+
+        try:
+            self.support.publish_kb_article(article_id)
+            messagebox.showinfo("Success", "Article published successfully")
+            self.refresh_kb_articles()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to publish article: {e}")
 
     def delete_kb_article(self):
-        messagebox.showinfo("Delete Article", "Delete article confirmation would appear here")
+        """Delete selected KB article"""
+        selection = self.kb_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an article to delete")
+            return
 
-    def search_kb(self, query):
-        messagebox.showinfo("Search", f"Searching for: {query}")
+        item = self.kb_tree.item(selection[0])
+        article_id = item['values'][0]
+        article_title = item['values'][1]
+
+        if not messagebox.askyesno("Confirm Delete",
+                                   f"Are you sure you want to delete article '{article_title}'?\n\nThis action cannot be undone."):
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM kb_articles WHERE article_id = ?', (article_id,))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Article deleted successfully")
+            self.refresh_kb_articles()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete article: {e}")
+
+    def view_kb_article_details(self):
+        """View detailed information about a KB article"""
+        selection = self.kb_tree.selection()
+        if not selection:
+            return
+
+        item = self.kb_tree.item(selection[0])
+        article_id = item['values'][0]
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM kb_articles WHERE article_id = ?', (article_id,))
+            article = cursor.fetchone()
+            conn.close()
+
+            if not article:
+                messagebox.showerror("Error", "Article not found")
+                return
+
+            # Create detail window
+            detail_window = tk.Toplevel(self.root)
+            detail_window.title(f"📖 {article['title']}")
+            detail_window.geometry("800x700")
+
+            # Scrollable frame
+            canvas = tk.Canvas(detail_window)
+            scrollbar = ttk.Scrollbar(detail_window, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas, padding="20")
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            # Article details
+            ttk.Label(scrollable_frame, text=article['title'], font=('Segoe UI', 16, 'bold')).pack(anchor="w", pady=(0, 10))
+
+            # Metadata
+            meta_frame = ttk.Frame(scrollable_frame)
+            meta_frame.pack(fill="x", pady=(0, 20))
+
+            ttk.Label(meta_frame, text=f"📁 Category: {article['category']}", font=('Segoe UI', 10)).pack(anchor="w")
+            ttk.Label(meta_frame, text=f"📊 Status: {'Published' if article['is_published'] else 'Draft'}", font=('Segoe UI', 10)).pack(anchor="w")
+            ttk.Label(meta_frame, text=f"👀 Views: {article['view_count'] or 0}", font=('Segoe UI', 10)).pack(anchor="w")
+            ttk.Label(meta_frame, text=f"👍 Helpful Votes: {article['helpful_votes'] or 0}", font=('Segoe UI', 10)).pack(anchor="w")
+
+            # Tags
+            if article['tags']:
+                try:
+                    tags = json.loads(article['tags'])
+                    if tags:
+                        tags_text = ', '.join(tags)
+                        ttk.Label(meta_frame, text=f"🏷️ Tags: {tags_text}", font=('Segoe UI', 10)).pack(anchor="w")
+                except:
+                    pass
+
+            # Summary
+            if article['summary']:
+                ttk.Label(scrollable_frame, text="Summary:", font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
+                summary_text = tk.Text(scrollable_frame, wrap=tk.WORD, height=3, font=('Segoe UI', 10))
+                summary_text.insert("1.0", article['summary'])
+                summary_text.config(state='disabled')
+                summary_text.pack(fill="x", pady=(0, 10))
+
+            # Content
+            ttk.Label(scrollable_frame, text="Content:", font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
+            content_text = tk.Text(scrollable_frame, wrap=tk.WORD, height=20, font=('Segoe UI', 10))
+            content_text.insert("1.0", article['content'])
+            content_text.config(state='disabled')
+            content_text.pack(fill="both", expand=True)
+
+            # Pack canvas and scrollbar
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load article details: {e}")
     
     def show_bulk_operations(self):
         """Show bulk operations interface (staff only)"""
         self.clear_content()
-        
+
         bulk_frame = ttk.Frame(self.notebook, padding="10")
         self.notebook.add(bulk_frame, text="📦 Bulk Operations")
-        
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(bulk_frame, text="❌ Staff access required", 
+            ttk.Label(bulk_frame, text="❌ Staff access required",
                      style='Title.TLabel').pack(pady=20)
             return
-        
-        ttk.Label(bulk_frame, text="📦 Bulk Operations", 
+
+        ttk.Label(bulk_frame, text="📦 Bulk Operations",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Bulk operations UI
         bulk_notebook = ttk.Notebook(bulk_frame)
         bulk_notebook.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        # Bulk Email Tab
-        bulk_email_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_email_frame, text="Bulk Email")
+        # Bulk Assign Tab
+        bulk_assign_frame = ttk.Frame(bulk_notebook, padding=10)
+        bulk_notebook.add(bulk_assign_frame, text="👤 Bulk Assign")
 
-        ttk.Label(bulk_email_frame, text="Send emails to multiple students", font=('Arial', 11, 'bold')).pack(pady=10)
-        ttk.Label(bulk_email_frame, text="Recipients:").pack(anchor='w', padx=10)
-        recipients_entry = ttk.Entry(bulk_email_frame, width=60)
-        recipients_entry.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(bulk_assign_frame, text="Assign multiple tickets to a staff member", font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
-        ttk.Label(bulk_email_frame, text="Subject:").pack(anchor='w', padx=10, pady=(10,0))
-        subject_entry = ttk.Entry(bulk_email_frame, width=60)
-        subject_entry.pack(fill=tk.X, padx=10, pady=5)
+        # Ticket IDs
+        ttk.Label(bulk_assign_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_assign_tickets_var = tk.StringVar()
+        ttk.Entry(bulk_assign_frame, textvariable=self.bulk_assign_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(bulk_email_frame, text="Message:").pack(anchor='w', padx=10, pady=(10,0))
-        message_text = scrolledtext.ScrolledText(bulk_email_frame, height=10)
-        message_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Staff member
+        ttk.Label(bulk_assign_frame, text="Assign To (username):").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_assign_staff_var = tk.StringVar()
+        ttk.Entry(bulk_assign_frame, textvariable=self.bulk_assign_staff_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(bulk_email_frame, text="Send Bulk Email",
-                  command=lambda: messagebox.showinfo("Bulk Email", "Bulk email would be sent")).pack(pady=10)
+        ttk.Button(bulk_assign_frame, text="📋 Assign Tickets", command=self.perform_bulk_assign).pack(pady=20)
 
-        # Bulk Update Tab
-        bulk_update_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_update_frame, text="Bulk Update")
+        # Bulk Status Update Tab
+        bulk_status_frame = ttk.Frame(bulk_notebook, padding=10)
+        bulk_notebook.add(bulk_status_frame, text="📊 Bulk Status")
 
-        ttk.Label(bulk_update_frame, text="Update multiple records", font=('Arial', 11, 'bold')).pack(pady=10)
+        ttk.Label(bulk_status_frame, text="Update status for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
-        update_options = ["Update Status", "Assign Advisor", "Change Category", "Add Tags"]
-        for option in update_options:
-            ttk.Button(bulk_update_frame, text=option, width=30,
-                      command=lambda o=option: messagebox.showinfo("Bulk Update", f"{o} dialog would open")).pack(pady=5)
+        # Ticket IDs
+        ttk.Label(bulk_status_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_status_tickets_var = tk.StringVar()
+        ttk.Entry(bulk_status_frame, textvariable=self.bulk_status_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
-        # Bulk Import Tab
-        bulk_import_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_import_frame, text="Bulk Import")
+        # Status
+        ttk.Label(bulk_status_frame, text="New Status:").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_status_var = tk.StringVar()
+        status_combo = ttk.Combobox(bulk_status_frame, textvariable=self.bulk_status_var, values=TICKET_STATUSES, state="readonly", width=57)
+        status_combo.pack(fill=tk.X, padx=10, pady=5)
+        if TICKET_STATUSES:
+            status_combo.current(0)
 
-        ttk.Label(bulk_import_frame, text="Import data from file", font=('Arial', 11, 'bold')).pack(pady=10)
+        ttk.Button(bulk_status_frame, text="🔄 Update Status", command=self.perform_bulk_status_update).pack(pady=20)
 
-        import_format_frame = ttk.LabelFrame(bulk_import_frame, text="Select Format", padding=10)
-        import_format_frame.pack(fill=tk.X, padx=20, pady=10)
+        # Bulk Priority Update Tab
+        bulk_priority_frame = ttk.Frame(bulk_notebook, padding=10)
+        bulk_notebook.add(bulk_priority_frame, text="⚡ Bulk Priority")
 
-        format_var = tk.StringVar(value="csv")
-        ttk.Radiobutton(import_format_frame, text="CSV File", variable=format_var, value="csv").pack(anchor='w')
-        ttk.Radiobutton(import_format_frame, text="Excel File", variable=format_var, value="excel").pack(anchor='w')
-        ttk.Radiobutton(import_format_frame, text="JSON File", variable=format_var, value="json").pack(anchor='w')
+        ttk.Label(bulk_priority_frame, text="Update priority for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
-        ttk.Button(bulk_import_frame, text="Select File and Import",
-                  command=lambda: messagebox.showinfo("Import", "File selection dialog would open")).pack(pady=20)
+        # Ticket IDs
+        ttk.Label(bulk_priority_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_priority_tickets_var = tk.StringVar()
+        ttk.Entry(bulk_priority_frame, textvariable=self.bulk_priority_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
+
+        # Priority
+        ttk.Label(bulk_priority_frame, text="New Priority:").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_priority_var = tk.StringVar()
+        priority_combo = ttk.Combobox(bulk_priority_frame, textvariable=self.bulk_priority_var, values=TICKET_PRIORITIES, state="readonly", width=57)
+        priority_combo.pack(fill=tk.X, padx=10, pady=5)
+        if TICKET_PRIORITIES:
+            priority_combo.current(0)
+
+        ttk.Button(bulk_priority_frame, text="⚡ Update Priority", command=self.perform_bulk_priority_update).pack(pady=20)
+
+        # Bulk Category Update Tab
+        bulk_category_frame = ttk.Frame(bulk_notebook, padding=10)
+        bulk_notebook.add(bulk_category_frame, text="📂 Bulk Category")
+
+        ttk.Label(bulk_category_frame, text="Update category for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
+
+        # Ticket IDs
+        ttk.Label(bulk_category_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_category_tickets_var = tk.StringVar()
+        ttk.Entry(bulk_category_frame, textvariable=self.bulk_category_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
+
+        # Category
+        ttk.Label(bulk_category_frame, text="New Category:").pack(anchor='w', padx=10, pady=(10, 5))
+        self.bulk_category_var = tk.StringVar()
+        category_combo = ttk.Combobox(bulk_category_frame, textvariable=self.bulk_category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
+        category_combo.pack(fill=tk.X, padx=10, pady=5)
+        if SUPPORT_CATEGORIES:
+            category_combo.current(0)
+
+        ttk.Button(bulk_category_frame, text="📂 Update Category", command=self.perform_bulk_category_update).pack(pady=20)
+
+    def perform_bulk_assign(self):
+        """Perform bulk ticket assignment"""
+        tickets_str = self.bulk_assign_tickets_var.get().strip()
+        staff_username = self.bulk_assign_staff_var.get().strip()
+
+        if not tickets_str or not staff_username:
+            messagebox.showerror("Error", "Please provide ticket IDs and staff username")
+            return
+
+        try:
+            # Parse ticket IDs
+            ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
+
+            if not messagebox.askyesno("Confirm Bulk Assign",
+                                       f"Assign {len(ticket_ids)} tickets to {staff_username}?"):
+                return
+
+            # Perform bulk update
+            updated_count = self.support.bulk_update_tickets(ticket_ids, {'assigned_to': staff_username})
+
+            messagebox.showinfo("Success", f"Successfully assigned {updated_count} tickets to {staff_username}")
+            self.bulk_assign_tickets_var.set('')
+            self.bulk_assign_staff_var.set('')
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform bulk assign: {e}")
+
+    def perform_bulk_status_update(self):
+        """Perform bulk status update"""
+        tickets_str = self.bulk_status_tickets_var.get().strip()
+        new_status = self.bulk_status_var.get()
+
+        if not tickets_str or not new_status:
+            messagebox.showerror("Error", "Please provide ticket IDs and status")
+            return
+
+        try:
+            # Parse ticket IDs
+            ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
+
+            if not messagebox.askyesno("Confirm Bulk Update",
+                                       f"Update status to '{new_status}' for {len(ticket_ids)} tickets?"):
+                return
+
+            # Perform bulk update
+            updated_count = self.support.bulk_update_tickets(ticket_ids, {'status': new_status})
+
+            messagebox.showinfo("Success", f"Successfully updated status for {updated_count} tickets")
+            self.bulk_status_tickets_var.set('')
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform bulk status update: {e}")
+
+    def perform_bulk_priority_update(self):
+        """Perform bulk priority update"""
+        tickets_str = self.bulk_priority_tickets_var.get().strip()
+        new_priority = self.bulk_priority_var.get()
+
+        if not tickets_str or not new_priority:
+            messagebox.showerror("Error", "Please provide ticket IDs and priority")
+            return
+
+        try:
+            # Parse ticket IDs
+            ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
+
+            if not messagebox.askyesno("Confirm Bulk Update",
+                                       f"Update priority to '{new_priority}' for {len(ticket_ids)} tickets?"):
+                return
+
+            # Perform bulk update
+            updated_count = self.support.bulk_update_tickets(ticket_ids, {'priority': new_priority})
+
+            messagebox.showinfo("Success", f"Successfully updated priority for {updated_count} tickets")
+            self.bulk_priority_tickets_var.set('')
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform bulk priority update: {e}")
+
+    def perform_bulk_category_update(self):
+        """Perform bulk category update"""
+        tickets_str = self.bulk_category_tickets_var.get().strip()
+        new_category = self.bulk_category_var.get()
+
+        if not tickets_str or not new_category:
+            messagebox.showerror("Error", "Please provide ticket IDs and category")
+            return
+
+        try:
+            # Parse ticket IDs
+            ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
+
+            if not messagebox.askyesno("Confirm Bulk Update",
+                                       f"Update category to '{new_category}' for {len(ticket_ids)} tickets?"):
+                return
+
+            # Perform bulk update
+            updated_count = self.support.bulk_update_tickets(ticket_ids, {'category': new_category})
+
+            messagebox.showinfo("Success", f"Successfully updated category for {updated_count} tickets")
+            self.bulk_category_tickets_var.set('')
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform bulk category update: {e}")
     
     def show_export_dialog(self):
-        """Show data export dialog"""
+        """Show data export dialog with advanced filters"""
         export_dialog = tk.Toplevel(self.root)
         export_dialog.title("📤 Export Data")
-        export_dialog.geometry("400x300")
+        export_dialog.geometry("500x650")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
-        
-        # Export form
-        form_frame = ttk.Frame(export_dialog, padding="20")
-        form_frame.pack(fill="both", expand=True)
-        
-        ttk.Label(form_frame, text="📤 Export Data", style='Heading.TLabel').pack(pady=(0, 20))
-        
+
+        # Scrollable frame
+        canvas = tk.Canvas(export_dialog)
+        scrollbar = ttk.Scrollbar(export_dialog, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas, padding="20")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        ttk.Label(scrollable_frame, text="📤 Export Data", style='Heading.TLabel').pack(pady=(0, 20))
+
         # Export type
-        ttk.Label(form_frame, text="Export Type:").pack(anchor="w")
+        ttk.Label(scrollable_frame, text="Export Type:").pack(anchor="w")
         export_type_var = tk.StringVar(value="tickets")
-        
+
         export_options = [
             ("🎫 Tickets", "tickets"),
             ("💬 Responses", "responses"),
             ("📊 Metrics", "metrics")
         ]
-        
+
         for text, value in export_options:
-            ttk.Radiobutton(form_frame, text=text, variable=export_type_var, 
+            ttk.Radiobutton(scrollable_frame, text=text, variable=export_type_var,
                            value=value).pack(anchor="w", pady=2)
-        
+
+        # Filters Section
+        filters_frame = ttk.LabelFrame(scrollable_frame, text="Filters (Optional)", padding="10")
+        filters_frame.pack(fill="x", pady=(20, 10))
+
+        # Date Range Filters
+        ttk.Label(filters_frame, text="Date From (YYYY-MM-DD):").pack(anchor="w")
+        date_from_var = tk.StringVar()
+        ttk.Entry(filters_frame, textvariable=date_from_var, width=40).pack(fill="x", pady=(5, 10))
+
+        ttk.Label(filters_frame, text="Date To (YYYY-MM-DD):").pack(anchor="w")
+        date_to_var = tk.StringVar()
+        ttk.Entry(filters_frame, textvariable=date_to_var, width=40).pack(fill="x", pady=(5, 10))
+
+        # Status Filter (for tickets)
+        ttk.Label(filters_frame, text="Status (for tickets):").pack(anchor="w")
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(filters_frame, textvariable=status_var,
+                                    values=['All'] + TICKET_STATUSES, state="readonly", width=37)
+        status_combo.set('All')
+        status_combo.pack(fill="x", pady=(5, 10))
+
+        # Category Filter (for tickets)
+        ttk.Label(filters_frame, text="Category (for tickets):").pack(anchor="w")
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(filters_frame, textvariable=category_var,
+                                      values=['All'] + SUPPORT_CATEGORIES, state="readonly", width=37)
+        category_combo.set('All')
+        category_combo.pack(fill="x", pady=(5, 10))
+
+        # Priority Filter (for tickets)
+        ttk.Label(filters_frame, text="Priority (for tickets):").pack(anchor="w")
+        priority_var = tk.StringVar()
+        priority_combo = ttk.Combobox(filters_frame, textvariable=priority_var,
+                                      values=['All'] + TICKET_PRIORITIES, state="readonly", width=37)
+        priority_combo.set('All')
+        priority_combo.pack(fill="x", pady=(5, 10))
+
         # Format
-        ttk.Label(form_frame, text="Format:", pady=(10, 0)).pack(anchor="w")
+        ttk.Label(scrollable_frame, text="Format:").pack(anchor="w", pady=(10, 5))
         format_var = tk.StringVar(value="csv")
-        
-        format_frame = ttk.Frame(form_frame)
+
+        format_frame = ttk.Frame(scrollable_frame)
         format_frame.pack(anchor="w")
-        
-        ttk.Radiobutton(format_frame, text="CSV", variable=format_var, 
+
+        ttk.Radiobutton(format_frame, text="CSV", variable=format_var,
                        value="csv").pack(side="left", padx=(0, 10))
-        ttk.Radiobutton(format_frame, text="JSON", variable=format_var, 
+        ttk.Radiobutton(format_frame, text="JSON", variable=format_var,
                        value="json").pack(side="left")
-        
+
         # Buttons
-        btn_frame = ttk.Frame(form_frame)
+        btn_frame = ttk.Frame(scrollable_frame)
         btn_frame.pack(fill="x", pady=(20, 0))
-        
+
         def start_export():
             export_type = export_type_var.get()
             format_type = format_var.get()
+
+            # Build filters
+            filters = {}
+
+            date_from = date_from_var.get().strip()
+            if date_from:
+                filters['date_from'] = date_from
+
+            date_to = date_to_var.get().strip()
+            if date_to:
+                filters['date_to'] = date_to
+
+            status = status_var.get()
+            if status and status != 'All':
+                filters['status'] = status
+
+            category = category_var.get()
+            if category and category != 'All':
+                filters['category'] = category
+
+            priority = priority_var.get()
+            if priority and priority != 'All':
+                filters['priority'] = priority
+
             export_dialog.destroy()
-            self.perform_export(export_type, format_type)
-        
-        ttk.Button(btn_frame, text="📤 Export", command=start_export, 
+            self.perform_export(export_type, format_type, filters)
+
+        ttk.Button(btn_frame, text="📤 Export", command=start_export,
                   style='Primary.TButton').pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="❌ Cancel", command=export_dialog.destroy).pack(side="left")
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
     
-    def perform_export(self, export_type, format_type):
-        """Perform data export"""
+    def perform_export(self, export_type, format_type, filters=None):
+        """Perform data export with optional filters"""
         try:
             # Get filename
             filename = filedialog.asksaveasfilename(
@@ -3068,21 +4225,22 @@ class StudentSupportGUI:
                 defaultextension=f".{format_type}",
                 filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
             )
-            
+
             if not filename:
                 return
-            
+
             self.update_status(f"Exporting {export_type} data...")
-            
-            # Export data
-            exported_data = self.support.export_data(export_type, {}, format_type)
-            
+
+            # Export data with filters
+            exported_data = self.support.export_data(export_type, filters or {}, format_type)
+
             with open(filename, 'w') as f:
                 f.write(exported_data)
-            
-            messagebox.showinfo("Export Complete", f"Data exported to {filename}")
+
+            filter_info = f" with {len(filters)} filter(s)" if filters else ""
+            messagebox.showinfo("Export Complete", f"Data exported to {filename}{filter_info}")
             self.update_status("Export completed")
-            
+
         except Exception as e:
             messagebox.showerror("Export Error", f"Failed to export data: {e}")
             self.update_status("Export failed")
