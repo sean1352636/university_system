@@ -9,6 +9,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Email Queue & Scheduler Manager GUI** (2025-11-08)
+- **New Feature**: Complete GUI interface for email queue and scheduler management
+- **Impact**: Provides administrative access to 7 previously GUI-inaccessible worker/scheduler functions
+- **Files Added**:
+  - `university_system/infrastructure/email/gui/email_queue_scheduler_gui.py` - Queue & scheduler management interface (815 lines)
+- **Files Modified**:
+  - `university_system/infrastructure/email/gui/email_manager_gui.py` - Added "Queue & Workers" button to toolbar
+
+**Previously Missing Functions Now Accessible via GUI**:
+
+1. **queue_email()** - Add email to background processing queue
+   - GUI: "Queue Emails" tab → "Queue Direct Email" sub-tab
+   - Full email composition form with recipient, subject, CC, BCC, body fields
+
+2. **queue_template_email()** - Queue templated email for background sending
+   - GUI: "Queue Emails" tab → "Queue Template Email" sub-tab
+   - Template dropdown, JSON editor for variables, recipient field
+
+3. **schedule_send()** - Schedule emails for future delivery
+   - GUI: "Schedule Emails" tab → "Schedule New" sub-tab
+   - Date picker, time spinners, multi-recipient support, JSON template vars
+
+4. **process_scheduled_emails()** - Process pending scheduled emails
+   - GUI: "Schedule Emails" tab → "Manage Scheduled" sub-tab
+   - "Process Due Emails Now" button, displays scheduled email list
+
+5. **start_email_workers()** - Start background email worker threads
+   - GUI: "Worker Control" tab → "Start Workers" button
+   - Shows worker status and count
+
+6. **stop_email_workers()** - Gracefully stop worker threads
+   - GUI: "Worker Control" tab → "Stop Workers" button
+   - Graceful shutdown with status feedback
+
+7. **email_worker()** - Background worker thread monitoring
+   - GUI: Status visible on "Worker Control" and "Monitor" tabs
+   - Real-time worker count and running status
+
+**4-Tab Interface**:
+- **Worker Control**: Start/stop workers, view status, detailed info
+- **Queue Emails**: Queue direct or template emails with full forms
+- **Schedule Emails**: Schedule new emails, manage scheduled emails
+- **Monitor**: Real-time monitoring of queue size, workers, and scheduled emails
+
+**Key Features**:
+- Intuitive tabbed interface with sub-tabs
+- JSON validation for template variables
+- Date/time pickers for scheduling
+- Real-time status monitoring
+- Error handling with user-friendly messages
+- Template dropdown integration
+- Treeview for scheduled email management
+- Visual status indicators (✓/✗ with colors)
+
+**Access**: Email Manager GUI → "Queue & Workers" button in toolbar
+
+---
+
 **Email Scheduler System** (2025-11-08)
 - **New Feature**: Comprehensive automated email scheduler for periodic tasks
 - **Impact**: Complete automation of batch email operations (satisfaction surveys, book reminders, overdue notices, SLA monitoring)

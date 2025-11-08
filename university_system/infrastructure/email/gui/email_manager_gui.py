@@ -637,6 +637,7 @@ class EmailManagerGUI:
         ttk.Button(toolbar_frame, text="Send Bulk", command=self.send_bulk_email).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar_frame, text="Templates", command=self.manage_templates).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar_frame, text="Schedule", command=self.schedule_email).pack(side=tk.LEFT, padx=5)
+        ttk.Button(toolbar_frame, text="Queue & Workers", command=self.open_queue_manager).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar_frame, text="Refresh", command=self.refresh_emails).pack(side=tk.RIGHT, padx=5)
         
         # Email list
@@ -1326,7 +1327,12 @@ class EmailManagerGUI:
     def manage_templates(self):
         """Open template management dialog"""
         TemplateManagerDialog(self.root)
-    
+
+    def open_queue_manager(self):
+        """Open email queue & scheduler manager"""
+        from university_system.infrastructure.email.gui.email_queue_scheduler_gui import EmailQueueSchedulerGUI
+        EmailQueueSchedulerGUI(self.root)
+
     def email_configuration(self):
         """Open email configuration dialog"""
         EmailConfigDialog(self.root)
