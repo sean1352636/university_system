@@ -443,9 +443,12 @@ class TripManagementGUI:
         cal_buttons_frame = ttk.Frame(calendar_frame)
         cal_buttons_frame.pack(pady=20)
         
-        ttk.Button(cal_buttons_frame, text="View Trips with Calendar Events", 
+        ttk.Button(cal_buttons_frame, text="View Trips with Calendar Events",
                   command=self.show_trips_with_calendar).pack(pady=5, fill=tk.X)
-        
+
+        ttk.Button(cal_buttons_frame, text="View Trip Events in Calendar",
+                  command=self.view_trip_events_in_calendar).pack(pady=5, fill=tk.X)
+
         if self.auth.check_permission('manage_schedules'):
             ttk.Button(cal_buttons_frame, text="Create Calendar Event for Trip", 
                       command=self.create_trip_calendar_event).pack(pady=5, fill=tk.X)
@@ -1528,7 +1531,87 @@ class TripManagementGUI:
                 self.calendar_tree.insert('', 'end', text=str(trip_id), values=(
                     name, calendar_info, start_date, status.title()
                 ))
-    
+
+    def view_trip_events_in_calendar(self):
+        """View trip events in the calendar (calendar-centric view)"""
+        if not CALENDAR_AVAILABLE or not self.calendar_manager:
+            messagebox.showwarning("Calendar Not Available",
+                                 "Calendar system is not available.")
+            return
+
+        try:
+            # Get trip events from calendar for next 365 days
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            future_date = (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')
+
+            events = self.calendar_manager.get_events_by_date_range(
+                current_date, future_date, 'Trip'
+            )
+
+            if not events:
+                messagebox.showinfo("No Events", "No trip events found in calendar for the next year.")
+                return
+
+            # Create dialog to display events
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Trip Events in Calendar")
+            dialog.geometry("900x600")
+            dialog.transient(self.root)
+
+            # Title
+            ttk.Label(dialog, text="Trip Events in Calendar",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            ttk.Label(dialog, text=f"Showing trip events for next 365 days ({len(events)} events found)",
+                     font=('Arial', 9)).pack(pady=(0, 10))
+
+            # Create treeview for events
+            frame = ttk.Frame(dialog)
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            columns = ('event_name', 'start_date', 'end_date', 'description')
+            tree = ttk.Treeview(frame, columns=columns, show='headings', height=20)
+
+            tree.heading('event_name', text='Event Name')
+            tree.heading('start_date', text='Start Date')
+            tree.heading('end_date', text='End Date')
+            tree.heading('description', text='Description')
+
+            tree.column('event_name', width=250)
+            tree.column('start_date', width=120)
+            tree.column('end_date', width=120)
+            tree.column('description', width=350)
+
+            # Add scrollbar
+            scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            # Populate with events
+            for event in events:
+                start_date = event.get('date_start') or event.get('date', 'TBD')
+                end_date = event.get('date_end') or event.get('date', 'TBD')
+                description = (event.get('description') or 'No description')[:80]
+
+                tree.insert('', tk.END, values=(
+                    event.get('name', 'Unnamed Event'),
+                    start_date,
+                    end_date,
+                    description
+                ))
+
+            # Close button
+            ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+            # Log activity
+            log_read('trip_calendar_events', f"Viewed {len(events)} trip events in calendar")
+            self.update_status(f"Showing {len(events)} trip events from calendar")
+
+        except Exception as e:
+            logging.error(f"Error viewing trip events in calendar: {e}")
+            messagebox.showerror("Error", f"Failed to view trip events: {str(e)}")
+
     def create_trip_calendar_event(self):
         """Create calendar event for trip"""
         if not self.calendar_manager:

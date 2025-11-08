@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Trip Management GUI - View Trip Events in Calendar** (2025-11-08)
+- **New Feature**: Added "View Trip Events in Calendar" function to display calendar events of type 'Trip'
+- **Impact**: Provides calendar-centric view of trip events, complementing the existing trip-centric view
+- **Files Modified**:
+  - `university_system/modules/domain/mobility/gui/trip_management_gui.py` - ~85 lines added
+
+**Changes Made**:
+1. **New Button in Calendar Tab** (lines 449-450):
+   - Added "View Trip Events in Calendar" button after "View Trips with Calendar Events"
+   - Located in Calendar tab's button frame for easy access
+   - Available to all users (no special permissions required)
+
+2. **New Method: view_trip_events_in_calendar()** (lines 1535-1613):
+   - Retrieves calendar events of type 'Trip' for next 365 days
+   - Creates dialog with treeview displaying: Event Name, Start Date, End Date, Description
+   - Handles calendar unavailability gracefully
+   - Shows informative message when no events found
+   - Logs activity for audit trail
+   - Error handling with user-friendly messages
+
+**Difference from Existing Function**:
+- **Existing `show_trips_with_calendar()`**: Shows TRIPS with their calendar events (trip-centric)
+- **New `view_trip_events_in_calendar()`**: Shows CALENDAR EVENTS of type 'Trip' (calendar-centric)
+
 **Parent Portal GUI - Dedicated Admin Panel Menu** (2025-11-08)
 - **New Feature**: Added dedicated Admin Panel menu option in sidebar for admin users, matching CLI's ADMINISTRATOR MODE
 - **Impact**: Admin functions now have prominent, organized access; better UX for administrators managing parent accounts
