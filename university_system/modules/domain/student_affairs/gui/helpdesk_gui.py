@@ -1903,6 +1903,14 @@ class HelpdeskGUI:
             # Auto-send email notifications for status changes
             if new_status in ['resolved', 'closed']:
                 self.auto_send_ticket_notifications(ticket_id, "resolved")
+
+                # Send satisfaction survey when ticket is resolved/closed
+                try:
+                    from university_system.infrastructure.email.email_service import send_satisfaction_survey
+                    send_satisfaction_survey(ticket_id)
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to send satisfaction survey for ticket {ticket_id}: {e}")
             else:
                 self.auto_send_ticket_notifications(ticket_id, "updated")
 

@@ -9,6 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Automatic Email Notifications - Part 2** (2025-11-08)
+- **Enhancement**: Added automatic email triggers for 4 new notification types
+- **Impact**: Users now receive notifications automatically for helpdesk, internship, parking, and schedule events
+- **Files Modified**: 3 GUI files updated with automatic email triggers
+
+**Automatic notification triggers added**:
+
+1. **Satisfaction Survey on Ticket Resolution** (`helpdesk_gui.py:1907-1913`)
+   - Automatically sends satisfaction survey when ticket status changes to 'resolved' or 'closed'
+   - Triggers after ticket status update in `update_ticket_status()` method
+   - Non-blocking: Ticket resolution completes even if email fails
+   - Function: `send_satisfaction_survey(ticket_id)`
+
+2. **Internship Application Confirmation** (`internship_management_gui.py:992-998`)
+   - Automatically sends confirmation when student submits internship application
+   - Triggers after application is inserted into database
+   - Replaces broken call to GUI method with proper email_service call
+   - Function: `send_application_confirmation(student_id, internship_id)`
+
+3. **Parking Permit Confirmation** (`parking_management_gui.py:990-1003`)
+   - Automatically sends confirmation when new parking permit is created
+   - Triggers after permit is committed to database in `create_permit_from_data()`
+   - Includes permit details: ID, zone, type, dates
+   - Function: `send_permit_confirmation(permit_id, email, zone, permit_type, start_date, end_date)`
+
+4. **Parking Permit Update Confirmation** (`parking_management_gui.py:1112-1137`)
+   - Automatically sends confirmation when parking permit is updated
+   - Triggers after permit update is committed in `update_permit_from_data()`
+   - Lists all fields that were changed (name, zone, type, dates, status)
+   - Function: `send_permit_update_confirmation(permit_id, email, updated_fields)`
+
+**Note**: Schedule Change Notification already implemented in `module_scheduling_gui.py:4395-4414`
+- Uses background threading for non-blocking notifications
+- Sends when schedule is edited via EditScheduleDialog
+
+**Implementation Details**:
+- All notifications wrapped in try-except blocks to prevent operation failure
+- Graceful error handling with logging.warning() for failed email sends
+- Non-blocking operations - main functions continue even if email fails
+- Dynamic imports to avoid circular dependencies
+
+**Error Handling**:
+- If email send fails, warning is logged but operation completes successfully
+- No popup errors shown to user for email failures
+- Ensures core functionality (ticket resolution, applications, permits) always works
+
 **Email GUI - Added 7 Additional Notification Functions** (2025-11-08)
 - **Enhancement**: Added remaining missing notification dialogs to email GUI
 - **Impact**: Complete coverage of all notification functions in email_service.py

@@ -989,8 +989,13 @@ class InternshipGUI:
             conn.commit()
             conn.close()
 
-            # Send application confirmation email
-            self.send_application_confirmation(student_id, internship_id)
+            # Send application confirmation email automatically
+            try:
+                from university_system.infrastructure.email.email_service import send_application_confirmation
+                send_application_confirmation(student_id, internship_id)
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to send application confirmation email: {e}")
 
             messagebox.showinfo("Success", "Application submitted successfully!")
             self.show_my_applications()

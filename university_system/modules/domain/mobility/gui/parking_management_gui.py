@@ -983,10 +983,25 @@ class ParkingManagementGUI:
             data.get('vehicle_id'),
             datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ))
-        
+
         conn.commit()
         conn.close()
-    
+
+        # Send permit confirmation email automatically
+        try:
+            from university_system.infrastructure.email.email_service import send_permit_confirmation
+            send_permit_confirmation(
+                permit_id,
+                data['email'],
+                data['zone'],
+                data['permit_type'],
+                data['start_date'],
+                data['end_date']
+            )
+        except Exception as e:
+            import logging
+            logging.warning(f"Failed to send permit confirmation email: {e}")
+
     def register_vehicle_from_data(self, data):
         """Register a vehicle from dialog data"""
         conn = get_connection()
@@ -1090,10 +1105,37 @@ class ParkingManagementGUI:
             data.get('vehicle_id'),
             permit_id
         ))
-        
+
         conn.commit()
         conn.close()
-    
+
+        # Send permit update confirmation email automatically
+        try:
+            from university_system.infrastructure.email.email_service import send_permit_update_confirmation
+            # Identify which fields were updated
+            updated_fields = []
+            if 'full_name' in data:
+                updated_fields.append(f"Full Name: {data['full_name']}")
+            if 'zone' in data:
+                updated_fields.append(f"Zone: {data['zone']}")
+            if 'permit_type' in data:
+                updated_fields.append(f"Permit Type: {data['permit_type']}")
+            if 'start_date' in data:
+                updated_fields.append(f"Start Date: {data['start_date']}")
+            if 'end_date' in data:
+                updated_fields.append(f"End Date: {data['end_date']}")
+            if 'active_status' in data:
+                updated_fields.append(f"Status: {data.get('active_status', 'Active')}")
+
+            send_permit_update_confirmation(
+                permit_id,
+                data['email'],
+                updated_fields
+            )
+        except Exception as e:
+            import logging
+            logging.warning(f"Failed to send permit update confirmation email: {e}")
+
     def update_vehicle_from_data(self, vehicle_id, data):
         """Update a vehicle from dialog data"""
         conn = get_connection()
