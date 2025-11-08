@@ -41,9 +41,9 @@ class ParentPortalGUI:
         # Initialize the portal
         if auth:
             self.parent_portal = ParentPortal(auth)
-            self.current_user = auth.current_user
-            if self.current_user and self.current_user['role'] == 'parent':
-                self.parent_id = self.parent_portal.get_parent_id_from_user(self.current_user['id'])
+            # Get current user dynamically from auth - don't store a stale snapshot
+            if auth.current_user and auth.current_user.get('role') == 'parent':
+                self.parent_id = self.parent_portal.get_parent_id_from_user(auth.current_user['id'])
         
     def create_main_window(self):
         """Create and configure the main application window"""
@@ -99,11 +99,12 @@ class ParentPortalGUI:
         title_label = ttk.Label(self.sidebar_frame, text="Parent Portal", style='Title.TLabel')
         title_label.pack(pady=20)
         
-        # User info
-        if self.current_user:
+        # User info - get current user dynamically
+        current_user = self.get_current_user()
+        if current_user:
             user_info = ttk.Label(
-                self.sidebar_frame, 
-                text=f"Welcome, {self.current_user.get('first_name', 'Parent')}",
+                self.sidebar_frame,
+                text=f"Welcome, {current_user.get('first_name', 'Parent')}",
                 style='Title.TLabel',
                 font=('Arial', 11)
             )
@@ -165,7 +166,13 @@ class ParentPortalGUI:
         """Clear the content frame"""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
-    
+
+    def get_current_user(self):
+        """Get current user from auth system dynamically"""
+        if self.auth:
+            return self.auth.current_user
+        return None
+
     def load_user_data(self):
         """Load user data in background"""
         if self.parent_portal and self.parent_id:
@@ -643,8 +650,9 @@ class ParentPortalGUI:
             )
             btn.pack(pady=10)
 
-        # Admin functions (only show if user is admin)
-        if self.current_user and self.current_user.get('role') == 'admin':
+        # Admin functions (only show if user is admin) - check dynamically
+        current_user = self.get_current_user()
+        if current_user and current_user.get('role') == 'admin':
             admin_frame = ttk.LabelFrame(self.content_frame, text="Administrator Functions", padding=20)
             admin_frame.pack(fill=tk.X, padx=20, pady=20)
 
@@ -6150,16 +6158,17 @@ class ParentPortalGUI:
         title = ttk.Label(self.content_frame, text="Account Settings", style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
 
-        # Account information
+        # Account information - get current user dynamically
         account_frame = ttk.LabelFrame(self.content_frame, text="Account Information", padding=20)
         account_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        if self.current_user:
-            ttk.Label(account_frame, text=f"Username: {self.current_user.get('username', 'N/A')}",
+        current_user = self.get_current_user()
+        if current_user:
+            ttk.Label(account_frame, text=f"Username: {current_user.get('username', 'N/A')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
-            ttk.Label(account_frame, text=f"Email: {self.current_user.get('email', 'Not set')}",
+            ttk.Label(account_frame, text=f"Email: {current_user.get('email', 'Not set')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
-            ttk.Label(account_frame, text=f"Role: {self.current_user.get('role', 'Parent')}",
+            ttk.Label(account_frame, text=f"Role: {current_user.get('role', 'Parent')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
 
         # Security settings
@@ -6260,7 +6269,9 @@ class ParentPortalGUI:
 
     def show_create_parent_account_interface(self):
         """Show interface for creating a new parent account (admin only)"""
-        if not self.current_user or self.current_user.get('role') != 'admin':
+        # Check admin role dynamically
+        current_user = self.get_current_user()
+        if not current_user or current_user.get('role') != 'admin':
             messagebox.showerror("Access Denied", "Only administrators can create parent accounts.")
             return
 
@@ -6397,7 +6408,9 @@ class ParentPortalGUI:
 
     def show_link_student_interface(self):
         """Show interface for linking a student to a parent (admin only)"""
-        if not self.current_user or self.current_user.get('role') != 'admin':
+        # Check admin role dynamically
+        current_user = self.get_current_user()
+        if not current_user or current_user.get('role') != 'admin':
             messagebox.showerror("Access Denied", "Only administrators can link students to parents.")
             return
 

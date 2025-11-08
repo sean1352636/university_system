@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+**Parent Portal GUI - Authentication Integration Fix** (2025-11-08)
+- **Issue**: Parent Portal GUI was storing a stale snapshot of `auth.current_user` at initialization
+- **Impact**: User data would not update if user changed or logged out during session
+- **Fix**: Replaced all `self.current_user` references with dynamic `self.get_current_user()` calls
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/parent_portal_gui.py`
+
+**Changes Made**:
+- Added `get_current_user()` helper method to dynamically retrieve current user from auth system (line 169-173)
+- Removed stale snapshot assignment in `__init__` (previously line 44)
+- Updated `__init__` parent role check to use `auth.current_user` directly (lines 44-46)
+- Updated `setup_sidebar()` welcome message to use `get_current_user()` (lines 102-111)
+- Updated `show_settings_menu()` admin check to use `get_current_user()` (lines 653-657)
+- Updated `show_account_settings()` account info display to use `get_current_user()` (lines 6161-6172)
+- Updated `show_create_parent_account_interface()` admin check to use `get_current_user()` (lines 6272-6276)
+- Updated `show_link_student_interface()` admin check to use `get_current_user()` (lines 6411-6415)
+- Kept `self.current_user = None` initialization for backwards compatibility (line 31)
+
+**Benefits**:
+- Auth state is now always current and synchronized with the UserAuth system
+- User role changes are immediately reflected in the GUI
+- Logout properly clears user context throughout the interface
+- Admin-only features dynamically respond to role changes
+- Prevents security issues from stale authentication data
+
 ### Added
 
 **Student Support GUI - Complete Missing Features Implementation** (2025-11-08)
