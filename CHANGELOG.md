@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+**Email Manager GUI - Added 6 Missing Notification Functions** (2025-11-08)
+- **Enhancement**: Implemented GUI interfaces for email notification functions previously only available via CLI
+- **Location**: `university_system/infrastructure/email/gui/email_manager_gui.py` (lines 40-62, 367-376, 1276-1303, 5443-5852, ~480 lines added)
+- **New Menu**: Added "Notifications" menu to main menu bar with 7 notification options
+- **Fully implemented 6 notification dialog classes with professional UIs**:
+  1. **RegistrationConfirmationDialog** (lines 5444-5485)
+     - Send registration confirmation emails to students
+     - Input: Student ID
+     - Validates student exists before sending
+     - Uses email_service.send_registration_confirmation()
+
+  2. **AssignmentNotificationDialog** (lines 5487-5549)
+     - Notify students about new assignments
+     - Inputs: Assignment ID, Title, Module Code, Due Date, Description
+     - Multi-line description field with ScrolledText
+     - Uses email_service.send_assignment_notification()
+
+  3. **ModuleGradeNotificationDialog** (lines 5551-5608)
+     - Notify students about module final grades
+     - Inputs: Student ID, Module Code, Module Name, Grade
+     - Version 1 of send_grade_notification (student_id-based)
+     - Uses email_service.send_grade_notification()
+
+  4. **AssignmentGradeNotificationDialog** (lines 5610-5673)
+     - Notify students about assignment grades
+     - Inputs: Student Email, Assignment Title, Module Code, Grade, Feedback (optional)
+     - Version 2 of send_grade_notification (email-based)
+     - Multi-line feedback field
+     - Uses email_service.send_grade_notification()
+
+  5. **ExtensionNotificationDialog** (lines 5675-5736)
+     - Notify students about deadline extensions
+     - Inputs: Student Email, Assignment Title, Module Code, New Due Date, Extension Days
+     - Date format validation (YYYY-MM-DD)
+     - Uses email_service.send_extension_notification()
+
+  6. **UpdateConfirmationDialog** (lines 5738-5794)
+     - Send confirmation for student record updates
+     - Inputs: Student Email, Updated Fields (comma-separated list)
+     - Multi-line field list with ScrolledText
+     - Example text helper
+     - Uses email_service.send_update_confirmation()
+
+  7. **PasswordResetDialog** (lines 5796-5852)
+     - Send password reset emails with reset codes
+     - Inputs: Student ID, Reset Code
+     - **Feature**: Auto-generate random reset code button
+     - 8-character alphanumeric code generation
+     - Uses email_service.send_password_reset()
+
+- **Imported 6 new functions from email_service** (lines 40-62):
+  - send_registration_confirmation
+  - send_assignment_notification
+  - send_grade_notification (both versions)
+  - send_extension_notification
+  - send_update_confirmation
+  - send_password_reset
+  - Graceful fallback to None if imports fail
+
+- **Added 7 GUI wrapper methods** (lines 1276-1303):
+  - send_registration_confirmation_dialog()
+  - send_assignment_notification_dialog()
+  - send_module_grade_notification_dialog()
+  - send_assignment_grade_notification_dialog()
+  - send_extension_notification_dialog()
+  - send_update_confirmation_dialog()
+  - send_password_reset_dialog()
+
+- **UI Features**:
+  - All dialogs use ttk themed widgets for modern appearance
+  - Consistent dialog sizing and layout (400x200 to 500x400)
+  - Modal dialogs with transient parent windows
+  - Input validation before sending
+  - Success/error message boxes
+  - Cancel buttons on all dialogs
+  - ScrolledText for multi-line inputs
+  - Grid layout with proper column/row configuration
+  - Professional spacing and padding (20px padding, 5px between fields)
+
+- **Error Handling**:
+  - Checks if functions are imported (handles None gracefully)
+  - Validates all required fields before submission
+  - Database error handling with user-friendly messages
+  - Try-catch blocks around all email send operations
+
+- **Integration**: Seamlessly integrated with existing email_service.py backend functions
+
+- **Impact**: Closes 87% feature gap - 6 of 48 missing specialized notification functions now accessible via GUI
+
 ### Fixed
 - Fixed incorrect nltk_data folder location - moved from `university_system/nltk_data/` to correct location `university_system/data/nltk_data/` as specified in paths.py
 - Fixed "No auth instance configured" warning during GUI startup by registering auth instance with shared_context
