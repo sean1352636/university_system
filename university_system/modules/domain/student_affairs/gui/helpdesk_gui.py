@@ -4300,9 +4300,9 @@ University Support Team
                 user_subject = f"Support Ticket Updated - #{ticket_id}"
                 user_message = f"""Your support ticket has been updated:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+================================================
 TICKET UPDATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+================================================
 
 Ticket ID: #{ticket_id}
 Subject: {subject}
@@ -4311,7 +4311,7 @@ Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 Please log into the helpdesk system to view the latest updates.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+================================================
 
 Best regards,
 University Support Team
