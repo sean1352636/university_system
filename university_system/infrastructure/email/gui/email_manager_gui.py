@@ -48,7 +48,10 @@ try:
         send_internship_notification, send_alumni_welcome_email,
         send_mentorship_notification, send_event_invitation,
         send_donation_receipt, send_book_checkout_confirmation,
-        send_book_return_reminder, send_overdue_notification
+        send_book_return_reminder, send_overdue_notification,
+        send_sla_alert, send_satisfaction_survey, send_bulk_satisfaction_surveys,
+        send_application_confirmation, send_schedule_change_notification,
+        send_permit_confirmation, send_permit_update_confirmation
     )
     print("✓ Imported email functions from email_service")
 except ImportError as e:
@@ -62,7 +65,10 @@ except ImportError as e:
                       'send_internship_notification', 'send_alumni_welcome_email',
                       'send_mentorship_notification', 'send_event_invitation',
                       'send_donation_receipt', 'send_book_checkout_confirmation',
-                      'send_book_return_reminder', 'send_overdue_notification']:
+                      'send_book_return_reminder', 'send_overdue_notification',
+                      'send_sla_alert', 'send_satisfaction_survey', 'send_bulk_satisfaction_surveys',
+                      'send_application_confirmation', 'send_schedule_change_notification',
+                      'send_permit_confirmation', 'send_permit_update_confirmation']:
         if func_name not in dir():
             globals()[func_name] = None
 
@@ -381,6 +387,7 @@ class EmailManagerGUI:
         academic_menu.add_command(label="Grade Notification (Module)", command=self.send_module_grade_notification_dialog)
         academic_menu.add_command(label="Grade Notification (Assignment)", command=self.send_assignment_grade_notification_dialog)
         academic_menu.add_command(label="Extension Notification", command=self.send_extension_notification_dialog)
+        academic_menu.add_command(label="Schedule Change Notification", command=self.send_schedule_change_notification_dialog)
         academic_menu.add_command(label="Update Confirmation", command=self.send_update_confirmation_dialog)
         academic_menu.add_command(label="Password Reset", command=self.send_password_reset_dialog)
 
@@ -395,6 +402,9 @@ class EmailManagerGUI:
         notif_menu.add_cascade(label="Helpdesk", menu=helpdesk_menu)
         helpdesk_menu.add_command(label="Ticket Notification", command=self.send_ticket_notification_dialog)
         helpdesk_menu.add_command(label="Reply Notification", command=self.send_reply_notification_dialog)
+        helpdesk_menu.add_command(label="SLA Alert", command=self.send_sla_alert_dialog)
+        helpdesk_menu.add_command(label="Satisfaction Survey", command=self.send_satisfaction_survey_dialog)
+        helpdesk_menu.add_command(label="Bulk Satisfaction Surveys", command=self.send_bulk_satisfaction_surveys_dialog)
 
         # Library submenu
         library_menu = tk.Menu(notif_menu, tearoff=0)
@@ -407,6 +417,7 @@ class EmailManagerGUI:
         affairs_menu = tk.Menu(notif_menu, tearoff=0)
         notif_menu.add_cascade(label="Student Affairs", menu=affairs_menu)
         affairs_menu.add_command(label="Internship Notification", command=self.send_internship_notification_dialog)
+        affairs_menu.add_command(label="Internship Application Confirmation", command=self.send_application_confirmation_dialog)
         affairs_menu.add_command(label="Mentorship Notification", command=self.send_mentorship_notification_dialog)
 
         # Alumni submenu
@@ -415,7 +426,13 @@ class EmailManagerGUI:
         alumni_menu.add_command(label="Welcome Email", command=self.send_alumni_welcome_dialog)
         alumni_menu.add_command(label="Event Invitation", command=self.send_event_invitation_dialog)
         alumni_menu.add_command(label="Donation Receipt", command=self.send_donation_receipt_dialog)
-        
+
+        # Parking/Permits submenu
+        parking_menu = tk.Menu(notif_menu, tearoff=0)
+        notif_menu.add_cascade(label="Parking/Permits", menu=parking_menu)
+        parking_menu.add_command(label="Permit Confirmation", command=self.send_permit_confirmation_dialog)
+        parking_menu.add_command(label="Permit Update Confirmation", command=self.send_permit_update_confirmation_dialog)
+
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
@@ -1395,6 +1412,38 @@ class EmailManagerGUI:
     def send_donation_receipt_dialog(self):
         """Open donation receipt dialog"""
         DonationReceiptDialog(self.root)
+
+    # Helpdesk Additional Notification Methods
+    def send_sla_alert_dialog(self):
+        """Open SLA alert dialog"""
+        SLAAlertDialog(self.root)
+
+    def send_satisfaction_survey_dialog(self):
+        """Open satisfaction survey dialog"""
+        SatisfactionSurveyDialog(self.root)
+
+    def send_bulk_satisfaction_surveys_dialog(self):
+        """Open bulk satisfaction surveys dialog"""
+        BulkSatisfactionSurveysDialog(self.root)
+
+    # Academic Additional Notification Methods
+    def send_schedule_change_notification_dialog(self):
+        """Open schedule change notification dialog"""
+        ScheduleChangeNotificationDialog(self.root)
+
+    # Student Affairs Additional Notification Methods
+    def send_application_confirmation_dialog(self):
+        """Open internship application confirmation dialog"""
+        ApplicationConfirmationDialog(self.root)
+
+    # Parking/Permits Notification Methods
+    def send_permit_confirmation_dialog(self):
+        """Open permit confirmation dialog"""
+        PermitConfirmationDialog(self.root)
+
+    def send_permit_update_confirmation_dialog(self):
+        """Open permit update confirmation dialog"""
+        PermitUpdateConfirmationDialog(self.root)
 
     def view_email_details(self, event):
         """View details of selected email"""
@@ -6727,6 +6776,384 @@ class DonationReceiptDialog:
                 messagebox.showerror("Error", "Function not available")
         except Exception as e:
             messagebox.showerror("Error", f"Error: {e}")
+
+
+class SLAAlertDialog:
+    """Dialog for sending SLA alert notifications"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send SLA Alert")
+        self.dialog.geometry("500x250")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Ticket ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.ticket_id_entry = ttk.Entry(main_frame, width=40)
+        self.ticket_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Alert Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.alert_type_var = tk.StringVar(value='overdue')
+        type_frame = ttk.Frame(main_frame)
+        type_frame.grid(row=1, column=1, sticky=tk.W, pady=5)
+        ttk.Radiobutton(type_frame, text="Overdue", variable=self.alert_type_var, value='overdue').pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(type_frame, text="Warning", variable=self.alert_type_var, value='warning').pack(side=tk.LEFT, padx=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
+
+        ttk.Button(button_frame, text="Send", command=self.send_alert).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+
+    def send_alert(self):
+        if not self.ticket_id_entry.get():
+            messagebox.showerror("Error", "Please enter ticket ID")
+            return
+
+        try:
+            if send_sla_alert is not None:
+                if send_sla_alert(
+                    self.ticket_id_entry.get().strip(),
+                    self.alert_type_var.get()
+                ):
+                    messagebox.showinfo("Success", "SLA alert sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send alert")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class SatisfactionSurveyDialog:
+    """Dialog for sending satisfaction survey"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Satisfaction Survey")
+        self.dialog.geometry("500x300")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Ticket ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.ticket_id_entry = ttk.Entry(main_frame, width=40)
+        self.ticket_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Custom Message (optional):").grid(row=1, column=0, sticky=tk.NW, pady=5)
+        self.message_text = scrolledtext.ScrolledText(main_frame, width=40, height=8)
+        self.message_text.grid(row=1, column=1, sticky=tk.NSEW, pady=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=10)
+
+        ttk.Button(button_frame, text="Send", command=self.send_survey).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(1, weight=1)
+
+    def send_survey(self):
+        if not self.ticket_id_entry.get():
+            messagebox.showerror("Error", "Please enter ticket ID")
+            return
+
+        custom_message = self.message_text.get(1.0, tk.END).strip() or None
+
+        try:
+            if send_satisfaction_survey is not None:
+                if send_satisfaction_survey(
+                    self.ticket_id_entry.get().strip(),
+                    custom_message
+                ):
+                    messagebox.showinfo("Success", "Satisfaction survey sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send survey")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class BulkSatisfactionSurveysDialog:
+    """Dialog for sending bulk satisfaction surveys"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Bulk Satisfaction Surveys")
+        self.dialog.geometry("450x200")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Send surveys to tickets closed within:").pack(pady=10)
+
+        days_frame = ttk.Frame(main_frame)
+        days_frame.pack(pady=10)
+
+        ttk.Label(days_frame, text="Days:").pack(side=tk.LEFT, padx=5)
+        self.days_spinbox = ttk.Spinbox(days_frame, from_=1, to=30, width=10)
+        self.days_spinbox.set(1)
+        self.days_spinbox.pack(side=tk.LEFT, padx=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=20)
+
+        ttk.Button(button_frame, text="Send Surveys", command=self.send_surveys).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def send_surveys(self):
+        try:
+            days = int(self.days_spinbox.get())
+            if send_bulk_satisfaction_surveys is not None:
+                if send_bulk_satisfaction_surveys(days):
+                    messagebox.showinfo("Success", f"Bulk satisfaction surveys sent for tickets closed in last {days} day(s)")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send bulk surveys")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class ScheduleChangeNotificationDialog:
+    """Dialog for sending schedule change notifications"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Schedule Change Notification")
+        self.dialog.geometry("500x250")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Schedule ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.schedule_id_entry = ttk.Entry(main_frame, width=40)
+        self.schedule_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Old Value:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.old_value_entry = ttk.Entry(main_frame, width=40)
+        self.old_value_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="New Value:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.new_value_entry = ttk.Entry(main_frame, width=40)
+        self.new_value_entry.grid(row=2, column=1, sticky=tk.EW, pady=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=20)
+
+        ttk.Button(button_frame, text="Send", command=self.send_notification).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+
+    def send_notification(self):
+        if not all([self.schedule_id_entry.get(), self.old_value_entry.get(), self.new_value_entry.get()]):
+            messagebox.showerror("Error", "Please fill in all fields")
+            return
+
+        try:
+            schedule_id = int(self.schedule_id_entry.get())
+            old_data = {'value': self.old_value_entry.get().strip()}
+            new_data = {'value': self.new_value_entry.get().strip()}
+
+            if send_schedule_change_notification is not None:
+                if send_schedule_change_notification(schedule_id, old_data, new_data):
+                    messagebox.showinfo("Success", "Schedule change notification sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send notification")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class ApplicationConfirmationDialog:
+    """Dialog for sending internship application confirmation"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Internship Application Confirmation")
+        self.dialog.geometry("500x200")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.student_id_entry = ttk.Entry(main_frame, width=40)
+        self.student_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Internship ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.internship_id_entry = ttk.Entry(main_frame, width=40)
+        self.internship_id_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
+
+        ttk.Button(button_frame, text="Send", command=self.send_confirmation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+
+    def send_confirmation(self):
+        if not all([self.student_id_entry.get(), self.internship_id_entry.get()]):
+            messagebox.showerror("Error", "Please fill in all fields")
+            return
+
+        try:
+            if send_application_confirmation is not None:
+                if send_application_confirmation(
+                    self.student_id_entry.get().strip(),
+                    self.internship_id_entry.get().strip()
+                ):
+                    messagebox.showinfo("Success", "Application confirmation sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send confirmation")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class PermitConfirmationDialog:
+    """Dialog for sending parking permit confirmation"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Permit Confirmation")
+        self.dialog.geometry("500x400")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Permit ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.permit_id_entry = ttk.Entry(main_frame, width=40)
+        self.permit_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.email_entry = ttk.Entry(main_frame, width=40)
+        self.email_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Zone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.zone_entry = ttk.Entry(main_frame, width=40)
+        self.zone_entry.grid(row=2, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Permit Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.type_entry = ttk.Entry(main_frame, width=40)
+        self.type_entry.grid(row=3, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        self.start_date_entry = ttk.Entry(main_frame, width=40)
+        self.start_date_entry.grid(row=4, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="End Date (YYYY-MM-DD):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        self.end_date_entry = ttk.Entry(main_frame, width=40)
+        self.end_date_entry.grid(row=5, column=1, sticky=tk.EW, pady=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=20)
+
+        ttk.Button(button_frame, text="Send", command=self.send_confirmation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+
+    def send_confirmation(self):
+        if not all([self.permit_id_entry.get(), self.email_entry.get(), self.zone_entry.get(),
+                   self.type_entry.get(), self.start_date_entry.get(), self.end_date_entry.get()]):
+            messagebox.showerror("Error", "Please fill in all fields")
+            return
+
+        try:
+            if send_permit_confirmation is not None:
+                if send_permit_confirmation(
+                    self.permit_id_entry.get().strip(),
+                    self.email_entry.get().strip(),
+                    self.zone_entry.get().strip(),
+                    self.type_entry.get().strip(),
+                    self.start_date_entry.get().strip(),
+                    self.end_date_entry.get().strip()
+                ):
+                    messagebox.showinfo("Success", "Permit confirmation sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send confirmation")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
+
+class PermitUpdateConfirmationDialog:
+    """Dialog for sending permit update confirmation"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Send Permit Update Confirmation")
+        self.dialog.geometry("500x300")
+        self.dialog.transient(parent)
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
+
+        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Permit ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.permit_id_entry = ttk.Entry(main_frame, width=40)
+        self.permit_id_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.email_entry = ttk.Entry(main_frame, width=40)
+        self.email_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+
+        ttk.Label(main_frame, text="Updated Fields (one per line):").grid(row=2, column=0, sticky=tk.NW, pady=5)
+        self.fields_text = scrolledtext.ScrolledText(main_frame, width=40, height=8)
+        self.fields_text.grid(row=2, column=1, sticky=tk.NSEW, pady=5)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=10)
+
+        ttk.Button(button_frame, text="Send", command=self.send_confirmation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(2, weight=1)
+
+    def send_confirmation(self):
+        if not all([self.permit_id_entry.get(), self.email_entry.get()]):
+            messagebox.showerror("Error", "Please fill in required fields")
+            return
+
+        updated_fields = [f.strip() for f in self.fields_text.get(1.0, tk.END).split('\n') if f.strip()]
+
+        try:
+            if send_permit_update_confirmation is not None:
+                if send_permit_update_confirmation(
+                    self.permit_id_entry.get().strip(),
+                    self.email_entry.get().strip(),
+                    updated_fields
+                ):
+                    messagebox.showinfo("Success", "Permit update confirmation sent")
+                    self.dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to send confirmation")
+            else:
+                messagebox.showerror("Error", "Function not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error: {e}")
+
 
 # Main Application Entry Point
 def main():

@@ -9,6 +9,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Email GUI - Added 7 Additional Notification Functions** (2025-11-08)
+- **Enhancement**: Added remaining missing notification dialogs to email GUI
+- **Impact**: Complete coverage of all notification functions in email_service.py
+- **Files Modified**: `email_manager_gui.py` (~580 lines added)
+- **Total Notifications**: 26 notification types now available in GUI (19 existing + 7 new)
+
+**New Notifications Menu Structure** (now 7 submenus):
+
+1. **Academic Submenu** (8 notifications - 1 new):
+   - Schedule Change Notification ⭐ NEW
+
+2. **Helpdesk Submenu** (5 notifications - 3 new):
+   - SLA Alert ⭐ NEW
+   - Satisfaction Survey ⭐ NEW
+   - Bulk Satisfaction Surveys ⭐ NEW
+
+3. **Student Affairs Submenu** (3 notifications - 1 new):
+   - Internship Application Confirmation ⭐ NEW
+
+4. **Parking/Permits Submenu** (2 notifications - NEW SUBMENU):
+   - Permit Confirmation ⭐ NEW
+   - Permit Update Confirmation ⭐ NEW
+
+**Implementation Details**:
+
+1. **SLAAlertDialog** (lines 6781-6830)
+   - Send SLA alerts for overdue or warning tickets
+   - Input: Ticket ID, Alert Type (overdue/warning radio buttons)
+   - Template: SLA breach/warning notifications
+   - Function: `send_sla_alert(ticket_id, alert_type)`
+
+2. **SatisfactionSurveyDialog** (lines 6833-6882)
+   - Send customer satisfaction surveys after ticket resolution
+   - Input: Ticket ID, Custom Message (optional)
+   - Template: Feedback request with survey link
+   - Function: `send_satisfaction_survey(ticket_id, custom_message)`
+
+3. **BulkSatisfactionSurveysDialog** (lines 6885-6925)
+   - Send surveys to multiple recently closed tickets
+   - Input: Days (spinbox 1-30)
+   - Template: Batch survey distribution
+   - Function: `send_bulk_satisfaction_surveys(days_old)`
+
+4. **ScheduleChangeNotificationDialog** (lines 6928-6979)
+   - Notify students about class schedule changes
+   - Input: Schedule ID, Old Value, New Value
+   - Template: Schedule change details (room, time, instructor)
+   - Function: `send_schedule_change_notification(schedule_id, old_data, new_data)`
+
+5. **ApplicationConfirmationDialog** (lines 6982-7028)
+   - Confirm internship application submission (different from status update)
+   - Input: Student ID, Internship ID
+   - Template: Application receipt confirmation
+   - Function: `send_application_confirmation(student_id, internship_id)`
+
+6. **PermitConfirmationDialog** (lines 7031-7098)
+   - Confirm parking permit issuance
+   - Input: Permit ID, Email, Zone, Permit Type, Start Date, End Date
+   - Template: Permit details and parking information
+   - Function: `send_permit_confirmation(permit_id, email, zone, permit_type, start_date, end_date)`
+
+7. **PermitUpdateConfirmationDialog** (lines 7101-7155)
+   - Confirm parking permit modifications
+   - Input: Permit ID, Email, Updated Fields (multiline)
+   - Template: List of permit changes
+   - Function: `send_permit_update_confirmation(permit_id, email, updated_fields)`
+
+**Menu Updates**:
+- Added "Schedule Change Notification" to Academic submenu (line 390)
+- Added 3 new items to Helpdesk submenu (lines 405-407)
+- Added "Internship Application Confirmation" to Student Affairs submenu (line 420)
+- Created new "Parking/Permits" submenu with 2 items (lines 430-434)
+
+**Benefits**:
+- **100% GUI Coverage**: All email notification functions now accessible via GUI
+- **Professional UIs**: Consistent dialog design with proper input validation
+- **Better Organization**: New Parking/Permits submenu for campus services
+- **Enhanced Helpdesk**: SLA monitoring and satisfaction surveys integrated
+- **Academic Flexibility**: Schedule change notifications for dynamic course management
+
 **Email Service Consolidation - Refactored Local Email Rendering** (2025-11-08)
 - **Refactor**: Consolidated email template rendering to use centralized email service functions
 - **Impact**: Improved maintainability, consistency, and reduced code duplication across the system
