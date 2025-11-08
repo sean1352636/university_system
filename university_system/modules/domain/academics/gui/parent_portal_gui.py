@@ -102,9 +102,14 @@ class ParentPortalGUI:
         # User info - get current user dynamically
         current_user = self.get_current_user()
         if current_user:
+            # Get full name
+            first_name = current_user.get('first_name', '')
+            last_name = current_user.get('last_name', '')
+            full_name = f"{first_name} {last_name}".strip() or current_user.get('username', 'User')
+
             user_info = ttk.Label(
                 self.sidebar_frame,
-                text=f"Welcome, {current_user.get('first_name', 'Parent')}",
+                text=f"Welcome, {full_name}",
                 style='Title.TLabel',
                 font=('Arial', 11)
             )
@@ -175,6 +180,13 @@ class ParentPortalGUI:
 
     def load_user_data(self):
         """Load user data in background"""
+        current_user = self.get_current_user()
+        if current_user and current_user.get('role') == 'parent':
+            # Get parent ID dynamically
+            if self.parent_portal:
+                self.parent_id = self.parent_portal.get_parent_id_from_user(current_user['id'])
+
+        # Load children data
         if self.parent_portal and self.parent_id:
             try:
                 self.children = self.parent_portal.view_children()
@@ -183,9 +195,16 @@ class ParentPortalGUI:
                 self.update_status(f"Error loading data: {str(e)}")
     
     def update_status(self, message: str):
-        """Update the status bar"""
+        """Update status bar with message and current user"""
+        current_user = self.get_current_user()
+        if current_user:
+            username = current_user.get('username', 'Unknown')
+            full_message = f"{message} | Logged in as: {username}"
+        else:
+            full_message = message
+
         if self.status_bar:
-            self.status_bar.config(text=message)
+            self.status_bar.config(text=full_message)
     
     def show_dashboard(self):
         """Show the main dashboard"""
@@ -193,9 +212,45 @@ class ParentPortalGUI:
         self.update_status("Dashboard")
         
         # Dashboard title
-        title = ttk.Label(self.content_frame, text="Parent Dashboard", style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title = ttk.Label(self.content_frame, text="Parent Portal - Dashboard", style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
-        
+
+        # Add personalized welcome
+        current_user = self.get_current_user()
+        if current_user:
+            first_name = current_user.get('first_name', '')
+            last_name = current_user.get('last_name', '')
+            full_name = f"{first_name} {last_name}".strip() or current_user.get('username', 'User')
+
+            welcome_label = ttk.Label(
+                self.content_frame,
+                text=f"Welcome back, {full_name}!",
+                font=('Arial', 14),
+                foreground='#2c3e50'
+            )
+            welcome_label.pack(pady=(0, 10))
+
+        # User info card
+        user_frame = ttk.LabelFrame(self.content_frame, text="Your Account", padding=15)
+        user_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        if current_user:
+            # Create two columns
+            left_col = ttk.Frame(user_frame)
+            left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            right_col = ttk.Frame(user_frame)
+            right_col.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+            # Left column
+            ttk.Label(left_col, text=f"Name: {full_name}", font=('Arial', 10)).pack(anchor='w', pady=2)
+            ttk.Label(left_col, text=f"Email: {current_user.get('email', 'Not set')}", font=('Arial', 10)).pack(anchor='w', pady=2)
+
+            # Right column
+            ttk.Label(right_col, text=f"Role: {current_user.get('role', 'parent').title()}", font=('Arial', 10)).pack(anchor='w', pady=2)
+            if self.parent_id:
+                ttk.Label(right_col, text=f"Parent ID: {self.parent_id}", font=('Arial', 10)).pack(anchor='w', pady=2)
+
         # Create dashboard widgets
         dashboard_container = ttk.Frame(self.content_frame)
         dashboard_container.pack(fill=tk.BOTH, expand=True, padx=20)
@@ -6164,12 +6219,20 @@ class ParentPortalGUI:
 
         current_user = self.get_current_user()
         if current_user:
+            first_name = current_user.get('first_name', '')
+            last_name = current_user.get('last_name', '')
+            full_name = f"{first_name} {last_name}".strip() or current_user.get('username', 'N/A')
+
+            ttk.Label(account_frame, text=f"Full Name: {full_name}", font=('Arial', 10)).pack(anchor='w', pady=3)
             ttk.Label(account_frame, text=f"Username: {current_user.get('username', 'N/A')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
             ttk.Label(account_frame, text=f"Email: {current_user.get('email', 'Not set')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
-            ttk.Label(account_frame, text=f"Role: {current_user.get('role', 'Parent')}",
+            ttk.Label(account_frame, text=f"Role: {current_user.get('role', 'parent').title()}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
+
+            if self.parent_id:
+                ttk.Label(account_frame, text=f"Parent ID: {self.parent_id}", font=('Arial', 10)).pack(anchor='w', pady=3)
 
         # Security settings
         security_frame = ttk.LabelFrame(self.content_frame, text="Security", padding=20)

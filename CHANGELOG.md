@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Parent Portal GUI - User Display Personalization** (2025-11-08)
+- **Issue**: Parent Portal GUI was showing generic "Parent" labels instead of actual user information
+- **Impact**: Impersonal user experience with no context about who is logged in
+- **Fix**: Implemented comprehensive user personalization throughout the interface
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/parent_portal_gui.py`
+
+**Changes Made**:
+1. **Sidebar Welcome Message** (lines 105-116):
+   - Changed from `Welcome, {first_name}` to `Welcome, {full_name}`
+   - Builds full name from first_name + last_name
+   - Fallback chain: full_name → username → 'User'
+
+2. **Dashboard Personalization** (lines 204-252):
+   - Changed title from "Parent Dashboard" to "Parent Portal - Dashboard"
+   - Added personalized "Welcome back, {full_name}!" greeting label
+   - New "Your Account" info card displaying:
+     - Full name
+     - Email address
+     - Role (titlecase)
+     - Parent ID (when available)
+   - Two-column layout for better organization
+
+3. **Dynamic Parent ID Loading** (lines 181-195):
+   - Updated `load_user_data()` to get parent_id dynamically from current user
+   - Ensures parent_id is always current and matches logged-in user
+   - Better error handling for missing parent records
+
+4. **Status Bar Enhancement** (lines 197-207):
+   - Added logged-in username to all status messages
+   - Format: "{message} | Logged in as: {username}"
+   - Provides constant awareness of current user context
+
+5. **Account Settings Display** (lines 6220-6235):
+   - Added "Full Name" field (first priority)
+   - Updated role display to use .title() for proper capitalization
+   - Added Parent ID field when available
+   - More professional and detailed account information
+
+**Benefits**:
+- Personalized user experience throughout the interface
+- Clear indication of who is logged in at all times
+- Consistent full name display across all screens
+- Better user context awareness in status bar
+- Professional account information presentation
+- Improved usability and user satisfaction
+
 **Parent Portal GUI - Authentication Integration Fix** (2025-11-08)
 - **Issue**: Parent Portal GUI was storing a stale snapshot of `auth.current_user` at initialization
 - **Impact**: User data would not update if user changed or logged out during session
