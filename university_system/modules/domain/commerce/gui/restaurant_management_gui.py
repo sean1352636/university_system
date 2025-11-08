@@ -377,13 +377,19 @@ class RestaurantManagementGUI:
         btn_frame = ttk.Frame(orders_frame)
         btn_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(btn_frame, text="View Orders", 
+        ttk.Button(btn_frame, text="View Orders",
                   command=self.view_orders_gui).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Update Status", 
+        ttk.Button(btn_frame, text="Update Status",
                   command=self.update_order_status_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Process Payment", 
+        ttk.Button(btn_frame, text="Process Payment",
                   command=self.process_payment_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Order Analytics", 
+        ttk.Button(btn_frame, text="Add Tip",
+                  command=self.add_tip).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Apply Discount",
+                  command=self.apply_discount).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refund Order",
+                  command=self.refund_order).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Order Analytics",
                   command=self.show_order_analytics).pack(side='left', padx=5)
         
         columns = ('Order ID', 'Customer', 'Date', 'Total', 'Status', 'Payment')
@@ -410,14 +416,16 @@ class RestaurantManagementGUI:
         btn_frame = ttk.Frame(customers_frame)
         btn_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(btn_frame, text="View Customers", 
+        ttk.Button(btn_frame, text="View Customers",
                   command=self.view_customers_gui).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Add Customer", 
+        ttk.Button(btn_frame, text="Add Customer",
                   command=self.add_customer_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Update Customer", 
+        ttk.Button(btn_frame, text="Update Customer",
                   command=self.update_customer_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Loyalty Program", 
+        ttk.Button(btn_frame, text="Loyalty Program",
                   command=self.manage_loyalty_dialog).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Customer Feedback",
+                  command=self.manage_customer_feedback).pack(side='left', padx=5)
         
         columns = ('ID', 'Name', 'Email', 'Phone', 'Loyalty Tier', 'Points', 'Total Spent')
         self.customers_tree = ttk.Treeview(customers_frame, columns=columns, show='headings', height=20)
@@ -857,6 +865,916 @@ class RestaurantManagementGUI:
         except Exception as e:
             return f"Error generating analytics: {str(e)}"
 
+    # Advanced Order Management Functions
+    def add_tip(self):
+        """Add tip to completed order"""
+        selection = self.orders_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an order to add a tip")
+            return
+
+        item = self.orders_tree.item(selection[0])
+        order_id = item['values'][0]
+
+        # Create tip dialog
+        tip_dialog = tk.Toplevel(self.root)
+        tip_dialog.title("Add Tip")
+        tip_dialog.geometry("400x300")
+        tip_dialog.transient(self.root)
+        tip_dialog.grab_set()
+
+        main_frame = ttk.Frame(tip_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Add Tip to Order #{order_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        # Get current order details
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT total_price, tip_amount, payment_status
+                    FROM restaurant_orders
+                    WHERE order_id = ?
+                ''', (order_id,))
+                order_data = cursor.fetchone()
+                conn.close()
+
+                if not order_data:
+                    messagebox.showerror("Error", "Order not found")
+                    tip_dialog.destroy()
+                    return
+
+                current_total, current_tip, payment_status = order_data
+
+                if payment_status != 'Paid':
+                    messagebox.showwarning("Cannot Add Tip", "Order must be paid before adding a tip")
+                    tip_dialog.destroy()
+                    return
+
+                # Display current info
+                info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+                info_frame.pack(fill='x', pady=10)
+
+                ttk.Label(info_frame, text=f"Current Total: £{current_total:.2f}").pack(anchor='w')
+                ttk.Label(info_frame, text=f"Current Tip: £{current_tip or 0:.2f}").pack(anchor='w')
+
+                # Tip entry
+                tip_frame = ttk.LabelFrame(main_frame, text="Add Tip", padding=10)
+                tip_frame.pack(fill='x', pady=10)
+
+                ttk.Label(tip_frame, text="Tip Amount (£):").grid(row=0, column=0, sticky='w', pady=5)
+                tip_amount_var = tk.DoubleVar(value=0.0)
+                tip_entry = ttk.Entry(tip_frame, textvariable=tip_amount_var, width=20)
+                tip_entry.grid(row=0, column=1, pady=5, padx=5)
+
+                # Quick tip buttons
+                quick_frame = ttk.Frame(tip_frame)
+                quick_frame.grid(row=1, column=0, columnspan=2, pady=10)
+
+                ttk.Label(quick_frame, text="Quick Select:").pack(side='left', padx=5)
+                ttk.Button(quick_frame, text="10%",
+                          command=lambda: tip_amount_var.set(round(current_total * 0.10, 2))).pack(side='left', padx=2)
+                ttk.Button(quick_frame, text="15%",
+                          command=lambda: tip_amount_var.set(round(current_total * 0.15, 2))).pack(side='left', padx=2)
+                ttk.Button(quick_frame, text="20%",
+                          command=lambda: tip_amount_var.set(round(current_total * 0.20, 2))).pack(side='left', padx=2)
+
+                def save_tip():
+                    tip_amount = tip_amount_var.get()
+                    if tip_amount <= 0:
+                        messagebox.showwarning("Invalid Amount", "Tip amount must be greater than 0")
+                        return
+
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            new_tip_total = (current_tip or 0) + tip_amount
+                            new_total = current_total + tip_amount
+
+                            cursor.execute('''
+                                UPDATE restaurant_orders
+                                SET tip_amount = ?, total_price = ?
+                                WHERE order_id = ?
+                            ''', (new_tip_total, new_total, order_id))
+                            conn.commit()
+                            conn.close()
+
+                            messagebox.showinfo("Success", f"Tip of £{tip_amount:.2f} added successfully!\n\nNew Total: £{new_total:.2f}")
+                            tip_dialog.destroy()
+                            self.view_orders_gui()  # Refresh
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to add tip: {e}")
+
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(pady=10)
+
+                ttk.Button(button_frame, text="Add Tip", command=save_tip).pack(side='left', padx=5)
+                ttk.Button(button_frame, text="Cancel", command=tip_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load order: {e}")
+            tip_dialog.destroy()
+
+    def refund_order(self):
+        """Process refund for an order"""
+        selection = self.orders_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an order to refund")
+            return
+
+        item = self.orders_tree.item(selection[0])
+        order_id = item['values'][0]
+
+        # Create refund dialog
+        refund_dialog = tk.Toplevel(self.root)
+        refund_dialog.title("Process Refund")
+        refund_dialog.geometry("450x450")
+        refund_dialog.transient(self.root)
+        refund_dialog.grab_set()
+
+        main_frame = ttk.Frame(refund_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Process Refund for Order #{order_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT total_price, payment_status, payment_method
+                    FROM restaurant_orders
+                    WHERE order_id = ?
+                ''', (order_id,))
+                order_data = cursor.fetchone()
+                conn.close()
+
+                if not order_data:
+                    messagebox.showerror("Error", "Order not found")
+                    refund_dialog.destroy()
+                    return
+
+                total_price, payment_status, payment_method = order_data
+
+                if payment_status != 'Paid':
+                    messagebox.showwarning("Cannot Refund", "Order must be paid before processing refund")
+                    refund_dialog.destroy()
+                    return
+
+                # Display order info
+                info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+                info_frame.pack(fill='x', pady=10)
+
+                ttk.Label(info_frame, text=f"Order Total: £{total_price:.2f}").pack(anchor='w')
+                ttk.Label(info_frame, text=f"Payment Method: {payment_method}").pack(anchor='w')
+
+                # Refund type
+                refund_frame = ttk.LabelFrame(main_frame, text="Refund Details", padding=10)
+                refund_frame.pack(fill='x', pady=10)
+
+                refund_type_var = tk.StringVar(value="Full")
+                ttk.Radiobutton(refund_frame, text="Full Refund", variable=refund_type_var,
+                               value="Full").pack(anchor='w')
+                ttk.Radiobutton(refund_frame, text="Partial Refund", variable=refund_type_var,
+                               value="Partial").pack(anchor='w')
+
+                ttk.Label(refund_frame, text="Refund Amount (£):").pack(anchor='w', pady=(10,0))
+                refund_amount_var = tk.DoubleVar(value=total_price)
+                refund_entry = ttk.Entry(refund_frame, textvariable=refund_amount_var, width=20)
+                refund_entry.pack(anchor='w', padx=20)
+
+                def update_refund_amount(*args):
+                    if refund_type_var.get() == "Full":
+                        refund_amount_var.set(total_price)
+                        refund_entry.config(state='disabled')
+                    else:
+                        refund_entry.config(state='normal')
+
+                refund_type_var.trace('w', update_refund_amount)
+                update_refund_amount()
+
+                # Reason
+                ttk.Label(refund_frame, text="Refund Reason:").pack(anchor='w', pady=(10,0))
+                reason_var = tk.StringVar()
+                reason_combo = ttk.Combobox(refund_frame, textvariable=reason_var, width=30)
+                reason_combo['values'] = ('Customer Request', 'Order Error', 'Quality Issue',
+                                         'Late Delivery', 'Wrong Item', 'Other')
+                reason_combo.pack(anchor='w', padx=20)
+
+                ttk.Label(refund_frame, text="Additional Notes:").pack(anchor='w', pady=(10,0))
+                notes_text = tk.Text(refund_frame, height=3, width=40)
+                notes_text.pack(anchor='w', padx=20)
+
+                def process_refund():
+                    refund_amount = refund_amount_var.get()
+                    if refund_amount <= 0 or refund_amount > total_price:
+                        messagebox.showwarning("Invalid Amount",
+                                             f"Refund amount must be between £0.01 and £{total_price:.2f}")
+                        return
+
+                    reason = reason_var.get()
+                    if not reason:
+                        messagebox.showwarning("Missing Information", "Please select a refund reason")
+                        return
+
+                    notes = notes_text.get(1.0, tk.END).strip()
+
+                    # Confirm refund
+                    if not messagebox.askyesno("Confirm Refund",
+                                              f"Process {refund_type_var.get()} refund of £{refund_amount:.2f}?\n\n" +
+                                              f"Reason: {reason}\n" +
+                                              f"This action cannot be undone."):
+                        return
+
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+
+                            # Create refunds table if doesn't exist
+                            cursor.execute('''
+                                CREATE TABLE IF NOT EXISTS order_refunds (
+                                    refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    order_id INTEGER,
+                                    refund_amount REAL,
+                                    refund_type TEXT,
+                                    reason TEXT,
+                                    notes TEXT,
+                                    refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                                )
+                            ''')
+
+                            # Insert refund record
+                            cursor.execute('''
+                                INSERT INTO order_refunds (order_id, refund_amount, refund_type, reason, notes)
+                                VALUES (?, ?, ?, ?, ?)
+                            ''', (order_id, refund_amount, refund_type_var.get(), reason, notes))
+
+                            # Update order status
+                            new_status = 'Refunded' if refund_type_var.get() == 'Full' else 'Partially Refunded'
+                            cursor.execute('''
+                                UPDATE restaurant_orders
+                                SET payment_status = ?, total_price = total_price - ?
+                                WHERE order_id = ?
+                            ''', (new_status, refund_amount, order_id))
+
+                            conn.commit()
+                            conn.close()
+
+                            messagebox.showinfo("Success",
+                                              f"Refund processed successfully!\n\n" +
+                                              f"Amount: £{refund_amount:.2f}\n" +
+                                              f"Method: {payment_method}\n\n" +
+                                              f"Funds will be returned to customer's {payment_method}.")
+                            refund_dialog.destroy()
+                            self.view_orders_gui()  # Refresh
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to process refund: {e}")
+
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(pady=10)
+
+                ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side='left', padx=5)
+                ttk.Button(button_frame, text="Cancel", command=refund_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load order: {e}")
+            refund_dialog.destroy()
+
+    def apply_discount(self):
+        """Apply discount to an order"""
+        selection = self.orders_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an order to apply discount")
+            return
+
+        item = self.orders_tree.item(selection[0])
+        order_id = item['values'][0]
+
+        # Create discount dialog
+        discount_dialog = tk.Toplevel(self.root)
+        discount_dialog.title("Apply Discount")
+        discount_dialog.geometry("450x450")
+        discount_dialog.transient(self.root)
+        discount_dialog.grab_set()
+
+        main_frame = ttk.Frame(discount_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Apply Discount to Order #{order_id}",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT total_price, discount_amount, payment_status
+                    FROM restaurant_orders
+                    WHERE order_id = ?
+                ''', (order_id,))
+                order_data = cursor.fetchone()
+                conn.close()
+
+                if not order_data:
+                    messagebox.showerror("Error", "Order not found")
+                    discount_dialog.destroy()
+                    return
+
+                original_total, current_discount, payment_status = order_data
+
+                # Display order info
+                info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+                info_frame.pack(fill='x', pady=10)
+
+                ttk.Label(info_frame, text=f"Original Total: £{original_total:.2f}").pack(anchor='w')
+                ttk.Label(info_frame, text=f"Current Discount: £{current_discount or 0:.2f}").pack(anchor='w')
+                ttk.Label(info_frame, text=f"Current Total: £{original_total - (current_discount or 0):.2f}").pack(anchor='w')
+
+                # Discount details
+                discount_frame = ttk.LabelFrame(main_frame, text="Discount Details", padding=10)
+                discount_frame.pack(fill='x', pady=10)
+
+                discount_type_var = tk.StringVar(value="Percentage")
+                ttk.Radiobutton(discount_frame, text="Percentage (%)", variable=discount_type_var,
+                               value="Percentage").pack(anchor='w')
+                ttk.Radiobutton(discount_frame, text="Fixed Amount (£)", variable=discount_type_var,
+                               value="Fixed").pack(anchor='w')
+
+                ttk.Label(discount_frame, text="Discount Value:").pack(anchor='w', pady=(10,0))
+                discount_value_var = tk.DoubleVar(value=0.0)
+                discount_entry = ttk.Entry(discount_frame, textvariable=discount_value_var, width=20)
+                discount_entry.pack(anchor='w', padx=20)
+
+                # Calculated discount display
+                calculated_label = ttk.Label(discount_frame, text="Discount Amount: £0.00", foreground='blue')
+                calculated_label.pack(anchor='w', padx=20, pady=5)
+
+                def update_calculated_discount(*args):
+                    try:
+                        value = discount_value_var.get()
+                        if discount_type_var.get() == "Percentage":
+                            discount_amount = (original_total * value) / 100
+                            calculated_label.config(text=f"Discount Amount: £{discount_amount:.2f} ({value}%)")
+                        else:
+                            calculated_label.config(text=f"Discount Amount: £{value:.2f}")
+                    except:
+                        calculated_label.config(text="Discount Amount: £0.00")
+
+                discount_value_var.trace('w', update_calculated_discount)
+                discount_type_var.trace('w', update_calculated_discount)
+
+                # Promotional code
+                ttk.Label(discount_frame, text="Promo Code (optional):").pack(anchor='w', pady=(10,0))
+                promo_var = tk.StringVar()
+                ttk.Entry(discount_frame, textvariable=promo_var, width=20).pack(anchor='w', padx=20)
+
+                # Reason
+                ttk.Label(discount_frame, text="Discount Reason:").pack(anchor='w', pady=(10,0))
+                reason_var = tk.StringVar()
+                reason_combo = ttk.Combobox(discount_frame, textvariable=reason_var, width=30)
+                reason_combo['values'] = ('Promotional Offer', 'Loyalty Reward', 'Compensation',
+                                         'Staff Discount', 'Manager Discretion', 'Other')
+                reason_combo.pack(anchor='w', padx=20)
+
+                # Manager approval for large discounts
+                approval_var = tk.BooleanVar(value=False)
+                approval_check = ttk.Checkbutton(discount_frame, text="Manager Approval (for discounts > 20%)",
+                                                variable=approval_var, state='disabled')
+                approval_check.pack(anchor='w', pady=5)
+
+                def check_approval_needed(*args):
+                    try:
+                        value = discount_value_var.get()
+                        if discount_type_var.get() == "Percentage" and value > 20:
+                            approval_check.config(state='normal')
+                        else:
+                            approval_check.config(state='disabled')
+                            approval_var.set(False)
+                    except:
+                        pass
+
+                discount_value_var.trace('w', check_approval_needed)
+                discount_type_var.trace('w', check_approval_needed)
+
+                def apply_discount_action():
+                    value = discount_value_var.get()
+                    if value <= 0:
+                        messagebox.showwarning("Invalid Value", "Discount value must be greater than 0")
+                        return
+
+                    # Calculate discount amount
+                    if discount_type_var.get() == "Percentage":
+                        if value > 100:
+                            messagebox.showwarning("Invalid Percentage", "Percentage cannot exceed 100%")
+                            return
+                        discount_amount = (original_total * value) / 100
+
+                        # Check for manager approval
+                        if value > 20 and not approval_var.get():
+                            messagebox.showwarning("Approval Required",
+                                                 "Manager approval required for discounts over 20%")
+                            return
+                    else:
+                        discount_amount = value
+                        if discount_amount >= original_total:
+                            messagebox.showwarning("Invalid Amount",
+                                                 f"Discount cannot exceed order total (£{original_total:.2f})")
+                            return
+
+                    reason = reason_var.get()
+                    if not reason:
+                        messagebox.showwarning("Missing Information", "Please select a discount reason")
+                        return
+
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+
+                            # Create discounts table if doesn't exist
+                            cursor.execute('''
+                                CREATE TABLE IF NOT EXISTS order_discounts (
+                                    discount_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    order_id INTEGER,
+                                    discount_amount REAL,
+                                    discount_type TEXT,
+                                    discount_value REAL,
+                                    promo_code TEXT,
+                                    reason TEXT,
+                                    manager_approved BOOLEAN,
+                                    discount_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                                )
+                            ''')
+
+                            # Insert discount record
+                            cursor.execute('''
+                                INSERT INTO order_discounts
+                                (order_id, discount_amount, discount_type, discount_value,
+                                 promo_code, reason, manager_approved)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ''', (order_id, discount_amount, discount_type_var.get(), value,
+                                 promo_var.get() or None, reason, approval_var.get()))
+
+                            # Update order
+                            new_discount_total = (current_discount or 0) + discount_amount
+                            new_total = original_total - new_discount_total
+
+                            cursor.execute('''
+                                UPDATE restaurant_orders
+                                SET discount_amount = ?, total_price = ?
+                                WHERE order_id = ?
+                            ''', (new_discount_total, new_total, order_id))
+
+                            conn.commit()
+                            conn.close()
+
+                            messagebox.showinfo("Success",
+                                              f"Discount applied successfully!\n\n" +
+                                              f"Discount: £{discount_amount:.2f}\n" +
+                                              f"New Total: £{new_total:.2f}")
+                            discount_dialog.destroy()
+                            self.view_orders_gui()  # Refresh
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to apply discount: {e}")
+
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(pady=10)
+
+                ttk.Button(button_frame, text="Apply Discount", command=apply_discount_action).pack(side='left', padx=5)
+                ttk.Button(button_frame, text="Cancel", command=discount_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load order: {e}")
+            discount_dialog.destroy()
+
+    def process_cash_payment(self, order_id, total_amount):
+        """Process cash payment with change calculation"""
+        cash_dialog = tk.Toplevel(self.root)
+        cash_dialog.title("Cash Payment")
+        cash_dialog.geometry("400x350")
+        cash_dialog.transient(self.root)
+        cash_dialog.grab_set()
+
+        main_frame = ttk.Frame(cash_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Cash Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Order info
+        info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+        info_frame.pack(fill='x', pady=10)
+
+        ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
+                 font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
+
+        # Cash tendered
+        ttk.Label(info_frame, text="Cash Tendered (£):").pack(anchor='w', pady=(10,0))
+        cash_tendered_var = tk.DoubleVar(value=0.0)
+        cash_entry = ttk.Entry(info_frame, textvariable=cash_tendered_var, width=20, font=('Arial', 12))
+        cash_entry.pack(anchor='w', pady=5)
+        cash_entry.focus()
+
+        # Change display
+        change_label = ttk.Label(info_frame, text="Change: £0.00",
+                                font=('Arial', 12, 'bold'), foreground='green')
+        change_label.pack(anchor='w', pady=10)
+
+        def update_change(*args):
+            try:
+                tendered = cash_tendered_var.get()
+                change = tendered - total_amount
+                if change >= 0:
+                    change_label.config(text=f"Change: £{change:.2f}", foreground='green')
+                else:
+                    change_label.config(text=f"Insufficient: £{abs(change):.2f} short", foreground='red')
+            except:
+                change_label.config(text="Change: £0.00", foreground='green')
+
+        cash_tendered_var.trace('w', update_change)
+
+        # Quick amount buttons
+        quick_frame = ttk.Frame(main_frame)
+        quick_frame.pack(pady=10)
+
+        ttk.Label(quick_frame, text="Quick Amounts:").pack(side='left', padx=5)
+        for amount in [10, 20, 50, 100]:
+            ttk.Button(quick_frame, text=f"£{amount}",
+                      command=lambda a=amount: cash_tendered_var.set(a)).pack(side='left', padx=2)
+
+        def complete_payment():
+            tendered = cash_tendered_var.get()
+            if tendered < total_amount:
+                messagebox.showwarning("Insufficient Cash",
+                                     f"Cash tendered (£{tendered:.2f}) is less than order total (£{total_amount:.2f})")
+                return
+
+            change = tendered - total_amount
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Create cash transactions table
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS cash_transactions (
+                            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            order_id INTEGER,
+                            cash_tendered REAL,
+                            change_given REAL,
+                            transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                        )
+                    ''')
+
+                    # Record cash transaction
+                    cursor.execute('''
+                        INSERT INTO cash_transactions (order_id, cash_tendered, change_given)
+                        VALUES (?, ?, ?)
+                    ''', (order_id, tendered, change))
+
+                    # Update order
+                    cursor.execute('''
+                        UPDATE restaurant_orders
+                        SET payment_status = 'Paid', payment_method = 'Cash'
+                        WHERE order_id = ?
+                    ''', (order_id,))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Payment Complete",
+                                      f"Cash payment processed successfully!\n\n" +
+                                      f"Cash Tendered: £{tendered:.2f}\n" +
+                                      f"Change: £{change:.2f}")
+                    cash_dialog.destroy()
+                    self.view_orders_gui()  # Refresh
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to process cash payment: {e}")
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="Complete Payment", command=complete_payment).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=cash_dialog.destroy).pack(side='left', padx=5)
+
+    def process_card_payment(self, order_id, total_amount):
+        """Process card payment"""
+        card_dialog = tk.Toplevel(self.root)
+        card_dialog.title("Card Payment")
+        card_dialog.geometry("400x400")
+        card_dialog.transient(self.root)
+        card_dialog.grab_set()
+
+        main_frame = ttk.Frame(card_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Card Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Order info
+        info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+        info_frame.pack(fill='x', pady=10)
+
+        ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
+                 font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
+
+        # Card type
+        ttk.Label(info_frame, text="Card Type:").pack(anchor='w', pady=(10,0))
+        card_type_var = tk.StringVar(value="Credit Card")
+        card_type_combo = ttk.Combobox(info_frame, textvariable=card_type_var, width=25, state='readonly')
+        card_type_combo['values'] = ('Credit Card', 'Debit Card', 'Contactless')
+        card_type_combo.pack(anchor='w', pady=5)
+
+        # Card last 4 digits (optional)
+        ttk.Label(info_frame, text="Card Last 4 Digits (optional):").pack(anchor='w', pady=(10,0))
+        card_last4_var = tk.StringVar()
+        ttk.Entry(info_frame, textvariable=card_last4_var, width=10).pack(anchor='w', pady=5)
+
+        # Transaction ID
+        ttk.Label(info_frame, text="Transaction ID:").pack(anchor='w', pady=(10,0))
+        import random
+        transaction_id = f"TXN{random.randint(100000, 999999)}"
+        transaction_id_var = tk.StringVar(value=transaction_id)
+        ttk.Entry(info_frame, textvariable=transaction_id_var, width=25, state='readonly').pack(anchor='w', pady=5)
+
+        # Status display
+        status_label = ttk.Label(main_frame, text="Ready to process payment",
+                                font=('Arial', 10), foreground='blue')
+        status_label.pack(pady=10)
+
+        def authorize_payment():
+            card_type = card_type_var.get()
+            card_last4 = card_last4_var.get()
+
+            if card_last4 and (not card_last4.isdigit() or len(card_last4) != 4):
+                messagebox.showwarning("Invalid Input", "Card last 4 digits must be exactly 4 digits")
+                return
+
+            # Simulate payment authorization
+            status_label.config(text="Authorizing payment...", foreground='orange')
+            card_dialog.update()
+
+            import time
+            time.sleep(1)  # Simulate processing
+
+            # Simulate success (95% success rate for demo)
+            import random
+            success = random.random() < 0.95
+
+            if success:
+                try:
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+
+                        # Create card transactions table
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS card_transactions (
+                                transaction_id TEXT PRIMARY KEY,
+                                order_id INTEGER,
+                                card_type TEXT,
+                                card_last4 TEXT,
+                                amount REAL,
+                                authorization_code TEXT,
+                                transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                            )
+                        ''')
+
+                        # Generate authorization code
+                        auth_code = f"AUTH{random.randint(100000, 999999)}"
+
+                        # Record card transaction
+                        cursor.execute('''
+                            INSERT INTO card_transactions
+                            (transaction_id, order_id, card_type, card_last4, amount, authorization_code)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (transaction_id, order_id, card_type, card_last4 or None, total_amount, auth_code))
+
+                        # Update order
+                        cursor.execute('''
+                            UPDATE restaurant_orders
+                            SET payment_status = 'Paid', payment_method = ?
+                            WHERE order_id = ?
+                        ''', (card_type, order_id))
+
+                        conn.commit()
+                        conn.close()
+
+                        status_label.config(text="Payment Authorized!", foreground='green')
+                        messagebox.showinfo("Payment Complete",
+                                          f"Card payment processed successfully!\n\n" +
+                                          f"Card Type: {card_type}\n" +
+                                          f"Amount: £{total_amount:.2f}\n" +
+                                          f"Transaction ID: {transaction_id}\n" +
+                                          f"Authorization Code: {auth_code}")
+                        card_dialog.destroy()
+                        self.view_orders_gui()  # Refresh
+                except Exception as e:
+                    status_label.config(text="Payment Failed", foreground='red')
+                    messagebox.showerror("Error", f"Failed to process card payment: {e}")
+            else:
+                status_label.config(text="Payment Declined", foreground='red')
+                messagebox.showerror("Payment Declined",
+                                   "Card payment was declined.\n\n" +
+                                   "Please try another payment method or contact your bank.")
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="Authorize Payment", command=authorize_payment).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=card_dialog.destroy).pack(side='left', padx=5)
+
+    def process_meal_plan_payment(self, order_id, total_amount):
+        """Process meal plan payment"""
+        meal_plan_dialog = tk.Toplevel(self.root)
+        meal_plan_dialog.title("Meal Plan Payment")
+        meal_plan_dialog.geometry("450x500")
+        meal_plan_dialog.transient(self.root)
+        meal_plan_dialog.grab_set()
+
+        main_frame = ttk.Frame(meal_plan_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Meal Plan Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Order info
+        info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+        info_frame.pack(fill='x', pady=10)
+
+        ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
+                 font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
+
+        # Student ID lookup
+        ttk.Label(info_frame, text="Student ID:").pack(anchor='w', pady=(10,0))
+        student_id_var = tk.StringVar()
+        student_entry = ttk.Entry(info_frame, textvariable=student_id_var, width=20)
+        student_entry.pack(anchor='w', pady=5)
+        student_entry.focus()
+
+        # Student info display
+        student_info_frame = ttk.LabelFrame(main_frame, text="Student Information", padding=10)
+        student_info_frame.pack(fill='x', pady=10)
+
+        student_name_label = ttk.Label(student_info_frame, text="Name: -")
+        student_name_label.pack(anchor='w')
+
+        plan_type_label = ttk.Label(student_info_frame, text="Plan Type: -")
+        plan_type_label.pack(anchor='w')
+
+        balance_label = ttk.Label(student_info_frame, text="Balance: £0.00", foreground='gray')
+        balance_label.pack(anchor='w')
+
+        status_label = ttk.Label(student_info_frame, text="Status: Not Checked", foreground='gray')
+        status_label.pack(anchor='w', pady=5)
+
+        def check_meal_plan():
+            student_id = student_id_var.get()
+            if not student_id:
+                messagebox.showwarning("Missing Information", "Please enter Student ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Create meal plans table if doesn't exist
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS student_meal_plans (
+                            student_id TEXT PRIMARY KEY,
+                            student_name TEXT,
+                            plan_type TEXT,
+                            balance REAL,
+                            plan_start_date DATE,
+                            plan_end_date DATE,
+                            is_active BOOLEAN DEFAULT 1
+                        )
+                    ''')
+
+                    # Check if student exists
+                    cursor.execute('''
+                        SELECT student_name, plan_type, balance, is_active
+                        FROM student_meal_plans
+                        WHERE student_id = ?
+                    ''', (student_id,))
+                    student_data = cursor.fetchone()
+
+                    if not student_data:
+                        # Create demo student for testing
+                        messagebox.showinfo("Demo Mode",
+                                          "Student not found. Creating demo meal plan for testing purposes.")
+                        cursor.execute('''
+                            INSERT INTO student_meal_plans
+                            (student_id, student_name, plan_type, balance, is_active)
+                            VALUES (?, ?, ?, ?, 1)
+                        ''', (student_id, f"Student {student_id}", "Standard Plan", 500.00))
+                        conn.commit()
+
+                        student_data = (f"Student {student_id}", "Standard Plan", 500.00, 1)
+
+                    conn.close()
+
+                    student_name, plan_type, balance, is_active = student_data
+
+                    student_name_label.config(text=f"Name: {student_name}")
+                    plan_type_label.config(text=f"Plan Type: {plan_type}")
+                    balance_label.config(text=f"Balance: £{balance:.2f}",
+                                        foreground='green' if balance >= total_amount else 'red')
+
+                    if not is_active:
+                        status_label.config(text="Status: Plan Inactive", foreground='red')
+                        messagebox.showwarning("Inactive Plan", "This meal plan is not active")
+                    elif balance < total_amount:
+                        status_label.config(text="Status: Insufficient Balance", foreground='red')
+                        messagebox.showwarning("Insufficient Balance",
+                                             f"Current balance (£{balance:.2f}) is less than order total (£{total_amount:.2f})")
+                    else:
+                        status_label.config(text="Status: Valid - Ready to Process", foreground='green')
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to check meal plan: {e}")
+
+        ttk.Button(info_frame, text="Check Meal Plan", command=check_meal_plan).pack(pady=10)
+
+        def process_payment():
+            student_id = student_id_var.get()
+            if not student_id:
+                messagebox.showwarning("Missing Information", "Please enter Student ID")
+                return
+
+            if status_label.cget('text') != "Status: Valid - Ready to Process":
+                messagebox.showwarning("Cannot Process", "Please check meal plan first and ensure it's valid")
+                return
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Deduct from meal plan
+                    cursor.execute('''
+                        UPDATE student_meal_plans
+                        SET balance = balance - ?
+                        WHERE student_id = ?
+                    ''', (total_amount, student_id))
+
+                    # Create meal plan transactions table
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS meal_plan_transactions (
+                            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            order_id INTEGER,
+                            student_id TEXT,
+                            amount REAL,
+                            transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                        )
+                    ''')
+
+                    # Record transaction
+                    cursor.execute('''
+                        INSERT INTO meal_plan_transactions (order_id, student_id, amount)
+                        VALUES (?, ?, ?)
+                    ''', (order_id, student_id, total_amount))
+
+                    # Update order
+                    cursor.execute('''
+                        UPDATE restaurant_orders
+                        SET payment_status = 'Paid', payment_method = 'Meal Plan'
+                        WHERE order_id = ?
+                    ''', (order_id,))
+
+                    # Get new balance
+                    cursor.execute('SELECT balance FROM student_meal_plans WHERE student_id = ?', (student_id,))
+                    new_balance = cursor.fetchone()[0]
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Payment Complete",
+                                      f"Meal plan payment processed successfully!\n\n" +
+                                      f"Student ID: {student_id}\n" +
+                                      f"Amount Deducted: £{total_amount:.2f}\n" +
+                                      f"New Balance: £{new_balance:.2f}")
+                    meal_plan_dialog.destroy()
+                    self.view_orders_gui()  # Refresh
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to process meal plan payment: {e}")
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="Process Payment", command=process_payment).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=meal_plan_dialog.destroy).pack(side='left', padx=5)
+
     # Customer Functions
     def view_customers_gui(self):
         """Display customers in the treeview"""
@@ -908,7 +1826,917 @@ class RestaurantManagementGUI:
         dialog = CustomerDialog(self.root, "Update Customer", customer_id)
         if dialog.result:
             self.view_customers_gui()
-            
+
+    # ============================================================================
+    # CUSTOMER FEEDBACK MANAGEMENT SYSTEM
+    # ============================================================================
+
+    def manage_customer_feedback(self):
+        """Main customer feedback management interface"""
+        feedback_dialog = tk.Toplevel(self.root)
+        feedback_dialog.title("Customer Feedback Management")
+        feedback_dialog.geometry("1000x700")
+        feedback_dialog.transient(self.root)
+        feedback_dialog.grab_set()
+
+        main_frame = ttk.Frame(feedback_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Customer Feedback Management",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Create feedback table if it doesn't exist
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+
+                # Customer feedback table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS customer_feedback (
+                        feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        customer_id INTEGER,
+                        customer_name TEXT,
+                        order_id INTEGER,
+                        rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+                        category TEXT,
+                        feedback_text TEXT NOT NULL,
+                        response TEXT,
+                        responded_by TEXT,
+                        response_date DATETIME,
+                        status TEXT DEFAULT 'Pending',
+                        feedback_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (customer_id) REFERENCES restaurant_customers(customer_id),
+                        FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                    )
+                ''')
+
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to initialize feedback table: {e}")
+            feedback_dialog.destroy()
+            return
+
+        # Action buttons frame
+        btn_frame = ttk.LabelFrame(main_frame, text="Actions", padding=15)
+        btn_frame.pack(fill='x', pady=10)
+
+        # Row 1: Viewing and Managing
+        row1 = ttk.Frame(btn_frame)
+        row1.pack(fill='x', pady=5)
+
+        ttk.Button(row1, text="View Recent Feedback",
+                  command=lambda: self.view_recent_feedback(feedback_dialog),
+                  width=25).pack(side='left', padx=5)
+
+        ttk.Button(row1, text="Respond to Feedback",
+                  command=lambda: self.respond_to_feedback(feedback_dialog),
+                  width=25).pack(side='left', padx=5)
+
+        ttk.Button(row1, text="Submit New Feedback (Demo)",
+                  command=lambda: self.submit_demo_feedback(feedback_dialog),
+                  width=25).pack(side='left', padx=5)
+
+        # Row 2: Reporting
+        row2 = ttk.Frame(btn_frame)
+        row2.pack(fill='x', pady=5)
+
+        ttk.Button(row2, text="Export Feedback Report (CSV)",
+                  command=self.export_feedback_report,
+                  width=25).pack(side='left', padx=5)
+
+        ttk.Button(row2, text="Generate Analytics Report",
+                  command=lambda: self.export_feedback_report_pdf(feedback_dialog),
+                  width=25).pack(side='left', padx=5)
+
+        # Statistics frame
+        stats_frame = ttk.LabelFrame(main_frame, text="Feedback Statistics", padding=15)
+        stats_frame.pack(fill='x', pady=10)
+
+        def update_stats():
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Total feedback
+                    cursor.execute("SELECT COUNT(*) FROM customer_feedback")
+                    total = cursor.fetchone()[0]
+
+                    # Pending responses
+                    cursor.execute("SELECT COUNT(*) FROM customer_feedback WHERE status = 'Pending'")
+                    pending = cursor.fetchone()[0]
+
+                    # Average rating
+                    cursor.execute("SELECT AVG(rating) FROM customer_feedback")
+                    avg_rating = cursor.fetchone()[0] or 0
+
+                    # Ratings distribution
+                    cursor.execute('''
+                        SELECT rating, COUNT(*) FROM customer_feedback
+                        GROUP BY rating ORDER BY rating DESC
+                    ''')
+                    ratings = cursor.fetchall()
+
+                    conn.close()
+
+                    stats_text = (f"Total Feedback: {total} | Pending Responses: {pending} | "
+                                f"Average Rating: {avg_rating:.2f}/5.0\n\n"
+                                f"Rating Distribution: ")
+
+                    for rating, count in ratings:
+                        stats_text += f"{rating}⭐: {count}  "
+
+                    stats_label.config(text=stats_text)
+            except Exception as e:
+                stats_label.config(text=f"Error loading statistics: {e}")
+
+        stats_label = ttk.Label(stats_frame, text="Loading statistics...", font=('Arial', 9))
+        stats_label.pack()
+
+        update_stats()
+
+        # Refresh and close buttons
+        bottom_frame = ttk.Frame(main_frame)
+        bottom_frame.pack(fill='x', pady=10)
+
+        ttk.Button(bottom_frame, text="Refresh Statistics",
+                  command=update_stats).pack(side='left', padx=5)
+        ttk.Button(bottom_frame, text="Close",
+                  command=feedback_dialog.destroy).pack(side='right', padx=5)
+
+    def view_recent_feedback(self, parent_dialog):
+        """View and browse customer feedback with filters"""
+        view_dialog = tk.Toplevel(parent_dialog)
+        view_dialog.title("View Customer Feedback")
+        view_dialog.geometry("1200x700")
+        view_dialog.transient(parent_dialog)
+        view_dialog.grab_set()
+
+        main_frame = ttk.Frame(view_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Customer Feedback",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding=10)
+        filter_frame.pack(fill='x', pady=10)
+
+        filter_row = ttk.Frame(filter_frame)
+        filter_row.pack(fill='x', pady=5)
+
+        ttk.Label(filter_row, text="Status:").pack(side='left', padx=5)
+        status_var = tk.StringVar(value='All')
+        status_combo = ttk.Combobox(filter_row, textvariable=status_var,
+                                   values=['All', 'Pending', 'Responded'],
+                                   width=15, state='readonly')
+        status_combo.pack(side='left', padx=5)
+
+        ttk.Label(filter_row, text="Rating:").pack(side='left', padx=20)
+        rating_var = tk.StringVar(value='All')
+        rating_combo = ttk.Combobox(filter_row, textvariable=rating_var,
+                                   values=['All', '5', '4', '3', '2', '1'],
+                                   width=10, state='readonly')
+        rating_combo.pack(side='left', padx=5)
+
+        ttk.Label(filter_row, text="Category:").pack(side='left', padx=20)
+        category_var = tk.StringVar(value='All')
+        category_combo = ttk.Combobox(filter_row, textvariable=category_var,
+                                     values=['All', 'Food Quality', 'Service', 'Cleanliness',
+                                            'Pricing', 'Ambiance', 'Other'],
+                                     width=15, state='readonly')
+        category_combo.pack(side='left', padx=5)
+
+        # Treeview frame
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=10)
+
+        # Scrollbars
+        v_scroll = ttk.Scrollbar(tree_frame, orient='vertical')
+        h_scroll = ttk.Scrollbar(tree_frame, orient='horizontal')
+
+        columns = ('ID', 'Date', 'Customer', 'Rating', 'Category', 'Feedback', 'Status', 'Response')
+        feedback_tree = ttk.Treeview(tree_frame, columns=columns, show='headings',
+                                     yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set,
+                                     height=20)
+
+        v_scroll.config(command=feedback_tree.yview)
+        h_scroll.config(command=feedback_tree.xview)
+
+        # Configure columns
+        column_widths = {'ID': 50, 'Date': 100, 'Customer': 120, 'Rating': 60,
+                        'Category': 100, 'Feedback': 250, 'Status': 80, 'Response': 200}
+
+        for col in columns:
+            feedback_tree.heading(col, text=col)
+            feedback_tree.column(col, width=column_widths.get(col, 100))
+
+        feedback_tree.pack(side='left', fill='both', expand=True)
+        v_scroll.pack(side='right', fill='y')
+        h_scroll.pack(side='bottom', fill='x')
+
+        def load_feedback():
+            # Clear existing items
+            for item in feedback_tree.get_children():
+                feedback_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Build query with filters
+                    query = '''
+                        SELECT feedback_id, feedback_date, customer_name, rating,
+                               category, feedback_text, status, response
+                        FROM customer_feedback
+                        WHERE 1=1
+                    '''
+                    params = []
+
+                    if status_var.get() != 'All':
+                        query += ' AND status = ?'
+                        params.append(status_var.get())
+
+                    if rating_var.get() != 'All':
+                        query += ' AND rating = ?'
+                        params.append(int(rating_var.get()))
+
+                    if category_var.get() != 'All':
+                        query += ' AND category = ?'
+                        params.append(category_var.get())
+
+                    query += ' ORDER BY feedback_date DESC'
+
+                    cursor.execute(query, params)
+                    feedbacks = cursor.fetchall()
+
+                    for fb in feedbacks:
+                        # Truncate long text for display
+                        feedback_text = fb[5][:100] + '...' if len(fb[5]) > 100 else fb[5]
+                        response_text = (fb[7][:100] + '...' if fb[7] and len(fb[7]) > 100
+                                       else fb[7] or 'N/A')
+
+                        feedback_tree.insert('', 'end', values=(
+                            fb[0],  # ID
+                            fb[1][:16] if fb[1] else 'N/A',  # Date
+                            fb[2] or 'Anonymous',  # Customer
+                            f"{fb[3]}⭐",  # Rating
+                            fb[4] or 'General',  # Category
+                            feedback_text,  # Feedback
+                            fb[6],  # Status
+                            response_text  # Response
+                        ))
+
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load feedback: {e}")
+
+        def view_full_feedback():
+            """View complete feedback details"""
+            selection = feedback_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select feedback to view details")
+                return
+
+            item = feedback_tree.item(selection[0])
+            feedback_id = item['values'][0]
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT * FROM customer_feedback WHERE feedback_id = ?
+                    ''', (feedback_id,))
+                    fb = cursor.fetchone()
+                    conn.close()
+
+                    if fb:
+                        details = f"""
+Feedback ID: {fb[0]}
+Customer: {fb[2] or 'Anonymous'}
+Order ID: {fb[3] or 'N/A'}
+Date: {fb[11]}
+
+Rating: {fb[4]}⭐ / 5
+Category: {fb[5] or 'General'}
+
+Feedback:
+{fb[6]}
+
+Status: {fb[10]}
+
+Response:
+{fb[7] or 'No response yet'}
+
+{'Responded by: ' + fb[8] if fb[8] else ''}
+{'Response date: ' + fb[9] if fb[9] else ''}
+                        """.strip()
+
+                        messagebox.showinfo("Feedback Details", details)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load feedback details: {e}")
+
+        load_feedback()
+
+        # Button frame
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Apply Filters", command=load_feedback).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="View Full Details", command=view_full_feedback).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=load_feedback).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=view_dialog.destroy).pack(side='right', padx=5)
+
+    def respond_to_feedback(self, parent_dialog):
+        """Respond to customer feedback"""
+        # First select feedback to respond to
+        select_dialog = tk.Toplevel(parent_dialog)
+        select_dialog.title("Select Feedback to Respond")
+        select_dialog.geometry("1000x600")
+        select_dialog.transient(parent_dialog)
+        select_dialog.grab_set()
+
+        main_frame = ttk.Frame(select_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Select Feedback to Respond To",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        ttk.Label(main_frame, text="Only showing pending feedback that needs a response",
+                 foreground='blue').pack(pady=5)
+
+        # Feedback list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=10)
+
+        columns = ('ID', 'Date', 'Customer', 'Rating', 'Category', 'Feedback')
+        fb_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            fb_tree.heading(col, text=col)
+            fb_tree.column(col, width=150)
+
+        fb_tree.pack(fill='both', expand=True)
+
+        def load_pending_feedback():
+            for item in fb_tree.get_children():
+                fb_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT feedback_id, feedback_date, customer_name, rating,
+                               category, feedback_text
+                        FROM customer_feedback
+                        WHERE status = 'Pending'
+                        ORDER BY feedback_date DESC
+                    ''')
+                    feedbacks = cursor.fetchall()
+
+                    for fb in feedbacks:
+                        feedback_text = fb[5][:150] + '...' if len(fb[5]) > 150 else fb[5]
+                        fb_tree.insert('', 'end', values=(
+                            fb[0],
+                            fb[1][:16] if fb[1] else 'N/A',
+                            fb[2] or 'Anonymous',
+                            f"{fb[3]}⭐",
+                            fb[4] or 'General',
+                            feedback_text
+                        ))
+
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load feedback: {e}")
+
+        load_pending_feedback()
+
+        def proceed_to_respond():
+            selection = fb_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select feedback to respond to")
+                return
+
+            item = fb_tree.item(selection[0])
+            feedback_id = item['values'][0]
+            select_dialog.destroy()
+            show_response_dialog(feedback_id)
+
+        def show_response_dialog(feedback_id):
+            """Show response composition dialog"""
+            response_dialog = tk.Toplevel(parent_dialog)
+            response_dialog.title("Respond to Customer Feedback")
+            response_dialog.geometry("700x600")
+            response_dialog.transient(parent_dialog)
+            response_dialog.grab_set()
+
+            main_frame = ttk.Frame(response_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Respond to Customer Feedback",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Load feedback details
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT feedback_id, customer_name, rating, category,
+                           feedback_text, feedback_date
+                    FROM customer_feedback WHERE feedback_id = ?
+                ''', (feedback_id,))
+                fb = cursor.fetchone()
+                conn.close()
+
+                if not fb:
+                    messagebox.showerror("Error", "Feedback not found")
+                    response_dialog.destroy()
+                    return
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load feedback: {e}")
+                response_dialog.destroy()
+                return
+
+            # Display original feedback
+            feedback_frame = ttk.LabelFrame(main_frame, text="Original Feedback", padding=15)
+            feedback_frame.pack(fill='x', pady=10)
+
+            feedback_info = f"""
+Customer: {fb[1] or 'Anonymous'}
+Date: {fb[5]}
+Rating: {fb[2]}⭐ / 5
+Category: {fb[3] or 'General'}
+
+Feedback:
+{fb[4]}
+            """.strip()
+
+            ttk.Label(feedback_frame, text=feedback_info, justify='left',
+                     font=('Arial', 9)).pack(pady=5)
+
+            # Response composition
+            response_frame = ttk.LabelFrame(main_frame, text="Your Response", padding=15)
+            response_frame.pack(fill='both', expand=True, pady=10)
+
+            ttk.Label(response_frame, text="Compose your response to the customer:",
+                     foreground='blue').pack(pady=5)
+
+            response_text = ScrolledText(response_frame, height=10, width=60, font=('Arial', 10))
+            response_text.pack(fill='both', expand=True, pady=5)
+
+            # Quick response templates
+            templates_frame = ttk.Frame(response_frame)
+            templates_frame.pack(fill='x', pady=5)
+
+            ttk.Label(templates_frame, text="Quick Templates:").pack(side='left', padx=5)
+
+            def insert_template(template):
+                response_text.delete('1.0', tk.END)
+                response_text.insert('1.0', template)
+
+            templates = {
+                "Thank You": "Thank you for your valuable feedback! We truly appreciate you taking the time to share your experience with us.",
+                "Apology": "We sincerely apologize for the experience you had. This does not reflect our usual standards, and we are taking immediate steps to address this issue.",
+                "Improvement": "Thank you for bringing this to our attention. We are constantly working to improve our service and your feedback helps us do that."
+            }
+
+            for name, text in templates.items():
+                ttk.Button(templates_frame, text=name,
+                          command=lambda t=text: insert_template(t)).pack(side='left', padx=2)
+
+            def save_response():
+                response = response_text.get('1.0', tk.END).strip()
+
+                if not response:
+                    messagebox.showwarning("Empty Response", "Please enter a response")
+                    return
+
+                # Get current user
+                current_user = "System"
+                if AUTH_AVAILABLE:
+                    try:
+                        from university_system.infrastructure.shared_context import get_auth
+                        auth = get_auth()
+                        if auth.is_logged_in():
+                            current_user = auth.get_current_user().username
+                    except:
+                        pass
+
+                try:
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            UPDATE customer_feedback
+                            SET response = ?,
+                                responded_by = ?,
+                                response_date = CURRENT_TIMESTAMP,
+                                status = 'Responded'
+                            WHERE feedback_id = ?
+                        ''', (response, current_user, feedback_id))
+
+                        conn.commit()
+                        conn.close()
+
+                        messagebox.showinfo("Success",
+                                          f"Response submitted successfully!\n\n"
+                                          f"Feedback ID: {feedback_id}\n"
+                                          f"Responded by: {current_user}")
+                        response_dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save response: {e}")
+
+            # Buttons
+            btn_frame = ttk.Frame(main_frame)
+            btn_frame.pack(fill='x', pady=10)
+
+            ttk.Button(btn_frame, text="Submit Response",
+                      command=save_response).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Cancel",
+                      command=response_dialog.destroy).pack(side='right', padx=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Respond to Selected",
+                  command=proceed_to_respond).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=load_pending_feedback).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=select_dialog.destroy).pack(side='right', padx=5)
+
+    def submit_demo_feedback(self, parent_dialog):
+        """Submit demo feedback for testing purposes"""
+        demo_dialog = tk.Toplevel(parent_dialog)
+        demo_dialog.title("Submit Feedback (Demo)")
+        demo_dialog.geometry("600x500")
+        demo_dialog.transient(parent_dialog)
+        demo_dialog.grab_set()
+
+        main_frame = ttk.Frame(demo_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Submit Customer Feedback",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True, pady=10)
+
+        fields = {}
+
+        row = 0
+        ttk.Label(form_frame, text="Customer Name:").grid(row=row, column=0, sticky='w', pady=5)
+        fields['name'] = ttk.Entry(form_frame, width=40)
+        fields['name'].grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(form_frame, text="Rating:*").grid(row=row, column=0, sticky='w', pady=5)
+        fields['rating'] = ttk.Combobox(form_frame, values=['5 - Excellent', '4 - Good', '3 - Average',
+                                                            '2 - Poor', '1 - Very Poor'],
+                                       width=38, state='readonly')
+        fields['rating'].grid(row=row, column=1, pady=5, padx=10)
+        fields['rating'].current(0)
+
+        row += 1
+        ttk.Label(form_frame, text="Category:*").grid(row=row, column=0, sticky='w', pady=5)
+        fields['category'] = ttk.Combobox(form_frame,
+                                         values=['Food Quality', 'Service', 'Cleanliness',
+                                                'Pricing', 'Ambiance', 'Other'],
+                                         width=38, state='readonly')
+        fields['category'].grid(row=row, column=1, pady=5, padx=10)
+        fields['category'].current(0)
+
+        row += 1
+        ttk.Label(form_frame, text="Feedback:*").grid(row=row, column=0, sticky='nw', pady=5)
+        fields['feedback'] = ScrolledText(form_frame, height=10, width=40, font=('Arial', 10))
+        fields['feedback'].grid(row=row, column=1, pady=5, padx=10)
+
+        def submit_feedback():
+            try:
+                feedback_text = fields['feedback'].get('1.0', tk.END).strip()
+                if not feedback_text:
+                    messagebox.showwarning("Missing Info", "Please enter feedback")
+                    return
+
+                rating_text = fields['rating'].get()
+                rating = int(rating_text.split(' - ')[0])
+
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO customer_feedback
+                        (customer_name, rating, category, feedback_text, status)
+                        VALUES (?, ?, ?, ?, 'Pending')
+                    ''', (fields['name'].get().strip() or 'Anonymous',
+                          rating,
+                          fields['category'].get(),
+                          feedback_text))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Feedback submitted successfully!")
+                    demo_dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to submit feedback: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Submit Feedback", command=submit_feedback).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=demo_dialog.destroy).pack(side='right', padx=5)
+
+    def export_feedback_report(self):
+        """Export feedback data to CSV with statistics"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                return
+
+            cursor = conn.cursor()
+
+            # Get all feedback
+            cursor.execute('''
+                SELECT feedback_id, feedback_date, customer_name, order_id,
+                       rating, category, feedback_text, response, responded_by,
+                       response_date, status
+                FROM customer_feedback
+                ORDER BY feedback_date DESC
+            ''')
+            feedbacks = cursor.fetchall()
+
+            # Get statistics
+            cursor.execute("SELECT COUNT(*) FROM customer_feedback")
+            total = cursor.fetchone()[0]
+
+            cursor.execute("SELECT AVG(rating) FROM customer_feedback")
+            avg_rating = cursor.fetchone()[0] or 0
+
+            cursor.execute('''
+                SELECT rating, COUNT(*) FROM customer_feedback
+                GROUP BY rating ORDER BY rating DESC
+            ''')
+            rating_dist = cursor.fetchall()
+
+            cursor.execute('''
+                SELECT category, COUNT(*) FROM customer_feedback
+                GROUP BY category ORDER BY COUNT(*) DESC
+            ''')
+            category_dist = cursor.fetchall()
+
+            conn.close()
+
+            # Create CSV content
+            import csv
+            from io import StringIO
+
+            output = StringIO()
+            writer = csv.writer(output)
+
+            # Summary section
+            writer.writerow(['CUSTOMER FEEDBACK REPORT'])
+            writer.writerow(['Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+            writer.writerow([])
+
+            writer.writerow(['SUMMARY STATISTICS'])
+            writer.writerow(['Total Feedback:', total])
+            writer.writerow(['Average Rating:', f"{avg_rating:.2f}/5.0"])
+            writer.writerow([])
+
+            writer.writerow(['RATING DISTRIBUTION'])
+            writer.writerow(['Rating', 'Count'])
+            for rating, count in rating_dist:
+                writer.writerow([f"{rating} Stars", count])
+            writer.writerow([])
+
+            writer.writerow(['CATEGORY DISTRIBUTION'])
+            writer.writerow(['Category', 'Count'])
+            for category, count in category_dist:
+                writer.writerow([category or 'N/A', count])
+            writer.writerow([])
+
+            # Detailed feedback data
+            writer.writerow(['DETAILED FEEDBACK'])
+            writer.writerow(['ID', 'Date', 'Customer', 'Order ID', 'Rating', 'Category',
+                           'Feedback', 'Response', 'Responded By', 'Response Date', 'Status'])
+
+            for fb in feedbacks:
+                writer.writerow(fb)
+
+            csv_content = output.getvalue()
+
+            # Save to file
+            filename = f"customer_feedback_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            filepath = os.path.join(os.getcwd(), filename)
+
+            with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                f.write(csv_content)
+
+            messagebox.showinfo("Export Success",
+                              f"Feedback report exported successfully!\n\n"
+                              f"File: {filename}\n"
+                              f"Location: {filepath}\n"
+                              f"Total Feedback: {total}\n"
+                              f"Average Rating: {avg_rating:.2f}/5.0")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export feedback report: {e}")
+
+    def export_feedback_report_pdf(self, parent_dialog):
+        """Generate comprehensive feedback analytics report"""
+        report_dialog = tk.Toplevel(parent_dialog)
+        report_dialog.title("Feedback Analytics Report")
+        report_dialog.geometry("900x700")
+        report_dialog.transient(parent_dialog)
+        report_dialog.grab_set()
+
+        main_frame = ttk.Frame(report_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Customer Feedback Analytics",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Report output
+        output_frame = ttk.LabelFrame(main_frame, text="Analytics Report", padding=10)
+        output_frame.pack(fill='both', expand=True, pady=10)
+
+        output_text = ScrolledText(output_frame, height=30, width=100, font=('Courier', 9))
+        output_text.pack(fill='both', expand=True)
+
+        def generate_report():
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+
+                # Get statistics
+                cursor.execute("SELECT COUNT(*) FROM customer_feedback")
+                total = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM customer_feedback WHERE status = 'Pending'")
+                pending = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM customer_feedback WHERE status = 'Responded'")
+                responded = cursor.fetchone()[0]
+
+                cursor.execute("SELECT AVG(rating) FROM customer_feedback")
+                avg_rating = cursor.fetchone()[0] or 0
+
+                cursor.execute('''
+                    SELECT rating, COUNT(*) FROM customer_feedback
+                    GROUP BY rating ORDER BY rating DESC
+                ''')
+                rating_dist = cursor.fetchall()
+
+                cursor.execute('''
+                    SELECT category, COUNT(*), AVG(rating)
+                    FROM customer_feedback
+                    GROUP BY category
+                    ORDER BY COUNT(*) DESC
+                ''')
+                category_stats = cursor.fetchall()
+
+                # Get recent feedback samples
+                cursor.execute('''
+                    SELECT customer_name, rating, category, feedback_text, feedback_date
+                    FROM customer_feedback
+                    ORDER BY feedback_date DESC
+                    LIMIT 5
+                ''')
+                recent = cursor.fetchall()
+
+                # Response rate
+                response_rate = (responded / total * 100) if total > 0 else 0
+
+                conn.close()
+
+                # Generate report
+                report = f"""
+{'='*90}
+                    CUSTOMER FEEDBACK ANALYTICS REPORT
+                    Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{'='*90}
+
+EXECUTIVE SUMMARY:
+-----------------
+Total Feedback Received:        {total}
+Pending Responses:              {pending}
+Completed Responses:            {responded}
+Response Rate:                  {response_rate:.1f}%
+
+Overall Customer Satisfaction:  {avg_rating:.2f} / 5.0 ⭐
+
+RATING DISTRIBUTION:
+-------------------
+"""
+                for rating, count in rating_dist:
+                    percentage = (count / total * 100) if total > 0 else 0
+                    bar = '█' * int(percentage / 2)
+                    report += f"{rating} Stars:  {count:>4} ({percentage:>5.1f}%)  {bar}\n"
+
+                report += f"""
+
+FEEDBACK BY CATEGORY:
+--------------------
+{'Category':<20} {'Count':>8} {'Avg Rating':>12} {'Percentage':>12}
+{'-'*60}
+"""
+                for category, count, avg_rat in category_stats:
+                    percentage = (count / total * 100) if total > 0 else 0
+                    report += f"{(category or 'N/A'):<20} {count:>8} {avg_rat:>12.2f} {percentage:>11.1f}%\n"
+
+                report += f"""
+
+INSIGHTS & RECOMMENDATIONS:
+--------------------------
+"""
+                # Generate insights based on data
+                if avg_rating >= 4.5:
+                    report += "✓ Excellent overall satisfaction! Customers are very happy.\n"
+                elif avg_rating >= 4.0:
+                    report += "✓ Good overall satisfaction with room for improvement.\n"
+                elif avg_rating >= 3.0:
+                    report += "⚠ Average satisfaction. Focus on addressing customer concerns.\n"
+                else:
+                    report += "⚠ Low satisfaction. Immediate action required.\n"
+
+                if pending > 0:
+                    report += f"⚠ {pending} feedback items need responses. Timely responses improve satisfaction.\n"
+
+                if response_rate < 50:
+                    report += f"⚠ Low response rate ({response_rate:.1f}%). Aim for >80% response rate.\n"
+
+                # Category-specific insights
+                if category_stats:
+                    lowest_cat = min(category_stats, key=lambda x: x[2])
+                    report += f"⚠ '{lowest_cat[0]}' has lowest rating ({lowest_cat[2]:.2f}). Priority area for improvement.\n"
+
+                report += f"""
+
+RECENT FEEDBACK SAMPLES:
+-----------------------
+"""
+                for idx, (cust, rating, cat, fb, date) in enumerate(recent, 1):
+                    fb_short = fb[:200] + '...' if len(fb) > 200 else fb
+                    report += f"""
+{idx}. {cust or 'Anonymous'} | {rating}⭐ | {cat} | {date}
+   {fb_short}
+"""
+
+                report += "\n" + "="*90 + "\n"
+                report += "\nACTION ITEMS:\n"
+                report += "1. Respond to all pending feedback within 24-48 hours\n"
+                report += "2. Address lowest-rated categories with targeted improvements\n"
+                report += "3. Follow up with customers who gave 1-2 star ratings\n"
+                report += "4. Continue practices that led to 5-star ratings\n"
+                report += "5. Monitor trends monthly to track improvement\n"
+
+                output_text.delete('1.0', tk.END)
+                output_text.insert('1.0', report)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+        generate_report()
+
+        # Export button
+        def export_report():
+            report_content = output_text.get('1.0', tk.END)
+            filename = f"feedback_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            filepath = os.path.join(os.getcwd(), filename)
+
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(report_content)
+
+                messagebox.showinfo("Export Success",
+                                  f"Analytics report exported!\n\n"
+                                  f"File: {filename}\n"
+                                  f"Location: {filepath}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export: {e}")
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Export to File", command=export_report).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=generate_report).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=report_dialog.destroy).pack(side='right', padx=5)
+
     def manage_loyalty_dialog(self):
         """Show loyalty program management dialog"""
         dialog = tk.Toplevel(self.root)
@@ -1023,8 +2851,705 @@ Platinum (1000+ points):
         info_text.insert('1.0', info_content)
         info_text.config(state='disabled')
 
+        # Advanced features buttons
+        advanced_frame = ttk.LabelFrame(main_frame, text="Advanced Features", padding=10)
+        advanced_frame.pack(fill='x', pady=10)
+
+        btn_row = ttk.Frame(advanced_frame)
+        btn_row.pack(fill='x', pady=5)
+
+        ttk.Button(btn_row, text="View Loyalty Tiers",
+                  command=lambda: self.view_loyalty_tiers(dialog),
+                  width=20).pack(side='left', padx=5)
+
+        ttk.Button(btn_row, text="Promote Customer Tier",
+                  command=lambda: self.promote_customer_tier(dialog),
+                  width=20).pack(side='left', padx=5)
+
+        ttk.Button(btn_row, text="Award Bonus Points",
+                  command=lambda: self.award_bonus_points(dialog),
+                  width=20).pack(side='left', padx=5)
+
         ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
-        
+
+    def view_loyalty_tiers(self, parent_dialog):
+        """View and manage loyalty tier structure"""
+        tiers_dialog = tk.Toplevel(parent_dialog)
+        tiers_dialog.title("Loyalty Tier Management")
+        tiers_dialog.geometry("900x700")
+        tiers_dialog.transient(parent_dialog)
+        tiers_dialog.grab_set()
+
+        main_frame = ttk.Frame(tiers_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Loyalty Tier Structure",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Tier definitions
+        tier_frame = ttk.LabelFrame(main_frame, text="Tier Definitions", padding=15)
+        tier_frame.pack(fill='both', expand=True, pady=10)
+
+        # Tier details
+        tiers = [
+            {
+                'name': 'Bronze',
+                'range': '0-99 points',
+                'discount': '2%',
+                'benefits': ['Birthday reward', 'Email notifications']
+            },
+            {
+                'name': 'Silver',
+                'range': '100-499 points',
+                'discount': '5%',
+                'benefits': ['Birthday reward', 'Priority reservations', 'Email notifications']
+            },
+            {
+                'name': 'Gold',
+                'range': '500-999 points',
+                'discount': '8%',
+                'benefits': ['Birthday reward', 'Priority reservations', 'Free appetizer monthly',
+                           'Exclusive promotions']
+            },
+            {
+                'name': 'Platinum',
+                'range': '1000+ points',
+                'discount': '10%',
+                'benefits': ['Birthday reward', 'Priority reservations', 'Free appetizer monthly',
+                           'Exclusive menu access', 'VIP events', 'Dedicated support']
+            }
+        ]
+
+        # Display tiers in a grid
+        for idx, tier in enumerate(tiers):
+            # Tier card frame
+            tier_card = ttk.LabelFrame(tier_frame, text=f"{tier['name']} Tier", padding=10)
+            tier_card.grid(row=idx//2, column=idx%2, padx=10, pady=10, sticky='nsew')
+
+            # Tier details
+            details_text = f"""
+Points Range: {tier['range']}
+Discount: {tier['discount']}
+
+Benefits:
+"""
+            for benefit in tier['benefits']:
+                details_text += f"  • {benefit}\n"
+
+            ttk.Label(tier_card, text=details_text, justify='left',
+                     font=('Arial', 9)).pack(anchor='w')
+
+        # Configure grid weights
+        tier_frame.columnconfigure(0, weight=1)
+        tier_frame.columnconfigure(1, weight=1)
+
+        # Statistics frame
+        stats_frame = ttk.LabelFrame(main_frame, text="Customer Distribution by Tier", padding=15)
+        stats_frame.pack(fill='x', pady=10)
+
+        def update_tier_stats():
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Count customers in each tier
+                    cursor.execute('''
+                        SELECT loyalty_tier, COUNT(*), AVG(loyalty_points)
+                        FROM restaurant_customers
+                        GROUP BY loyalty_tier
+                        ORDER BY
+                            CASE loyalty_tier
+                                WHEN 'Platinum' THEN 4
+                                WHEN 'Gold' THEN 3
+                                WHEN 'Silver' THEN 2
+                                WHEN 'Bronze' THEN 1
+                                ELSE 0
+                            END DESC
+                    ''')
+                    tier_stats = cursor.fetchall()
+
+                    cursor.execute("SELECT COUNT(*) FROM restaurant_customers")
+                    total_customers = cursor.fetchone()[0]
+
+                    conn.close()
+
+                    stats_text = "Customer Distribution:\n\n"
+                    for tier, count, avg_points in tier_stats:
+                        percentage = (count / total_customers * 100) if total_customers > 0 else 0
+                        bar = '█' * int(percentage / 2)
+                        stats_text += f"{tier:12} {count:>4} customers ({percentage:>5.1f}%)  Avg: {avg_points:>6.1f} pts  {bar}\n"
+
+                    stats_label.config(text=stats_text)
+            except Exception as e:
+                stats_label.config(text=f"Error loading statistics: {e}")
+
+        stats_label = ttk.Label(stats_frame, text="Loading statistics...",
+                               font=('Courier', 9), justify='left')
+        stats_label.pack(anchor='w')
+
+        update_tier_stats()
+
+        # Tier upgrade rules
+        rules_frame = ttk.LabelFrame(main_frame, text="Tier Upgrade Rules", padding=10)
+        rules_frame.pack(fill='x', pady=10)
+
+        rules_text = """
+Automatic Tier Upgrades:
+• Customers are automatically upgraded when they reach the points threshold for the next tier
+• Points are earned at a rate of 1 point per £1 spent
+• Points never expire
+• Tier downgrades do not occur (tier is the highest achieved, not current points)
+
+Manual Promotions:
+• Managers can manually promote customers for exceptional loyalty
+• Use the 'Promote Customer Tier' function to upgrade customers
+• Manual promotions are permanent and recorded in the system
+        """.strip()
+
+        ttk.Label(rules_frame, text=rules_text, justify='left', font=('Arial', 9)).pack(anchor='w')
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Refresh Statistics",
+                  command=update_tier_stats).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=tiers_dialog.destroy).pack(side='right', padx=5)
+
+    def promote_customer_tier(self, parent_dialog):
+        """Manually promote a customer to a higher loyalty tier"""
+        promote_dialog = tk.Toplevel(parent_dialog)
+        promote_dialog.title("Promote Customer Tier")
+        promote_dialog.geometry("700x600")
+        promote_dialog.transient(parent_dialog)
+        promote_dialog.grab_set()
+
+        main_frame = ttk.Frame(promote_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Promote Customer to Higher Tier",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        ttk.Label(main_frame,
+                 text="Select a customer and promote them to a higher loyalty tier",
+                 foreground='blue').pack(pady=5)
+
+        # Customer selection
+        search_frame = ttk.LabelFrame(main_frame, text="Select Customer", padding=15)
+        search_frame.pack(fill='x', pady=10)
+
+        ttk.Label(search_frame, text="Customer:").grid(row=0, column=0, sticky='w', pady=5)
+        customer_var = tk.StringVar()
+        customer_combo = ttk.Combobox(search_frame, textvariable=customer_var,
+                                      width=50, state='readonly')
+        customer_combo.grid(row=0, column=1, pady=5, padx=10)
+
+        # Load customers
+        customer_data = {}
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT customer_id, name, loyalty_tier, loyalty_points
+                    FROM restaurant_customers
+                    ORDER BY name
+                ''')
+                customers = cursor.fetchall()
+                conn.close()
+
+                for cust in customers:
+                    label = f"{cust[1]} - {cust[2]} ({cust[3]} points)"
+                    customer_data[label] = cust
+                    customer_combo['values'] = list(customer_data.keys())
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load customers: {e}")
+
+        # Current tier info
+        current_info_frame = ttk.LabelFrame(main_frame, text="Current Information", padding=15)
+        current_info_frame.pack(fill='x', pady=10)
+
+        current_info_label = ttk.Label(current_info_frame,
+                                      text="Select a customer to view their current tier",
+                                      font=('Arial', 9))
+        current_info_label.pack(pady=5)
+
+        # New tier selection
+        new_tier_frame = ttk.LabelFrame(main_frame, text="Promote To", padding=15)
+        new_tier_frame.pack(fill='x', pady=10)
+
+        ttk.Label(new_tier_frame, text="New Tier:").grid(row=0, column=0, sticky='w', pady=5)
+        new_tier_var = tk.StringVar()
+        new_tier_combo = ttk.Combobox(new_tier_frame, textvariable=new_tier_var,
+                                     values=['Bronze', 'Silver', 'Gold', 'Platinum'],
+                                     width=30, state='readonly')
+        new_tier_combo.grid(row=0, column=1, pady=5, padx=10)
+
+        ttk.Label(new_tier_frame, text="Reason:*").grid(row=1, column=0, sticky='w', pady=5)
+        reason_entry = ttk.Entry(new_tier_frame, width=50)
+        reason_entry.grid(row=1, column=1, pady=5, padx=10, columnspan=2)
+
+        ttk.Label(new_tier_frame, text="Notes:").grid(row=2, column=0, sticky='nw', pady=5)
+        notes_text = tk.Text(new_tier_frame, height=4, width=50)
+        notes_text.grid(row=2, column=1, pady=5, padx=10)
+
+        def update_customer_info(*args):
+            """Update displayed customer information"""
+            selection = customer_var.get()
+            if selection and selection in customer_data:
+                cust = customer_data[selection]
+                info = f"""
+Customer ID: {cust[0]}
+Name: {cust[1]}
+Current Tier: {cust[2]}
+Loyalty Points: {cust[3]}
+                """.strip()
+                current_info_label.config(text=info)
+
+                # Set default new tier to one above current
+                tier_order = ['Bronze', 'Silver', 'Gold', 'Platinum']
+                current_tier = cust[2]
+                if current_tier in tier_order:
+                    current_idx = tier_order.index(current_tier)
+                    if current_idx < len(tier_order) - 1:
+                        new_tier_combo.set(tier_order[current_idx + 1])
+
+        customer_combo.bind('<<ComboboxSelected>>', update_customer_info)
+
+        def promote_customer():
+            """Execute the tier promotion"""
+            selection = customer_var.get()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a customer")
+                return
+
+            if not new_tier_var.get():
+                messagebox.showwarning("No Tier", "Please select a new tier")
+                return
+
+            if not reason_entry.get().strip():
+                messagebox.showwarning("No Reason", "Please provide a reason for the promotion")
+                return
+
+            cust = customer_data[selection]
+            current_tier = cust[2]
+            new_tier = new_tier_var.get()
+
+            # Validate promotion is an upgrade
+            tier_order = ['Bronze', 'Silver', 'Gold', 'Platinum']
+            if current_tier not in tier_order or new_tier not in tier_order:
+                messagebox.showerror("Error", "Invalid tier selection")
+                return
+
+            current_idx = tier_order.index(current_tier)
+            new_idx = tier_order.index(new_tier)
+
+            if new_idx <= current_idx:
+                messagebox.showerror("Invalid Promotion",
+                                   f"Cannot promote from {current_tier} to {new_tier}.\n"
+                                   f"New tier must be higher than current tier.")
+                return
+
+            # Confirm promotion
+            confirm = messagebox.askyesno("Confirm Promotion",
+                                         f"Promote {cust[1]} from {current_tier} to {new_tier}?\n\n"
+                                         f"Reason: {reason_entry.get()}\n\n"
+                                         f"This action will be recorded in the system.")
+
+            if not confirm:
+                return
+
+            # Get current user
+            current_user = "System"
+            if AUTH_AVAILABLE:
+                try:
+                    from university_system.infrastructure.shared_context import get_auth
+                    auth = get_auth()
+                    if auth.is_logged_in():
+                        current_user = auth.get_current_user().username
+                except:
+                    pass
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Create tier promotions table if it doesn't exist
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS loyalty_tier_promotions (
+                            promotion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            customer_id INTEGER NOT NULL,
+                            old_tier TEXT NOT NULL,
+                            new_tier TEXT NOT NULL,
+                            reason TEXT,
+                            notes TEXT,
+                            promoted_by TEXT,
+                            promotion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (customer_id) REFERENCES restaurant_customers(customer_id)
+                        )
+                    ''')
+
+                    # Update customer tier
+                    cursor.execute('''
+                        UPDATE restaurant_customers
+                        SET loyalty_tier = ?
+                        WHERE customer_id = ?
+                    ''', (new_tier, cust[0]))
+
+                    # Record the promotion
+                    cursor.execute('''
+                        INSERT INTO loyalty_tier_promotions
+                        (customer_id, old_tier, new_tier, reason, notes, promoted_by)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (cust[0], current_tier, new_tier, reason_entry.get(),
+                          notes_text.get('1.0', tk.END).strip(), current_user))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success",
+                                      f"Customer {cust[1]} promoted successfully!\n\n"
+                                      f"{current_tier} → {new_tier}\n"
+                                      f"Promoted by: {current_user}")
+                    promote_dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to promote customer: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Promote Customer",
+                  command=promote_customer).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel",
+                  command=promote_dialog.destroy).pack(side='right', padx=5)
+
+    def award_bonus_points(self, parent_dialog):
+        """Award promotional bonus points to customers"""
+        bonus_dialog = tk.Toplevel(parent_dialog)
+        bonus_dialog.title("Award Bonus Points")
+        bonus_dialog.geometry("800x650")
+        bonus_dialog.transient(parent_dialog)
+        bonus_dialog.grab_set()
+
+        main_frame = ttk.Frame(bonus_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Award Bonus Loyalty Points",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        ttk.Label(main_frame,
+                 text="Award bonus points to customers for promotions, events, or special occasions",
+                 foreground='blue').pack(pady=5)
+
+        # Award type selection
+        type_frame = ttk.LabelFrame(main_frame, text="Award Type", padding=15)
+        type_frame.pack(fill='x', pady=10)
+
+        award_type_var = tk.StringVar(value='individual')
+
+        ttk.Radiobutton(type_frame, text="Individual Customer",
+                       variable=award_type_var, value='individual').pack(anchor='w', pady=2)
+        ttk.Radiobutton(type_frame, text="All Customers in Tier",
+                       variable=award_type_var, value='tier').pack(anchor='w', pady=2)
+        ttk.Radiobutton(type_frame, text="All Customers",
+                       variable=award_type_var, value='all').pack(anchor='w', pady=2)
+
+        # Selection frame (changes based on award type)
+        selection_frame = ttk.LabelFrame(main_frame, text="Select Recipients", padding=15)
+        selection_frame.pack(fill='x', pady=10)
+
+        # Individual customer selection
+        individual_frame = ttk.Frame(selection_frame)
+        ttk.Label(individual_frame, text="Customer:").pack(side='left', padx=5)
+        customer_var = tk.StringVar()
+        customer_combo = ttk.Combobox(individual_frame, textvariable=customer_var,
+                                      width=50, state='readonly')
+        customer_combo.pack(side='left', padx=5)
+
+        # Tier selection
+        tier_frame_inner = ttk.Frame(selection_frame)
+        ttk.Label(tier_frame_inner, text="Tier:").pack(side='left', padx=5)
+        tier_var = tk.StringVar()
+        tier_combo = ttk.Combobox(tier_frame_inner, textvariable=tier_var,
+                                  values=['Bronze', 'Silver', 'Gold', 'Platinum'],
+                                  width=20, state='readonly')
+        tier_combo.pack(side='left', padx=5)
+
+        # All customers frame
+        all_frame = ttk.Frame(selection_frame)
+        ttk.Label(all_frame, text="This will award points to ALL customers in the system",
+                 foreground='red', font=('Arial', 9, 'bold')).pack(pady=5)
+
+        # Load customers
+        customer_data = {}
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT customer_id, name, loyalty_tier, loyalty_points
+                    FROM restaurant_customers
+                    ORDER BY name
+                ''')
+                customers = cursor.fetchall()
+                conn.close()
+
+                for cust in customers:
+                    label = f"{cust[1]} - {cust[2]} ({cust[3]} points)"
+                    customer_data[label] = cust
+                customer_combo['values'] = list(customer_data.keys())
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load customers: {e}")
+
+        def update_selection_ui(*args):
+            """Update UI based on award type selection"""
+            # Hide all frames
+            individual_frame.pack_forget()
+            tier_frame_inner.pack_forget()
+            all_frame.pack_forget()
+
+            # Show appropriate frame
+            if award_type_var.get() == 'individual':
+                individual_frame.pack(fill='x', pady=5)
+            elif award_type_var.get() == 'tier':
+                tier_frame_inner.pack(fill='x', pady=5)
+            else:  # 'all'
+                all_frame.pack(fill='x', pady=5)
+
+        award_type_var.trace('w', update_selection_ui)
+        update_selection_ui()  # Initial setup
+
+        # Points and reason
+        details_frame = ttk.LabelFrame(main_frame, text="Bonus Details", padding=15)
+        details_frame.pack(fill='x', pady=10)
+
+        ttk.Label(details_frame, text="Bonus Points:*").grid(row=0, column=0, sticky='w', pady=5)
+        points_entry = ttk.Entry(details_frame, width=20)
+        points_entry.grid(row=0, column=1, sticky='w', pady=5, padx=10)
+        points_entry.insert(0, "100")
+
+        ttk.Label(details_frame, text="Reason/Campaign:*").grid(row=1, column=0, sticky='w', pady=5)
+        reason_entry = ttk.Entry(details_frame, width=50)
+        reason_entry.grid(row=1, column=1, pady=5, padx=10, columnspan=2)
+
+        ttk.Label(details_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        desc_text = tk.Text(details_frame, height=4, width=50)
+        desc_text.grid(row=2, column=1, pady=5, padx=10)
+
+        # Preview
+        preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding=10)
+        preview_frame.pack(fill='x', pady=10)
+
+        preview_label = ttk.Label(preview_frame, text="Configure award details above",
+                                 font=('Arial', 9))
+        preview_label.pack()
+
+        def update_preview(*args):
+            """Update preview of who will receive points"""
+            try:
+                points = int(points_entry.get() or 0)
+                award_type = award_type_var.get()
+
+                if award_type == 'individual':
+                    if customer_var.get():
+                        cust = customer_data[customer_var.get()]
+                        preview_label.config(
+                            text=f"Will award {points} points to:\n{cust[1]} (Current: {cust[3]} → New: {cust[3] + points})")
+                    else:
+                        preview_label.config(text="Please select a customer")
+
+                elif award_type == 'tier':
+                    if tier_var.get():
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                SELECT COUNT(*) FROM restaurant_customers
+                                WHERE loyalty_tier = ?
+                            ''', (tier_var.get(),))
+                            count = cursor.fetchone()[0]
+                            conn.close()
+                            preview_label.config(
+                                text=f"Will award {points} points to {count} customers in {tier_var.get()} tier")
+                    else:
+                        preview_label.config(text="Please select a tier")
+
+                else:  # 'all'
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT COUNT(*) FROM restaurant_customers")
+                        count = cursor.fetchone()[0]
+                        conn.close()
+                        preview_label.config(
+                            text=f"Will award {points} points to ALL {count} customers")
+
+            except:
+                preview_label.config(text="Configure award details above")
+
+        points_entry.bind('<KeyRelease>', update_preview)
+        customer_var.trace('w', update_preview)
+        tier_var.trace('w', update_preview)
+        award_type_var.trace('w', update_preview)
+
+        def award_points():
+            """Execute the bonus points award"""
+            try:
+                points = int(points_entry.get())
+                if points <= 0:
+                    messagebox.showwarning("Invalid Points", "Points must be greater than 0")
+                    return
+            except ValueError:
+                messagebox.showwarning("Invalid Input", "Please enter a valid number of points")
+                return
+
+            if not reason_entry.get().strip():
+                messagebox.showwarning("Missing Reason", "Please provide a reason for the bonus points")
+                return
+
+            award_type = award_type_var.get()
+
+            # Validate selection
+            if award_type == 'individual' and not customer_var.get():
+                messagebox.showwarning("No Selection", "Please select a customer")
+                return
+            elif award_type == 'tier' and not tier_var.get():
+                messagebox.showwarning("No Selection", "Please select a tier")
+                return
+
+            # Get current user
+            current_user = "System"
+            if AUTH_AVAILABLE:
+                try:
+                    from university_system.infrastructure.shared_context import get_auth
+                    auth = get_auth()
+                    if auth.is_logged_in():
+                        current_user = auth.get_current_user().username
+                except:
+                    pass
+
+            # Confirm award
+            if award_type == 'all':
+                confirm = messagebox.askyesno("Confirm Award",
+                                            f"Award {points} bonus points to ALL customers?\n\n"
+                                            f"Reason: {reason_entry.get()}\n\n"
+                                            f"This cannot be undone.")
+            else:
+                confirm = messagebox.askyesno("Confirm Award",
+                                            f"Award {points} bonus points?\n\n"
+                                            f"Reason: {reason_entry.get()}")
+
+            if not confirm:
+                return
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Create bonus points table if it doesn't exist
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS loyalty_bonus_points (
+                            bonus_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            customer_id INTEGER,
+                            points_awarded INTEGER NOT NULL,
+                            reason TEXT NOT NULL,
+                            description TEXT,
+                            awarded_by TEXT,
+                            award_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (customer_id) REFERENCES restaurant_customers(customer_id)
+                        )
+                    ''')
+
+                    customers_affected = 0
+
+                    if award_type == 'individual':
+                        cust = customer_data[customer_var.get()]
+                        cursor.execute('''
+                            UPDATE restaurant_customers
+                            SET loyalty_points = loyalty_points + ?
+                            WHERE customer_id = ?
+                        ''', (points, cust[0]))
+
+                        cursor.execute('''
+                            INSERT INTO loyalty_bonus_points
+                            (customer_id, points_awarded, reason, description, awarded_by)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (cust[0], points, reason_entry.get(),
+                              desc_text.get('1.0', tk.END).strip(), current_user))
+
+                        customers_affected = 1
+
+                    elif award_type == 'tier':
+                        # Get all customers in tier
+                        cursor.execute('''
+                            SELECT customer_id FROM restaurant_customers
+                            WHERE loyalty_tier = ?
+                        ''', (tier_var.get(),))
+                        tier_customers = cursor.fetchall()
+
+                        for (cust_id,) in tier_customers:
+                            cursor.execute('''
+                                UPDATE restaurant_customers
+                                SET loyalty_points = loyalty_points + ?
+                                WHERE customer_id = ?
+                            ''', (points, cust_id))
+
+                            cursor.execute('''
+                                INSERT INTO loyalty_bonus_points
+                                (customer_id, points_awarded, reason, description, awarded_by)
+                                VALUES (?, ?, ?, ?, ?)
+                            ''', (cust_id, points, reason_entry.get(),
+                                  desc_text.get('1.0', tk.END).strip(), current_user))
+
+                        customers_affected = len(tier_customers)
+
+                    else:  # 'all'
+                        cursor.execute("SELECT customer_id FROM restaurant_customers")
+                        all_customers = cursor.fetchall()
+
+                        for (cust_id,) in all_customers:
+                            cursor.execute('''
+                                UPDATE restaurant_customers
+                                SET loyalty_points = loyalty_points + ?
+                                WHERE customer_id = ?
+                            ''', (points, cust_id))
+
+                            cursor.execute('''
+                                INSERT INTO loyalty_bonus_points
+                                (customer_id, points_awarded, reason, description, awarded_by)
+                                VALUES (?, ?, ?, ?, ?)
+                            ''', (cust_id, points, reason_entry.get(),
+                                  desc_text.get('1.0', tk.END).strip(), current_user))
+
+                        customers_affected = len(all_customers)
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success",
+                                      f"Bonus points awarded successfully!\n\n"
+                                      f"Points Awarded: {points}\n"
+                                      f"Customers Affected: {customers_affected}\n"
+                                      f"Awarded by: {current_user}")
+                    bonus_dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to award bonus points: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Award Points",
+                  command=award_points).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel",
+                  command=bonus_dialog.destroy).pack(side='right', padx=5)
+
     # Tables Functions
     def view_tables_gui(self):
         """Display tables in the treeview"""
@@ -2961,15 +5486,1519 @@ Platinum (1000+ points):
             messagebox.showerror("Error", f"Failed to load inventory: {str(e)}")
             
     def manage_purchase_orders_dialog(self):
-        """Show purchase orders management dialog"""
-        messagebox.showinfo("Purchase Orders",
-            "Purchase Orders Management\n\n" +
-            "This feature would allow you to:\n" +
-            "• Create new purchase orders\n" +
-            "• Track order status (Pending, Approved, Received)\n" +
-            "• Manage supplier orders\n" +
-            "• Update inventory upon receipt\n" +
-            "• Generate order reports")
+        """Comprehensive purchase order management system"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Purchase Orders Management")
+        dialog.geometry("1000x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Purchase Orders Management",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Create purchase orders table if it doesn't exist
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+
+                # Main purchase orders table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS purchase_orders (
+                        po_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        po_number TEXT UNIQUE NOT NULL,
+                        supplier_id INTEGER,
+                        order_date DATE NOT NULL,
+                        expected_delivery DATE,
+                        actual_delivery DATE,
+                        status TEXT DEFAULT 'Pending',
+                        total_amount REAL DEFAULT 0,
+                        tax_amount REAL DEFAULT 0,
+                        shipping_cost REAL DEFAULT 0,
+                        notes TEXT,
+                        ordered_by TEXT,
+                        approved_by TEXT,
+                        received_by TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (supplier_id) REFERENCES restaurant_suppliers(supplier_id)
+                    )
+                ''')
+
+                # Purchase order line items table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS purchase_order_items (
+                        po_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        po_id INTEGER NOT NULL,
+                        item_name TEXT NOT NULL,
+                        description TEXT,
+                        quantity REAL NOT NULL,
+                        unit TEXT,
+                        unit_price REAL NOT NULL,
+                        total_price REAL NOT NULL,
+                        received_quantity REAL DEFAULT 0,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (po_id) REFERENCES purchase_orders(po_id)
+                    )
+                ''')
+
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to initialize purchase orders tables: {e}")
+            dialog.destroy()
+            return
+
+        # Button frame with organized sections
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        # Section 1: Viewing and Creating
+        ttk.Label(btn_frame, text="View & Create:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, columnspan=2, sticky='w', pady=5)
+
+        ttk.Button(btn_frame, text="View All Purchase Orders",
+                  command=lambda: self.view_purchase_orders(dialog)).grid(
+                      row=1, column=0, padx=5, pady=2, sticky='ew')
+
+        ttk.Button(btn_frame, text="Create New Purchase Order",
+                  command=lambda: self.create_purchase_order(dialog)).grid(
+                      row=1, column=1, padx=5, pady=2, sticky='ew')
+
+        # Section 2: Managing
+        ttk.Label(btn_frame, text="Manage Orders:", font=('Arial', 10, 'bold')).grid(
+            row=2, column=0, columnspan=2, sticky='w', pady=(15, 5))
+
+        ttk.Button(btn_frame, text="Update Purchase Order",
+                  command=lambda: self.update_purchase_order(dialog)).grid(
+                      row=3, column=0, padx=5, pady=2, sticky='ew')
+
+        ttk.Button(btn_frame, text="Receive Purchase Order",
+                  command=lambda: self.receive_purchase_order(dialog)).grid(
+                      row=3, column=1, padx=5, pady=2, sticky='ew')
+
+        # Section 3: Reports
+        ttk.Label(btn_frame, text="Reports & Analytics:", font=('Arial', 10, 'bold')).grid(
+            row=4, column=0, columnspan=2, sticky='w', pady=(15, 5))
+
+        ttk.Button(btn_frame, text="Purchase Order Reports",
+                  command=lambda: self.purchase_order_reports(dialog)).grid(
+                      row=5, column=0, columnspan=2, padx=5, pady=2, sticky='ew')
+
+        # Configure column weights for equal button width
+        btn_frame.columnconfigure(0, weight=1)
+        btn_frame.columnconfigure(1, weight=1)
+
+        # Summary statistics frame
+        stats_frame = ttk.LabelFrame(main_frame, text="Purchase Order Statistics", padding=15)
+        stats_frame.pack(fill='x', pady=10)
+
+        def update_stats():
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Total POs
+                    cursor.execute("SELECT COUNT(*) FROM purchase_orders")
+                    total_pos = cursor.fetchone()[0]
+
+                    # Pending POs
+                    cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Pending'")
+                    pending_pos = cursor.fetchone()[0]
+
+                    # Approved POs
+                    cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Approved'")
+                    approved_pos = cursor.fetchone()[0]
+
+                    # Received POs
+                    cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Received'")
+                    received_pos = cursor.fetchone()[0]
+
+                    # Total value
+                    cursor.execute("SELECT SUM(total_amount) FROM purchase_orders WHERE status != 'Cancelled'")
+                    total_value = cursor.fetchone()[0] or 0
+
+                    conn.close()
+
+                    stats_text = (f"Total Purchase Orders: {total_pos} | "
+                                f"Pending: {pending_pos} | "
+                                f"Approved: {approved_pos} | "
+                                f"Received: {received_pos} | "
+                                f"Total Value: £{total_value:,.2f}")
+
+                    stats_label.config(text=stats_text)
+            except Exception as e:
+                stats_label.config(text=f"Error loading statistics: {e}")
+
+        stats_label = ttk.Label(stats_frame, text="Loading statistics...", font=('Arial', 9))
+        stats_label.pack()
+
+        update_stats()
+
+        # Refresh button
+        ttk.Button(main_frame, text="Refresh Statistics",
+                  command=update_stats).pack(pady=10)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def view_purchase_orders(self, parent_dialog):
+        """View all purchase orders with filtering options"""
+        view_dialog = tk.Toplevel(parent_dialog)
+        view_dialog.title("View Purchase Orders")
+        view_dialog.geometry("1200x700")
+        view_dialog.transient(parent_dialog)
+        view_dialog.grab_set()
+
+        main_frame = ttk.Frame(view_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Purchase Orders List",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding=10)
+        filter_frame.pack(fill='x', pady=10)
+
+        filter_row1 = ttk.Frame(filter_frame)
+        filter_row1.pack(fill='x', pady=5)
+
+        ttk.Label(filter_row1, text="Status:").pack(side='left', padx=5)
+        status_var = tk.StringVar(value='All')
+        status_combo = ttk.Combobox(filter_row1, textvariable=status_var,
+                                   values=['All', 'Pending', 'Approved', 'Received', 'Cancelled'],
+                                   width=15, state='readonly')
+        status_combo.pack(side='left', padx=5)
+
+        ttk.Label(filter_row1, text="Supplier:").pack(side='left', padx=5)
+        supplier_var = tk.StringVar(value='All')
+        supplier_combo = ttk.Combobox(filter_row1, textvariable=supplier_var,
+                                     values=['All'], width=20, state='readonly')
+        supplier_combo.pack(side='left', padx=5)
+
+        # Treeview frame
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=10)
+
+        # Scrollbars
+        v_scroll = ttk.Scrollbar(tree_frame, orient='vertical')
+        h_scroll = ttk.Scrollbar(tree_frame, orient='horizontal')
+
+        columns = ('PO#', 'Supplier', 'Order Date', 'Expected', 'Status', 'Total', 'Items', 'Notes')
+        po_tree = ttk.Treeview(tree_frame, columns=columns, show='headings',
+                              yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set, height=20)
+
+        v_scroll.config(command=po_tree.yview)
+        h_scroll.config(command=po_tree.xview)
+
+        # Configure columns
+        column_widths = {'PO#': 100, 'Supplier': 150, 'Order Date': 100, 'Expected': 100,
+                        'Status': 100, 'Total': 100, 'Items': 80, 'Notes': 200}
+
+        for col in columns:
+            po_tree.heading(col, text=col)
+            po_tree.column(col, width=column_widths.get(col, 100))
+
+        po_tree.pack(side='left', fill='both', expand=True)
+        v_scroll.pack(side='right', fill='y')
+        h_scroll.pack(side='bottom', fill='x')
+
+        def load_purchase_orders():
+            # Clear existing items
+            for item in po_tree.get_children():
+                po_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Build query with filters
+                    query = '''
+                        SELECT po.po_number, COALESCE(s.name, 'N/A') as supplier_name,
+                               po.order_date, po.expected_delivery, po.status,
+                               po.total_amount, COUNT(poi.po_item_id) as item_count,
+                               po.notes
+                        FROM purchase_orders po
+                        LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                        LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                        WHERE 1=1
+                    '''
+
+                    params = []
+
+                    if status_var.get() != 'All':
+                        query += ' AND po.status = ?'
+                        params.append(status_var.get())
+
+                    if supplier_var.get() != 'All':
+                        query += ' AND s.name = ?'
+                        params.append(supplier_var.get())
+
+                    query += ' GROUP BY po.po_id ORDER BY po.order_date DESC'
+
+                    cursor.execute(query, params)
+                    orders = cursor.fetchall()
+
+                    for order in orders:
+                        po_tree.insert('', 'end', values=(
+                            order[0],  # PO Number
+                            order[1],  # Supplier
+                            order[2],  # Order Date
+                            order[3] or 'N/A',  # Expected Delivery
+                            order[4],  # Status
+                            f"£{order[5]:,.2f}",  # Total
+                            order[6],  # Item Count
+                            order[7] or ''  # Notes
+                        ))
+
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load purchase orders: {e}")
+
+        def load_suppliers():
+            """Load supplier list for filter"""
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT DISTINCT name FROM restaurant_suppliers ORDER BY name")
+                    suppliers = [row[0] for row in cursor.fetchall()]
+                    supplier_combo['values'] = ['All'] + suppliers
+                    conn.close()
+            except Exception:
+                pass
+
+        def view_po_details():
+            """View detailed information about selected PO"""
+            selection = po_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a purchase order to view details")
+                return
+
+            item = po_tree.item(selection[0])
+            po_number = item['values'][0]
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Get PO header details
+                    cursor.execute('''
+                        SELECT po.*, s.name as supplier_name
+                        FROM purchase_orders po
+                        LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                        WHERE po.po_number = ?
+                    ''', (po_number,))
+                    po_data = cursor.fetchone()
+
+                    # Get PO line items
+                    cursor.execute('''
+                        SELECT item_name, description, quantity, unit, unit_price,
+                               total_price, received_quantity
+                        FROM purchase_order_items
+                        WHERE po_id = ?
+                    ''', (po_data[0],))
+                    items = cursor.fetchall()
+
+                    conn.close()
+
+                    # Create details dialog
+                    details_dialog = tk.Toplevel(view_dialog)
+                    details_dialog.title(f"PO Details - {po_number}")
+                    details_dialog.geometry("800x600")
+                    details_dialog.transient(view_dialog)
+
+                    details_frame = ttk.Frame(details_dialog, padding=20)
+                    details_frame.pack(fill='both', expand=True)
+
+                    # Header info
+                    header_text = f"""
+Purchase Order: {po_data[1]}
+Supplier: {po_data[14]}
+Order Date: {po_data[3]}
+Expected Delivery: {po_data[4] or 'Not specified'}
+Actual Delivery: {po_data[5] or 'Not delivered'}
+Status: {po_data[6]}
+
+Total Amount: £{po_data[7]:,.2f}
+Tax Amount: £{po_data[8]:,.2f}
+Shipping Cost: £{po_data[9]:,.2f}
+
+Ordered By: {po_data[11] or 'N/A'}
+Approved By: {po_data[12] or 'Not approved'}
+Received By: {po_data[13] or 'Not received'}
+
+Notes: {po_data[10] or 'None'}
+                    """.strip()
+
+                    ttk.Label(details_frame, text=header_text, justify='left',
+                             font=('Courier', 9)).pack(pady=10)
+
+                    # Items list
+                    ttk.Label(details_frame, text="Line Items:", font=('Arial', 10, 'bold')).pack(pady=5)
+
+                    items_tree = ttk.Treeview(details_frame,
+                                            columns=('Item', 'Qty', 'Unit', 'Price', 'Total', 'Received'),
+                                            show='headings', height=15)
+
+                    for col in ('Item', 'Qty', 'Unit', 'Price', 'Total', 'Received'):
+                        items_tree.heading(col, text=col)
+                        items_tree.column(col, width=120)
+
+                    for item in items:
+                        items_tree.insert('', 'end', values=(
+                            f"{item[0]} - {item[1] or ''}",
+                            item[2],
+                            item[3],
+                            f"£{item[4]:.2f}",
+                            f"£{item[5]:.2f}",
+                            item[6]
+                        ))
+
+                    items_tree.pack(fill='both', expand=True)
+
+                    ttk.Button(details_frame, text="Close",
+                              command=details_dialog.destroy).pack(pady=10)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load PO details: {e}")
+
+        # Load data
+        load_suppliers()
+        load_purchase_orders()
+
+        # Button frame
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Apply Filters", command=load_purchase_orders).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="View Details", command=view_po_details).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=load_purchase_orders).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=view_dialog.destroy).pack(side='right', padx=5)
+
+    def create_purchase_order(self, parent_dialog):
+        """Create a new purchase order with items"""
+        create_dialog = tk.Toplevel(parent_dialog)
+        create_dialog.title("Create Purchase Order")
+        create_dialog.geometry("900x700")
+        create_dialog.transient(parent_dialog)
+        create_dialog.grab_set()
+
+        main_frame = ttk.Frame(create_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Create New Purchase Order",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # PO Header Form
+        header_frame = ttk.LabelFrame(main_frame, text="Purchase Order Details", padding=15)
+        header_frame.pack(fill='x', pady=10)
+
+        fields = {}
+
+        # Row 1: PO Number and Supplier
+        row1 = ttk.Frame(header_frame)
+        row1.pack(fill='x', pady=5)
+
+        ttk.Label(row1, text="PO Number:*").pack(side='left', padx=5)
+        fields['po_number'] = ttk.Entry(row1, width=20)
+        fields['po_number'].pack(side='left', padx=5)
+        # Auto-generate PO number
+        fields['po_number'].insert(0, f"PO-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+
+        ttk.Label(row1, text="Supplier:*").pack(side='left', padx=20)
+        fields['supplier'] = ttk.Combobox(row1, width=30, state='readonly')
+        fields['supplier'].pack(side='left', padx=5)
+
+        # Load suppliers
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT supplier_id, name FROM restaurant_suppliers WHERE status = 'Active'")
+                suppliers = cursor.fetchall()
+                supplier_dict = {f"{s[1]} (ID: {s[0]})": s[0] for s in suppliers}
+                fields['supplier']['values'] = list(supplier_dict.keys())
+                fields['supplier_dict'] = supplier_dict
+                conn.close()
+        except Exception:
+            pass
+
+        # Row 2: Dates
+        row2 = ttk.Frame(header_frame)
+        row2.pack(fill='x', pady=5)
+
+        ttk.Label(row2, text="Order Date:*").pack(side='left', padx=5)
+        fields['order_date'] = ttk.Entry(row2, width=15)
+        fields['order_date'].pack(side='left', padx=5)
+        fields['order_date'].insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(row2, text="Expected Delivery:").pack(side='left', padx=20)
+        fields['expected_date'] = ttk.Entry(row2, width=15)
+        fields['expected_date'].pack(side='left', padx=5)
+        # Default to 7 days from now
+        fields['expected_date'].insert(0, (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d'))
+
+        # Row 3: Additional costs
+        row3 = ttk.Frame(header_frame)
+        row3.pack(fill='x', pady=5)
+
+        ttk.Label(row3, text="Shipping Cost (£):").pack(side='left', padx=5)
+        fields['shipping'] = ttk.Entry(row3, width=15)
+        fields['shipping'].pack(side='left', padx=5)
+        fields['shipping'].insert(0, "0.00")
+
+        ttk.Label(row3, text="Tax Rate (%):").pack(side='left', padx=20)
+        fields['tax_rate'] = ttk.Entry(row3, width=15)
+        fields['tax_rate'].pack(side='left', padx=5)
+        fields['tax_rate'].insert(0, "20.0")
+
+        # Row 4: Notes
+        row4 = ttk.Frame(header_frame)
+        row4.pack(fill='x', pady=5)
+
+        ttk.Label(row4, text="Notes:").pack(side='left', padx=5)
+        fields['notes'] = ttk.Entry(row4, width=60)
+        fields['notes'].pack(side='left', padx=5)
+
+        # Items Section
+        items_frame = ttk.LabelFrame(main_frame, text="Order Items", padding=15)
+        items_frame.pack(fill='both', expand=True, pady=10)
+
+        # Items list storage
+        po_items = []
+
+        # Items treeview
+        items_tree = ttk.Treeview(items_frame,
+                                 columns=('Item', 'Description', 'Qty', 'Unit', 'Price', 'Total'),
+                                 show='headings', height=10)
+
+        for col in ('Item', 'Description', 'Qty', 'Unit', 'Price', 'Total'):
+            items_tree.heading(col, text=col)
+            items_tree.column(col, width=120)
+
+        items_tree.pack(fill='both', expand=True, pady=5)
+
+        def add_item():
+            """Add item to PO"""
+            item_dialog = tk.Toplevel(create_dialog)
+            item_dialog.title("Add Item")
+            item_dialog.geometry("500x400")
+            item_dialog.transient(create_dialog)
+            item_dialog.grab_set()
+
+            item_frame = ttk.Frame(item_dialog, padding=20)
+            item_frame.pack(fill='both', expand=True)
+
+            item_fields = {}
+
+            ttk.Label(item_frame, text="Item Name:*").grid(row=0, column=0, sticky='w', pady=5)
+            item_fields['name'] = ttk.Entry(item_frame, width=40)
+            item_fields['name'].grid(row=0, column=1, pady=5, padx=10)
+
+            ttk.Label(item_frame, text="Description:").grid(row=1, column=0, sticky='w', pady=5)
+            item_fields['desc'] = ttk.Entry(item_frame, width=40)
+            item_fields['desc'].grid(row=1, column=1, pady=5, padx=10)
+
+            ttk.Label(item_frame, text="Quantity:*").grid(row=2, column=0, sticky='w', pady=5)
+            item_fields['qty'] = ttk.Entry(item_frame, width=40)
+            item_fields['qty'].grid(row=2, column=1, pady=5, padx=10)
+
+            ttk.Label(item_frame, text="Unit:").grid(row=3, column=0, sticky='w', pady=5)
+            item_fields['unit'] = ttk.Combobox(item_frame,
+                                              values=['kg', 'L', 'pieces', 'boxes', 'cases', 'units'],
+                                              width=38)
+            item_fields['unit'].grid(row=3, column=1, pady=5, padx=10)
+            item_fields['unit'].current(0)
+
+            ttk.Label(item_frame, text="Unit Price (£):*").grid(row=4, column=0, sticky='w', pady=5)
+            item_fields['price'] = ttk.Entry(item_frame, width=40)
+            item_fields['price'].grid(row=4, column=1, pady=5, padx=10)
+
+            ttk.Label(item_frame, text="Total:").grid(row=5, column=0, sticky='w', pady=5)
+            total_label = ttk.Label(item_frame, text="£0.00", font=('Arial', 10, 'bold'))
+            total_label.grid(row=5, column=1, sticky='w', pady=5, padx=10)
+
+            def update_total(*args):
+                try:
+                    qty = float(item_fields['qty'].get() or 0)
+                    price = float(item_fields['price'].get() or 0)
+                    total = qty * price
+                    total_label.config(text=f"£{total:.2f}")
+                except:
+                    total_label.config(text="£0.00")
+
+            item_fields['qty'].bind('<KeyRelease>', update_total)
+            item_fields['price'].bind('<KeyRelease>', update_total)
+
+            def save_item():
+                try:
+                    if not item_fields['name'].get().strip():
+                        messagebox.showwarning("Missing Info", "Item name is required")
+                        return
+
+                    qty = float(item_fields['qty'].get())
+                    price = float(item_fields['price'].get())
+                    total = qty * price
+
+                    item = {
+                        'name': item_fields['name'].get().strip(),
+                        'desc': item_fields['desc'].get().strip(),
+                        'qty': qty,
+                        'unit': item_fields['unit'].get(),
+                        'price': price,
+                        'total': total
+                    }
+
+                    po_items.append(item)
+                    items_tree.insert('', 'end', values=(
+                        item['name'],
+                        item['desc'],
+                        item['qty'],
+                        item['unit'],
+                        f"£{item['price']:.2f}",
+                        f"£{item['total']:.2f}"
+                    ))
+
+                    update_order_total()
+                    item_dialog.destroy()
+
+                except ValueError:
+                    messagebox.showerror("Invalid Input", "Please enter valid numbers for quantity and price")
+
+            btn_frame = ttk.Frame(item_frame)
+            btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
+
+            ttk.Button(btn_frame, text="Add Item", command=save_item).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Cancel", command=item_dialog.destroy).pack(side='left', padx=5)
+
+        def remove_item():
+            """Remove selected item"""
+            selection = items_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select an item to remove")
+                return
+
+            index = items_tree.index(selection[0])
+            po_items.pop(index)
+            items_tree.delete(selection[0])
+            update_order_total()
+
+        # Total display
+        total_frame = ttk.Frame(items_frame)
+        total_frame.pack(fill='x', pady=5)
+
+        total_label = ttk.Label(total_frame, text="Subtotal: £0.00 | Tax: £0.00 | Shipping: £0.00 | Total: £0.00",
+                               font=('Arial', 10, 'bold'))
+        total_label.pack()
+
+        def update_order_total():
+            try:
+                subtotal = sum(item['total'] for item in po_items)
+                shipping = float(fields['shipping'].get() or 0)
+                tax_rate = float(fields['tax_rate'].get() or 0) / 100
+                tax = subtotal * tax_rate
+                total = subtotal + tax + shipping
+
+                total_label.config(text=f"Subtotal: £{subtotal:.2f} | Tax: £{tax:.2f} | "
+                                      f"Shipping: £{shipping:.2f} | Total: £{total:.2f}")
+            except:
+                pass
+
+        fields['shipping'].bind('<KeyRelease>', lambda e: update_order_total())
+        fields['tax_rate'].bind('<KeyRelease>', lambda e: update_order_total())
+
+        # Item buttons
+        item_btn_frame = ttk.Frame(items_frame)
+        item_btn_frame.pack(fill='x', pady=5)
+
+        ttk.Button(item_btn_frame, text="Add Item", command=add_item).pack(side='left', padx=5)
+        ttk.Button(item_btn_frame, text="Remove Item", command=remove_item).pack(side='left', padx=5)
+
+        # Save PO
+        def save_purchase_order():
+            try:
+                # Validation
+                if not fields['po_number'].get().strip():
+                    messagebox.showwarning("Missing Info", "PO Number is required")
+                    return
+
+                if not fields['supplier'].get():
+                    messagebox.showwarning("Missing Info", "Please select a supplier")
+                    return
+
+                if not po_items:
+                    messagebox.showwarning("Missing Items", "Please add at least one item to the purchase order")
+                    return
+
+                # Get supplier ID
+                supplier_id = fields['supplier_dict'][fields['supplier'].get()]
+
+                # Calculate totals
+                subtotal = sum(item['total'] for item in po_items)
+                shipping = float(fields['shipping'].get() or 0)
+                tax_rate = float(fields['tax_rate'].get() or 0) / 100
+                tax = subtotal * tax_rate
+                total = subtotal + tax + shipping
+
+                # Get current user
+                current_user = "System"
+                if AUTH_AVAILABLE:
+                    try:
+                        from university_system.infrastructure.shared_context import get_auth
+                        auth = get_auth()
+                        if auth.is_logged_in():
+                            current_user = auth.get_current_user().username
+                    except:
+                        pass
+
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+
+                    # Insert PO header
+                    cursor.execute('''
+                        INSERT INTO purchase_orders
+                        (po_number, supplier_id, order_date, expected_delivery,
+                         total_amount, tax_amount, shipping_cost, notes, ordered_by, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+                    ''', (fields['po_number'].get().strip(),
+                          supplier_id,
+                          fields['order_date'].get(),
+                          fields['expected_date'].get() or None,
+                          total,
+                          tax,
+                          shipping,
+                          fields['notes'].get().strip() or None,
+                          current_user))
+
+                    po_id = cursor.lastrowid
+
+                    # Insert line items
+                    for item in po_items:
+                        cursor.execute('''
+                            INSERT INTO purchase_order_items
+                            (po_id, item_name, description, quantity, unit, unit_price, total_price)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (po_id, item['name'], item['desc'], item['qty'],
+                              item['unit'], item['price'], item['total']))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success",
+                                      f"Purchase Order {fields['po_number'].get()} created successfully!\n\n"
+                                      f"Total: £{total:,.2f}\n"
+                                      f"Items: {len(po_items)}")
+                    create_dialog.destroy()
+
+            except sqlite3.IntegrityError:
+                messagebox.showerror("Error", "PO Number already exists. Please use a unique PO number.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create purchase order: {e}")
+
+        # Bottom buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Save Purchase Order",
+                  command=save_purchase_order).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel",
+                  command=create_dialog.destroy).pack(side='right', padx=5)
+
+    def update_purchase_order(self, parent_dialog):
+        """Update an existing purchase order"""
+        # First, select which PO to update
+        select_dialog = tk.Toplevel(parent_dialog)
+        select_dialog.title("Select Purchase Order to Update")
+        select_dialog.geometry("800x500")
+        select_dialog.transient(parent_dialog)
+        select_dialog.grab_set()
+
+        main_frame = ttk.Frame(select_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Select Purchase Order to Update",
+                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+        # Only show Pending or Approved POs
+        ttk.Label(main_frame, text="Only Pending and Approved purchase orders can be updated",
+                 foreground='blue').pack(pady=5)
+
+        # PO list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=10)
+
+        columns = ('PO#', 'Supplier', 'Date', 'Status', 'Total', 'Items')
+        po_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            po_tree.heading(col, text=col)
+            po_tree.column(col, width=120)
+
+        po_tree.pack(fill='both', expand=True)
+
+        def load_pos():
+            for item in po_tree.get_children():
+                po_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT po.po_id, po.po_number, COALESCE(s.name, 'N/A'),
+                               po.order_date, po.status, po.total_amount,
+                               COUNT(poi.po_item_id)
+                        FROM purchase_orders po
+                        LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                        LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                        WHERE po.status IN ('Pending', 'Approved')
+                        GROUP BY po.po_id
+                        ORDER BY po.order_date DESC
+                    ''')
+                    pos = cursor.fetchall()
+
+                    for po in pos:
+                        po_tree.insert('', 'end', values=(
+                            po[1],  # PO Number
+                            po[2],  # Supplier
+                            po[3],  # Date
+                            po[4],  # Status
+                            f"£{po[5]:,.2f}",  # Total
+                            po[6]  # Items
+                        ), tags=(po[0],))  # Store PO ID in tags
+
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load purchase orders: {e}")
+
+        load_pos()
+
+        def proceed_to_update():
+            selection = po_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a purchase order to update")
+                return
+
+            po_id = po_tree.item(selection[0])['tags'][0]
+            select_dialog.destroy()
+            show_update_dialog(po_id)
+
+        def show_update_dialog(po_id):
+            """Show update dialog for selected PO"""
+            update_dialog = tk.Toplevel(parent_dialog)
+            update_dialog.title("Update Purchase Order")
+            update_dialog.geometry("700x600")
+            update_dialog.transient(parent_dialog)
+            update_dialog.grab_set()
+
+            main_frame = ttk.Frame(update_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Update Purchase Order",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Load current PO data
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT po.*, s.name
+                    FROM purchase_orders po
+                    LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                    WHERE po.po_id = ?
+                ''', (po_id,))
+                po_data = cursor.fetchone()
+                conn.close()
+
+                if not po_data:
+                    messagebox.showerror("Error", "Purchase order not found")
+                    update_dialog.destroy()
+                    return
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load PO data: {e}")
+                update_dialog.destroy()
+                return
+
+            # Update form
+            form_frame = ttk.LabelFrame(main_frame, text="Update Fields", padding=15)
+            form_frame.pack(fill='both', expand=True, pady=10)
+
+            fields = {}
+
+            # PO Number (read-only)
+            row = 0
+            ttk.Label(form_frame, text="PO Number:").grid(row=row, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=po_data[1], font=('Arial', 10, 'bold')).grid(
+                row=row, column=1, sticky='w', pady=5, padx=10)
+
+            # Status
+            row += 1
+            ttk.Label(form_frame, text="Status:*").grid(row=row, column=0, sticky='w', pady=5)
+            fields['status'] = ttk.Combobox(form_frame,
+                                          values=['Pending', 'Approved', 'Cancelled'],
+                                          width=30, state='readonly')
+            fields['status'].grid(row=row, column=1, sticky='w', pady=5, padx=10)
+            fields['status'].set(po_data[6])
+
+            # Expected Delivery
+            row += 1
+            ttk.Label(form_frame, text="Expected Delivery:").grid(row=row, column=0, sticky='w', pady=5)
+            fields['expected'] = ttk.Entry(form_frame, width=32)
+            fields['expected'].grid(row=row, column=1, sticky='w', pady=5, padx=10)
+            fields['expected'].insert(0, po_data[4] or '')
+
+            # Shipping Cost
+            row += 1
+            ttk.Label(form_frame, text="Shipping Cost (£):").grid(row=row, column=0, sticky='w', pady=5)
+            fields['shipping'] = ttk.Entry(form_frame, width=32)
+            fields['shipping'].grid(row=row, column=1, sticky='w', pady=5, padx=10)
+            fields['shipping'].insert(0, f"{po_data[9]:.2f}")
+
+            # Notes
+            row += 1
+            ttk.Label(form_frame, text="Notes:").grid(row=row, column=0, sticky='nw', pady=5)
+            fields['notes'] = tk.Text(form_frame, height=4, width=32)
+            fields['notes'].grid(row=row, column=1, pady=5, padx=10)
+            if po_data[10]:
+                fields['notes'].insert('1.0', po_data[10])
+
+            # Current info display
+            row += 1
+            info_text = f"""
+Current Information:
+Supplier: {po_data[15]}
+Order Date: {po_data[3]}
+Total Amount: £{po_data[7]:,.2f}
+Tax Amount: £{po_data[8]:,.2f}
+Ordered By: {po_data[11] or 'N/A'}
+            """.strip()
+            ttk.Label(form_frame, text=info_text, justify='left', foreground='blue').grid(
+                row=row, column=0, columnspan=2, sticky='w', pady=10)
+
+            def save_updates():
+                try:
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+
+                        cursor.execute('''
+                            UPDATE purchase_orders
+                            SET status = ?,
+                                expected_delivery = ?,
+                                shipping_cost = ?,
+                                notes = ?
+                            WHERE po_id = ?
+                        ''', (fields['status'].get(),
+                              fields['expected'].get() or None,
+                              float(fields['shipping'].get() or 0),
+                              fields['notes'].get('1.0', tk.END).strip() or None,
+                              po_id))
+
+                        conn.commit()
+                        conn.close()
+
+                        messagebox.showinfo("Success", "Purchase order updated successfully!")
+                        update_dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update purchase order: {e}")
+
+            # Buttons
+            btn_frame = ttk.Frame(form_frame)
+            btn_frame.grid(row=row+1, column=0, columnspan=2, pady=20)
+
+            ttk.Button(btn_frame, text="Save Updates", command=save_updates).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Cancel", command=update_dialog.destroy).pack(side='left', padx=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Update Selected", command=proceed_to_update).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=load_pos).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=select_dialog.destroy).pack(side='right', padx=5)
+
+    def receive_purchase_order(self, parent_dialog):
+        """Mark purchase order as received and optionally update inventory"""
+        # Select PO to receive
+        select_dialog = tk.Toplevel(parent_dialog)
+        select_dialog.title("Receive Purchase Order")
+        select_dialog.geometry("900x600")
+        select_dialog.transient(parent_dialog)
+        select_dialog.grab_set()
+
+        main_frame = ttk.Frame(select_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Receive Purchase Order",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        ttk.Label(main_frame, text="Select an Approved purchase order to receive",
+                 foreground='blue').pack(pady=5)
+
+        # PO list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=10)
+
+        columns = ('PO#', 'Supplier', 'Order Date', 'Expected', 'Total', 'Items')
+        po_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            po_tree.heading(col, text=col)
+            po_tree.column(col, width=130)
+
+        po_tree.pack(fill='both', expand=True)
+
+        def load_approved_pos():
+            for item in po_tree.get_children():
+                po_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT po.po_id, po.po_number, COALESCE(s.name, 'N/A'),
+                               po.order_date, po.expected_delivery, po.total_amount,
+                               COUNT(poi.po_item_id)
+                        FROM purchase_orders po
+                        LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                        LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                        WHERE po.status = 'Approved'
+                        GROUP BY po.po_id
+                        ORDER BY po.expected_delivery
+                    ''')
+                    pos = cursor.fetchall()
+
+                    for po in pos:
+                        po_tree.insert('', 'end', values=(
+                            po[1],  # PO Number
+                            po[2],  # Supplier
+                            po[3],  # Order Date
+                            po[4] or 'N/A',  # Expected
+                            f"£{po[5]:,.2f}",  # Total
+                            po[6]  # Items
+                        ), tags=(po[0],))
+
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load purchase orders: {e}")
+
+        load_approved_pos()
+
+        def proceed_to_receive():
+            selection = po_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a purchase order to receive")
+                return
+
+            po_id = po_tree.item(selection[0])['tags'][0]
+            po_number = po_tree.item(selection[0])['values'][0]
+            select_dialog.destroy()
+            show_receive_dialog(po_id, po_number)
+
+        def show_receive_dialog(po_id, po_number):
+            """Show receiving dialog with item quantities"""
+            receive_dialog = tk.Toplevel(parent_dialog)
+            receive_dialog.title(f"Receive PO - {po_number}")
+            receive_dialog.geometry("900x700")
+            receive_dialog.transient(parent_dialog)
+            receive_dialog.grab_set()
+
+            main_frame = ttk.Frame(receive_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Receive Purchase Order: {po_number}",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Instructions
+            ttk.Label(main_frame,
+                     text="Enter the actual quantity received for each item (defaults to ordered quantity)",
+                     foreground='blue').pack(pady=5)
+
+            # Load PO items
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT po_item_id, item_name, description, quantity, unit
+                    FROM purchase_order_items
+                    WHERE po_id = ?
+                ''', (po_id,))
+                items = cursor.fetchall()
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load items: {e}")
+                receive_dialog.destroy()
+                return
+
+            # Items frame with scrollbar
+            items_frame = ttk.LabelFrame(main_frame, text="Items to Receive", padding=15)
+            items_frame.pack(fill='both', expand=True, pady=10)
+
+            canvas = tk.Canvas(items_frame)
+            scrollbar = ttk.Scrollbar(items_frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas)
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            # Header row
+            ttk.Label(scrollable_frame, text="Item", font=('Arial', 9, 'bold'),
+                     width=25).grid(row=0, column=0, padx=5, pady=5)
+            ttk.Label(scrollable_frame, text="Ordered Qty", font=('Arial', 9, 'bold'),
+                     width=15).grid(row=0, column=1, padx=5, pady=5)
+            ttk.Label(scrollable_frame, text="Received Qty", font=('Arial', 9, 'bold'),
+                     width=15).grid(row=0, column=2, padx=5, pady=5)
+            ttk.Label(scrollable_frame, text="Unit", font=('Arial', 9, 'bold'),
+                     width=10).grid(row=0, column=3, padx=5, pady=5)
+
+            # Create entry fields for each item
+            item_entries = {}
+            for idx, item in enumerate(items, start=1):
+                item_id, name, desc, qty, unit = item
+
+                # Item name
+                display_name = f"{name}\n{desc}" if desc else name
+                ttk.Label(scrollable_frame, text=display_name, width=25,
+                         wraplength=180).grid(row=idx, column=0, padx=5, pady=5, sticky='w')
+
+                # Ordered quantity
+                ttk.Label(scrollable_frame, text=str(qty), width=15).grid(
+                    row=idx, column=1, padx=5, pady=5)
+
+                # Received quantity entry
+                rec_entry = ttk.Entry(scrollable_frame, width=15)
+                rec_entry.grid(row=idx, column=2, padx=5, pady=5)
+                rec_entry.insert(0, str(qty))  # Default to ordered quantity
+                item_entries[item_id] = rec_entry
+
+                # Unit
+                ttk.Label(scrollable_frame, text=unit, width=10).grid(
+                    row=idx, column=3, padx=5, pady=5)
+
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+            # Receiving details
+            details_frame = ttk.Frame(main_frame)
+            details_frame.pack(fill='x', pady=10)
+
+            ttk.Label(details_frame, text="Received By:").pack(side='left', padx=5)
+            received_by = ttk.Entry(details_frame, width=20)
+            received_by.pack(side='left', padx=5)
+
+            # Get current user
+            current_user = "System"
+            if AUTH_AVAILABLE:
+                try:
+                    from university_system.infrastructure.shared_context import get_auth
+                    auth = get_auth()
+                    if auth.is_logged_in():
+                        current_user = auth.get_current_user().username
+                except:
+                    pass
+            received_by.insert(0, current_user)
+
+            ttk.Label(details_frame, text="Received Date:").pack(side='left', padx=20)
+            received_date = ttk.Entry(details_frame, width=15)
+            received_date.pack(side='left', padx=5)
+            received_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+            # Update inventory checkbox
+            update_inv_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(main_frame, text="Update inventory quantities",
+                          variable=update_inv_var).pack(pady=5)
+
+            def save_receipt():
+                try:
+                    conn = get_db_connection()
+                    if not conn:
+                        return
+
+                    cursor = conn.cursor()
+
+                    # Update PO status
+                    cursor.execute('''
+                        UPDATE purchase_orders
+                        SET status = 'Received',
+                            actual_delivery = ?,
+                            received_by = ?
+                        WHERE po_id = ?
+                    ''', (received_date.get(), received_by.get(), po_id))
+
+                    # Update received quantities for each item
+                    for item_id, entry in item_entries.items():
+                        received_qty = float(entry.get() or 0)
+                        cursor.execute('''
+                            UPDATE purchase_order_items
+                            SET received_quantity = ?
+                            WHERE po_item_id = ?
+                        ''', (received_qty, item_id))
+
+                    # Optionally update inventory
+                    if update_inv_var.get():
+                        for item_id, entry in item_entries.items():
+                            received_qty = float(entry.get() or 0)
+
+                            # Get item name
+                            cursor.execute('''
+                                SELECT item_name FROM purchase_order_items
+                                WHERE po_item_id = ?
+                            ''', (item_id,))
+                            item_name = cursor.fetchone()[0]
+
+                            # Check if item exists in inventory
+                            cursor.execute('''
+                                SELECT item_id, quantity FROM restaurant_inventory
+                                WHERE LOWER(item_name) = LOWER(?)
+                            ''', (item_name,))
+                            existing = cursor.fetchone()
+
+                            if existing:
+                                # Update existing inventory
+                                new_qty = existing[1] + received_qty
+                                cursor.execute('''
+                                    UPDATE restaurant_inventory
+                                    SET quantity = ?,
+                                        last_updated = CURRENT_TIMESTAMP
+                                    WHERE item_id = ?
+                                ''', (new_qty, existing[0]))
+                            # If not in inventory, could add here but skipping for safety
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success",
+                                      f"Purchase Order {po_number} marked as received!\n\n"
+                                      f"Received by: {received_by.get()}\n"
+                                      f"Date: {received_date.get()}")
+                    receive_dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to receive purchase order: {e}")
+
+            # Buttons
+            btn_frame = ttk.Frame(main_frame)
+            btn_frame.pack(fill='x', pady=10)
+
+            ttk.Button(btn_frame, text="Complete Receipt",
+                      command=save_receipt).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Cancel",
+                      command=receive_dialog.destroy).pack(side='right', padx=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        ttk.Button(btn_frame, text="Receive Selected", command=proceed_to_receive).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Refresh", command=load_approved_pos).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=select_dialog.destroy).pack(side='right', padx=5)
+
+    def purchase_order_reports(self, parent_dialog):
+        """Generate various purchase order reports and analytics"""
+        reports_dialog = tk.Toplevel(parent_dialog)
+        reports_dialog.title("Purchase Order Reports")
+        reports_dialog.geometry("900x700")
+        reports_dialog.transient(parent_dialog)
+        reports_dialog.grab_set()
+
+        main_frame = ttk.Frame(reports_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Purchase Order Reports & Analytics",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Report options
+        reports_frame = ttk.LabelFrame(main_frame, text="Available Reports", padding=15)
+        reports_frame.pack(fill='both', expand=True, pady=10)
+
+        # Report output area
+        output_frame = ttk.LabelFrame(main_frame, text="Report Output", padding=10)
+        output_frame.pack(fill='both', expand=True, pady=10)
+
+        output_text = ScrolledText(output_frame, height=20, width=100, font=('Courier', 9))
+        output_text.pack(fill='both', expand=True)
+
+        def generate_summary_report():
+            """Overall PO summary statistics"""
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+
+                # Get statistics
+                cursor.execute("SELECT COUNT(*) FROM purchase_orders")
+                total_pos = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Pending'")
+                pending = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Approved'")
+                approved = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Received'")
+                received = cursor.fetchone()[0]
+
+                cursor.execute("SELECT COUNT(*) FROM purchase_orders WHERE status = 'Cancelled'")
+                cancelled = cursor.fetchone()[0]
+
+                cursor.execute("SELECT SUM(total_amount) FROM purchase_orders WHERE status != 'Cancelled'")
+                total_value = cursor.fetchone()[0] or 0
+
+                cursor.execute("SELECT AVG(total_amount) FROM purchase_orders WHERE status != 'Cancelled'")
+                avg_value = cursor.fetchone()[0] or 0
+
+                cursor.execute('''
+                    SELECT s.name, COUNT(po.po_id), SUM(po.total_amount)
+                    FROM purchase_orders po
+                    JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                    WHERE po.status != 'Cancelled'
+                    GROUP BY s.name
+                    ORDER BY SUM(po.total_amount) DESC
+                    LIMIT 5
+                ''')
+                top_suppliers = cursor.fetchall()
+
+                conn.close()
+
+                # Generate report
+                report = f"""
+{'='*80}
+                    PURCHASE ORDER SUMMARY REPORT
+                    Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{'='*80}
+
+OVERALL STATISTICS:
+------------------
+Total Purchase Orders:     {total_pos}
+  - Pending:              {pending}
+  - Approved:             {approved}
+  - Received:             {received}
+  - Cancelled:            {cancelled}
+
+FINANCIAL SUMMARY:
+-----------------
+Total Value (excl. cancelled):  £{total_value:,.2f}
+Average PO Value:               £{avg_value:,.2f}
+
+TOP 5 SUPPLIERS BY VALUE:
+------------------------
+"""
+                for idx, (supplier, count, value) in enumerate(top_suppliers, 1):
+                    report += f"{idx}. {supplier:<30} POs: {count:>3}  Value: £{value:>10,.2f}\n"
+
+                report += "\n" + "="*80 + "\n"
+
+                output_text.delete('1.0', tk.END)
+                output_text.insert('1.0', report)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+        def generate_status_report():
+            """Detailed report by status"""
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+
+                report = f"""
+{'='*80}
+                    PURCHASE ORDERS BY STATUS
+                    Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{'='*80}
+
+"""
+
+                for status in ['Pending', 'Approved', 'Received', 'Cancelled']:
+                    cursor.execute('''
+                        SELECT po.po_number, s.name, po.order_date, po.total_amount
+                        FROM purchase_orders po
+                        LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                        WHERE po.status = ?
+                        ORDER BY po.order_date DESC
+                    ''', (status,))
+                    pos = cursor.fetchall()
+
+                    report += f"\n{status.upper()} PURCHASE ORDERS ({len(pos)}):\n"
+                    report += "-" * 80 + "\n"
+
+                    if pos:
+                        report += f"{'PO Number':<20} {'Supplier':<25} {'Date':<12} {'Amount':>12}\n"
+                        report += "-" * 80 + "\n"
+                        for po in pos:
+                            report += f"{po[0]:<20} {(po[1] or 'N/A'):<25} {po[2]:<12} £{po[3]:>10,.2f}\n"
+                    else:
+                        report += "No purchase orders with this status\n"
+
+                    report += "\n"
+
+                conn.close()
+
+                report += "="*80 + "\n"
+
+                output_text.delete('1.0', tk.END)
+                output_text.insert('1.0', report)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+        def generate_supplier_report():
+            """Report by supplier"""
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT s.name, s.supplier_id
+                    FROM restaurant_suppliers s
+                    ORDER BY s.name
+                ''')
+                suppliers = cursor.fetchall()
+
+                report = f"""
+{'='*80}
+                    PURCHASE ORDERS BY SUPPLIER
+                    Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{'='*80}
+
+"""
+
+                for supplier_name, supplier_id in suppliers:
+                    cursor.execute('''
+                        SELECT COUNT(*), SUM(total_amount), AVG(total_amount)
+                        FROM purchase_orders
+                        WHERE supplier_id = ? AND status != 'Cancelled'
+                    ''', (supplier_id,))
+                    stats = cursor.fetchone()
+                    count, total, avg = stats[0], stats[1] or 0, stats[2] or 0
+
+                    cursor.execute('''
+                        SELECT po_number, order_date, status, total_amount
+                        FROM purchase_orders
+                        WHERE supplier_id = ?
+                        ORDER BY order_date DESC
+                        LIMIT 5
+                    ''', (supplier_id,))
+                    recent_pos = cursor.fetchall()
+
+                    report += f"\n{supplier_name.upper()}\n"
+                    report += "-" * 80 + "\n"
+                    report += f"Total POs: {count}  |  Total Value: £{total:,.2f}  |  Avg Value: £{avg:,.2f}\n\n"
+
+                    if recent_pos:
+                        report += f"{'Recent POs:':<20} {'Date':<12} {'Status':<12} {'Amount':>12}\n"
+                        report += "-" * 80 + "\n"
+                        for po in recent_pos:
+                            report += f"{po[0]:<20} {po[1]:<12} {po[2]:<12} £{po[3]:>10,.2f}\n"
+                    else:
+                        report += "No purchase orders for this supplier\n"
+
+                    report += "\n"
+
+                conn.close()
+
+                report += "="*80 + "\n"
+
+                output_text.delete('1.0', tk.END)
+                output_text.insert('1.0', report)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+        def export_to_csv():
+            """Export all POs to CSV"""
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT po.po_number, s.name, po.order_date, po.expected_delivery,
+                           po.actual_delivery, po.status, po.total_amount, po.tax_amount,
+                           po.shipping_cost, po.ordered_by, po.received_by, po.notes
+                    FROM purchase_orders po
+                    LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                    ORDER BY po.order_date DESC
+                ''')
+                pos = cursor.fetchall()
+                conn.close()
+
+                # Create CSV content
+                import csv
+                from io import StringIO
+
+                output = StringIO()
+                writer = csv.writer(output)
+
+                writer.writerow(['PO Number', 'Supplier', 'Order Date', 'Expected Delivery',
+                               'Actual Delivery', 'Status', 'Total Amount', 'Tax Amount',
+                               'Shipping Cost', 'Ordered By', 'Received By', 'Notes'])
+
+                for po in pos:
+                    writer.writerow(po)
+
+                csv_content = output.getvalue()
+
+                # Save to file
+                filename = f"purchase_orders_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                filepath = os.path.join(os.getcwd(), filename)
+
+                with open(filepath, 'w', newline='') as f:
+                    f.write(csv_content)
+
+                messagebox.showinfo("Export Success",
+                                  f"Purchase orders exported successfully!\n\n"
+                                  f"File: {filename}\n"
+                                  f"Location: {filepath}\n"
+                                  f"Records: {len(pos)}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export: {e}")
+
+        # Report buttons
+        btn_frame = ttk.Frame(reports_frame)
+        btn_frame.pack(fill='x', pady=5)
+
+        ttk.Button(btn_frame, text="Summary Report",
+                  command=generate_summary_report).pack(side='left', padx=5, pady=5)
+        ttk.Button(btn_frame, text="Status Report",
+                  command=generate_status_report).pack(side='left', padx=5, pady=5)
+        ttk.Button(btn_frame, text="Supplier Report",
+                  command=generate_supplier_report).pack(side='left', padx=5, pady=5)
+        ttk.Button(btn_frame, text="Export to CSV",
+                  command=export_to_csv).pack(side='left', padx=5, pady=5)
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=reports_dialog.destroy).pack(pady=10)
 
     def manage_suppliers_dialog(self):
         """Show suppliers management dialog"""
