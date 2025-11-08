@@ -8596,6 +8596,733 @@ University Support Team
         word_counts = Counter(keywords)
         return [word for word, count in word_counts.most_common(10)]
 
+    # ========================================================================
+    # ENHANCED TICKET VIEW FUNCTIONS
+    # ========================================================================
+
+    def view_ticket_detail_enhanced_gui(self, ticket_id):
+        """View complete ticket details with all information"""
+        try:
+            conn = get_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT t.*, u1.username as submitter, u2.username as assignee
+                FROM support_tickets t
+                JOIN users u1 ON t.user_id = u1.id
+                LEFT JOIN users u2 ON t.assigned_to = u2.id
+                WHERE t.ticket_id = ?
+            ''', (ticket_id,))
+
+            ticket = cursor.fetchone()
+            conn.close()
+
+            if not ticket:
+                messagebox.showerror("Not Found", "Ticket not found.")
+                return
+
+            # Create detail window
+            detail_window = tk.Toplevel(self.root)
+            detail_window.title(f"Ticket #{ticket_id} - {ticket['subject']}")
+            detail_window.geometry("1000x700")
+
+            # Main scrollable frame
+            main_canvas = tk.Canvas(detail_window)
+            scrollbar = ttk.Scrollbar(detail_window, orient="vertical", command=main_canvas.yview)
+            scrollable_frame = ttk.Frame(main_canvas)
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+            )
+
+            main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            main_canvas.configure(yscrollcommand=scrollbar.set)
+
+            # Ticket header
+            header_frame = ttk.LabelFrame(scrollable_frame, text="Ticket Information", padding="10")
+            header_frame.pack(fill=tk.X, padx=10, pady=5)
+
+            ttk.Label(header_frame, text=f"Ticket ID: #{ticket['ticket_id']}", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Subject: {ticket['subject']}", font=('Arial', 11)).pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Status: {ticket['status'].upper()}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Priority: {ticket['priority'].upper()} | Impact: {ticket['impact'].upper()} | Urgency: {ticket['urgency'].upper()}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Category: {ticket['category']}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Submitted by: {ticket['submitter']}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Assigned to: {ticket['assignee'] or 'Unassigned'}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Created: {ticket['created_at']}").pack(anchor=tk.W)
+            ttk.Label(header_frame, text=f"Updated: {ticket['updated_at']}").pack(anchor=tk.W)
+
+            if ticket['due_date']:
+                ttk.Label(header_frame, text=f"Due Date: {ticket['due_date']}").pack(anchor=tk.W)
+
+            # Message
+            msg_frame = ttk.LabelFrame(scrollable_frame, text="Message", padding="10")
+            msg_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+            msg_text = scrolledtext.ScrolledText(msg_frame, wrap=tk.WORD, height=5)
+            msg_text.pack(fill=tk.BOTH, expand=True)
+            msg_text.insert('1.0', ticket['message'])
+            msg_text.config(state=tk.DISABLED)
+
+            # Replies
+            self.display_ticket_replies_gui(ticket_id, scrollable_frame)
+
+            # Time tracking
+            self.display_time_tracking_gui(ticket_id, scrollable_frame)
+
+            # Escalation history
+            self.display_escalation_history_gui(ticket_id, scrollable_frame)
+
+            # Linked tickets
+            self.display_linked_tickets_gui(ticket_id, scrollable_frame)
+
+            # Audit trail (admin only)
+            if self.auth.has_permission('view_all_tickets'):
+                self.display_audit_trail_gui(ticket_id, scrollable_frame)
+
+            # Action buttons
+            action_frame = ttk.Frame(scrollable_frame)
+            action_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            if self.auth.has_permission('reply_to_any_ticket') or ticket['user_id'] == self.auth.get_current_user()['id']:
+                ttk.Button(action_frame, text="Reply", command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, False)).pack(side=tk.LEFT, padx=5)
+
+            if self.auth.has_permission('manage_tickets'):
+                ttk.Button(action_frame, text="Internal Note", command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, True)).pack(side=tk.LEFT, padx=5)
+                ttk.Button(action_frame, text="Add Time Entry", command=lambda: self.add_time_entry_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
+                ttk.Button(action_frame, text="Link Ticket", command=lambda: self.link_tickets_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(action_frame, text="Close", command=detail_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+            main_canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load ticket details: {e}")
+
+    def view_all_tickets_enhanced_gui(self):
+        """Enhanced view of all tickets with advanced filtering"""
+        if not self.auth.has_permission('view_all_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to view all tickets.")
+            return
+
+        window = tk.Toplevel(self.root)
+        window.title("All Tickets - Enhanced View")
+        window.geometry("1200x700")
+
+        main_frame = ttk.Frame(window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding="10")
+        filter_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(filter_frame, text="Filter:").pack(side=tk.LEFT, padx=5)
+
+        filter_var = tk.StringVar(value="all")
+        filters = [
+            ("All tickets", "all"),
+            ("Unassigned", "unassigned"),
+            ("My assigned", "my_assigned"),
+            ("Overdue", "overdue"),
+            ("High priority", "high_priority"),
+            ("Escalated", "escalated")
+        ]
+
+        for label, value in filters:
+            ttk.Radiobutton(filter_frame, text=label, variable=filter_var, value=value).pack(side=tk.LEFT, padx=5)
+
+        # Tickets treeview
+        columns = ('id', 'subject', 'category', 'status', 'priority', 'submitter', 'assignee', 'created', 'due')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        tree.heading('id', text='ID')
+        tree.heading('subject', text='Subject')
+        tree.heading('category', text='Category')
+        tree.heading('status', text='Status')
+        tree.heading('priority', text='Priority')
+        tree.heading('submitter', text='Submitter')
+        tree.heading('assignee', text='Assignee')
+        tree.heading('created', text='Created')
+        tree.heading('due', text='Due Date')
+
+        tree.column('id', width=50)
+        tree.column('subject', width=250)
+        tree.column('category', width=120)
+        tree.column('status', width=100)
+        tree.column('priority', width=80)
+        tree.column('submitter', width=100)
+        tree.column('assignee', width=100)
+        tree.column('created', width=130)
+        tree.column('due', width=130)
+
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=10)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=10)
+
+        def load_tickets():
+            # Clear existing
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = get_connection()
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+
+                where_conditions = []
+                params = []
+
+                filter_val = filter_var.get()
+                if filter_val == "unassigned":
+                    where_conditions.append("t.assigned_to IS NULL")
+                elif filter_val == "my_assigned":
+                    where_conditions.append("t.assigned_to = ?")
+                    params.append(self.auth.get_current_user()['id'])
+                elif filter_val == "overdue":
+                    where_conditions.append("t.due_date IS NOT NULL AND t.due_date < ? AND t.status NOT IN ('resolved', 'closed')")
+                    params.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                elif filter_val == "high_priority":
+                    where_conditions.append("t.priority = 'high'")
+                elif filter_val == "escalated":
+                    where_conditions.append("t.escalation_level > 0")
+
+                where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+
+                cursor.execute(f'''
+                    SELECT t.ticket_id, t.subject, t.category, t.status, t.priority,
+                           u1.username as submitter, u2.username as assignee,
+                           t.created_at, t.due_date
+                    FROM support_tickets t
+                    JOIN users u1 ON t.user_id = u1.id
+                    LEFT JOIN users u2 ON t.assigned_to = u2.id
+                    WHERE {where_clause}
+                    ORDER BY t.created_at DESC
+                ''', params)
+
+                tickets = cursor.fetchall()
+                conn.close()
+
+                for ticket in tickets:
+                    tree.insert('', tk.END, values=(
+                        ticket['ticket_id'],
+                        ticket['subject'][:40],
+                        ticket['category'],
+                        ticket['status'].upper(),
+                        ticket['priority'].upper(),
+                        ticket['submitter'],
+                        ticket['assignee'] or 'Unassigned',
+                        ticket['created_at'],
+                        ticket['due_date'] or 'N/A'
+                    ))
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to load tickets: {e}")
+
+        ttk.Button(filter_frame, text="Apply Filter", command=load_tickets).pack(side=tk.LEFT, padx=5)
+        ttk.Button(main_frame, text="View Details", command=lambda: self.view_ticket_from_tree(tree)).pack(pady=5)
+        ttk.Button(main_frame, text="Close", command=window.destroy).pack(pady=5)
+
+        tree.bind('<Double-1>', lambda e: self.view_ticket_from_tree(tree))
+
+        # Initial load
+        load_tickets()
+
+    def view_ticket_from_tree(self, tree):
+        """View ticket details from treeview selection"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a ticket to view.")
+            return
+
+        item = tree.item(selection[0])
+        ticket_id = item['values'][0]
+        self.view_ticket_detail_enhanced_gui(ticket_id)
+
+    def display_ticket_replies_gui(self, ticket_id, parent_frame):
+        """Display ticket reply history"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT r.*, u.username, u.role
+                FROM ticket_replies r
+                JOIN users u ON r.user_id = u.id
+                WHERE r.ticket_id = ?
+                ORDER BY r.created_at ASC
+            ''', (ticket_id,))
+
+            replies = cursor.fetchall()
+            conn.close()
+
+            if not replies:
+                return
+
+            replies_frame = ttk.LabelFrame(parent_frame, text="Conversation History", padding="10")
+            replies_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+            for reply in replies:
+                reply_type = "Internal Note" if reply[4] else "Reply"
+                is_internal = reply[4]
+
+                # Only show internal notes to admins
+                if is_internal and not self.auth.has_permission('manage_tickets'):
+                    continue
+
+                reply_item_frame = ttk.Frame(replies_frame)
+                reply_item_frame.pack(fill=tk.X, pady=5)
+
+                icon = "🔒" if is_internal else "💬"
+                header_text = f"{icon} {reply_type} from {reply[-2]} ({reply[-1]}) at {reply[6]}"
+
+                ttk.Label(reply_item_frame, text=header_text, font=('Arial', 9, 'bold')).pack(anchor=tk.W)
+
+                msg_text = tk.Text(reply_item_frame, wrap=tk.WORD, height=3, relief=tk.FLAT, bg='#f0f0f0')
+                msg_text.pack(fill=tk.X, pady=2)
+                msg_text.insert('1.0', reply[3])
+                msg_text.config(state=tk.DISABLED)
+
+                ttk.Separator(replies_frame, orient='horizontal').pack(fill=tk.X, pady=2)
+
+        except sqlite3.Error as e:
+            print(f"Error loading replies: {e}")
+
+    def display_time_tracking_gui(self, ticket_id, parent_frame):
+        """Display time tracking information"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT tt.*, u.username
+                FROM ticket_time_tracking tt
+                JOIN users u ON tt.user_id = u.id
+                WHERE tt.ticket_id = ?
+                ORDER BY tt.created_at
+            ''', (ticket_id,))
+
+            time_entries = cursor.fetchall()
+            conn.close()
+
+            if not time_entries:
+                return
+
+            time_frame = ttk.LabelFrame(parent_frame, text="Time Tracking", padding="10")
+            time_frame.pack(fill=tk.X, padx=10, pady=5)
+
+            total_time = 0
+            billable_time = 0
+
+            for entry in time_entries:
+                duration = entry[5] / 60  # minutes to hours
+                total_time += duration
+                if entry[7]:  # billable
+                    billable_time += duration
+
+                billable_text = " (Billable)" if entry[7] else ""
+                entry_text = f"⏱️  {entry[-1]}: {duration:.2f} hours{billable_text}"
+
+                if entry[6]:  # description
+                    entry_text += f"\n   Description: {entry[6]}"
+
+                ttk.Label(time_frame, text=entry_text).pack(anchor=tk.W, pady=2)
+
+            ttk.Separator(time_frame, orient='horizontal').pack(fill=tk.X, pady=5)
+            ttk.Label(time_frame, text=f"Total Time: {total_time:.2f} hours", font=('Arial', 9, 'bold')).pack(anchor=tk.W)
+            ttk.Label(time_frame, text=f"Billable Time: {billable_time:.2f} hours", font=('Arial', 9, 'bold')).pack(anchor=tk.W)
+
+        except sqlite3.Error as e:
+            print(f"Error loading time tracking: {e}")
+
+    def display_escalation_history_gui(self, ticket_id, parent_frame):
+        """Display escalation history"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT e.*, u1.username as escalated_to_user, u2.username as escalated_by_user
+                FROM ticket_escalations e
+                LEFT JOIN users u1 ON e.escalated_to = u1.id
+                LEFT JOIN users u2 ON e.escalated_by = u2.id
+                WHERE e.ticket_id = ?
+                ORDER BY e.created_at
+            ''', (ticket_id,))
+
+            escalations = cursor.fetchall()
+            conn.close()
+
+            if not escalations:
+                return
+
+            esc_frame = ttk.LabelFrame(parent_frame, text="Escalation History", padding="10")
+            esc_frame.pack(fill=tk.X, padx=10, pady=5)
+
+            for esc in escalations:
+                status = "Resolved" if esc[6] else "Open"
+                escalated_by = esc[-1] or "System"
+
+                esc_text = f"🔺 Level {esc[2]} - Escalated to {esc[-2]} by {escalated_by}\n"
+                esc_text += f"   Reason: {esc[4]}\n"
+                esc_text += f"   Date: {esc[7]} - Status: {status}"
+
+                ttk.Label(esc_frame, text=esc_text).pack(anchor=tk.W, pady=2)
+
+        except sqlite3.Error as e:
+            print(f"Error loading escalation history: {e}")
+
+    def display_audit_trail_gui(self, ticket_id, parent_frame):
+        """Display audit trail for admins"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT al.*, u.username
+                FROM ticket_audit_log al
+                JOIN users u ON al.user_id = u.id
+                WHERE al.ticket_id = ?
+                ORDER BY al.created_at DESC
+                LIMIT 10
+            ''', (ticket_id,))
+
+            audit_entries = cursor.fetchall()
+            conn.close()
+
+            if not audit_entries:
+                return
+
+            audit_frame = ttk.LabelFrame(parent_frame, text="Recent Activity (Audit Trail)", padding="10")
+            audit_frame.pack(fill=tk.X, padx=10, pady=5)
+
+            for entry in audit_entries:
+                audit_text = f"📋 {entry[3]} by {entry[-1]} at {entry[8]}"
+
+                if entry[4]:  # old_values
+                    try:
+                        old_vals = json.loads(entry[4])
+                        if old_vals:
+                            audit_text += f"\n   Previous: {old_vals}"
+                    except json.JSONDecodeError:
+                        pass
+
+                if entry[5]:  # new_values
+                    try:
+                        new_vals = json.loads(entry[5])
+                        if new_vals:
+                            audit_text += f"\n   New: {new_vals}"
+                    except json.JSONDecodeError:
+                        pass
+
+                ttk.Label(audit_frame, text=audit_text).pack(anchor=tk.W, pady=2)
+
+        except sqlite3.Error as e:
+            print(f"Error loading audit trail: {e}")
+
+    def display_linked_tickets_gui(self, ticket_id, parent_frame):
+        """Display linked tickets"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT tl.*, t.subject, t.status
+                FROM ticket_links tl
+                JOIN support_tickets t ON tl.linked_ticket_id = t.ticket_id
+                WHERE tl.ticket_id = ?
+                ORDER BY tl.created_at
+            ''', (ticket_id,))
+
+            links = cursor.fetchall()
+            conn.close()
+
+            if not links:
+                return
+
+            links_frame = ttk.LabelFrame(parent_frame, text="Linked Tickets", padding="10")
+            links_frame.pack(fill=tk.X, padx=10, pady=5)
+
+            for link in links:
+                link_text = f"🔗 {link[3]} #{link[2]}: {link[-2]} ({link[-1]})"
+                ttk.Label(links_frame, text=link_text).pack(anchor=tk.W, pady=2)
+
+        except sqlite3.Error as e:
+            print(f"Error loading linked tickets: {e}")
+
+    # ========================================================================
+    # TICKET REPLIES & COMMUNICATION
+    # ========================================================================
+
+    def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
+        """Enhanced reply functionality with attachments"""
+        # Permission check
+        is_admin = self.auth.has_permission('reply_to_any_ticket')
+
+        if not is_admin and not self.auth.has_permission('reply_to_own_ticket'):
+            messagebox.showerror("Permission Denied", "You don't have permission to reply to tickets.")
+            return
+
+        # Check ownership for non-admins
+        if not is_admin:
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT user_id FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
+                result = cursor.fetchone()
+                conn.close()
+
+                if not result or result[0] != self.auth.get_current_user()['id']:
+                    messagebox.showerror("Permission Denied", "You don't have permission to reply to this ticket.")
+                    return
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to check permissions: {e}")
+                return
+
+        # Create reply dialog
+        reply_type = "Internal Note" if is_internal else "Reply"
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Add {reply_type} to Ticket #{ticket_id}")
+        dialog.geometry("600x500")
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Message
+        ttk.Label(main_frame, text=f"{reply_type} Message:").pack(anchor=tk.W, pady=5)
+        message_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, height=15)
+        message_text.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # Time spent (admin only)
+        time_frame = ttk.Frame(main_frame)
+        if self.auth.has_permission('manage_tickets'):
+            time_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(time_frame, text="Time spent (hours):").pack(side=tk.LEFT, padx=5)
+            time_var = tk.StringVar(value="0")
+            ttk.Entry(time_frame, textvariable=time_var, width=10).pack(side=tk.LEFT, padx=5)
+
+        def save_reply():
+            message = message_text.get('1.0', tk.END).strip()
+
+            if not message:
+                messagebox.showerror("Validation Error", "Reply message cannot be empty.")
+                return
+
+            time_spent = 0
+            if self.auth.has_permission('manage_tickets'):
+                try:
+                    time_spent = float(time_var.get())
+                except ValueError:
+                    time_spent = 0
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                user_id = self.auth.get_current_user()['id']
+
+                cursor.execute('''
+                    INSERT INTO ticket_replies
+                    (ticket_id, user_id, message, is_internal, time_spent, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (ticket_id, user_id, message, is_internal, time_spent, now))
+
+                # Update ticket timestamps
+                cursor.execute('''
+                    UPDATE support_tickets
+                    SET updated_at = ?, last_activity_at = ?
+                    WHERE ticket_id = ?
+                ''', (now, now, ticket_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"{reply_type} added successfully!")
+                dialog.destroy()
+                self.load_tickets()
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to add {reply_type.lower()}: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(btn_frame, text="Save", command=save_reply).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def handle_file_attachments_gui(self, ticket_id, reply_id=None):
+        """Handle file attachment uploads (placeholder implementation)"""
+        # Note: Full file upload implementation would require additional file handling
+        messagebox.showinfo("Feature Coming Soon", "File attachment feature is under development.")
+
+    def add_attachment_gui(self, ticket_id, reply_id, file_path):
+        """Add attachment to ticket or reply (placeholder implementation)"""
+        # Note: Full implementation would require file storage and validation
+        messagebox.showinfo("Feature Coming Soon", "File attachment feature is under development.")
+
+    # ========================================================================
+    # TIME TRACKING & TICKET LINKING
+    # ========================================================================
+
+    def add_time_entry_gui(self, ticket_id):
+        """Add time tracking entry"""
+        if not self.auth.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to add time entries.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Add Time Entry - Ticket #{ticket_id}")
+        dialog.geometry("400x300")
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Duration
+        ttk.Label(main_frame, text="Duration (hours):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        duration_var = tk.StringVar(value="1.0")
+        ttk.Entry(main_frame, textvariable=duration_var, width=20).grid(row=0, column=1, pady=5, padx=5)
+
+        # Description
+        ttk.Label(main_frame, text="Description:").grid(row=1, column=0, sticky=tk.NW, pady=5)
+        description_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, width=30, height=5)
+        description_text.grid(row=1, column=1, pady=5, padx=5)
+
+        # Billable
+        billable_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(main_frame, text="Billable", variable=billable_var).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+        def save_time_entry():
+            try:
+                duration = float(duration_var.get())
+                if duration <= 0:
+                    messagebox.showerror("Validation Error", "Duration must be greater than 0.")
+                    return
+            except ValueError:
+                messagebox.showerror("Validation Error", "Please enter a valid number for duration.")
+                return
+
+            description = description_text.get('1.0', tk.END).strip()
+            billable = billable_var.get()
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                start_time = (datetime.now() - timedelta(hours=duration)).strftime('%Y-%m-%d %H:%M:%S')
+                duration_minutes = int(duration * 60)
+                user_id = self.auth.get_current_user()['id']
+
+                cursor.execute('''
+                    INSERT INTO ticket_time_tracking
+                    (ticket_id, user_id, start_time, end_time, duration_minutes, description, billable, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (ticket_id, user_id, start_time, now, duration_minutes, description, billable, now))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Time entry added: {duration} hours")
+                dialog.destroy()
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to add time entry: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
+
+        ttk.Button(btn_frame, text="Save", command=save_time_entry).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def link_tickets_gui(self, ticket_id):
+        """Link tickets together"""
+        if not self.auth.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to link tickets.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Link Ticket #{ticket_id}")
+        dialog.geometry("400x250")
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Linked ticket ID
+        ttk.Label(main_frame, text="Ticket ID to link:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        linked_id_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=linked_id_var, width=20).grid(row=0, column=1, pady=5, padx=5)
+
+        # Link type
+        ttk.Label(main_frame, text="Link type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        link_type_var = tk.StringVar(value="related_to")
+        link_types = [
+            ("Related to", "related_to"),
+            ("Duplicate of", "duplicate_of"),
+            ("Blocks", "blocks"),
+            ("Blocked by", "blocked_by"),
+            ("Parent of", "parent_of"),
+            ("Child of", "child_of")
+        ]
+
+        link_frame = ttk.Frame(main_frame)
+        link_frame.grid(row=1, column=1, pady=5, padx=5, sticky=tk.W)
+
+        for i, (label, value) in enumerate(link_types):
+            ttk.Radiobutton(link_frame, text=label, variable=link_type_var, value=value).grid(row=i, column=0, sticky=tk.W)
+
+        def save_link():
+            try:
+                linked_ticket_id = int(linked_id_var.get())
+
+                if linked_ticket_id == ticket_id:
+                    messagebox.showerror("Validation Error", "Cannot link ticket to itself.")
+                    return
+
+                # Check if target ticket exists
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT ticket_id, subject FROM support_tickets WHERE ticket_id = ?', (linked_ticket_id,))
+                target_ticket = cursor.fetchone()
+
+                if not target_ticket:
+                    messagebox.showerror("Not Found", "Target ticket not found.")
+                    conn.close()
+                    return
+
+                link_type = link_type_var.get()
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO ticket_links (ticket_id, linked_ticket_id, link_type, created_at)
+                    VALUES (?, ?, ?, ?)
+                ''', (ticket_id, linked_ticket_id, link_type, now))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Ticket linked successfully as '{link_type}'")
+                dialog.destroy()
+
+            except ValueError:
+                messagebox.showerror("Validation Error", "Please enter a valid ticket ID.")
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to link tickets: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=10)
+
+        ttk.Button(btn_frame, text="Link", command=save_link).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
 
 def run_gui_helpdesk(auth_system=None):
     """Run the GUI helpdesk system"""

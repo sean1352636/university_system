@@ -9,6 +9,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Helpdesk GUI - Enhanced Views, Replies, Time Tracking & Linking** (2025-11-08)
+- **New Update**: Added 14 advanced ticket management functions (727 lines of new code)
+- **Impact**: Complete ticket detail views, reply management, time tracking, and ticket linking now available in GUI
+- **Files Modified**:
+  - `university_system/modules/domain/student_affairs/gui/helpdesk_gui.py` - Added 727 lines (8,635 → 9,362 lines)
+
+**Enhanced Ticket View Functions (8 functions)**:
+
+1. **view_ticket_detail_enhanced_gui()** - Comprehensive ticket details view
+   - Complete ticket information display (ID, subject, status, priority, impact, urgency)
+   - Integrated display of replies, time tracking, escalations, linked tickets, audit trail
+   - Scrollable canvas for long ticket histories
+   - Action buttons for Reply, Internal Note, Add Time, Link Ticket
+   - Permission-based button visibility
+
+2. **view_all_tickets_enhanced_gui()** - Advanced ticket list with filtering
+   - Six pre-built filters: All, Unassigned, My assigned, Overdue, High priority, Escalated
+   - 9-column treeview (ID, subject, category, status, priority, submitter, assignee, created, due)
+   - Double-click to view details
+
+3. **display_ticket_replies_gui()** - Reply history display
+   - Chronological reply threading with 💬 and 🔒 icons
+   - Admin-only internal note visibility
+   - Username/role attribution
+
+4. **display_time_tracking_gui()** - Time log display
+   - Duration calculation with ⏱️ icon
+   - Billable vs non-billable distinction
+   - Total and billable time subtotals
+
+5. **display_escalation_history_gui()** - Escalation timeline
+   - Escalation level with 🔺 icon
+   - Escalated to/by tracking
+   - Open/Resolved status
+
+6. **display_audit_trail_gui()** - Complete audit log (admin only)
+   - Last 10 audit entries with 📋 icon
+   - Old/new values JSON display
+   - Username and timestamp
+
+7. **display_linked_tickets_gui()** - Show related tickets
+   - Link type display with 🔗 icon
+   - Linked ticket ID, subject, and status
+
+8. **view_ticket_from_tree()** - Tree selection handler
+
+**Ticket Replies & Communication (3 functions)**:
+
+9. **reply_to_ticket_enhanced_gui()** - Enhanced reply creation
+   - Reply vs Internal Note mode
+   - Permission checking (reply_to_any_ticket, reply_to_own_ticket)
+   - Time spent tracking (admin only)
+   - Automatic timestamp updates
+
+10. **handle_file_attachments_gui()** - File upload management (placeholder)
+
+11. **add_attachment_gui()** - Attachment addition (placeholder)
+
+**Time Tracking & Ticket Linking (3 functions)**:
+
+12. **add_time_entry_gui()** - Log time spent
+   - Duration input (hours)
+   - Description text area
+   - Billable checkbox
+   - Admin-only permission
+
+13. **link_tickets_gui()** - Link related tickets
+   - Six link types: Related to, Duplicate of, Blocks, Blocked by, Parent of, Child of
+   - Target ticket validation
+   - Self-link prevention
+
+14. **view_ticket_detail_enhanced_gui() integration** - Complete unified detail view
+
+**Technical Improvements**:
+- Scrollable canvas for long ticket details
+- Permission-based UI rendering
+- Treeview integration with double-click handlers
+- Text widget embedding for replies
+- Transaction safety for all writes
+- Time calculation utilities (minutes ↔ hours)
+
 **Helpdesk GUI - Search & Knowledge Base Integration** (2025-11-08)
 - **New Update**: Added 14 advanced search and knowledge base functions (1,020 lines of new code)
 - **Impact**: Comprehensive search capabilities and full knowledge base management now available in GUI
