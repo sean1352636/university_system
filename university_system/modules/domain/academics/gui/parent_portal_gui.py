@@ -120,10 +120,22 @@ class ParentPortalGUI:
     
     def create_nav_menu(self):
         """Create the navigation menu"""
+        # Check if user is admin
+        current_user = self.get_current_user()
+        is_admin = current_user and current_user.get('role') == 'admin'
+
         # Menu sections
         menus = [
             ("🏠 Dashboard", self.show_dashboard),
             ("⚡ Quick Actions", self.show_quick_actions),
+        ]
+
+        # Add Admin menu ONLY for admin users (matching CLI behavior)
+        if is_admin:
+            menus.append(("👨‍💼 Admin Panel", self.show_admin_menu))
+
+        # Continue with rest of menu
+        menus.extend([
             ("👥 My Children", self.show_children),
             ("📚 Academic Records", self.show_academic_menu),
             ("📅 Attendance & Behavior", self.show_attendance_menu),
@@ -134,7 +146,7 @@ class ParentPortalGUI:
             ("⚙️ Settings & Tools", self.show_settings_menu),
             ("🔔 Notifications", self.mark_notifications_read),  # New quick access
             ("🏠 Return to Main Menu", self.return_to_main_menu),
-        ]
+        ])
         self.nav_buttons = []
         for text, command in menus:
             btn = tk.Button(
@@ -705,31 +717,94 @@ class ParentPortalGUI:
             )
             btn.pack(pady=10)
 
-        # Admin functions (only show if user is admin) - check dynamically
+        # Note: Admin functions moved to dedicated Admin Panel menu (visible in sidebar for admins)
+
+    def show_admin_menu(self):
+        """Show administrator menu (admin only)"""
+        self.clear_content()
+        self.update_status("Administrator Panel")
+
+        # Verify admin access
         current_user = self.get_current_user()
-        if current_user and current_user.get('role') == 'admin':
-            admin_frame = ttk.LabelFrame(self.content_frame, text="Administrator Functions", padding=20)
-            admin_frame.pack(fill=tk.X, padx=20, pady=20)
+        if not current_user or current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can access this panel.")
+            self.show_dashboard()
+            return
 
-            admin_options = [
-                ("👨‍👩‍👧 Create Parent Account", self.show_create_parent_account_interface),
-                ("🔗 Link Student to Parent", self.show_link_student_interface),
-            ]
+        # Admin panel title
+        title = ttk.Label(
+            self.content_frame,
+            text="Administrator Panel - Parent Management",
+            style='Title.TLabel',
+            font=('Arial', 20, 'bold')
+        )
+        title.pack(pady=20)
 
-            for text, command in admin_options:
-                btn = tk.Button(
-                    admin_frame,
-                    text=text,
-                    command=command,
-                    font=('Arial', 12),
-                    padx=20,
-                    pady=15,
-                    width=30,
-                    bg='#c0392b',
-                    fg='white'
-                )
-                btn.pack(pady=10)
-        
+        # Admin info banner
+        admin_info = ttk.Frame(self.content_frame)
+        admin_info.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            admin_info,
+            text=f"Administrator: {current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip() or current_user.get('username', 'Admin'),
+            font=('Arial', 11, 'italic'),
+            foreground='#c0392b'
+        ).pack(anchor='w')
+
+        ttk.Label(
+            admin_info,
+            text="You have full administrative access to parent account management",
+            font=('Arial', 9),
+            foreground='#7f8c8d'
+        ).pack(anchor='w')
+
+        # Admin menu frame
+        menu_frame = ttk.Frame(self.content_frame)
+        menu_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+
+        # Admin options (matching CLI menu)
+        admin_options = [
+            ("👨‍👩‍👧 Create Parent Account", self.show_create_parent_account_interface,
+             "Create a new parent account with login credentials", "#e74c3c"),
+            ("🔗 Link Student to Parent", self.show_link_student_interface,
+             "Link an existing student to a parent account", "#3498db"),
+            ("👁️ View Any Parent Dashboard", self.show_view_parent_dashboard_interface,
+             "View dashboard for any parent in the system", "#27ae60"),
+            ("📊 Parent Account Reports", self.show_parent_reports_interface,
+             "Generate reports on parent accounts and activity", "#f39c12"),
+        ]
+
+        for text, command, description, color in admin_options:
+            # Create card-style button with description
+            card_frame = tk.Frame(menu_frame, bg=color, relief=tk.RAISED, bd=2)
+            card_frame.pack(fill=tk.X, pady=10)
+
+            btn = tk.Button(
+                card_frame,
+                text=text,
+                command=command,
+                font=('Arial', 12, 'bold'),
+                bg=color,
+                fg='white',
+                relief=tk.FLAT,
+                padx=20,
+                pady=15,
+                anchor='w'
+            )
+            btn.pack(fill=tk.X)
+
+            desc_label = tk.Label(
+                card_frame,
+                text=description,
+                font=('Arial', 9),
+                bg=color,
+                fg='white',
+                anchor='w',
+                padx=20,
+                pady=(0, 10)
+            )
+            desc_label.pack(fill=tk.X)
+
     def view_child_grades(self, child):
         """View grades for a specific child"""
         self.clear_content()
@@ -6467,7 +6542,7 @@ class ParentPortalGUI:
                 messagebox.showerror("Error", f"Failed to create parent account: {str(e)}")
 
         ttk.Button(btn_frame, text="Create Account", command=create_account).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.show_settings_menu).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
 
     def show_link_student_interface(self):
         """Show interface for linking a student to a parent (admin only)"""
@@ -6647,7 +6722,167 @@ class ParentPortalGUI:
                 messagebox.showerror("Error", f"Failed to link accounts: {str(e)}")
 
         ttk.Button(btn_frame, text="Link Accounts", command=link_accounts).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.show_settings_menu).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
+
+    def show_view_parent_dashboard_interface(self):
+        """Show interface to view any parent's dashboard (admin only)"""
+        current_user = self.get_current_user()
+        if not current_user or current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can view parent dashboards.")
+            return
+
+        self.clear_content()
+        self.update_status("View Parent Dashboard")
+
+        title = ttk.Label(
+            self.content_frame,
+            text="View Parent Dashboard",
+            style='Title.TLabel',
+            font=('Arial', 20, 'bold')
+        )
+        title.pack(pady=20)
+
+        # Search frame
+        search_frame = ttk.LabelFrame(self.content_frame, text="Search for Parent", padding=20)
+        search_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(search_frame, text="Parent ID or Email:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        search_entry = ttk.Entry(search_frame, width=40, font=('Arial', 10))
+        search_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        parent_info_label = ttk.Label(search_frame, text="", font=('Arial', 9))
+        parent_info_label.grid(row=1, column=0, columnspan=2, pady=5)
+
+        def search_parent():
+            search_value = search_entry.get().strip()
+            if not search_value:
+                messagebox.showwarning("Input Required", "Please enter a parent ID or email")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Search by parent_id or email
+                cursor.execute('''
+                    SELECT parent_id, first_name, last_name, email, phone
+                    FROM parent_accounts
+                    WHERE parent_id = ? OR email = ?
+                ''', (search_value, search_value))
+
+                parent = cursor.fetchone()
+                conn.close()
+
+                if parent:
+                    parent_info_label.config(
+                        text=f"Found: {parent[1]} {parent[2]} | Email: {parent[3]} | Phone: {parent[4] or 'N/A'}",
+                        foreground='green'
+                    )
+
+                    # Show view dashboard button
+                    if hasattr(search_frame, 'view_btn'):
+                        search_frame.view_btn.destroy()
+
+                    def view_dashboard():
+                        # Temporarily set parent_id to view their dashboard
+                        original_parent_id = self.parent_id
+                        self.parent_id = parent[0]
+
+                        # Load that parent's children
+                        self.load_children()
+
+                        # Show dashboard
+                        self.show_dashboard()
+
+                        # Reset parent_id
+                        self.parent_id = original_parent_id
+
+                    search_frame.view_btn = ttk.Button(
+                        search_frame,
+                        text="View This Parent's Dashboard",
+                        command=view_dashboard
+                    )
+                    search_frame.view_btn.grid(row=2, column=0, columnspan=2, pady=10)
+                else:
+                    parent_info_label.config(text="Parent not found!", foreground='red')
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Database error: {str(e)}")
+
+        ttk.Button(search_frame, text="Search", command=search_parent).grid(row=0, column=2, padx=5)
+        ttk.Button(self.content_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(pady=20)
+
+    def show_parent_reports_interface(self):
+        """Show parent account reports interface (admin only)"""
+        current_user = self.get_current_user()
+        if not current_user or current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can view reports.")
+            return
+
+        self.clear_content()
+        self.update_status("Parent Account Reports")
+
+        title = ttk.Label(
+            self.content_frame,
+            text="Parent Account Reports",
+            style='Title.TLabel',
+            font=('Arial', 20, 'bold')
+        )
+        title.pack(pady=20)
+
+        # Reports frame
+        reports_frame = ttk.Frame(self.content_frame)
+        reports_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+
+        # Statistics
+        stats_frame = ttk.LabelFrame(reports_frame, text="System Statistics", padding=15)
+        stats_frame.pack(fill=tk.X, pady=10)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Total parents
+            cursor.execute("SELECT COUNT(*) FROM parent_accounts")
+            total_parents = cursor.fetchone()[0]
+
+            # Total relationships
+            cursor.execute("SELECT COUNT(*) FROM parent_student_relationships")
+            total_links = cursor.fetchone()[0]
+
+            # Recent registrations (last 30 days)
+            cursor.execute("""
+                SELECT COUNT(*) FROM parent_accounts
+                WHERE registration_date >= date('now', '-30 days')
+            """)
+            recent_registrations = cursor.fetchone()[0]
+
+            conn.close()
+
+            ttk.Label(stats_frame, text=f"Total Parent Accounts: {total_parents}", font=('Arial', 10)).pack(anchor='w', pady=2)
+            ttk.Label(stats_frame, text=f"Total Parent-Student Links: {total_links}", font=('Arial', 10)).pack(anchor='w', pady=2)
+            ttk.Label(stats_frame, text=f"New Registrations (30 days): {recent_registrations}", font=('Arial', 10)).pack(anchor='w', pady=2)
+
+        except Exception as e:
+            ttk.Label(stats_frame, text=f"Error loading statistics: {str(e)}", foreground='red').pack()
+
+        # Report options
+        report_options_frame = ttk.LabelFrame(reports_frame, text="Generate Reports", padding=15)
+        report_options_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(
+            report_options_frame,
+            text="Export All Parent Accounts (CSV)",
+            command=lambda: messagebox.showinfo("Report", "CSV export functionality coming soon")
+        ).pack(fill=tk.X, pady=5)
+
+        ttk.Button(
+            report_options_frame,
+            text="View Parent Activity Log",
+            command=lambda: messagebox.showinfo("Report", "Activity log viewer coming soon")
+        ).pack(fill=tk.X, pady=5)
+
+        ttk.Button(self.content_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(pady=20)
 
     def show_placeholder(self, title):
         """Show a placeholder interface"""

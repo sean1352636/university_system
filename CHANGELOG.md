@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+**Parent Portal GUI - Dedicated Admin Panel Menu** (2025-11-08)
+- **New Feature**: Added dedicated Admin Panel menu option in sidebar for admin users, matching CLI's ADMINISTRATOR MODE
+- **Impact**: Admin functions now have prominent, organized access; better UX for administrators managing parent accounts
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/parent_portal_gui.py` - ~200 lines added/modified
+
+**Changes Made**:
+1. **Dynamic Admin Menu in Sidebar** (lines 121-149):
+   - Added conditional check for admin role in `create_nav_menu()`
+   - "👨‍💼 Admin Panel" menu button appears for admin users only
+   - Positioned strategically after Quick Actions for visibility
+   - Regular parent users don't see this option
+
+2. **New Admin Panel Interface** (lines 722-806):
+   - Created `show_admin_menu()` method with card-style admin panel
+   - Admin info banner showing administrator name and access level
+   - Four color-coded admin options with descriptions:
+     - Create Parent Account (red #e74c3c)
+     - Link Student to Parent (blue #3498db)
+     - View Any Parent Dashboard (green #27ae60) - NEW
+     - Parent Account Reports (orange #f39c12) - NEW
+
+3. **New: View Any Parent Dashboard** (lines 6727-6813):
+   - `show_view_parent_dashboard_interface()` method
+   - Search by parent ID or email with real-time validation
+   - Temporarily loads selected parent's data and dashboard
+   - Safely restores original parent context after viewing
+   - Full admin access to any parent's account view
+
+4. **New: Parent Account Reports** (lines 6815-6885):
+   - `show_parent_reports_interface()` method
+   - System statistics display:
+     - Total parent accounts
+     - Total parent-student links
+     - New registrations (last 30 days)
+   - Report generation options (CSV export, activity log)
+   - Foundation for future reporting features
+
+5. **Removed Duplication** (line 720):
+   - Removed admin functions from Settings & Tools menu
+   - Added comment noting functions moved to Admin Panel
+   - Prevents confusion with duplicate admin options
+
+6. **Navigation Updates**:
+   - All admin functions now have "Back to Admin Panel" buttons
+   - Create Parent Account: line 6545
+   - Link Student to Parent: line 6725
+   - View Parent Dashboard: line 6813
+   - Parent Reports: line 6885
+
+**Benefits**:
+- Matches CLI's ADMINISTRATOR MODE functionality in GUI
+- Clear separation of admin vs parent functions
+- Prominent, organized admin access
+- Professional card-style interface with color coding
+- Two new powerful admin capabilities
+- Better admin workflow and efficiency
+- Eliminates duplication and confusion
+
 ### Fixed
 
 **Parent Portal GUI - User Display Personalization** (2025-11-08)
