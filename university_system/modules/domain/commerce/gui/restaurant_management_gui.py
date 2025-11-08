@@ -443,14 +443,16 @@ class RestaurantManagementGUI:
         btn_frame = ttk.Frame(tables_frame)
         btn_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(btn_frame, text="View Tables", 
+        ttk.Button(btn_frame, text="View Tables",
                   command=self.view_tables_gui).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Add Table", 
+        ttk.Button(btn_frame, text="Add Table",
                   command=self.add_table_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Reservations", 
+        ttk.Button(btn_frame, text="Reservations",
                   command=self.manage_reservations_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Generate QR Codes", 
+        ttk.Button(btn_frame, text="Generate QR Codes",
                   command=self.generate_qr_dialog).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Optimize Table Layout",
+                  command=self.optimize_table_structure).pack(side='left', padx=5)
         
         columns = ('Table ID', 'Capacity', 'Status', 'Location', 'Type')
         self.tables_tree = ttk.Treeview(tables_frame, columns=columns, show='headings', height=20)
@@ -476,13 +478,17 @@ class RestaurantManagementGUI:
         btn_frame = ttk.Frame(staff_frame)
         btn_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(btn_frame, text="View Staff", 
+        ttk.Button(btn_frame, text="View Staff",
                   command=self.view_staff_gui).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Add Staff", 
+        ttk.Button(btn_frame, text="Add Staff",
                   command=self.add_staff_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Manage Schedules", 
+        ttk.Button(btn_frame, text="Manage Schedules",
                   command=self.manage_schedules_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Staff Analytics", 
+        ttk.Button(btn_frame, text="Schedule Conflicts",
+                  command=self.view_schedule_conflicts).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Staff Performance",
+                  command=self.staff_performance).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Staff Analytics",
                   command=self.show_staff_analytics).pack(side='left', padx=5)
         
         columns = ('Staff ID', 'Name', 'Role', 'Hourly Rate', 'Status', 'Performance')
@@ -509,14 +515,18 @@ class RestaurantManagementGUI:
         btn_frame = ttk.Frame(inventory_frame)
         btn_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(btn_frame, text="View Inventory", 
+        ttk.Button(btn_frame, text="View Inventory",
                   command=self.view_inventory_gui).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Purchase Orders", 
+        ttk.Button(btn_frame, text="Purchase Orders",
                   command=self.manage_purchase_orders_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Suppliers", 
+        ttk.Button(btn_frame, text="Suppliers",
                   command=self.manage_suppliers_dialog).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Waste Tracking", 
+        ttk.Button(btn_frame, text="Waste Tracking",
                   command=self.waste_tracking_dialog).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Inventory Reports",
+                  command=self.inventory_reports).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Low Stock Alerts",
+                  command=self.low_stock_alerts).pack(side='left', padx=5)
         
         columns = ('Item ID', 'Name', 'Quantity', 'Unit', 'Cost/Unit', 'Reorder Level')
         self.inventory_tree = ttk.Treeview(inventory_frame, columns=columns, show='headings', height=20)
@@ -1325,9 +1335,787 @@ Platinum (1000+ points):
         ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
         
     def generate_qr_dialog(self):
-        """Show QR code generation dialog"""
-        messagebox.showinfo("Success", "QR codes would be generated here")
-            
+        """Show QR code management menu"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("QR Code Management")
+        dialog.geometry("500x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="QR Code Management",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Generate QR Codes section
+        generate_section = ttk.LabelFrame(main_frame, text="Generate QR Codes", padding=15)
+        generate_section.pack(fill='x', pady=10)
+
+        ttk.Button(generate_section, text="Generate Single QR Code",
+                  command=self.create_qr_code_image,
+                  width=30).pack(pady=5)
+
+        ttk.Button(generate_section, text="Generate Enhanced Branded QR",
+                  command=self.create_enhanced_qr_image,
+                  width=30).pack(pady=5)
+
+        ttk.Button(generate_section, text="Batch Print QR Codes",
+                  command=self.print_qr_codes,
+                  width=30).pack(pady=5)
+
+        # Analytics section
+        analytics_section = ttk.LabelFrame(main_frame, text="QR Code Analytics", padding=15)
+        analytics_section.pack(fill='x', pady=10)
+
+        ttk.Button(analytics_section, text="View QR Code Usage Analytics",
+                  command=self.scan_qr_code_usage,
+                  width=30).pack(pady=5)
+
+        # Management section
+        mgmt_section = ttk.LabelFrame(main_frame, text="QR Code Database", padding=15)
+        mgmt_section.pack(fill='x', pady=10)
+
+        ttk.Button(mgmt_section, text="Update QR Database Records",
+                  command=self.update_qr_database_record,
+                  width=30).pack(pady=5)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+
+    def create_qr_code_image(self):
+        """Generate individual QR code image for a table"""
+        try:
+            import qrcode
+            from tkinter import filedialog
+            import os
+
+            # Ask for table number
+            table_number = simpledialog.askstring("Generate QR Code",
+                                                  "Enter table number:")
+            if not table_number:
+                return
+
+            # Create QR code data
+            qr_data = f"https://restaurant.example.com/table/{table_number}"
+
+            # Generate QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_H,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+
+            # Create image
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Ask where to save
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
+                initialfile=f"table_{table_number}_qr.png"
+            )
+
+            if filename:
+                img.save(filename)
+
+                # Update database
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS qr_codes (
+                            qr_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            table_number TEXT,
+                            qr_data TEXT,
+                            generated_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            image_path TEXT
+                        )
+                    ''')
+                    cursor.execute('''
+                        INSERT INTO qr_codes (table_number, qr_data, image_path)
+                        VALUES (?, ?, ?)
+                    ''', (table_number, qr_data, filename))
+                    conn.commit()
+                    conn.close()
+
+                messagebox.showinfo("Success",
+                                   f"QR code generated successfully!\n\n" +
+                                   f"Table: {table_number}\n" +
+                                   f"Saved to: {filename}\n" +
+                                   f"Size: High resolution (suitable for printing)")
+
+        except ImportError:
+            messagebox.showerror("Missing Library",
+                                "QR code generation requires the 'qrcode' library.\n\n" +
+                                "Install with: pip install qrcode[pil]")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate QR code:\n{str(e)}")
+
+    def create_enhanced_qr_image(self):
+        """Generate branded QR code with logo and colors"""
+        try:
+            import qrcode
+            from PIL import Image, ImageDraw, ImageFont
+            from tkinter import filedialog
+
+            # Ask for table number
+            table_number = simpledialog.askstring("Generate Enhanced QR",
+                                                  "Enter table number:")
+            if not table_number:
+                return
+
+            # Ask for customization
+            include_label = messagebox.askyesno("Customization",
+                                               "Include table number label on QR code?")
+
+            # Create QR code data
+            qr_data = f"https://restaurant.example.com/table/{table_number}"
+
+            # Generate QR code with higher error correction for logo overlay
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_H,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+
+            # Create image with white background
+            img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+            if include_label:
+                # Add label below QR code
+                from PIL import ImageDraw, ImageFont
+                width, height = img.size
+                new_img = Image.new('RGB', (width, height + 80), 'white')
+                new_img.paste(img, (0, 0))
+
+                draw = ImageDraw.Draw(new_img)
+                try:
+                    # Try to use a nice font
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+                except:
+                    # Fallback to default
+                    font = ImageFont.load_default()
+
+                text = f"Table {table_number}"
+                # Get text bounding box
+                bbox = draw.textbbox((0, 0), text, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_x = (width - text_width) // 2
+                text_y = height + 20
+
+                draw.text((text_x, text_y), text, fill="black", font=font)
+                img = new_img
+
+            # Ask where to save
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
+                initialfile=f"table_{table_number}_branded_qr.png"
+            )
+
+            if filename:
+                img.save(filename, quality=95)
+
+                # Update database
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS qr_codes (
+                            qr_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            table_number TEXT,
+                            qr_data TEXT,
+                            generated_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            image_path TEXT,
+                            is_branded BOOLEAN DEFAULT 0
+                        )
+                    ''')
+                    cursor.execute('''
+                        INSERT INTO qr_codes (table_number, qr_data, image_path, is_branded)
+                        VALUES (?, ?, ?, 1)
+                    ''', (table_number, qr_data, filename))
+                    conn.commit()
+                    conn.close()
+
+                messagebox.showinfo("Success",
+                                   f"Enhanced QR code generated!\n\n" +
+                                   f"Table: {table_number}\n" +
+                                   f"Saved to: {filename}\n" +
+                                   f"Features: High quality, labeled")
+
+        except ImportError:
+            messagebox.showerror("Missing Library",
+                                "Enhanced QR code generation requires 'qrcode' and 'Pillow'.\n\n" +
+                                "Install with: pip install qrcode[pil] Pillow")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate enhanced QR code:\n{str(e)}")
+
+    def print_qr_codes(self):
+        """Batch generate and print QR codes for multiple tables"""
+        try:
+            import qrcode
+            from PIL import Image, ImageDraw, ImageFont
+            from tkinter import filedialog
+
+            # Ask for table range
+            start_table = simpledialog.askinteger("Batch Generate",
+                                                 "Start table number:",
+                                                 minvalue=1, maxvalue=100)
+            if not start_table:
+                return
+
+            end_table = simpledialog.askinteger("Batch Generate",
+                                               "End table number:",
+                                               minvalue=start_table, maxvalue=100)
+            if not end_table:
+                return
+
+            # Ask for save directory
+            save_dir = filedialog.askdirectory(title="Select folder to save QR codes")
+            if not save_dir:
+                return
+
+            generated_count = 0
+            errors = []
+
+            for table_num in range(start_table, end_table + 1):
+                try:
+                    # Create QR code
+                    qr_data = f"https://restaurant.example.com/table/{table_num}"
+                    qr = qrcode.QRCode(
+                        version=1,
+                        error_correction=qrcode.constants.ERROR_CORRECT_H,
+                        box_size=10,
+                        border=4,
+                    )
+                    qr.add_data(qr_data)
+                    qr.make(fit=True)
+
+                    img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+                    # Add label
+                    width, height = img.size
+                    new_img = Image.new('RGB', (width, height + 80), 'white')
+                    new_img.paste(img, (0, 0))
+
+                    draw = ImageDraw.Draw(new_img)
+                    try:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+                    except:
+                        font = ImageFont.load_default()
+
+                    text = f"Table {table_num}"
+                    bbox = draw.textbbox((0, 0), text, font=font)
+                    text_width = bbox[2] - bbox[0]
+                    text_x = (width - text_width) // 2
+                    text_y = height + 20
+
+                    draw.text((text_x, text_y), text, fill="black", font=font)
+
+                    # Save
+                    import os
+                    filename = os.path.join(save_dir, f"table_{table_num:03d}_qr.png")
+                    new_img.save(filename, quality=95)
+
+                    # Update database
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS qr_codes (
+                                qr_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                table_number TEXT,
+                                qr_data TEXT,
+                                generated_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                image_path TEXT,
+                                is_branded BOOLEAN DEFAULT 0
+                            )
+                        ''')
+                        cursor.execute('''
+                            INSERT INTO qr_codes (table_number, qr_data, image_path, is_branded)
+                            VALUES (?, ?, ?, 1)
+                        ''', (str(table_num), qr_data, filename))
+                        conn.commit()
+                        conn.close()
+
+                    generated_count += 1
+
+                except Exception as e:
+                    errors.append(f"Table {table_num}: {str(e)}")
+
+            # Show results
+            result_msg = f"Batch QR Code Generation Complete!\n\n"
+            result_msg += f"Successfully generated: {generated_count} QR codes\n"
+            result_msg += f"Saved to: {save_dir}\n"
+
+            if errors:
+                result_msg += f"\nErrors ({len(errors)}):\n"
+                result_msg += "\n".join(errors[:5])  # Show first 5 errors
+                if len(errors) > 5:
+                    result_msg += f"\n... and {len(errors) - 5} more"
+
+            messagebox.showinfo("Batch Generation Complete", result_msg)
+
+        except ImportError:
+            messagebox.showerror("Missing Library",
+                                "Batch QR code generation requires 'qrcode' and 'Pillow'.\n\n" +
+                                "Install with: pip install qrcode[pil] Pillow")
+        except Exception as e:
+            messagebox.showerror("Error", f"Batch generation failed:\n{str(e)}")
+
+    def scan_qr_code_usage(self):
+        """Display QR code scanning analytics"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Create tables if they don't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS qr_scans (
+                    scan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    table_number TEXT,
+                    scan_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    customer_id INTEGER,
+                    device_type TEXT
+                )
+            ''')
+            conn.commit()
+
+            # Get analytics data
+            cursor.execute('''
+                SELECT COUNT(*) FROM qr_scans
+            ''')
+            total_scans = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT table_number, COUNT(*) as scan_count
+                FROM qr_scans
+                GROUP BY table_number
+                ORDER BY scan_count DESC
+                LIMIT 10
+            ''')
+            top_tables = cursor.fetchall()
+
+            cursor.execute('''
+                SELECT strftime('%H', scan_time) as hour, COUNT(*) as count
+                FROM qr_scans
+                GROUP BY hour
+                ORDER BY count DESC
+                LIMIT 5
+            ''')
+            peak_hours = cursor.fetchall()
+
+            cursor.execute('''
+                SELECT DATE(scan_time) as date, COUNT(*) as count
+                FROM qr_scans
+                WHERE scan_time >= date('now', '-7 days')
+                GROUP BY date
+                ORDER BY date DESC
+            ''')
+            recent_scans = cursor.fetchall()
+
+            conn.close()
+
+            # Display analytics
+            analytics_dialog = tk.Toplevel(self.root)
+            analytics_dialog.title("QR Code Usage Analytics")
+            analytics_dialog.geometry("800x600")
+            analytics_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(analytics_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="QR Code Usage Analytics",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Create scrolled text for report
+            report_text = ScrolledText(main_frame, height=30, width=90)
+            report_text.pack(fill='both', expand=True)
+
+            report = "QR CODE USAGE ANALYTICS\n"
+            report += "=" * 80 + "\n\n"
+
+            report += f"OVERALL STATISTICS:\n"
+            report += "-" * 80 + "\n"
+            report += f"Total Scans: {total_scans}\n\n"
+
+            report += "TOP 10 MOST SCANNED TABLES:\n"
+            report += "-" * 80 + "\n"
+            report += f"{'Table':<15} {'Scan Count':<15} {'Engagement':<20}\n"
+            report += "-" * 80 + "\n"
+            for table, count in top_tables:
+                engagement = "High" if count > 50 else "Medium" if count > 20 else "Low"
+                report += f"{table:<15} {count:<15} {engagement:<20}\n"
+
+            report += "\n\nPEAK SCANNING HOURS:\n"
+            report += "-" * 80 + "\n"
+            report += f"{'Hour':<15} {'Scan Count':<15} {'Time Period':<20}\n"
+            report += "-" * 80 + "\n"
+            for hour, count in peak_hours:
+                if hour:
+                    hour_int = int(hour)
+                    period = "Breakfast" if 6 <= hour_int < 11 else "Lunch" if 11 <= hour_int < 15 else "Dinner" if 17 <= hour_int < 22 else "Other"
+                    report += f"{hour:02d}:00{' '*9} {count:<15} {period:<20}\n"
+
+            report += "\n\nSCANS BY DATE (Last 7 Days):\n"
+            report += "-" * 80 + "\n"
+            report += f"{'Date':<15} {'Scan Count':<15} {'Trend':<20}\n"
+            report += "-" * 80 + "\n"
+            for date, count in recent_scans:
+                trend = "▲" if count > 30 else "▼" if count < 10 else "■"
+                report += f"{date:<15} {count:<15} {trend:<20}\n"
+
+            report += "\n\nKEY INSIGHTS:\n"
+            report += "-" * 80 + "\n"
+            if total_scans == 0:
+                report += "• No QR code scans recorded yet\n"
+                report += "• Generate and distribute QR codes to tables\n"
+                report += "• Encourage customers to scan for digital menus\n"
+            else:
+                report += f"• Average scans per table: {total_scans / max(len(top_tables), 1):.1f}\n"
+                if peak_hours:
+                    report += f"• Peak usage hour: {peak_hours[0][0]}:00\n"
+                if top_tables:
+                    report += f"• Most popular table: {top_tables[0][0]} ({top_tables[0][1]} scans)\n"
+                report += "• QR code effectiveness: " + ("High" if total_scans > 100 else "Medium" if total_scans > 30 else "Low") + "\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            # Add simulate scan button for testing
+            def simulate_scan():
+                table = simpledialog.askstring("Simulate Scan", "Enter table number:")
+                if table:
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                INSERT INTO qr_scans (table_number, device_type)
+                                VALUES (?, 'Mobile')
+                            ''', (table,))
+                            conn.commit()
+                            conn.close()
+                            messagebox.showinfo("Success", f"Simulated scan for Table {table}")
+                            analytics_dialog.destroy()
+                            self.scan_qr_code_usage()  # Refresh
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to simulate scan: {e}")
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Simulate Scan (Testing)",
+                      command=simulate_scan).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=analytics_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load QR analytics:\n{str(e)}")
+
+    def update_qr_database_record(self):
+        """Update QR code database records"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Create table if doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS qr_codes (
+                    qr_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    table_number TEXT,
+                    qr_data TEXT,
+                    generated_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    image_path TEXT,
+                    is_branded BOOLEAN DEFAULT 0,
+                    is_active BOOLEAN DEFAULT 1,
+                    version INTEGER DEFAULT 1
+                )
+            ''')
+            conn.commit()
+
+            # Get all QR codes
+            cursor.execute('''
+                SELECT qr_id, table_number, generated_date, is_active, version
+                FROM qr_codes
+                ORDER BY table_number
+            ''')
+            qr_records = cursor.fetchall()
+            conn.close()
+
+            if not qr_records:
+                messagebox.showinfo("No Records",
+                                   "No QR code records found in database.\n\n" +
+                                   "Generate QR codes first to create records.")
+                return
+
+            # Show management dialog
+            mgmt_dialog = tk.Toplevel(self.root)
+            mgmt_dialog.title("QR Code Database Management")
+            mgmt_dialog.geometry("800x500")
+            mgmt_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(mgmt_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="QR Code Database Records",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Create treeview
+            tree_frame = ttk.Frame(main_frame)
+            tree_frame.pack(fill='both', expand=True, pady=10)
+
+            columns = ('ID', 'Table', 'Generated', 'Active', 'Version')
+            tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            for record in qr_records:
+                qr_id, table, gen_date, is_active, version = record
+                active_status = "Yes" if is_active else "No"
+                tree.insert('', 'end', values=(qr_id, table, gen_date, active_status, version))
+
+            scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            # Action buttons
+            def regenerate_qr():
+                selection = tree.selection()
+                if not selection:
+                    messagebox.showwarning("No Selection", "Please select a QR code to regenerate")
+                    return
+
+                item = tree.item(selection[0])
+                qr_id = item['values'][0]
+                table_num = item['values'][1]
+
+                if messagebox.askyesno("Confirm", f"Regenerate QR code for Table {table_num}?"):
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                UPDATE qr_codes
+                                SET version = version + 1,
+                                    generated_date = CURRENT_TIMESTAMP
+                                WHERE qr_id = ?
+                            ''', (qr_id,))
+                            conn.commit()
+                            conn.close()
+                            messagebox.showinfo("Success", f"QR code record updated for Table {table_num}")
+                            mgmt_dialog.destroy()
+                            self.update_qr_database_record()  # Refresh
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to update record: {e}")
+
+            def toggle_active():
+                selection = tree.selection()
+                if not selection:
+                    messagebox.showwarning("No Selection", "Please select a QR code")
+                    return
+
+                item = tree.item(selection[0])
+                qr_id = item['values'][0]
+                table_num = item['values'][1]
+                current_status = item['values'][3]
+
+                new_status = 0 if current_status == "Yes" else 1
+
+                try:
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            UPDATE qr_codes
+                            SET is_active = ?
+                            WHERE qr_id = ?
+                        ''', (new_status, qr_id))
+                        conn.commit()
+                        conn.close()
+                        messagebox.showinfo("Success",
+                                           f"Table {table_num} QR code " +
+                                           ("activated" if new_status else "deactivated"))
+                        mgmt_dialog.destroy()
+                        self.update_qr_database_record()  # Refresh
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update status: {e}")
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Regenerate Selected",
+                      command=regenerate_qr).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Toggle Active/Inactive",
+                      command=toggle_active).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=mgmt_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to manage QR database:\n{str(e)}")
+
+    def optimize_table_structure(self):
+        """Optimize table arrangement based on utilization data"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get table utilization data
+            cursor.execute('''
+                SELECT t.table_id, t.capacity, t.location, t.table_type,
+                       COUNT(r.reservation_id) as reservation_count,
+                       AVG(r.party_size) as avg_party_size
+                FROM restaurant_tables t
+                LEFT JOIN restaurant_reservations r ON t.table_id = r.table_id
+                WHERE r.reservation_date >= date('now', '-30 days')
+                GROUP BY t.table_id
+                ORDER BY reservation_count DESC
+            ''')
+            utilization_data = cursor.fetchall()
+
+            # Get revenue per table (if order data exists)
+            cursor.execute('''
+                SELECT t.table_id, SUM(o.total_price) as total_revenue
+                FROM restaurant_tables t
+                LEFT JOIN restaurant_orders o ON t.table_id = o.table_id
+                WHERE o.order_time >= datetime('now', '-30 days')
+                GROUP BY t.table_id
+            ''')
+            revenue_data = dict(cursor.fetchall())
+
+            conn.close()
+
+            # Display optimization analysis
+            opt_dialog = tk.Toplevel(self.root)
+            opt_dialog.title("Table Structure Optimization")
+            opt_dialog.geometry("900x700")
+            opt_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(opt_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Table Structure Optimization Analysis",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Create scrolled text for report
+            report_text = ScrolledText(main_frame, height=35, width=100)
+            report_text.pack(fill='both', expand=True)
+
+            report = "TABLE STRUCTURE OPTIMIZATION ANALYSIS\n"
+            report += "=" * 90 + "\n\n"
+
+            # Table utilization analysis
+            report += "TABLE UTILIZATION ANALYSIS (Last 30 Days):\n"
+            report += "-" * 90 + "\n"
+            report += f"{'Table':<10} {'Capacity':<10} {'Reservations':<15} {'Avg Party':<12} {'Revenue':<15} {'Efficiency':<15}\n"
+            report += "-" * 90 + "\n"
+
+            total_capacity = 0
+            total_reservations = 0
+            underutilized = []
+            overutilized = []
+
+            for table_id, capacity, location, table_type, res_count, avg_party in utilization_data:
+                revenue = revenue_data.get(table_id, 0)
+                efficiency = (avg_party / capacity * 100) if capacity and avg_party else 0
+
+                total_capacity += capacity
+                total_reservations += res_count
+
+                report += f"{table_id:<10} {capacity:<10} {res_count:<15} {avg_party or 0:<12.1f} £{revenue:<14.2f} {efficiency:<14.1f}%\n"
+
+                if efficiency < 60 and res_count > 5:
+                    underutilized.append((table_id, capacity, efficiency))
+                elif efficiency > 95 and res_count > 10:
+                    overutilized.append((table_id, capacity, efficiency))
+
+            # Capacity vs Demand analysis
+            report += "\n\nCAPACITY VS DEMAND ANALYSIS:\n"
+            report += "-" * 90 + "\n"
+            report += f"Total Seating Capacity: {total_capacity} seats\n"
+            report += f"Total Reservations (30 days): {total_reservations}\n"
+            if utilization_data:
+                avg_util = (total_reservations / (len(utilization_data) * 30)) * 100
+                report += f"Average Table Utilization: {avg_util:.1f}%\n\n"
+
+            # Recommendations
+            report += "OPTIMIZATION RECOMMENDATIONS:\n"
+            report += "-" * 90 + "\n"
+
+            if underutilized:
+                report += "\n1. UNDERUTILIZED TABLES (< 60% efficiency):\n"
+                for table_id, capacity, efficiency in underutilized:
+                    report += f"   • Table {table_id} ({capacity} seats) - {efficiency:.1f}% efficiency\n"
+                    report += f"     Recommendation: Consider converting to smaller table or different configuration\n"
+
+            if overutilized:
+                report += "\n2. OVERUTILIZED TABLES (> 95% efficiency):\n"
+                for table_id, capacity, efficiency in overutilized:
+                    report += f"   • Table {table_id} ({capacity} seats) - {efficiency:.1f}% efficiency\n"
+                    report += f"     Recommendation: High demand - consider adding similar capacity tables\n"
+
+            if not underutilized and not overutilized:
+                report += "• Current table configuration appears well-balanced\n"
+                report += "• Continue monitoring utilization trends\n"
+
+            # Revenue optimization
+            report += "\n3. REVENUE OPTIMIZATION:\n"
+            top_revenue = sorted(revenue_data.items(), key=lambda x: x[1], reverse=True)[:3]
+            if top_revenue:
+                report += "   Top revenue-generating tables:\n"
+                for table_id, revenue in top_revenue:
+                    report += f"   • Table {table_id}: £{revenue:.2f}\n"
+                report += "   Recommendation: Prioritize these table locations for expansion\n"
+
+            # Turnover rate analysis
+            report += "\n4. TURNOVER RATE ANALYSIS:\n"
+            if total_reservations > 0:
+                daily_turnover = total_reservations / 30
+                report += f"   • Average daily table turnovers: {daily_turnover:.1f}\n"
+                if daily_turnover < 2:
+                    report += "   • Recommendation: Low turnover - consider strategies to increase table turnover\n"
+                elif daily_turnover > 4:
+                    report += "   • Recommendation: High turnover - ensure service quality is maintained\n"
+
+            report += "\n\nACTION ITEMS:\n"
+            report += "-" * 90 + "\n"
+            report += "1. Review underutilized tables for reconfiguration\n"
+            report += "2. Monitor overutilized tables for customer satisfaction\n"
+            report += "3. Consider adding capacity in high-revenue areas\n"
+            report += "4. Optimize table allocation during peak hours\n"
+            report += "5. Review reservation patterns for better planning\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=opt_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze table structure:\n{str(e)}")
+
     # Staff Functions
     def view_staff_gui(self):
         """Display staff in the treeview"""
@@ -1691,7 +2479,453 @@ Platinum (1000+ points):
             
         except Exception as e:
             return f"Error generating analytics: {str(e)}"
-            
+
+    def view_schedule_conflicts(self):
+        """Identify and display scheduling conflicts"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Find overlapping shifts
+            cursor.execute('''
+                SELECT s1.shift_id as shift1_id, s1.staff_id, s1.shift_date, s1.start_time, s1.end_time,
+                       s2.shift_id as shift2_id, s2.start_time as overlap_start, s2.end_time as overlap_end,
+                       st.name
+                FROM restaurant_shifts s1
+                JOIN restaurant_shifts s2 ON s1.staff_id = s2.staff_id
+                    AND s1.shift_id != s2.shift_id
+                    AND s1.shift_date = s2.shift_date
+                    AND s1.start_time < s2.end_time
+                    AND s1.end_time > s2.start_time
+                JOIN restaurant_staff st ON s1.staff_id = st.staff_id
+                WHERE s1.shift_date >= date('now')
+                ORDER BY s1.shift_date, s1.start_time
+            ''')
+            conflicts = cursor.fetchall()
+
+            # Check for understaffed periods (need at least 2 staff per 4-hour period)
+            cursor.execute('''
+                SELECT shift_date, start_time, COUNT(*) as staff_count
+                FROM restaurant_shifts
+                WHERE shift_date >= date('now')
+                GROUP BY shift_date, start_time
+                HAVING COUNT(*) < 2
+                ORDER BY shift_date, start_time
+            ''')
+            understaffed = cursor.fetchall()
+
+            # Check for overstaffed periods (more than 6 staff at once)
+            cursor.execute('''
+                SELECT shift_date, start_time, COUNT(*) as staff_count
+                FROM restaurant_shifts
+                WHERE shift_date >= date('now')
+                GROUP BY shift_date, start_time
+                HAVING COUNT(*) > 6
+                ORDER BY shift_date, start_time
+            ''')
+            overstaffed = cursor.fetchall()
+
+            conn.close()
+
+            # Display conflicts
+            conflict_dialog = tk.Toplevel(self.root)
+            conflict_dialog.title("Schedule Conflicts")
+            conflict_dialog.geometry("900x700")
+            conflict_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(conflict_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Schedule Conflicts & Issues",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=35, width=100)
+            report_text.pack(fill='both', expand=True)
+
+            report = "SCHEDULE CONFLICTS REPORT\n"
+            report += "=" * 90 + "\n\n"
+
+            # Overlapping shifts
+            report += "1. OVERLAPPING SHIFTS (Double-booked staff):\n"
+            report += "-" * 90 + "\n"
+            if conflicts:
+                for shift1_id, staff_id, shift_date, start1, end1, shift2_id, start2, end2, name in conflicts:
+                    report += f"Staff: {name} (ID: {staff_id})\n"
+                    report += f"  Date: {shift_date}\n"
+                    report += f"  Shift 1: {start1} - {end1} (ID: {shift1_id})\n"
+                    report += f"  Shift 2: {start2} - {end2} (ID: {shift2_id})\n"
+                    report += f"  CONFLICT: Shifts overlap!\n\n"
+                report += f"\nTotal conflicts found: {len(conflicts)}\n"
+            else:
+                report += "No overlapping shifts detected.\n"
+
+            # Understaffed periods
+            report += "\n\n2. UNDERSTAFFED PERIODS (< 2 staff):\n"
+            report += "-" * 90 + "\n"
+            if understaffed:
+                for shift_date, start_time, staff_count in understaffed:
+                    report += f"Date: {shift_date}, Time: {start_time} - Staff Count: {staff_count}\n"
+                report += f"\nTotal understaffed periods: {len(understaffed)}\n"
+            else:
+                report += "No understaffed periods detected.\n"
+
+            # Overstaffed periods
+            report += "\n\n3. OVERSTAFFED PERIODS (> 6 staff):\n"
+            report += "-" * 90 + "\n"
+            if overstaffed:
+                for shift_date, start_time, staff_count in overstaffed:
+                    report += f"Date: {shift_date}, Time: {start_time} - Staff Count: {staff_count}\n"
+                report += f"\nTotal overstaffed periods: {len(overstaffed)}\n"
+            else:
+                report += "No overstaffed periods detected.\n"
+
+            # Recommendations
+            report += "\n\nRECOMMENDATIONS:\n"
+            report += "-" * 90 + "\n"
+            if conflicts:
+                report += "• Resolve overlapping shifts immediately\n"
+                report += "• Contact affected staff to confirm availability\n"
+                report += "• Update shift assignments\n"
+            if understaffed:
+                report += "• Schedule additional staff for understaffed periods\n"
+                report += "• Consider part-time staff or on-call arrangements\n"
+            if overstaffed:
+                report += "• Reduce staff during overstaffed periods to optimize costs\n"
+                report += "• Reassign staff to other duties or locations\n"
+            if not conflicts and not understaffed and not overstaffed:
+                report += "• Schedule appears well-balanced\n"
+                report += "• Continue monitoring for future conflicts\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=conflict_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to check schedule conflicts:\n{str(e)}")
+
+    def staff_performance(self):
+        """Staff performance management menu"""
+        perf_dialog = tk.Toplevel(self.root)
+        perf_dialog.title("Staff Performance Management")
+        perf_dialog.geometry("400x350")
+        perf_dialog.transient(self.root)
+        perf_dialog.grab_set()
+
+        main_frame = ttk.Frame(perf_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Staff Performance Management",
+                 font=('Arial', 14, 'bold')).pack(pady=20)
+
+        ttk.Button(main_frame, text="View Performance Rankings",
+                  command=lambda: [perf_dialog.destroy(), self.view_performance_rankings()],
+                  width=35).pack(pady=10)
+
+        ttk.Button(main_frame, text="Update Performance Scores",
+                  command=lambda: [perf_dialog.destroy(), self.update_performance_scores()],
+                  width=35).pack(pady=10)
+
+        ttk.Button(main_frame, text="Export Performance Report",
+                  command=lambda: [perf_dialog.destroy(), self.export_performance_report()],
+                  width=35).pack(pady=10)
+
+        ttk.Button(main_frame, text="Close",
+                  command=perf_dialog.destroy,
+                  width=35).pack(pady=20)
+
+    def view_performance_rankings(self):
+        """Display staff performance rankings"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Create performance table if it doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS staff_performance (
+                    performance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    staff_id INTEGER,
+                    punctuality_score INTEGER DEFAULT 5,
+                    quality_score INTEGER DEFAULT 5,
+                    efficiency_score INTEGER DEFAULT 5,
+                    teamwork_score INTEGER DEFAULT 5,
+                    overall_score REAL DEFAULT 5.0,
+                    evaluation_date DATE DEFAULT CURRENT_DATE,
+                    notes TEXT,
+                    FOREIGN KEY (staff_id) REFERENCES restaurant_staff(staff_id)
+                )
+            ''')
+            conn.commit()
+
+            # Get performance rankings
+            cursor.execute('''
+                SELECT s.staff_id, s.name, s.position,
+                       COALESCE(AVG(p.overall_score), 5.0) as avg_score,
+                       COUNT(p.performance_id) as eval_count
+                FROM restaurant_staff s
+                LEFT JOIN staff_performance p ON s.staff_id = p.staff_id
+                GROUP BY s.staff_id
+                ORDER BY avg_score DESC
+            ''')
+            rankings = cursor.fetchall()
+
+            conn.close()
+
+            # Display rankings
+            rank_dialog = tk.Toplevel(self.root)
+            rank_dialog.title("Staff Performance Rankings")
+            rank_dialog.geometry("800x600")
+            rank_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(rank_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Staff Performance Rankings",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Create treeview
+            columns = ('Rank', 'Staff ID', 'Name', 'Position', 'Avg Score', 'Evaluations', 'Performance')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=100)
+
+            rank = 1
+            for staff_id, name, position, avg_score, eval_count in rankings:
+                performance = "Excellent" if avg_score >= 8 else "Good" if avg_score >= 6 else "Needs Improvement"
+                tree.insert('', 'end', values=(rank, staff_id, name, position,
+                                              f"{avg_score:.1f}/10", eval_count, performance))
+                rank += 1
+
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            ttk.Button(main_frame, text="Close",
+                      command=rank_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load performance rankings:\n{str(e)}")
+
+    def update_performance_scores(self):
+        """Update individual staff performance scores"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+            cursor.execute('SELECT staff_id, name, position FROM restaurant_staff ORDER BY name')
+            staff_list = cursor.fetchall()
+            conn.close()
+
+            if not staff_list:
+                messagebox.showinfo("No Staff", "No staff members found in database")
+                return
+
+            # Create dialog
+            update_dialog = tk.Toplevel(self.root)
+            update_dialog.title("Update Performance Scores")
+            update_dialog.geometry("500x650")
+            update_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(update_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Update Performance Scores",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Staff selection
+            staff_frame = ttk.LabelFrame(main_frame, text="Select Staff Member", padding=10)
+            staff_frame.pack(fill='x', pady=10)
+
+            staff_var = tk.StringVar()
+            staff_dropdown = ttk.Combobox(staff_frame, textvariable=staff_var, width=40, state='readonly')
+            staff_dropdown['values'] = [f"{s[0]} - {s[1]} ({s[2]})" for s in staff_list]
+            staff_dropdown.pack()
+
+            # Performance criteria
+            criteria_frame = ttk.LabelFrame(main_frame, text="Performance Criteria (1-10)", padding=10)
+            criteria_frame.pack(fill='x', pady=10)
+
+            punctuality_var = tk.IntVar(value=5)
+            quality_var = tk.IntVar(value=5)
+            efficiency_var = tk.IntVar(value=5)
+            teamwork_var = tk.IntVar(value=5)
+
+            ttk.Label(criteria_frame, text="Punctuality:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Scale(criteria_frame, from_=1, to=10, variable=punctuality_var, orient='horizontal', length=200).grid(row=0, column=1, padx=10)
+            ttk.Label(criteria_frame, textvariable=punctuality_var).grid(row=0, column=2)
+
+            ttk.Label(criteria_frame, text="Quality:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Scale(criteria_frame, from_=1, to=10, variable=quality_var, orient='horizontal', length=200).grid(row=1, column=1, padx=10)
+            ttk.Label(criteria_frame, textvariable=quality_var).grid(row=1, column=2)
+
+            ttk.Label(criteria_frame, text="Efficiency:").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Scale(criteria_frame, from_=1, to=10, variable=efficiency_var, orient='horizontal', length=200).grid(row=2, column=1, padx=10)
+            ttk.Label(criteria_frame, textvariable=efficiency_var).grid(row=2, column=2)
+
+            ttk.Label(criteria_frame, text="Teamwork:").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Scale(criteria_frame, from_=1, to=10, variable=teamwork_var, orient='horizontal', length=200).grid(row=3, column=1, padx=10)
+            ttk.Label(criteria_frame, textvariable=teamwork_var).grid(row=3, column=2)
+
+            # Notes
+            notes_frame = ttk.LabelFrame(main_frame, text="Manager Comments", padding=10)
+            notes_frame.pack(fill='both', expand=True, pady=10)
+
+            notes_text = tk.Text(notes_frame, height=5, width=50)
+            notes_text.pack(fill='both', expand=True)
+
+            # Save button
+            def save_performance():
+                if not staff_var.get():
+                    messagebox.showwarning("No Selection", "Please select a staff member")
+                    return
+
+                staff_id = int(staff_var.get().split(' - ')[0])
+
+                overall_score = (punctuality_var.get() + quality_var.get() +
+                               efficiency_var.get() + teamwork_var.get()) / 4
+
+                try:
+                    conn = get_db_connection()
+                    if conn:
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS staff_performance (
+                                performance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                staff_id INTEGER,
+                                punctuality_score INTEGER,
+                                quality_score INTEGER,
+                                efficiency_score INTEGER,
+                                teamwork_score INTEGER,
+                                overall_score REAL,
+                                evaluation_date DATE DEFAULT CURRENT_DATE,
+                                notes TEXT,
+                                FOREIGN KEY (staff_id) REFERENCES restaurant_staff(staff_id)
+                            )
+                        ''')
+                        cursor.execute('''
+                            INSERT INTO staff_performance
+                            (staff_id, punctuality_score, quality_score, efficiency_score,
+                             teamwork_score, overall_score, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (staff_id, punctuality_var.get(), quality_var.get(),
+                             efficiency_var.get(), teamwork_var.get(), overall_score,
+                             notes_text.get(1.0, tk.END)))
+                        conn.commit()
+                        conn.close()
+                        messagebox.showinfo("Success", "Performance evaluation saved successfully!")
+                        update_dialog.destroy()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save performance: {e}")
+
+            ttk.Button(main_frame, text="Save Evaluation",
+                      command=save_performance).pack(pady=10)
+            ttk.Button(main_frame, text="Cancel",
+                      command=update_dialog.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update performance scores:\n{str(e)}")
+
+    def export_performance_report(self):
+        """Export staff performance report"""
+        try:
+            from tkinter import filedialog
+            import csv
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get comprehensive performance data
+            cursor.execute('''
+                SELECT s.staff_id, s.name, s.position,
+                       AVG(p.punctuality_score) as avg_punctuality,
+                       AVG(p.quality_score) as avg_quality,
+                       AVG(p.efficiency_score) as avg_efficiency,
+                       AVG(p.teamwork_score) as avg_teamwork,
+                       AVG(p.overall_score) as avg_overall,
+                       COUNT(p.performance_id) as eval_count,
+                       MAX(p.evaluation_date) as latest_eval
+                FROM restaurant_staff s
+                LEFT JOIN staff_performance p ON s.staff_id = p.staff_id
+                GROUP BY s.staff_id
+                ORDER BY avg_overall DESC
+            ''')
+            performance_data = cursor.fetchall()
+
+            conn.close()
+
+            if not performance_data:
+                messagebox.showinfo("No Data", "No performance data available")
+                return
+
+            # Ask for export format
+            format_choice = messagebox.askquestion("Export Format",
+                                                  "Export as CSV?\n(No = Display in window)")
+
+            if format_choice == 'yes':
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile="staff_performance_report.csv"
+                )
+
+                if filename:
+                    with open(filename, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Staff ID', 'Name', 'Position', 'Punctuality', 'Quality',
+                                       'Efficiency', 'Teamwork', 'Overall Score', 'Evaluations', 'Latest Eval'])
+
+                        for record in performance_data:
+                            writer.writerow(record)
+
+                    messagebox.showinfo("Success", f"Performance report exported to:\n{filename}")
+            else:
+                # Display in report window
+                report = "STAFF PERFORMANCE REPORT\n"
+                report += "=" * 120 + "\n\n"
+                report += f"{'ID':<6} {'Name':<20} {'Position':<15} {'Punct':<7} {'Quality':<8} {'Effic':<7} {'Team':<7} {'Overall':<8} {'Evals':<7} {'Latest':<12}\n"
+                report += "-" * 120 + "\n"
+
+                for (staff_id, name, position, punc, qual, effic, team, overall, evals, latest) in performance_data:
+                    report += f"{staff_id:<6} {name:<20} {position:<15} "
+                    report += f"{punc or 0:<7.1f} {qual or 0:<8.1f} {effic or 0:<7.1f} {team or 0:<7.1f} "
+                    report += f"{overall or 0:<8.1f} {evals or 0:<7} {latest or 'N/A':<12}\n"
+
+                # Show in main report area if available, otherwise create dialog
+                if hasattr(self, 'report_text'):
+                    self.report_text.delete(1.0, tk.END)
+                    self.report_text.insert(tk.END, report)
+                else:
+                    report_dialog = tk.Toplevel(self.root)
+                    report_dialog.title("Performance Report")
+                    report_dialog.geometry("1000x600")
+                    report_text = ScrolledText(report_dialog, height=30, width=120)
+                    report_text.pack(fill='both', expand=True, padx=10, pady=10)
+                    report_text.insert(1.0, report)
+                    report_text.config(state='disabled')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export performance report:\n{str(e)}")
+
     # Inventory Functions
     def view_inventory_gui(self):
         """Display inventory in the treeview"""
@@ -2116,7 +3350,638 @@ Platinum (1000+ points):
         ttk.Button(button_frame_bottom, text="View Detailed Reports",
                   command=self.view_waste_reports).pack(side='left', padx=5)
         ttk.Button(button_frame_bottom, text="Close", command=dialog.destroy).pack(side='left', padx=5)
-        
+
+    # Comprehensive Inventory Reports
+    def inventory_reports(self):
+        """Show comprehensive inventory reports menu"""
+        reports_dialog = tk.Toplevel(self.root)
+        reports_dialog.title("Inventory Reports")
+        reports_dialog.geometry("450x500")
+        reports_dialog.transient(self.root)
+        reports_dialog.grab_set()
+
+        main_frame = ttk.Frame(reports_dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Inventory Reports",
+                 font=('Arial', 14, 'bold')).pack(pady=20)
+
+        ttk.Button(main_frame, text="Inventory Valuation Report",
+                  command=lambda: [reports_dialog.destroy(), self.inventory_valuation_report()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="Stock Movement Report",
+                  command=lambda: [reports_dialog.destroy(), self.stock_movement_report()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="Low Stock Report",
+                  command=lambda: [reports_dialog.destroy(), self.low_stock_report()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="Expiry Report",
+                  command=lambda: [reports_dialog.destroy(), self.expiry_report()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="ABC Analysis",
+                  command=lambda: [reports_dialog.destroy(), self.abc_analysis()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="Inventory Transactions Log",
+                  command=lambda: [reports_dialog.destroy(), self.inventory_transactions()],
+                  width=35).pack(pady=5)
+
+        ttk.Button(main_frame, text="Close",
+                  command=reports_dialog.destroy,
+                  width=35).pack(pady=20)
+
+    def inventory_valuation_report(self):
+        """Calculate total inventory value"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get inventory valuation by category/item
+            cursor.execute('''
+                SELECT item_id, name, quantity, unit, cost_per_unit,
+                       (quantity * cost_per_unit) as total_value
+                FROM restaurant_inventory
+                ORDER BY total_value DESC
+            ''')
+            items = cursor.fetchall()
+
+            conn.close()
+
+            # Display report
+            report_dialog = tk.Toplevel(self.root)
+            report_dialog.title("Inventory Valuation Report")
+            report_dialog.geometry("900x600")
+            report_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(report_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Inventory Valuation Report",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=30, width=100)
+            report_text.pack(fill='both', expand=True)
+
+            report = "INVENTORY VALUATION REPORT\n"
+            report += "=" * 90 + "\n\n"
+            report += f"{'Item ID':<10} {'Item Name':<30} {'Quantity':<12} {'Unit':<10} {'Cost/Unit':<12} {'Total Value':<15}\n"
+            report += "-" * 90 + "\n"
+
+            total_value = 0
+            for item_id, name, qty, unit, cost, value in items:
+                total_value += value if value else 0
+                report += f"{item_id:<10} {name:<30} {qty:<12.1f} {unit:<10} £{cost:<11.2f if cost else 0:<11.2f} £{value:<14.2f if value else 0:<14.2f}\n"
+
+            report += "-" * 90 + "\n"
+            report += f"{'TOTAL INVENTORY VALUE:':<64} £{total_value:<14.2f}\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=report_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate valuation report:\n{str(e)}")
+
+    def stock_movement_report(self):
+        """Track inventory movements (received, used, waste)"""
+        try:
+            start_date = simpledialog.askstring("Stock Movement", "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Stock Movement", "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get movements data (purchases, waste)
+            cursor.execute('''
+                SELECT 'Purchase' as type, po.order_date as date, poi.item_id,
+                       i.name, poi.quantity, 'Received' as movement
+                FROM restaurant_purchase_order_items poi
+                JOIN restaurant_purchase_orders po ON poi.order_id = po.order_id
+                JOIN restaurant_inventory i ON poi.item_id = i.item_id
+                WHERE po.order_date BETWEEN ? AND ?
+                UNION ALL
+                SELECT 'Waste' as type, w.waste_date as date, NULL as item_id,
+                       w.item_name as name, w.quantity, 'Waste' as movement
+                FROM restaurant_waste w
+                WHERE w.waste_date BETWEEN ? AND ?
+                ORDER BY date DESC
+            ''', (start_date, end_date, start_date, end_date))
+            movements = cursor.fetchall()
+
+            conn.close()
+
+            # Display report
+            report_dialog = tk.Toplevel(self.root)
+            report_dialog.title("Stock Movement Report")
+            report_dialog.geometry("900x600")
+            report_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(report_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Stock Movement Report\n{start_date} to {end_date}",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=30, width=100)
+            report_text.pack(fill='both', expand=True)
+
+            report = "STOCK MOVEMENT REPORT\n"
+            report += "=" * 90 + "\n\n"
+            report += f"{'Date':<12} {'Type':<12} {'Item':<30} {'Quantity':<12} {'Movement':<15}\n"
+            report += "-" * 90 + "\n"
+
+            total_received = 0
+            total_waste = 0
+
+            for mov_type, date, item_id, name, qty, movement in movements:
+                report += f"{date:<12} {mov_type:<12} {name:<30} {qty:<12.1f} {movement:<15}\n"
+                if movement == 'Received':
+                    total_received += qty if qty else 0
+                elif movement == 'Waste':
+                    total_waste += qty if qty else 0
+
+            report += "\n" + "=" * 90 + "\n"
+            report += f"Total Received: {total_received:.1f} units\n"
+            report += f"Total Waste: {total_waste:.1f} units\n"
+            report += f"Net Movement: {total_received - total_waste:.1f} units\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=report_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate stock movement report:\n{str(e)}")
+
+    def low_stock_report(self):
+        """Report on items below reorder level"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get low stock items
+            cursor.execute('''
+                SELECT item_id, name, quantity, unit, reorder_level,
+                       cost_per_unit, (reorder_level - quantity) as reorder_qty,
+                       ((reorder_level - quantity) * cost_per_unit) as reorder_cost
+                FROM restaurant_inventory
+                WHERE quantity <= reorder_level
+                ORDER BY (reorder_level - quantity) DESC
+            ''')
+            low_stock = cursor.fetchall()
+
+            conn.close()
+
+            if not low_stock:
+                messagebox.showinfo("Low Stock", "No items are currently low on stock!")
+                return
+
+            # Display report
+            report_dialog = tk.Toplevel(self.root)
+            report_dialog.title("Low Stock Report")
+            report_dialog.geometry("1000x600")
+            report_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(report_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Low Stock Report",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=30, width=110)
+            report_text.pack(fill='both', expand=True)
+
+            report = "LOW STOCK REPORT\n"
+            report += "=" * 105 + "\n\n"
+            report += f"{'ID':<6} {'Item':<25} {'Current':<10} {'Reorder':<10} {'Unit':<8} {'Shortage':<10} {'Cost/Unit':<12} {'Restock Cost':<15} {'Priority':<10}\n"
+            report += "-" * 105 + "\n"
+
+            total_restock_cost = 0
+
+            for item_id, name, qty, unit, reorder, cost, reorder_qty, restock_cost in low_stock:
+                total_restock_cost += restock_cost if restock_cost else 0
+                shortage = reorder - qty
+                priority = "CRITICAL" if qty < (reorder * 0.3) else "WARNING"
+
+                report += f"{item_id:<6} {name:<25} {qty:<10.1f} {reorder:<10.1f} {unit:<8} "
+                report += f"{shortage:<10.1f} £{cost:<11.2f if cost else 0:<11.2f} £{restock_cost:<14.2f if restock_cost else 0:<14.2f} {priority:<10}\n"
+
+            report += "\n" + "=" * 105 + "\n"
+            report += f"Total Items Low on Stock: {len(low_stock)}\n"
+            report += f"Total Restock Cost: £{total_restock_cost:.2f}\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=report_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate low stock report:\n{str(e)}")
+
+    def expiry_report(self):
+        """Track expiring inventory"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Add expiry_date column if it doesn't exist
+            try:
+                cursor.execute('''
+                    ALTER TABLE restaurant_inventory ADD COLUMN expiry_date DATE
+                ''')
+                conn.commit()
+            except:
+                pass  # Column already exists
+
+            # Get expiring items (next 7, 14, 30 days)
+            cursor.execute('''
+                SELECT item_id, name, quantity, unit, expiry_date,
+                       julianday(expiry_date) - julianday('now') as days_until_expiry,
+                       cost_per_unit, (quantity * cost_per_unit) as value_at_risk
+                FROM restaurant_inventory
+                WHERE expiry_date IS NOT NULL
+                ORDER BY expiry_date
+            ''')
+            expiring_items = cursor.fetchall()
+
+            conn.close()
+
+            # Display report
+            report_dialog = tk.Toplevel(self.root)
+            report_dialog.title("Expiry Report")
+            report_dialog.geometry("1000x600")
+            report_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(report_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Inventory Expiry Report",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=30, width=110)
+            report_text.pack(fill='both', expand=True)
+
+            report = "INVENTORY EXPIRY REPORT\n"
+            report += "=" * 105 + "\n\n"
+
+            expired = []
+            expires_7_days = []
+            expires_14_days = []
+            expires_30_days = []
+
+            for item in expiring_items:
+                days_left = item[5]
+                if days_left < 0:
+                    expired.append(item)
+                elif days_left <= 7:
+                    expires_7_days.append(item)
+                elif days_left <= 14:
+                    expires_14_days.append(item)
+                elif days_left <= 30:
+                    expires_30_days.append(item)
+
+            # Expired items
+            report += "EXPIRED ITEMS (Immediate Action Required):\n"
+            report += "-" * 105 + "\n"
+            if expired:
+                report += f"{'ID':<6} {'Item':<25} {'Quantity':<12} {'Expiry Date':<15} {'Days Ago':<12} {'Value Lost':<15}\n"
+                report += "-" * 105 + "\n"
+                for item_id, name, qty, unit, expiry, days, cost, value in expired:
+                    report += f"{item_id:<6} {name:<25} {qty:<12.1f} {expiry:<15} {abs(days):<12.0f} £{value:<14.2f if value else 0:<14.2f}\n"
+            else:
+                report += "No expired items.\n"
+
+            # Expiring in 7 days
+            report += "\n\nEXPIRING WITHIN 7 DAYS (Critical):\n"
+            report += "-" * 105 + "\n"
+            if expires_7_days:
+                report += f"{'ID':<6} {'Item':<25} {'Quantity':<12} {'Expiry Date':<15} {'Days Left':<12} {'Value at Risk':<15}\n"
+                report += "-" * 105 + "\n"
+                for item_id, name, qty, unit, expiry, days, cost, value in expires_7_days:
+                    report += f"{item_id:<6} {name:<25} {qty:<12.1f} {expiry:<15} {days:<12.0f} £{value:<14.2f if value else 0:<14.2f}\n"
+            else:
+                report += "No items expiring within 7 days.\n"
+
+            # Expiring in 14 days
+            report += "\n\nEXPIRING WITHIN 14 DAYS (Warning):\n"
+            report += "-" * 105 + "\n"
+            if expires_14_days:
+                report += f"{'ID':<6} {'Item':<25} {'Quantity':<12} {'Expiry Date':<15} {'Days Left':<12}\n"
+                report += "-" * 105 + "\n"
+                for item_id, name, qty, unit, expiry, days, cost, value in expires_14_days:
+                    report += f"{item_id:<6} {name:<25} {qty:<12.1f} {expiry:<15} {days:<12.0f}\n"
+            else:
+                report += "No items expiring within 14 days.\n"
+
+            # Summary
+            report += "\n\nSUMMARY:\n"
+            report += "-" * 105 + "\n"
+            report += f"Expired Items: {len(expired)}\n"
+            report += f"Expiring in 7 Days: {len(expires_7_days)}\n"
+            report += f"Expiring in 14 Days: {len(expires_14_days)}\n"
+            report += f"Expiring in 30 Days: {len(expires_30_days)}\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=report_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate expiry report:\n{str(e)}")
+
+    def abc_analysis(self):
+        """ABC analysis for inventory optimization"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get inventory value data
+            cursor.execute('''
+                SELECT item_id, name, quantity, cost_per_unit,
+                       (quantity * cost_per_unit) as total_value
+                FROM restaurant_inventory
+                WHERE quantity > 0 AND cost_per_unit > 0
+                ORDER BY total_value DESC
+            ''')
+            items = cursor.fetchall()
+
+            conn.close()
+
+            if not items:
+                messagebox.showinfo("No Data", "No inventory data available for ABC analysis")
+                return
+
+            # Perform ABC analysis
+            total_value = sum(item[4] for item in items)
+            cumulative_value = 0
+            a_items = []
+            b_items = []
+            c_items = []
+
+            for item in items:
+                cumulative_value += item[4]
+                cumulative_percent = (cumulative_value / total_value) * 100
+
+                if cumulative_percent <= 80:  # A items: top 80% of value
+                    a_items.append(item)
+                elif cumulative_percent <= 95:  # B items: next 15% of value
+                    b_items.append(item)
+                else:  # C items: remaining 5% of value
+                    c_items.append(item)
+
+            # Display report
+            report_dialog = tk.Toplevel(self.root)
+            report_dialog.title("ABC Analysis")
+            report_dialog.geometry("900x700")
+            report_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(report_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="ABC Inventory Analysis",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            report_text = ScrolledText(main_frame, height=35, width=100)
+            report_text.pack(fill='both', expand=True)
+
+            report = "ABC INVENTORY ANALYSIS\n"
+            report += "=" * 90 + "\n\n"
+
+            report += "CATEGORY A ITEMS (High Value - Top 80%):\n"
+            report += f"Items: {len(a_items)} ({len(a_items)/len(items)*100:.1f}% of items)\n"
+            report += f"Value: £{sum(item[4] for item in a_items):.2f} (~80% of total value)\n"
+            report += "-" * 90 + "\n"
+            report += f"{'ID':<6} {'Item Name':<30} {'Quantity':<12} {'Value':<15}\n"
+            report += "-" * 90 + "\n"
+            for item_id, name, qty, cost, value in a_items[:10]:
+                report += f"{item_id:<6} {name:<30} {qty:<12.1f} £{value:<14.2f}\n"
+            if len(a_items) > 10:
+                report += f"... and {len(a_items) - 10} more items\n"
+
+            report += "\n\nCATEGORY B ITEMS (Moderate Value - Next 15%):\n"
+            report += f"Items: {len(b_items)} ({len(b_items)/len(items)*100:.1f}% of items)\n"
+            report += f"Value: £{sum(item[4] for item in b_items):.2f} (~15% of total value)\n"
+            report += "-" * 90 + "\n"
+            report += f"{'ID':<6} {'Item Name':<30} {'Quantity':<12} {'Value':<15}\n"
+            report += "-" * 90 + "\n"
+            for item_id, name, qty, cost, value in b_items[:10]:
+                report += f"{item_id:<6} {name:<30} {qty:<12.1f} £{value:<14.2f}\n"
+            if len(b_items) > 10:
+                report += f"... and {len(b_items) - 10} more items\n"
+
+            report += "\n\nCATEGORY C ITEMS (Low Value - Remaining 5%):\n"
+            report += f"Items: {len(c_items)} ({len(c_items)/len(items)*100:.1f}% of items)\n"
+            report += f"Value: £{sum(item[4] for item in c_items):.2f} (~5% of total value)\n"
+
+            report += "\n\nRECOMMENDATIONS:\n"
+            report += "-" * 90 + "\n"
+            report += "Category A Items:\n"
+            report += "  • Tight inventory control and frequent monitoring\n"
+            report += "  • Accurate demand forecasting\n"
+            report += "  • Strong supplier relationships\n"
+            report += "  • Priority reordering\n\n"
+            report += "Category B Items:\n"
+            report += "  • Moderate control and periodic review\n"
+            report += "  • Standard reorder procedures\n\n"
+            report += "Category C Items:\n"
+            report += "  • Simple controls and bulk ordering\n"
+            report += "  • Consider reducing stock variety\n"
+
+            report_text.insert(1.0, report)
+            report_text.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=report_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate ABC analysis:\n{str(e)}")
+
+    def inventory_transactions(self):
+        """Display detailed inventory transaction log"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Create transactions table if doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS inventory_transactions (
+                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    item_id INTEGER,
+                    transaction_type TEXT,
+                    quantity REAL,
+                    transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    user_id INTEGER,
+                    notes TEXT
+                )
+            ''')
+            conn.commit()
+
+            # Get recent transactions
+            cursor.execute('''
+                SELECT t.transaction_id, t.item_id, i.name, t.transaction_type,
+                       t.quantity, t.transaction_date, t.notes
+                FROM inventory_transactions t
+                LEFT JOIN restaurant_inventory i ON t.item_id = i.item_id
+                ORDER BY t.transaction_date DESC
+                LIMIT 100
+            ''')
+            transactions = cursor.fetchall()
+
+            conn.close()
+
+            # Display transactions
+            trans_dialog = tk.Toplevel(self.root)
+            trans_dialog.title("Inventory Transactions Log")
+            trans_dialog.geometry("1000x600")
+            trans_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(trans_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Inventory Transactions Log (Last 100)",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Create treeview
+            columns = ('Trans ID', 'Item ID', 'Item Name', 'Type', 'Quantity', 'Date', 'Notes')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=25)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=120)
+
+            for trans in transactions:
+                tree.insert('', 'end', values=trans)
+
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            ttk.Button(main_frame, text="Close",
+                      command=trans_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load transactions:\n{str(e)}")
+
+    def low_stock_alerts(self):
+        """Show automated low stock alerts"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get low stock items
+            cursor.execute('''
+                SELECT item_id, name, quantity, reorder_level, unit
+                FROM restaurant_inventory
+                WHERE quantity <= reorder_level
+                ORDER BY (quantity / NULLIF(reorder_level, 0))
+            ''')
+            low_stock = cursor.fetchall()
+
+            conn.close()
+
+            # Display alerts
+            alerts_dialog = tk.Toplevel(self.root)
+            alerts_dialog.title("Low Stock Alerts")
+            alerts_dialog.geometry("700x500")
+            alerts_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(alerts_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            if not low_stock:
+                ttk.Label(main_frame, text="✓ No Low Stock Alerts",
+                         font=('Arial', 14, 'bold'), foreground='green').pack(pady=20)
+                ttk.Label(main_frame, text="All inventory levels are adequate.",
+                         font=('Arial', 12)).pack(pady=10)
+            else:
+                ttk.Label(main_frame, text=f"⚠ {len(low_stock)} Low Stock Alerts",
+                         font=('Arial', 14, 'bold'), foreground='orange').pack(pady=20)
+
+                # Create treeview for alerts
+                columns = ('Item ID', 'Item Name', 'Current Qty', 'Reorder Level', 'Status')
+                tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+                for col in columns:
+                    tree.heading(col, text=col)
+                    tree.column(col, width=120)
+
+                for item_id, name, qty, reorder, unit in low_stock:
+                    status = "CRITICAL" if qty < (reorder * 0.5) else "LOW"
+                    tree.insert('', 'end', values=(item_id, name, f"{qty:.1f} {unit}",
+                                                  f"{reorder:.1f} {unit}", status),
+                               tags=(status,))
+
+                # Color code by status
+                tree.tag_configure('CRITICAL', background='#ffcccc')
+                tree.tag_configure('LOW', background='#ffffcc')
+
+                scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+                tree.configure(yscrollcommand=scrollbar.set)
+
+                tree.pack(side='left', fill='both', expand=True)
+                scrollbar.pack(side='right', fill='y')
+
+                # Action buttons
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(pady=10)
+
+                def send_alert_email():
+                    messagebox.showinfo("Email Alert",
+                                       f"Low stock alert email would be sent to procurement team.\n\n" +
+                                       f"{len(low_stock)} items require reordering.")
+
+                ttk.Button(button_frame, text="Send Email Alert",
+                          command=send_alert_email).pack(side='left', padx=5)
+
+            ttk.Button(main_frame, text="Close",
+                      command=alerts_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load low stock alerts:\n{str(e)}")
+
     # Report Functions
     def daily_sales_report(self):
         """Generate daily sales report"""
