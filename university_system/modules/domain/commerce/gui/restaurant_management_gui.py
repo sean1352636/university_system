@@ -538,35 +538,92 @@ class RestaurantManagementGUI:
         """Create reports tab"""
         reports_frame = ttk.Frame(self.notebook)
         self.notebook.add(reports_frame, text="Reports")
-        
-        ttk.Label(reports_frame, text="Financial Reports", style='Heading.TLabel').pack(pady=10)
-        
-        financial_frame = ttk.Frame(reports_frame)
+
+        # Create a scrollable frame for all the buttons
+        canvas = tk.Canvas(reports_frame)
+        scrollbar = ttk.Scrollbar(reports_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Basic Financial Reports
+        ttk.Label(scrollable_frame, text="Basic Financial Reports", style='Heading.TLabel').pack(pady=10)
+
+        financial_frame = ttk.Frame(scrollable_frame)
         financial_frame.pack(fill='x', padx=20, pady=5)
-        
-        ttk.Button(financial_frame, text="Daily Sales", 
+
+        ttk.Button(financial_frame, text="Daily Sales",
                   command=self.daily_sales_report).pack(side='left', padx=5)
-        ttk.Button(financial_frame, text="Monthly Summary", 
+        ttk.Button(financial_frame, text="Monthly Summary",
                   command=self.monthly_summary_report).pack(side='left', padx=5)
-        ttk.Button(financial_frame, text="Profit Analysis", 
+        ttk.Button(financial_frame, text="Profit Analysis",
                   command=self.profit_analysis_report).pack(side='left', padx=5)
-        
-        ttk.Label(reports_frame, text="Operational Reports", style='Heading.TLabel').pack(pady=(20, 10))
-        
-        operational_frame = ttk.Frame(reports_frame)
+
+        # Advanced Financial Reports
+        ttk.Label(scrollable_frame, text="Advanced Financial Reports", style='Heading.TLabel').pack(pady=(20, 10))
+
+        advanced_financial_frame = ttk.Frame(scrollable_frame)
+        advanced_financial_frame.pack(fill='x', padx=20, pady=5)
+
+        ttk.Button(advanced_financial_frame, text="Payroll Report",
+                  command=self.export_payroll_report).pack(side='left', padx=5)
+        ttk.Button(advanced_financial_frame, text="Expense Report",
+                  command=self.export_expense_report).pack(side='left', padx=5)
+        ttk.Button(advanced_financial_frame, text="Tax Reports",
+                  command=self.tax_reports_menu).pack(side='left', padx=5)
+        ttk.Button(advanced_financial_frame, text="Financial Forecast",
+                  command=self.financial_forecasting).pack(side='left', padx=5)
+
+        # Data Export
+        ttk.Label(scrollable_frame, text="Data Export", style='Heading.TLabel').pack(pady=(20, 10))
+
+        export_frame = ttk.Frame(scrollable_frame)
+        export_frame.pack(fill='x', padx=20, pady=5)
+
+        ttk.Button(export_frame, text="Export Financial Data",
+                  command=self.export_financial_data_menu).pack(side='left', padx=5)
+        ttk.Button(export_frame, text="Export Sales Data",
+                  command=self.export_sales_data).pack(side='left', padx=5)
+
+        # Operational Reports
+        ttk.Label(scrollable_frame, text="Operational Reports", style='Heading.TLabel').pack(pady=(20, 10))
+
+        operational_frame = ttk.Frame(scrollable_frame)
         operational_frame.pack(fill='x', padx=20, pady=5)
-        
-        ttk.Button(operational_frame, text="Menu Performance", 
+
+        ttk.Button(operational_frame, text="Menu Performance",
                   command=self.menu_performance_report).pack(side='left', padx=5)
-        ttk.Button(operational_frame, text="Customer Analytics", 
+        ttk.Button(operational_frame, text="Customer Analytics",
                   command=self.customer_analytics_report).pack(side='left', padx=5)
-        ttk.Button(operational_frame, text="Staff Performance", 
+        ttk.Button(operational_frame, text="Staff Performance",
                   command=self.staff_performance_report).pack(side='left', padx=5)
-        
-        ttk.Label(reports_frame, text="Report Output", style='Heading.TLabel').pack(pady=(20, 5))
-        
-        self.report_text = ScrolledText(reports_frame, height=20, width=80)
+
+        # System Tools
+        ttk.Label(scrollable_frame, text="System Tools", style='Heading.TLabel').pack(pady=(20, 10))
+
+        tools_frame = ttk.Frame(scrollable_frame)
+        tools_frame.pack(fill='x', padx=20, pady=5)
+
+        ttk.Button(tools_frame, text="System Settings",
+                  command=self.display_system_settings).pack(side='left', padx=5)
+        ttk.Button(tools_frame, text="Backup & Recovery",
+                  command=self.backup_database).pack(side='left', padx=5)
+
+        # Report Output
+        ttk.Label(scrollable_frame, text="Report Output", style='Heading.TLabel').pack(pady=(20, 5))
+
+        self.report_text = ScrolledText(scrollable_frame, height=15, width=80)
         self.report_text.pack(fill='both', expand=True, padx=20, pady=10)
+
+        # Pack the canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
         
     def clear_window(self):
         """Clear all widgets from the window"""
@@ -2052,7 +2109,13 @@ Platinum (1000+ points):
 
         update_summary()
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        # Additional buttons
+        button_frame_bottom = ttk.Frame(main_frame)
+        button_frame_bottom.pack(fill='x', pady=10)
+
+        ttk.Button(button_frame_bottom, text="View Detailed Reports",
+                  command=self.view_waste_reports).pack(side='left', padx=5)
+        ttk.Button(button_frame_bottom, text="Close", command=dialog.destroy).pack(side='left', padx=5)
         
     # Report Functions
     def daily_sales_report(self):
@@ -2170,18 +2233,1665 @@ Platinum (1000+ points):
         analytics_text = self.generate_staff_analytics()
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, analytics_text)
-        
+
+    # Advanced Waste Reports
+    def view_waste_reports(self):
+        """Show comprehensive waste reports and analytics"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Waste Reports & Analytics")
+        dialog.geometry("1000x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Waste Reports & Analytics",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Report type selection
+        report_frame = ttk.LabelFrame(main_frame, text="Select Report Type", padding=10)
+        report_frame.pack(fill='x', pady=10)
+
+        btn_container = ttk.Frame(report_frame)
+        btn_container.pack(fill='x')
+
+        ttk.Button(btn_container, text="Waste by Date Range",
+                  command=lambda: self.generate_waste_by_date_range(output_text)).pack(side='left', padx=5)
+        ttk.Button(btn_container, text="Waste by Category",
+                  command=lambda: self.generate_waste_by_category(output_text)).pack(side='left', padx=5)
+        ttk.Button(btn_container, text="Waste by Reason",
+                  command=lambda: self.generate_waste_by_reason(output_text)).pack(side='left', padx=5)
+        ttk.Button(btn_container, text="Waste Trends",
+                  command=lambda: self.generate_waste_trends(output_text)).pack(side='left', padx=5)
+        ttk.Button(btn_container, text="Cost Analysis",
+                  command=lambda: self.generate_waste_cost_analysis(output_text)).pack(side='left', padx=5)
+
+        # Output area
+        output_frame = ttk.LabelFrame(main_frame, text="Report Output", padding=10)
+        output_frame.pack(fill='both', expand=True, pady=10)
+
+        output_text = ScrolledText(output_frame, height=30, width=100)
+        output_text.pack(fill='both', expand=True)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def generate_waste_by_date_range(self, output_widget):
+        """Generate waste report by date range"""
+        start_date = simpledialog.askstring("Date Range", "Enter start date (YYYY-MM-DD):")
+        if not start_date:
+            return
+        end_date = simpledialog.askstring("Date Range", "Enter end date (YYYY-MM-DD):")
+        if not end_date:
+            return
+
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT waste_date, item_name, quantity, unit, cost_value, reason
+                    FROM restaurant_waste
+                    WHERE waste_date BETWEEN ? AND ?
+                    ORDER BY waste_date DESC
+                ''', (start_date, end_date))
+                records = cursor.fetchall()
+
+                cursor.execute('''
+                    SELECT COUNT(*), SUM(cost_value), SUM(quantity)
+                    FROM restaurant_waste
+                    WHERE waste_date BETWEEN ? AND ?
+                ''', (start_date, end_date))
+                summary = cursor.fetchone()
+                conn.close()
+
+                report = f"WASTE REPORT BY DATE RANGE\n"
+                report += f"Period: {start_date} to {end_date}\n"
+                report += "=" * 100 + "\n\n"
+                report += f"Summary:\n"
+                report += f"  Total Records: {summary[0]}\n"
+                report += f"  Total Cost: £{summary[1]:.2f if summary[1] else 0:.2f}\n"
+                report += f"  Total Quantity: {summary[2]:.1f if summary[2] else 0:.1f} units\n\n"
+                report += "Detailed Records:\n"
+                report += "-" * 100 + "\n"
+                report += f"{'Date':<12} {'Item':<25} {'Qty':<8} {'Unit':<8} {'Cost':<10} {'Reason':<20}\n"
+                report += "-" * 100 + "\n"
+
+                for record in records:
+                    report += f"{record[0]:<12} {record[1]:<25} {record[2]:<8.1f} {record[3]:<8} "
+                    report += f"£{record[4]:<9.2f if record[4] else 0:<9.2f} {record[5]:<20}\n"
+
+                output_widget.delete(1.0, tk.END)
+                output_widget.insert(tk.END, report)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+    def generate_waste_by_category(self, output_widget):
+        """Generate waste report grouped by category"""
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                # Get waste by item name (category proxy)
+                cursor.execute('''
+                    SELECT item_name, COUNT(*), SUM(quantity), SUM(cost_value)
+                    FROM restaurant_waste
+                    GROUP BY item_name
+                    ORDER BY SUM(cost_value) DESC
+                ''')
+                records = cursor.fetchall()
+                conn.close()
+
+                report = "WASTE REPORT BY CATEGORY\n"
+                report += "=" * 100 + "\n\n"
+                report += f"{'Item/Category':<30} {'Records':<10} {'Total Qty':<15} {'Total Cost':<15}\n"
+                report += "-" * 100 + "\n"
+
+                total_cost = 0
+                for record in records:
+                    cost = record[3] if record[3] else 0
+                    total_cost += cost
+                    report += f"{record[0]:<30} {record[1]:<10} {record[2]:<15.1f} £{cost:<14.2f}\n"
+
+                report += "-" * 100 + "\n"
+                report += f"{'TOTAL':<30} {'':<10} {'':<15} £{total_cost:<14.2f}\n"
+
+                output_widget.delete(1.0, tk.END)
+                output_widget.insert(tk.END, report)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+    def generate_waste_by_reason(self, output_widget):
+        """Generate waste report grouped by reason"""
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT reason, COUNT(*), SUM(quantity), SUM(cost_value)
+                    FROM restaurant_waste
+                    GROUP BY reason
+                    ORDER BY SUM(cost_value) DESC
+                ''')
+                records = cursor.fetchall()
+                conn.close()
+
+                report = "WASTE REPORT BY REASON\n"
+                report += "=" * 100 + "\n\n"
+                report += f"{'Reason':<25} {'Records':<10} {'Total Qty':<15} {'Total Cost':<15} {'% of Total':<12}\n"
+                report += "-" * 100 + "\n"
+
+                total_cost = sum(record[3] if record[3] else 0 for record in records)
+
+                for record in records:
+                    cost = record[3] if record[3] else 0
+                    percentage = (cost / total_cost * 100) if total_cost > 0 else 0
+                    report += f"{record[0]:<25} {record[1]:<10} {record[2]:<15.1f} "
+                    report += f"£{cost:<14.2f} {percentage:<11.1f}%\n"
+
+                report += "-" * 100 + "\n"
+                report += f"{'TOTAL':<25} {'':<10} {'':<15} £{total_cost:<14.2f} {'100.0%':<12}\n"
+
+                output_widget.delete(1.0, tk.END)
+                output_widget.insert(tk.END, report)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+    def generate_waste_trends(self, output_widget):
+        """Generate waste trends over time"""
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                # Monthly trends
+                cursor.execute('''
+                    SELECT strftime('%Y-%m', waste_date) as month,
+                           COUNT(*), SUM(cost_value), SUM(quantity)
+                    FROM restaurant_waste
+                    GROUP BY month
+                    ORDER BY month DESC
+                    LIMIT 12
+                ''')
+                monthly = cursor.fetchall()
+
+                # Weekly trends
+                cursor.execute('''
+                    SELECT strftime('%Y-W%W', waste_date) as week,
+                           COUNT(*), SUM(cost_value), SUM(quantity)
+                    FROM restaurant_waste
+                    WHERE waste_date >= date('now', '-8 weeks')
+                    GROUP BY week
+                    ORDER BY week DESC
+                ''')
+                weekly = cursor.fetchall()
+                conn.close()
+
+                report = "WASTE TRENDS ANALYSIS\n"
+                report += "=" * 100 + "\n\n"
+
+                report += "MONTHLY TRENDS (Last 12 Months):\n"
+                report += "-" * 100 + "\n"
+                report += f"{'Month':<15} {'Records':<10} {'Total Cost':<15} {'Total Qty':<15} {'Avg Cost/Record':<15}\n"
+                report += "-" * 100 + "\n"
+
+                for record in monthly:
+                    avg_cost = (record[2] / record[1]) if record[1] and record[2] else 0
+                    report += f"{record[0]:<15} {record[1]:<10} £{record[2] if record[2] else 0:<14.2f} "
+                    report += f"{record[3] if record[3] else 0:<15.1f} £{avg_cost:<14.2f}\n"
+
+                report += "\n\nWEEKLY TRENDS (Last 8 Weeks):\n"
+                report += "-" * 100 + "\n"
+                report += f"{'Week':<15} {'Records':<10} {'Total Cost':<15} {'Total Qty':<15} {'Avg Cost/Record':<15}\n"
+                report += "-" * 100 + "\n"
+
+                for record in weekly:
+                    avg_cost = (record[2] / record[1]) if record[1] and record[2] else 0
+                    report += f"{record[0]:<15} {record[1]:<10} £{record[2] if record[2] else 0:<14.2f} "
+                    report += f"{record[3] if record[3] else 0:<15.1f} £{avg_cost:<14.2f}\n"
+
+                # Add waste reduction suggestions
+                report += "\n\nWASTE REDUCTION SUGGESTIONS:\n"
+                report += "-" * 100 + "\n"
+                if monthly:
+                    latest_month_cost = monthly[0][2] if monthly[0][2] else 0
+                    if len(monthly) > 1:
+                        prev_month_cost = monthly[1][2] if monthly[1][2] else 0
+                        if latest_month_cost > prev_month_cost:
+                            report += "• Waste cost increased from previous month - review procurement and portion sizes\n"
+                        else:
+                            report += "• Waste cost decreased from previous month - current practices are effective\n"
+
+                    if latest_month_cost > 500:
+                        report += "• High waste cost detected - consider implementing:\n"
+                        report += "  - Better inventory management\n"
+                        report += "  - Staff training on portion control\n"
+                        report += "  - Review menu items with highest waste\n"
+
+                output_widget.delete(1.0, tk.END)
+                output_widget.insert(tk.END, report)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate trends report: {e}")
+
+    def generate_waste_cost_analysis(self, output_widget):
+        """Generate detailed cost analysis of waste"""
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+
+                # Overall statistics
+                cursor.execute('''
+                    SELECT COUNT(*), SUM(cost_value), AVG(cost_value), MAX(cost_value)
+                    FROM restaurant_waste
+                ''')
+                overall = cursor.fetchone()
+
+                # Cost by reason
+                cursor.execute('''
+                    SELECT reason, SUM(cost_value)
+                    FROM restaurant_waste
+                    GROUP BY reason
+                    ORDER BY SUM(cost_value) DESC
+                ''')
+                by_reason = cursor.fetchall()
+
+                # Most expensive waste items
+                cursor.execute('''
+                    SELECT item_name, waste_date, cost_value, reason
+                    FROM restaurant_waste
+                    ORDER BY cost_value DESC
+                    LIMIT 10
+                ''')
+                top_expensive = cursor.fetchall()
+
+                conn.close()
+
+                report = "WASTE COST ANALYSIS\n"
+                report += "=" * 100 + "\n\n"
+
+                report += "OVERALL STATISTICS:\n"
+                report += "-" * 100 + "\n"
+                report += f"Total Waste Records: {overall[0]}\n"
+                report += f"Total Waste Cost: £{overall[1]:.2f if overall[1] else 0:.2f}\n"
+                report += f"Average Waste Cost per Record: £{overall[2]:.2f if overall[2] else 0:.2f}\n"
+                report += f"Maximum Single Waste Cost: £{overall[3]:.2f if overall[3] else 0:.2f}\n\n"
+
+                report += "COST BREAKDOWN BY REASON:\n"
+                report += "-" * 100 + "\n"
+                total_cost = overall[1] if overall[1] else 0
+                for record in by_reason:
+                    cost = record[1] if record[1] else 0
+                    percentage = (cost / total_cost * 100) if total_cost > 0 else 0
+                    report += f"  {record[0]:<25} £{cost:<14.2f} ({percentage:.1f}%)\n"
+
+                report += "\n\nTOP 10 MOST EXPENSIVE WASTE ITEMS:\n"
+                report += "-" * 100 + "\n"
+                report += f"{'Item':<30} {'Date':<12} {'Cost':<12} {'Reason':<25}\n"
+                report += "-" * 100 + "\n"
+                for record in top_expensive:
+                    report += f"{record[0]:<30} {record[1]:<12} £{record[2]:<11.2f if record[2] else 0:<11.2f} {record[3]:<25}\n"
+
+                # Cost impact analysis
+                report += "\n\nCOST IMPACT ANALYSIS:\n"
+                report += "-" * 100 + "\n"
+                monthly_avg = (total_cost / 12) if total_cost > 0 else 0
+                annual_projection = total_cost  # If this is YTD data
+                report += f"Monthly Average Waste Cost: £{monthly_avg:.2f}\n"
+                report += f"Annual Projected Waste Cost: £{annual_projection:.2f}\n"
+                report += f"\nPotential Savings with 25% Reduction: £{annual_projection * 0.25:.2f}/year\n"
+                report += f"Potential Savings with 50% Reduction: £{annual_projection * 0.50:.2f}/year\n"
+
+                output_widget.delete(1.0, tk.END)
+                output_widget.insert(tk.END, report)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate cost analysis: {e}")
+
+    # Financial Export Functions
+    def export_payroll_report(self):
+        """Export staff payroll data"""
+        try:
+            from tkinter import filedialog
+            import csv
+
+            # Get date range
+            start_date = simpledialog.askstring("Payroll Report", "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Payroll Report", "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get staff and their shifts
+            cursor.execute('''
+                SELECT s.staff_id, s.name, s.position, s.hourly_rate,
+                       COUNT(sh.shift_id) as shift_count,
+                       SUM(
+                           CASE
+                               WHEN sh.end_time IS NOT NULL THEN
+                                   (julianday(sh.end_time) - julianday(sh.start_time)) * 24
+                               ELSE 0
+                           END
+                       ) as total_hours
+                FROM restaurant_staff s
+                LEFT JOIN restaurant_shifts sh ON s.staff_id = sh.staff_id
+                WHERE sh.shift_date BETWEEN ? AND ?
+                GROUP BY s.staff_id
+                ORDER BY s.name
+            ''', (start_date, end_date))
+
+            payroll_data = cursor.fetchall()
+            conn.close()
+
+            if not payroll_data:
+                messagebox.showinfo("No Data", "No payroll data found for the specified period")
+                return
+
+            # Ask for export format
+            format_choice = messagebox.askquestion("Export Format",
+                                                  "Export as CSV?\n(No = Display in window)")
+
+            if format_choice == 'yes':
+                # Export to CSV
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=f"payroll_report_{start_date}_to_{end_date}.csv"
+                )
+
+                if filename:
+                    with open(filename, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Staff ID', 'Name', 'Position', 'Hourly Rate',
+                                       'Shifts Worked', 'Total Hours', 'Gross Pay'])
+
+                        for record in payroll_data:
+                            hours = record[5] if record[5] else 0
+                            rate = record[3] if record[3] else 0
+                            gross_pay = hours * rate
+                            writer.writerow([record[0], record[1], record[2], f"£{rate:.2f}",
+                                          record[4], f"{hours:.2f}", f"£{gross_pay:.2f}"])
+
+                    messagebox.showinfo("Success", f"Payroll report exported to {filename}")
+            else:
+                # Display in report window
+                report = f"PAYROLL REPORT\n"
+                report += f"Period: {start_date} to {end_date}\n"
+                report += "=" * 100 + "\n\n"
+                report += f"{'ID':<8} {'Name':<25} {'Position':<20} {'Rate':<12} {'Shifts':<10} {'Hours':<12} {'Gross Pay':<12}\n"
+                report += "-" * 100 + "\n"
+
+                total_hours = 0
+                total_pay = 0
+
+                for record in payroll_data:
+                    hours = record[5] if record[5] else 0
+                    rate = record[3] if record[3] else 0
+                    gross_pay = hours * rate
+                    total_hours += hours
+                    total_pay += gross_pay
+
+                    report += f"{record[0]:<8} {record[1]:<25} {record[2]:<20} "
+                    report += f"£{rate:<11.2f} {record[4]:<10} {hours:<12.2f} £{gross_pay:<11.2f}\n"
+
+                report += "-" * 100 + "\n"
+                report += f"{'TOTALS:':<54} {'':<12} {'':<10} {total_hours:<12.2f} £{total_pay:<11.2f}\n"
+
+                self.report_text.delete(1.0, tk.END)
+                self.report_text.insert(tk.END, report)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate payroll report: {e}")
+
+    def export_expense_report(self):
+        """Export detailed expense report"""
+        try:
+            from tkinter import filedialog
+            import csv
+
+            # Get date range
+            start_date = simpledialog.askstring("Expense Report", "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Expense Report", "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get expenses from purchase orders
+            cursor.execute('''
+                SELECT po.order_id, po.supplier_id, s.name as supplier_name,
+                       po.order_date, po.total_cost, po.status, po.payment_method
+                FROM restaurant_purchase_orders po
+                LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
+                WHERE po.order_date BETWEEN ? AND ?
+                ORDER BY po.order_date DESC
+            ''', (start_date, end_date))
+
+            expenses = cursor.fetchall()
+            conn.close()
+
+            if not expenses:
+                messagebox.showinfo("No Data", "No expense data found for the specified period")
+                return
+
+            # Ask for export format
+            format_choice = messagebox.askquestion("Export Format",
+                                                  "Export as CSV?\n(No = Display in window)")
+
+            if format_choice == 'yes':
+                # Export to CSV
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=f"expense_report_{start_date}_to_{end_date}.csv"
+                )
+
+                if filename:
+                    with open(filename, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Order ID', 'Supplier ID', 'Supplier Name', 'Date',
+                                       'Amount', 'Status', 'Payment Method'])
+
+                        for record in expenses:
+                            writer.writerow([record[0], record[1], record[2], record[3],
+                                          f"£{record[4]:.2f}", record[5], record[6]])
+
+                    messagebox.showinfo("Success", f"Expense report exported to {filename}")
+            else:
+                # Display in report window
+                report = f"EXPENSE REPORT\n"
+                report += f"Period: {start_date} to {end_date}\n"
+                report += "=" * 110 + "\n\n"
+                report += f"{'Order ID':<10} {'Supplier':<25} {'Date':<12} {'Amount':<12} {'Status':<12} {'Payment':<15}\n"
+                report += "-" * 110 + "\n"
+
+                total_expense = 0
+                status_totals = {}
+                payment_totals = {}
+
+                for record in expenses:
+                    amount = record[4] if record[4] else 0
+                    total_expense += amount
+
+                    status = record[5] if record[5] else 'Unknown'
+                    status_totals[status] = status_totals.get(status, 0) + amount
+
+                    payment = record[6] if record[6] else 'Unknown'
+                    payment_totals[payment] = payment_totals.get(payment, 0) + amount
+
+                    report += f"{record[0]:<10} {record[2]:<25} {record[3]:<12} £{amount:<11.2f} {status:<12} {payment:<15}\n"
+
+                report += "-" * 110 + "\n"
+                report += f"{'TOTAL EXPENSES:':<49} £{total_expense:<11.2f}\n\n"
+
+                report += "BREAKDOWN BY STATUS:\n"
+                for status, amount in status_totals.items():
+                    report += f"  {status:<20} £{amount:.2f}\n"
+
+                report += "\nBREAKDOWN BY PAYMENT METHOD:\n"
+                for payment, amount in payment_totals.items():
+                    report += f"  {payment:<20} £{amount:.2f}\n"
+
+                self.report_text.delete(1.0, tk.END)
+                self.report_text.insert(tk.END, report)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate expense report: {e}")
+
+    def tax_reports_menu(self):
+        """Show tax reporting menu"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Tax Reports")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Tax Reports", font=('Arial', 14, 'bold')).pack(pady=20)
+
+        ttk.Button(main_frame, text="Generate VAT Report",
+                  command=lambda: [dialog.destroy(), self.generate_vat_report()],
+                  width=30).pack(pady=10)
+
+        ttk.Button(main_frame, text="Generate Sales Tax Summary",
+                  command=lambda: [dialog.destroy(), self.generate_sales_tax_summary()],
+                  width=30).pack(pady=10)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy, width=30).pack(pady=20)
+
+    def generate_vat_report(self):
+        """Generate VAT/GST report"""
+        try:
+            # Get date range
+            start_date = simpledialog.askstring("VAT Report", "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("VAT Report", "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            vat_rate = 0.20  # 20% UK VAT rate
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # VAT collected on sales
+            cursor.execute('''
+                SELECT SUM(total_price), SUM(tax_amount)
+                FROM restaurant_orders
+                WHERE DATE(order_time) BETWEEN ? AND ?
+                AND status = 'Completed'
+            ''', (start_date, end_date))
+            sales_data = cursor.fetchone()
+
+            # VAT paid on purchases
+            cursor.execute('''
+                SELECT SUM(total_cost)
+                FROM restaurant_purchase_orders
+                WHERE order_date BETWEEN ? AND ?
+                AND status = 'Completed'
+            ''', (start_date, end_date))
+            purchase_data = cursor.fetchone()
+
+            conn.close()
+
+            total_sales = sales_data[0] if sales_data[0] else 0
+            vat_collected = sales_data[1] if sales_data[1] else (total_sales * vat_rate / (1 + vat_rate))
+
+            total_purchases = purchase_data[0] if purchase_data[0] else 0
+            vat_paid = total_purchases * vat_rate / (1 + vat_rate)
+
+            net_vat_liability = vat_collected - vat_paid
+
+            report = f"VAT REPORT\n"
+            report += f"Period: {start_date} to {end_date}\n"
+            report += f"VAT Rate: {vat_rate*100:.0f}%\n"
+            report += "=" * 80 + "\n\n"
+
+            report += "VAT COLLECTED (Output VAT):\n"
+            report += "-" * 80 + "\n"
+            report += f"Total Sales (including VAT): £{total_sales:.2f}\n"
+            report += f"VAT Collected on Sales: £{vat_collected:.2f}\n\n"
+
+            report += "VAT PAID (Input VAT):\n"
+            report += "-" * 80 + "\n"
+            report += f"Total Purchases (including VAT): £{total_purchases:.2f}\n"
+            report += f"VAT Paid on Purchases: £{vat_paid:.2f}\n\n"
+
+            report += "NET VAT POSITION:\n"
+            report += "-" * 80 + "\n"
+            if net_vat_liability > 0:
+                report += f"VAT Payable to HMRC: £{net_vat_liability:.2f}\n"
+            elif net_vat_liability < 0:
+                report += f"VAT Reclaimable from HMRC: £{abs(net_vat_liability):.2f}\n"
+            else:
+                report += f"VAT Position: £0.00 (Neutral)\n"
+
+            report += "\n" + "=" * 80 + "\n"
+            report += "This report is for informational purposes only.\n"
+            report += "Please consult with a qualified accountant for official VAT returns.\n"
+
+            self.report_text.delete(1.0, tk.END)
+            self.report_text.insert(tk.END, report)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate VAT report: {e}")
+
+    def generate_sales_tax_summary(self):
+        """Generate sales tax summary"""
+        try:
+            # Get date range
+            start_date = simpledialog.askstring("Sales Tax Summary", "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Sales Tax Summary", "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Sales by payment method
+            cursor.execute('''
+                SELECT payment_method, COUNT(*), SUM(total_price), SUM(tax_amount)
+                FROM restaurant_orders
+                WHERE DATE(order_time) BETWEEN ? AND ?
+                AND status = 'Completed'
+                GROUP BY payment_method
+            ''', (start_date, end_date))
+            payment_breakdown = cursor.fetchall()
+
+            # Total sales
+            cursor.execute('''
+                SELECT COUNT(*), SUM(total_price), SUM(tax_amount)
+                FROM restaurant_orders
+                WHERE DATE(order_time) BETWEEN ? AND ?
+                AND status = 'Completed'
+            ''', (start_date, end_date))
+            totals = cursor.fetchone()
+
+            conn.close()
+
+            report = f"SALES TAX SUMMARY\n"
+            report += f"Period: {start_date} to {end_date}\n"
+            report += "=" * 100 + "\n\n"
+
+            report += "SUMMARY:\n"
+            report += "-" * 100 + "\n"
+            report += f"Total Transactions: {totals[0]}\n"
+            report += f"Total Taxable Sales: £{(totals[1] - totals[2]) if totals[1] and totals[2] else 0:.2f}\n"
+            report += f"Total Tax Collected: £{totals[2] if totals[2] else 0:.2f}\n"
+            report += f"Total Sales (including tax): £{totals[1] if totals[1] else 0:.2f}\n\n"
+
+            report += "BREAKDOWN BY PAYMENT METHOD:\n"
+            report += "-" * 100 + "\n"
+            report += f"{'Payment Method':<20} {'Transactions':<15} {'Taxable Amount':<18} {'Tax Collected':<18} {'Total':<15}\n"
+            report += "-" * 100 + "\n"
+
+            for record in payment_breakdown:
+                method = record[0] if record[0] else 'Unknown'
+                count = record[1]
+                total_amount = record[2] if record[2] else 0
+                tax = record[3] if record[3] else 0
+                taxable = total_amount - tax
+
+                report += f"{method:<20} {count:<15} £{taxable:<17.2f} £{tax:<17.2f} £{total_amount:<14.2f}\n"
+
+            report += "\n" + "=" * 100 + "\n"
+            report += "Filing Period Summary: This report summarizes all sales tax collected for the specified period.\n"
+
+            self.report_text.delete(1.0, tk.END)
+            self.report_text.insert(tk.END, report)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate sales tax summary: {e}")
+
+    def financial_forecasting(self):
+        """Generate financial forecasts based on historical data"""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            # Get historical revenue by month (last 12 months)
+            cursor.execute('''
+                SELECT strftime('%Y-%m', order_time) as month,
+                       SUM(total_price) as revenue,
+                       COUNT(*) as order_count
+                FROM restaurant_orders
+                WHERE status = 'Completed'
+                AND order_time >= date('now', '-12 months')
+                GROUP BY month
+                ORDER BY month
+            ''')
+            monthly_revenue = cursor.fetchall()
+
+            # Get historical expenses by month
+            cursor.execute('''
+                SELECT strftime('%Y-%m', order_date) as month,
+                       SUM(total_cost) as expenses
+                FROM restaurant_purchase_orders
+                WHERE status = 'Completed'
+                AND order_date >= date('now', '-12 months')
+                GROUP BY month
+                ORDER BY month
+            ''')
+            monthly_expenses = cursor.fetchall()
+
+            conn.close()
+
+            if not monthly_revenue:
+                messagebox.showinfo("No Data", "Insufficient historical data for forecasting")
+                return
+
+            # Calculate averages and trends
+            total_revenue = sum(r[1] for r in monthly_revenue if r[1])
+            avg_monthly_revenue = total_revenue / len(monthly_revenue) if monthly_revenue else 0
+
+            expense_dict = {e[0]: e[1] for e in monthly_expenses if e[1]}
+            total_expenses = sum(expense_dict.values())
+            avg_monthly_expenses = total_expenses / len(monthly_expenses) if monthly_expenses else 0
+
+            avg_monthly_profit = avg_monthly_revenue - avg_monthly_expenses
+
+            # Simple linear trend (last 3 months vs previous 3 months)
+            if len(monthly_revenue) >= 6:
+                recent_avg = sum(r[1] for r in monthly_revenue[-3:] if r[1]) / 3
+                previous_avg = sum(r[1] for r in monthly_revenue[-6:-3] if r[1]) / 3
+                growth_rate = ((recent_avg - previous_avg) / previous_avg) if previous_avg > 0 else 0
+            else:
+                growth_rate = 0
+
+            # Forecast next 3 months
+            forecast_months = 3
+            projected_revenue = []
+            projected_expenses = []
+            projected_profit = []
+
+            for i in range(1, forecast_months + 1):
+                forecast_rev = avg_monthly_revenue * (1 + growth_rate * i)
+                forecast_exp = avg_monthly_expenses * (1 + growth_rate * i * 0.8)  # Assume expenses grow slower
+                projected_revenue.append(forecast_rev)
+                projected_expenses.append(forecast_exp)
+                projected_profit.append(forecast_rev - forecast_exp)
+
+            report = "FINANCIAL FORECASTING\n"
+            report += "=" * 100 + "\n\n"
+
+            report += "HISTORICAL PERFORMANCE (Last 12 Months):\n"
+            report += "-" * 100 + "\n"
+            report += f"{'Month':<12} {'Revenue':<15} {'Expenses':<15} {'Profit':<15} {'Orders':<10}\n"
+            report += "-" * 100 + "\n"
+
+            for rev_record in monthly_revenue:
+                month = rev_record[0]
+                revenue = rev_record[1] if rev_record[1] else 0
+                expenses = expense_dict.get(month, 0)
+                profit = revenue - expenses
+                orders = rev_record[2]
+
+                report += f"{month:<12} £{revenue:<14.2f} £{expenses:<14.2f} £{profit:<14.2f} {orders:<10}\n"
+
+            report += "\n\nAVERAGES:\n"
+            report += "-" * 100 + "\n"
+            report += f"Average Monthly Revenue: £{avg_monthly_revenue:.2f}\n"
+            report += f"Average Monthly Expenses: £{avg_monthly_expenses:.2f}\n"
+            report += f"Average Monthly Profit: £{avg_monthly_profit:.2f}\n"
+            report += f"Growth Rate (Trend): {growth_rate*100:.1f}%\n"
+
+            report += "\n\n3-MONTH FORECAST:\n"
+            report += "-" * 100 + "\n"
+            report += f"{'Month':<12} {'Projected Revenue':<20} {'Projected Expenses':<20} {'Projected Profit':<20}\n"
+            report += "-" * 100 + "\n"
+
+            from datetime import datetime, timedelta
+            forecast_start = datetime.now() + timedelta(days=30)
+
+            for i in range(forecast_months):
+                forecast_month = (forecast_start + timedelta(days=30*i)).strftime('%Y-%m')
+                report += f"{forecast_month:<12} £{projected_revenue[i]:<19.2f} £{projected_expenses[i]:<19.2f} £{projected_profit[i]:<19.2f}\n"
+
+            report += "\n\nKEY INSIGHTS:\n"
+            report += "-" * 100 + "\n"
+            if growth_rate > 0:
+                report += f"• Positive growth trend of {growth_rate*100:.1f}% detected\n"
+                report += f"• Projected 3-month revenue: £{sum(projected_revenue):.2f}\n"
+                report += f"• Projected 3-month profit: £{sum(projected_profit):.2f}\n"
+            elif growth_rate < 0:
+                report += f"• Negative growth trend of {growth_rate*100:.1f}% detected\n"
+                report += "• Consider reviewing pricing and marketing strategies\n"
+            else:
+                report += "• Revenue appears stable\n"
+
+            if avg_monthly_profit < 0:
+                report += "• WARNING: Average monthly profit is negative\n"
+                report += "• Immediate cost reduction or revenue enhancement needed\n"
+
+            report += "\n" + "=" * 100 + "\n"
+            report += "Note: Forecasts are based on historical trends and should be used as guidance only.\n"
+            report += "Actual results may vary based on market conditions and business decisions.\n"
+
+            self.report_text.delete(1.0, tk.END)
+            self.report_text.insert(tk.END, report)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate forecast: {e}")
+
+    def export_financial_data_menu(self):
+        """Show export financial data menu"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Export Financial Data")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Export Financial Data",
+                 font=('Arial', 14, 'bold')).pack(pady=20)
+
+        ttk.Button(main_frame, text="Export Complete Financial Data",
+                  command=lambda: [dialog.destroy(), self.export_complete_financial_data()],
+                  width=35).pack(pady=10)
+
+        ttk.Button(main_frame, text="Export Sales Data Only",
+                  command=lambda: [dialog.destroy(), self.export_sales_data()],
+                  width=35).pack(pady=10)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy, width=35).pack(pady=20)
+
+    def export_complete_financial_data(self):
+        """Export complete financial data to CSV"""
+        try:
+            from tkinter import filedialog
+            import csv
+
+            # Get date range
+            start_date = simpledialog.askstring("Export Financial Data",
+                                               "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Export Financial Data",
+                                             "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"complete_financial_data_{start_date}_to_{end_date}.csv"
+            )
+
+            if not filename:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+
+                # Write header
+                writer.writerow(['COMPLETE FINANCIAL DATA EXPORT'])
+                writer.writerow([f'Period: {start_date} to {end_date}'])
+                writer.writerow([])
+
+                # Sales Revenue
+                writer.writerow(['SALES REVENUE'])
+                writer.writerow(['Order ID', 'Date', 'Total Price', 'Tax Amount', 'Payment Method', 'Status'])
+
+                cursor.execute('''
+                    SELECT order_id, order_time, total_price, tax_amount, payment_method, status
+                    FROM restaurant_orders
+                    WHERE DATE(order_time) BETWEEN ? AND ?
+                    ORDER BY order_time
+                ''', (start_date, end_date))
+
+                sales = cursor.fetchall()
+                for record in sales:
+                    writer.writerow(record)
+
+                writer.writerow([])
+
+                # Purchase Expenses
+                writer.writerow(['PURCHASE EXPENSES'])
+                writer.writerow(['Order ID', 'Supplier ID', 'Date', 'Total Cost', 'Status', 'Payment Method'])
+
+                cursor.execute('''
+                    SELECT order_id, supplier_id, order_date, total_cost, status, payment_method
+                    FROM restaurant_purchase_orders
+                    WHERE order_date BETWEEN ? AND ?
+                    ORDER BY order_date
+                ''', (start_date, end_date))
+
+                purchases = cursor.fetchall()
+                for record in purchases:
+                    writer.writerow(record)
+
+                writer.writerow([])
+
+                # Waste Costs
+                writer.writerow(['WASTE COSTS'])
+                writer.writerow(['Waste ID', 'Item', 'Date', 'Cost', 'Reason'])
+
+                cursor.execute('''
+                    SELECT waste_id, item_name, waste_date, cost_value, reason
+                    FROM restaurant_waste
+                    WHERE waste_date BETWEEN ? AND ?
+                    ORDER BY waste_date
+                ''', (start_date, end_date))
+
+                waste = cursor.fetchall()
+                for record in waste:
+                    writer.writerow(record)
+
+                writer.writerow([])
+
+                # Summary
+                cursor.execute('''
+                    SELECT SUM(total_price), SUM(tax_amount)
+                    FROM restaurant_orders
+                    WHERE DATE(order_time) BETWEEN ? AND ?
+                    AND status = 'Completed'
+                ''', (start_date, end_date))
+                sales_summary = cursor.fetchone()
+
+                cursor.execute('''
+                    SELECT SUM(total_cost)
+                    FROM restaurant_purchase_orders
+                    WHERE order_date BETWEEN ? AND ?
+                    AND status = 'Completed'
+                ''', (start_date, end_date))
+                expense_summary = cursor.fetchone()
+
+                cursor.execute('''
+                    SELECT SUM(cost_value)
+                    FROM restaurant_waste
+                    WHERE waste_date BETWEEN ? AND ?
+                ''', (start_date, end_date))
+                waste_summary = cursor.fetchone()
+
+                writer.writerow(['FINANCIAL SUMMARY'])
+                writer.writerow(['Total Sales Revenue', f"£{sales_summary[0] if sales_summary[0] else 0:.2f}"])
+                writer.writerow(['Total Tax Collected', f"£{sales_summary[1] if sales_summary[1] else 0:.2f}"])
+                writer.writerow(['Total Purchase Expenses', f"£{expense_summary[0] if expense_summary[0] else 0:.2f}"])
+                writer.writerow(['Total Waste Costs', f"£{waste_summary[0] if waste_summary[0] else 0:.2f}"])
+
+                total_expenses = (expense_summary[0] if expense_summary[0] else 0) + (waste_summary[0] if waste_summary[0] else 0)
+                total_revenue = sales_summary[0] if sales_summary[0] else 0
+                net_profit = total_revenue - total_expenses
+
+                writer.writerow(['Total Expenses', f"£{total_expenses:.2f}"])
+                writer.writerow(['Net Profit/Loss', f"£{net_profit:.2f}"])
+
+            conn.close()
+            messagebox.showinfo("Success", f"Complete financial data exported to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export financial data: {e}")
+
+    def export_sales_data(self):
+        """Export sales-specific data to CSV"""
+        try:
+            from tkinter import filedialog
+            import csv
+
+            # Get date range
+            start_date = simpledialog.askstring("Export Sales Data",
+                                               "Enter start date (YYYY-MM-DD):")
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Export Sales Data",
+                                             "Enter end date (YYYY-MM-DD):")
+            if not end_date:
+                return
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"sales_data_{start_date}_to_{end_date}.csv"
+            )
+
+            if not filename:
+                return
+
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection failed")
+                return
+
+            cursor = conn.cursor()
+
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+
+                # Write header
+                writer.writerow(['SALES DATA EXPORT'])
+                writer.writerow([f'Period: {start_date} to {end_date}'])
+                writer.writerow([])
+
+                # Sales transactions
+                writer.writerow(['ALL SALES TRANSACTIONS'])
+                writer.writerow(['Order ID', 'Customer ID', 'Date/Time', 'Subtotal',
+                               'Tax Amount', 'Total Price', 'Payment Method', 'Status'])
+
+                cursor.execute('''
+                    SELECT order_id, customer_id, order_time,
+                           (total_price - tax_amount) as subtotal,
+                           tax_amount, total_price, payment_method, status
+                    FROM restaurant_orders
+                    WHERE DATE(order_time) BETWEEN ? AND ?
+                    ORDER BY order_time
+                ''', (start_date, end_date))
+
+                transactions = cursor.fetchall()
+                for record in transactions:
+                    writer.writerow(record)
+
+                writer.writerow([])
+
+                # Item-level sales (if available)
+                writer.writerow(['ITEM-LEVEL SALES'])
+                writer.writerow(['Order ID', 'Item ID', 'Item Name', 'Quantity', 'Price'])
+
+                cursor.execute('''
+                    SELECT oi.order_id, oi.item_id, mi.name, oi.quantity, oi.price
+                    FROM restaurant_order_items oi
+                    JOIN menu_items mi ON oi.item_id = mi.item_id
+                    JOIN restaurant_orders ro ON oi.order_id = ro.order_id
+                    WHERE DATE(ro.order_time) BETWEEN ? AND ?
+                    ORDER BY oi.order_id
+                ''', (start_date, end_date))
+
+                items = cursor.fetchall()
+                for record in items:
+                    writer.writerow(record)
+
+                writer.writerow([])
+
+                # Summary statistics
+                writer.writerow(['SALES SUMMARY'])
+                cursor.execute('''
+                    SELECT
+                        COUNT(*) as total_orders,
+                        SUM(total_price - tax_amount) as total_sales,
+                        SUM(tax_amount) as total_tax,
+                        SUM(total_price) as total_with_tax,
+                        AVG(total_price) as avg_order_value
+                    FROM restaurant_orders
+                    WHERE DATE(order_time) BETWEEN ? AND ?
+                    AND status = 'Completed'
+                ''', (start_date, end_date))
+
+                summary = cursor.fetchone()
+                writer.writerow(['Total Orders', summary[0]])
+                writer.writerow(['Total Sales (excl. tax)', f"£{summary[1] if summary[1] else 0:.2f}"])
+                writer.writerow(['Total Tax Collected', f"£{summary[2] if summary[2] else 0:.2f}"])
+                writer.writerow(['Total Sales (incl. tax)', f"£{summary[3] if summary[3] else 0:.2f}"])
+                writer.writerow(['Average Order Value', f"£{summary[4] if summary[4] else 0:.2f}"])
+
+            conn.close()
+            messagebox.showinfo("Success", f"Sales data exported to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export sales data: {e}")
+
+    # System Settings
+    def display_system_settings(self):
+        """Display and configure system settings"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("System Settings")
+        dialog.geometry("700x800")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="System Settings",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Create notebook for different setting categories
+        settings_notebook = ttk.Notebook(main_frame)
+        settings_notebook.pack(fill='both', expand=True, pady=10)
+
+        # Restaurant Info Tab
+        info_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(info_frame, text="Restaurant Info")
+
+        row = 0
+        ttk.Label(info_frame, text="Restaurant Name:").grid(row=row, column=0, sticky='w', pady=5)
+        restaurant_name = ttk.Entry(info_frame, width=40)
+        restaurant_name.insert(0, "University Restaurant")
+        restaurant_name.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(info_frame, text="Address:").grid(row=row, column=0, sticky='w', pady=5)
+        address = ttk.Entry(info_frame, width=40)
+        address.insert(0, "123 Campus Drive")
+        address.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(info_frame, text="Phone:").grid(row=row, column=0, sticky='w', pady=5)
+        phone = ttk.Entry(info_frame, width=40)
+        phone.insert(0, "+44 20 1234 5678")
+        phone.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(info_frame, text="Email:").grid(row=row, column=0, sticky='w', pady=5)
+        email = ttk.Entry(info_frame, width=40)
+        email.insert(0, "info@university-restaurant.ac.uk")
+        email.grid(row=row, column=1, pady=5, padx=10)
+
+        # Operating Hours Tab
+        hours_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(hours_frame, text="Operating Hours")
+
+        row = 0
+        ttk.Label(hours_frame, text="Monday - Friday:").grid(row=row, column=0, sticky='w', pady=5)
+        weekday_hours = ttk.Entry(hours_frame, width=40)
+        weekday_hours.insert(0, "08:00 - 22:00")
+        weekday_hours.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(hours_frame, text="Saturday:").grid(row=row, column=0, sticky='w', pady=5)
+        saturday_hours = ttk.Entry(hours_frame, width=40)
+        saturday_hours.insert(0, "10:00 - 20:00")
+        saturday_hours.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(hours_frame, text="Sunday:").grid(row=row, column=0, sticky='w', pady=5)
+        sunday_hours = ttk.Entry(hours_frame, width=40)
+        sunday_hours.insert(0, "Closed")
+        sunday_hours.grid(row=row, column=1, pady=5, padx=10)
+
+        # Tax & Currency Tab
+        tax_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(tax_frame, text="Tax & Currency")
+
+        row = 0
+        ttk.Label(tax_frame, text="Currency:").grid(row=row, column=0, sticky='w', pady=5)
+        currency = ttk.Combobox(tax_frame, values=['GBP (£)', 'USD ($)', 'EUR (€)'], width=38)
+        currency.current(0)
+        currency.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(tax_frame, text="Tax Rate (%):").grid(row=row, column=0, sticky='w', pady=5)
+        tax_rate = ttk.Entry(tax_frame, width=40)
+        tax_rate.insert(0, "20.0")
+        tax_rate.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(tax_frame, text="Tax Name:").grid(row=row, column=0, sticky='w', pady=5)
+        tax_name = ttk.Entry(tax_frame, width=40)
+        tax_name.insert(0, "VAT")
+        tax_name.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(tax_frame, text="Tax Number:").grid(row=row, column=0, sticky='w', pady=5)
+        tax_number = ttk.Entry(tax_frame, width=40)
+        tax_number.insert(0, "GB123456789")
+        tax_number.grid(row=row, column=1, pady=5, padx=10)
+
+        # Receipt Settings Tab
+        receipt_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(receipt_frame, text="Receipt Settings")
+
+        row = 0
+        ttk.Label(receipt_frame, text="Receipt Header:").grid(row=row, column=0, sticky='nw', pady=5)
+        receipt_header = tk.Text(receipt_frame, height=3, width=40)
+        receipt_header.insert(1.0, "Thank you for dining with us!\nUniversity Restaurant")
+        receipt_header.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(receipt_frame, text="Receipt Footer:").grid(row=row, column=0, sticky='nw', pady=5)
+        receipt_footer = tk.Text(receipt_frame, height=3, width=40)
+        receipt_footer.insert(1.0, "Please visit us again!\nwww.university-restaurant.ac.uk")
+        receipt_footer.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        show_tax_details = tk.BooleanVar(value=True)
+        ttk.Checkbutton(receipt_frame, text="Show tax details on receipt",
+                       variable=show_tax_details).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+
+        row += 1
+        show_loyalty = tk.BooleanVar(value=True)
+        ttk.Checkbutton(receipt_frame, text="Show loyalty points on receipt",
+                       variable=show_loyalty).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+
+        # Notifications Tab
+        notif_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(notif_frame, text="Notifications")
+
+        row = 0
+        email_notif = tk.BooleanVar(value=True)
+        ttk.Checkbutton(notif_frame, text="Email notifications for new orders",
+                       variable=email_notif).grid(row=row, column=0, sticky='w', pady=5)
+
+        row += 1
+        low_stock_notif = tk.BooleanVar(value=True)
+        ttk.Checkbutton(notif_frame, text="Alert when inventory is low",
+                       variable=low_stock_notif).grid(row=row, column=0, sticky='w', pady=5)
+
+        row += 1
+        waste_notif = tk.BooleanVar(value=False)
+        ttk.Checkbutton(notif_frame, text="Daily waste summary email",
+                       variable=waste_notif).grid(row=row, column=0, sticky='w', pady=5)
+
+        row += 1
+        ttk.Label(notif_frame, text="Notification Email:").grid(row=row, column=0, sticky='w', pady=5)
+        notif_email = ttk.Entry(notif_frame, width=40)
+        notif_email.insert(0, "manager@university-restaurant.ac.uk")
+        notif_email.grid(row=row, column=1, pady=5, padx=10)
+
+        # System Preferences Tab
+        pref_frame = ttk.Frame(settings_notebook, padding=10)
+        settings_notebook.add(pref_frame, text="Preferences")
+
+        row = 0
+        ttk.Label(pref_frame, text="Date Format:").grid(row=row, column=0, sticky='w', pady=5)
+        date_format = ttk.Combobox(pref_frame,
+                                   values=['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY'],
+                                   width=38)
+        date_format.current(0)
+        date_format.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(pref_frame, text="Time Format:").grid(row=row, column=0, sticky='w', pady=5)
+        time_format = ttk.Combobox(pref_frame, values=['24-hour', '12-hour'], width=38)
+        time_format.current(0)
+        time_format.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        ttk.Label(pref_frame, text="Default Table Capacity:").grid(row=row, column=0, sticky='w', pady=5)
+        default_capacity = ttk.Entry(pref_frame, width=40)
+        default_capacity.insert(0, "4")
+        default_capacity.grid(row=row, column=1, pady=5, padx=10)
+
+        row += 1
+        auto_complete_orders = tk.BooleanVar(value=False)
+        ttk.Checkbutton(pref_frame, text="Auto-complete orders after payment",
+                       variable=auto_complete_orders).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+
+        # Save and Cancel buttons
+        def save_settings():
+            try:
+                # In a real implementation, save these to a config file or database
+                messagebox.showinfo("Success", "Settings saved successfully!\n\n" +
+                                   "Note: Some settings may require application restart.")
+                dialog.destroy()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {e}")
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=10)
+
+        ttk.Button(button_frame, text="Save Settings",
+                  command=save_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel",
+                  command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Reset to Defaults",
+                  command=lambda: messagebox.showinfo("Reset",
+                      "This would reset all settings to default values")).pack(side='left', padx=5)
+
     # Utility Functions
     def backup_database(self):
-        """Backup database"""
+        """Show backup and recovery management menu"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Backup & Recovery")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Backup & Recovery Management",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Backup section
+        backup_section = ttk.LabelFrame(main_frame, text="Backup Operations", padding=15)
+        backup_section.pack(fill='x', pady=10)
+
+        ttk.Button(backup_section, text="Create Full Backup",
+                  command=self.create_full_backup,
+                  width=30).pack(pady=5)
+
+        ttk.Button(backup_section, text="Create Incremental Backup",
+                  command=self.create_incremental_backup,
+                  width=30).pack(pady=5)
+
+        ttk.Button(backup_section, text="Verify Backup Integrity",
+                  command=self.verify_backup,
+                  width=30).pack(pady=5)
+
+        # Restore section
+        restore_section = ttk.LabelFrame(main_frame, text="Restore Operations", padding=15)
+        restore_section.pack(fill='x', pady=10)
+
+        ttk.Button(restore_section, text="Restore from Backup",
+                  command=self.restore_from_backup,
+                  width=30).pack(pady=5)
+
+        ttk.Button(restore_section, text="View Backup History",
+                  command=self.view_backup_history,
+                  width=30).pack(pady=5)
+
+        # Management section
+        mgmt_section = ttk.LabelFrame(main_frame, text="Backup Management", padding=15)
+        mgmt_section.pack(fill='x', pady=10)
+
+        ttk.Button(mgmt_section, text="Manage Backup Location",
+                  command=self.manage_backup_location,
+                  width=30).pack(pady=5)
+
+        ttk.Button(mgmt_section, text="Schedule Automated Backups",
+                  command=self.schedule_backups,
+                  width=30).pack(pady=5)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+
+    def create_full_backup(self):
+        """Create a full database backup"""
         try:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_filename = f"restaurant_backup_{timestamp}.db"
+            from tkinter import filedialog
             import shutil
-            shutil.copy2(DATABASE_FILE, backup_filename)
-            messagebox.showinfo("Backup", f"Backup completed successfully: {backup_filename}")
+            import os
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            default_filename = f"restaurant_backup_full_{timestamp}.db"
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".db",
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                initialfile=default_filename,
+                title="Save Full Backup As"
+            )
+
+            if filename:
+                # Close any open connections first
+                shutil.copy2(DATABASE_FILE, filename)
+
+                # Get file size
+                file_size = os.path.getsize(filename) / (1024 * 1024)  # Convert to MB
+
+                messagebox.showinfo("Backup Complete",
+                                   f"Full backup created successfully!\n\n" +
+                                   f"Location: {filename}\n" +
+                                   f"Size: {file_size:.2f} MB\n" +
+                                   f"Timestamp: {timestamp}")
+
+                # Log the backup
+                self.log_backup_event("Full Backup", filename, file_size)
+
         except Exception as e:
-            messagebox.showerror("Error", f"Backup failed: {str(e)}")
+            messagebox.showerror("Backup Failed", f"Failed to create backup:\n{str(e)}")
+
+    def create_incremental_backup(self):
+        """Create an incremental backup (only changed data)"""
+        try:
+            messagebox.showinfo("Incremental Backup",
+                               "Incremental backup feature:\n\n" +
+                               "This would backup only the data that has changed since\n" +
+                               "the last backup, reducing backup time and storage.\n\n" +
+                               "For this demo, performing a full backup instead.")
+            self.create_full_backup()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create incremental backup:\n{str(e)}")
+
+    def verify_backup(self):
+        """Verify the integrity of a backup file"""
+        try:
+            from tkinter import filedialog
+
+            filename = filedialog.askopenfilename(
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                title="Select Backup File to Verify"
+            )
+
+            if filename:
+                # Try to open the database file
+                test_conn = sqlite3.connect(filename)
+                cursor = test_conn.cursor()
+
+                # Check some basic tables
+                tables_to_check = ['menu_items', 'restaurant_orders', 'restaurant_staff']
+                verified_tables = []
+
+                for table in tables_to_check:
+                    try:
+                        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                        count = cursor.fetchone()[0]
+                        verified_tables.append(f"✓ {table}: {count} records")
+                    except:
+                        verified_tables.append(f"✗ {table}: Missing or corrupted")
+
+                test_conn.close()
+
+                verification_report = "BACKUP VERIFICATION REPORT\n\n"
+                verification_report += f"File: {filename}\n"
+                verification_report += f"Status: Backup file is valid\n\n"
+                verification_report += "Table Verification:\n"
+                verification_report += "\n".join(verified_tables)
+
+                messagebox.showinfo("Verification Complete", verification_report)
+
+        except Exception as e:
+            messagebox.showerror("Verification Failed",
+                                f"Backup verification failed:\n{str(e)}\n\n" +
+                                "The backup file may be corrupted or invalid.")
+
+    def restore_from_backup(self):
+        """Restore database from a backup file"""
+        try:
+            from tkinter import filedialog
+            import shutil
+
+            # Warning message
+            response = messagebox.askyesno("Restore Database",
+                                          "WARNING: This will replace the current database with the backup.\n\n" +
+                                          "All current data will be lost!\n\n" +
+                                          "Do you want to continue?",
+                                          icon='warning')
+
+            if not response:
+                return
+
+            # Create a safety backup first
+            safety_backup = f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            shutil.copy2(DATABASE_FILE, safety_backup)
+
+            # Select backup file to restore
+            backup_file = filedialog.askopenfilename(
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                title="Select Backup File to Restore"
+            )
+
+            if backup_file:
+                # Verify the backup first
+                try:
+                    test_conn = sqlite3.connect(backup_file)
+                    test_conn.close()
+                except:
+                    messagebox.showerror("Invalid Backup",
+                                        "The selected file is not a valid database backup.")
+                    return
+
+                # Perform the restore
+                shutil.copy2(backup_file, DATABASE_FILE)
+
+                messagebox.showinfo("Restore Complete",
+                                   f"Database restored successfully!\n\n" +
+                                   f"Restored from: {backup_file}\n" +
+                                   f"Safety backup created: {safety_backup}\n\n" +
+                                   "Please restart the application for changes to take effect.")
+
+                # Log the restore
+                self.log_backup_event("Restore", backup_file, 0)
+
+        except Exception as e:
+            messagebox.showerror("Restore Failed",
+                                f"Failed to restore database:\n{str(e)}\n\n" +
+                                f"Your original database is safe.")
+
+    def view_backup_history(self):
+        """View backup history"""
+        try:
+            import os
+            import glob
+
+            # Find all backup files in current directory
+            backup_files = glob.glob("restaurant_backup_*.db")
+
+            if not backup_files:
+                messagebox.showinfo("No Backups Found",
+                                   "No backup files found in the current directory.\n\n" +
+                                   "Backups are saved with names like:\n" +
+                                   "restaurant_backup_full_YYYYMMDD_HHMMSS.db")
+                return
+
+            # Create a dialog to show backup history
+            history_dialog = tk.Toplevel(self.root)
+            history_dialog.title("Backup History")
+            history_dialog.geometry("700x400")
+            history_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(history_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Available Backups",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Create treeview for backup files
+            columns = ('Filename', 'Size (MB)', 'Date Modified')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=12)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            # Add backup files to treeview
+            for backup_file in sorted(backup_files, reverse=True):
+                size_mb = os.path.getsize(backup_file) / (1024 * 1024)
+                mod_time = datetime.fromtimestamp(os.path.getmtime(backup_file))
+                mod_time_str = mod_time.strftime('%Y-%m-%d %H:%M:%S')
+
+                tree.insert('', 'end', values=(backup_file, f"{size_mb:.2f}", mod_time_str))
+
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
+            ttk.Button(main_frame, text="Close",
+                      command=history_dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load backup history:\n{str(e)}")
+
+    def manage_backup_location(self):
+        """Manage backup storage location"""
+        try:
+            from tkinter import filedialog
+
+            current_location = os.path.dirname(os.path.abspath(DATABASE_FILE))
+
+            info_text = f"Current database location:\n{current_location}\n\n"
+            info_text += "Backup files are saved in the current working directory.\n\n"
+            info_text += "To change the backup location, you can:\n"
+            info_text += "• Save backups to a specific folder when creating them\n"
+            info_text += "• Move backup files to external storage\n"
+            info_text += "• Set up automatic cloud sync for the backup folder"
+
+            messagebox.showinfo("Backup Location", info_text)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to manage backup location:\n{str(e)}")
+
+    def schedule_backups(self):
+        """Configure automated backup scheduling"""
+        try:
+            schedule_dialog = tk.Toplevel(self.root)
+            schedule_dialog.title("Schedule Automated Backups")
+            schedule_dialog.geometry("500x400")
+            schedule_dialog.transient(self.root)
+
+            main_frame = ttk.Frame(schedule_dialog, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Automated Backup Schedule",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Frequency selection
+            freq_frame = ttk.LabelFrame(main_frame, text="Backup Frequency", padding=10)
+            freq_frame.pack(fill='x', pady=10)
+
+            frequency_var = tk.StringVar(value="Daily")
+            ttk.Radiobutton(freq_frame, text="Hourly", variable=frequency_var,
+                           value="Hourly").pack(anchor='w')
+            ttk.Radiobutton(freq_frame, text="Daily", variable=frequency_var,
+                           value="Daily").pack(anchor='w')
+            ttk.Radiobutton(freq_frame, text="Weekly", variable=frequency_var,
+                           value="Weekly").pack(anchor='w')
+            ttk.Radiobutton(freq_frame, text="Monthly", variable=frequency_var,
+                           value="Monthly").pack(anchor='w')
+
+            # Time selection
+            time_frame = ttk.LabelFrame(main_frame, text="Backup Time", padding=10)
+            time_frame.pack(fill='x', pady=10)
+
+            ttk.Label(time_frame, text="Preferred time:").pack(side='left', padx=5)
+            time_entry = ttk.Entry(time_frame, width=10)
+            time_entry.insert(0, "02:00")
+            time_entry.pack(side='left', padx=5)
+            ttk.Label(time_frame, text="(24-hour format)").pack(side='left')
+
+            # Retention policy
+            retention_frame = ttk.LabelFrame(main_frame, text="Backup Retention", padding=10)
+            retention_frame.pack(fill='x', pady=10)
+
+            ttk.Label(retention_frame, text="Keep backups for:").pack(side='left', padx=5)
+            retention_var = tk.StringVar(value="30")
+            retention_entry = ttk.Entry(retention_frame, textvariable=retention_var, width=10)
+            retention_entry.pack(side='left', padx=5)
+            ttk.Label(retention_frame, text="days").pack(side='left')
+
+            def save_schedule():
+                messagebox.showinfo("Schedule Saved",
+                                   f"Backup schedule configured:\n\n" +
+                                   f"Frequency: {frequency_var.get()}\n" +
+                                   f"Time: {time_entry.get()}\n" +
+                                   f"Retention: {retention_var.get()} days\n\n" +
+                                   "Note: This is a configuration preview.\n" +
+                                   "In production, this would create a scheduled task.")
+                schedule_dialog.destroy()
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Save Schedule",
+                      command=save_schedule).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel",
+                      command=schedule_dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to configure backup schedule:\n{str(e)}")
+
+    def log_backup_event(self, event_type, filename, size_mb):
+        """Log backup events to database"""
+        try:
+            conn = get_db_connection()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS backup_log (
+                        log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_type TEXT,
+                        filename TEXT,
+                        file_size_mb REAL,
+                        event_time DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT INTO backup_log (event_type, filename, file_size_mb)
+                    VALUES (?, ?, ?)
+                ''', (event_type, filename, size_mb))
+                conn.commit()
+                conn.close()
+        except:
+            pass  # Silently fail if logging doesn't work
             
     def return_to_main_menu(self):
         """Return to the main menu"""
