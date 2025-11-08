@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Email GUI - Added 12 Service-Specific Notification Functions** (2025-11-08)
+- **Enhancement**: Added GUI dialogs for health, library, helpdesk, alumni, and student affairs email notifications
+- **Impact**: All 157 email templates now accessible via GUI - 100% template coverage
+- **Files Modified**: `email_manager_gui.py` (+900 lines), `email_service.py` (fixed send_update_confirmation)
+- **Total Notifications**: 19 notification types now available (7 existing + 12 new)
+
+**New organized Notifications menu with 5 submenus**:
+
+1. **Academic Submenu** (7 notifications - existing):
+   - Registration Confirmation, Assignment Notification, Grade Notifications (2 types)
+   - Extension Notification, Update Confirmation, Password Reset
+
+2. **Health Services Submenu** (2 new):
+   - Appointment Confirmation, Health Advisory (with severity: low/medium/high)
+
+3. **Helpdesk Submenu** (2 new):
+   - Ticket Notification, Reply Notification
+
+4. **Library Submenu** (3 new):
+   - Checkout Confirmation, Return Reminder, Overdue Notice
+
+5. **Student Affairs Submenu** (2 new):
+   - Internship Notification (accepted/rejected/pending), Mentorship Notification
+
+6. **Alumni Submenu** (3 new):
+   - Welcome Email, Event Invitation, Donation Receipt
+
+**Implementation**: 12 new dialog classes with professional UIs, input validation, and template integration. Fixed send_update_confirmation() to properly use send_template_email().
+
 **Automatic Email Notifications - Integrated Across System** (2025-11-08)
 - **Enhancement**: Added automatic email notifications that trigger when relevant events occur
 - **Impact**: Users now automatically receive email notifications without manual intervention

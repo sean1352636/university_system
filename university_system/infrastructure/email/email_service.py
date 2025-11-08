@@ -1143,24 +1143,19 @@ def send_registration_confirmation(student_id):
 
 @handle_exception
 def send_update_confirmation(student_email, updated_fields):
+    """Send update confirmation email to student"""
     try:
-        # Compose message from template
-        updated_fields_str = ', '.join(updated_fields)
-        subject, message = render_template("update_confirmation", {
-            "updated_fields": updated_fields_str
-        })
+        # Format updated fields list
+        updated_fields_str = '\n'.join([f"- {field}" for field in updated_fields])
 
-        if not (subject and message):
-            # Fallback if template fails
-            subject = "Record Update Confirmation"
-            message = f"Dear student,\n\nYour record has been updated. The following fields were changed: {updated_fields_str}.\n\nBest regards,\nAdmin"
+        template_vars = {
+            'updated_fields': updated_fields_str
+        }
 
-        # Simulate sending the email
-        logging.info(f"Sending email to {student_email}: {message}")
-        print(f"Email sent to {student_email}: {message}")
-        return True
+        # Send email using template
+        return send_template_email('update_confirmation', student_email, template_vars)
     except Exception as e:
-        logging.error(f"Unexpected error in send_update_confirmation: {e}")
+        log_event('error', f"Error sending update confirmation: {e}")
         return False
 
 
