@@ -9,6 +9,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Alumni Management GUI - Enhanced Event, Forum, Job & Photo Functions** (2025-11-08)
+- **New Update**: Added 11 advanced management functions (approximately 850 lines of new code)
+- **Impact**: Enhanced event filtering, forum interaction, job board details, and photo gallery management
+- **Files Modified**:
+  - `university_system/modules/domain/student_affairs/gui/alumni_management_gui.py` - Added ~850 lines
+
+**Event Management Functions (3 functions)**:
+
+1. **view_my_event_registrations()** - View user's own event registrations
+   - Displays all events the current user has registered for
+   - Shows event details: name, date, location, status, payment status, registration date
+   - Action buttons: View Details, Cancel Registration, Refresh
+   - Database integration with event_registrations and events tables
+
+2. **search_events()** - Advanced event search and filtering
+   - Search by keyword (event name or description)
+   - Filter by event type (In-Person, Virtual, Hybrid, Networking, Career, Social, Fundraising)
+   - Filter by date range (Next 7/30 Days, Next 3 Months, This Year, Past Events)
+   - Filter by location
+   - Additional filters: Free events only, Has available capacity
+   - Results displayed in treeview with full details
+
+3. **view_event_details()** - Already existed (verified at line 3111)
+
+**Forum Management Functions (3 functions)**:
+
+4. **view_forum_posts()** - List all forum posts with filtering
+   - Filter by category (General Discussion, Career Advice, Networking, etc.)
+   - Sort by: Most Recent, Most Replies, Most Views, Oldest First
+   - Displays: Title, Author, Category, Replies, Views, Last Activity
+   - Action buttons: View Post, Create New Post, Refresh
+
+5. **view_forum_post_details()** - Detailed view for single forum post
+   - Complete post information with metadata
+   - Display post content from database
+   - Show all replies with timestamps
+   - Action button to add reply
+   - Dialog-based detail window
+
+6. **add_forum_reply()** - Reply to forum posts
+   - Create replies to existing forum posts
+   - Updates post reply count and last activity date
+   - Activity logging for audit trail
+   - Permission checking and validation
+
+**Job Board Functions (2 functions)**:
+
+7. **view_job_details()** - Detailed view for job postings
+   - Job selection dialog with treeview
+   - Complete job information display
+   - Company details, job type, salary range
+   - Full description and requirements from database
+   - Express interest action button
+
+8. **record_job_interest()** - Express interest in job postings
+   - Records user interest in specific jobs
+   - Prevents duplicate interest expressions
+   - Updates job interest counts
+   - Activity logging for tracking
+   - Integration with job_interests table
+
+**Photo Gallery Functions (3 functions)**:
+
+9. **view_my_photos()** - View user's uploaded photos
+   - Filter to show only current user's photos
+   - Display: Event, Photo Path, Caption, Upload Date, Status
+   - Action buttons: Delete Photo, Refresh
+   - Database integration with photo_gallery and events tables
+
+10. **moderate_photos()** - Admin photo moderation
+    - Admin-only function with permission checking
+    - Filter by status (All, pending, approved, rejected)
+    - Display: Photo ID, Event, Uploader, Caption, Upload Date, Status
+    - Action buttons: Approve, Reject, Delete, Refresh
+    - Updates photo status or removes photos
+    - Activity logging for moderation actions
+
+11. **view_event_photos()** - Filter photos by specific event
+    - Event selection dropdown
+    - Displays all photos for selected event
+    - Shows: Photo ID, Uploader, Caption, Upload Date, Status
+    - Dynamic event loading from database
+    - Event ID parsing from selection
+
+**Technical Improvements**:
+- Database context managers for transaction safety
+- Parameterized queries to prevent SQL injection
+- Activity logging integration for compliance
+- Permission-based access control
+- ScrolledText widgets for content display
+- Treeview widgets for tabular data
+- Dialog-based detail windows
+- Error handling and user feedback
+- User-friendly status messages
+
 **Helpdesk GUI - Enhanced Views, Replies, Time Tracking & Linking** (2025-11-08)
 - **New Update**: Added 14 advanced ticket management functions (727 lines of new code)
 - **Impact**: Complete ticket detail views, reply management, time tracking, and ticket linking now available in GUI

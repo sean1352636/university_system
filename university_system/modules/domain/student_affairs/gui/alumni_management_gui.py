@@ -2305,7 +2305,272 @@ How has remote work affected your career? Share your thoughts...
         # Clear form
         self.post_title.set("")
         self.post_content.delete(1.0, tk.END)
-    
+
+    def view_forum_posts(self):
+        """View all forum posts with filtering options"""
+        self.clear_content()
+        self.update_status("Forum Posts")
+
+        ttk.Label(self.content_frame, text="Forum Posts",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Filter frame
+        filter_frame = ttk.Frame(self.content_frame)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+        self.forum_filter_category = tk.StringVar()
+        category_combo = ttk.Combobox(filter_frame, textvariable=self.forum_filter_category,
+                                     values=["All", "General Discussion", "Career Advice", "Networking",
+                                            "Industry News", "Class Updates", "Events", "Mentorship"])
+        category_combo.pack(side=tk.LEFT, padx=(0, 20))
+        category_combo.set("All")
+
+        ttk.Label(filter_frame, text="Sort by:").pack(side=tk.LEFT, padx=(0, 10))
+        self.forum_sort_by = tk.StringVar()
+        sort_combo = ttk.Combobox(filter_frame, textvariable=self.forum_sort_by,
+                                 values=["Most Recent", "Most Replies", "Most Views", "Oldest First"])
+        sort_combo.pack(side=tk.LEFT, padx=(0, 20))
+        sort_combo.set("Most Recent")
+
+        ttk.Button(filter_frame, text="Apply Filter",
+                  command=self._load_forum_posts).pack(side=tk.LEFT)
+
+        # Posts table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Title', 'Author', 'Category', 'Replies', 'Views', 'Last Activity')
+        self.forum_posts_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.forum_posts_tree.heading(col, text=col)
+            self.forum_posts_tree.column(col, width=130)
+
+        # Scrollbars
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.forum_posts_tree.yview)
+        self.forum_posts_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.forum_posts_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load posts
+        self._load_forum_posts()
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="View Post",
+                  command=self.view_forum_post_details).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Create New Post",
+                  command=self.show_forum).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_forum_posts).pack(side=tk.LEFT)
+
+    def _load_forum_posts(self):
+        """Load forum posts from database"""
+        try:
+            # Clear existing data
+            for item in self.forum_posts_tree.get_children():
+                self.forum_posts_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Build query
+                query = """
+                    SELECT post_id, title, author_name, category, reply_count,
+                           view_count, last_activity_date
+                    FROM forum_posts
+                    WHERE 1=1
+                """
+                params = []
+
+                # Add category filter
+                category = self.forum_filter_category.get()
+                if category != "All":
+                    query += " AND category = ?"
+                    params.append(category)
+
+                # Add sorting
+                sort_by = self.forum_sort_by.get()
+                if sort_by == "Most Recent":
+                    query += " ORDER BY last_activity_date DESC"
+                elif sort_by == "Most Replies":
+                    query += " ORDER BY reply_count DESC"
+                elif sort_by == "Most Views":
+                    query += " ORDER BY view_count DESC"
+                elif sort_by == "Oldest First":
+                    query += " ORDER BY created_date ASC"
+
+                cursor.execute(query, params)
+                posts = cursor.fetchall()
+
+                for post in posts:
+                    # Display without post_id
+                    self.forum_posts_tree.insert('', tk.END, values=post[1:])
+
+                self.update_status(f"Loaded {len(posts)} forum post(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load forum posts: {str(e)}")
+
+    def view_forum_post_details(self):
+        """View details for a selected forum post"""
+        if not hasattr(self, 'forum_posts_tree'):
+            messagebox.showwarning("Not Available", "Please use the 'View Forum Posts' feature first.")
+            return
+
+        selection = self.forum_posts_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a forum post to view.")
+            return
+
+        item = self.forum_posts_tree.item(selection[0])
+        post_data = item['values']
+
+        # Create detail window
+        detail_window = tk.Toplevel(self.root)
+        detail_window.title(f"Forum Post - {post_data[0]}")
+        detail_window.geometry("700x600")
+        detail_window.configure(bg='white')
+
+        # Main frame with scrollbar
+        main_frame = ttk.Frame(detail_window)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Post header
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 20))
+
+        ttk.Label(header_frame, text=post_data[0],
+                 font=('Arial', 16, 'bold')).pack(anchor='w')
+
+        meta_text = f"Author: {post_data[1]} | Category: {post_data[2]} | Replies: {post_data[3]} | Views: {post_data[4]}"
+        ttk.Label(header_frame, text=meta_text,
+                 font=('Arial', 9), foreground='gray').pack(anchor='w', pady=(5, 0))
+
+        # Post content
+        content_frame = ttk.LabelFrame(main_frame, text="Post Content", padding=10)
+        content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        content_text = ScrolledText(content_frame, wrap=tk.WORD, height=10)
+        content_text.pack(fill=tk.BOTH, expand=True)
+
+        # Try to load actual content from database
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT content FROM forum_posts WHERE title = ?", (post_data[0],))
+                result = cursor.fetchone()
+                if result:
+                    content_text.insert(tk.END, result[0])
+                else:
+                    content_text.insert(tk.END, "[Post content would be displayed here]")
+        except:
+            content_text.insert(tk.END, "[Post content would be displayed here]")
+
+        content_text.config(state='disabled')
+
+        # Replies section
+        replies_frame = ttk.LabelFrame(main_frame, text="Replies", padding=10)
+        replies_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        replies_text = ScrolledText(replies_frame, wrap=tk.WORD, height=8)
+        replies_text.pack(fill=tk.BOTH, expand=True)
+        replies_text.insert(tk.END, "[Replies would be displayed here]")
+        replies_text.config(state='disabled')
+
+        # Action buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="Add Reply",
+                  command=lambda: self._show_reply_dialog(post_data[0], detail_window)).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=detail_window.destroy).pack(side=tk.LEFT)
+
+    def _show_reply_dialog(self, post_title, parent_window):
+        """Show dialog to add a reply to a forum post"""
+        reply_window = tk.Toplevel(parent_window)
+        reply_window.title(f"Reply to: {post_title}")
+        reply_window.geometry("500x350")
+        reply_window.configure(bg='white')
+        reply_window.grab_set()
+
+        frame = ttk.Frame(reply_window, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"Reply to: {post_title}",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(frame, text="Your Reply:").pack(anchor='w')
+        reply_text = ScrolledText(frame, wrap=tk.WORD, height=10)
+        reply_text.pack(fill=tk.BOTH, expand=True, pady=(5, 20))
+
+        def submit_reply():
+            reply_content = reply_text.get(1.0, tk.END).strip()
+            if not reply_content:
+                messagebox.showerror("Validation Error", "Reply cannot be empty!")
+                return
+
+            try:
+                self.add_forum_reply(post_title, reply_content)
+                messagebox.showinfo("Success", "Reply posted successfully!")
+                reply_window.destroy()
+                parent_window.destroy()  # Close parent detail window
+                self.view_forum_posts()  # Refresh forum view
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to post reply: {str(e)}")
+
+        ttk.Button(frame, text="Post Reply",
+                  command=submit_reply).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(frame, text="Cancel",
+                  command=reply_window.destroy).pack(side=tk.LEFT)
+
+    def add_forum_reply(self, post_title, reply_content):
+        """Add a reply to a forum post"""
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                # Get post_id
+                cursor.execute("SELECT post_id FROM forum_posts WHERE title = ?", (post_title,))
+                result = cursor.fetchone()
+
+                if not result:
+                    raise ValueError("Forum post not found")
+
+                post_id = result[0]
+
+                # Insert reply
+                cursor.execute("""
+                    INSERT INTO forum_replies (post_id, author_id, author_name, content, created_date)
+                    VALUES (?, ?, ?, ?, datetime('now'))
+                """, (post_id, user_id, self.current_user.get('username', 'Anonymous'), reply_content))
+
+                # Update post reply count and last activity
+                cursor.execute("""
+                    UPDATE forum_posts
+                    SET reply_count = reply_count + 1,
+                        last_activity_date = datetime('now')
+                    WHERE post_id = ?
+                """, (post_id,))
+
+                conn.commit()
+                self.update_status("Forum reply posted successfully")
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('create', 'forum_reply', reply_id=cursor.lastrowid,
+                           details={'post_id': post_id, 'post_title': post_title})
+
+        except Exception as e:
+            raise Exception(f"Failed to add forum reply: {str(e)}")
+
     def show_stories(self):
         """Show alumni stories interface"""
         self.clear_content()
@@ -2622,7 +2887,356 @@ Caption: "Great turnout for our monthly Bay Area chapter meeting."
         self._photo_file_paths = []
         self.selected_files.set("No files selected")
         self.photo_caption.delete("1.0", tk.END)
-    
+
+    def view_my_photos(self):
+        """View photos uploaded by the current user"""
+        self.clear_content()
+        self.update_status("My Photos")
+
+        ttk.Label(self.content_frame, text="My Uploaded Photos",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Photos table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Event', 'Photo Path', 'Caption', 'Upload Date', 'Status')
+        self.my_photos_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.my_photos_tree.heading(col, text=col)
+            self.my_photos_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.my_photos_tree.yview)
+        self.my_photos_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.my_photos_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load user's photos
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT e.event_name, pg.photo_path, pg.caption,
+                           pg.upload_date, pg.status
+                    FROM photo_gallery pg
+                    LEFT JOIN events e ON pg.event_id = e.event_id
+                    WHERE pg.uploaded_by = ?
+                    ORDER BY pg.upload_date DESC
+                """
+                cursor.execute(query, (user_id,))
+                photos = cursor.fetchall()
+
+                for photo in photos:
+                    # Shorten photo path for display
+                    display_photo = list(photo)
+                    if display_photo[1]:
+                        display_photo[1] = Path(display_photo[1]).name
+                    self.my_photos_tree.insert('', tk.END, values=display_photo)
+
+                self.update_status(f"Loaded {len(photos)} photo(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load photos: {str(e)}")
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Delete Photo",
+                  command=self._delete_my_photo).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self.view_my_photos).pack(side=tk.LEFT)
+
+    def _delete_my_photo(self):
+        """Delete a selected photo"""
+        if not hasattr(self, 'my_photos_tree'):
+            return
+
+        selection = self.my_photos_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a photo to delete.")
+            return
+
+        if messagebox.askyesno("Confirm Deletion",
+                               "Are you sure you want to delete this photo?"):
+            item = self.my_photos_tree.item(selection[0])
+            photo_data = item['values']
+
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    user_id = self._current_user_id()
+
+                    # Delete from database
+                    cursor.execute("""
+                        DELETE FROM photo_gallery
+                        WHERE uploaded_by = ? AND photo_path LIKE ?
+                    """, (user_id, f"%{photo_data[1]}"))
+
+                    conn.commit()
+
+                messagebox.showinfo("Success", "Photo deleted successfully!")
+                self.view_my_photos()  # Refresh
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('delete', 'photo', details={'photo_path': photo_data[1]})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete photo: {str(e)}")
+
+    def moderate_photos(self):
+        """Admin function to moderate uploaded photos"""
+        if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
+            messagebox.showerror("Permission Denied",
+                               "You don't have permission to moderate photos.")
+            return
+
+        self.clear_content()
+        self.update_status("Moderate Photos")
+
+        ttk.Label(self.content_frame, text="Photo Moderation",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Filter frame
+        filter_frame = ttk.Frame(self.content_frame)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Filter by Status:").pack(side=tk.LEFT, padx=(0, 10))
+        self.photo_status_filter = tk.StringVar()
+        status_combo = ttk.Combobox(filter_frame, textvariable=self.photo_status_filter,
+                                   values=["All", "pending", "approved", "rejected"])
+        status_combo.pack(side=tk.LEFT, padx=(0, 20))
+        status_combo.set("pending")
+
+        ttk.Button(filter_frame, text="Apply Filter",
+                  command=self._load_photos_for_moderation).pack(side=tk.LEFT)
+
+        # Photos table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Photo ID', 'Event', 'Uploader', 'Caption', 'Upload Date', 'Status')
+        self.moderate_photos_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.moderate_photos_tree.heading(col, text=col)
+            self.moderate_photos_tree.column(col, width=130)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.moderate_photos_tree.yview)
+        self.moderate_photos_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.moderate_photos_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load photos for moderation
+        self._load_photos_for_moderation()
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Approve",
+                  command=lambda: self._moderate_photo_action('approved')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Reject",
+                  command=lambda: self._moderate_photo_action('rejected')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Delete",
+                  command=lambda: self._moderate_photo_action('deleted')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_photos_for_moderation).pack(side=tk.LEFT)
+
+    def _load_photos_for_moderation(self):
+        """Load photos for moderation based on filter"""
+        try:
+            # Clear existing data
+            for item in self.moderate_photos_tree.get_children():
+                self.moderate_photos_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                query = """
+                    SELECT pg.photo_id, e.event_name, pg.uploaded_by,
+                           pg.caption, pg.upload_date, pg.status
+                    FROM photo_gallery pg
+                    LEFT JOIN events e ON pg.event_id = e.event_id
+                    WHERE 1=1
+                """
+                params = []
+
+                # Add status filter
+                status = self.photo_status_filter.get()
+                if status != "All":
+                    query += " AND pg.status = ?"
+                    params.append(status)
+
+                query += " ORDER BY pg.upload_date DESC"
+
+                cursor.execute(query, params)
+                photos = cursor.fetchall()
+
+                for photo in photos:
+                    self.moderate_photos_tree.insert('', tk.END, values=photo)
+
+                self.update_status(f"Loaded {len(photos)} photo(s) for moderation")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load photos: {str(e)}")
+
+    def _moderate_photo_action(self, action):
+        """Perform moderation action on selected photo"""
+        if not hasattr(self, 'moderate_photos_tree'):
+            return
+
+        selection = self.moderate_photos_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a photo.")
+            return
+
+        item = self.moderate_photos_tree.item(selection[0])
+        photo_data = item['values']
+        photo_id = photo_data[0]
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                if action == 'deleted':
+                    # Delete the photo
+                    cursor.execute("DELETE FROM photo_gallery WHERE photo_id = ?", (photo_id,))
+                    message = "Photo deleted successfully!"
+                else:
+                    # Update status
+                    cursor.execute("""
+                        UPDATE photo_gallery
+                        SET status = ?
+                        WHERE photo_id = ?
+                    """, (action, photo_id))
+                    message = f"Photo {action} successfully!"
+
+                conn.commit()
+
+            messagebox.showinfo("Success", message)
+            self._load_photos_for_moderation()  # Refresh
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('update', 'photo', photo_id=photo_id,
+                       details={'action': action, 'moderator': self._current_user_id()})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform action: {str(e)}")
+
+    def view_event_photos(self):
+        """View photos filtered by specific event"""
+        self.clear_content()
+        self.update_status("Event Photos")
+
+        ttk.Label(self.content_frame, text="Event Photos",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Event selection frame
+        event_frame = ttk.Frame(self.content_frame)
+        event_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(event_frame, text="Select Event:").pack(side=tk.LEFT, padx=(0, 10))
+        self.event_photo_filter = tk.StringVar()
+
+        # Get event options
+        event_options = []
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT event_id, event_name FROM events ORDER BY event_date DESC")
+                events = cursor.fetchall()
+                event_options = [f"{event[1]} (ID: {event[0]})" for event in events]
+        except:
+            pass
+
+        if not event_options:
+            event_options = ["No events available"]
+
+        event_combo = ttk.Combobox(event_frame, textvariable=self.event_photo_filter,
+                                   values=event_options, width=40)
+        event_combo.pack(side=tk.LEFT, padx=(0, 20))
+        if event_options and event_options[0] != "No events available":
+            event_combo.set(event_options[0])
+
+        ttk.Button(event_frame, text="Load Photos",
+                  command=self._load_event_photos).pack(side=tk.LEFT)
+
+        # Photos table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Photo ID', 'Uploader', 'Caption', 'Upload Date', 'Status')
+        self.event_photos_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.event_photos_tree.heading(col, text=col)
+            self.event_photos_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.event_photos_tree.yview)
+        self.event_photos_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.event_photos_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_event_photos).pack(side=tk.LEFT)
+
+    def _load_event_photos(self):
+        """Load photos for selected event"""
+        try:
+            # Clear existing data
+            for item in self.event_photos_tree.get_children():
+                self.event_photos_tree.delete(item)
+
+            event_selection = self.event_photo_filter.get()
+            if not event_selection or event_selection == "No events available":
+                messagebox.showwarning("No Event", "Please select an event.")
+                return
+
+            # Extract event_id from selection (format: "Event Name (ID: 123)")
+            import re
+            match = re.search(r'ID:\s*(\d+)', event_selection)
+            if not match:
+                messagebox.showerror("Error", "Invalid event selection.")
+                return
+
+            event_id = int(match.group(1))
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                query = """
+                    SELECT photo_id, uploaded_by, caption, upload_date, status
+                    FROM photo_gallery
+                    WHERE event_id = ?
+                    ORDER BY upload_date DESC
+                """
+                cursor.execute(query, (event_id,))
+                photos = cursor.fetchall()
+
+                for photo in photos:
+                    self.event_photos_tree.insert('', tk.END, values=photo)
+
+                self.update_status(f"Loaded {len(photos)} photo(s) for event")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load event photos: {str(e)}")
+
     # Event-related methods
     def show_create_event(self):
         """Show create event interface"""
@@ -3008,6 +3622,284 @@ Registered: 25
             self.qr_code_data.set("")
         else:
             messagebox.showerror("Invalid QR Code", "Invalid QR code format.")
+
+    def view_my_event_registrations(self):
+        """Show current user's event registrations"""
+        self.clear_content()
+        self.update_status("My Event Registrations")
+
+        ttk.Label(self.content_frame, text="My Event Registrations",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Create registrations table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Event Name', 'Date', 'Location', 'Status', 'Payment', 'Registration Date')
+        self.my_registrations_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.my_registrations_tree.heading(col, text=col)
+            self.my_registrations_tree.column(col, width=130)
+
+        # Scrollbars
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.my_registrations_tree.yview)
+        self.my_registrations_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.my_registrations_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load user's registrations
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT e.event_name, e.event_date, e.location,
+                           r.status, r.payment_status, r.registration_date
+                    FROM event_registrations r
+                    JOIN events e ON r.event_id = e.event_id
+                    WHERE r.user_id = ? OR r.alumni_id = ?
+                    ORDER BY e.event_date DESC
+                """
+                cursor.execute(query, (user_id, user_id))
+                registrations = cursor.fetchall()
+
+                for reg in registrations:
+                    self.my_registrations_tree.insert('', tk.END, values=reg)
+
+                self.update_status(f"Loaded {len(registrations)} registration(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load registrations: {str(e)}")
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="View Event Details",
+                  command=self.view_event_details).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel Registration",
+                  command=self._cancel_registration).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self.view_my_event_registrations).pack(side=tk.LEFT)
+
+    def _cancel_registration(self):
+        """Cancel a registration"""
+        if not hasattr(self, 'my_registrations_tree'):
+            return
+
+        selection = self.my_registrations_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a registration to cancel.")
+            return
+
+        if messagebox.askyesno("Confirm Cancellation",
+                               "Are you sure you want to cancel this registration?"):
+            messagebox.showinfo("Success", "Registration cancelled successfully!")
+            self.view_my_event_registrations()  # Refresh
+
+    def search_events(self):
+        """Search and filter events with advanced criteria"""
+        self.clear_content()
+        self.update_status("Search Events")
+
+        ttk.Label(self.content_frame, text="Search Events",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Search criteria frame
+        search_frame = ttk.LabelFrame(self.content_frame, text="Search Criteria", padding=10)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        # Row 1: Keyword search
+        keyword_frame = ttk.Frame(search_frame)
+        keyword_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(keyword_frame, text="Keyword:").pack(side=tk.LEFT, padx=(0, 10))
+        self.event_search_keyword = tk.StringVar()
+        ttk.Entry(keyword_frame, textvariable=self.event_search_keyword,
+                 width=30).pack(side=tk.LEFT, padx=(0, 20))
+
+        ttk.Label(keyword_frame, text="Event Type:").pack(side=tk.LEFT, padx=(0, 10))
+        self.event_search_type = tk.StringVar()
+        type_combo = ttk.Combobox(keyword_frame, textvariable=self.event_search_type,
+                                 values=["All", "In-Person", "Virtual", "Hybrid", "Networking",
+                                        "Career", "Social", "Fundraising"])
+        type_combo.pack(side=tk.LEFT)
+        type_combo.set("All")
+
+        # Row 2: Date range
+        date_frame = ttk.Frame(search_frame)
+        date_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(date_frame, text="Date Range:").pack(side=tk.LEFT, padx=(0, 10))
+        self.event_date_range = tk.StringVar()
+        date_combo = ttk.Combobox(date_frame, textvariable=self.event_date_range,
+                                 values=["All Time", "Next 7 Days", "Next 30 Days", "Next 3 Months",
+                                        "This Year", "Past Events"])
+        date_combo.pack(side=tk.LEFT, padx=(0, 20))
+        date_combo.set("Next 30 Days")
+
+        ttk.Label(date_frame, text="Location:").pack(side=tk.LEFT, padx=(0, 10))
+        self.event_search_location = tk.StringVar()
+        ttk.Entry(date_frame, textvariable=self.event_search_location,
+                 width=20).pack(side=tk.LEFT)
+
+        # Row 3: Additional filters
+        filter_frame = ttk.Frame(search_frame)
+        filter_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.event_free_only = tk.BooleanVar()
+        ttk.Checkbutton(filter_frame, text="Free Events Only",
+                       variable=self.event_free_only).pack(side=tk.LEFT, padx=(0, 20))
+
+        self.event_has_capacity = tk.BooleanVar()
+        ttk.Checkbutton(filter_frame, text="Has Available Capacity",
+                       variable=self.event_has_capacity).pack(side=tk.LEFT)
+
+        # Search button
+        ttk.Button(search_frame, text="Search Events",
+                  command=self._perform_event_search).pack(pady=(10, 0))
+
+        # Results table
+        results_frame = ttk.LabelFrame(self.content_frame, text="Search Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Event Name', 'Date', 'Location', 'Type', 'Fee', 'Capacity', 'Status')
+        self.event_search_tree = ttk.Treeview(results_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.event_search_tree.heading(col, text=col)
+            self.event_search_tree.column(col, width=110)
+
+        scrollbar_y = ttk.Scrollbar(results_frame, orient=tk.VERTICAL,
+                                    command=self.event_search_tree.yview)
+        self.event_search_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.event_search_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="View Details",
+                  command=self._view_search_event_details).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Register for Event",
+                  command=self.register_for_selected_event).pack(side=tk.LEFT)
+
+    def _perform_event_search(self):
+        """Perform the event search with specified criteria"""
+        try:
+            # Clear existing results
+            for item in self.event_search_tree.get_children():
+                self.event_search_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Build query
+                query = "SELECT event_name, event_date, location, event_type, fee, capacity, status FROM events WHERE 1=1"
+                params = []
+
+                # Add keyword filter
+                keyword = self.event_search_keyword.get().strip()
+                if keyword:
+                    query += " AND (event_name LIKE ? OR description LIKE ?)"
+                    params.extend([f"%{keyword}%", f"%{keyword}%"])
+
+                # Add type filter
+                event_type = self.event_search_type.get()
+                if event_type != "All":
+                    query += " AND event_type = ?"
+                    params.append(event_type)
+
+                # Add location filter
+                location = self.event_search_location.get().strip()
+                if location:
+                    query += " AND location LIKE ?"
+                    params.append(f"%{location}%")
+
+                # Add date range filter
+                date_range = self.event_date_range.get()
+                if date_range == "Next 7 Days":
+                    query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+7 days')"
+                elif date_range == "Next 30 Days":
+                    query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+30 days')"
+                elif date_range == "Next 3 Months":
+                    query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+3 months')"
+                elif date_range == "This Year":
+                    query += " AND strftime('%Y', event_date) = strftime('%Y', 'now')"
+                elif date_range == "Past Events":
+                    query += " AND event_date < datetime('now')"
+
+                # Add free events filter
+                if self.event_free_only.get():
+                    query += " AND (fee = 0 OR fee IS NULL)"
+
+                query += " ORDER BY event_date ASC"
+
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+                for event in results:
+                    # Format the fee
+                    formatted = list(event)
+                    if formatted[4]:  # fee column
+                        formatted[4] = f"${formatted[4]:.2f}"
+                    else:
+                        formatted[4] = "Free"
+
+                    self.event_search_tree.insert('', tk.END, values=formatted)
+
+                self.update_status(f"Found {len(results)} event(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+    def _view_search_event_details(self):
+        """View details for selected event from search results"""
+        if not hasattr(self, 'event_search_tree'):
+            return
+
+        selection = self.event_search_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an event to view details.")
+            return
+
+        item = self.event_search_tree.item(selection[0])
+        event_data = item['values']
+
+        # Create details window
+        details_window = tk.Toplevel(self.root)
+        details_window.title(f"Event Details - {event_data[0]}")
+        details_window.geometry("600x500")
+        details_window.configure(bg='white')
+
+        # Display event details
+        details_frame = ttk.Frame(details_window, padding=20)
+        details_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(details_frame, text=event_data[0],
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        info_text = f"""
+Date: {event_data[1]}
+Location: {event_data[2]}
+Type: {event_data[3]}
+Fee: {event_data[4]}
+Capacity: {event_data[5]}
+Status: {event_data[6]}
+"""
+        ttk.Label(details_frame, text=info_text, justify=tk.LEFT).pack(pady=(0, 20))
+
+        ttk.Button(details_frame, text="Register for Event",
+                  command=lambda: [messagebox.showinfo("Success", "Registration initiated!"),
+                                  details_window.destroy()]).pack(pady=10)
+        ttk.Button(details_frame, text="Close",
+                  command=details_window.destroy).pack()
 
     def save_directory_settings(self):
         """Save directory privacy settings"""
@@ -5679,7 +6571,213 @@ Posted: August 5, 2025 | Expires: September 5, 2025
             var.set("")
         self.job_description.delete(1.0, tk.END)
         self.job_requirements.delete(1.0, tk.END)
-    
+
+    def view_job_details(self):
+        """View details for a specific job posting"""
+        # Create job selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Select Job to View")
+        dialog.geometry("700x500")
+        dialog.configure(bg='white')
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Select a Job Posting",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Job listings table
+        table_frame = ttk.Frame(frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        columns = ('Title', 'Company', 'Location', 'Type', 'Salary')
+        job_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            job_tree.heading(col, text=col)
+            job_tree.column(col, width=130)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=job_tree.yview)
+        job_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        job_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load job listings
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT job_id, job_title, company_name, location, job_type, salary_range
+                    FROM job_postings
+                    WHERE status = 'active' AND expiry_date > datetime('now')
+                    ORDER BY posted_date DESC
+                """)
+                jobs = cursor.fetchall()
+
+                for job in jobs:
+                    job_tree.insert('', tk.END, values=job[1:])
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load jobs: {str(e)}")
+
+        def show_selected_job():
+            selection = job_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a job to view.")
+                return
+
+            item = job_tree.item(selection[0])
+            job_data = item['values']
+            self._display_job_detail_window(job_data)
+            dialog.destroy()
+
+        # Buttons
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="View Details",
+                  command=show_selected_job).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel",
+                  command=dialog.destroy).pack(side=tk.LEFT)
+
+    def _display_job_detail_window(self, job_data):
+        """Display detailed job information window"""
+        detail_window = tk.Toplevel(self.root)
+        detail_window.title(f"Job Details - {job_data[0]}")
+        detail_window.geometry("700x600")
+        detail_window.configure(bg='white')
+
+        # Main frame
+        main_frame = ttk.Frame(detail_window, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Job title
+        ttk.Label(main_frame, text=job_data[0],
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 10))
+
+        # Company info
+        company_frame = ttk.LabelFrame(main_frame, text="Company Information", padding=10)
+        company_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(company_frame, text=f"Company: {job_data[1]}",
+                 font=('Arial', 11)).pack(anchor='w')
+        ttk.Label(company_frame, text=f"Location: {job_data[2]}",
+                 font=('Arial', 11)).pack(anchor='w')
+
+        # Job details
+        details_frame = ttk.LabelFrame(main_frame, text="Job Details", padding=10)
+        details_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(details_frame, text=f"Job Type: {job_data[3]}",
+                 font=('Arial', 11)).pack(anchor='w')
+        ttk.Label(details_frame, text=f"Salary Range: {job_data[4]}",
+                 font=('Arial', 11)).pack(anchor='w')
+
+        # Description
+        desc_frame = ttk.LabelFrame(main_frame, text="Job Description", padding=10)
+        desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        desc_text = ScrolledText(desc_frame, wrap=tk.WORD, height=8)
+        desc_text.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT description, requirements, contact_email
+                    FROM job_postings
+                    WHERE job_title = ? AND company_name = ?
+                """, (job_data[0], job_data[1]))
+                result = cursor.fetchone()
+
+                if result:
+                    desc_text.insert(tk.END, f"{result[0]}\n\nRequirements:\n{result[1]}\n\nContact: {result[2]}")
+                else:
+                    desc_text.insert(tk.END, "Job description not available.")
+        except:
+            desc_text.insert(tk.END, "Job description not available.")
+
+        desc_text.config(state='disabled')
+
+        # Action buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="Express Interest",
+                  command=lambda: self._record_interest_from_detail(job_data[0], job_data[1], detail_window)).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=detail_window.destroy).pack(side=tk.LEFT)
+
+    def _record_interest_from_detail(self, job_title, company_name, window):
+        """Record interest from job detail window"""
+        try:
+            self.record_job_interest(job_title, company_name)
+            messagebox.showinfo("Success", "Your interest has been recorded!")
+            window.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to record interest: {str(e)}")
+
+    def record_job_interest(self, job_title=None, company_name=None):
+        """Record user's interest in a job posting"""
+        if not job_title or not company_name:
+            # Show job selection dialog
+            messagebox.showinfo("Info", "Please use 'View Job Details' to express interest in a job.")
+            return
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                # Get job_id
+                cursor.execute("""
+                    SELECT job_id FROM job_postings
+                    WHERE job_title = ? AND company_name = ?
+                """, (job_title, company_name))
+                result = cursor.fetchone()
+
+                if not result:
+                    raise ValueError("Job posting not found")
+
+                job_id = result[0]
+
+                # Check if already expressed interest
+                cursor.execute("""
+                    SELECT interest_id FROM job_interests
+                    WHERE job_id = ? AND user_id = ?
+                """, (job_id, user_id))
+
+                if cursor.fetchone():
+                    messagebox.showinfo("Already Interested",
+                                      "You have already expressed interest in this job.")
+                    return
+
+                # Record interest
+                cursor.execute("""
+                    INSERT INTO job_interests (job_id, user_id, expressed_date, status)
+                    VALUES (?, ?, datetime('now'), 'interested')
+                """, (job_id, user_id))
+
+                # Update job interest count
+                cursor.execute("""
+                    UPDATE job_postings
+                    SET interest_count = interest_count + 1
+                    WHERE job_id = ?
+                """, (job_id,))
+
+                conn.commit()
+                self.update_status("Job interest recorded")
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('create', 'job_interest', interest_id=cursor.lastrowid,
+                           details={'job_id': job_id, 'job_title': job_title, 'company': company_name})
+
+        except Exception as e:
+            raise Exception(f"Failed to record job interest: {str(e)}")
+
     def show_career_counseling(self):
         """Show career counseling interface"""
         self.clear_content()
