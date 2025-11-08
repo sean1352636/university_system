@@ -799,11 +799,9 @@ class ParentPortalGUI:
                 font=('Arial', 9),
                 bg=color,
                 fg='white',
-                anchor='w',
-                padx=20,
-                pady=(0, 10)
+                anchor='w'
             )
-            desc_label.pack(fill=tk.X)
+            desc_label.pack(fill=tk.X, padx=20, pady=(0, 10))
 
     def view_child_grades(self, child):
         """View grades for a specific child"""
