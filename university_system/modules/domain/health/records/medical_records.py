@@ -2407,18 +2407,48 @@ def add_health_advisory(auth):
     advisory_id = cursor.lastrowid
     
     log_audit_event(auth.current_user['id'], 'issue_health_advisory', 'health_advisory', advisory_id)
-    
+
     print(f"\nHealth advisory issued successfully!")
     print(f"Advisory ID: {advisory_id}")
-    
-    # Send notifications if critical
-    if priority == 'Critical':
-        print("🚨 CRITICAL ADVISORY - Consider immediate notification to all relevant parties")
-        send_notification = input("Send immediate notifications? (y/n): ").lower()
-        if send_notification == 'y':
-            # Placeholder for notification system
-            print("Notifications sent to target audience.")
-    
+
+    # Automatically send email notifications to target audience
+    try:
+        # Get students based on target audience
+        if target_audience == 'All Students':
+            cursor.execute('SELECT student_id FROM students WHERE status = "active"')
+        elif target_audience == 'High Risk Students':
+            # Send to students with chronic conditions or recent health issues
+            cursor.execute('''
+                SELECT DISTINCT mr.student_id
+                FROM medical_records mr
+                WHERE mr.record_type IN ('chronic_condition', 'prescription')
+                AND mr.student_id IN (SELECT student_id FROM students WHERE status = "active")
+            ''')
+        elif target_audience == 'Staff Only':
+            # Send to staff/faculty
+            cursor.execute('''
+                SELECT id as student_id FROM users
+                WHERE role IN ('staff', 'admin', 'instructor') AND is_active = 1
+            ''')
+        else:  # Specific Groups - send to all active students as fallback
+            cursor.execute('SELECT student_id FROM students WHERE status = "active"')
+
+        students = cursor.fetchall()
+        notification_count = 0
+
+        for (student_id,) in students:
+            try:
+                send_health_notification(student_id, title, content, priority)
+                notification_count += 1
+            except Exception as e:
+                print(f"Warning: Could not send notification to student {student_id}: {e}")
+
+        print(f"✉️  Automatic email notifications sent to {notification_count} recipients")
+        if priority == 'Critical':
+            print("🚨 CRITICAL ADVISORY - Email notifications sent to all relevant parties")
+    except Exception as e:
+        print(f"Warning: Could not send email notifications: {e}")
+
     conn.close()
 
 def view_health_advisories(auth):

@@ -1935,14 +1935,46 @@ def record_donation():
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        donation_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         cursor.execute('''
             INSERT INTO alumni_donations (user_id, amount, purpose, donation_date, payment_status)
             VALUES (?, ?, ?, ?, 'completed')
-        ''', (auth.current_user['user_id'], amount, purpose, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        ''', (auth.current_user['user_id'], amount, purpose, donation_date))
 
+        donation_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+
         print(f"Donation of ${amount:.2f} recorded successfully. Thank you for your generosity!")
+
+        # Automatically send donation receipt email
+        try:
+            # Get alumni ID and email from current user
+            cursor.execute('''
+                SELECT ap.alumni_id, ap.email
+                FROM alumni_profiles ap
+                JOIN users u ON ap.alumni_id = u.username
+                WHERE u.id = ?
+            ''', (auth.current_user['user_id'],))
+
+            result = cursor.fetchone()
+            if result:
+                alumni_id, email = result
+                send_donation_receipt(
+                    alumni_id=alumni_id,
+                    donation_id=donation_id,
+                    email_address=email,
+                    amount=amount,
+                    donation_date=donation_date,
+                    purpose=purpose
+                )
+                print("✉️  Donation receipt sent to your email")
+            else:
+                print("⚠️  Could not send receipt: Alumni profile not found")
+        except Exception as e:
+            print(f"⚠️  Could not send donation receipt email: {e}")
+
+        conn.close()
     except ValueError:
         print("Invalid amount entered.")
     except Exception as e:
@@ -3965,19 +3997,44 @@ def create_enhanced_event():
         cursor.execute('UPDATE alumni_events SET qr_code_path = ? WHERE event_id = ?', (qr_code_path, event_id))
     
     conn.commit()
-    
+
     print(f"\nEnhanced event created successfully with ID: {event_id}")
     print(f"Event Type: {event_type}")
     if payment_required:
         print(f"Event Fee: ${event_fee:.2f}")
     if virtual_link:
         print(f"Virtual Link: {virtual_link}")
-    
-    # Ask if notifications should be sent
-    notify = input("Would you like to send event notifications to alumni? (y/n): ").lower()
-    if notify == 'y':
-        send_enhanced_event_notifications(event_id, cursor)
-    
+
+    # Automatically send event invitations to all alumni
+    try:
+        # Get all alumni
+        cursor.execute('SELECT alumni_id, email, first_name, last_name FROM alumni_profiles')
+        alumni_list = cursor.fetchall()
+
+        if alumni_list:
+            print(f"\n✉️  Sending event invitations to {len(alumni_list)} alumni...")
+            sent_count = 0
+
+            for alumni_id, email, first_name, last_name in alumni_list:
+                try:
+                    send_event_invitation(
+                        alumni_id=alumni_id,
+                        event_id=event_id,
+                        email_address=email,
+                        event_name=event_name,
+                        event_date=event_date_str,
+                        event_location=event_location
+                    )
+                    sent_count += 1
+                except Exception as e:
+                    print(f"   ⚠️  Could not send invitation to {email}: {e}")
+
+            print(f"✅ Event invitations sent successfully to {sent_count} alumni!")
+        else:
+            print("⚠️  No alumni found to notify.")
+    except Exception as e:
+        print(f"⚠️  Could not send event invitations: {e}")
+
     conn.close()
 
 def generate_event_qr_code(event_id):
@@ -6018,8 +6075,37 @@ def create_recommended_mentorships(matches, cursor):
                 
                 mentorship_id = cursor.lastrowid
                 created_count += 1
-                
+
                 print(f"✅ Created mentorship {mentorship_id}: {mentor_first} {mentor_last} → {mentee_name}")
+
+                # Automatically send mentorship notification emails
+                try:
+                    # Get mentor email
+                    cursor.execute('SELECT email FROM alumni_profiles WHERE alumni_id = ?', (mentor_id,))
+                    mentor_result = cursor.fetchone()
+                    mentor_email = mentor_result[0] if mentor_result else None
+
+                    # Get mentee email
+                    cursor.execute('SELECT email FROM alumni_profiles WHERE alumni_id = ?', (mentee_id,))
+                    mentee_result = cursor.fetchone()
+                    mentee_email = mentee_result[0] if mentee_result else None
+
+                    if mentor_email and mentee_email:
+                        mentor_name = f"{mentor_first} {mentor_last}"
+                        send_mentorship_notification(
+                            mentor_email=mentor_email,
+                            mentee_email=mentee_email,
+                            mentor_name=mentor_name,
+                            mentee_name=mentee_name,
+                            focus_area=focus_area,
+                            start_date=start_date,
+                            end_date=None
+                        )
+                        print(f"   ✉️  Email notifications sent to mentor and mentee")
+                    else:
+                        print(f"   ⚠️  Could not send emails: Missing email address(es)")
+                except Exception as e:
+                    print(f"   ⚠️  Could not send email notification: {e}")
         elif choice.lower() == 's':
             print(f"Skipped {mentee_name}")
         else:

@@ -811,7 +811,35 @@ def reply_to_ticket_enhanced(auth, ticket_id, is_internal=False):
         
         # Run workflows
         run_ticket_workflows(ticket_id, 'reply_added', user_role=auth.current_user['role'])
-        
+
+        # Check for SLA breach and send alert if overdue
+        try:
+            cursor.execute('''
+                SELECT due_date, status
+                FROM support_tickets
+                WHERE ticket_id = ?
+            ''', (ticket_id,))
+
+            ticket_data = cursor.fetchone()
+            if ticket_data and ticket_data[0]:  # if due_date exists
+                due_date_str = ticket_data[0]
+                status = ticket_data[1]
+
+                # Parse due date
+                try:
+                    due_date = datetime.strptime(due_date_str, '%Y-%m-%d %H:%M:%S')
+                    current_time = datetime.now()
+
+                    # If ticket is overdue and not resolved/closed
+                    if current_time > due_date and status not in ['resolved', 'closed']:
+                        send_sla_alert(ticket_id, alert_type='overdue')
+                        print("⚠️  SLA alert sent - ticket is overdue")
+                except ValueError:
+                    # Invalid date format, skip SLA check
+                    pass
+        except Exception as e:
+            print(f"Note: Could not check SLA status: {e}")
+
     except sqlite3.Error as e:
         print(f"Error adding reply: {e}")
     finally:
@@ -1675,7 +1703,18 @@ def create_ticket_with_details(auth, subject, message, category, priority, impac
         
         # Suggest knowledge base articles
         suggest_knowledge_base_articles(ticket_id, subject + " " + message)
-        
+
+        # Check for immediate SLA breach (rare but possible)
+        if due_date:
+            try:
+                due_datetime = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
+                if datetime.now() > due_datetime:
+                    send_sla_alert(ticket_id, alert_type='overdue')
+                    print("⚠️  SLA alert sent - ticket is already overdue")
+            except (ValueError, Exception) as e:
+                # Skip SLA check if date parsing fails
+                pass
+
     except sqlite3.Error as e:
         print(f"Error creating support ticket: {e}")
     finally:

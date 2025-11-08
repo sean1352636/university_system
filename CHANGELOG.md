@@ -9,6 +9,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Automatic Email Notifications - Part 4 (Event-Based Triggers)** (2025-11-08)
+- **Enhancement**: Implemented automatic email triggers for 5 critical event-based notifications
+- **Impact**: Complete automation of email notifications for health advisories, mentorship, events, donations, and SLA alerts
+- **Files Modified**:
+  - `university_system/modules/domain/health/records/medical_records.py`
+  - `university_system/modules/domain/student_affairs/services/alumni_management.py`
+  - `university_system/modules/domain/student_affairs/services/helpdesk.py`
+
+**Event-triggered automatic notifications**:
+
+1. **Health Advisory Notification** (`medical_records.py:2414-2450`)
+   - Automatically sends when health advisory is posted
+   - Targets specific audiences: All Students, High Risk Students, Staff Only, or Specific Groups
+   - Sends personalized emails to all matching recipients
+   - Function: `send_health_notification(student_id, title, content, priority)`
+   - Shows notification count and critical advisory warnings
+
+2. **Mentorship Pairing Notification** (`alumni_management.py:6024-6051`)
+   - Automatically sends when mentorship is created from AI recommendations
+   - Notifies both mentor and mentee
+   - Includes focus area, start date, and match score
+   - Function: `send_mentorship_notification(mentor_email, mentee_email, mentor_name, mentee_name, focus_area, start_date, end_date)`
+   - Retrieves emails from alumni_profiles table
+
+3. **Alumni Event Invitation** (`alumni_management.py:3976-4004`)
+   - Automatically sends when enhanced alumni event is created
+   - Sends to all alumni in the system
+   - Includes event name, date, location details
+   - Function: `send_event_invitation(alumni_id, event_id, email_address, event_name, event_date, event_location)`
+   - Replaces manual "Would you like to send notifications?" prompt
+
+4. **Donation Receipt** (`alumni_management.py:1950-1975`)
+   - Automatically sends when donation is recorded
+   - Sends immediately after successful donation
+   - Includes donation amount, purpose, date, and donation ID
+   - Function: `send_donation_receipt(alumni_id, donation_id, email_address, amount, donation_date, purpose)`
+   - Looks up alumni profile from current user
+
+5. **SLA Alert** (`helpdesk.py:815-841, 1707-1716`)
+   - Automatically checks for SLA breaches when tickets are updated or created
+   - Triggers when ticket is overdue and not resolved/closed
+   - Sends alerts to assigned staff and department managers
+   - Function: `send_sla_alert(ticket_id, alert_type='overdue')`
+   - Checks on:
+     - Ticket creation (if immediately overdue)
+     - Ticket reply/update (if now overdue)
+   - Note: For comprehensive SLA monitoring, a scheduled job should also periodically check for newly overdue tickets
+
+**Implementation Details**:
+- All wrapped in try-except blocks for graceful failure handling
+- Non-blocking: Core operations complete even if email sending fails
+- Informative console messages (✉️ for success, ⚠️ for warnings)
+- Email sending failures logged but don't interrupt workflows
+- Automatic recipient lookup from database (students, alumni, users tables)
+
+**Behavioral Changes**:
+- Health advisories now automatically notify all relevant recipients (previously had manual prompt)
+- Alumni events now automatically send invitations to all alumni (previously had manual y/n prompt)
+- Mentorship creation now sends notification emails without requiring manual action
+- Donations now automatically send receipts to donors
+- SLA breaches are now monitored and alerted automatically
+
+**Future Enhancements Recommended**:
+- Implement scheduled batch job for continuous SLA monitoring (every 15-30 minutes)
+- Add batch email functions for book return reminders and satisfaction surveys to scheduler
+- Consider rate limiting for bulk email operations (health advisories to all students)
+
+---
+
 **Automatic Email Notifications - Part 3 (Comprehensive Coverage)** (2025-11-08)
 - **Enhancement**: Added automatic email triggers for 4 additional notification types
 - **Impact**: Near-complete automated email coverage across all major system operations
