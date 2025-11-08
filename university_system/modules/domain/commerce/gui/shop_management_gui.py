@@ -3608,11 +3608,15 @@ class UniversityShopGUI:
         
         action_frame = ttk.Frame(title_frame)
         action_frame.grid(row=0, column=1, sticky=tk.E)
-        
-        ttk.Button(action_frame, text="Add Product", command=self.show_add_product_dialog, 
+
+        ttk.Button(action_frame, text="Quick Add", command=self.show_quick_add_product_dialog,
                   style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(action_frame, text="Import Products", command=self.import_products).grid(row=0, column=1, padx=5)
-        ttk.Button(action_frame, text="Export Products", command=self.export_products).grid(row=0, column=2, padx=5)
+        ttk.Button(action_frame, text="Add Product", command=self.show_add_product_dialog,
+                  style='Success.TButton').grid(row=0, column=1, padx=5)
+        ttk.Button(action_frame, text="Import Products", command=self.import_products).grid(row=0, column=2, padx=5)
+        ttk.Button(action_frame, text="Export Products", command=self.export_products).grid(row=0, column=3, padx=5)
+        ttk.Button(action_frame, text="Backup DB", command=self.backup_shop_database).grid(row=0, column=4, padx=5)
+        ttk.Button(action_frame, text="Cleanup Discounts", command=self.cleanup_expired_discounts).grid(row=0, column=5, padx=5)
         
         # Products table with management features
         products_frame = ttk.LabelFrame(self.content_frame, text="Products", padding="10")
@@ -3868,7 +3872,187 @@ class UniversityShopGUI:
                 conn.rollback()
                 conn.close()
             raise Exception(f"Database error: {e}")
-            
+
+    def show_quick_add_product_dialog(self):
+        """Show quick add product dialog with minimal inputs"""
+        # Create quick add window
+        quick_window = tk.Toplevel(self.root)
+        quick_window.title("Quick Add Product")
+        quick_window.geometry("400x350")
+        quick_window.resizable(False, False)
+
+        # Make it modal
+        quick_window.transient(self.root)
+        quick_window.grab_set()
+
+        main_frame = ttk.Frame(quick_window, padding="20")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Title
+        ttk.Label(main_frame, text="Quick Add Product", style='Heading.TLabel').grid(
+            row=0, column=0, columnspan=2, pady=(0, 15))
+
+        # Info label
+        info_label = ttk.Label(main_frame,
+            text="Streamlined product entry with auto-filled defaults",
+            foreground='gray', font=('Arial', 9, 'italic'))
+        info_label.grid(row=1, column=0, columnspan=2, pady=(0, 15))
+
+        # Form fields - minimal inputs
+        ttk.Label(main_frame, text="Product Name*:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        name_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=name_var, width=30).grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(main_frame, text="Price (£)*:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        price_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=price_var, width=30).grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(main_frame, text="Category:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        category_var = tk.StringVar(value="General")
+        ttk.Entry(main_frame, textvariable=category_var, width=30).grid(row=4, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(main_frame, text="Initial Stock:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        stock_var = tk.StringVar(value="10")
+        ttk.Entry(main_frame, textvariable=stock_var, width=30).grid(row=5, column=1, pady=5, padx=(10, 0))
+
+        # Defaults info
+        defaults_label = ttk.Label(main_frame,
+            text="Auto-defaults: Description='Quick-added', Tax=20%, Threshold=auto",
+            foreground='gray', font=('Arial', 8))
+        defaults_label.grid(row=6, column=0, columnspan=2, pady=(15, 5))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+
+        def quick_save_product():
+            try:
+                # Validate minimal required inputs
+                if not name_var.get().strip() or not price_var.get().strip():
+                    messagebox.showerror("Error", "Please fill in Product Name and Price")
+                    return
+
+                price = float(price_var.get())
+                stock = int(stock_var.get())
+
+                if price < 0:
+                    messagebox.showerror("Error", "Price must be >= 0")
+                    return
+                if stock < 0:
+                    messagebox.showerror("Error", "Stock must be >= 0")
+                    return
+
+                # Create product with auto-defaults
+                product_data = {
+                    'name': name_var.get().strip(),
+                    'description': f"Quick-added product: {name_var.get().strip()}",
+                    'price': price,
+                    'category': category_var.get().strip() or "General",
+                    'initial_stock': stock,
+                    'restock_threshold': max(5, stock // 4),  # Auto-calculated
+                    'tax_rate': 0.20  # Default 20%
+                }
+
+                self.create_product(product_data)
+                quick_window.destroy()
+                self.load_products_for_management()
+                messagebox.showinfo("Success", f"Product '{product_data['name']}' added quickly!")
+
+            except ValueError:
+                messagebox.showerror("Error", "Please enter valid numbers for Price and Stock")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to quick add product: {e}")
+
+        ttk.Button(button_frame, text="Quick Save", command=quick_save_product,
+                  style='Success.TButton').grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=quick_window.destroy).grid(row=0, column=1, padx=5)
+
+    def backup_shop_database(self):
+        """Create timestamped backup of shop database"""
+        try:
+            import shutil
+            from datetime import datetime
+
+            # Generate timestamped backup filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_filename = f"shop_backup_{timestamp}.db"
+
+            # Get the current database path
+            db_path = str(DEFAULT_DB_PATH) if 'DEFAULT_DB_PATH' in globals() else "student_records.db"
+
+            # Let user choose save location
+            from tkinter import filedialog
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=".db",
+                filetypes=[("Database files", "*.db"), ("All files", "*.*")],
+                initialfile=backup_filename,
+                title="Save Database Backup"
+            )
+
+            if not save_path:
+                return  # User cancelled
+
+            # Perform backup
+            shutil.copy2(db_path, save_path)
+
+            messagebox.showinfo("Backup Complete",
+                f"Database backed up successfully!\n\nBackup saved to:\n{save_path}\n\nSize: {os.path.getsize(save_path) / 1024:.2f} KB")
+
+        except Exception as e:
+            messagebox.showerror("Backup Failed", f"Failed to backup database: {e}")
+
+    def cleanup_expired_discounts(self):
+        """Deactivate all expired discounts"""
+        try:
+            from datetime import datetime
+
+            if 'get_connection' in globals():
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Get current datetime
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Find expired discounts
+                cursor.execute("""
+                    SELECT discount_id, code, end_date
+                    FROM shop_discounts
+                    WHERE end_date < ? AND is_active = 1
+                """, (now,))
+
+                expired_discounts = cursor.fetchall()
+
+                if not expired_discounts:
+                    messagebox.showinfo("Cleanup Complete", "No expired discounts found.")
+                    conn.close()
+                    return
+
+                # Deactivate expired discounts
+                cursor.execute("""
+                    UPDATE shop_discounts
+                    SET is_active = 0
+                    WHERE end_date < ? AND is_active = 1
+                """, (now,))
+
+                count = cursor.rowcount
+                conn.commit()
+                conn.close()
+
+                # Show details
+                discount_list = "\n".join([f"- {d[1]} (expired: {d[2]})" for d in expired_discounts[:5]])
+                if len(expired_discounts) > 5:
+                    discount_list += f"\n... and {len(expired_discounts) - 5} more"
+
+                messagebox.showinfo("Cleanup Complete",
+                    f"Deactivated {count} expired discount(s):\n\n{discount_list}")
+
+                # Refresh discounts view if visible
+                if hasattr(self, 'load_discounts'):
+                    self.load_discounts()
+
+        except Exception as e:
+            messagebox.showerror("Cleanup Failed", f"Failed to cleanup expired discounts: {e}")
+
     def launch_cli_mode(self):
         """Launch the original CLI mode in a separate window"""
         try:
