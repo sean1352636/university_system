@@ -9,6 +9,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Email Scheduler System** (2025-11-08)
+- **New Feature**: Comprehensive automated email scheduler for periodic tasks
+- **Impact**: Complete automation of batch email operations (satisfaction surveys, book reminders, overdue notices, SLA monitoring)
+- **Files Added**:
+  - `university_system/infrastructure/email/email_scheduler.py` - Core scheduler module
+  - `university_system/utils/email_scheduler_control.py` - CLI control script
+  - `docs/EMAIL_SCHEDULER.md` - Complete documentation
+
+**Scheduled Tasks Implemented**:
+
+1. **Satisfaction Survey Batch** (Daily at 09:00)
+   - Automatically sends surveys for tickets resolved in the last 24 hours
+   - Prevents duplicate surveys using email log tracking
+   - Function: `send_bulk_satisfaction_surveys(days_old=1)`
+   - Logs success/total count
+
+2. **Book Return Reminders** (Daily at 08:00)
+   - Sends reminders 3 days before library book due date
+   - One reminder per book per day (prevents spam)
+   - Queries checkouts and books tables
+   - Function: `check_book_return_reminders()`
+
+3. **Overdue Book Notifications** (Daily at 10:00)
+   - Sends notices for books past their due date
+   - Includes days overdue count
+   - One notification per book per day
+   - Function: `check_overdue_books()`
+
+4. **SLA Breach Alerts** (Every 30 minutes)
+   - Monitors support tickets for SLA violations
+   - Alerts for tickets past due_date that aren't resolved/closed
+   - Prevents duplicate alerts within 1 hour
+   - Function: `check_sla_breaches()`
+
+**Scheduler Features**:
+- **Background Operation**: Runs in separate daemon thread
+- **Thread-Safe**: Uses threading.Event for clean start/stop
+- **Configurable Schedules**: Easy to adjust times and frequencies
+- **Comprehensive Logging**: Logs to application logger and database
+- **Error Handling**: Graceful failure handling for individual tasks
+- **Status Monitoring**: Check running status and view scheduled jobs
+- **Control Script**: Simple CLI for start/stop/status/run operations
+
+**Control Commands**:
+```bash
+# Start scheduler in background
+python -m university_system.utils.email_scheduler_control start
+
+# Check status
+python -m university_system.utils.email_scheduler_control status
+
+# Stop scheduler
+python -m university_system.utils.email_scheduler_control stop
+
+# Run in foreground (testing)
+python -m university_system.utils.email_scheduler_control run
+```
+
+**Production Deployment**:
+- Systemd service template provided in documentation
+- Docker compose configuration example included
+- Auto-start integration examples for Flask and CLI
+- Health monitoring and log rotation recommendations
+
+**Documentation**:
+- Complete setup guide: `docs/EMAIL_SCHEDULER.md`
+- Systemd service configuration
+- Docker deployment instructions
+- Troubleshooting guide
+- Configuration customization
+- Monitoring and log queries
+- Security best practices
+
+**Technical Implementation**:
+- Uses `schedule` library for job scheduling
+- Integrates with existing email infrastructure
+- Database queries optimized to prevent duplicate sends
+- Deduplication using email_log table
+- Thread-safe operation with locks and events
+- Graceful shutdown handling
+
+**Integration Points**:
+- Works with existing `send_bulk_satisfaction_surveys()` function
+- Reuses `send_book_return_reminder()` and `send_overdue_notification()`
+- Integrates with `send_sla_alert()` from helpdesk module
+- Uses centralized database connection pooling
+- Logs to standard logging infrastructure
+
+**Future Enhancements**:
+- Web UI for schedule management (planned)
+- Dynamic configuration via database (planned)
+- Email rate limiting (planned)
+- Prometheus metrics export (planned)
+- Multi-server coordination (planned)
+
+**Updated Files**:
+- `CLAUDE.md` - Added Email Scheduler section in Commands
+
+---
+
 **Automatic Email Notifications - Part 4 (Event-Based Triggers)** (2025-11-08)
 - **Enhancement**: Implemented automatic email triggers for 5 critical event-based notifications
 - **Impact**: Complete automation of email notifications for health advisories, mentorship, events, donations, and SLA alerts

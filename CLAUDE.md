@@ -93,6 +93,33 @@ make db-restore BACKUP_FILE=path/to/backup.db
 make db-reset
 ```
 
+### Email Scheduler
+
+```bash
+# Start email scheduler (background)
+python -m university_system.utils.email_scheduler_control start
+
+# Check scheduler status
+python -m university_system.utils.email_scheduler_control status
+
+# Stop scheduler
+python -m university_system.utils.email_scheduler_control stop
+
+# Run in foreground (testing/debugging)
+python -m university_system.utils.email_scheduler_control run
+
+# Or run directly
+python -m university_system.infrastructure.email.email_scheduler
+```
+
+**Scheduled Tasks:**
+- Satisfaction surveys: Daily at 09:00
+- Book return reminders: Daily at 08:00
+- Overdue book notices: Daily at 10:00
+- SLA breach alerts: Every 30 minutes
+
+See `docs/EMAIL_SCHEDULER.md` for detailed documentation.
+
 ### Development
 
 ```bash
