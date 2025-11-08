@@ -510,21 +510,22 @@ class ParentPortalGUI:
         """Show communication submenu"""
         self.clear_content()
         self.update_status("Communication")
-        
+
         title = ttk.Label(self.content_frame, text="Communication", style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
-        
+
         menu_frame = ttk.Frame(self.content_frame)
         menu_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-        
+
         options = [
             ("📧 View Messages", self.show_messages_interface),
             ("✉️ Send Message", self.show_send_message_interface),
             ("👥 Group Messages", self.show_group_message_interface),
             ("📢 Announcements", self.show_announcements_interface),
             ("🤝 Schedule Meeting", self.show_meeting_interface),
+            ("⚠️ Report Issue", self.show_report_issue_interface),
         ]
-        
+
         for text, command in options:
             btn = tk.Button(
                 menu_frame,
@@ -608,13 +609,13 @@ class ParentPortalGUI:
         """Show settings and tools submenu"""
         self.clear_content()
         self.update_status("Settings & Tools")
-        
+
         title = ttk.Label(self.content_frame, text="Settings & Tools", style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
-        
+
         menu_frame = ttk.Frame(self.content_frame)
         menu_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-        
+
         options = [
             ("🔔 Notification Preferences", self.show_notifications_interface),
             ("📄 Document Management", self.show_documents_interface),
@@ -627,7 +628,7 @@ class ParentPortalGUI:
             ("🔗 Generate QR Code", self.generate_qr_code_interface),
             ("✅ Mark Notifications Read", self.mark_notifications_read),
         ]
-        
+
         for text, command in options:
             btn = tk.Button(
                 menu_frame,
@@ -641,6 +642,30 @@ class ParentPortalGUI:
                 fg='white'
             )
             btn.pack(pady=10)
+
+        # Admin functions (only show if user is admin)
+        if self.current_user and self.current_user.get('role') == 'admin':
+            admin_frame = ttk.LabelFrame(self.content_frame, text="Administrator Functions", padding=20)
+            admin_frame.pack(fill=tk.X, padx=20, pady=20)
+
+            admin_options = [
+                ("👨‍👩‍👧 Create Parent Account", self.show_create_parent_account_interface),
+                ("🔗 Link Student to Parent", self.show_link_student_interface),
+            ]
+
+            for text, command in admin_options:
+                btn = tk.Button(
+                    admin_frame,
+                    text=text,
+                    command=command,
+                    font=('Arial', 12),
+                    padx=20,
+                    pady=15,
+                    width=30,
+                    bg='#c0392b',
+                    fg='white'
+                )
+                btn.pack(pady=10)
         
     def view_child_grades(self, child):
         """View grades for a specific child"""
@@ -3810,7 +3835,168 @@ class ParentPortalGUI:
 
         except Exception as e:
             ttk.Label(existing_frame, text=f"Error loading meetings: {str(e)}").pack()
-    
+
+    def show_report_issue_interface(self):
+        """Show report issue interface"""
+        self.clear_content()
+        self.update_status("Report Issue")
+
+        title = ttk.Label(self.content_frame, text="Report Issue", style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Issue report form
+        form_frame = ttk.LabelFrame(self.content_frame, text="Report an Issue to School Administration", padding=20)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Category
+        ttk.Label(form_frame, text="Category:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, width=40, state='readonly')
+        category_combo['values'] = ["Academic concern", "Behavioral concern", "Facility issue",
+                                     "Safety concern", "Billing/Administrative", "Other"]
+        category_combo.grid(row=0, column=1, pady=5, sticky='ew')
+
+        # Subject
+        ttk.Label(form_frame, text="Subject:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+        subject_entry = ttk.Entry(form_frame, width=40)
+        subject_entry.grid(row=1, column=1, pady=5, sticky='ew')
+
+        # Priority
+        ttk.Label(form_frame, text="Priority:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+        priority_var = tk.StringVar()
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, width=40, state='readonly')
+        priority_combo['values'] = ["Low", "Medium", "High"]
+        priority_combo.current(1)  # Default to Medium
+        priority_combo.grid(row=2, column=1, pady=5, sticky='ew')
+
+        # Description
+        ttk.Label(form_frame, text="Description:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='nw', pady=5)
+        description_text = scrolledtext.ScrolledText(form_frame, height=10, width=40, wrap=tk.WORD)
+        description_text.grid(row=3, column=1, pady=5, sticky='ew')
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        btn_frame = ttk.Frame(self.content_frame)
+        btn_frame.pack(pady=10)
+
+        def submit_issue():
+            category = category_var.get()
+            subject = subject_entry.get().strip()
+            priority = priority_var.get().lower()
+            description = description_text.get('1.0', tk.END).strip()
+
+            if not category:
+                messagebox.showwarning("Validation Error", "Please select a category.")
+                return
+
+            if not subject:
+                messagebox.showwarning("Validation Error", "Please enter a subject.")
+                return
+
+            if not description:
+                messagebox.showwarning("Validation Error", "Please enter a detailed description.")
+                return
+
+            if not self.parent_id:
+                messagebox.showerror("Error", "Parent ID not found. Please log in again.")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Create table if it doesn't exist
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS parent_issues (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    parent_id TEXT,
+                    category TEXT,
+                    subject TEXT,
+                    description TEXT,
+                    priority TEXT,
+                    status TEXT DEFAULT 'open',
+                    created_date TEXT,
+                    resolved_date TEXT,
+                    response TEXT,
+                    FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id)
+                )
+                ''')
+
+                # Insert issue
+                cursor.execute('''
+                INSERT INTO parent_issues (parent_id, category, subject, description, priority, created_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', (self.parent_id, category, subject, description, priority,
+                      datetime.datetime.now().isoformat()))
+
+                conn.commit()
+                issue_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success",
+                    f"Issue reported successfully!\n\nTracking ID: #{issue_id}\n\n"
+                    "School administration will respond within 24-48 hours.")
+                self.update_status("Issue reported successfully")
+                self.show_communication_menu()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to submit issue: {str(e)}")
+
+        ttk.Button(btn_frame, text="Submit Issue", command=submit_issue).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.show_communication_menu).pack(side=tk.LEFT, padx=5)
+
+        # Show recent issues
+        recent_frame = ttk.LabelFrame(self.content_frame, text="Your Recent Issues", padding=15)
+        recent_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute("""
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='parent_issues'
+            """)
+
+            if cursor.fetchone() and self.parent_id:
+                cursor.execute("""
+                SELECT id, category, subject, priority, status, created_date
+                FROM parent_issues
+                WHERE parent_id = ?
+                ORDER BY created_date DESC
+                LIMIT 5
+                """, (self.parent_id,))
+
+                issues = cursor.fetchall()
+
+                if issues:
+                    columns = ("ID", "Category", "Subject", "Priority", "Status", "Date")
+                    tree = ttk.Treeview(recent_frame, columns=columns, show="headings", height=5)
+
+                    for col in columns:
+                        tree.heading(col, text=col)
+                        tree.column(col, width=100)
+
+                    for issue in issues:
+                        # Format date
+                        created_date = issue[5][:10] if issue[5] else "N/A"
+                        tree.insert("", tk.END, values=(
+                            f"#{issue[0]}", issue[1], issue[2], issue[3].upper(),
+                            issue[4].upper(), created_date
+                        ))
+
+                    tree.pack(fill=tk.X, pady=5)
+                else:
+                    ttk.Label(recent_frame, text="No issues reported yet").pack()
+            else:
+                ttk.Label(recent_frame, text="No issues reported yet").pack()
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(recent_frame, text=f"Error loading recent issues: {str(e)}").pack()
+
     def show_fees_interface(self):
         """Show fees and payments interface"""
         self.clear_content()
@@ -5185,7 +5371,185 @@ class ParentPortalGUI:
             messagebox.showinfo("Success", "Notification preferences saved successfully!")
             self.update_status("Preferences saved")
 
-        ttk.Button(self.content_frame, text="Save Preferences", command=save_preferences).pack(pady=20)
+        # Advanced settings button
+        def show_advanced_settings():
+            self.show_advanced_notification_settings()
+
+        btn_frame = ttk.Frame(self.content_frame)
+        btn_frame.pack(pady=20)
+
+        ttk.Button(btn_frame, text="Save Preferences", command=save_preferences).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Advanced Settings", command=show_advanced_settings).pack(side=tk.LEFT, padx=5)
+
+    def show_advanced_notification_settings(self):
+        """Show advanced notification settings dialog"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Advanced Notification Settings")
+        dialog.geometry("500x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Advanced Notification Settings",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Load current preferences from database
+        current_prefs = {}
+        try:
+            if self.parent_id:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Ensure parent_preferences table exists with advanced columns
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS parent_preferences (
+                    parent_id TEXT PRIMARY KEY,
+                    email_notifications INTEGER DEFAULT 1,
+                    sms_notifications INTEGER DEFAULT 0,
+                    grade_alerts INTEGER DEFAULT 1,
+                    attendance_alerts INTEGER DEFAULT 1,
+                    behavior_alerts INTEGER DEFAULT 1,
+                    assignment_alerts INTEGER DEFAULT 1,
+                    weekly_summary INTEGER DEFAULT 1,
+                    preferred_notification_time TEXT,
+                    quiet_hours_start TEXT,
+                    quiet_hours_end TEXT,
+                    subject_preferences TEXT,
+                    FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id)
+                )
+                ''')
+
+                cursor.execute('''
+                SELECT preferred_notification_time, quiet_hours_start, quiet_hours_end, subject_preferences
+                FROM parent_preferences
+                WHERE parent_id = ?
+                ''', (self.parent_id,))
+
+                prefs = cursor.fetchone()
+                if prefs:
+                    current_prefs = {
+                        'notification_time': prefs[0] or '09:00',
+                        'quiet_start': prefs[1] or '22:00',
+                        'quiet_end': prefs[2] or '07:00',
+                        'subjects': prefs[3] or ''
+                    }
+                else:
+                    # Insert default preferences
+                    cursor.execute('''
+                    INSERT OR IGNORE INTO parent_preferences (parent_id)
+                    VALUES (?)
+                    ''', (self.parent_id,))
+                    conn.commit()
+                    current_prefs = {
+                        'notification_time': '09:00',
+                        'quiet_start': '22:00',
+                        'quiet_end': '07:00',
+                        'subjects': ''
+                    }
+
+                conn.close()
+        except Exception as e:
+            print(f"Error loading preferences: {e}")
+            current_prefs = {
+                'notification_time': '09:00',
+                'quiet_start': '22:00',
+                'quiet_end': '07:00',
+                'subjects': ''
+            }
+
+        # Preferred notification time
+        time_frame = ttk.LabelFrame(main_frame, text="Preferred Notification Time", padding=15)
+        time_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(time_frame, text="Send daily summaries at:").pack(anchor='w', pady=5)
+        notification_time_var = tk.StringVar(value=current_prefs['notification_time'])
+        time_combo = ttk.Combobox(time_frame, textvariable=notification_time_var, width=20, state='readonly')
+        time_combo['values'] = ['07:00', '08:00', '09:00', '10:00', '12:00', '15:00', '17:00', '18:00', '20:00']
+        time_combo.pack(fill=tk.X, pady=5)
+
+        # Quiet hours
+        quiet_frame = ttk.LabelFrame(main_frame, text="Quiet Hours (No Notifications)", padding=15)
+        quiet_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(quiet_frame, text="Start Time:").grid(row=0, column=0, sticky='w', pady=5)
+        quiet_start_var = tk.StringVar(value=current_prefs['quiet_start'])
+        quiet_start_combo = ttk.Combobox(quiet_frame, textvariable=quiet_start_var, width=15, state='readonly')
+        quiet_start_combo['values'] = [f"{h:02d}:00" for h in range(24)]
+        quiet_start_combo.grid(row=0, column=1, pady=5, padx=5)
+
+        ttk.Label(quiet_frame, text="End Time:").grid(row=1, column=0, sticky='w', pady=5)
+        quiet_end_var = tk.StringVar(value=current_prefs['quiet_end'])
+        quiet_end_combo = ttk.Combobox(quiet_frame, textvariable=quiet_end_var, width=15, state='readonly')
+        quiet_end_combo['values'] = [f"{h:02d}:00" for h in range(24)]
+        quiet_end_combo.grid(row=1, column=1, pady=5, padx=5)
+
+        # Subject-specific preferences
+        subject_frame = ttk.LabelFrame(main_frame, text="Subject-Specific Notifications", padding=15)
+        subject_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(subject_frame,
+                 text="Get notifications only for specific subjects\n(comma-separated, leave empty for all):",
+                 wraplength=400).pack(anchor='w', pady=5)
+
+        # Parse current subjects
+        try:
+            if current_prefs['subjects']:
+                subject_data = json.loads(current_prefs['subjects'])
+                current_subjects = ', '.join(subject_data.get('subjects', []))
+            else:
+                current_subjects = ''
+        except:
+            current_subjects = ''
+
+        subject_entry = ttk.Entry(subject_frame, width=50)
+        subject_entry.insert(0, current_subjects)
+        subject_entry.pack(fill=tk.X, pady=5)
+
+        ttk.Label(subject_frame, text="Example: Mathematics, Science, English",
+                 font=('Arial', 8, 'italic')).pack(anchor='w')
+
+        # Save button
+        def save_advanced_settings():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Prepare subject preferences
+                subjects_input = subject_entry.get().strip()
+                if subjects_input:
+                    subjects_list = [s.strip() for s in subjects_input.split(',') if s.strip()]
+                    subject_prefs_json = json.dumps({'subjects': subjects_list})
+                else:
+                    subject_prefs_json = None
+
+                # Update preferences
+                cursor.execute('''
+                UPDATE parent_preferences
+                SET preferred_notification_time = ?,
+                    quiet_hours_start = ?,
+                    quiet_hours_end = ?,
+                    subject_preferences = ?
+                WHERE parent_id = ?
+                ''', (notification_time_var.get(), quiet_start_var.get(), quiet_end_var.get(),
+                      subject_prefs_json, self.parent_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Advanced notification settings saved successfully!")
+                self.update_status("Advanced notification settings saved")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+
+        ttk.Button(btn_frame, text="Save Settings", command=save_advanced_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def show_documents_interface(self):
         """Show document management interface"""
@@ -5436,75 +5800,347 @@ class ParentPortalGUI:
         title.pack(pady=20)
 
         # Calendar sync options
-        sync_frame = ttk.LabelFrame(self.content_frame, text="Calendar Sync", padding=20)
+        sync_frame = ttk.LabelFrame(self.content_frame, text="Calendar Export & Integration", padding=20)
         sync_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(sync_frame, text="Sync school events with your personal calendar",
+        ttk.Label(sync_frame, text="Export school events to your personal calendar",
                  font=('Arial', 11)).pack(anchor='w', pady=5)
 
-        sync_options = ["Google Calendar", "Apple Calendar", "Microsoft Outlook", "Other"]
+        export_btn_frame = ttk.Frame(sync_frame)
+        export_btn_frame.pack(fill=tk.X, pady=5)
 
-        for option in sync_options:
-            ttk.Button(sync_frame, text=f"Sync with {option}",
-                      command=lambda o=option: self.sync_calendar(o)).pack(fill=tk.X, pady=5)
+        ttk.Button(export_btn_frame, text="Generate iCal File (.ics)",
+                  command=self.export_to_ical).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(export_btn_frame, text="Generate Google Calendar CSV",
+                  command=self.export_to_google_csv).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(export_btn_frame, text="Show Subscription URL",
+                  command=self.show_calendar_subscription_url).pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Event type filter
+        filter_frame = ttk.Frame(self.content_frame)
+        filter_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(filter_frame, text="Filter by Event Type:", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=5)
+        event_type_var = tk.StringVar(value="all")
+        event_type_combo = ttk.Combobox(filter_frame, textvariable=event_type_var, width=20, state='readonly')
+        event_type_combo['values'] = ["All Events", "Academic", "Parent", "Holiday", "Sports", "Other"]
+        event_type_combo.current(0)
+        event_type_combo.pack(side=tk.LEFT, padx=5)
 
         # Upcoming events
-        events_frame = ttk.LabelFrame(self.content_frame, text="Upcoming Events", padding=15)
+        events_frame = ttk.LabelFrame(self.content_frame, text="School Calendar - Upcoming Events", padding=15)
         events_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+        def load_calendar_events():
+            # Clear existing content
+            for widget in events_frame.winfo_children():
+                widget.destroy()
 
-            cursor.execute("""
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='calendar_events'
-            """)
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
 
-            if cursor.fetchone():
+                # Create school_calendar table if it doesn't exist
                 cursor.execute("""
-                SELECT event_name, event_date, event_time, location, description
-                FROM calendar_events
-                WHERE event_date >= date('now')
-                ORDER BY event_date
-                LIMIT 15
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='school_calendar'
                 """)
+
+                if not cursor.fetchone():
+                    cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS school_calendar (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_name TEXT,
+                        event_description TEXT,
+                        event_date TEXT,
+                        start_time TEXT,
+                        end_time TEXT,
+                        location TEXT,
+                        event_type TEXT,
+                        audience TEXT
+                    )
+                    ''')
+
+                    # Add sample events
+                    sample_events = [
+                        ('Start of Fall Semester', 'First day of classes for the fall semester', '2025-09-04', '08:00', '17:00', 'All Campuses', 'academic', 'all'),
+                        ('Parents Evening', 'Meet with teachers to discuss student progress', '2025-09-20', '17:00', '20:00', 'Main Hall', 'parent', 'parents'),
+                        ('Midterm Exams Begin', 'First day of midterm examinations', '2025-10-16', '09:00', '17:00', 'Examination Halls', 'academic', 'all'),
+                        ('Fall Break', 'No classes during fall break', '2025-11-23', '00:00', '23:59', 'All Campuses', 'holiday', 'all'),
+                        ('End of Fall Semester', 'Last day of classes for the fall semester', '2025-12-15', '08:00', '17:00', 'All Campuses', 'academic', 'all')
+                    ]
+
+                    cursor.executemany(
+                        'INSERT INTO school_calendar (event_name, event_description, event_date, start_time, end_time, location, event_type, audience) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        sample_events
+                    )
+                    conn.commit()
+
+                # Build query based on filter
+                today = datetime.datetime.now().strftime('%Y-%m-%d')
+                event_filter = event_type_var.get().lower()
+
+                if event_filter == "all events":
+                    cursor.execute("""
+                    SELECT event_name, event_description, event_date, start_time, end_time, location, event_type
+                    FROM school_calendar
+                    WHERE event_date >= ? AND audience IN ('all', 'parents')
+                    ORDER BY event_date, start_time
+                    LIMIT 20
+                    """, (today,))
+                else:
+                    cursor.execute("""
+                    SELECT event_name, event_description, event_date, start_time, end_time, location, event_type
+                    FROM school_calendar
+                    WHERE event_date >= ? AND audience IN ('all', 'parents') AND event_type = ?
+                    ORDER BY event_date, start_time
+                    LIMIT 20
+                    """, (today, event_filter))
 
                 events = cursor.fetchall()
 
                 if events:
-                    columns = ("Event", "Date", "Time", "Location")
-                    tree = ttk.Treeview(events_frame, columns=columns, show="headings", height=10)
+                    # Create treeview
+                    columns = ("Event", "Date", "Time", "Location", "Type")
+                    tree = ttk.Treeview(events_frame, columns=columns, show="headings", height=12)
 
-                    for col in columns:
-                        tree.heading(col, text=col)
-                        tree.column(col, width=150)
+                    tree.heading("Event", text="Event")
+                    tree.heading("Date", text="Date")
+                    tree.heading("Time", text="Time")
+                    tree.heading("Location", text="Location")
+                    tree.heading("Type", text="Type")
+
+                    tree.column("Event", width=250)
+                    tree.column("Date", width=100)
+                    tree.column("Time", width=100)
+                    tree.column("Location", width=150)
+                    tree.column("Type", width=80)
 
                     for event in events:
-                        tree.insert('', tk.END, values=event[:4])
+                        event_name, description, event_date, start_time, end_time, location, event_type = event
+                        time_range = f"{start_time} - {end_time}"
+                        tree.insert('', tk.END, values=(event_name, event_date, time_range, location, event_type.upper()))
 
                     scrollbar = ttk.Scrollbar(events_frame, orient=tk.VERTICAL, command=tree.yview)
                     tree.configure(yscrollcommand=scrollbar.set)
 
                     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-                else:
-                    ttk.Label(events_frame, text="No upcoming events", font=('Arial', 11)).pack(pady=50)
-            else:
-                ttk.Label(events_frame, text="Calendar system not configured",
-                         font=('Arial', 11)).pack(pady=20)
 
+                    # Show event details on selection
+                    def show_event_details(event):
+                        selected = tree.selection()
+                        if selected:
+                            item = tree.item(selected[0])
+                            event_name = item['values'][0]
+                            # Find full event details
+                            for evt in events:
+                                if evt[0] == event_name:
+                                    messagebox.showinfo("Event Details",
+                                        f"Event: {evt[0]}\n\n"
+                                        f"Description: {evt[1] or 'No description'}\n\n"
+                                        f"Date: {evt[2]}\n"
+                                        f"Time: {evt[3]} - {evt[4]}\n"
+                                        f"Location: {evt[5]}\n"
+                                        f"Type: {evt[6].upper()}")
+                                    break
+
+                    tree.bind('<Double-1>', show_event_details)
+
+                    ttk.Label(events_frame, text="Double-click an event for details",
+                             font=('Arial', 8, 'italic')).pack(pady=5)
+                else:
+                    ttk.Label(events_frame, text="No upcoming events found", font=('Arial', 11)).pack(pady=50)
+
+                conn.close()
+                self.update_status(f"Showing {len(events)} upcoming events")
+
+            except Exception as e:
+                ttk.Label(events_frame, text=f"Error loading events: {str(e)}",
+                         font=('Arial', 10)).pack(pady=20)
+
+        # Load events initially
+        load_calendar_events()
+
+        # Reload when filter changes
+        event_type_combo.bind('<<ComboboxSelected>>', lambda e: load_calendar_events())
+
+    def export_to_ical(self):
+        """Export school events to iCal format"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            today = datetime.datetime.now().strftime('%Y-%m-%d')
+
+            cursor.execute('''
+            SELECT event_name, event_description, event_date, start_time, end_time, location, event_type
+            FROM school_calendar
+            WHERE event_date >= ? AND audience IN ('all', 'parents')
+            ORDER BY event_date
+            LIMIT 20
+            ''', (today,))
+
+            events = cursor.fetchall()
             conn.close()
 
+            if not events:
+                messagebox.showinfo("Export", "No upcoming events to export.")
+                return
+
+            # Generate iCal content
+            ical_content = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//School//Parent Portal//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n"
+
+            for event in events:
+                name, description, date, start_time, end_time, location, event_type = event
+
+                # Convert to iCal format (remove dashes and colons)
+                event_start = f"{date.replace('-', '')}T{start_time.replace(':', '')}00"
+                event_end = f"{date.replace('-', '')}T{end_time.replace(':', '')}00"
+
+                ical_content += "BEGIN:VEVENT\n"
+                ical_content += f"DTSTART:{event_start}\n"
+                ical_content += f"DTEND:{event_end}\n"
+                ical_content += f"SUMMARY:{name}\n"
+                ical_content += f"DESCRIPTION:{description or 'School event'}\n"
+                ical_content += f"LOCATION:{location}\n"
+                ical_content += f"CATEGORIES:{event_type.upper()}\n"
+                ical_content += "END:VEVENT\n"
+
+            ical_content += "END:VCALENDAR\n"
+
+            # Show dialog to save file
+            from tkinter import filedialog
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".ics",
+                filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
+                title="Save iCal File"
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(ical_content)
+                messagebox.showinfo("Success",
+                    f"Calendar exported successfully!\n\n"
+                    f"File saved to: {filename}\n\n"
+                    f"You can now import this file into your calendar application.")
+                self.update_status("Calendar exported to iCal file")
+
         except Exception as e:
-            ttk.Label(events_frame, text=f"Error loading events: {str(e)}",
-                     font=('Arial', 10)).pack(pady=20)
+            messagebox.showerror("Error", f"Failed to export calendar: {str(e)}")
+
+    def export_to_google_csv(self):
+        """Export school events to Google Calendar CSV format"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            today = datetime.datetime.now().strftime('%Y-%m-%d')
+
+            cursor.execute('''
+            SELECT event_name, event_description, event_date, start_time, end_time, location, event_type
+            FROM school_calendar
+            WHERE event_date >= ? AND audience IN ('all', 'parents')
+            ORDER BY event_date
+            LIMIT 20
+            ''', (today,))
+
+            events = cursor.fetchall()
+            conn.close()
+
+            if not events:
+                messagebox.showinfo("Export", "No upcoming events to export.")
+                return
+
+            # Generate Google Calendar CSV
+            csv_content = "Subject,Start Date,Start Time,End Date,End Time,Description,Location\n"
+
+            for event in events:
+                name, description, date, start_time, end_time, location, event_type = event
+                # Escape commas and quotes in fields
+                name = name.replace('"', '""')
+                description = (description or '').replace('"', '""')
+                location = location.replace('"', '""')
+
+                csv_content += f'"{name}",{date},{start_time},{date},{end_time},"{description}","{location}"\n'
+
+            # Show dialog to save file
+            from tkinter import filedialog
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Save Google Calendar CSV"
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(csv_content)
+                messagebox.showinfo("Success",
+                    f"Calendar exported successfully!\n\n"
+                    f"File saved to: {filename}\n\n"
+                    f"Import this file to Google Calendar:\n"
+                    f"1. Open Google Calendar\n"
+                    f"2. Click Settings > Import & Export\n"
+                    f"3. Select the exported CSV file")
+                self.update_status("Calendar exported to CSV file")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export calendar: {str(e)}")
+
+    def show_calendar_subscription_url(self):
+        """Show calendar subscription URL"""
+        if not self.parent_id:
+            messagebox.showerror("Error", "Parent ID not found.")
+            return
+
+        # In a real implementation, this would be an actual webcal:// URL
+        subscription_url = f"webcal://school.example.com/calendar/parent/{self.parent_id}"
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Calendar Subscription URL")
+        dialog.geometry("600x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Calendar Subscription URL",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(main_frame,
+                 text="Add this URL to your calendar app to automatically sync school events:",
+                 wraplength=500).pack(pady=10)
+
+        url_frame = ttk.Frame(main_frame)
+        url_frame.pack(fill=tk.X, pady=10)
+
+        url_entry = ttk.Entry(url_frame, width=60)
+        url_entry.insert(0, subscription_url)
+        url_entry.config(state='readonly')
+        url_entry.pack(side=tk.LEFT, padx=5)
+
+        def copy_url():
+            dialog.clipboard_clear()
+            dialog.clipboard_append(subscription_url)
+            messagebox.showinfo("Copied", "URL copied to clipboard!")
+
+        ttk.Button(url_frame, text="Copy", command=copy_url).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(main_frame,
+                 text="Instructions:\n\n"
+                      "Google Calendar: Settings > Add calendar > From URL\n"
+                      "Apple Calendar: File > New Calendar Subscription\n"
+                      "Outlook: Add calendar > Subscribe from web",
+                 justify=tk.LEFT,
+                 wraplength=500).pack(pady=20)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
 
     def sync_calendar(self, calendar_type):
-        """Sync with external calendar"""
+        """Sync with external calendar (deprecated - use export functions)"""
         messagebox.showinfo("Calendar Sync",
-                           f"Calendar sync with {calendar_type} is not available in demo.\n\n"
-                           "Please contact IT support for calendar integration setup.")
+                           f"Please use the Export buttons above to sync with {calendar_type}.")
 
     def show_account_interface(self):
         """Show account settings interface"""
@@ -5549,14 +6185,67 @@ class ParentPortalGUI:
         phone_entry = ttk.Entry(contact_frame, width=40)
         phone_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
-        ttk.Label(contact_frame, text="Secondary Phone:").grid(row=2, column=0, sticky='w', pady=5)
-        secondary_phone_entry = ttk.Entry(contact_frame, width=40)
-        secondary_phone_entry.grid(row=2, column=1, pady=5, sticky='ew')
+        ttk.Label(contact_frame, text="Address:").grid(row=2, column=0, sticky='w', pady=5)
+        address_entry = ttk.Entry(contact_frame, width=40)
+        address_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
         contact_frame.columnconfigure(1, weight=1)
 
+        # Load current contact information
+        try:
+            if self.parent_id:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT email, phone, address
+                FROM parent_accounts
+                WHERE parent_id = ?
+                ''', (self.parent_id,))
+
+                info = cursor.fetchone()
+                conn.close()
+
+                if info:
+                    email_entry.insert(0, info[0] or "")
+                    phone_entry.insert(0, info[1] or "")
+                    address_entry.insert(0, info[2] or "")
+        except Exception as e:
+            print(f"Error loading contact info: {e}")
+
         def save_contact_info():
-            messagebox.showinfo("Success", "Contact information updated successfully!")
+            email = email_entry.get().strip()
+            phone = phone_entry.get().strip()
+            address = address_entry.get().strip()
+
+            # Validate email
+            if email and '@' not in email:
+                messagebox.showwarning("Validation Error", "Please enter a valid email address.")
+                return
+
+            if not self.parent_id:
+                messagebox.showerror("Error", "Parent ID not found. Please log in again.")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Update contact information
+                cursor.execute('''
+                UPDATE parent_accounts
+                SET email = ?, phone = ?, address = ?
+                WHERE parent_id = ?
+                ''', (email, phone, address, self.parent_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Contact information updated successfully!")
+                self.update_status("Contact information updated")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update contact information: {str(e)}")
 
         ttk.Button(self.content_frame, text="Save Changes", command=save_contact_info).pack(pady=20)
 
@@ -5568,7 +6257,322 @@ class ParentPortalGUI:
     def view_login_history(self):
         """View login history"""
         messagebox.showinfo("Login History", "Login history viewing not available in demo.")
-    
+
+    def show_create_parent_account_interface(self):
+        """Show interface for creating a new parent account (admin only)"""
+        if not self.current_user or self.current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can create parent accounts.")
+            return
+
+        self.clear_content()
+        self.update_status("Create Parent Account")
+
+        title = ttk.Label(self.content_frame, text="Create New Parent Account",
+                         style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Form frame
+        form_frame = ttk.LabelFrame(self.content_frame, text="Parent Information", padding=20)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # First Name
+        ttk.Label(form_frame, text="First Name:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        first_name_entry = ttk.Entry(form_frame, width=40)
+        first_name_entry.grid(row=0, column=1, pady=5, sticky='ew')
+
+        # Last Name
+        ttk.Label(form_frame, text="Last Name:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+        last_name_entry = ttk.Entry(form_frame, width=40)
+        last_name_entry.grid(row=1, column=1, pady=5, sticky='ew')
+
+        # Email
+        ttk.Label(form_frame, text="Email:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+        email_entry = ttk.Entry(form_frame, width=40)
+        email_entry.grid(row=2, column=1, pady=5, sticky='ew')
+
+        # Phone
+        ttk.Label(form_frame, text="Phone:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
+        phone_entry = ttk.Entry(form_frame, width=40)
+        phone_entry.grid(row=3, column=1, pady=5, sticky='ew')
+
+        # Address
+        ttk.Label(form_frame, text="Address:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='nw', pady=5)
+        address_text = scrolledtext.ScrolledText(form_frame, width=40, height=4)
+        address_text.grid(row=4, column=1, pady=5, sticky='ew')
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Result display
+        result_frame = ttk.LabelFrame(self.content_frame, text="Created Account Details", padding=20)
+        result_frame.pack(fill=tk.X, padx=20, pady=10)
+        result_label = ttk.Label(result_frame, text="Account details will appear here after creation",
+                                font=('Arial', 10, 'italic'))
+        result_label.pack()
+
+        # Buttons
+        btn_frame = ttk.Frame(self.content_frame)
+        btn_frame.pack(pady=10)
+
+        def create_account():
+            first_name = first_name_entry.get().strip()
+            last_name = last_name_entry.get().strip()
+            email = email_entry.get().strip()
+            phone = phone_entry.get().strip()
+            address = address_text.get('1.0', tk.END).strip()
+
+            # Validation
+            if not first_name or not last_name:
+                messagebox.showwarning("Validation Error", "First name and last name are required.")
+                return
+
+            if not email or '@' not in email:
+                messagebox.showwarning("Validation Error", "Please enter a valid email address.")
+                return
+
+            try:
+                import random
+                import string
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if email already exists
+                cursor.execute('SELECT email FROM parent_accounts WHERE email = ?', (email,))
+                if cursor.fetchone():
+                    messagebox.showerror("Error", "This email is already registered.")
+                    conn.close()
+                    return
+
+                # Generate parent_id
+                parent_id = f"P{random.randint(10000, 99999)}"
+
+                # Insert parent account
+                cursor.execute('''
+                INSERT INTO parent_accounts (parent_id, first_name, last_name, email, phone, address)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', (parent_id, first_name, last_name, email, phone, address))
+
+                # Generate username and password
+                username = f"{first_name.lower()}.{last_name.lower()}.{random.randint(100, 999)}"
+                password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+                # Create user account (simplified - in production use proper authentication)
+                cursor.execute('''
+                INSERT INTO users (username, password, role, email)
+                VALUES (?, ?, ?, ?)
+                ''', (username, password, 'parent', email))
+
+                user_id = cursor.lastrowid
+
+                # Link user to parent
+                cursor.execute('''
+                INSERT INTO parent_user_mapping (user_id, parent_id)
+                VALUES (?, ?)
+                ''', (user_id, parent_id))
+
+                conn.commit()
+                conn.close()
+
+                # Show success and account details
+                result_text = f"Parent ID: {parent_id}\n\n" \
+                             f"Username: {username}\n" \
+                             f"Temporary Password: {password}\n\n" \
+                             f"IMPORTANT: Please save these credentials!\n" \
+                             f"The parent should change the password on first login."
+
+                result_label.config(text=result_text, font=('Arial', 10), foreground='green')
+
+                messagebox.showinfo("Success",
+                    f"Parent account created successfully!\n\n"
+                    f"Username: {username}\n"
+                    f"Password: {password}\n\n"
+                    f"Please provide these credentials to the parent.")
+
+                self.update_status("Parent account created successfully")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create parent account: {str(e)}")
+
+        ttk.Button(btn_frame, text="Create Account", command=create_account).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.show_settings_menu).pack(side=tk.LEFT, padx=5)
+
+    def show_link_student_interface(self):
+        """Show interface for linking a student to a parent (admin only)"""
+        if not self.current_user or self.current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can link students to parents.")
+            return
+
+        self.clear_content()
+        self.update_status("Link Student to Parent")
+
+        title = ttk.Label(self.content_frame, text="Link Student to Parent",
+                         style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Form frame
+        form_frame = ttk.LabelFrame(self.content_frame, text="Link Information", padding=20)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Parent ID
+        ttk.Label(form_frame, text="Parent ID:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        parent_id_entry = ttk.Entry(form_frame, width=40)
+        parent_id_entry.grid(row=0, column=1, pady=5, sticky='ew')
+
+        ttk.Button(form_frame, text="Search Parent",
+                  command=lambda: search_parent(parent_id_entry.get())).grid(row=0, column=2, padx=5)
+
+        # Parent info display
+        parent_info_label = ttk.Label(form_frame, text="", font=('Arial', 9))
+        parent_info_label.grid(row=1, column=0, columnspan=3, sticky='w', pady=5)
+
+        # Student ID
+        ttk.Label(form_frame, text="Student ID:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+        student_id_entry = ttk.Entry(form_frame, width=40)
+        student_id_entry.grid(row=2, column=1, pady=5, sticky='ew')
+
+        ttk.Button(form_frame, text="Search Student",
+                  command=lambda: search_student(student_id_entry.get())).grid(row=2, column=2, padx=5)
+
+        # Student info display
+        student_info_label = ttk.Label(form_frame, text="", font=('Arial', 9))
+        student_info_label.grid(row=3, column=0, columnspan=3, sticky='w', pady=5)
+
+        # Relationship
+        ttk.Label(form_frame, text="Relationship:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
+        relationship_var = tk.StringVar()
+        relationship_combo = ttk.Combobox(form_frame, textvariable=relationship_var, width=37, state='readonly')
+        relationship_combo['values'] = ["Mother", "Father", "Guardian", "Other"]
+        relationship_combo.current(0)
+        relationship_combo.grid(row=4, column=1, pady=5, sticky='ew')
+
+        form_frame.columnconfigure(1, weight=1)
+
+        def search_parent(parent_id):
+            if not parent_id:
+                messagebox.showwarning("Validation Error", "Please enter a parent ID.")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT first_name, last_name, email, phone
+                FROM parent_accounts
+                WHERE parent_id = ?
+                ''', (parent_id,))
+
+                parent = cursor.fetchone()
+                conn.close()
+
+                if parent:
+                    parent_info_label.config(
+                        text=f"Parent: {parent[0]} {parent[1]} | Email: {parent[2]} | Phone: {parent[3] or 'N/A'}",
+                        foreground='green'
+                    )
+                else:
+                    parent_info_label.config(text="Parent not found!", foreground='red')
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to search parent: {str(e)}")
+
+        def search_student(student_id):
+            if not student_id:
+                messagebox.showwarning("Validation Error", "Please enter a student ID.")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT first_name, last_name, date_of_birth, grade_level
+                FROM students
+                WHERE student_id = ?
+                ''', (student_id,))
+
+                student = cursor.fetchone()
+                conn.close()
+
+                if student:
+                    student_info_label.config(
+                        text=f"Student: {student[0]} {student[1]} | DOB: {student[2]} | Grade: {student[3]}",
+                        foreground='green'
+                    )
+                else:
+                    student_info_label.config(text="Student not found!", foreground='red')
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to search student: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(self.content_frame)
+        btn_frame.pack(pady=20)
+
+        def link_accounts():
+            parent_id = parent_id_entry.get().strip()
+            student_id = student_id_entry.get().strip()
+            relationship = relationship_var.get()
+
+            if not parent_id or not student_id:
+                messagebox.showwarning("Validation Error", "Please enter both parent ID and student ID.")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Verify parent exists
+                cursor.execute('SELECT parent_id FROM parent_accounts WHERE parent_id = ?', (parent_id,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Error", "Parent ID not found.")
+                    conn.close()
+                    return
+
+                # Verify student exists
+                cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Error", "Student ID not found.")
+                    conn.close()
+                    return
+
+                # Check if link already exists
+                cursor.execute('''
+                SELECT * FROM parent_student_link
+                WHERE parent_id = ? AND student_id = ?
+                ''', (parent_id, student_id))
+
+                if cursor.fetchone():
+                    messagebox.showwarning("Duplicate", "This parent is already linked to this student.")
+                    conn.close()
+                    return
+
+                # Create link
+                cursor.execute('''
+                INSERT INTO parent_student_link (parent_id, student_id, relationship)
+                VALUES (?, ?, ?)
+                ''', (parent_id, student_id, relationship))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success",
+                    f"Student {student_id} successfully linked to parent {parent_id}\n"
+                    f"Relationship: {relationship}")
+
+                self.update_status("Student linked to parent successfully")
+
+                # Clear form
+                parent_id_entry.delete(0, tk.END)
+                student_id_entry.delete(0, tk.END)
+                parent_info_label.config(text="")
+                student_info_label.config(text="")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to link accounts: {str(e)}")
+
+        ttk.Button(btn_frame, text="Link Accounts", command=link_accounts).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.show_settings_menu).pack(side=tk.LEFT, padx=5)
+
     def show_placeholder(self, title):
         """Show a placeholder interface"""
         self.clear_content()
