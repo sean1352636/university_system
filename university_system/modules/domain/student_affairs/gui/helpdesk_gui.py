@@ -4227,130 +4227,51 @@ Backwards compatible with CLI version
 
     def _send_ticket_created_emails(self, ticket_id, subject, category, priority, admin_email, user_email):
         """Send emails when ticket is created"""
-        # Email to admin using template system
+        # Send ticket notification using centralized email service
         try:
-            admin_subject, admin_message = render_template("support_ticket_created", {
-                "ticket_id": ticket_id,
-                "subject": subject,
-                "category": category,
-                "priority": priority,
-                "created_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                "recipient_type": "admin"
-            })
+            from university_system.infrastructure.email.email_service import send_ticket_notification
 
-            if not (admin_subject and admin_message):
-                # Fallback if template fails
-                admin_subject = f"New Support Ticket Created - #{ticket_id}"
-                admin_message = f"""New support ticket has been created:
+            # Extract username from user_email if available
+            username = user_email.split('@')[0] if user_email else 'Unknown User'
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NEW SUPPORT TICKET
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Ticket ID: #{ticket_id}
-Subject: {subject}
-Category: {category}
-Priority: {priority}
-Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Please log into the helpdesk system to review and assign this ticket.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Best regards,
-University Helpdesk System
-"""
+            # Send ticket notification (handles both admin and user emails)
+            send_ticket_notification(ticket_id, subject, username, [admin_email] if admin_email else None)
         except Exception as e:
-            # Error handling
-            admin_subject = f"New Support Ticket Created - #{ticket_id}"
-            admin_message = f"""New support ticket has been created:
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NEW SUPPORT TICKET
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Ticket ID: #{ticket_id}
-Subject: {subject}
-Category: {category}
-Priority: {priority}
-Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Please log into the helpdesk system to review and assign this ticket.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Best regards,
-University Helpdesk System
-"""
-
-        self._send_email_via_gui(admin_email, admin_subject, admin_message)
-
-        # Email to user (confirmation) using template system
-        if user_email:
-            try:
-                user_subject, user_message = render_template("support_ticket_created", {
-                    "ticket_id": ticket_id,
-                    "subject": subject,
-                    "category": category,
-                    "priority": priority,
-                    "created_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    "recipient_type": "user"
-                })
-
-            except Exception as e:
-                # Error handling
-                user_subject = None
-                user_message = None
-
-            if user_subject and user_message:
-                self._send_email_via_gui(user_email, user_subject, user_message)
+            print(f"Failed to send ticket notification: {e}")
 
     def _send_ticket_resolved_emails(self, ticket_id, subject, resolution, admin_email, user_email):
         """Send emails when ticket is resolved"""
-        if user_email:
-            try:
-                user_subject, user_message = render_template("support_ticket_resolved", {
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
+
+            if user_email:
+                template_vars = {
                     "ticket_id": ticket_id,
                     "subject": subject,
                     "resolution": resolution or 'Issue has been resolved.',
                     "resolution_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
-            except Exception as e:
-                # Error handling
-                user_subject = None
-                user_message = None
+                }
 
-            if user_subject and user_message:
-                self._send_email_via_gui(user_email, user_subject, user_message)
+                send_template_email('helpdesk_ticket_resolved', user_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send ticket resolved notification: {e}")
 
     def _send_ticket_updated_emails(self, ticket_id, subject, status, admin_email, user_email):
         """Send emails when ticket is updated"""
-        if user_email:
-            try:
-                user_subject, user_message = render_template("support_ticket_updated", {
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
+
+            if user_email:
+                template_vars = {
                     "ticket_id": ticket_id,
                     "subject": subject,
                     "status": status,
                     "updated_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
+                }
 
-                if not (user_subject and user_message):
-                    # Fallback if template fails
-                    user_subject = f"Support Ticket Updated - #{ticket_id}"
-                    user_message = f"""Your support ticket has been updated:
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TICKET UPDATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Ticket ID: #{ticket_id}
-Subject: {subject}
-New Status: {status}
-Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Please log into the helpdesk system to view the latest updates.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                send_template_email('helpdesk_ticket_updated', user_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send ticket update notification: {e}")
 
 Best regards,
 University Support Team

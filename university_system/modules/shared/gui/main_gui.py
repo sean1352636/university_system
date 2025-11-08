@@ -6250,29 +6250,19 @@ University Administration"""
     def _send_welcome_email_to_student(self, student_id, first_name, last_name, email_address, temp_password, course):
         """Send welcome email to newly created student"""
         try:
-            from university_system.infrastructure.email.template_utils import render_template
+            from university_system.infrastructure.email.email_service import send_template_email
 
-            subject, message = render_template('student_welcome', {
+            template_vars = {
                 'first_name': first_name,
                 'last_name': last_name,
                 'student_id': student_id,
                 'email_address': email_address,
                 'course': course,
                 'temp_password': temp_password
-            })
+            }
 
-            if not (subject and message):
-                print("Failed to load welcome email template")
-                return
-
-            # Try to send via email GUI if available
-            success = self._send_email_via_gui(email_address, subject, message)
-
-            if success:
-                print(f"Welcome email sent successfully to {first_name} {last_name} ({email_address})")
-            else:
-                # Fallback: show email details for manual sending
-                self._show_welcome_email_fallback(first_name, last_name, email_address, subject, message)
+            send_template_email('student_welcome', email_address, template_vars)
+            print(f"Welcome email sent successfully to {first_name} {last_name} ({email_address})")
 
         except Exception as e:
             print(f"Failed to send welcome email to {email_address}: {e}")
@@ -6378,27 +6368,15 @@ University Administration"""
                 # No significant changes to notify about
                 return
 
-            from university_system.infrastructure.email.template_utils import render_template
+            from university_system.infrastructure.email.email_service import send_template_email
 
             template_vars = {
                 'student_name': f"{new_data['first_name']} {new_data['last_name']}",
                 'updated_fields': changes_text
             }
 
-            subject, message = render_template('account_information_updated', template_vars)
-
-            if not (subject and message):
-                print("Failed to load account update template")
-                return
-
-            # Try to send via email GUI if available
-            success = self._send_email_via_gui(email_address, subject, message)
-
-            if success:
-                print(f"Student update notification sent to {new_data['first_name']} {new_data['last_name']} ({email_address})")
-            else:
-                # Fallback: show email details for manual sending
-                self._show_update_email_fallback(new_data['first_name'], new_data['last_name'], email_address, subject, message)
+            send_template_email('account_information_updated', email_address, template_vars)
+            print(f"Student update notification sent to {new_data['first_name']} {new_data['last_name']} ({email_address})")
 
         except Exception as e:
             print(f"Failed to send student update email to {student_id}: {e}")

@@ -4107,141 +4107,133 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
 
     def send_appointment_confirmation(self, patient_email, patient_name, appointment_details):
         """Send confirmation email for appointment booking"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        subject, message = render_template('appointment_confirmation', {
-            'patient_name': patient_name,
-            'date': appointment_details.get('date', 'N/A'),
-            'time': appointment_details.get('time', 'N/A'),
-            'practitioner': appointment_details.get('practitioner', 'N/A'),
-            'department': appointment_details.get('department', 'N/A'),
-            'location': appointment_details.get('location', 'University Health Center'),
-            'appointment_type': appointment_details.get('type', 'N/A')
-        })
+            template_vars = {
+                'patient_name': patient_name,
+                'first_name': patient_name.split()[0] if patient_name else 'Patient',
+                'last_name': ' '.join(patient_name.split()[1:]) if len(patient_name.split()) > 1 else '',
+                'appointment_id': appointment_details.get('id', 'N/A'),
+                'date': appointment_details.get('date', 'N/A'),
+                'appointment_date': appointment_details.get('date', 'N/A'),
+                'time': appointment_details.get('time', 'N/A'),
+                'appointment_time': appointment_details.get('time', 'N/A'),
+                'practitioner': appointment_details.get('practitioner', 'N/A'),
+                'provider': appointment_details.get('practitioner', 'N/A'),
+                'department': appointment_details.get('department', 'N/A'),
+                'location': appointment_details.get('location', 'University Health Center'),
+                'appointment_type': appointment_details.get('type', 'N/A')
+            }
 
-        if not (subject and message):
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_appointment_confirmation', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send appointment confirmation: {e}")
 
     def send_appointment_cancellation(self, patient_email, patient_name, appointment_details, cancellation_reason):
         """Send confirmation email for appointment cancellation"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        subject, message = render_template('appointment_cancellation', {
-            'patient_name': patient_name,
-            'date': appointment_details.get('date', 'N/A'),
-            'time': appointment_details.get('time', 'N/A'),
-            'practitioner': appointment_details.get('practitioner', 'N/A'),
-            'department': appointment_details.get('department', 'N/A'),
-            'cancellation_reason': cancellation_reason
-        })
+            template_vars = {
+                'patient_name': patient_name,
+                'date': appointment_details.get('date', 'N/A'),
+                'time': appointment_details.get('time', 'N/A'),
+                'practitioner': appointment_details.get('practitioner', 'N/A'),
+                'department': appointment_details.get('department', 'N/A'),
+                'cancellation_reason': cancellation_reason,
+                'reason': cancellation_reason
+            }
 
-        if not (subject and message):
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('appointment_cancellation', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send cancellation confirmation: {e}")
 
     def send_appointment_date_change(self, patient_email, patient_name, old_appointment, new_appointment):
         """Send confirmation email for appointment date/time changes"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        subject, message = render_template('appointment_rescheduled', {
-            'patient_name': patient_name,
-            'old_date': old_appointment.get('date', 'N/A'),
-            'old_time': old_appointment.get('time', 'N/A'),
-            'date': new_appointment.get('date', 'N/A'),
-            'time': new_appointment.get('time', 'N/A'),
-            'practitioner': new_appointment.get('practitioner', 'N/A'),
-            'department': new_appointment.get('department', 'N/A'),
-            'location': new_appointment.get('location', 'University Health Center')
-        })
+            template_vars = {
+                'patient_name': patient_name,
+                'old_date': old_appointment.get('date', 'N/A'),
+                'old_time': old_appointment.get('time', 'N/A'),
+                'date': new_appointment.get('date', 'N/A'),
+                'new_date': new_appointment.get('date', 'N/A'),
+                'time': new_appointment.get('time', 'N/A'),
+                'new_time': new_appointment.get('time', 'N/A'),
+                'practitioner': new_appointment.get('practitioner', 'N/A'),
+                'department': new_appointment.get('department', 'N/A'),
+                'location': new_appointment.get('location', 'University Health Center')
+            }
 
-        if not (subject and message):
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('appointment_rescheduled', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send reschedule confirmation: {e}")
 
     # ==================== HEALTH REPORT EMAIL METHODS ====================
 
     def send_health_report_email(self, patient_email, patient_name, report_details):
         """Send health report via email"""
-        from university_system.infrastructure.email.template_utils import render_template
-        subject, message = render_template("health_report", {
-            "patient_name": patient_name,
-            "report_title": report_details.get('title', 'Health Report'),
-            "report_type": report_details.get('type', 'N/A'),
-            "report_date": report_details.get('date', datetime.now().strftime('%Y-%m-%d')),
-            "practitioner": report_details.get('practitioner', 'University Health Center'),
-            "report_summary": report_details.get('summary', 'Please see the attached detailed report.'),
-            "next_steps": report_details.get('next_steps', 'Please follow up with your healthcare provider if you have any questions about this report.')
-        })
-        if not (subject and message):
-            return
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            template_vars = {
+                "patient_name": patient_name,
+                "report_title": report_details.get('title', 'Health Report'),
+                "report_type": report_details.get('type', 'N/A'),
+                "report_date": report_details.get('date', datetime.now().strftime('%Y-%m-%d')),
+                "practitioner": report_details.get('practitioner', 'University Health Center'),
+                "report_summary": report_details.get('summary', 'Please see the attached detailed report.'),
+                "next_steps": report_details.get('next_steps', 'Please follow up with your healthcare provider if you have any questions about this report.')
+            }
+
+            send_template_email('health_report', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send health report email: {e}")
 
     def send_health_report_creation_confirmation(self, patient_email, patient_name, report_title):
         """Send confirmation email for health report creation"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'report_title': report_title
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'report_title': report_title
+            }
 
-        subject, message = render_template('health_report_created', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_report_created', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send report creation confirmation: {e}")
 
     def send_health_report_update_confirmation(self, patient_email, patient_name, report_title, update_details):
         """Send confirmation email for health report updates"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'report_title': report_title,
-            'update_details': update_details
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'report_title': report_title,
+                'update_details': update_details
+            }
 
-        subject, message = render_template('health_report_updated', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_report_updated', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send report update confirmation: {e}")
 
     def send_health_report_deletion_confirmation(self, patient_email, patient_name, report_title):
         """Send confirmation email for health report deletion"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'report_title': report_title
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'report_title': report_title
+            }
 
-        subject, message = render_template('health_report_deleted', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_report_deleted', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send report deletion confirmation: {e}")
 
     # ==================== HEALTH RECORD EMAIL METHODS ====================
 
@@ -4291,58 +4283,46 @@ PRIVACY NOTICE: This health record is protected under HIPAA regulations."""
 
     def send_health_record_creation_confirmation(self, patient_email, patient_name, record_type):
         """Send confirmation email for health record creation"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'record_type': record_type
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'record_type': record_type
+            }
 
-        subject, message = render_template('health_record_created', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_record_created', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send record creation confirmation: {e}")
 
     def send_health_record_update_confirmation(self, patient_email, patient_name, record_type, update_details):
         """Send confirmation email for health record updates"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'record_type': record_type,
-            'update_details': update_details
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'record_type': record_type,
+                'update_details': update_details
+            }
 
-        subject, message = render_template('health_record_updated', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_record_updated', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send record update confirmation: {e}")
 
     def send_health_record_deletion_confirmation(self, patient_email, patient_name, record_type):
         """Send confirmation email for health record deletion"""
-        from university_system.infrastructure.email.template_utils import render_template
+        try:
+            from university_system.infrastructure.email.email_service import send_template_email
 
-        template_vars = {
-            'patient_name': patient_name,
-            'record_type': record_type
-        }
+            template_vars = {
+                'patient_name': patient_name,
+                'record_type': record_type
+            }
 
-        subject, message = render_template('health_record_deleted', template_vars)
-
-        if not subject or not message:
-            print("Failed to load email template.")
-            return
-
-        if not self._send_email_via_gui(patient_email, subject, message):
-            self._show_email_fallback_dialog(patient_email, subject, message)
+            send_template_email('health_record_deleted', patient_email, template_vars)
+        except Exception as e:
+            print(f"Failed to send record deletion confirmation: {e}")
 
     # ==================== EMERGENCY CONTACT EMAIL METHODS ====================
 

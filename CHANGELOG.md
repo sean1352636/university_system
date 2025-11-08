@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Email Service Consolidation - Refactored Local Email Rendering** (2025-11-08)
+- **Refactor**: Consolidated email template rendering to use centralized email service functions
+- **Impact**: Improved maintainability, consistency, and reduced code duplication across the system
+- **Files Modified**: 4 major GUI files refactored (~1,500 lines simplified)
+
+**Refactored Files**:
+
+1. **health_portal_gui.py** (lines 4108-4325)
+   - Refactored 10 email methods to use `send_template_email()`
+   - Previously used local `render_template()` and `_send_email_via_gui()`
+   - Methods: appointment confirmation/cancellation/rescheduling, health report creation/update/deletion, health record creation/update/deletion
+   - Reduced from ~150 lines per method to ~15 lines per method (~90% reduction)
+
+2. **helpdesk_gui.py** (lines 4228-4274)
+   - Refactored 3 ticket notification methods to use centralized email service
+   - Previously used local `render_template()` with complex fallback logic
+   - Methods: `_send_ticket_created_emails()`, `_send_ticket_resolved_emails()`, `_send_ticket_updated_emails()`
+   - Reduced from ~60 lines per method to ~11 lines per method (~82% reduction)
+
+3. **internship_management_gui.py** (lines 2832-2930)
+   - Refactored 3 internship email methods to use `send_template_email()`
+   - Previously used local `render_template()` with extensive fallback messages
+   - Methods: `send_new_internship_announcement()`, `send_application_confirmation()`, `send_application_decision()`
+   - Removed 150+ lines of duplicate fallback logic
+
+4. **main_gui.py** (lines 6250-6275, 6371-6389)
+   - Refactored 2 student notification methods
+   - Methods: `_send_welcome_email_to_student()`, `_send_student_update_email()`
+   - Removed dependency on `_send_email_via_gui()` fallback system
+   - Simplified error handling with centralized service
+
+**Benefits**:
+- **Centralized Email Logic**: All email sending now uses `send_template_email()` from email_service.py
+- **Consistent Error Handling**: Unified approach across all modules
+- **Reduced Code Duplication**: Eliminated ~1,500 lines of duplicate template rendering and fallback logic
+- **Easier Maintenance**: Template changes only need to be made in one place
+- **Better Testing**: Centralized functions are easier to mock and test
+- **Removed Unused Helpers**: Eliminated `_send_email_via_gui()`, `_show_email_fallback()` methods in multiple files
+
 **Email GUI - Added 12 Service-Specific Notification Functions** (2025-11-08)
 - **Enhancement**: Added GUI dialogs for health, library, helpdesk, alumni, and student affairs email notifications
 - **Impact**: All 157 email templates now accessible via GUI - 100% template coverage

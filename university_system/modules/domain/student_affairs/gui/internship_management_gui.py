@@ -2832,6 +2832,8 @@ CV Filename: {app_data[5]}
     def send_new_internship_announcement(self, internship_id, internship_title, company_name, description, requirements):
         """Send email to all students about new internship"""
         try:
+            from university_system.infrastructure.email.email_service import send_template_email
+
             # Get all student emails
             conn = get_connection()
             cursor = conn.cursor()
@@ -2845,7 +2847,7 @@ CV Filename: {app_data[5]}
 
             for email, first_name, last_name in students:
                 try:
-                    subject, message = render_template("internship_opportunity", {
+                    template_vars = {
                         "first_name": first_name,
                         "last_name": last_name,
                         "internship_title": internship_title,
@@ -2853,15 +2855,10 @@ CV Filename: {app_data[5]}
                         "internship_id": internship_id,
                         "description": description,
                         "requirements": requirements
-                    })
-
+                    }
+                    send_template_email('internship_opportunity', email, template_vars)
                 except Exception as e:
-                    # Error handling
-                    subject = None
-                    message = None
-
-                if subject and message:
-                    self._send_email_via_gui(email, subject, message)
+                    print(f"Failed to send announcement to {email}: {e}")
 
             print(f"New internship announcement sent to {len(students)} students")
 
@@ -2871,6 +2868,8 @@ CV Filename: {app_data[5]}
     def send_application_confirmation(self, student_email, student_name, internship_title, company_name, action_type="applied"):
         """Send confirmation email when student applies for or deletes internship application"""
         try:
+            from university_system.infrastructure.email.email_service import send_template_email
+
             if action_type == "applied":
                 template_name = "internship_application_confirmation"
                 action_text = "submitted"
@@ -2889,77 +2888,18 @@ CV Filename: {app_data[5]}
 • Reapply for this position if it's still open
 • Contact career services if you need assistance"""
 
-            try:
-                subject, message = render_template(template_name, {
-                    "student_name": student_name,
-                    "internship_title": internship_title,
-                    "company_name": company_name,
-                    "action_text": action_text,
-                    "status_text": status_text,
-                    "next_steps": next_steps,
-                    "action_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                })
+            template_vars = {
+                "student_name": student_name,
+                "internship_title": internship_title,
+                "company_name": company_name,
+                "action_text": action_text,
+                "status_text": status_text,
+                "next_steps": next_steps,
+                "action_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
 
-                if not (subject and message):
-                    # Fallback if template fails
-                    subject = f"Application {action_text.title()}: {internship_title} at {company_name}"
-                    message = f"""Dear {student_name},
-
-Your internship application has been {action_text}.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-APPLICATION CONFIRMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Position: {internship_title}
-Company: {company_name}
-Action: Application {action_text.title()}
-Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-{status_text}
-
-{next_steps}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You can view and manage your applications through the Student Internship Portal.
-
-Best regards,
-University Career Services Team
-"""
-            except Exception as e:
-                # Error handling
-                subject = f"Application {action_text.title()}: {internship_title} at {company_name}"
-                message = f"""Dear {student_name},
-
-Your internship application has been {action_text}.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-APPLICATION CONFIRMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Position: {internship_title}
-Company: {company_name}
-Action: Application {action_text.title()}
-Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-{status_text}
-
-{next_steps}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You can view and manage your applications through the Student Internship Portal.
-
-Best regards,
-University Career Services Team
-"""
-
-            success = self._send_email_via_gui(student_email, subject, message)
-            if success:
-                messagebox.showinfo("Email Sent", f"Confirmation email sent to {student_name}")
-            else:
-                self._show_email_fallback(student_email, subject, message, "Application Confirmation")
+            send_template_email(template_name, student_email, template_vars)
+            messagebox.showinfo("Email Sent", f"Confirmation email sent to {student_name}")
 
         except Exception as e:
             print(f"Failed to send application confirmation: {e}")
@@ -2967,137 +2907,24 @@ University Career Services Team
     def send_application_decision(self, student_email, student_name, internship_title, company_name, decision, reason=""):
         """Send email notification for application acceptance or rejection"""
         try:
+            from university_system.infrastructure.email.email_service import send_template_email
+
             if decision.lower() == "accepted":
                 template_name = "internship_application_accepted"
-                decision_text = "ACCEPTED"
             else:  # rejected or update
                 template_name = "internship_application_update"
-                decision_text = "NOT SELECTED"
 
-            try:
-                subject, message = render_template(template_name, {
-                    "student_name": student_name,
-                    "internship_title": internship_title,
-                    "company_name": company_name,
-                    "decision": decision,
-                    "reason": reason if reason else "",
-                    "decision_date": datetime.now().strftime('%Y-%m-%d')
-                })
+            template_vars = {
+                "student_name": student_name,
+                "internship_title": internship_title,
+                "company_name": company_name,
+                "decision": decision,
+                "reason": reason if reason else "",
+                "decision_date": datetime.now().strftime('%Y-%m-%d')
+            }
 
-                if not (subject and message):
-                    # Fallback if template fails
-                    if decision.lower() == "accepted":
-                        subject = f"Congratulations! Application Accepted: {internship_title} at {company_name}"
-                        message_body = f"""Congratulations! We're thrilled to inform you that your application has been accepted.
-
-Your application stood out among many candidates, and {company_name} is excited to have you join their team as an intern.
-
-Next Steps:
-• You will be contacted directly by {company_name} within 2-3 business days
-• Please prepare any additional documentation they may require
-• Review the internship terms and conditions that will be provided
-• Contact our career services if you have any questions
-
-This is a fantastic opportunity to gain valuable industry experience. We're proud of your achievement!"""
-                        if reason:
-                            message_body += f"\n\nSelection Reason:\n{reason}"
-                    else:
-                        subject = f"Application Update: {internship_title} at {company_name}"
-                        message_body = f"""Thank you for your interest in the {internship_title} position at {company_name}.
-
-After careful review, we regret to inform you that your application was not selected for this particular internship.
-
-This decision does not reflect your abilities or potential. The competition was very strong, and many qualified candidates applied.
-
-What's Next:
-• Continue applying for other available internships
-• Consider gaining additional skills or experience in relevant areas
-• Attend career workshops and networking events
-• Contact career services for personalized guidance
-
-Remember, this is just one opportunity among many. Keep pursuing your goals!"""
-                        if reason:
-                            message_body += f"\n\nFeedback:\n{reason}"
-
-                    message = f"""Dear {student_name},
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-APPLICATION DECISION: {decision_text}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Position: {internship_title}
-Company: {company_name}
-Decision Date: {datetime.now().strftime('%Y-%m-%d')}
-
-{message_body}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-For any questions, please don't hesitate to contact our career services team.
-
-Best regards,
-University Career Services Team
-"""
-            except Exception as e:
-                # Error handling
-                if decision.lower() == "accepted":
-                    subject = f"Congratulations! Application Accepted: {internship_title} at {company_name}"
-                    message_body = f"""Congratulations! We're thrilled to inform you that your application has been accepted.
-
-Your application stood out among many candidates, and {company_name} is excited to have you join their team as an intern.
-
-Next Steps:
-• You will be contacted directly by {company_name} within 2-3 business days
-• Please prepare any additional documentation they may require
-• Review the internship terms and conditions that will be provided
-• Contact our career services if you have any questions
-
-This is a fantastic opportunity to gain valuable industry experience. We're proud of your achievement!"""
-                    if reason:
-                        message_body += f"\n\nSelection Reason:\n{reason}"
-                else:
-                    subject = f"Application Update: {internship_title} at {company_name}"
-                    message_body = f"""Thank you for your interest in the {internship_title} position at {company_name}.
-
-After careful review, we regret to inform you that your application was not selected for this particular internship.
-
-This decision does not reflect your abilities or potential. The competition was very strong, and many qualified candidates applied.
-
-What's Next:
-• Continue applying for other available internships
-• Consider gaining additional skills or experience in relevant areas
-• Attend career workshops and networking events
-• Contact career services for personalized guidance
-
-Remember, this is just one opportunity among many. Keep pursuing your goals!"""
-                    if reason:
-                        message_body += f"\n\nFeedback:\n{reason}"
-
-                message = f"""Dear {student_name},
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-APPLICATION DECISION: {decision_text}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Position: {internship_title}
-Company: {company_name}
-Decision Date: {datetime.now().strftime('%Y-%m-%d')}
-
-{message_body}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-For any questions, please don't hesitate to contact our career services team.
-
-Best regards,
-University Career Services Team
-"""
-
-            success = self._send_email_via_gui(student_email, subject, message)
-            if success:
-                messagebox.showinfo("Decision Email Sent", f"Application decision sent to {student_name}")
-            else:
-                self._show_email_fallback(student_email, subject, message, "Application Decision")
+            send_template_email(template_name, student_email, template_vars)
+            messagebox.showinfo("Decision Email Sent", f"Application decision sent to {student_name}")
 
         except Exception as e:
             print(f"Failed to send application decision: {e}")
