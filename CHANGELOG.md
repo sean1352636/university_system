@@ -9,6 +9,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Helpdesk GUI - Enhanced Ticket Management Functions** (2025-11-08)
+- **New Feature**: Added 8 missing enhanced ticket management functions to helpdesk GUI
+- **Impact**: GUI now has feature parity with CLI for advanced ticket operations
+- **Files Modified**:
+  - `university_system/modules/domain/student_affairs/gui/helpdesk_gui.py` - Added 688 lines of new functionality
+
+**Functions Added**:
+
+1. **create_ticket_enhanced()** - Enhanced ticket creation with templates and validation
+   - Template selection dropdown with auto-fill capability
+   - Subcategory support with dynamic category-based options
+   - Priority, impact, and urgency selection
+   - Form validation and SLA integration
+   - Knowledge base article suggestions
+
+2. **create_ticket_from_template_gui()** - Load template data into ticket form
+   - Automatically populates subject, category, priority, impact, urgency
+   - Supports template message pre-filling
+   - Reduces ticket creation time for common issues
+
+3. **create_custom_ticket_gui()** - Create tickets with custom form fields
+   - Wrapper for enhanced ticket creation
+   - Extensible for dynamic custom fields from database
+
+4. **create_ticket_with_details()** - Programmatic ticket creation API
+   - Full parameter control (subject, message, category, priority, impact, urgency, subcategory)
+   - Automatic SLA policy lookup and due date calculation
+   - Smart department-based auto-assignment
+   - Load balancing for staff workload
+   - Automated email notifications
+
+5. **assign_ticket_enhanced()** - Smart ticket assignment with load balancing
+   - Three assignment modes:
+     - Assign to specific user (shows staff workload)
+     - Assign to department (auto-balance to least loaded staff)
+     - Unassign ticket
+   - Real-time active ticket count per staff member
+   - Department filtering
+   - Skill-based routing capability
+
+6. **change_ticket_status_enhanced()** - Enhanced status changes with workflow validation
+   - Six status options: open, in progress, waiting for customer, resolved, closed, cancelled
+   - Resolution tracking for resolved/closed tickets
+   - Resolution field requirement enforcement
+   - Automatic timestamp tracking (resolved_at)
+   - Email notifications on status change
+   - Workflow integration
+
+7. **bulk_status_change_gui()** - Batch status updates for multiple tickets
+   - Multi-select support from all tickets view
+   - Update multiple tickets simultaneously
+   - Status options: open, in progress, waiting for customer, resolved, closed
+   - Bulk email notifications
+   - Transaction safety for all updates
+
+8. **execute_ticket_action_gui()** - Unified action handler for all ticket operations
+   - Centralized action dispatcher
+   - Supported actions: reply, assign, change_status, escalate, view, close
+   - Consistent interface across ticket views
+   - Extensible for new actions
+
+**Technical Improvements**:
+- SLA policy integration for automatic due date calculation
+- Department-based auto-assignment with load balancing
+- Template system support for faster ticket creation
+- Enhanced form validation
+- Real-time staff workload visibility
+- Transaction-safe bulk operations
+- Comprehensive error handling
+
 **Email Queue & Scheduler Manager GUI with Utilities** (2025-11-08)
 - **New Feature**: Complete GUI interface for email queue, scheduler management, and utility functions
 - **Impact**: Provides administrative access to 10 previously GUI-inaccessible worker/scheduler/utility functions

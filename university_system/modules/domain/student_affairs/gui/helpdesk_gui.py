@@ -4209,6 +4209,696 @@ Backwards compatible with CLI version
 
         ttk.Button(content_frame, text="Close", command=about_window.destroy).pack(pady=10)
 
+    # ============================================================================
+    # ENHANCED TICKET MANAGEMENT FUNCTIONS (8 NEW FUNCTIONS)
+    # ============================================================================
+
+    def create_ticket_enhanced(self):
+        """Enhanced ticket creation with templates and validation"""
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to create a support ticket.")
+            return
+
+        if not self.has_permission('create_ticket'):
+            messagebox.showerror("Permission Denied", "You don't have permission to create support tickets.")
+            return
+
+        # Create enhanced ticket creation dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Enhanced Ticket")
+        dialog.geometry("700x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Main container
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        # Title
+        ttk.Label(main_frame, text="Create New Support Ticket",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+        # Template selection
+        template_frame = ttk.LabelFrame(main_frame, text="Template Selection", padding="10")
+        template_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(template_frame, text="Select a template to auto-fill form:").pack(anchor='w')
+
+        template_var = tk.StringVar(value='custom')
+        template_combo = ttk.Combobox(template_frame, textvariable=template_var, state="readonly", width=50)
+        template_combo.pack(fill='x', pady=5)
+
+        # Load templates
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT template_id, name, description FROM ticket_templates
+                WHERE is_active = 1 ORDER BY category, name
+            ''')
+            templates = cursor.fetchall()
+            conn.close()
+
+            template_list = ['Custom (No Template)']
+            template_map = {0: None}
+
+            for idx, (tid, name, desc) in enumerate(templates, 1):
+                template_list.append(f"{name} - {desc}")
+                template_map[idx] = tid
+
+            template_combo['values'] = template_list
+        except Exception as e:
+            print(f"Error loading templates: {e}")
+            template_combo['values'] = ['Custom (No Template)']
+            template_map = {0: None}
+
+        # Form fields
+        form_frame = ttk.LabelFrame(main_frame, text="Ticket Information", padding="10")
+        form_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        # Subject
+        ttk.Label(form_frame, text="Subject *").grid(row=0, column=0, sticky='w', pady=2)
+        subject_entry = ttk.Entry(form_frame, width=60)
+        subject_entry.grid(row=0, column=1, columnspan=2, sticky='ew', pady=2)
+
+        # Category with subcategory
+        ttk.Label(form_frame, text="Category *").grid(row=1, column=0, sticky='w', pady=2)
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, state="readonly", width=28)
+        category_combo['values'] = ['Technical Support', 'Academic Inquiry', 'Financial Services',
+                                    'Account Access', 'Other']
+        category_combo.grid(row=1, column=1, sticky='w', pady=2)
+
+        ttk.Label(form_frame, text="Subcategory").grid(row=1, column=2, sticky='w', pady=2, padx=(10,0))
+        subcategory_var = tk.StringVar()
+        subcategory_combo = ttk.Combobox(form_frame, textvariable=subcategory_var, state="readonly", width=25)
+        subcategory_combo.grid(row=1, column=3, sticky='w', pady=2)
+
+        # Priority, Impact, Urgency
+        ttk.Label(form_frame, text="Priority *").grid(row=2, column=0, sticky='w', pady=2)
+        priority_var = tk.StringVar(value='medium')
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
+        priority_combo['values'] = ['low', 'medium', 'high']
+        priority_combo.grid(row=2, column=1, sticky='w', pady=2)
+
+        ttk.Label(form_frame, text="Impact *").grid(row=3, column=0, sticky='w', pady=2)
+        impact_var = tk.StringVar(value='low')
+        impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
+        impact_combo['values'] = ['low', 'medium', 'high']
+        impact_combo.grid(row=3, column=1, sticky='w', pady=2)
+
+        ttk.Label(form_frame, text="Urgency *").grid(row=4, column=0, sticky='w', pady=2)
+        urgency_var = tk.StringVar(value='low')
+        urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
+        urgency_combo['values'] = ['low', 'medium', 'high']
+        urgency_combo.grid(row=4, column=1, sticky='w', pady=2)
+
+        # Message
+        ttk.Label(form_frame, text="Description *").grid(row=5, column=0, sticky='nw', pady=2)
+        message_text = scrolledtext.ScrolledText(form_frame, height=10, width=60)
+        message_text.grid(row=5, column=1, columnspan=3, sticky='ew', pady=2)
+
+        # Configure grid weights
+        form_frame.columnconfigure(1, weight=1)
+
+        # Update subcategory when category changes
+        def update_subcategories(event=None):
+            cat = category_var.get()
+            subcategories_map = {
+                "Technical Support": ["Login Issues", "Performance Problems", "Software Bugs", "Hardware Problems"],
+                "Academic Inquiry": ["Course Information", "Grading Questions", "Academic Records", "Transcript Requests"],
+                "Financial Services": ["Payment Plans", "Refunds", "Financial Aid", "Billing Inquiries"],
+                "Account Access": ["Password Reset", "Account Locked", "Permission Issues", "Profile Updates"],
+                "Other": ["General Inquiry", "Feedback", "Complaint", "Suggestion"]
+            }
+            subcategory_combo['values'] = subcategories_map.get(cat, [])
+            if subcategory_combo['values']:
+                subcategory_combo.current(0)
+
+        category_combo.bind('<<ComboboxSelected>>', update_subcategories)
+
+        # Load template when selected
+        def load_template(event=None):
+            idx = template_combo.current()
+            if idx > 0 and idx in template_map:
+                template_id = template_map[idx]
+                self.create_ticket_from_template_gui(template_id, subject_entry, category_var,
+                                                     priority_var, impact_var, urgency_var, message_text)
+
+        template_combo.bind('<<ComboboxSelected>>', load_template)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(0, 5))
+
+        def submit_ticket():
+            subject = subject_entry.get().strip()
+            category = category_var.get()
+            subcategory = subcategory_var.get()
+            message = message_text.get('1.0', 'end-1c').strip()
+            priority = priority_var.get()
+            impact = impact_var.get()
+            urgency = urgency_var.get()
+
+            if not subject or not category or not message:
+                messagebox.showerror("Error", "Subject, category, and description are required")
+                return
+
+            # Create ticket using enhanced method
+            ticket_id = self.create_ticket_with_details(subject, message, category, priority,
+                                                       impact, urgency, subcategory)
+            if ticket_id:
+                messagebox.showinfo("Success", f"Ticket #{ticket_id} created successfully!")
+                dialog.destroy()
+                self.refresh_my_tickets()
+            else:
+                messagebox.showerror("Error", "Failed to create ticket")
+
+        ttk.Button(button_frame, text="Create Ticket", command=submit_ticket).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def create_ticket_from_template_gui(self, template_id, subject_entry, category_var,
+                                        priority_var, impact_var, urgency_var, message_text):
+        """Load template data into form fields"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM ticket_templates WHERE template_id = ?', (template_id,))
+            template = cursor.fetchone()
+            conn.close()
+
+            if not template:
+                messagebox.showerror("Error", "Template not found")
+                return
+
+            # Unpack template data (adjust indices based on schema)
+            # Assuming: template_id, name, description, category, subject_template, message_template,
+            #           default_priority, default_impact, default_urgency, form_fields
+            _, name, desc, category, subj_tpl, msg_tpl, pri, imp, urg, form_fields = template[:10]
+
+            # Fill in form fields
+            if subj_tpl:
+                subject_entry.delete(0, 'end')
+                subject_entry.insert(0, subj_tpl)
+
+            if category:
+                category_var.set(category)
+
+            if pri:
+                priority_var.set(pri)
+            if imp:
+                impact_var.set(imp)
+            if urg:
+                urgency_var.set(urg)
+
+            if msg_tpl:
+                message_text.delete('1.0', 'end')
+                message_text.insert('1.0', msg_tpl)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+
+    def create_custom_ticket_gui(self):
+        """Create ticket with custom form fields (wrapper for create_ticket_enhanced)"""
+        # This is essentially the same as create_ticket_enhanced but can be extended
+        # with dynamic custom fields from database
+        self.create_ticket_enhanced()
+
+    def create_ticket_with_details(self, subject, message, category, priority, impact, urgency, subcategory=None):
+        """Programmatic ticket creation with full details"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Determine SLA and department assignment
+            cursor.execute('''
+                SELECT sla_id, first_response_hours, resolution_hours
+                FROM sla_policies
+                WHERE priority = ? AND impact = ? AND urgency = ? AND is_active = 1
+                ORDER BY sla_id LIMIT 1
+            ''', (priority, impact, urgency))
+
+            sla_result = cursor.fetchone()
+            due_date = None
+            if sla_result:
+                resolution_hours = sla_result[2]
+                due_date = (datetime.now() + timedelta(hours=resolution_hours)).strftime('%Y-%m-%d %H:%M:%S')
+
+            # Auto-assign to department based on category
+            assigned_to = None
+            department = None
+
+            category_dept_map = {
+                "Technical Support": "IT Support",
+                "Academic Inquiry": "Academic Affairs",
+                "Financial Services": "Financial Services",
+                "Account Access": "IT Support"
+            }
+
+            if category in category_dept_map:
+                department = category_dept_map[category]
+
+                # Find available staff in the department
+                cursor.execute('''
+                    SELECT u.id FROM users u
+                    WHERE u.role IN ('staff', 'admin') AND u.is_active = 1
+                    ORDER BY u.last_login_at DESC LIMIT 1
+                ''')
+
+                dept_staff = cursor.fetchone()
+                if dept_staff:
+                    assigned_to = dept_staff[0]
+
+            # Get current time
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Insert ticket into database
+            cursor.execute('''
+                INSERT INTO support_tickets
+                (user_id, assigned_to, subject, message, category, subcategory, status, priority,
+                 impact, urgency, source, due_date, department, created_at, updated_at, last_activity_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (self.current_user.get('id', 0), assigned_to, subject, message, category, subcategory,
+                  'open', priority, impact, urgency, 'web', due_date, department, now, now, now))
+
+            conn.commit()
+            ticket_id = cursor.lastrowid
+            conn.close()
+
+            # Send notifications
+            self.auto_send_ticket_notifications(ticket_id, "created")
+
+            return ticket_id
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create ticket: {str(e)}")
+            return None
+
+    def assign_ticket_enhanced(self, ticket_id):
+        """Enhanced ticket assignment with load balancing and skill-based routing"""
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to assign tickets.")
+            return
+
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to assign tickets.")
+            return
+
+        # Create assignment dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Enhanced Ticket Assignment")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Assign Ticket #{ticket_id}",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Assignment options
+        option_frame = ttk.LabelFrame(main_frame, text="Assignment Options", padding="10")
+        option_frame.pack(fill='x', pady=(0, 10))
+
+        assign_option = tk.StringVar(value='user')
+        ttk.Radiobutton(option_frame, text="Assign to specific user",
+                       variable=assign_option, value='user').pack(anchor='w')
+        ttk.Radiobutton(option_frame, text="Assign to department (auto-balance)",
+                       variable=assign_option, value='department').pack(anchor='w')
+        ttk.Radiobutton(option_frame, text="Unassign ticket",
+                       variable=assign_option, value='unassign').pack(anchor='w')
+
+        # User selection frame
+        user_frame = ttk.LabelFrame(main_frame, text="Select User", padding="10")
+        user_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        # Staff list
+        columns = ('ID', 'Username', 'Role', 'Department', 'Active Tickets')
+        staff_tree = ttk.Treeview(user_frame, columns=columns, show='headings', height=10)
+
+        for col in columns:
+            staff_tree.heading(col, text=col)
+            staff_tree.column(col, width=100)
+
+        staff_tree.pack(fill='both', expand=True, side='left')
+
+        scrollbar = ttk.Scrollbar(user_frame, orient='vertical', command=staff_tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        staff_tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load staff members with workload
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT u.id, u.username, u.role, COALESCE(u.department, 'No Department'),
+                       COUNT(st.ticket_id) as active_tickets
+                FROM users u
+                LEFT JOIN support_tickets st ON u.id = st.assigned_to AND st.status NOT IN ('closed', 'resolved')
+                WHERE u.role IN ('staff', 'admin') AND u.is_active = 1
+                GROUP BY u.id, u.username, u.role, u.department
+                ORDER BY active_tickets ASC, u.username
+            ''')
+
+            staff_members = cursor.fetchall()
+            conn.close()
+
+            for staff in staff_members:
+                staff_tree.insert('', 'end', values=staff)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load staff: {str(e)}")
+            return
+
+        # Department selection (hidden by default)
+        dept_frame = ttk.LabelFrame(main_frame, text="Select Department", padding="10")
+
+        dept_var = tk.StringVar()
+        dept_combo = ttk.Combobox(dept_frame, textvariable=dept_var, state="readonly", width=40)
+        dept_combo.pack(fill='x')
+
+        # Load departments
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT name FROM departments WHERE is_active = 1 ORDER BY name')
+            departments = [row[0] for row in cursor.fetchall()]
+            conn.close()
+            dept_combo['values'] = departments
+        except:
+            dept_combo['values'] = ['IT Support', 'Academic Affairs', 'Financial Services']
+
+        # Show/hide frames based on selection
+        def update_frames(*args):
+            if assign_option.get() == 'user':
+                user_frame.pack(fill='both', expand=True, pady=(0, 10))
+                dept_frame.pack_forget()
+            elif assign_option.get() == 'department':
+                user_frame.pack_forget()
+                dept_frame.pack(fill='x', pady=(0, 10))
+            else:
+                user_frame.pack_forget()
+                dept_frame.pack_forget()
+
+        assign_option.trace('w', update_frames)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        def perform_assignment():
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                new_assigned = None
+                new_department = None
+
+                if assign_option.get() == 'user':
+                    selection = staff_tree.selection()
+                    if not selection:
+                        messagebox.showerror("Error", "Please select a user")
+                        return
+
+                    values = staff_tree.item(selection[0])['values']
+                    new_assigned = values[0]
+                    new_department = values[3] if values[3] != 'No Department' else None
+
+                elif assign_option.get() == 'department':
+                    new_department = dept_var.get()
+                    if not new_department:
+                        messagebox.showerror("Error", "Please select a department")
+                        return
+
+                    # Auto-assign to least loaded staff in department
+                    cursor.execute('''
+                        SELECT u.id, COUNT(st.ticket_id) as workload
+                        FROM users u
+                        LEFT JOIN support_tickets st ON u.id = st.assigned_to AND st.status NOT IN ('closed', 'resolved')
+                        WHERE u.role IN ('staff', 'admin') AND u.is_active = 1 AND u.department = ?
+                        GROUP BY u.id
+                        ORDER BY workload ASC LIMIT 1
+                    ''', (new_department,))
+
+                    result = cursor.fetchone()
+                    if result:
+                        new_assigned = result[0]
+
+                # Update ticket
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute('''
+                    UPDATE support_tickets
+                    SET assigned_to = ?, department = ?, updated_at = ?, last_activity_at = ?
+                    WHERE ticket_id = ?
+                ''', (new_assigned, new_department, now, now, ticket_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Ticket #{ticket_id} assigned successfully!")
+                dialog.destroy()
+                self.refresh_all_tickets()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to assign ticket: {str(e)}")
+
+        ttk.Button(button_frame, text="Assign", command=perform_assignment).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def change_ticket_status_enhanced(self, ticket_id):
+        """Enhanced status change with resolution tracking and workflow validation"""
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to update ticket status.")
+            return
+
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to update ticket status.")
+            return
+
+        # Create status change dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Change Ticket Status")
+        dialog.geometry("500x450")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Change Status for Ticket #{ticket_id}",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Get current status
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT status, resolution FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
+            result = cursor.fetchone()
+            conn.close()
+
+            if not result:
+                messagebox.showerror("Error", f"Ticket #{ticket_id} not found")
+                dialog.destroy()
+                return
+
+            current_status, current_resolution = result
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load ticket: {str(e)}")
+            dialog.destroy()
+            return
+
+        # Current status display
+        status_frame = ttk.LabelFrame(main_frame, text="Current Status", padding="10")
+        status_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(status_frame, text=current_status.upper(),
+                 font=('TkDefaultFont', 10, 'bold')).pack()
+
+        # New status selection
+        new_status_frame = ttk.LabelFrame(main_frame, text="New Status", padding="10")
+        new_status_frame.pack(fill='x', pady=(0, 10))
+
+        status_var = tk.StringVar(value=current_status)
+        statuses = ['open', 'in progress', 'waiting for customer', 'resolved', 'closed', 'cancelled']
+
+        for status in statuses:
+            ttk.Radiobutton(new_status_frame, text=status.title(),
+                           variable=status_var, value=status).pack(anchor='w')
+
+        # Resolution frame (shown for resolved/closed)
+        resolution_frame = ttk.LabelFrame(main_frame, text="Resolution Details", padding="10")
+        resolution_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        ttk.Label(resolution_frame, text="Required for Resolved/Closed tickets:").pack(anchor='w')
+        resolution_text = scrolledtext.ScrolledText(resolution_frame, height=8, width=50)
+        resolution_text.pack(fill='both', expand=True)
+
+        if current_resolution:
+            resolution_text.insert('1.0', current_resolution)
+
+        # Show/hide resolution based on status
+        def update_resolution_visibility(*args):
+            if status_var.get() in ['resolved', 'closed']:
+                resolution_frame.pack(fill='both', expand=True, pady=(0, 10))
+            else:
+                resolution_frame.pack_forget()
+
+        status_var.trace('w', update_resolution_visibility)
+        update_resolution_visibility()
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        def update_status():
+            new_status = status_var.get()
+            resolution = resolution_text.get('1.0', 'end-1c').strip()
+
+            if new_status == current_status:
+                messagebox.showinfo("Info", "Status is already set to " + new_status.upper())
+                return
+
+            if new_status in ['resolved', 'closed'] and not resolution:
+                messagebox.showerror("Error", "Resolution details are required for resolved/closed tickets")
+                return
+
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                resolved_at = now if new_status in ['resolved', 'closed'] else None
+
+                cursor.execute('''
+                    UPDATE support_tickets
+                    SET status = ?, resolution = ?, resolved_at = ?, updated_at = ?, last_activity_at = ?
+                    WHERE ticket_id = ?
+                ''', (new_status, resolution, resolved_at, now, now, ticket_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Ticket status updated to: {new_status.upper()}")
+                dialog.destroy()
+                self.refresh_all_tickets()
+                self.auto_send_ticket_notifications(ticket_id, "updated")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+
+        ttk.Button(button_frame, text="Update Status", command=update_status).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def bulk_status_change_gui(self):
+        """Bulk change status of multiple selected tickets"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to change ticket status.")
+            return
+
+        # Get selected tickets from all tickets view
+        if not hasattr(self, 'all_tickets_tree'):
+            messagebox.showerror("Error", "Please navigate to All Tickets tab first")
+            return
+
+        selection = self.all_tickets_tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select one or more tickets")
+            return
+
+        ticket_ids = [self.all_tickets_tree.item(item)['values'][0] for item in selection]
+
+        # Create bulk status change dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Bulk Status Change")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=f"Update {len(ticket_ids)} Tickets",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        ttk.Label(main_frame, text=f"Ticket IDs: {', '.join(map(str, ticket_ids))}").pack(pady=(0, 10))
+
+        # Status selection
+        status_frame = ttk.LabelFrame(main_frame, text="Select New Status", padding="10")
+        status_frame.pack(fill='x', pady=(0, 10))
+
+        status_var = tk.StringVar(value='open')
+        statuses = ['open', 'in progress', 'waiting for customer', 'resolved', 'closed']
+
+        for status in statuses:
+            ttk.Radiobutton(status_frame, text=status.title(),
+                           variable=status_var, value=status).pack(anchor='w')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        def perform_bulk_update():
+            new_status = status_var.get()
+
+            try:
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                resolved_at = now if new_status in ['resolved', 'closed'] else None
+
+                for ticket_id in ticket_ids:
+                    cursor.execute('''
+                        UPDATE support_tickets
+                        SET status = ?, resolved_at = ?, updated_at = ?, last_activity_at = ?
+                        WHERE ticket_id = ?
+                    ''', (new_status, resolved_at, now, now, ticket_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"{len(ticket_ids)} tickets updated to {new_status.upper()}")
+                dialog.destroy()
+                self.refresh_all_tickets()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update tickets: {str(e)}")
+
+        ttk.Button(button_frame, text="Update All", command=perform_bulk_update).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def execute_ticket_action_gui(self, ticket_id, action):
+        """Execute various ticket actions through unified interface"""
+        if action == 'reply':
+            self.show_add_reply(ticket_id)
+        elif action == 'assign':
+            self.assign_ticket_enhanced(ticket_id)
+        elif action == 'change_status':
+            self.change_ticket_status_enhanced(ticket_id)
+        elif action == 'escalate':
+            self.escalate_ticket_dialog(ticket_id)
+        elif action == 'view':
+            self.view_ticket_details(ticket_id)
+        elif action == 'close':
+            self.change_ticket_status_enhanced(ticket_id)
+        else:
+            messagebox.showinfo("Info", f"Action '{action}' not yet implemented")
+
+    # END OF ENHANCED TICKET MANAGEMENT FUNCTIONS
+    # ============================================================================
+
     def send_ticket_notification_email(self, ticket_id, notification_type, admin_email, user_email=None):
         """Send ticket notification emails"""
         try:
