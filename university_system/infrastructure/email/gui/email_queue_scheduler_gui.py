@@ -24,6 +24,9 @@ from university_system.infrastructure.email.email_service import (
     email_queue,
     worker_threads,
     list_templates,
+    wait_for_email_queue,
+    fix_inbox_display_issue,
+    update_scheduled_email_status,
 )
 from university_system.infrastructure.database.db import get_connection
 
@@ -61,6 +64,9 @@ class EmailQueueSchedulerGUI:
 
         # Tab 4: Monitor
         self.create_monitor_tab()
+
+        # Tab 5: Utilities
+        self.create_utilities_tab()
 
     def create_worker_tab(self):
         """Create worker control and status tab"""
@@ -426,6 +432,111 @@ Worker threads are only needed for high-volume async email processing.
         self.monitor_details = scrolledtext.ScrolledText(details_frame, height=20, wrap=tk.WORD)
         self.monitor_details.pack(fill=tk.BOTH, expand=True)
 
+    def create_utilities_tab(self):
+        """Create utilities tab for additional functions"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text="Utilities")
+
+        # Title
+        title = tk.Label(tab, text="Email System Utilities", font=("Arial", 16, "bold"))
+        title.pack(pady=10)
+
+        # Utility 1: Wait for Queue
+        queue_frame = ttk.LabelFrame(tab, text="Queue Management", padding=10)
+        queue_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            queue_frame,
+            text="Wait for all queued emails to be sent (blocks until queue is empty)",
+            font=("Arial", 10)
+        ).pack(pady=5)
+
+        ttk.Button(
+            queue_frame,
+            text="Wait for Queue to Empty",
+            command=self.wait_for_queue,
+            width=25
+        ).pack(pady=5)
+
+        # Utility 2: Fix Inbox Display
+        inbox_frame = ttk.LabelFrame(tab, text="Database Repair", padding=10)
+        inbox_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(
+            inbox_frame,
+            text="Fix inbox display issues (recreate missing inbox messages from stored emails)",
+            font=("Arial", 10)
+        ).pack(pady=5)
+
+        ttk.Button(
+            inbox_frame,
+            text="Fix Inbox Display Issue",
+            command=self.fix_inbox_display,
+            width=25
+        ).pack(pady=5)
+
+        # Utility 3: Update Scheduled Email Status
+        status_frame = ttk.LabelFrame(tab, text="Update Scheduled Email Status", padding=10)
+        status_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        form_frame = ttk.Frame(status_frame)
+        form_frame.pack(pady=5)
+
+        ttk.Label(form_frame, text="Email ID:", font=("Arial", 10, "bold")).grid(
+            row=0, column=0, sticky=tk.W, pady=5, padx=5
+        )
+        self.status_email_id = ttk.Entry(form_frame, width=20)
+        self.status_email_id.grid(row=0, column=1, pady=5, padx=5)
+
+        ttk.Label(form_frame, text="New Status:", font=("Arial", 10, "bold")).grid(
+            row=1, column=0, sticky=tk.W, pady=5, padx=5
+        )
+        self.status_new_status = ttk.Combobox(
+            form_frame,
+            values=["pending", "sent", "failed", "cancelled"],
+            state="readonly",
+            width=18
+        )
+        self.status_new_status.grid(row=1, column=1, pady=5, padx=5)
+        self.status_new_status.current(0)
+
+        ttk.Button(
+            status_frame,
+            text="Update Status",
+            command=self.update_email_status,
+            width=20
+        ).pack(pady=10)
+
+        # Utility 4: Automated Scheduler Reference
+        scheduler_frame = ttk.LabelFrame(tab, text="Automated Email Scheduler", padding=10)
+        scheduler_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        info_text = scrolledtext.ScrolledText(scheduler_frame, height=8, wrap=tk.WORD)
+        info_text.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        scheduler_info = """
+AUTOMATED EMAIL SCHEDULER
+=========================
+
+For automated periodic email tasks (satisfaction surveys, book reminders,
+overdue notices, SLA alerts), use the dedicated Email Scheduler system:
+
+Command Line:
+  python -m university_system.utils.email_scheduler_control start
+  python -m university_system.utils.email_scheduler_control status
+  python -m university_system.utils.email_scheduler_control stop
+
+Features:
+  • Satisfaction surveys (daily at 09:00)
+  • Book return reminders (daily at 08:00)
+  • Overdue book notices (daily at 10:00)
+  • SLA breach alerts (every 30 minutes)
+
+See docs/EMAIL_SCHEDULER.md for complete documentation.
+"""
+        info_text.insert("1.0", scheduler_info)
+        info_text.config(state=tk.DISABLED)
+
     # Action methods
 
     def start_workers(self):
@@ -683,6 +794,75 @@ In database-only mode, emails are sent immediately.
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh monitor: {str(e)}")
+
+    def wait_for_queue(self):
+        """Wait for email queue to empty"""
+        try:
+            # Show a progress dialog
+            progress_window = tk.Toplevel(self.window)
+            progress_window.title("Waiting for Queue")
+            progress_window.geometry("300x100")
+            progress_window.transient(self.window)
+            progress_window.grab_set()
+
+            label = tk.Label(progress_window, text="Waiting for email queue to empty...", pady=20)
+            label.pack()
+
+            # Run wait_for_email_queue in a thread
+            def wait_thread():
+                try:
+                    result = wait_for_email_queue()
+                    progress_window.destroy()
+                    if result:
+                        messagebox.showinfo("Success", "All queued emails have been sent")
+                    else:
+                        messagebox.showinfo("Info", "No queue to wait for (database-only mode)")
+                except Exception as e:
+                    progress_window.destroy()
+                    messagebox.showerror("Error", f"Error waiting for queue: {str(e)}")
+
+            thread = threading.Thread(target=wait_thread, daemon=True)
+            thread.start()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to wait for queue: {str(e)}")
+
+    def fix_inbox_display(self):
+        """Fix inbox display issues"""
+        try:
+            if messagebox.askyesno("Confirm", "This will recreate missing inbox messages from stored emails. Continue?"):
+                result = fix_inbox_display_issue()
+                if result:
+                    messagebox.showinfo("Success", "Inbox display issues have been fixed")
+                else:
+                    messagebox.showwarning("Warning", "No issues found or fix failed")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to fix inbox display: {str(e)}")
+
+    def update_email_status(self):
+        """Update scheduled email status"""
+        email_id = self.status_email_id.get().strip()
+        new_status = self.status_new_status.get()
+
+        if not email_id:
+            messagebox.showerror("Error", "Email ID is required")
+            return
+
+        try:
+            email_id = int(email_id)
+            result = update_scheduled_email_status(email_id, new_status)
+
+            if result:
+                messagebox.showinfo("Success", f"Email #{email_id} status updated to '{new_status}'")
+                self.status_email_id.delete(0, tk.END)
+                self.refresh_scheduled_list()
+            else:
+                messagebox.showerror("Error", "Failed to update email status")
+
+        except ValueError:
+            messagebox.showerror("Error", "Email ID must be a number")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update status: {str(e)}")
 
     def run(self):
         """Run the GUI"""

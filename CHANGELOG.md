@@ -9,15 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-**Email Queue & Scheduler Manager GUI** (2025-11-08)
-- **New Feature**: Complete GUI interface for email queue and scheduler management
-- **Impact**: Provides administrative access to 7 previously GUI-inaccessible worker/scheduler functions
-- **Files Added**:
-  - `university_system/infrastructure/email/gui/email_queue_scheduler_gui.py` - Queue & scheduler management interface (815 lines)
+**Email Queue & Scheduler Manager GUI with Utilities** (2025-11-08)
+- **New Feature**: Complete GUI interface for email queue, scheduler management, and utility functions
+- **Impact**: Provides administrative access to 10 previously GUI-inaccessible worker/scheduler/utility functions
 - **Files Modified**:
+  - `university_system/infrastructure/email/gui/email_queue_scheduler_gui.py` - Added 5th "Utilities" tab (880 lines total)
   - `university_system/infrastructure/email/gui/email_manager_gui.py` - Added "Queue & Workers" button to toolbar
 
-**Previously Missing Functions Now Accessible via GUI**:
+**All Missing Functions Now Accessible via GUI**:
 
 1. **queue_email()** - Add email to background processing queue
    - GUI: "Queue Emails" tab → "Queue Direct Email" sub-tab
@@ -47,14 +46,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - GUI: Status visible on "Worker Control" and "Monitor" tabs
    - Real-time worker count and running status
 
-**4-Tab Interface**:
+8. **wait_for_email_queue()** - Wait for queue to empty
+   - GUI: "Utilities" tab → "Queue Management" section
+   - Button: "Wait for Queue to Empty" with progress dialog
+   - Blocks until all queued emails are sent
+
+9. **fix_inbox_display_issue()** - Database repair utility
+   - GUI: "Utilities" tab → "Database Repair" section
+   - Button: "Fix Inbox Display Issue" with confirmation dialog
+   - Recreates missing inbox messages from stored emails
+
+10. **update_scheduled_email_status()** - Update scheduled email status
+    - GUI: "Utilities" tab → "Update Scheduled Email Status" section
+    - Form: Email ID field + Status dropdown (pending/sent/failed/cancelled)
+    - Manually change status of scheduled emails
+
+**5-Tab Interface**:
 - **Worker Control**: Start/stop workers, view status, detailed info
 - **Queue Emails**: Queue direct or template emails with full forms
 - **Schedule Emails**: Schedule new emails, manage scheduled emails
 - **Monitor**: Real-time monitoring of queue size, workers, and scheduled emails
+- **Utilities**: Queue wait, inbox repair, status updates, automated scheduler reference
 
 **Key Features**:
-- Intuitive tabbed interface with sub-tabs
+- Intuitive 5-tab interface with sub-tabs
 - JSON validation for template variables
 - Date/time pickers for scheduling
 - Real-time status monitoring
@@ -62,8 +77,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Template dropdown integration
 - Treeview for scheduled email management
 - Visual status indicators (✓/✗ with colors)
+- Progress dialogs for long-running operations
+- Confirmation dialogs for destructive operations
+- Database repair utilities
+- Reference to automated email scheduler system
+
+**Additional Utilities Tab Features**:
+- **Queue Wait**: Thread-safe queue emptying with progress window
+- **Inbox Repair**: One-click fix for inbox display issues with confirmation
+- **Status Update**: Form to manually update scheduled email status (4 status options)
+- **Scheduler Reference**: Information panel with commands for automated scheduler
 
 **Access**: Email Manager GUI → "Queue & Workers" button in toolbar
+
+**Note**: Internal functions (#48-50) don't require GUI access:
+- generate_system_username() - Internal username generation logic
+- get_appropriate_sender_id() - Internal sender attribution management
+- safe_log_email() - Internal error-tolerant logging function
 
 ---
 
