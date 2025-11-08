@@ -9,6 +9,150 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Helpdesk GUI - Search & Knowledge Base Integration** (2025-11-08)
+- **New Update**: Added 14 advanced search and knowledge base functions (1,020 lines of new code)
+- **Impact**: Comprehensive search capabilities and full knowledge base management now available in GUI
+- **Files Modified**:
+  - `university_system/modules/domain/student_affairs/gui/helpdesk_gui.py` - Added 1,020 lines (7,615 → 8,635 lines)
+
+**Search & Filtering Functions (6 functions)**:
+
+1. **advanced_search_tickets_gui()** - Multi-criteria ticket search
+   - Full-text search across subject and message
+   - Status filter (all, open, in progress, resolved, closed)
+   - Priority filter (low, medium, high)
+   - Category filter (Technical Support, Academic Inquiry, Financial Services, Account Access, Other)
+   - Date range filtering (start/end dates)
+   - Assigned user filter (admin only)
+   - Save search functionality
+   - Real-time results display in treeview
+
+2. **save_search_criteria_gui()** - Save search for reuse
+   - Named search storage
+   - User-specific searches
+   - JSON-based criteria storage
+   - Quick access from search dialog
+
+3. **load_saved_searches_gui()** - Load and execute saved searches
+   - List all saved searches
+   - Selection dialog with search names
+   - One-click search execution
+   - Automatic results display
+
+4. **execute_search_gui()** - Search execution engine
+   - Dynamic SQL query building
+   - Permission-based filtering
+   - Full-text search with LIKE operators
+   - Multi-field filtering
+   - Optimized performance
+
+5. **display_search_results_gui()** - Results visualization
+   - Treeview display with 7 columns
+   - Ticket count summary
+   - Sortable columns
+   - Clear formatting
+
+6. **rebuild_search_indexes_gui()** - Search index maintenance
+   - Admin-only function
+   - Updates knowledge base search keywords
+   - Combines title, content, and tags
+   - Case-insensitive indexing
+
+**Knowledge Base Functions (8 functions)**:
+
+7. **manage_knowledge_base_gui()** - KB management interface
+   - Centralized KB operations hub
+   - Toolbar with Create/Edit/View/Statistics buttons
+   - Articles treeview with ID, title, category, views, votes
+   - Double-click to view details
+   - Permission-based access control
+
+8. **view_kb_articles_gui()** - Browse KB articles with filtering
+   - Category filter dropdown
+   - Dynamic category loading
+   - Rating display (helpful/total votes)
+   - Views counter
+   - Sortable by helpfulness and popularity
+
+9. **view_kb_article_detail_gui()** - Full article viewer
+   - Complete article metadata display
+   - Author information
+   - View count tracking
+   - Helpful/unhelpful votes
+   - Tags and categories
+   - Created/updated timestamps
+   - Read-only content display
+
+10. **create_kb_article_gui()** - New article creation
+    - Title, category, tags input
+    - Rich text content editor
+    - Category selection (5 predefined categories)
+    - Auto-publish on save
+    - Author tracking
+
+11. **edit_kb_article_gui()** - Update existing articles
+    - Article ID-based lookup
+    - Permission validation (author or admin)
+    - Pre-filled form with current data
+    - Update timestamp tracking
+    - Title, category, tags, content editing
+
+12. **kb_statistics_gui()** - KB analytics dashboard
+    - Total published articles count
+    - Top 5 most viewed articles
+    - Top 5 most helpful articles (by % rating)
+    - Articles by category breakdown
+    - Visual display with labeled frames
+
+13. **display_kb_suggestions_gui()** - Show suggested articles for tickets
+    - Automatically display relevant KB articles
+    - Article metadata (title, category, helpfulness)
+    - One-click article viewing
+    - Helpful ratio percentage display
+
+14. **suggest_knowledge_base_articles_gui()** - AI-powered article suggestions
+    - Keyword extraction from ticket content
+    - Stop-word filtering
+    - Multi-field search (title, content, search_keywords)
+    - Top 3 most relevant articles
+    - Auto-update ticket with suggestions
+
+**Helper Functions**:
+
+15. **extract_keywords_gui()** - NLP keyword extraction
+    - Stop-word removal (50+ common words)
+    - Regex-based word extraction
+    - Frequency-based ranking
+    - Returns top 10 keywords
+
+16. **view_kb_article_detail_gui_from_tree()** - Tree selection handler
+    - Extract article ID from treeview selection
+    - Delegate to detail viewer
+    - Validation for empty selection
+
+17. **refresh_kb_list()** - Reload articles treeview
+    - Clear existing items
+    - Fetch published articles
+    - Order by helpfulness and views
+    - Error handling
+
+**Technical Improvements**:
+- JSON-based search criteria storage for complex filters
+- SQLite Row factory for dict-like result access
+- Dynamic SQL query building with parameterized queries (SQL injection prevention)
+- Permission-based UI element visibility
+- Comprehensive error handling with user-friendly messages
+- Transaction safety for all database writes
+- View count tracking with auto-increment
+- Search keyword indexing for performance
+- Keyword extraction with NLP-like filtering
+
+**Database Integration**:
+- `saved_searches` table support (user_id, name, search_criteria, created_at)
+- `knowledge_base` table full CRUD operations
+- `support_tickets.knowledge_base_articles` field integration
+- Automatic search index updates
+
 **Helpdesk GUI - Complete Feature Parity with CLI** (2025-11-08)
 - **Major Update**: Added 56 missing functions to helpdesk GUI (3,226 lines of new code)
 - **Impact**: GUI now has 100% feature parity with CLI - all advanced helpdesk operations accessible via GUI

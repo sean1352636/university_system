@@ -7576,6 +7576,1026 @@ University Support Team
         except Exception as e:
             print(f"Failed to auto-send ticket notifications: {e}")
 
+    # ========================================================================
+    # SEARCH & FILTERING FUNCTIONS
+    # ========================================================================
+
+    def advanced_search_tickets_gui(self):
+        """Advanced ticket search with multiple filters"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Advanced Ticket Search")
+        dialog.geometry("700x700")
+
+        # Main frame with scrollbar
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Search criteria storage
+        criteria = {}
+
+        # Text search
+        ttk.Label(main_frame, text="Search Text (Subject/Message):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        text_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=text_var, width=50).grid(row=0, column=1, pady=5, padx=5)
+
+        # Status filter
+        ttk.Label(main_frame, text="Status Filter:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        status_var = tk.StringVar(value="all")
+        status_combo = ttk.Combobox(main_frame, textvariable=status_var, width=47,
+                                    values=["all", "open", "in progress", "resolved", "closed"])
+        status_combo.grid(row=1, column=1, pady=5, padx=5)
+
+        # Priority filter
+        ttk.Label(main_frame, text="Priority Filter:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        priority_var = tk.StringVar(value="all")
+        priority_combo = ttk.Combobox(main_frame, textvariable=priority_var, width=47,
+                                      values=["all", "low", "medium", "high"])
+        priority_combo.grid(row=2, column=1, pady=5, padx=5)
+
+        # Category filter
+        ttk.Label(main_frame, text="Category Filter:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        category_var = tk.StringVar(value="all")
+        categories = ["all", "Technical Support", "Academic Inquiry", "Financial Services",
+                      "Account Access", "Other"]
+        category_combo = ttk.Combobox(main_frame, textvariable=category_var, width=47, values=categories)
+        category_combo.grid(row=3, column=1, pady=5, padx=5)
+
+        # Date range
+        ttk.Label(main_frame, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        start_date_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=start_date_var, width=50).grid(row=4, column=1, pady=5, padx=5)
+
+        ttk.Label(main_frame, text="End Date (YYYY-MM-DD):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        end_date_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=end_date_var, width=50).grid(row=5, column=1, pady=5, padx=5)
+
+        # Assigned user filter (admin only)
+        assigned_label = ttk.Label(main_frame, text="Assigned To (Username):")
+        assigned_var = tk.StringVar()
+        assigned_entry = ttk.Entry(main_frame, textvariable=assigned_var, width=50)
+
+        if self.auth.has_permission('view_all_tickets'):
+            assigned_label.grid(row=6, column=0, sticky=tk.W, pady=5)
+            assigned_entry.grid(row=6, column=1, pady=5, padx=5)
+
+        # Save search name
+        ttk.Label(main_frame, text="Save Search As:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        save_name_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=save_name_var, width=50).grid(row=7, column=1, pady=5, padx=5)
+
+        # Results display
+        results_frame = ttk.LabelFrame(main_frame, text="Search Results", padding="10")
+        results_frame.grid(row=8, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+
+        # Results treeview
+        columns = ('id', 'subject', 'from', 'assigned', 'status', 'priority', 'updated')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=10)
+
+        results_tree.heading('id', text='ID')
+        results_tree.heading('subject', text='Subject')
+        results_tree.heading('from', text='From')
+        results_tree.heading('assigned', text='Assigned')
+        results_tree.heading('status', text='Status')
+        results_tree.heading('priority', text='Priority')
+        results_tree.heading('updated', text='Updated')
+
+        results_tree.column('id', width=40)
+        results_tree.column('subject', width=200)
+        results_tree.column('from', width=100)
+        results_tree.column('assigned', width=100)
+        results_tree.column('status', width=80)
+        results_tree.column('priority', width=60)
+        results_tree.column('updated', width=120)
+
+        scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=results_tree.yview)
+        results_tree.configure(yscrollcommand=scrollbar.set)
+
+        results_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def execute_search():
+            """Execute the search with current criteria"""
+            # Build criteria dictionary
+            search_criteria = {}
+
+            if text_var.get().strip():
+                search_criteria['text'] = text_var.get().strip()
+
+            if status_var.get() != "all":
+                search_criteria['status'] = status_var.get()
+
+            if priority_var.get() != "all":
+                search_criteria['priority'] = priority_var.get()
+
+            if category_var.get() != "all":
+                search_criteria['category'] = category_var.get()
+
+            if start_date_var.get().strip():
+                search_criteria['start_date'] = start_date_var.get().strip()
+
+            if end_date_var.get().strip():
+                search_criteria['end_date'] = end_date_var.get().strip()
+
+            if assigned_var.get().strip() and self.auth.has_permission('view_all_tickets'):
+                search_criteria['assigned_user'] = assigned_var.get().strip()
+
+            # Save search if name provided
+            if save_name_var.get().strip():
+                self.save_search_criteria_gui(save_name_var.get().strip(), search_criteria)
+
+            # Execute search
+            results = self.execute_search_gui(search_criteria)
+
+            # Display results
+            self.display_search_results_gui(results, results_tree)
+
+        # Button frame
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=9, column=0, columnspan=2, pady=10)
+
+        ttk.Button(btn_frame, text="Search", command=execute_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Load Saved Search",
+                  command=lambda: self.load_saved_searches_gui(results_tree)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Clear", command=lambda: [
+            text_var.set(''), status_var.set('all'), priority_var.set('all'),
+            category_var.set('all'), start_date_var.set(''), end_date_var.set(''),
+            assigned_var.set(''), save_name_var.set(''),
+            results_tree.delete(*results_tree.get_children())
+        ]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def save_search_criteria_gui(self, name, criteria):
+        """Save search criteria for later use"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            user_id = self.auth.get_current_user()['id']
+
+            cursor.execute('''
+                INSERT INTO saved_searches (user_id, name, search_criteria, created_at)
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, name, json.dumps(criteria), now))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Search '{name}' saved successfully!")
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to save search: {e}")
+
+    def load_saved_searches_gui(self, results_tree):
+        """Load and execute saved searches"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            user_id = self.auth.get_current_user()['id']
+
+            cursor.execute('''
+                SELECT search_id, name, search_criteria
+                FROM saved_searches
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+            ''', (user_id,))
+
+            searches = cursor.fetchall()
+            conn.close()
+
+            if not searches:
+                messagebox.showinfo("No Saved Searches", "No saved searches found.")
+                return
+
+            # Create selection dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Load Saved Search")
+            dialog.geometry("400x300")
+
+            ttk.Label(dialog, text="Select a saved search:", padding="10").pack()
+
+            # Listbox with saved searches
+            listbox_frame = ttk.Frame(dialog)
+            listbox_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+            scrollbar = ttk.Scrollbar(listbox_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            search_listbox = tk.Listbox(listbox_frame, yscrollcommand=scrollbar.set)
+            search_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=search_listbox.yview)
+
+            for search_id, name, criteria_json in searches:
+                search_listbox.insert(tk.END, name)
+
+            def execute_selected():
+                selection = search_listbox.curselection()
+                if selection:
+                    idx = selection[0]
+                    search_id, name, criteria_json = searches[idx]
+
+                    try:
+                        criteria = json.loads(criteria_json)
+                        results = self.execute_search_gui(criteria)
+                        self.display_search_results_gui(results, results_tree)
+                        dialog.destroy()
+                    except json.JSONDecodeError:
+                        messagebox.showerror("Error", "Corrupted search data")
+
+            ttk.Button(dialog, text="Execute", command=execute_selected).pack(pady=5)
+            ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load searches: {e}")
+
+    def execute_search_gui(self, criteria):
+        """Execute search with given criteria"""
+        try:
+            conn = get_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            # Build query
+            where_conditions = []
+            params = []
+
+            # Check permissions
+            if not self.auth.has_permission('view_all_tickets'):
+                where_conditions.append("t.user_id = ?")
+                params.append(self.auth.get_current_user()['id'])
+
+            # Text search
+            if 'text' in criteria:
+                where_conditions.append("(t.subject LIKE ? OR t.message LIKE ?)")
+                text_param = f"%{criteria['text']}%"
+                params.extend([text_param, text_param])
+
+            # Status filter
+            if 'status' in criteria:
+                where_conditions.append("t.status = ?")
+                params.append(criteria['status'])
+
+            # Priority filter
+            if 'priority' in criteria:
+                where_conditions.append("t.priority = ?")
+                params.append(criteria['priority'])
+
+            # Category filter
+            if 'category' in criteria:
+                where_conditions.append("t.category = ?")
+                params.append(criteria['category'])
+
+            # Date range
+            if 'start_date' in criteria:
+                where_conditions.append("DATE(t.created_at) >= ?")
+                params.append(criteria['start_date'])
+
+            if 'end_date' in criteria:
+                where_conditions.append("DATE(t.created_at) <= ?")
+                params.append(criteria['end_date'])
+
+            # Assigned user
+            if 'assigned_user' in criteria:
+                where_conditions.append("u2.username = ?")
+                params.append(criteria['assigned_user'])
+
+            # Build final query
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+
+            query = f'''
+                SELECT t.*, u1.username as submitter, u2.username as assignee
+                FROM support_tickets t
+                JOIN users u1 ON t.user_id = u1.id
+                LEFT JOIN users u2 ON t.assigned_to = u2.id
+                WHERE {where_clause}
+                ORDER BY t.updated_at DESC
+            '''
+
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+
+            conn.close()
+            return results
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Search failed: {e}")
+            return []
+
+    def display_search_results_gui(self, results, tree_widget):
+        """Display search results in the treeview"""
+        # Clear existing results
+        for item in tree_widget.get_children():
+            tree_widget.delete(item)
+
+        if not results:
+            messagebox.showinfo("No Results", "No tickets found matching your search criteria.")
+            return
+
+        # Populate results
+        for ticket in results:
+            assignee = ticket['assignee'] if ticket['assignee'] else 'Unassigned'
+            tree_widget.insert('', tk.END, values=(
+                ticket['ticket_id'],
+                ticket['subject'][:40],
+                ticket['submitter'][:20],
+                assignee[:20],
+                ticket['status'].upper(),
+                ticket['priority'].upper(),
+                ticket['updated_at']
+            ))
+
+        messagebox.showinfo("Search Complete", f"Found {len(results)} ticket(s) matching your criteria.")
+
+    def rebuild_search_indexes_gui(self):
+        """Rebuild full-text search indexes"""
+        if not self.auth.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to rebuild search indexes.")
+            return
+
+        if not messagebox.askyesno("Confirm", "Rebuild search indexes? This may take a moment."):
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Update search keywords for knowledge base articles
+            cursor.execute('''
+                UPDATE knowledge_base
+                SET search_keywords = LOWER(title || ' ' || content || ' ' || COALESCE(tags, ''))
+            ''')
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Search indexes rebuilt successfully!")
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to rebuild indexes: {e}")
+
+    # ========================================================================
+    # KNOWLEDGE BASE FUNCTIONS
+    # ========================================================================
+
+    def manage_knowledge_base_gui(self):
+        """Knowledge base management interface"""
+        kb_window = tk.Toplevel(self.root)
+        kb_window.title("Knowledge Base Management")
+        kb_window.geometry("900x600")
+
+        # Main frame
+        main_frame = ttk.Frame(kb_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Toolbar
+        toolbar = ttk.Frame(main_frame)
+        toolbar.pack(fill=tk.X, pady=5)
+
+        ttk.Button(toolbar, text="View Articles",
+                  command=lambda: self.view_kb_articles_gui()).pack(side=tk.LEFT, padx=2)
+
+        if self.auth.has_permission('manage_tickets'):
+            ttk.Button(toolbar, text="Create Article",
+                      command=lambda: self.create_kb_article_gui()).pack(side=tk.LEFT, padx=2)
+            ttk.Button(toolbar, text="Edit Article",
+                      command=lambda: self.edit_kb_article_gui()).pack(side=tk.LEFT, padx=2)
+
+        if self.auth.has_permission('view_all_tickets'):
+            ttk.Button(toolbar, text="Statistics",
+                      command=lambda: self.kb_statistics_gui()).pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(toolbar, text="Refresh",
+                  command=lambda: self.refresh_kb_list(tree)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text="Close",
+                  command=kb_window.destroy).pack(side=tk.RIGHT, padx=2)
+
+        # Articles list
+        list_frame = ttk.LabelFrame(main_frame, text="Knowledge Base Articles", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ('id', 'title', 'category', 'views', 'helpful', 'unhelpful', 'updated')
+        tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
+
+        tree.heading('id', text='ID')
+        tree.heading('title', text='Title')
+        tree.heading('category', text='Category')
+        tree.heading('views', text='Views')
+        tree.heading('helpful', text='Helpful')
+        tree.heading('unhelpful', text='Unhelpful')
+        tree.heading('updated', text='Updated')
+
+        tree.column('id', width=40)
+        tree.column('title', width=300)
+        tree.column('category', width=120)
+        tree.column('views', width=60)
+        tree.column('helpful', width=60)
+        tree.column('unhelpful', width=60)
+        tree.column('updated', width=140)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Double-click to view details
+        tree.bind('<Double-1>', lambda e: self.view_kb_article_detail_gui_from_tree(tree))
+
+        # Initial load
+        self.refresh_kb_list(tree)
+
+    def refresh_kb_list(self, tree):
+        """Refresh knowledge base articles list"""
+        # Clear existing items
+        for item in tree.get_children():
+            tree.delete(item)
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT article_id, title, category, views, helpful_votes, unhelpful_votes, updated_at
+                FROM knowledge_base
+                WHERE status = 'published'
+                ORDER BY helpful_votes DESC, views DESC
+            ''')
+
+            articles = cursor.fetchall()
+            conn.close()
+
+            for article in articles:
+                tree.insert('', tk.END, values=article)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load articles: {e}")
+
+    def view_kb_articles_gui(self):
+        """View knowledge base articles with category filter"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Knowledge Base Articles")
+        dialog.geometry("800x600")
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Category filter
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=5)
+
+        # Get categories
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT DISTINCT category FROM knowledge_base
+                WHERE status = 'published' AND category IS NOT NULL
+                ORDER BY category
+            ''')
+            categories = ['All Categories'] + [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+        except sqlite3.Error:
+            categories = ['All Categories']
+
+        category_var = tk.StringVar(value='All Categories')
+        category_combo = ttk.Combobox(filter_frame, textvariable=category_var,
+                                      values=categories, width=30)
+        category_combo.pack(side=tk.LEFT, padx=5)
+
+        # Articles list
+        columns = ('id', 'title', 'category', 'views', 'rating')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        tree.heading('id', text='ID')
+        tree.heading('title', text='Title')
+        tree.heading('category', text='Category')
+        tree.heading('views', text='Views')
+        tree.heading('rating', text='Rating')
+
+        tree.column('id', width=40)
+        tree.column('title', width=400)
+        tree.column('category', width=120)
+        tree.column('views', width=60)
+        tree.column('rating', width=100)
+
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=10)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=10)
+
+        def load_articles():
+            # Clear existing
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                where_clause = "WHERE status = 'published'"
+                params = []
+
+                if category_var.get() != 'All Categories':
+                    where_clause += " AND category = ?"
+                    params.append(category_var.get())
+
+                cursor.execute(f'''
+                    SELECT article_id, title, category, views, helpful_votes, unhelpful_votes
+                    FROM knowledge_base
+                    {where_clause}
+                    ORDER BY helpful_votes DESC, views DESC
+                ''', params)
+
+                articles = cursor.fetchall()
+                conn.close()
+
+                for article in articles:
+                    article_id, title, category, views, helpful, unhelpful = article
+                    total_votes = helpful + unhelpful
+                    rating = f"{helpful}/{total_votes}" if total_votes > 0 else "No votes"
+
+                    tree.insert('', tk.END, values=(article_id, title, category, views, rating))
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to load articles: {e}")
+
+        # Filter button
+        ttk.Button(filter_frame, text="Filter", command=load_articles).pack(side=tk.LEFT, padx=5)
+
+        # View detail button
+        ttk.Button(main_frame, text="View Details",
+                  command=lambda: self.view_kb_article_detail_gui_from_tree(tree)).pack(pady=5)
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=5)
+
+        # Double-click to view
+        tree.bind('<Double-1>', lambda e: self.view_kb_article_detail_gui_from_tree(tree))
+
+        # Initial load
+        load_articles()
+
+    def view_kb_article_detail_gui_from_tree(self, tree):
+        """View KB article detail from tree selection"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an article to view.")
+            return
+
+        item = tree.item(selection[0])
+        article_id = item['values'][0]
+        self.view_kb_article_detail_gui(article_id)
+
+    def view_kb_article_detail_gui(self, article_id):
+        """View detailed knowledge base article"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT kb.*, u.username as author
+                FROM knowledge_base kb
+                LEFT JOIN users u ON kb.author_id = u.id
+                WHERE kb.article_id = ?
+            ''', (article_id,))
+
+            article = cursor.fetchone()
+
+            if not article:
+                messagebox.showerror("Not Found", "Article not found.")
+                conn.close()
+                return
+
+            # Update view count
+            cursor.execute('''
+                UPDATE knowledge_base SET views = views + 1 WHERE article_id = ?
+            ''', (article_id,))
+            conn.commit()
+            conn.close()
+
+            # Create detail window
+            detail_window = tk.Toplevel(self.root)
+            detail_window.title(f"Article #{article[0]}: {article[1]}")
+            detail_window.geometry("700x600")
+
+            main_frame = ttk.Frame(detail_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Header info
+            info_frame = ttk.LabelFrame(main_frame, text="Article Information", padding="10")
+            info_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(info_frame, text=f"Title: {article[1]}", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Category: {article[3] or 'Uncategorized'}").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Author: {article[-1] or 'Unknown'}").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Status: {article[6]}").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Views: {article[7]}").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Helpful votes: {article[8]} | Unhelpful votes: {article[9]}").pack(anchor=tk.W)
+
+            if article[4]:  # tags
+                ttk.Label(info_frame, text=f"Tags: {article[4]}").pack(anchor=tk.W)
+
+            ttk.Label(info_frame, text=f"Created: {article[11]}").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=f"Updated: {article[12]}").pack(anchor=tk.W)
+
+            # Content
+            content_frame = ttk.LabelFrame(main_frame, text="Content", padding="10")
+            content_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+            content_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD, height=20)
+            content_text.pack(fill=tk.BOTH, expand=True)
+            content_text.insert('1.0', article[2])  # content
+            content_text.config(state=tk.DISABLED)
+
+            ttk.Button(main_frame, text="Close", command=detail_window.destroy).pack(pady=5)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load article: {e}")
+
+    def create_kb_article_gui(self):
+        """Create a new knowledge base article"""
+        if not self.auth.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to create articles.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Knowledge Base Article")
+        dialog.geometry("700x600")
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        ttk.Label(main_frame, text="Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        title_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=title_var, width=60).grid(row=0, column=1, pady=5, padx=5)
+
+        # Category
+        ttk.Label(main_frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        category_var = tk.StringVar()
+        categories = ["Technical Support", "Academic Inquiry", "Financial Services", "Account Access", "Other"]
+        ttk.Combobox(main_frame, textvariable=category_var, values=categories, width=57).grid(row=1, column=1, pady=5, padx=5)
+
+        # Tags
+        ttk.Label(main_frame, text="Tags (comma-separated):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        tags_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=tags_var, width=60).grid(row=2, column=1, pady=5, padx=5)
+
+        # Content
+        ttk.Label(main_frame, text="Content:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+        content_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, width=60, height=20)
+        content_text.grid(row=3, column=1, pady=5, padx=5)
+
+        def save_article():
+            title = title_var.get().strip()
+            category = category_var.get().strip()
+            tags = tags_var.get().strip()
+            content = content_text.get('1.0', tk.END).strip()
+
+            if not title or not content:
+                messagebox.showerror("Validation Error", "Title and content are required.")
+                return
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                author_id = self.auth.get_current_user()['id']
+
+                cursor.execute('''
+                    INSERT INTO knowledge_base
+                    (title, content, category, tags, author_id, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, 'published', ?, ?)
+                ''', (title, content, category, tags, author_id, now, now))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Knowledge base article created successfully!")
+                dialog.destroy()
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to create article: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=4, column=0, columnspan=2, pady=10)
+
+        ttk.Button(btn_frame, text="Save", command=save_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def edit_kb_article_gui(self):
+        """Edit an existing knowledge base article"""
+        if not self.auth.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to edit articles.")
+            return
+
+        # Ask for article ID
+        article_id = simpledialog.askinteger("Edit Article", "Enter article ID to edit:")
+        if not article_id:
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM knowledge_base WHERE article_id = ?', (article_id,))
+            article = cursor.fetchone()
+
+            if not article:
+                messagebox.showerror("Not Found", "Article not found.")
+                conn.close()
+                return
+
+            # Check permissions
+            if article[5] != self.auth.get_current_user()['id'] and not self.auth.has_permission('manage_tickets'):
+                messagebox.showerror("Permission Denied", "You don't have permission to edit this article.")
+                conn.close()
+                return
+
+            conn.close()
+
+            # Create edit dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Edit Article #{article_id}")
+            dialog.geometry("700x600")
+
+            main_frame = ttk.Frame(dialog, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Title
+            ttk.Label(main_frame, text="Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            title_var = tk.StringVar(value=article[1])
+            ttk.Entry(main_frame, textvariable=title_var, width=60).grid(row=0, column=1, pady=5, padx=5)
+
+            # Category
+            ttk.Label(main_frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            category_var = tk.StringVar(value=article[3] or '')
+            categories = ["Technical Support", "Academic Inquiry", "Financial Services", "Account Access", "Other"]
+            ttk.Combobox(main_frame, textvariable=category_var, values=categories, width=57).grid(row=1, column=1, pady=5, padx=5)
+
+            # Tags
+            ttk.Label(main_frame, text="Tags:").grid(row=2, column=0, sticky=tk.W, pady=5)
+            tags_var = tk.StringVar(value=article[4] or '')
+            ttk.Entry(main_frame, textvariable=tags_var, width=60).grid(row=2, column=1, pady=5, padx=5)
+
+            # Content
+            ttk.Label(main_frame, text="Content:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+            content_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, width=60, height=20)
+            content_text.grid(row=3, column=1, pady=5, padx=5)
+            content_text.insert('1.0', article[2])
+
+            def save_changes():
+                new_title = title_var.get().strip()
+                new_category = category_var.get().strip()
+                new_tags = tags_var.get().strip()
+                new_content = content_text.get('1.0', tk.END).strip()
+
+                if not new_title or not new_content:
+                    messagebox.showerror("Validation Error", "Title and content are required.")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    cursor.execute('''
+                        UPDATE knowledge_base
+                        SET title = ?, content = ?, category = ?, tags = ?, updated_at = ?
+                        WHERE article_id = ?
+                    ''', (new_title, new_content, new_category, new_tags, now, article_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Article updated successfully!")
+                    dialog.destroy()
+
+                except sqlite3.Error as e:
+                    messagebox.showerror("Error", f"Failed to update article: {e}")
+
+            # Buttons
+            btn_frame = ttk.Frame(main_frame)
+            btn_frame.grid(row=4, column=0, columnspan=2, pady=10)
+
+            ttk.Button(btn_frame, text="Save", command=save_changes).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load article: {e}")
+
+    def kb_statistics_gui(self):
+        """Display knowledge base statistics"""
+        if not self.auth.has_permission('view_all_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to view statistics.")
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get statistics
+            cursor.execute('SELECT COUNT(*) FROM knowledge_base WHERE status = "published"')
+            total_articles = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT title, views FROM knowledge_base
+                WHERE status = 'published'
+                ORDER BY views DESC
+                LIMIT 5
+            ''')
+            top_viewed = cursor.fetchall()
+
+            cursor.execute('''
+                SELECT title, helpful_votes, unhelpful_votes
+                FROM knowledge_base
+                WHERE status = 'published' AND (helpful_votes + unhelpful_votes) > 0
+                ORDER BY (helpful_votes * 1.0 / (helpful_votes + unhelpful_votes)) DESC
+                LIMIT 5
+            ''')
+            top_helpful = cursor.fetchall()
+
+            cursor.execute('''
+                SELECT category, COUNT(*) as count
+                FROM knowledge_base
+                WHERE status = 'published'
+                GROUP BY category
+                ORDER BY count DESC
+            ''')
+            categories = cursor.fetchall()
+
+            conn.close()
+
+            # Create statistics window
+            stats_window = tk.Toplevel(self.root)
+            stats_window.title("Knowledge Base Statistics")
+            stats_window.geometry("600x500")
+
+            main_frame = ttk.Frame(stats_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Total articles
+            ttk.Label(main_frame, text=f"Total Published Articles: {total_articles}",
+                     font=('Arial', 12, 'bold')).pack(anchor=tk.W, pady=10)
+
+            # Most viewed
+            viewed_frame = ttk.LabelFrame(main_frame, text="Most Viewed Articles", padding="10")
+            viewed_frame.pack(fill=tk.X, pady=5)
+
+            for title, views in top_viewed:
+                ttk.Label(viewed_frame, text=f"{title[:50]}: {views} views").pack(anchor=tk.W)
+
+            # Most helpful
+            helpful_frame = ttk.LabelFrame(main_frame, text="Most Helpful Articles", padding="10")
+            helpful_frame.pack(fill=tk.X, pady=5)
+
+            for title, helpful, unhelpful in top_helpful:
+                total_votes = helpful + unhelpful
+                helpfulness = (helpful / total_votes * 100) if total_votes > 0 else 0
+                ttk.Label(helpful_frame, text=f"{title[:50]}: {helpfulness:.1f}% helpful ({total_votes} votes)").pack(anchor=tk.W)
+
+            # Categories
+            cat_frame = ttk.LabelFrame(main_frame, text="Articles by Category", padding="10")
+            cat_frame.pack(fill=tk.X, pady=5)
+
+            for category, count in categories:
+                ttk.Label(cat_frame, text=f"{category or 'Uncategorized'}: {count}").pack(anchor=tk.W)
+
+            ttk.Button(main_frame, text="Close", command=stats_window.destroy).pack(pady=10)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load statistics: {e}")
+
+    def display_kb_suggestions_gui(self, ticket):
+        """Display knowledge base article suggestions for a ticket"""
+        if not ticket or not ticket.get('knowledge_base_articles'):
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            article_ids = ticket['knowledge_base_articles'].split(',')
+            placeholders = ','.join(['?' for _ in article_ids])
+
+            cursor.execute(f'''
+                SELECT article_id, title, category, helpful_votes, unhelpful_votes
+                FROM knowledge_base
+                WHERE article_id IN ({placeholders}) AND status = 'published'
+            ''', article_ids)
+
+            articles = cursor.fetchall()
+            conn.close()
+
+            if not articles:
+                return
+
+            # Create suggestions window
+            suggest_window = tk.Toplevel(self.root)
+            suggest_window.title("Suggested Knowledge Base Articles")
+            suggest_window.geometry("600x400")
+
+            main_frame = ttk.Frame(suggest_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text="Suggested Articles That Might Help:",
+                     font=('Arial', 12, 'bold')).pack(anchor=tk.W, pady=10)
+
+            # Article list
+            for article in articles:
+                article_id, title, category, helpful, unhelpful = article
+                total_votes = helpful + unhelpful
+                helpful_ratio = (helpful / total_votes * 100) if total_votes > 0 else 0
+
+                article_frame = ttk.Frame(main_frame)
+                article_frame.pack(fill=tk.X, pady=5)
+
+                ttk.Label(article_frame, text=f"• {title}", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+                ttk.Label(article_frame, text=f"  Category: {category} - {helpful_ratio:.0f}% helpful").pack(anchor=tk.W)
+
+                ttk.Button(article_frame, text="View Article",
+                          command=lambda aid=article_id: self.view_kb_article_detail_gui(aid)).pack(anchor=tk.W, padx=20)
+
+            ttk.Button(main_frame, text="Close", command=suggest_window.destroy).pack(pady=10)
+
+        except sqlite3.Error as e:
+            print(f"Error loading KB suggestions: {e}")
+
+    def suggest_knowledge_base_articles_gui(self, ticket_id, content):
+        """Suggest relevant knowledge base articles based on ticket content"""
+        try:
+            # Extract keywords
+            keywords = self.extract_keywords_gui(content.lower())
+
+            if not keywords:
+                return
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Search for articles with matching keywords
+            keyword_conditions = []
+            params = []
+
+            for keyword in keywords[:5]:  # Limit to top 5 keywords
+                keyword_conditions.append("(title LIKE ? OR content LIKE ? OR search_keywords LIKE ?)")
+                params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+
+            if keyword_conditions:
+                query = f'''
+                    SELECT article_id, title, category
+                    FROM knowledge_base
+                    WHERE status = 'published' AND ({" OR ".join(keyword_conditions)})
+                    ORDER BY helpful_votes DESC, views DESC
+                    LIMIT 3
+                '''
+
+                cursor.execute(query, params)
+                articles = cursor.fetchall()
+
+                if articles:
+                    # Store suggestions in ticket
+                    article_ids = [str(a[0]) for a in articles]
+                    cursor.execute('''
+                        UPDATE support_tickets
+                        SET knowledge_base_articles = ?
+                        WHERE ticket_id = ?
+                    ''', (','.join(article_ids), ticket_id))
+
+                    conn.commit()
+
+            conn.close()
+
+        except sqlite3.Error as e:
+            print(f"Error suggesting KB articles: {e}")
+
+    def extract_keywords_gui(self, text):
+        """Extract relevant keywords from text"""
+        # Remove common words and extract meaningful terms
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                      'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have',
+                      'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+                      'may', 'might', 'can', 'cant', 'cannot', 'i', 'you', 'he', 'she', 'it',
+                      'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his',
+                      'her', 'its', 'our', 'their'}
+
+        # Simple word extraction
+        import re
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', text)
+        keywords = [word for word in words if word.lower() not in stop_words]
+
+        # Return most frequent keywords
+        from collections import Counter
+        word_counts = Counter(keywords)
+        return [word for word, count in word_counts.most_common(10)]
+
 
 def run_gui_helpdesk(auth_system=None):
     """Run the GUI helpdesk system"""
@@ -7604,7 +8624,7 @@ if __name__ == "__main__":
     print("Starting Enhanced Helpdesk System GUI...")
     print("This GUI version is fully backwards compatible with the original CLI system.")
     print("Use the 'CLI Mode' button to switch to the original interface.")
-    
+
     try:
         run_gui_helpdesk()
     except Exception as e:
