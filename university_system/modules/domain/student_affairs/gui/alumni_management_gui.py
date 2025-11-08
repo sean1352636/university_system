@@ -1502,7 +1502,334 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Total Connections: 3
 """
         connections_text.insert(tk.END, connections_content)
-    
+
+    def send_connection_request(self):
+        """Send connection request to another alumni"""
+        self.clear_content()
+        self.update_status("Send Connection Request")
+
+        ttk.Label(self.content_frame, text="Send Connection Request",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Alumni search
+        search_frame = ttk.LabelFrame(self.content_frame, text="Find Alumni", padding=10)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        ttk.Label(search_frame, text="Search by name:").pack(side=tk.LEFT, padx=(0, 10))
+        self.connection_search = tk.StringVar()
+        ttk.Entry(search_frame, textvariable=self.connection_search, width=30).pack(side=tk.LEFT, padx=(0, 20))
+
+        ttk.Button(search_frame, text="Search",
+                  command=self._search_alumni_for_connection).pack(side=tk.LEFT)
+
+        # Search results
+        results_frame = ttk.LabelFrame(self.content_frame, text="Alumni", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Name', 'Graduation Year', 'Industry', 'Location', 'Status')
+        self.connection_alumni_tree = ttk.Treeview(results_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.connection_alumni_tree.heading(col, text=col)
+            self.connection_alumni_tree.column(col, width=130)
+
+        scrollbar_y = ttk.Scrollbar(results_frame, orient=tk.VERTICAL,
+                                    command=self.connection_alumni_tree.yview)
+        self.connection_alumni_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.connection_alumni_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Send Connection Request",
+                  command=self._send_selected_connection_request).pack(side=tk.LEFT)
+
+    def _search_alumni_for_connection(self):
+        """Search alumni for connection requests"""
+        try:
+            # Clear existing results
+            for item in self.connection_alumni_tree.get_children():
+                self.connection_alumni_tree.delete(item)
+
+            search_term = self.connection_search.get().strip()
+            if not search_term:
+                messagebox.showwarning("Search Required", "Please enter a search term.")
+                return
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT a.alumni_id, a.first_name || ' ' || a.last_name,
+                           a.graduation_year, a.industry, a.location,
+                           CASE
+                               WHEN EXISTS (
+                                   SELECT 1 FROM alumni_connections
+                                   WHERE (requester_id = ? AND recipient_id = a.alumni_id)
+                                   OR (requester_id = a.alumni_id AND recipient_id = ?)
+                               ) THEN 'Connected/Pending'
+                               ELSE 'Not Connected'
+                           END as status
+                    FROM alumni_directory a
+                    WHERE (a.first_name LIKE ? OR a.last_name LIKE ?)
+                    AND a.alumni_id != ?
+                    ORDER BY a.last_name
+                """
+                cursor.execute(query, (user_id, user_id, f"%{search_term}%", f"%{search_term}%", user_id))
+                results = cursor.fetchall()
+
+                for alumni in results:
+                    # Display without alumni_id
+                    self.connection_alumni_tree.insert('', tk.END, values=alumni[1:])
+
+                self.update_status(f"Found {len(results)} alumni")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+    def _send_selected_connection_request(self):
+        """Send connection request to selected alumni"""
+        if not hasattr(self, 'connection_alumni_tree'):
+            return
+
+        selection = self.connection_alumni_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select an alumni to connect with.")
+            return
+
+        item = self.connection_alumni_tree.item(selection[0])
+        alumni_data = item['values']
+
+        # Check if already connected
+        if alumni_data[4] == 'Connected/Pending':
+            messagebox.showinfo("Already Connected",
+                              "You already have a connection or pending request with this alumni.")
+            return
+
+        # Create message dialog
+        msg_window = tk.Toplevel(self.root)
+        msg_window.title("Connection Request Message")
+        msg_window.geometry("500x300")
+        msg_window.configure(bg='white')
+        msg_window.grab_set()
+
+        frame = ttk.Frame(msg_window, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"Send connection request to {alumni_data[0]}",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        ttk.Label(frame, text="Message (optional):").pack(anchor='w')
+        message_text = ScrolledText(frame, height=6, wrap=tk.WORD)
+        message_text.pack(fill=tk.BOTH, expand=True, pady=(5, 20))
+
+        def send_request():
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    user_id = self._current_user_id()
+
+                    # Get recipient_id from name
+                    name_parts = alumni_data[0].split()
+                    first_name = name_parts[0] if name_parts else ''
+                    last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+
+                    cursor.execute("""
+                        SELECT alumni_id FROM alumni_directory
+                        WHERE first_name = ? AND last_name = ?
+                    """, (first_name, last_name))
+                    result = cursor.fetchone()
+
+                    if result:
+                        recipient_id = result[0]
+
+                        cursor.execute("""
+                            INSERT INTO alumni_connections (
+                                requester_id, recipient_id, status, message, request_date
+                            ) VALUES (?, ?, 'pending', ?, datetime('now'))
+                        """, (user_id, recipient_id, message_text.get(1.0, tk.END).strip()))
+
+                        conn.commit()
+
+                        messagebox.showinfo("Success", "Connection request sent!")
+                        msg_window.destroy()
+                        self._search_alumni_for_connection()  # Refresh
+
+                        # Log activity
+                        from university_system.modules.shared.utils.activity_logger import log_activity
+                        log_activity('create', 'connection_request',
+                                   details={'recipient': alumni_data[0]})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send request: {str(e)}")
+
+        ttk.Button(frame, text="Send Request",
+                  command=send_request).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(frame, text="Cancel",
+                  command=msg_window.destroy).pack(side=tk.LEFT)
+
+    def view_connection_requests(self):
+        """View pending connection requests"""
+        self.clear_content()
+        self.update_status("Connection Requests")
+
+        ttk.Label(self.content_frame, text="Connection Requests",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Tabs
+        notebook = ttk.Notebook(self.content_frame)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Incoming requests tab
+        incoming_frame = ttk.Frame(notebook)
+        notebook.add(incoming_frame, text="Incoming Requests")
+
+        incoming_table = ttk.Frame(incoming_frame)
+        incoming_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('From', 'Industry', 'Message', 'Date')
+        self.incoming_requests_tree = ttk.Treeview(incoming_table, columns=columns, show='headings')
+
+        for col in columns:
+            self.incoming_requests_tree.heading(col, text=col)
+            self.incoming_requests_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(incoming_table, orient=tk.VERTICAL,
+                                    command=self.incoming_requests_tree.yview)
+        self.incoming_requests_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.incoming_requests_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load incoming requests
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT a.first_name || ' ' || a.last_name, a.industry,
+                           c.message, c.request_date
+                    FROM alumni_connections c
+                    JOIN alumni_directory a ON c.requester_id = a.alumni_id
+                    WHERE c.recipient_id = ? AND c.status = 'pending'
+                    ORDER BY c.request_date DESC
+                """
+                cursor.execute(query, (user_id,))
+                requests = cursor.fetchall()
+
+                for req in requests:
+                    self.incoming_requests_tree.insert('', tk.END, values=req)
+
+                self.update_status(f"{len(requests)} incoming request(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load requests: {str(e)}")
+
+        # Action buttons for incoming
+        incoming_buttons = ttk.Frame(incoming_frame)
+        incoming_buttons.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(incoming_buttons, text="Accept",
+                  command=lambda: self._respond_to_request('accepted')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(incoming_buttons, text="Decline",
+                  command=lambda: self._respond_to_request('declined')).pack(side=tk.LEFT)
+
+        # Outgoing requests tab
+        outgoing_frame = ttk.Frame(notebook)
+        notebook.add(outgoing_frame, text="Sent Requests")
+
+        outgoing_table = ttk.Frame(outgoing_frame)
+        outgoing_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns_out = ('To', 'Industry', 'Status', 'Date')
+        self.outgoing_requests_tree = ttk.Treeview(outgoing_table, columns=columns_out, show='headings')
+
+        for col in columns_out:
+            self.outgoing_requests_tree.heading(col, text=col)
+            self.outgoing_requests_tree.column(col, width=150)
+
+        scrollbar_y2 = ttk.Scrollbar(outgoing_table, orient=tk.VERTICAL,
+                                     command=self.outgoing_requests_tree.yview)
+        self.outgoing_requests_tree.configure(yscrollcommand=scrollbar_y2.set)
+
+        self.outgoing_requests_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y2.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load outgoing requests
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT a.first_name || ' ' || a.last_name, a.industry,
+                           c.status, c.request_date
+                    FROM alumni_connections c
+                    JOIN alumni_directory a ON c.recipient_id = a.alumni_id
+                    WHERE c.requester_id = ?
+                    ORDER BY c.request_date DESC
+                """
+                cursor.execute(query, (user_id,))
+                requests = cursor.fetchall()
+
+                for req in requests:
+                    self.outgoing_requests_tree.insert('', tk.END, values=req)
+
+        except Exception as e:
+            pass
+
+    def _respond_to_request(self, response):
+        """Respond to a connection request"""
+        if not hasattr(self, 'incoming_requests_tree'):
+            return
+
+        selection = self.incoming_requests_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a request.")
+            return
+
+        item = self.incoming_requests_tree.item(selection[0])
+        request_data = item['values']
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                # Get requester_id from name
+                name_parts = request_data[0].split()
+                first_name = name_parts[0] if name_parts else ''
+                last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+
+                cursor.execute("""
+                    UPDATE alumni_connections
+                    SET status = ?, response_date = datetime('now')
+                    WHERE recipient_id = ?
+                    AND requester_id = (
+                        SELECT alumni_id FROM alumni_directory
+                        WHERE first_name = ? AND last_name = ?
+                    )
+                    AND status = 'pending'
+                """, (response, user_id, first_name, last_name))
+
+                conn.commit()
+
+            messagebox.showinfo("Success", f"Request {response}!")
+            self.view_connection_requests()  # Refresh
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('update', 'connection_request',
+                       details={'requester': request_data[0], 'action': response})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to respond: {str(e)}")
+
     def show_business_directory(self):
         """Show business directory interface"""
         self.clear_content()
@@ -1681,7 +2008,384 @@ Total Connections: 3
             var.set("")
         self.business_desc.delete(1.0, tk.END)
         self.business_services.delete(1.0, tk.END)
-    
+
+    def update_business_listing(self):
+        """Edit an existing business listing"""
+        self.clear_content()
+        self.update_status("Update Business Listing")
+
+        ttk.Label(self.content_frame, text="Update Business Listing",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Business selection
+        select_frame = ttk.LabelFrame(self.content_frame, text="Select Business to Update", padding=10)
+        select_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        ttk.Label(select_frame, text="Select Business:").pack(side=tk.LEFT, padx=(0, 10))
+        self.selected_business = tk.StringVar()
+
+        # Load businesses owned by user
+        business_options = []
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                cursor.execute("""
+                    SELECT listing_id, business_name, industry
+                    FROM business_directory
+                    WHERE owner_id = ?
+                    ORDER BY business_name
+                """, (user_id,))
+                businesses = cursor.fetchall()
+                business_options = [f"{b[1]} - {b[2]} (ID: {b[0]})" for b in businesses]
+        except:
+            pass
+
+        if not business_options:
+            business_options = ["No businesses to update"]
+
+        business_combo = ttk.Combobox(select_frame, textvariable=self.selected_business,
+                                     values=business_options, width=50)
+        business_combo.pack(side=tk.LEFT, padx=(0, 20))
+        if business_options and business_options[0] != "No businesses to update":
+            business_combo.set(business_options[0])
+
+        ttk.Button(select_frame, text="Load Business",
+                  command=self._load_business_for_edit).pack(side=tk.LEFT)
+
+        # Edit form
+        self.business_edit_frame = ttk.LabelFrame(self.content_frame, text="Business Details", padding=10)
+        self.business_edit_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Form fields
+        self.edit_business_vars = {}
+
+        fields = [
+            ("Business Name*", "name"),
+            ("Industry*", "industry"),
+            ("Website", "website"),
+            ("Email*", "email"),
+            ("Phone", "phone"),
+            ("Location", "location")
+        ]
+
+        for label, var_name in fields:
+            field_frame = ttk.Frame(self.business_edit_frame)
+            field_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(field_frame, text=label, width=15).pack(side=tk.LEFT, padx=(0, 10))
+            self.edit_business_vars[var_name] = tk.StringVar()
+            ttk.Entry(field_frame, textvariable=self.edit_business_vars[var_name]).pack(
+                side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Description
+        ttk.Label(self.business_edit_frame, text="Description:").pack(anchor='w', pady=(10, 5))
+        self.edit_business_description = ScrolledText(self.business_edit_frame, height=5, wrap=tk.WORD)
+        self.edit_business_description.pack(fill=tk.X)
+
+        # Services
+        ttk.Label(self.business_edit_frame, text="Services Offered:").pack(anchor='w', pady=(10, 5))
+        self.edit_business_services = ScrolledText(self.business_edit_frame, height=4, wrap=tk.WORD)
+        self.edit_business_services.pack(fill=tk.X)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.business_edit_frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+
+        ttk.Button(button_frame, text="Save Changes",
+                  command=self._save_business_changes).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Delete Listing",
+                  command=self._delete_business_listing).pack(side=tk.LEFT)
+
+    def _load_business_for_edit(self):
+        """Load selected business data into edit form"""
+        business_selection = self.selected_business.get()
+        if not business_selection or business_selection == "No businesses to update":
+            messagebox.showwarning("No Selection", "Please select a business to update.")
+            return
+
+        # Extract listing_id
+        import re
+        match = re.search(r'ID:\s*(\d+)', business_selection)
+        if not match:
+            messagebox.showerror("Error", "Invalid business selection.")
+            return
+
+        listing_id = int(match.group(1))
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT business_name, industry, website, email, phone,
+                           location, description, services
+                    FROM business_directory
+                    WHERE listing_id = ?
+                """, (listing_id,))
+                business = cursor.fetchone()
+
+                if business:
+                    self.edit_business_vars['name'].set(business[0] or '')
+                    self.edit_business_vars['industry'].set(business[1] or '')
+                    self.edit_business_vars['website'].set(business[2] or '')
+                    self.edit_business_vars['email'].set(business[3] or '')
+                    self.edit_business_vars['phone'].set(business[4] or '')
+                    self.edit_business_vars['location'].set(business[5] or '')
+
+                    self.edit_business_description.delete(1.0, tk.END)
+                    if business[6]:
+                        self.edit_business_description.insert(tk.END, business[6])
+
+                    self.edit_business_services.delete(1.0, tk.END)
+                    if business[7]:
+                        self.edit_business_services.insert(tk.END, business[7])
+
+                    self.update_status(f"Loaded business: {business[0]}")
+                else:
+                    messagebox.showerror("Error", "Business not found.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load business: {str(e)}")
+
+    def _save_business_changes(self):
+        """Save changes to business listing"""
+        business_selection = self.selected_business.get()
+        if not business_selection:
+            return
+
+        # Extract listing_id
+        import re
+        match = re.search(r'ID:\s*(\d+)', business_selection)
+        if not match:
+            return
+
+        listing_id = int(match.group(1))
+
+        # Validation
+        if not self.edit_business_vars['name'].get():
+            messagebox.showerror("Validation Error", "Business name is required!")
+            return
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE business_directory
+                    SET business_name = ?, industry = ?, website = ?,
+                        email = ?, phone = ?, location = ?,
+                        description = ?, services = ?
+                    WHERE listing_id = ?
+                """, (
+                    self.edit_business_vars['name'].get(),
+                    self.edit_business_vars['industry'].get(),
+                    self.edit_business_vars['website'].get(),
+                    self.edit_business_vars['email'].get(),
+                    self.edit_business_vars['phone'].get(),
+                    self.edit_business_vars['location'].get(),
+                    self.edit_business_description.get(1.0, tk.END).strip(),
+                    self.edit_business_services.get(1.0, tk.END).strip(),
+                    listing_id
+                ))
+                conn.commit()
+
+            messagebox.showinfo("Success", "Business listing updated successfully!")
+            self.update_status("Business listing saved")
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('update', 'business_listing', listing_id=listing_id,
+                       details={'name': self.edit_business_vars['name'].get()})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save changes: {str(e)}")
+
+    def _delete_business_listing(self):
+        """Delete a business listing"""
+        if messagebox.askyesno("Confirm Deletion",
+                              "Are you sure you want to delete this business listing?"):
+            business_selection = self.selected_business.get()
+            if not business_selection:
+                return
+
+            # Extract listing_id
+            import re
+            match = re.search(r'ID:\s*(\d+)', business_selection)
+            if not match:
+                return
+
+            listing_id = int(match.group(1))
+
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM business_directory WHERE listing_id = ?", (listing_id,))
+                    conn.commit()
+
+                messagebox.showinfo("Success", "Business listing deleted successfully!")
+                self.update_business_listing()  # Reload
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('delete', 'business_listing', listing_id=listing_id,
+                           details={'action': 'deleted'})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete listing: {str(e)}")
+
+    def search_business_directory(self):
+        """Search businesses in the directory"""
+        self.clear_content()
+        self.update_status("Search Business Directory")
+
+        ttk.Label(self.content_frame, text="Search Business Directory",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Search criteria
+        search_frame = ttk.LabelFrame(self.content_frame, text="Search Criteria", padding=10)
+        search_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        # Row 1: Keyword and Industry
+        row1 = ttk.Frame(search_frame)
+        row1.pack(fill=tk.X, pady=5)
+
+        ttk.Label(row1, text="Keyword:").pack(side=tk.LEFT, padx=(0, 10))
+        self.biz_search_keyword = tk.StringVar()
+        ttk.Entry(row1, textvariable=self.biz_search_keyword, width=25).pack(side=tk.LEFT, padx=(0, 20))
+
+        ttk.Label(row1, text="Industry:").pack(side=tk.LEFT, padx=(0, 10))
+        self.biz_search_industry = tk.StringVar()
+        industry_combo = ttk.Combobox(row1, textvariable=self.biz_search_industry,
+                                     values=["All", "Technology", "Finance", "Healthcare",
+                                            "Education", "Marketing", "Consulting", "Other"])
+        industry_combo.pack(side=tk.LEFT)
+        industry_combo.set("All")
+
+        # Row 2: Location
+        row2 = ttk.Frame(search_frame)
+        row2.pack(fill=tk.X, pady=5)
+
+        ttk.Label(row2, text="Location:").pack(side=tk.LEFT, padx=(0, 10))
+        self.biz_search_location = tk.StringVar()
+        ttk.Entry(row2, textvariable=self.biz_search_location, width=25).pack(side=tk.LEFT)
+
+        # Search button
+        ttk.Button(search_frame, text="Search",
+                  command=self._perform_business_search).pack(pady=(10, 0))
+
+        # Results table
+        results_frame = ttk.LabelFrame(self.content_frame, text="Search Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Business Name', 'Industry', 'Location', 'Owner', 'Contact')
+        self.biz_search_tree = ttk.Treeview(results_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.biz_search_tree.heading(col, text=col)
+            self.biz_search_tree.column(col, width=140)
+
+        scrollbar_y = ttk.Scrollbar(results_frame, orient=tk.VERTICAL,
+                                    command=self.biz_search_tree.yview)
+        self.biz_search_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.biz_search_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="View Details",
+                  command=self._view_business_details).pack(side=tk.LEFT)
+
+    def _perform_business_search(self):
+        """Perform business directory search"""
+        try:
+            # Clear existing results
+            for item in self.biz_search_tree.get_children():
+                self.biz_search_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Build query
+                query = """
+                    SELECT business_name, industry, location, owner_name, email
+                    FROM business_directory
+                    WHERE 1=1
+                """
+                params = []
+
+                # Add keyword filter
+                keyword = self.biz_search_keyword.get().strip()
+                if keyword:
+                    query += " AND (business_name LIKE ? OR description LIKE ? OR services LIKE ?)"
+                    params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+
+                # Add industry filter
+                industry = self.biz_search_industry.get()
+                if industry != "All":
+                    query += " AND industry = ?"
+                    params.append(industry)
+
+                # Add location filter
+                location = self.biz_search_location.get().strip()
+                if location:
+                    query += " AND location LIKE ?"
+                    params.append(f"%{location}%")
+
+                query += " ORDER BY business_name"
+
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+                for business in results:
+                    self.biz_search_tree.insert('', tk.END, values=business)
+
+                self.update_status(f"Found {len(results)} business(es)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+    def _view_business_details(self):
+        """View details for selected business"""
+        if not hasattr(self, 'biz_search_tree'):
+            return
+
+        selection = self.biz_search_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a business to view.")
+            return
+
+        item = self.biz_search_tree.item(selection[0])
+        business_data = item['values']
+
+        # Create details window
+        details_window = tk.Toplevel(self.root)
+        details_window.title(f"Business Details - {business_data[0]}")
+        details_window.geometry("600x500")
+        details_window.configure(bg='white')
+
+        frame = ttk.Frame(details_window, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=business_data[0],
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        info_frame = ttk.Frame(frame)
+        info_frame.pack(fill=tk.X, pady=(0, 20))
+
+        info_text = f"""
+Industry: {business_data[1]}
+Location: {business_data[2]}
+Owner: {business_data[3]}
+Contact: {business_data[4]}
+"""
+        ttk.Label(info_frame, text=info_text, justify=tk.LEFT).pack(anchor='w')
+
+        ttk.Button(frame, text="Close",
+                  command=details_window.destroy).pack()
+
     def show_regional_chapters(self):
         """Show regional chapters interface"""
         self.clear_content()
@@ -5775,7 +6479,418 @@ Recent Impact: Helped 23 students with emergency expenses
             else:
                 var.set("")
         self.campaign_description.delete(1.0, tk.END)
-    
+
+    def view_campaign_performance(self):
+        """View analytics for a specific campaign"""
+        self.clear_content()
+        self.update_status("Campaign Performance")
+
+        ttk.Label(self.content_frame, text="Campaign Performance Analytics",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Campaign selection
+        select_frame = ttk.LabelFrame(self.content_frame, text="Select Campaign", padding=10)
+        select_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        ttk.Label(select_frame, text="Campaign:").pack(side=tk.LEFT, padx=(0, 10))
+        self.selected_campaign = tk.StringVar()
+
+        # Load campaigns
+        campaign_options = []
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT campaign_id, campaign_name, goal_amount, start_date, end_date
+                    FROM fundraising_campaigns
+                    ORDER BY start_date DESC
+                """)
+                campaigns = cursor.fetchall()
+                campaign_options = [f"{c[1]} (${c[2]:,.2f} goal) - {c[3]} (ID: {c[0]})" for c in campaigns]
+        except:
+            pass
+
+        if not campaign_options:
+            campaign_options = ["No campaigns available"]
+
+        campaign_combo = ttk.Combobox(select_frame, textvariable=self.selected_campaign,
+                                     values=campaign_options, width=60)
+        campaign_combo.pack(side=tk.LEFT, padx=(0, 20))
+        if campaign_options and campaign_options[0] != "No campaigns available":
+            campaign_combo.set(campaign_options[0])
+
+        ttk.Button(select_frame, text="Load Performance",
+                  command=self._load_campaign_performance).pack(side=tk.LEFT)
+
+        # Performance metrics
+        self.performance_frame = ttk.LabelFrame(self.content_frame, text="Performance Metrics", padding=10)
+        self.performance_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Summary metrics
+        summary_frame = ttk.Frame(self.performance_frame)
+        summary_frame.pack(fill=tk.X, pady=(0, 20))
+
+        self.performance_labels = {}
+        metrics = ['Total Raised', 'Number of Donors', 'Average Donation', 'Goal Progress']
+
+        for i, metric in enumerate(metrics):
+            metric_frame = ttk.Frame(summary_frame)
+            metric_frame.grid(row=0, column=i, padx=10, pady=5, sticky='ew')
+
+            ttk.Label(metric_frame, text=metric, font=('Arial', 10, 'bold')).pack()
+            self.performance_labels[metric] = ttk.Label(metric_frame, text="--",
+                                                        font=('Arial', 14))
+            self.performance_labels[metric].pack()
+
+        summary_frame.columnconfigure((0, 1, 2, 3), weight=1)
+
+        # Donation history
+        history_frame = ttk.LabelFrame(self.performance_frame, text="Recent Donations", padding=10)
+        history_frame.pack(fill=tk.BOTH, expand=True)
+
+        columns = ('Donor', 'Amount', 'Date', 'Payment Method')
+        self.campaign_donations_tree = ttk.Treeview(history_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.campaign_donations_tree.heading(col, text=col)
+            self.campaign_donations_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(history_frame, orient=tk.VERTICAL,
+                                    command=self.campaign_donations_tree.yview)
+        self.campaign_donations_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.campaign_donations_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def _load_campaign_performance(self):
+        """Load and display campaign performance data"""
+        campaign_selection = self.selected_campaign.get()
+        if not campaign_selection or campaign_selection == "No campaigns available":
+            messagebox.showwarning("No Selection", "Please select a campaign.")
+            return
+
+        # Extract campaign_id
+        import re
+        match = re.search(r'ID:\s*(\d+)', campaign_selection)
+        if not match:
+            messagebox.showerror("Error", "Invalid campaign selection.")
+            return
+
+        campaign_id = int(match.group(1))
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get campaign details and performance
+                cursor.execute("""
+                    SELECT campaign_name, goal_amount,
+                           (SELECT COALESCE(SUM(amount), 0) FROM donations WHERE campaign_id = ?) as total_raised,
+                           (SELECT COUNT(*) FROM donations WHERE campaign_id = ?) as donor_count
+                    FROM fundraising_campaigns
+                    WHERE campaign_id = ?
+                """, (campaign_id, campaign_id, campaign_id))
+                campaign_data = cursor.fetchone()
+
+                if campaign_data:
+                    campaign_name, goal, total_raised, donor_count = campaign_data
+
+                    # Calculate metrics
+                    avg_donation = total_raised / donor_count if donor_count > 0 else 0
+                    progress_pct = (total_raised / goal * 100) if goal > 0 else 0
+
+                    # Update labels
+                    self.performance_labels['Total Raised'].config(text=f"${total_raised:,.2f}")
+                    self.performance_labels['Number of Donors'].config(text=str(donor_count))
+                    self.performance_labels['Average Donation'].config(text=f"${avg_donation:,.2f}")
+                    self.performance_labels['Goal Progress'].config(text=f"{progress_pct:.1f}%")
+
+                    # Load recent donations
+                    for item in self.campaign_donations_tree.get_children():
+                        self.campaign_donations_tree.delete(item)
+
+                    cursor.execute("""
+                        SELECT donor_name, amount, donation_date, payment_method
+                        FROM donations
+                        WHERE campaign_id = ?
+                        ORDER BY donation_date DESC
+                        LIMIT 100
+                    """, (campaign_id,))
+                    donations = cursor.fetchall()
+
+                    for donation in donations:
+                        formatted = list(donation)
+                        formatted[1] = f"${formatted[1]:,.2f}"
+                        self.campaign_donations_tree.insert('', tk.END, values=formatted)
+
+                    self.update_status(f"Loaded performance for: {campaign_name}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load performance: {str(e)}")
+
+    def update_donor_recognition_levels(self):
+        """Configure donor recognition tiers"""
+        if not self.has_permission('admin') and not self.has_permission('manage_fundraising'):
+            messagebox.showerror("Permission Denied",
+                               "You don't have permission to manage donor recognition levels.")
+            return
+
+        self.clear_content()
+        self.update_status("Donor Recognition Levels")
+
+        ttk.Label(self.content_frame, text="Donor Recognition Levels",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Recognition levels table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Level Name', 'Min Amount', 'Max Amount', 'Benefits', 'Status')
+        self.recognition_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.recognition_tree.heading(col, text=col)
+            self.recognition_tree.column(col, width=140)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.recognition_tree.yview)
+        self.recognition_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.recognition_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load recognition levels
+        self._load_recognition_levels()
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Add New Level",
+                  command=self._add_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Edit Level",
+                  command=self._edit_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Delete Level",
+                  command=self._delete_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_recognition_levels).pack(side=tk.LEFT)
+
+    def _load_recognition_levels(self):
+        """Load donor recognition levels"""
+        try:
+            # Clear existing data
+            for item in self.recognition_tree.get_children():
+                self.recognition_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    SELECT level_name, min_amount, max_amount, benefits, status
+                    FROM donor_recognition_levels
+                    ORDER BY min_amount
+                """)
+                levels = cursor.fetchall()
+
+                for level in levels:
+                    formatted = list(level)
+                    formatted[1] = f"${formatted[1]:,.2f}" if formatted[1] else "N/A"
+                    formatted[2] = f"${formatted[2]:,.2f}" if formatted[2] else "No limit"
+                    self.recognition_tree.insert('', tk.END, values=formatted)
+
+                self.update_status(f"Loaded {len(levels)} recognition level(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load levels: {str(e)}")
+
+    def _add_recognition_level(self):
+        """Add a new recognition level"""
+        messagebox.showinfo("Feature", "Recognition level editor dialog would open here.")
+
+    def _edit_recognition_level(self):
+        """Edit selected recognition level"""
+        selection = self.recognition_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a level to edit.")
+            return
+        messagebox.showinfo("Feature", "Recognition level editor dialog would open here.")
+
+    def _delete_recognition_level(self):
+        """Delete selected recognition level"""
+        selection = self.recognition_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a level to delete.")
+            return
+
+        if messagebox.askyesno("Confirm Deletion",
+                              "Are you sure you want to delete this recognition level?"):
+            messagebox.showinfo("Success", "Recognition level deleted!")
+            self._load_recognition_levels()
+
+    def view_alumni_stories(self):
+        """List all alumni stories"""
+        self.clear_content()
+        self.update_status("Alumni Stories")
+
+        ttk.Label(self.content_frame, text="Alumni Stories",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Filter frame
+        filter_frame = ttk.Frame(self.content_frame)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+        self.story_filter_category = tk.StringVar()
+        category_combo = ttk.Combobox(filter_frame, textvariable=self.story_filter_category,
+                                     values=["All", "Career Success", "Entrepreneurship", "Community Impact",
+                                            "Academic Achievement", "Personal Journey"])
+        category_combo.pack(side=tk.LEFT, padx=(0, 20))
+        category_combo.set("All")
+
+        ttk.Button(filter_frame, text="Filter",
+                  command=self._load_alumni_stories).pack(side=tk.LEFT)
+
+        # Stories table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Title', 'Author', 'Category', 'Published Date', 'Views')
+        self.stories_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.stories_tree.heading(col, text=col)
+            self.stories_tree.column(col, width=140)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.stories_tree.yview)
+        self.stories_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.stories_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load stories
+        self._load_alumni_stories()
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Read Full Story",
+                  command=self.read_full_story).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Submit Your Story",
+                  command=self.show_create_story).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_alumni_stories).pack(side=tk.LEFT)
+
+    def _load_alumni_stories(self):
+        """Load alumni stories from database"""
+        try:
+            # Clear existing data
+            for item in self.stories_tree.get_children():
+                self.stories_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                query = """
+                    SELECT story_id, title, author_name, category, published_date, view_count
+                    FROM alumni_stories
+                    WHERE status = 'published'
+                """
+                params = []
+
+                # Add category filter
+                category = self.story_filter_category.get()
+                if category != "All":
+                    query += " AND category = ?"
+                    params.append(category)
+
+                query += " ORDER BY published_date DESC"
+
+                cursor.execute(query, params)
+                stories = cursor.fetchall()
+
+                for story in stories:
+                    # Display without story_id
+                    self.stories_tree.insert('', tk.END, values=story[1:])
+
+                self.update_status(f"Loaded {len(stories)} story/stories")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load stories: {str(e)}")
+
+    def read_full_story(self):
+        """View complete story details"""
+        if not hasattr(self, 'stories_tree'):
+            messagebox.showwarning("Not Available", "Please use 'View Alumni Stories' first.")
+            return
+
+        selection = self.stories_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a story to read.")
+            return
+
+        item = self.stories_tree.item(selection[0])
+        story_data = item['values']
+
+        # Create story window
+        story_window = tk.Toplevel(self.root)
+        story_window.title(f"{story_data[0]}")
+        story_window.geometry("700x600")
+        story_window.configure(bg='white')
+
+        # Main frame
+        main_frame = ttk.Frame(story_window, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        ttk.Label(main_frame, text=story_data[0],
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 10))
+
+        # Meta info
+        meta_text = f"By {story_data[1]} | {story_data[2]} | Published: {story_data[3]} | Views: {story_data[4]}"
+        ttk.Label(main_frame, text=meta_text,
+                 font=('Arial', 9), foreground='gray').pack(pady=(0, 20))
+
+        # Story content
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        story_text = ScrolledText(content_frame, wrap=tk.WORD)
+        story_text.pack(fill=tk.BOTH, expand=True)
+
+        # Load story content from database
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT content FROM alumni_stories
+                    WHERE title = ? AND author_name = ?
+                """, (story_data[0], story_data[1]))
+                result = cursor.fetchone()
+
+                if result:
+                    story_text.insert(tk.END, result[0])
+
+                    # Increment view count
+                    cursor.execute("""
+                        UPDATE alumni_stories
+                        SET view_count = view_count + 1
+                        WHERE title = ? AND author_name = ?
+                    """, (story_data[0], story_data[1]))
+                    conn.commit()
+                else:
+                    story_text.insert(tk.END, "[Story content would be displayed here]")
+
+        except:
+            story_text.insert(tk.END, "[Story content would be displayed here]")
+
+        story_text.config(state='disabled')
+
+        # Close button
+        ttk.Button(main_frame, text="Close",
+                  command=story_window.destroy).pack()
+
     # Mentorship Methods
     def show_setup_mentorship(self):
         """Show mentorship setup interface"""
@@ -6287,7 +7402,800 @@ Volunteers needed to help organize this milestone event.
         
         messagebox.showinfo("Reunion Planned", "Class reunion plan submitted successfully!")
         self.update_status("Reunion planning form submitted")
-    
+
+    def manage_existing_reunion(self):
+        """Edit an existing reunion"""
+        self.clear_content()
+        self.update_status("Manage Reunion")
+
+        ttk.Label(self.content_frame, text="Manage Existing Reunion",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Reunion selection
+        select_frame = ttk.LabelFrame(self.content_frame, text="Select Reunion to Manage", padding=10)
+        select_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        ttk.Label(select_frame, text="Select Reunion:").pack(side=tk.LEFT, padx=(0, 10))
+        self.selected_reunion = tk.StringVar()
+
+        # Load reunions from database
+        reunion_options = []
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT reunion_id, graduation_year, reunion_date, location
+                    FROM class_reunions
+                    WHERE organizer_id = ? OR status = 'planning'
+                    ORDER BY reunion_date DESC
+                """, (self._current_user_id(),))
+                reunions = cursor.fetchall()
+                reunion_options = [f"Class of {r[1]} - {r[2]} at {r[3]} (ID: {r[0]})" for r in reunions]
+        except:
+            pass
+
+        if not reunion_options:
+            reunion_options = ["No reunions available to manage"]
+
+        reunion_combo = ttk.Combobox(select_frame, textvariable=self.selected_reunion,
+                                    values=reunion_options, width=50)
+        reunion_combo.pack(side=tk.LEFT, padx=(0, 20))
+        if reunion_options and reunion_options[0] != "No reunions available to manage":
+            reunion_combo.set(reunion_options[0])
+
+        ttk.Button(select_frame, text="Load Reunion",
+                  command=self._load_reunion_for_edit).pack(side=tk.LEFT)
+
+        # Edit form (initially hidden)
+        self.reunion_edit_frame = ttk.LabelFrame(self.content_frame, text="Reunion Details", padding=10)
+        self.reunion_edit_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Form fields
+        self.edit_reunion_vars = {}
+
+        fields = [
+            ("Graduation Year*", "graduation_year"),
+            ("Reunion Date*", "reunion_date"),
+            ("Location*", "location"),
+            ("Registration Fee", "fee"),
+            ("Expected Attendees", "expected_attendees"),
+            ("Registration Deadline", "reg_deadline")
+        ]
+
+        for label, var_name in fields:
+            field_frame = ttk.Frame(self.reunion_edit_frame)
+            field_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(field_frame, text=label, width=20).pack(side=tk.LEFT, padx=(0, 10))
+            self.edit_reunion_vars[var_name] = tk.StringVar()
+            ttk.Entry(field_frame, textvariable=self.edit_reunion_vars[var_name]).pack(
+                side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Status
+        status_frame = ttk.Frame(self.reunion_edit_frame)
+        status_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(status_frame, text="Status*", width=20).pack(side=tk.LEFT, padx=(0, 10))
+        self.edit_reunion_vars['status'] = tk.StringVar()
+        status_combo = ttk.Combobox(status_frame, textvariable=self.edit_reunion_vars['status'],
+                                   values=["planning", "registration_open", "registration_closed", "completed", "cancelled"])
+        status_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Description
+        ttk.Label(self.reunion_edit_frame, text="Description:").pack(anchor='w', pady=(10, 5))
+        self.edit_reunion_description = ScrolledText(self.reunion_edit_frame, height=6, wrap=tk.WORD)
+        self.edit_reunion_description.pack(fill=tk.X)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.reunion_edit_frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+
+        ttk.Button(button_frame, text="Save Changes",
+                  command=self._save_reunion_changes).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel Reunion",
+                  command=self._cancel_reunion).pack(side=tk.LEFT)
+
+    def _load_reunion_for_edit(self):
+        """Load selected reunion data into edit form"""
+        reunion_selection = self.selected_reunion.get()
+        if not reunion_selection or reunion_selection == "No reunions available to manage":
+            messagebox.showwarning("No Selection", "Please select a reunion to manage.")
+            return
+
+        # Extract reunion_id
+        import re
+        match = re.search(r'ID:\s*(\d+)', reunion_selection)
+        if not match:
+            messagebox.showerror("Error", "Invalid reunion selection.")
+            return
+
+        reunion_id = int(match.group(1))
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT graduation_year, reunion_date, location, fee,
+                           expected_attendees, registration_deadline, status, description
+                    FROM class_reunions
+                    WHERE reunion_id = ?
+                """, (reunion_id,))
+                reunion = cursor.fetchone()
+
+                if reunion:
+                    self.edit_reunion_vars['graduation_year'].set(reunion[0] or '')
+                    self.edit_reunion_vars['reunion_date'].set(reunion[1] or '')
+                    self.edit_reunion_vars['location'].set(reunion[2] or '')
+                    self.edit_reunion_vars['fee'].set(reunion[3] or '')
+                    self.edit_reunion_vars['expected_attendees'].set(reunion[4] or '')
+                    self.edit_reunion_vars['reg_deadline'].set(reunion[5] or '')
+                    self.edit_reunion_vars['status'].set(reunion[6] or 'planning')
+
+                    self.edit_reunion_description.delete(1.0, tk.END)
+                    if reunion[7]:
+                        self.edit_reunion_description.insert(tk.END, reunion[7])
+
+                    self.update_status(f"Loaded reunion for Class of {reunion[0]}")
+                else:
+                    messagebox.showerror("Error", "Reunion not found.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load reunion: {str(e)}")
+
+    def _save_reunion_changes(self):
+        """Save changes to reunion"""
+        reunion_selection = self.selected_reunion.get()
+        if not reunion_selection:
+            return
+
+        # Extract reunion_id
+        import re
+        match = re.search(r'ID:\s*(\d+)', reunion_selection)
+        if not match:
+            return
+
+        reunion_id = int(match.group(1))
+
+        # Validation
+        if not self.edit_reunion_vars['graduation_year'].get():
+            messagebox.showerror("Validation Error", "Graduation year is required!")
+            return
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE class_reunions
+                    SET graduation_year = ?, reunion_date = ?, location = ?,
+                        fee = ?, expected_attendees = ?, registration_deadline = ?,
+                        status = ?, description = ?
+                    WHERE reunion_id = ?
+                """, (
+                    self.edit_reunion_vars['graduation_year'].get(),
+                    self.edit_reunion_vars['reunion_date'].get(),
+                    self.edit_reunion_vars['location'].get(),
+                    self.edit_reunion_vars['fee'].get() or None,
+                    self.edit_reunion_vars['expected_attendees'].get() or None,
+                    self.edit_reunion_vars['reg_deadline'].get() or None,
+                    self.edit_reunion_vars['status'].get(),
+                    self.edit_reunion_description.get(1.0, tk.END).strip(),
+                    reunion_id
+                ))
+                conn.commit()
+
+            messagebox.showinfo("Success", "Reunion updated successfully!")
+            self.update_status("Reunion changes saved")
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('update', 'reunion', reunion_id=reunion_id,
+                       details={'graduation_year': self.edit_reunion_vars['graduation_year'].get()})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save changes: {str(e)}")
+
+    def _cancel_reunion(self):
+        """Cancel a reunion"""
+        if messagebox.askyesno("Confirm Cancellation",
+                              "Are you sure you want to cancel this reunion? This action cannot be undone."):
+            reunion_selection = self.selected_reunion.get()
+            if not reunion_selection:
+                return
+
+            # Extract reunion_id
+            import re
+            match = re.search(r'ID:\s*(\d+)', reunion_selection)
+            if not match:
+                return
+
+            reunion_id = int(match.group(1))
+
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        UPDATE class_reunions
+                        SET status = 'cancelled'
+                        WHERE reunion_id = ?
+                    """, (reunion_id,))
+                    conn.commit()
+
+                messagebox.showinfo("Success", "Reunion cancelled successfully!")
+                self.manage_existing_reunion()  # Reload
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('update', 'reunion', reunion_id=reunion_id,
+                           details={'action': 'cancelled'})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to cancel reunion: {str(e)}")
+
+    def view_my_chapters(self):
+        """View chapters the user is member of"""
+        self.clear_content()
+        self.update_status("My Chapters")
+
+        ttk.Label(self.content_frame, text="My Chapter Memberships",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Chapters table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Chapter Name', 'Location', 'Role', 'Joined Date', 'Status')
+        self.my_chapters_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.my_chapters_tree.heading(col, text=col)
+            self.my_chapters_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.my_chapters_tree.yview)
+        self.my_chapters_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.my_chapters_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load user's chapters
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT rc.chapter_name, rc.location, cm.role,
+                           cm.join_date, cm.status
+                    FROM chapter_members cm
+                    JOIN regional_chapters rc ON cm.chapter_id = rc.chapter_id
+                    WHERE cm.member_id = ?
+                    ORDER BY cm.join_date DESC
+                """
+                cursor.execute(query, (user_id,))
+                chapters = cursor.fetchall()
+
+                for chapter in chapters:
+                    self.my_chapters_tree.insert('', tk.END, values=chapter)
+
+                self.update_status(f"You are a member of {len(chapters)} chapter(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load chapters: {str(e)}")
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Leave Chapter",
+                  command=self._leave_chapter).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Join New Chapter",
+                  command=self.join_regional_chapter).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self.view_my_chapters).pack(side=tk.LEFT)
+
+    def _leave_chapter(self):
+        """Leave a selected chapter"""
+        if not hasattr(self, 'my_chapters_tree'):
+            return
+
+        selection = self.my_chapters_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a chapter to leave.")
+            return
+
+        if messagebox.askyesno("Confirm Leave",
+                              "Are you sure you want to leave this chapter?"):
+            item = self.my_chapters_tree.item(selection[0])
+            chapter_data = item['values']
+            chapter_name = chapter_data[0]
+
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    user_id = self._current_user_id()
+
+                    # Get chapter_id
+                    cursor.execute("SELECT chapter_id FROM regional_chapters WHERE chapter_name = ?",
+                                 (chapter_name,))
+                    result = cursor.fetchone()
+
+                    if result:
+                        chapter_id = result[0]
+                        cursor.execute("""
+                            DELETE FROM chapter_members
+                            WHERE chapter_id = ? AND member_id = ?
+                        """, (chapter_id, user_id))
+
+                        # Update member count
+                        cursor.execute("""
+                            UPDATE regional_chapters
+                            SET member_count = member_count - 1
+                            WHERE chapter_id = ?
+                        """, (chapter_id,))
+
+                        conn.commit()
+
+                        messagebox.showinfo("Success", f"You have left {chapter_name}.")
+                        self.view_my_chapters()  # Refresh
+
+                        # Log activity
+                        from university_system.modules.shared.utils.activity_logger import log_activity
+                        log_activity('delete', 'chapter_membership',
+                                   details={'chapter': chapter_name, 'action': 'left'})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to leave chapter: {str(e)}")
+
+    def admin_manage_chapters(self):
+        """Admin controls for managing chapters"""
+        if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
+            messagebox.showerror("Permission Denied",
+                               "You don't have permission to manage chapters.")
+            return
+
+        self.clear_content()
+        self.update_status("Manage Chapters (Admin)")
+
+        ttk.Label(self.content_frame, text="Chapter Management (Admin)",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Chapters table
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Chapter ID', 'Chapter Name', 'Location', 'Coordinator', 'Members', 'Status', 'Created')
+        self.admin_chapters_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.admin_chapters_tree.heading(col, text=col)
+            if col == 'Chapter ID':
+                self.admin_chapters_tree.column(col, width=80)
+            else:
+                self.admin_chapters_tree.column(col, width=120)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.admin_chapters_tree.yview)
+        self.admin_chapters_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.admin_chapters_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load all chapters
+        self._load_all_chapters()
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Edit Chapter",
+                  command=self._edit_chapter_admin).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Deactivate",
+                  command=lambda: self._update_chapter_status('inactive')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Activate",
+                  command=lambda: self._update_chapter_status('active')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Delete Chapter",
+                  command=self._delete_chapter_admin).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self._load_all_chapters).pack(side=tk.LEFT)
+
+    def _load_all_chapters(self):
+        """Load all chapters for admin view"""
+        try:
+            # Clear existing data
+            for item in self.admin_chapters_tree.get_children():
+                self.admin_chapters_tree.delete(item)
+
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+
+                query = """
+                    SELECT chapter_id, chapter_name, location, coordinator_name,
+                           member_count, status, created_date
+                    FROM regional_chapters
+                    ORDER BY created_date DESC
+                """
+                cursor.execute(query)
+                chapters = cursor.fetchall()
+
+                for chapter in chapters:
+                    self.admin_chapters_tree.insert('', tk.END, values=chapter)
+
+                self.update_status(f"Loaded {len(chapters)} chapter(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load chapters: {str(e)}")
+
+    def _edit_chapter_admin(self):
+        """Edit selected chapter"""
+        selection = self.admin_chapters_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a chapter to edit.")
+            return
+
+        item = self.admin_chapters_tree.item(selection[0])
+        chapter_data = item['values']
+        chapter_id = chapter_data[0]
+
+        # Create edit dialog
+        edit_window = tk.Toplevel(self.root)
+        edit_window.title(f"Edit Chapter - {chapter_data[1]}")
+        edit_window.geometry("500x400")
+        edit_window.configure(bg='white')
+        edit_window.grab_set()
+
+        frame = ttk.Frame(edit_window, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"Edit Chapter: {chapter_data[1]}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Form fields
+        edit_vars = {}
+        fields = [
+            ("Chapter Name:", "name", chapter_data[1]),
+            ("Location:", "location", chapter_data[2]),
+            ("Coordinator:", "coordinator", chapter_data[3])
+        ]
+
+        for label, var_name, default_value in fields:
+            field_frame = ttk.Frame(frame)
+            field_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(field_frame, text=label, width=15).pack(side=tk.LEFT, padx=(0, 10))
+            edit_vars[var_name] = tk.StringVar(value=default_value)
+            ttk.Entry(field_frame, textvariable=edit_vars[var_name]).pack(
+                side=tk.LEFT, fill=tk.X, expand=True)
+
+        def save_chapter_changes():
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        UPDATE regional_chapters
+                        SET chapter_name = ?, location = ?, coordinator_name = ?
+                        WHERE chapter_id = ?
+                    """, (
+                        edit_vars['name'].get(),
+                        edit_vars['location'].get(),
+                        edit_vars['coordinator'].get(),
+                        chapter_id
+                    ))
+                    conn.commit()
+
+                messagebox.showinfo("Success", "Chapter updated successfully!")
+                edit_window.destroy()
+                self._load_all_chapters()
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('update', 'chapter', chapter_id=chapter_id,
+                           details={'name': edit_vars['name'].get()})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update chapter: {str(e)}")
+
+        ttk.Button(frame, text="Save Changes",
+                  command=save_chapter_changes).pack(pady=20)
+        ttk.Button(frame, text="Cancel",
+                  command=edit_window.destroy).pack()
+
+    def _update_chapter_status(self, status):
+        """Update chapter status"""
+        selection = self.admin_chapters_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a chapter.")
+            return
+
+        item = self.admin_chapters_tree.item(selection[0])
+        chapter_data = item['values']
+        chapter_id = chapter_data[0]
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE regional_chapters
+                    SET status = ?
+                    WHERE chapter_id = ?
+                """, (status, chapter_id))
+                conn.commit()
+
+            messagebox.showinfo("Success", f"Chapter {status}!")
+            self._load_all_chapters()
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('update', 'chapter', chapter_id=chapter_id,
+                       details={'action': f'status_changed_to_{status}'})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+
+    def _delete_chapter_admin(self):
+        """Delete selected chapter"""
+        selection = self.admin_chapters_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a chapter to delete.")
+            return
+
+        item = self.admin_chapters_tree.item(selection[0])
+        chapter_data = item['values']
+        chapter_id = chapter_data[0]
+
+        if messagebox.askyesno("Confirm Deletion",
+                              f"Are you sure you want to delete '{chapter_data[1]}'? "
+                              f"This will also remove all {chapter_data[4]} member(s)."):
+            try:
+                with db_get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # Delete chapter members first
+                    cursor.execute("DELETE FROM chapter_members WHERE chapter_id = ?", (chapter_id,))
+
+                    # Delete chapter
+                    cursor.execute("DELETE FROM regional_chapters WHERE chapter_id = ?", (chapter_id,))
+
+                    conn.commit()
+
+                messagebox.showinfo("Success", "Chapter deleted successfully!")
+                self._load_all_chapters()
+
+                # Log activity
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('delete', 'chapter', chapter_id=chapter_id,
+                           details={'name': chapter_data[1], 'action': 'deleted'})
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete chapter: {str(e)}")
+
+    def join_regional_chapter(self):
+        """Join a regional chapter"""
+        self.clear_content()
+        self.update_status("Join Regional Chapter")
+
+        ttk.Label(self.content_frame, text="Join a Regional Chapter",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Available chapters
+        table_frame = ttk.Frame(self.content_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        columns = ('Chapter Name', 'Location', 'Coordinator', 'Members', 'Status')
+        self.join_chapters_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
+
+        for col in columns:
+            self.join_chapters_tree.heading(col, text=col)
+            self.join_chapters_tree.column(col, width=150)
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient=tk.VERTICAL,
+                                    command=self.join_chapters_tree.yview)
+        self.join_chapters_tree.configure(yscrollcommand=scrollbar_y.set)
+
+        self.join_chapters_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load available chapters (not already joined)
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                query = """
+                    SELECT rc.chapter_id, rc.chapter_name, rc.location,
+                           rc.coordinator_name, rc.member_count, rc.status
+                    FROM regional_chapters rc
+                    WHERE rc.status = 'active'
+                    AND rc.chapter_id NOT IN (
+                        SELECT chapter_id FROM chapter_members WHERE member_id = ?
+                    )
+                    ORDER BY rc.chapter_name
+                """
+                cursor.execute(query, (user_id,))
+                chapters = cursor.fetchall()
+
+                for chapter in chapters:
+                    # Display without chapter_id
+                    self.join_chapters_tree.insert('', tk.END, values=chapter[1:])
+
+                self.update_status(f"Found {len(chapters)} available chapter(s)")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load chapters: {str(e)}")
+
+        # Action buttons
+        button_frame = ttk.Frame(self.content_frame)
+        button_frame.pack(fill=tk.X, padx=20)
+
+        ttk.Button(button_frame, text="Join Selected Chapter",
+                  command=self._join_selected_chapter).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self.join_regional_chapter).pack(side=tk.LEFT)
+
+    def _join_selected_chapter(self):
+        """Join the selected chapter"""
+        if not hasattr(self, 'join_chapters_tree'):
+            return
+
+        selection = self.join_chapters_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a chapter to join.")
+            return
+
+        item = self.join_chapters_tree.item(selection[0])
+        chapter_data = item['values']
+        chapter_name = chapter_data[0]
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                # Get chapter_id
+                cursor.execute("SELECT chapter_id FROM regional_chapters WHERE chapter_name = ?",
+                             (chapter_name,))
+                result = cursor.fetchone()
+
+                if result:
+                    chapter_id = result[0]
+
+                    # Join chapter
+                    cursor.execute("""
+                        INSERT INTO chapter_members (chapter_id, member_id, role, join_date, status)
+                        VALUES (?, ?, 'member', datetime('now'), 'active')
+                    """, (chapter_id, user_id))
+
+                    # Update member count
+                    cursor.execute("""
+                        UPDATE regional_chapters
+                        SET member_count = member_count + 1
+                        WHERE chapter_id = ?
+                    """, (chapter_id,))
+
+                    conn.commit()
+
+                    messagebox.showinfo("Success", f"You have joined {chapter_name}!")
+                    self.join_regional_chapter()  # Refresh
+
+                    # Log activity
+                    from university_system.modules.shared.utils.activity_logger import log_activity
+                    log_activity('create', 'chapter_membership',
+                               details={'chapter': chapter_name, 'action': 'joined'})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to join chapter: {str(e)}")
+
+    def create_regional_chapter(self):
+        """Create a new regional chapter"""
+        self.clear_content()
+        self.update_status("Create Regional Chapter")
+
+        ttk.Label(self.content_frame, text="Create a New Regional Chapter",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+
+        # Form
+        form_frame = ttk.LabelFrame(self.content_frame, text="Chapter Details", padding=10)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Form fields
+        self.new_chapter_vars = {}
+
+        fields = [
+            ("Chapter Name*", "name"),
+            ("Location*", "location"),
+            ("Coordinator Name", "coordinator"),
+            ("Contact Email", "email")
+        ]
+
+        for label, var_name in fields:
+            field_frame = ttk.Frame(form_frame)
+            field_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(field_frame, text=label, width=18).pack(side=tk.LEFT, padx=(0, 10))
+            self.new_chapter_vars[var_name] = tk.StringVar()
+            ttk.Entry(field_frame, textvariable=self.new_chapter_vars[var_name]).pack(
+                side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Description
+        ttk.Label(form_frame, text="Chapter Description:").pack(anchor='w', pady=(10, 5))
+        self.new_chapter_description = ScrolledText(form_frame, height=5, wrap=tk.WORD)
+        self.new_chapter_description.pack(fill=tk.X)
+
+        # Action buttons
+        button_frame = ttk.Frame(form_frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+
+        ttk.Button(button_frame, text="Create Chapter",
+                  command=self._submit_new_chapter).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Clear Form",
+                  command=self._clear_chapter_form).pack(side=tk.LEFT)
+
+    def _submit_new_chapter(self):
+        """Submit new chapter creation"""
+        # Validation
+        if not self.new_chapter_vars['name'].get().strip():
+            messagebox.showerror("Validation Error", "Chapter name is required!")
+            return
+
+        if not self.new_chapter_vars['location'].get().strip():
+            messagebox.showerror("Validation Error", "Location is required!")
+            return
+
+        try:
+            with db_get_connection() as conn:
+                cursor = conn.cursor()
+                user_id = self._current_user_id()
+
+                # Insert chapter
+                cursor.execute("""
+                    INSERT INTO regional_chapters (
+                        chapter_name, location, coordinator_name, contact_email,
+                        description, created_date, created_by, status, member_count
+                    ) VALUES (?, ?, ?, ?, ?, datetime('now'), ?, 'active', 0)
+                """, (
+                    self.new_chapter_vars['name'].get(),
+                    self.new_chapter_vars['location'].get(),
+                    self.new_chapter_vars['coordinator'].get() or user_id,
+                    self.new_chapter_vars['email'].get(),
+                    self.new_chapter_description.get(1.0, tk.END).strip(),
+                    user_id
+                ))
+
+                chapter_id = cursor.lastrowid
+
+                # Auto-join the creator
+                cursor.execute("""
+                    INSERT INTO chapter_members (chapter_id, member_id, role, join_date, status)
+                    VALUES (?, ?, 'coordinator', datetime('now'), 'active')
+                """, (chapter_id, user_id))
+
+                # Update member count
+                cursor.execute("""
+                    UPDATE regional_chapters
+                    SET member_count = 1
+                    WHERE chapter_id = ?
+                """, (chapter_id,))
+
+                conn.commit()
+
+            messagebox.showinfo("Success", "Regional chapter created successfully!")
+            self.update_status("Chapter created")
+            self._clear_chapter_form()
+
+            # Log activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            log_activity('create', 'chapter', chapter_id=chapter_id,
+                       details={'name': self.new_chapter_vars['name'].get()})
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create chapter: {str(e)}")
+
+    def _clear_chapter_form(self):
+        """Clear chapter creation form"""
+        for var in self.new_chapter_vars.values():
+            var.set("")
+        self.new_chapter_description.delete(1.0, tk.END)
+
+
     # Career Services Methods
     def show_job_board(self):
         """Show job board interface"""
