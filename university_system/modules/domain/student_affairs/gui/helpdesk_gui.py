@@ -1822,8 +1822,19 @@ class HelpdeskGUI:
             
             conn.commit()
             conn.close()
+
+            # Send reply notification email automatically
+            if not is_internal:  # Only send for public replies
+                try:
+                    from university_system.infrastructure.email.email_service import send_reply_notification
+                    username = self.current_user.get('username', 'Support Agent')
+                    send_reply_notification(ticket_id, self.current_user.get('id'), username, None, None, None)
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to send reply notification: {e}")
+
             return True
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add reply: {str(e)}")
             return False

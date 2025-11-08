@@ -1066,6 +1066,15 @@ class AlumniGUIApp:
         conn.commit()
         conn.close()
 
+        # Send alumni welcome email automatically
+        try:
+            from university_system.infrastructure.email.email_service import send_alumni_welcome_email
+            full_name = f"{data['first_name']} {data.get('middle_name', '')} {data['last_name']}".replace('  ', ' ')
+            send_alumni_welcome_email(data['alumni_id'], data['email_address'], full_name)
+        except Exception as e:
+            import logging
+            logging.warning(f"Failed to send alumni welcome email: {e}")
+
     def _fetch_business_listings(self, industry: str | None = None):
         """Return business listings optionally filtered by industry."""
         conn = self._get_db_connection()

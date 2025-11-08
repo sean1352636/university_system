@@ -1904,12 +1904,27 @@ Overdue: {overdue_books:,}
             cursor.execute('UPDATE books SET status = "checked_out" WHERE book_id = ?', (book_id,))
             
             conn.commit()
+
+            # Get book details for email
+            cursor_temp = get_db_connection().cursor()
+            cursor_temp.execute('SELECT title FROM books WHERE book_id = ?', (book_id,))
+            book_result = cursor_temp.fetchone()
+            book_title = book_result[0] if book_result else "Unknown Book"
+
             conn.close()
-            
+
+            # Send book checkout confirmation email automatically
+            try:
+                from university_system.infrastructure.email.email_service import send_book_checkout_confirmation
+                send_book_checkout_confirmation(user_id, book_id, book_title, due_date.strftime('%Y-%m-%d'))
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to send book checkout confirmation: {e}")
+
             # Log the action
             if ORIGINAL_LIBRARY_AVAILABLE:
                 log_audit_event(get_current_user_id(), f"GUI: Checked out book {book_id} to {user_id}", "book_loans")
-            
+
             return True
             
         except Exception as e:

@@ -1728,8 +1728,8 @@ CV Filename: {app_data[5]}
             
             conn.commit()
             conn.close()
-            
-            # Send application decision notification
+
+            # Send internship status notification automatically
             cursor = get_connection().cursor()
             cursor.execute('''
             SELECT student_id, internship_id FROM internship_applications
@@ -1738,8 +1738,14 @@ CV Filename: {app_data[5]}
 
             app_details = cursor.fetchone()
             if app_details:
-                self.send_application_decision(app_details[0], app_details[1], new_status, feedback)
-            
+                # Send centralized internship notification
+                try:
+                    from university_system.infrastructure.email.email_service import send_internship_notification
+                    send_internship_notification(app_details[0], app_details[1], new_status, feedback)
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to send internship status notification: {e}")
+
             messagebox.showinfo("Success", f"Application status updated to: {new_status}")
             
             # Close dialogs and refresh
