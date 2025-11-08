@@ -4471,15 +4471,29 @@ class UserAuth:
             )
             
             conn.commit()
-            
+
+            # Send password reset notification email
+            try:
+                # Get student_id from users table if exists
+                cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+                student_result = cursor.fetchone()
+
+                if student_result and student_result[0]:
+                    student_id = student_result[0]
+                    from university_system.infrastructure.email.email_service import send_password_reset
+                    send_password_reset(student_id, temp_password)
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to send password reset email: {e}")
+
             # Log the activity
             admin_username = self.current_user['username'] if self.current_user else "system"
             self._log_activity(admin_username, f'Password reset for user: {username}', None, self.current_user['id'] if self.current_user else None)
-            
+
             print(f"Password for {username} has been reset to: {temp_password}")
             print("User will be required to change password on next login.")
             return True
-            
+
         except sqlite3.Error as e:
             logger.error(f"Database error: {e}")
             return False

@@ -4592,7 +4592,41 @@ University Administration"""
                                 ''', (student_id, module_code, current_date, 'enrolled'))
 
                     update_conn.commit()
-                    
+
+                    # Send update confirmation email via email_service
+                    try:
+                        # Get student email
+                        update_cursor.execute('SELECT email_address FROM students WHERE student_id = ?', (student_id,))
+                        email_result = update_cursor.fetchone()
+
+                        if email_result:
+                            student_email = email_result[0]
+                            # Determine what fields were updated
+                            updated_fields = []
+                            if new_title != student[2]:
+                                updated_fields.append('title')
+                            if new_first_name != student[3]:
+                                updated_fields.append('first name')
+                            if new_middle_name != student[4]:
+                                updated_fields.append('middle name')
+                            if new_last_name != student[5]:
+                                updated_fields.append('last name')
+                            if new_gender != student[6]:
+                                updated_fields.append('gender')
+                            if new_dob and new_dob != student[7]:
+                                updated_fields.append('date of birth')
+                            if course_changed:
+                                updated_fields.append('course')
+                            if password_var.get():
+                                updated_fields.append('password')
+
+                            if updated_fields:
+                                from university_system.infrastructure.email.email_service import send_update_confirmation
+                                send_update_confirmation(student_email, updated_fields)
+                    except Exception as e:
+                        import logging
+                        logging.warning(f"Failed to send update confirmation email: {e}")
+
                     success_msg = f"Student {student_id} updated successfully!"
                     if course_changed:
                         success_msg += f"\nCourse randomly changed from {student[9]} to {new_course}"
@@ -5351,7 +5385,14 @@ University Administration"""
 
                 conn.commit()
                 conn.close()
-                
+
+                # Send registration confirmation email
+                try:
+                    from university_system.infrastructure.email.email_service import send_registration_confirmation
+                    send_registration_confirmation(student_id)
+                except Exception as e:
+                    logging.warning(f"Failed to send registration confirmation email: {e}")
+
                 # Create user account
                 temp_password = f"{first_name.lower()}123456"
                 try:

@@ -2100,7 +2100,22 @@ class AssignmentManager:
     
             conn.commit()
             conn.close()
-            
+
+            # Send assignment notification to students
+            try:
+                from university_system.infrastructure.email.email_service import send_assignment_notification
+                import logging
+                send_assignment_notification(
+                    assignment_id,
+                    self.title_var.get().strip(),
+                    module_code,
+                    due_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    self.description_text.get(1.0, tk.END).strip()
+                )
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to send assignment notification emails: {e}")
+
             # Update GUI on main thread
             self.root.after(0, lambda: self.show_assignment_status(
                 f"Assignment '{self.title_var.get()}' created successfully! ID: {assignment_id}", "success"))

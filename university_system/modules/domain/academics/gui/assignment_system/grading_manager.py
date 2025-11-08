@@ -500,8 +500,36 @@ class GradingManager:
                       (score/max_points)*100, feedback, self.auth.current_user['id'], timestamp))
             
             conn.commit()
+
+            # Send grade notification email
+            try:
+                # Get student email and assignment details
+                cursor.execute('''
+                SELECT s.email_address, a.title, a.module_code
+                FROM assignment_submissions sub
+                JOIN students s ON sub.student_id = s.student_id
+                JOIN assignments a ON sub.assignment_id = a.id
+                WHERE sub.id = ?
+                ''', (submission_id,))
+                result = cursor.fetchone()
+
+                if result:
+                    student_email, assignment_title, module_code = result
+                    from university_system.infrastructure.email.email_service import send_grade_notification
+                    import logging
+                    send_grade_notification(
+                        student_email,
+                        assignment_title,
+                        module_code,
+                        f"{percentage:.1f}%",
+                        overall_feedback if overall_feedback else None
+                    )
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to send grade notification email: {e}")
+
             conn.close()
-            
+
             messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({total_earned}/{total_possible})")
             
             # Refresh submissions list

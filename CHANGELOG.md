@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Automatic Email Notifications - Integrated Across System** (2025-11-08)
+- **Enhancement**: Added automatic email notifications that trigger when relevant events occur
+- **Impact**: Users now automatically receive email notifications without manual intervention
+- **Files Modified**: 5 files across academics, auth, and shared modules
+
+**Automatic notification triggers**:
+  1. **Student Registration** (`main_gui.py:5355-5360`)
+     - Automatically sends registration confirmation when student is created
+     - Includes student ID, email, course details, and enrolled modules
+     - Calls: `send_registration_confirmation(student_id)`
+
+  2. **Assignment Creation** (`assignment_manager.py:2104-2117`)
+     - Notifies all enrolled students when assignment is created
+     - Includes assignment title, module code, due date, description
+     - Calls: `send_assignment_notification(assignment_id, title, module_code, due_date, description)`
+
+  3. **Grade Posting** (`grading_manager.py:504-530`)
+     - Notifies student when assignment grade is submitted
+     - Includes assignment title, module code, percentage grade, feedback
+     - Fetches student email from database via submission ID
+     - Calls: `send_grade_notification(email, title, module_code, grade, feedback)`
+
+  4. **Extension Approval** (`extension_manager.py:304-330`)
+     - Notifies student when extension request is approved
+     - Includes assignment title, module code, new due date, extension days
+     - Only sends if status is 'approved' (not 'denied')
+     - Calls: `send_extension_notification(email, title, module_code, new_due_date, extension_days)`
+
+  5. **Student Record Updates** (`main_gui.py:4596-4628`)
+     - Notifies student when profile information is updated
+     - Tracks which fields changed (title, name, gender, DOB, course, password)
+     - Calls: `send_update_confirmation(email, updated_fields)`
+
+  6. **Password Reset** (`user_authentication.py:4475-4487`)
+     - Notifies student when admin resets their password
+     - Includes the new temporary reset code
+     - Calls: `send_password_reset(student_id, temp_password)`
+
+**Implementation Details**:
+- All notifications wrapped in try-except blocks to prevent operation failure if email fails
+- Graceful error handling with logging.warning() for failed email sends
+- Database queries to fetch student email and related info before sending
+- Non-blocking operations - main function continues even if email fails
+- Imports email functions dynamically to avoid circular dependencies
+
+**Error Handling**:
+- If email send fails, warning is logged but operation completes successfully
+- Students still get created/updated/graded even if notification fails
+- No popup errors shown to user for email failures
+
 **Email Manager GUI - Added 6 Missing Notification Functions** (2025-11-08)
 - **Enhancement**: Implemented GUI interfaces for email notification functions previously only available via CLI
 - **Location**: `university_system/infrastructure/email/gui/email_manager_gui.py` (lines 40-62, 367-376, 1276-1303, 5443-5852, ~480 lines added)

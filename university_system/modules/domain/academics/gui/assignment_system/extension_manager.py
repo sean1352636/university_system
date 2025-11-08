@@ -300,8 +300,37 @@ class ExtensionManager:
                   comments, extension_days, request_id))
             
             conn.commit()
+
+            # Send extension notification email if approved
+            if decision == 'approved':
+                try:
+                    # Get student email and assignment details
+                    cursor.execute('''
+                    SELECT s.email_address, a.title, a.module_code, er.new_due_date
+                    FROM extension_requests er
+                    JOIN students s ON er.student_id = s.student_id
+                    JOIN assignments a ON er.assignment_id = a.id
+                    WHERE er.id = ?
+                    ''', (request_id,))
+                    result = cursor.fetchone()
+
+                    if result:
+                        student_email, assignment_title, module_code, new_due_date = result
+                        from university_system.infrastructure.email.email_service import send_extension_notification
+                        import logging
+                        send_extension_notification(
+                            student_email,
+                            assignment_title,
+                            module_code,
+                            new_due_date,
+                            str(extension_days)
+                        )
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to send extension notification email: {e}")
+
             conn.close()
-            
+
             messagebox.showinfo("Success", f"Extension request {decision}!")
             
             # Refresh the list
