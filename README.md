@@ -954,7 +954,7 @@ log_activity('delete', 'course', course_id='CS101')
 - **Detailed logging** for administrators
 - **No stack traces** in production
 
-For detailed security information, see [SECURITY.md](SECURITY.md).
+For detailed security information, see [SECURITY.md](SECURITY.md) and [Security Documentation](university_system/docs/SECURITY.md).
 
 ---
 
@@ -1081,17 +1081,22 @@ python -m university_system.infrastructure.database.verify
 
 ### Available Documentation
 
-- **[User Guide](docs/user-guide/USER_GUIDE.md)** - Complete user manual for all features
-- **[API Documentation](docs/development/API.md)** - REST API reference with examples
-- **[Architecture Overview](docs/development/ARCHITECTURE.md)** - System design and patterns
-- **[Development Guide](docs/development/SETUP.md)** - Setting up development environment
-- **[Contributing Guide](docs/development/CONTRIBUTING.md)** - How to contribute
-- **[Code Style Guide](docs/development/CODE_STYLE.md)** - Coding standards and conventions
-- **[Testing Guide](docs/testing/TESTING_GUIDE.md)** - Writing and running tests
-- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - Production deployment
-- **[Backup Templates Guide](templates/backup_templates/README.md)** - Pre-configured backup templates and usage
-- **[FAQ](docs/troubleshooting/FAQ.md)** - Frequently asked questions
-- **[Common Issues](docs/troubleshooting/COMMON_ISSUES.md)** - Troubleshooting guide
+- **[Documentation Index](university_system/docs/README.md)** - Complete documentation overview
+- **[Email Scheduler Guide](university_system/docs/EMAIL_SCHEDULER.md)** - Automated email system setup and usage
+- **[Security Documentation](university_system/docs/SECURITY.md)** - Security features and best practices
+- **[Security Features Summary](university_system/docs/SECURITY_FEATURES_SUMMARY.md)** - Quick security reference
+- **[MFA Quick Start](university_system/docs/MFA_QUICK_START.md)** - Multi-factor authentication setup
+- **[MFA System Documentation](university_system/docs/MFA_SYSTEM_DOCUMENTATION.md)** - Complete MFA guide
+- **[Authentication Overview](university_system/docs/AUTHENTICATION_ARCHITECTURE_OVERVIEW.md)** - Authentication system architecture
+- **[Auth Quick Reference](university_system/docs/AUTH_QUICK_REFERENCE.md)** - Authentication quick guide
+- **[Database Documentation](university_system/docs/development/DATABASE.md)** - Database architecture and usage
+- **[Authentication Guide](university_system/docs/development/AUTHENTICATION.md)** - Authentication implementation
+- **[Transaction Handling](university_system/docs/development/TRANSACTIONS.md)** - Transaction safety guide
+- **[Exception Handling](university_system/docs/development/EXCEPTION_HANDLING.md)** - Error handling patterns
+- **[Testing Guide](university_system/docs/testing/TESTING_GUIDE.md)** - Writing and running tests
+- **[Troubleshooting](university_system/docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Backup Templates Guide](university_system/templates/backup_templates/README.md)** - Pre-configured backup templates and usage
+- **[Quick Start Guide](university_system/docs/getting-started/QUICK_START.md)** - Getting started quickly
 
 ### CLAUDE.md
 
@@ -1148,7 +1153,7 @@ We welcome contributions! Please follow these steps:
 
 ### Contribution Guidelines
 
-- Follow the [Code Style Guide](docs/development/CODE_STYLE.md)
+- Follow PEP 8 style guide and use Black formatter (line length: 100)
 - Write meaningful, descriptive commit messages
 - Include comprehensive tests for new features (minimum 80% coverage)
 - Update documentation for user-facing changes
@@ -1156,7 +1161,7 @@ We welcome contributions! Please follow these steps:
 - Add entry to `CHANGELOG.md` describing your changes
 - Request code review from maintainers
 
-For detailed guidelines, see [Contributing Guide](docs/development/CONTRIBUTING.md).
+For more information, see [Documentation Index](university_system/docs/README.md) and [CLAUDE.md](CLAUDE.md).
 
 ---
 
@@ -1236,9 +1241,9 @@ brew install python-tk
 ```
 
 For more help, see:
-- [FAQ](docs/troubleshooting/FAQ.md)
-- [Common Issues](docs/troubleshooting/COMMON_ISSUES.md)
-- [Error Reference](docs/troubleshooting/ERRORS.md)
+- [Troubleshooting Guide](university_system/docs/TROUBLESHOOTING.md)
+- [Documentation Index](university_system/docs/README.md)
+- [Security Documentation](university_system/docs/SECURITY.md)
 
 ---
 
@@ -1323,11 +1328,11 @@ The codebase underwent comprehensive modularization:
 
 ### Getting Help
 
-- **Documentation**: [docs/README.md](docs/README.md)
-- **FAQ**: [docs/troubleshooting/FAQ.md](docs/troubleshooting/FAQ.md)
+- **Documentation**: [Documentation Index](university_system/docs/README.md)
+- **Troubleshooting**: [Troubleshooting Guide](university_system/docs/TROUBLESHOOTING.md)
 - **Issue Tracker**: [GitHub Issues](https://github.com/yourusername/university-system/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/university-system/discussions)
-- **Wiki**: [Project Wiki](https://github.com/yourusername/university-system/wiki)
+- **Quick Start**: [Getting Started](university_system/docs/getting-started/QUICK_START.md)
 
 ### Reporting Issues
 

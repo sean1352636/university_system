@@ -375,63 +375,16 @@ class EmailManagerGUI:
         comm_menu.add_separator()
         comm_menu.add_command(label="Preferences", command=self.notification_preferences)
 
-        # Notifications menu with submenus
-        notif_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Notifications", menu=notif_menu)
-
-        # Academic submenu
-        academic_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Academic", menu=academic_menu)
-        academic_menu.add_command(label="Registration Confirmation", command=self.send_registration_confirmation_dialog)
-        academic_menu.add_command(label="Assignment Notification", command=self.send_assignment_notification_dialog)
-        academic_menu.add_command(label="Grade Notification (Module)", command=self.send_module_grade_notification_dialog)
-        academic_menu.add_command(label="Grade Notification (Assignment)", command=self.send_assignment_grade_notification_dialog)
-        academic_menu.add_command(label="Extension Notification", command=self.send_extension_notification_dialog)
-        academic_menu.add_command(label="Schedule Change Notification", command=self.send_schedule_change_notification_dialog)
-        academic_menu.add_command(label="Update Confirmation", command=self.send_update_confirmation_dialog)
-        academic_menu.add_command(label="Password Reset", command=self.send_password_reset_dialog)
-
-        # Health Services submenu
-        health_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Health Services", menu=health_menu)
-        health_menu.add_command(label="Appointment Confirmation", command=self.send_appointment_confirmation_dialog)
-        health_menu.add_command(label="Health Advisory", command=self.send_health_notification_dialog)
-
-        # Helpdesk submenu
-        helpdesk_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Helpdesk", menu=helpdesk_menu)
-        helpdesk_menu.add_command(label="Ticket Notification", command=self.send_ticket_notification_dialog)
-        helpdesk_menu.add_command(label="Reply Notification", command=self.send_reply_notification_dialog)
-        helpdesk_menu.add_command(label="SLA Alert", command=self.send_sla_alert_dialog)
-        helpdesk_menu.add_command(label="Satisfaction Survey", command=self.send_satisfaction_survey_dialog)
-        helpdesk_menu.add_command(label="Bulk Satisfaction Surveys", command=self.send_bulk_satisfaction_surveys_dialog)
-
-        # Library submenu
-        library_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Library", menu=library_menu)
-        library_menu.add_command(label="Checkout Confirmation", command=self.send_book_checkout_confirmation_dialog)
-        library_menu.add_command(label="Return Reminder", command=self.send_book_return_reminder_dialog)
-        library_menu.add_command(label="Overdue Notice", command=self.send_overdue_notification_dialog)
-
-        # Student Affairs submenu
-        affairs_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Student Affairs", menu=affairs_menu)
-        affairs_menu.add_command(label="Internship Notification", command=self.send_internship_notification_dialog)
-        affairs_menu.add_command(label="Internship Application Confirmation", command=self.send_application_confirmation_dialog)
-        affairs_menu.add_command(label="Mentorship Notification", command=self.send_mentorship_notification_dialog)
-
-        # Alumni submenu
-        alumni_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Alumni", menu=alumni_menu)
-        alumni_menu.add_command(label="Welcome Email", command=self.send_alumni_welcome_dialog)
-        alumni_menu.add_command(label="Event Invitation", command=self.send_event_invitation_dialog)
-        alumni_menu.add_command(label="Donation Receipt", command=self.send_donation_receipt_dialog)
-
-        # Parking/Permits submenu
-        parking_menu = tk.Menu(notif_menu, tearoff=0)
-        notif_menu.add_cascade(label="Parking/Permits", menu=parking_menu)
-        parking_menu.add_command(label="Permit Confirmation", command=self.send_permit_confirmation_dialog)
-        parking_menu.add_command(label="Permit Update Confirmation", command=self.send_permit_update_confirmation_dialog)
+        # NOTE: Notifications menu removed - emails now send automatically
+        # All notification emails are triggered automatically by the respective modules:
+        # - Academic: Registration, assignments, grades, extensions, schedule changes
+        # - Health: Appointments, health advisories
+        # - Helpdesk: Tickets, replies, SLA alerts, satisfaction surveys
+        # - Library: Checkouts, return reminders, overdue notices
+        # - Student Affairs: Internships, mentorships
+        # - Alumni: Welcome emails, event invitations, donation receipts
+        # - Parking: Permit confirmations and updates
+        # Use the Email Scheduler for batch operations (Queue & Workers button)
 
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)

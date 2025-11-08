@@ -4292,13 +4292,11 @@ Backwards compatible with CLI version
         except Exception as e:
             print(f"Failed to send ticket update notification: {e}")
 
-Best regards,
-University Support Team
-"""
-            except Exception as e:
-                # Error handling
-                user_subject = f"Support Ticket Updated - #{ticket_id}"
-                user_message = f"""Your support ticket has been updated:
+    def _send_ticket_updated_emails_fallback(self, ticket_id, subject, status, user_email):
+        """Fallback email sending when template fails"""
+        try:
+            user_subject = f"Support Ticket Updated - #{ticket_id}"
+            user_message = f"""Your support ticket has been updated:
 
 ================================================
 TICKET UPDATE
@@ -4316,8 +4314,9 @@ Please log into the helpdesk system to view the latest updates.
 Best regards,
 University Support Team
 """
-
             self._send_email_via_gui(user_email, user_subject, user_message)
+        except Exception as e:
+            print(f"Failed to send fallback email: {e}")
 
     def _send_email_via_gui(self, to_email, subject, message):
         """Send email via email GUI"""
