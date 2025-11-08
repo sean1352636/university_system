@@ -4899,6 +4899,1015 @@ Backwards compatible with CLI version
     # END OF ENHANCED TICKET MANAGEMENT FUNCTIONS
     # ============================================================================
 
+    # ============================================================================
+    # ANALYTICS & REPORTING FUNCTIONS (12 FUNCTIONS)
+    # ============================================================================
+
+    def generate_enhanced_ticket_report_gui(self):
+        """Show report generation dialog"""
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate reports.")
+            return
+
+        if not self.has_permission('view_all_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
+            return
+
+        # Create report selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Generate Reports")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Enhanced Ticket Report Generator",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+
+        # Report type selection
+        report_frame = ttk.LabelFrame(main_frame, text="Select Report Type", padding="10")
+        report_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        report_type = tk.StringVar(value='executive')
+
+        reports = [
+            ('executive', 'Executive Summary Report', 'High-level metrics and KPIs'),
+            ('staff', 'Staff Performance Report', 'Individual staff metrics and workload'),
+            ('sla', 'SLA Compliance Report', 'SLA adherence and breaches'),
+            ('satisfaction', 'Customer Satisfaction Report', 'Satisfaction ratings and feedback'),
+            ('trend', 'Trend Analysis Report', 'Historical trends and patterns'),
+            ('department', 'Department Performance Report', 'Department-level metrics'),
+            ('custom', 'Custom Date Range Report', 'Custom period analysis')
+        ]
+
+        for value, label, desc in reports:
+            frame = ttk.Frame(report_frame)
+            frame.pack(fill='x', pady=2)
+            ttk.Radiobutton(frame, text=label, variable=report_type, value=value).pack(side='left')
+            ttk.Label(frame, text=f"  ({desc})", foreground='gray').pack(side='left')
+
+        # Period selection
+        period_frame = ttk.LabelFrame(main_frame, text="Time Period", padding="10")
+        period_frame.pack(fill='x', pady=(0, 10))
+
+        period_var = tk.StringVar(value='30d')
+        periods = [('7d', '7 Days'), ('30d', '30 Days'), ('90d', '90 Days'), ('1y', '1 Year')]
+
+        period_buttons = ttk.Frame(period_frame)
+        period_buttons.pack(fill='x')
+        for value, label in periods:
+            ttk.Radiobutton(period_buttons, text=label, variable=period_var,
+                           value=value).pack(side='left', padx=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def generate_report():
+            rtype = report_type.get()
+            period = period_var.get()
+
+            if rtype == 'executive':
+                self.generate_executive_summary_gui(period)
+            elif rtype == 'staff':
+                self.generate_staff_performance_report_gui(period)
+            elif rtype == 'department':
+                self.generate_department_report_gui(period)
+            elif rtype == 'satisfaction':
+                self.generate_satisfaction_report_gui(period)
+            elif rtype == 'trend':
+                self.generate_trend_analysis_report_gui(period)
+            elif rtype == 'custom':
+                self.generate_custom_date_report_gui()
+            else:
+                messagebox.showinfo("Info", f"Report type '{rtype}' will be generated")
+
+            dialog.destroy()
+
+        ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def generate_executive_summary_gui(self, period='30d'):
+        """Generate and display executive summary report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Calculate date range
+            days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
+            days = days_map.get(period, 30)
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Get key metrics
+            cursor.execute('''
+                SELECT
+                    COUNT(*) as total_tickets,
+                    COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved_tickets,
+                    COUNT(CASE WHEN status = 'open' THEN 1 END) as open_tickets,
+                    COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_priority,
+                    AVG(CASE WHEN resolved_at IS NOT NULL
+                        THEN (julianday(resolved_at) - julianday(created_at)) * 24
+                        ELSE NULL END) as avg_resolution_hours,
+                    AVG(satisfaction_rating) as avg_satisfaction
+                FROM support_tickets
+                WHERE created_at >= ?
+            ''', (start_date,))
+
+            metrics = cursor.fetchone()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title(f"Executive Summary - {period.upper()}")
+            report_window.geometry("800x600")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            # Title
+            ttk.Label(main_frame, text=f"📊 Executive Summary Report ({period.upper()})",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Scrollable content
+            canvas = tk.Canvas(main_frame)
+            scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas)
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+            # Report content
+            report_text = ""
+
+            if metrics[0] > 0:
+                resolution_rate = (metrics[1] / metrics[0] * 100)
+
+                # Key Metrics Section
+                metrics_frame = ttk.LabelFrame(scrollable_frame, text="📊 Key Metrics", padding="10")
+                metrics_frame.pack(fill='x', pady=5)
+
+                metrics_text = f"""Total Tickets: {metrics[0]}
+Resolution Rate: {resolution_rate:.1f}%
+Open Tickets: {metrics[2]}
+High Priority: {metrics[3]}"""
+
+                if metrics[4]:
+                    metrics_text += f"\nAvg Resolution Time: {metrics[4]:.1f} hours"
+                if metrics[5]:
+                    metrics_text += f"\nCustomer Satisfaction: {metrics[5]:.1f}/5.0"
+
+                ttk.Label(metrics_frame, text=metrics_text, justify='left',
+                         font=('TkDefaultFont', 10)).pack(anchor='w')
+
+                report_text += metrics_text + "\n\n"
+
+                # Top Categories
+                cursor.execute('''
+                    SELECT category, COUNT(*) as count
+                    FROM support_tickets
+                    WHERE created_at >= ?
+                    GROUP BY category
+                    ORDER BY count DESC
+                    LIMIT 5
+                ''', (start_date,))
+
+                categories = cursor.fetchall()
+
+                cat_frame = ttk.LabelFrame(scrollable_frame, text="📋 Top Categories", padding="10")
+                cat_frame.pack(fill='x', pady=5)
+
+                cat_text = ""
+                for cat, count in categories:
+                    percentage = (count / metrics[0] * 100)
+                    cat_text += f"{cat}: {count} ({percentage:.1f}%)\n"
+
+                ttk.Label(cat_frame, text=cat_text, justify='left').pack(anchor='w')
+                report_text += "Top Categories:\n" + cat_text + "\n"
+
+                # Staff Workload
+                cursor.execute('''
+                    SELECT u.username,
+                           COUNT(t.ticket_id) as assigned,
+                           COUNT(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 END) as resolved
+                    FROM users u
+                    LEFT JOIN support_tickets t ON u.id = t.assigned_to AND t.created_at >= ?
+                    WHERE u.role IN ('staff', 'admin') AND u.is_active = 1
+                    GROUP BY u.id, u.username
+                    HAVING assigned > 0
+                    ORDER BY assigned DESC
+                    LIMIT 5
+                ''', (start_date,))
+
+                staff_stats = cursor.fetchall()
+
+                staff_frame = ttk.LabelFrame(scrollable_frame, text="👥 Staff Workload", padding="10")
+                staff_frame.pack(fill='x', pady=5)
+
+                staff_text = ""
+                for username, assigned, resolved in staff_stats:
+                    staff_resolution_rate = (resolved / assigned * 100) if assigned > 0 else 0
+                    staff_text += f"{username}: {assigned} assigned, {resolved} resolved ({staff_resolution_rate:.1f}%)\n"
+
+                ttk.Label(staff_frame, text=staff_text, justify='left').pack(anchor='w')
+                report_text += "Staff Workload:\n" + staff_text
+
+            conn.close()
+
+            # Export button
+            export_frame = ttk.Frame(main_frame)
+            export_frame.pack(fill='x', pady=(10, 0))
+
+            def export_report():
+                self.save_report_to_file_gui("executive_summary", period, report_text)
+
+            ttk.Button(export_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
+            ttk.Button(export_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+    def generate_staff_performance_report_gui(self, period='30d'):
+        """Generate staff performance report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
+            days = days_map.get(period, 30)
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Get staff performance data
+            cursor.execute('''
+                SELECT
+                    u.username,
+                    u.role,
+                    COUNT(t.ticket_id) as total_assigned,
+                    COUNT(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 END) as resolved,
+                    AVG(CASE WHEN t.resolved_at IS NOT NULL
+                        THEN (julianday(t.resolved_at) - julianday(t.created_at)) * 24
+                        ELSE NULL END) as avg_resolution_hours,
+                    AVG(t.satisfaction_rating) as avg_satisfaction
+                FROM users u
+                LEFT JOIN support_tickets t ON u.id = t.assigned_to AND t.created_at >= ?
+                WHERE u.role IN ('staff', 'admin') AND u.is_active = 1
+                GROUP BY u.id, u.username, u.role
+                HAVING total_assigned > 0
+                ORDER BY total_assigned DESC
+            ''', (start_date,))
+
+            staff_data = cursor.fetchall()
+            conn.close()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title(f"Staff Performance Report - {period.upper()}")
+            report_window.geometry("900x600")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"👥 Staff Performance Report ({period.upper()})",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Create treeview
+            columns = ('Username', 'Role', 'Assigned', 'Resolved', 'Resolution %', 'Avg Hours', 'Satisfaction')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=120)
+
+            tree.pack(fill='both', expand=True, pady=(0, 10))
+
+            # Add scrollbar
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            scrollbar.pack(side='right', fill='y')
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Populate data
+            report_text = "Staff Performance Report\n" + "="*50 + "\n\n"
+            for username, role, assigned, resolved, avg_hours, avg_sat in staff_data:
+                resolution_rate = (resolved / assigned * 100) if assigned > 0 else 0
+                avg_hours_str = f"{avg_hours:.1f}" if avg_hours else "N/A"
+                avg_sat_str = f"{avg_sat:.1f}" if avg_sat else "N/A"
+
+                tree.insert('', 'end', values=(
+                    username, role, assigned, resolved,
+                    f"{resolution_rate:.1f}%", avg_hours_str, avg_sat_str
+                ))
+
+                report_text += f"{username} ({role}): {assigned} assigned, {resolved} resolved ({resolution_rate:.1f}%), "
+                report_text += f"Avg: {avg_hours_str}h, Satisfaction: {avg_sat_str}\n"
+
+            # Export button
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x')
+
+            def export_report():
+                self.save_report_to_file_gui("staff_performance", period, report_text)
+
+            ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+    def generate_department_report_gui(self, period='30d'):
+        """Generate department performance report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
+            days = days_map.get(period, 30)
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Get department performance data
+            cursor.execute('''
+                SELECT
+                    COALESCE(department, 'Unassigned') as dept,
+                    COUNT(*) as total_tickets,
+                    COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved,
+                    AVG(CASE WHEN resolved_at IS NOT NULL
+                        THEN (julianday(resolved_at) - julianday(created_at)) * 24
+                        ELSE NULL END) as avg_resolution_hours
+                FROM support_tickets
+                WHERE created_at >= ?
+                GROUP BY department
+                ORDER BY total_tickets DESC
+            ''', (start_date,))
+
+            dept_data = cursor.fetchall()
+            conn.close()
+
+            # Create report window with chart
+            report_window = tk.Toplevel(self.root)
+            report_window.title(f"Department Performance - {period.upper()}")
+            report_window.geometry("800x600")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"🏢 Department Performance Report ({period.upper()})",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Create treeview
+            columns = ('Department', 'Total Tickets', 'Resolved', 'Resolution %', 'Avg Resolution Hours')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=12)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            tree.pack(fill='both', expand=True, pady=(0, 10))
+
+            report_text = "Department Performance Report\n" + "="*50 + "\n\n"
+            for dept, total, resolved, avg_hours in dept_data:
+                resolution_rate = (resolved / total * 100) if total > 0 else 0
+                avg_hours_str = f"{avg_hours:.1f}" if avg_hours else "N/A"
+
+                tree.insert('', 'end', values=(
+                    dept, total, resolved, f"{resolution_rate:.1f}%", avg_hours_str
+                ))
+
+                report_text += f"{dept}: {total} tickets, {resolved} resolved ({resolution_rate:.1f}%), Avg: {avg_hours_str}h\n"
+
+            # Export button
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x')
+
+            def export_report():
+                self.save_report_to_file_gui("department_performance", period, report_text)
+
+            ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+    def generate_satisfaction_report_gui(self, period='30d'):
+        """Generate customer satisfaction report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
+            days = days_map.get(period, 30)
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Get satisfaction data
+            cursor.execute('''
+                SELECT
+                    satisfaction_rating,
+                    COUNT(*) as count,
+                    satisfaction_feedback
+                FROM support_tickets
+                WHERE created_at >= ? AND satisfaction_rating IS NOT NULL
+                GROUP BY satisfaction_rating
+                ORDER BY satisfaction_rating DESC
+            ''', (start_date,))
+
+            satisfaction_data = cursor.fetchall()
+
+            # Get average
+            cursor.execute('''
+                SELECT AVG(satisfaction_rating) as avg_rating,
+                       COUNT(*) as total_rated
+                FROM support_tickets
+                WHERE created_at >= ? AND satisfaction_rating IS NOT NULL
+            ''', (start_date,))
+
+            avg_data = cursor.fetchone()
+            conn.close()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title(f"Customer Satisfaction Report - {period.upper()}")
+            report_window.geometry("700x500")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"⭐ Customer Satisfaction Report ({period.upper()})",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Average satisfaction
+            if avg_data and avg_data[0]:
+                summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
+                summary_frame.pack(fill='x', pady=(0, 10))
+
+                summary_text = f"Average Rating: {avg_data[0]:.2f}/5.0\nTotal Rated Tickets: {avg_data[1]}"
+                ttk.Label(summary_frame, text=summary_text, font=('TkDefaultFont', 11, 'bold')).pack()
+
+            # Rating distribution
+            dist_frame = ttk.LabelFrame(main_frame, text="Rating Distribution", padding="10")
+            dist_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+            columns = ('Rating', 'Count', 'Percentage')
+            tree = ttk.Treeview(dist_frame, columns=columns, show='headings', height=5)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            tree.pack(fill='both', expand=True)
+
+            report_text = f"Customer Satisfaction Report\n{'='*50}\n\n"
+            if avg_data and avg_data[0]:
+                report_text += f"Average Rating: {avg_data[0]:.2f}/5.0\nTotal Rated: {avg_data[1]}\n\n"
+
+            total_ratings = sum(count for _, count, _ in satisfaction_data)
+            for rating, count, _ in satisfaction_data:
+                percentage = (count / total_ratings * 100) if total_ratings > 0 else 0
+                tree.insert('', 'end', values=(
+                    f"{'⭐' * rating} ({rating})", count, f"{percentage:.1f}%"
+                ))
+                report_text += f"{rating} stars: {count} ({percentage:.1f}%)\n"
+
+            # Export button
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x')
+
+            def export_report():
+                self.save_report_to_file_gui("satisfaction", period, report_text)
+
+            ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+    def generate_trend_analysis_report_gui(self, period='30d'):
+        """Generate trend analysis report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
+            days = days_map.get(period, 30)
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Get daily ticket counts
+            cursor.execute('''
+                SELECT DATE(created_at) as date, COUNT(*) as count
+                FROM support_tickets
+                WHERE created_at >= ?
+                GROUP BY DATE(created_at)
+                ORDER BY date
+            ''', (start_date,))
+
+            daily_data = cursor.fetchall()
+
+            # Get status trends
+            cursor.execute('''
+                SELECT status, COUNT(*) as count
+                FROM support_tickets
+                WHERE created_at >= ?
+                GROUP BY status
+                ORDER BY count DESC
+            ''', (start_date,))
+
+            status_data = cursor.fetchall()
+            conn.close()
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title(f"Trend Analysis - {period.upper()}")
+            report_window.geometry("800x600")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"📈 Trend Analysis Report ({period.upper()})",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Daily trends
+            daily_frame = ttk.LabelFrame(main_frame, text="Daily Ticket Volume", padding="10")
+            daily_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+            columns = ('Date', 'Tickets Created')
+            tree = ttk.Treeview(daily_frame, columns=columns, show='headings', height=8)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            tree.pack(fill='both', expand=True)
+
+            report_text = f"Trend Analysis Report\n{'='*50}\n\nDaily Trends:\n"
+            for date, count in daily_data:
+                tree.insert('', 'end', values=(date, count))
+                report_text += f"{date}: {count} tickets\n"
+
+            # Status distribution
+            status_frame = ttk.LabelFrame(main_frame, text="Status Distribution", padding="10")
+            status_frame.pack(fill='x', pady=(0, 10))
+
+            status_text = "\n\nStatus Distribution:\n"
+            for status, count in status_data:
+                status_text += f"{status}: {count} tickets\n"
+
+            ttk.Label(status_frame, text=status_text, justify='left').pack(anchor='w')
+            report_text += status_text
+
+            # Export button
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x')
+
+            def export_report():
+                self.save_report_to_file_gui("trend_analysis", period, report_text)
+
+            ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+    def generate_custom_date_report_gui(self):
+        """Generate report for custom date range"""
+        # Create dialog for date selection
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Custom Date Range Report")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Select Date Range",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Date inputs
+        date_frame = ttk.LabelFrame(main_frame, text="Date Range", padding="10")
+        date_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(date_frame, text="Start Date (YYYY-MM-DD):").grid(row=0, column=0, sticky='w', pady=5)
+        start_entry = ttk.Entry(date_frame, width=20)
+        start_entry.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+        start_entry.grid(row=0, column=1, pady=5)
+
+        ttk.Label(date_frame, text="End Date (YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        end_entry = ttk.Entry(date_frame, width=20)
+        end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+        end_entry.grid(row=1, column=1, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def generate():
+            start_date = start_entry.get()
+            end_date = end_entry.get()
+
+            try:
+                # Validate dates
+                datetime.strptime(start_date, '%Y-%m-%d')
+                datetime.strptime(end_date, '%Y-%m-%d')
+
+                dialog.destroy()
+                messagebox.showinfo("Info", f"Generating report from {start_date} to {end_date}")
+                # Here you would call the actual report generation with the custom dates
+
+            except ValueError:
+                messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD")
+
+        ttk.Button(button_frame, text="Generate", command=generate).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def export_ticket_list_gui(self):
+        """Export filtered ticket list to CSV"""
+        try:
+            import csv
+            from tkinter import filedialog
+
+            # Get tickets to export (from current view)
+            if hasattr(self, 'all_tickets_tree'):
+                items = self.all_tickets_tree.get_children()
+                if not items:
+                    messagebox.showinfo("Info", "No tickets to export")
+                    return
+
+                # Ask for save location
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=f"tickets_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+
+                if not filename:
+                    return
+
+                with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(['ID', 'Subject', 'Status', 'Priority', 'Category', 'Created', 'Assigned To'])
+
+                    for item in items:
+                        values = self.all_tickets_tree.item(item)['values']
+                        writer.writerow(values)
+
+                messagebox.showinfo("Success", f"Exported {len(items)} tickets to {filename}")
+
+            else:
+                messagebox.showerror("Error", "No ticket list available to export")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export tickets: {str(e)}")
+
+    def save_report_to_file_gui(self, report_type, period, report_content):
+        """Save report to file"""
+        try:
+            from tkinter import filedialog
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                initialfile=f"{report_type}_{period}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            )
+
+            if not filename:
+                return
+
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(f"Helpdesk Report: {report_type}\n")
+                f.write(f"Period: {period}\n")
+                f.write(f"Generated by: {self.current_user.get('username', 'Unknown')}\n")
+                f.write(f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write("\n" + "="*50 + "\n\n")
+                f.write(report_content)
+
+            messagebox.showinfo("Success", f"Report saved to {filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
+    def export_analytics_data_gui(self):
+        """Export analytics data to CSV"""
+        try:
+            import csv
+            from tkinter import filedialog
+            from university_system.infrastructure.database.db import get_connection
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"analytics_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not filename:
+                return
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT ticket_id, user_id, subject, category, status, priority,
+                       created_at, resolved_at, satisfaction_rating
+                FROM support_tickets
+                ORDER BY created_at DESC
+            ''')
+
+            tickets = cursor.fetchall()
+            conn.close()
+
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Ticket ID', 'User ID', 'Subject', 'Category', 'Status',
+                               'Priority', 'Created At', 'Resolved At', 'Satisfaction'])
+
+                for ticket in tickets:
+                    writer.writerow(ticket)
+
+            messagebox.showinfo("Success", f"Exported {len(tickets)} tickets to {filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export analytics data: {str(e)}")
+
+    # END OF ANALYTICS & REPORTING FUNCTIONS
+    # ============================================================================
+
+    # ============================================================================
+    # IMPORT/EXPORT & SYSTEM MANAGEMENT FUNCTIONS (7 FUNCTIONS)
+    # ============================================================================
+
+    def import_tickets_csv_gui(self):
+        """Import tickets from CSV file"""
+        try:
+            import csv
+            from tkinter import filedialog
+            from university_system.infrastructure.database.db import get_connection
+
+            filename = filedialog.askopenfilename(
+                title="Select CSV file to import",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+
+            if not filename:
+                return
+
+            imported = 0
+            errors = []
+
+            with open(filename, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                for row in reader:
+                    try:
+                        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                        cursor.execute('''
+                            INSERT INTO support_tickets
+                            (user_id, subject, message, category, status, priority, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            self.current_user.get('id', 0),
+                            row.get('subject', ''),
+                            row.get('message', ''),
+                            row.get('category', 'Other'),
+                            row.get('status', 'open'),
+                            row.get('priority', 'medium'),
+                            now, now
+                        ))
+
+                        imported += 1
+
+                    except Exception as e:
+                        errors.append(f"Row {reader.line_num}: {str(e)}")
+
+                conn.commit()
+                conn.close()
+
+            if errors:
+                error_msg = "\n".join(errors[:5])
+                if len(errors) > 5:
+                    error_msg += f"\n... and {len(errors)-5} more errors"
+                messagebox.showwarning("Import Complete with Errors",
+                                      f"Imported {imported} tickets\nErrors: {len(errors)}\n\n{error_msg}")
+            else:
+                messagebox.showinfo("Success", f"Successfully imported {imported} tickets")
+
+            self.refresh_all_tickets()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import tickets: {str(e)}")
+
+    def data_import_export_gui(self):
+        """Show import/export options dialog"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Data Import/Export")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Data Import/Export",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+
+        # Export options
+        export_frame = ttk.LabelFrame(main_frame, text="Export", padding="10")
+        export_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(export_frame, text="Export Tickets to CSV",
+                  command=lambda: [dialog.destroy(), self.export_ticket_list_gui()]).pack(fill='x', pady=2)
+        ttk.Button(export_frame, text="Export Analytics Data",
+                  command=lambda: [dialog.destroy(), self.export_analytics_data_gui()]).pack(fill='x', pady=2)
+
+        # Import options
+        import_frame = ttk.LabelFrame(main_frame, text="Import", padding="10")
+        import_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(import_frame, text="Import Tickets from CSV",
+                  command=lambda: [dialog.destroy(), self.import_tickets_csv_gui()]).pack(fill='x', pady=2)
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(10, 0))
+
+    def system_management_menu_gui(self):
+        """Show system management menu"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to access system management.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("System Management")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="System Management",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+
+        # Management options
+        options_frame = ttk.Frame(main_frame)
+        options_frame.pack(fill='both', expand=True)
+
+        ttk.Button(options_frame, text="📊 Generate Reports",
+                  command=lambda: [dialog.destroy(), self.generate_enhanced_ticket_report_gui()]).pack(fill='x', pady=5)
+        ttk.Button(options_frame, text="💾 Data Import/Export",
+                  command=lambda: [dialog.destroy(), self.data_import_export_gui()]).pack(fill='x', pady=5)
+        ttk.Button(options_frame, text="🔧 System Maintenance",
+                  command=lambda: [dialog.destroy(), self.system_maintenance_gui()]).pack(fill='x', pady=5)
+        ttk.Button(options_frame, text="📋 Audit Logs",
+                  command=lambda: [dialog.destroy(), self.view_audit_logs_gui()]).pack(fill='x', pady=5)
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(20, 0))
+
+    def system_maintenance_gui(self):
+        """System maintenance functions"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("System Maintenance")
+        dialog.geometry("500x350")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="System Maintenance",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill='both', expand=True)
+
+        def check_integrity():
+            try:
+                from university_system.modules.domain.student_affairs.services.helpdesk import check_data_integrity
+                check_data_integrity(self.auth if hasattr(self, 'auth') else None)
+                messagebox.showinfo("Success", "Data integrity check completed")
+            except Exception as e:
+                messagebox.showerror("Error", f"Integrity check failed: {str(e)}")
+
+        def backup_db():
+            try:
+                from university_system.modules.domain.student_affairs.services.helpdesk import backup_database
+                backup_database(self.auth if hasattr(self, 'auth') else None)
+                messagebox.showinfo("Success", "Database backup completed")
+            except Exception as e:
+                messagebox.showerror("Error", f"Backup failed: {str(e)}")
+
+        ttk.Button(info_frame, text="🔍 Check Data Integrity",
+                  command=check_integrity).pack(fill='x', pady=5)
+        ttk.Button(info_frame, text="💾 Backup Database",
+                  command=backup_db).pack(fill='x', pady=5)
+        ttk.Button(info_frame, text="🧹 Database Cleanup",
+                  command=lambda: messagebox.showinfo("Info", "Database cleanup functionality")).pack(fill='x', pady=5)
+
+        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(20, 0))
+
+    def view_audit_logs_gui(self):
+        """View ticket audit logs"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            log_window = tk.Toplevel(self.root)
+            log_window.title("Audit Logs")
+            log_window.geometry("1000x600")
+
+            main_frame = ttk.Frame(log_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="📋 Ticket Audit Logs",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+            # Create treeview
+            columns = ('Log ID', 'Ticket ID', 'User', 'Action', 'Timestamp', 'Details')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            tree.pack(fill='both', expand=True, pady=(0, 10))
+
+            # Add scrollbar
+            scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+            scrollbar.pack(side='right', fill='y')
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Load audit logs
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT al.log_id, al.ticket_id, u.username, al.action, al.created_at,
+                       al.new_values
+                FROM ticket_audit_log al
+                LEFT JOIN users u ON al.user_id = u.id
+                ORDER BY al.created_at DESC
+                LIMIT 1000
+            ''')
+
+            logs = cursor.fetchall()
+            conn.close()
+
+            for log in logs:
+                log_id, ticket_id, username, action, timestamp, details = log
+                tree.insert('', 'end', values=(
+                    log_id, ticket_id, username or 'System', action, timestamp,
+                    details[:50] if details else ''
+                ))
+
+            ttk.Button(main_frame, text="Close", command=log_window.destroy).pack()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load audit logs: {str(e)}")
+
+    def log_ticket_action_gui(self, ticket_id, action, old_values=None, new_values=None):
+        """Log ticket action to audit trail"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            import json
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            cursor.execute('''
+                INSERT INTO ticket_audit_log
+                (ticket_id, user_id, action, old_values, new_values, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                ticket_id,
+                self.current_user.get('id', 0),
+                action,
+                json.dumps(old_values or {}),
+                json.dumps(new_values or {}),
+                now
+            ))
+
+            conn.commit()
+            conn.close()
+
+        except Exception as e:
+            print(f"Failed to log action: {e}")
+
+    # END OF IMPORT/EXPORT & SYSTEM MANAGEMENT FUNCTIONS
+    # ============================================================================
+
     def send_ticket_notification_email(self, ticket_id, notification_type, admin_email, user_email=None):
         """Send ticket notification emails"""
         try:
