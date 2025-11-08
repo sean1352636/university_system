@@ -9,6 +9,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Internship Management GUI - Enhanced Application Filtering** (2025-11-08)
+- **New Update**: Added 2 critical application filter functions (approximately 120 lines of new code)
+- **Impact**: Complete parity with CLI filtering options for viewing applications
+- **Files Modified**:
+  - `university_system/modules/domain/student_affairs/gui/internship_management_gui.py` - Added ~120 lines
+
+**Application Filtering Functions (2 new)**:
+
+1. **filter_by_internship_id()** - Filter applications by specific internship
+   - Entry field for internship ID input
+   - Validation that internship exists in database
+   - Clear error messages for invalid IDs
+   - Auto-clears conflicting student filter
+   - Shows all applications for selected internship
+   - Matches CLI Option 2 functionality
+
+2. **filter_by_student_id()** - Filter applications by specific student
+   - Entry field for student ID input
+   - Validation that student exists in database
+   - Clear error messages for invalid IDs
+   - Auto-clears conflicting internship filter
+   - Shows all applications from selected student
+   - Matches CLI Option 4 functionality
+
+**Supporting Functions (1 new)**:
+
+3. **clear_all_filters()** - Reset all filters to defaults
+   - Clears status filter (resets to "All")
+   - Clears internship ID filter
+   - Clears student ID filter
+   - Reloads all applications
+   - Confirmation message to user
+
+**UI Enhancements**:
+- **Enhanced filter layout**: Two-row filter interface for better organization
+  - Row 1: Status filter + Internship ID filter
+  - Row 2: Student ID filter + Clear/Refresh buttons
+- **Visual distinction**: Color-coded filter buttons
+  - Blue for internship filter
+  - Purple for student filter
+  - Red for clear filters
+  - Green for refresh
+- **Improved UX**: Separate dedicated buttons for each filter type
+- **Filter combination**: Can combine status with internship/student filters
+- **Filter feedback**: Info message showing applied filters and result count
+
+**Updated Function**:
+- **load_all_applications_data()** - Enhanced to support multiple filters
+  - Dynamic WHERE clause construction
+  - Supports status + internship_id filters
+  - Supports status + student_id filters
+  - Parameterized queries for security
+  - Filter status display message
+
+**Query Implementation**:
+Filter by Internship ID:
+```sql
+SELECT a.application_id, a.student_id, s.first_name || ' ' || s.last_name,
+       i.title, i.company, a.application_date, a.status
+FROM internship_applications a
+JOIN students s ON a.student_id = s.student_id
+JOIN internships i ON a.internship_id = i.internship_id
+WHERE a.internship_id = ?
+ORDER BY a.application_date DESC
+```
+
+Filter by Student ID:
+```sql
+SELECT a.application_id, a.student_id, s.first_name || ' ' || s.last_name,
+       i.title, i.company, a.application_date, a.status
+FROM internship_applications a
+JOIN students s ON a.student_id = s.student_id
+JOIN internships i ON a.internship_id = i.internship_id
+WHERE a.student_id = ?
+ORDER BY a.application_date DESC
+```
+
+**Technical Improvements**:
+- Input validation before database queries
+- Existence checks for internship/student IDs
+- Auto-clear conflicting filters for clarity
+- Comprehensive error handling
+- User-friendly feedback messages
+- Maintains existing color-coded status display
+
 **Alumni Management GUI - Complete Feature Set: Reunions, Chapters, Business, Networking, Fundraising & Stories** (2025-11-08)
 - **New Update**: Added 13 comprehensive management functions (approximately 1,850 lines of new code)
 - **Impact**: Complete alumni management system with full CRUD operations across all modules

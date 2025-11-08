@@ -1348,23 +1348,66 @@ CV Filename: {app_data[5]}
         tk.Label(title_frame, text="All Applications", 
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
         
-        # Filter frame
-        filter_frame = tk.Frame(title_frame, bg='white')
-        filter_frame.pack(side='right')
-        
-        tk.Label(filter_frame, text="Filter by Status:", font=('Arial', 10), 
+        # Filter frame (multiple rows for different filters)
+        filter_frame = tk.Frame(self.content_frame, bg='white')
+        filter_frame.pack(fill='x', padx=20, pady=(0, 10))
+
+        # Row 1: Status and Internship ID filters
+        filter_row1 = tk.Frame(filter_frame, bg='white')
+        filter_row1.pack(fill='x', pady=2)
+
+        # Status filter
+        tk.Label(filter_row1, text="Filter by Status:", font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
-        
+
         self.status_filter = tk.StringVar(value="All")
-        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_filter, 
+        status_combo = ttk.Combobox(filter_row1, textvariable=self.status_filter,
                                    values=["All", "pending", "approved", "rejected"],
                                    font=('Arial', 9), state='readonly', width=12)
         status_combo.pack(side='left', padx=5)
         status_combo.bind('<<ComboboxSelected>>', lambda e: self.load_all_applications_data())
-        
-        refresh_btn = tk.Button(filter_frame, text="Refresh", command=self.load_all_applications_data,
-                               bg='#27ae60', fg='white', font=('Arial', 10), 
-                               padx=10, pady=3, relief='flat')
+
+        # Internship ID filter
+        tk.Label(filter_row1, text="Internship ID:", font=('Arial', 10),
+                bg='white', fg='#34495e').pack(side='left', padx=(15, 5))
+
+        self.internship_id_filter = tk.StringVar()
+        internship_id_entry = ttk.Entry(filter_row1, textvariable=self.internship_id_filter,
+                                        font=('Arial', 9), width=12)
+        internship_id_entry.pack(side='left', padx=5)
+
+        tk.Button(filter_row1, text="Filter by Internship",
+                 command=self.filter_by_internship_id,
+                 bg='#3498db', fg='white', font=('Arial', 9),
+                 padx=8, pady=2, relief='flat').pack(side='left', padx=5)
+
+        # Row 2: Student ID filter and controls
+        filter_row2 = tk.Frame(filter_frame, bg='white')
+        filter_row2.pack(fill='x', pady=2)
+
+        # Student ID filter
+        tk.Label(filter_row2, text="Filter by Student ID:", font=('Arial', 10),
+                bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
+
+        self.student_id_filter = tk.StringVar()
+        student_id_entry = ttk.Entry(filter_row2, textvariable=self.student_id_filter,
+                                     font=('Arial', 9), width=12)
+        student_id_entry.pack(side='left', padx=5)
+
+        tk.Button(filter_row2, text="Filter by Student",
+                 command=self.filter_by_student_id,
+                 bg='#9b59b6', fg='white', font=('Arial', 9),
+                 padx=8, pady=2, relief='flat').pack(side='left', padx=5)
+
+        # Clear filters and refresh buttons
+        tk.Button(filter_row2, text="Clear All Filters",
+                 command=self.clear_all_filters,
+                 bg='#e74c3c', fg='white', font=('Arial', 9),
+                 padx=8, pady=2, relief='flat').pack(side='left', padx=(15, 5))
+
+        refresh_btn = tk.Button(filter_row2, text="Refresh", command=self.load_all_applications_data,
+                               bg='#27ae60', fg='white', font=('Arial', 9),
+                               padx=8, pady=2, relief='flat')
         refresh_btn.pack(side='left', padx=5)
         
         # Create treeview for all applications
@@ -1414,16 +1457,16 @@ CV Filename: {app_data[5]}
                      bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
     
     def load_all_applications_data(self):
-        """Load all applications data"""
+        """Load all applications data with optional filters"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Clear existing data
             for item in self.all_apps_tree.get_children():
                 self.all_apps_tree.delete(item)
-            
-            # Build query based on filter
+
+            # Build query based on filters
             base_query = '''
             SELECT a.application_id, a.student_id, s.first_name || ' ' || s.last_name,
                    i.title, i.company, a.application_date, a.status
@@ -1431,15 +1474,34 @@ CV Filename: {app_data[5]}
             JOIN students s ON a.student_id = s.student_id
             JOIN internships i ON a.internship_id = i.internship_id
             '''
-            
-            if self.status_filter.get() != "All":
-                cursor.execute(base_query + ' WHERE a.status = ? ORDER BY a.application_date DESC', 
-                              (self.status_filter.get(),))
+
+            where_clauses = []
+            params = []
+
+            # Add status filter
+            if hasattr(self, 'status_filter') and self.status_filter.get() != "All":
+                where_clauses.append('a.status = ?')
+                params.append(self.status_filter.get())
+
+            # Add internship ID filter
+            if hasattr(self, 'internship_id_filter') and self.internship_id_filter.get().strip():
+                where_clauses.append('a.internship_id = ?')
+                params.append(self.internship_id_filter.get().strip())
+
+            # Add student ID filter
+            if hasattr(self, 'student_id_filter') and self.student_id_filter.get().strip():
+                where_clauses.append('a.student_id = ?')
+                params.append(self.student_id_filter.get().strip())
+
+            # Construct final query
+            if where_clauses:
+                query = base_query + ' WHERE ' + ' AND '.join(where_clauses) + ' ORDER BY a.application_date DESC'
+                cursor.execute(query, params)
             else:
                 cursor.execute(base_query + ' ORDER BY a.application_date DESC')
-            
+
             applications = cursor.fetchall()
-            
+
             # Insert data with color coding
             for app in applications:
                 tags = []
@@ -1449,19 +1511,119 @@ CV Filename: {app_data[5]}
                     tags = ['rejected']
                 elif app[6] == 'pending':
                     tags = ['pending']
-                
+
                 self.all_apps_tree.insert('', 'end', values=app, tags=tags)
-            
+
             # Configure tag colors
             self.all_apps_tree.tag_configure('approved', background='#d4edda')
             self.all_apps_tree.tag_configure('rejected', background='#f8d7da')
             self.all_apps_tree.tag_configure('pending', background='#fff3cd')
-            
+
             conn.close()
-            
+
+            # Update status message
+            filter_msg = []
+            if hasattr(self, 'status_filter') and self.status_filter.get() != "All":
+                filter_msg.append(f"Status: {self.status_filter.get()}")
+            if hasattr(self, 'internship_id_filter') and self.internship_id_filter.get().strip():
+                filter_msg.append(f"Internship ID: {self.internship_id_filter.get()}")
+            if hasattr(self, 'student_id_filter') and self.student_id_filter.get().strip():
+                filter_msg.append(f"Student ID: {self.student_id_filter.get()}")
+
+            if filter_msg:
+                messagebox.showinfo("Filter Applied",
+                                  f"Showing {len(applications)} application(s)\nFilters: {', '.join(filter_msg)}")
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error loading applications: {e}")
-    
+
+    def filter_by_internship_id(self):
+        """Filter applications by internship ID"""
+        internship_id = self.internship_id_filter.get().strip()
+
+        if not internship_id:
+            messagebox.showwarning("Input Required", "Please enter an Internship ID to filter.")
+            return
+
+        # Validate that internship exists
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT internship_id, title, company FROM internships WHERE internship_id = ?',
+                          (internship_id,))
+            internship = cursor.fetchone()
+
+            conn.close()
+
+            if not internship:
+                messagebox.showerror("Invalid ID",
+                                   f"No internship found with ID: {internship_id}")
+                self.internship_id_filter.set("")
+                return
+
+            # Clear other filters to show only internship filter results
+            if hasattr(self, 'student_id_filter'):
+                self.student_id_filter.set("")
+
+            # Load applications with this filter
+            self.load_all_applications_data()
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Error validating internship ID: {e}")
+
+    def filter_by_student_id(self):
+        """Filter applications by student ID"""
+        student_id = self.student_id_filter.get().strip()
+
+        if not student_id:
+            messagebox.showwarning("Input Required", "Please enter a Student ID to filter.")
+            return
+
+        # Validate that student exists
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT student_id, first_name, last_name FROM students WHERE student_id = ?',
+                          (student_id,))
+            student = cursor.fetchone()
+
+            conn.close()
+
+            if not student:
+                messagebox.showerror("Invalid ID",
+                                   f"No student found with ID: {student_id}")
+                self.student_id_filter.set("")
+                return
+
+            # Clear other filters to show only student filter results
+            if hasattr(self, 'internship_id_filter'):
+                self.internship_id_filter.set("")
+
+            # Load applications with this filter
+            self.load_all_applications_data()
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Error validating student ID: {e}")
+
+    def clear_all_filters(self):
+        """Clear all application filters and reload all data"""
+        # Reset all filter values
+        if hasattr(self, 'status_filter'):
+            self.status_filter.set("All")
+
+        if hasattr(self, 'internship_id_filter'):
+            self.internship_id_filter.set("")
+
+        if hasattr(self, 'student_id_filter'):
+            self.student_id_filter.set("")
+
+        # Reload all applications
+        self.load_all_applications_data()
+
+        messagebox.showinfo("Filters Cleared", "All filters have been cleared. Showing all applications.")
+
     def view_all_app_details(self):
         """View details of selected application from all applications view"""
         selection = self.all_apps_tree.selection()
