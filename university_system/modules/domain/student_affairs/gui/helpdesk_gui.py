@@ -5908,6 +5908,749 @@ High Priority: {metrics[3]}"""
     # END OF IMPORT/EXPORT & SYSTEM MANAGEMENT FUNCTIONS
     # ============================================================================
 
+    # ============================================================================
+    # TICKET TEMPLATE MANAGEMENT FUNCTIONS (5 FUNCTIONS)
+    # ============================================================================
+
+    def manage_ticket_templates_gui(self):
+        """Manage ticket templates"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to manage templates.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Ticket Template Management")
+        dialog.geometry("900x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Ticket Template Management",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+        # Toolbar
+        toolbar = ttk.Frame(main_frame)
+        toolbar.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(toolbar, text="➕ Create Template",
+                  command=lambda: self.create_ticket_template_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="✏️ Edit Template",
+                  command=lambda: self.edit_selected_template(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔄 Toggle Active",
+                  command=lambda: self.toggle_selected_template(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔃 Refresh",
+                  command=lambda: self.load_templates_list(tree)).pack(side='left', padx=5)
+
+        # Templates list
+        columns = ('ID', 'Name', 'Category', 'Priority', 'Impact', 'Urgency', 'Active')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            width = 80 if col == 'ID' else 150
+            tree.column(col, width=width)
+
+        tree.pack(fill='both', expand=True, side='left')
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load templates
+        self.load_templates_list(tree)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def load_templates_list(self, tree):
+        """Load templates into treeview"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT template_id, name, category, default_priority, default_impact,
+                       default_urgency, is_active
+                FROM ticket_templates
+                ORDER BY category, name
+            ''')
+
+            templates = cursor.fetchall()
+            conn.close()
+
+            for template in templates:
+                tid, name, category, priority, impact, urgency, is_active = template
+                active_text = "✓ Yes" if is_active else "✗ No"
+
+                tree.insert('', 'end', values=(
+                    tid, name, category or 'N/A', priority or 'N/A',
+                    impact or 'N/A', urgency or 'N/A', active_text
+                ))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+
+    def create_ticket_template_gui(self):
+        """Create a new ticket template"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Ticket Template")
+        dialog.geometry("600x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Create New Ticket Template",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Form fields
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True)
+
+        # Name
+        ttk.Label(form_frame, text="Template Name *").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(form_frame, width=40)
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Description
+        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        desc_entry = ttk.Entry(form_frame, width=40)
+        desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # Category
+        ttk.Label(form_frame, text="Category *").grid(row=2, column=0, sticky='w', pady=5)
+        category_var = tk.StringVar()
+        category_combo = ttk.Combobox(form_frame, textvariable=category_var, state="readonly", width=38)
+        category_combo['values'] = ['Technical Support', 'Academic Inquiry', 'Financial Services',
+                                    'Account Access', 'Other']
+        category_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+        # Subject Template
+        ttk.Label(form_frame, text="Subject Template").grid(row=3, column=0, sticky='nw', pady=5)
+        subject_entry = ttk.Entry(form_frame, width=40)
+        subject_entry.grid(row=3, column=1, sticky='ew', pady=5)
+        ttk.Label(form_frame, text="Use [FIELD_NAME] for placeholders", foreground='gray').grid(
+            row=4, column=1, sticky='w')
+
+        # Message Template
+        ttk.Label(form_frame, text="Message Template").grid(row=5, column=0, sticky='nw', pady=5)
+        message_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
+        message_text.grid(row=5, column=1, sticky='ew', pady=5)
+
+        # Priority, Impact, Urgency
+        ttk.Label(form_frame, text="Default Priority").grid(row=6, column=0, sticky='w', pady=5)
+        priority_var = tk.StringVar(value='medium')
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
+        priority_combo['values'] = ['low', 'medium', 'high']
+        priority_combo.grid(row=6, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Default Impact").grid(row=7, column=0, sticky='w', pady=5)
+        impact_var = tk.StringVar(value='low')
+        impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
+        impact_combo['values'] = ['low', 'medium', 'high']
+        impact_combo.grid(row=7, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Default Urgency").grid(row=8, column=0, sticky='w', pady=5)
+        urgency_var = tk.StringVar(value='low')
+        urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
+        urgency_combo['values'] = ['low', 'medium', 'high']
+        urgency_combo.grid(row=8, column=1, sticky='w', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def save_template():
+            name = name_entry.get().strip()
+            category = category_var.get()
+
+            if not name or not category:
+                messagebox.showerror("Error", "Name and category are required")
+                return
+
+            try:
+                from university_system.infrastructure.database.db import get_connection
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO ticket_templates
+                    (name, description, category, subject_template, message_template,
+                     default_priority, default_impact, default_urgency, created_by, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    name,
+                    desc_entry.get().strip(),
+                    category,
+                    subject_entry.get().strip(),
+                    message_text.get('1.0', 'end-1c').strip(),
+                    priority_var.get(),
+                    impact_var.get(),
+                    urgency_var.get(),
+                    self.current_user.get('id', 0),
+                    now
+                ))
+
+                conn.commit()
+                template_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success", f"Template #{template_id} created successfully!")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create template: {str(e)}")
+
+        ttk.Button(button_frame, text="Create Template", command=save_template).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def edit_selected_template(self, tree):
+        """Edit selected template"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a template to edit")
+            return
+
+        template_id = tree.item(selection[0])['values'][0]
+        self.edit_ticket_template_gui(template_id)
+
+    def edit_ticket_template_gui(self, template_id):
+        """Edit an existing ticket template"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM ticket_templates WHERE template_id = ?', (template_id,))
+            template = cursor.fetchone()
+            conn.close()
+
+            if not template:
+                messagebox.showerror("Error", "Template not found")
+                return
+
+            # Create edit dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Edit Template #{template_id}")
+            dialog.geometry("600x700")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Edit Template: {template[1]}",
+                     font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+            # Form fields (similar to create, but pre-filled)
+            form_frame = ttk.Frame(main_frame)
+            form_frame.pack(fill='both', expand=True)
+
+            # Name
+            ttk.Label(form_frame, text="Template Name *").grid(row=0, column=0, sticky='w', pady=5)
+            name_entry = ttk.Entry(form_frame, width=40)
+            name_entry.insert(0, template[1])
+            name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+            # Description
+            ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+            desc_entry = ttk.Entry(form_frame, width=40)
+            desc_entry.insert(0, template[2] or '')
+            desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+            # Category
+            ttk.Label(form_frame, text="Category *").grid(row=2, column=0, sticky='w', pady=5)
+            category_var = tk.StringVar(value=template[3] or '')
+            category_combo = ttk.Combobox(form_frame, textvariable=category_var, state="readonly", width=38)
+            category_combo['values'] = ['Technical Support', 'Academic Inquiry', 'Financial Services',
+                                        'Account Access', 'Other']
+            category_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+            # Subject Template
+            ttk.Label(form_frame, text="Subject Template").grid(row=3, column=0, sticky='nw', pady=5)
+            subject_entry = ttk.Entry(form_frame, width=40)
+            subject_entry.insert(0, template[4] or '')
+            subject_entry.grid(row=3, column=1, sticky='ew', pady=5)
+
+            # Message Template
+            ttk.Label(form_frame, text="Message Template").grid(row=4, column=0, sticky='nw', pady=5)
+            message_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
+            message_text.insert('1.0', template[5] or '')
+            message_text.grid(row=4, column=1, sticky='ew', pady=5)
+
+            # Priority, Impact, Urgency
+            ttk.Label(form_frame, text="Default Priority").grid(row=5, column=0, sticky='w', pady=5)
+            priority_var = tk.StringVar(value=template[6] or 'medium')
+            priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
+            priority_combo['values'] = ['low', 'medium', 'high']
+            priority_combo.grid(row=5, column=1, sticky='w', pady=5)
+
+            ttk.Label(form_frame, text="Default Impact").grid(row=6, column=0, sticky='w', pady=5)
+            impact_var = tk.StringVar(value=template[7] or 'low')
+            impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
+            impact_combo['values'] = ['low', 'medium', 'high']
+            impact_combo.grid(row=6, column=1, sticky='w', pady=5)
+
+            ttk.Label(form_frame, text="Default Urgency").grid(row=7, column=0, sticky='w', pady=5)
+            urgency_var = tk.StringVar(value=template[8] or 'low')
+            urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
+            urgency_combo['values'] = ['low', 'medium', 'high']
+            urgency_combo.grid(row=7, column=1, sticky='w', pady=5)
+
+            form_frame.columnconfigure(1, weight=1)
+
+            # Buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(10, 0))
+
+            def update_template():
+                name = name_entry.get().strip()
+                category = category_var.get()
+
+                if not name or not category:
+                    messagebox.showerror("Error", "Name and category are required")
+                    return
+
+                try:
+                    from university_system.infrastructure.database.db import get_connection
+
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                        UPDATE ticket_templates
+                        SET name = ?, description = ?, category = ?, subject_template = ?,
+                            message_template = ?, default_priority = ?, default_impact = ?,
+                            default_urgency = ?
+                        WHERE template_id = ?
+                    ''', (
+                        name,
+                        desc_entry.get().strip(),
+                        category,
+                        subject_entry.get().strip(),
+                        message_text.get('1.0', 'end-1c').strip(),
+                        priority_var.get(),
+                        impact_var.get(),
+                        urgency_var.get(),
+                        template_id
+                    ))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Template updated successfully!")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update template: {str(e)}")
+
+            ttk.Button(button_frame, text="Update Template", command=update_template).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+
+    def toggle_selected_template(self, tree):
+        """Toggle active status of selected template"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a template to toggle")
+            return
+
+        template_id = tree.item(selection[0])['values'][0]
+        self.toggle_ticket_template_gui(template_id, tree)
+
+    def toggle_ticket_template_gui(self, template_id, tree):
+        """Toggle template active status"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT name, is_active FROM ticket_templates WHERE template_id = ?',
+                          (template_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Template not found")
+                conn.close()
+                return
+
+            name, is_active = result
+            new_status = not is_active
+
+            cursor.execute('UPDATE ticket_templates SET is_active = ? WHERE template_id = ?',
+                          (new_status, template_id))
+
+            conn.commit()
+            conn.close()
+
+            status_text = "activated" if new_status else "deactivated"
+            messagebox.showinfo("Success", f"Template '{name}' has been {status_text}")
+
+            # Refresh tree
+            self.load_templates_list(tree)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to toggle template: {str(e)}")
+
+    def view_ticket_templates_gui(self):
+        """View ticket templates (read-only)"""
+        self.manage_ticket_templates_gui()
+
+    # END OF TICKET TEMPLATE MANAGEMENT FUNCTIONS
+    # ============================================================================
+
+    # ============================================================================
+    # DEPARTMENT & ORGANIZATION MANAGEMENT FUNCTIONS (9 FUNCTIONS)
+    # ============================================================================
+
+    def manage_departments_gui(self):
+        """Manage departments"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to manage departments.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Department Management")
+        dialog.geometry("900x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Department Management",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+        # Toolbar
+        toolbar = ttk.Frame(main_frame)
+        toolbar.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(toolbar, text="➕ Create Department",
+                  command=lambda: self.create_department_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="✏️ Edit Department",
+                  command=lambda: self.edit_selected_department(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔄 Toggle Active",
+                  command=lambda: self.toggle_selected_department(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔃 Refresh",
+                  command=lambda: self.load_departments_list(tree)).pack(side='left', padx=5)
+
+        # Departments list
+        columns = ('ID', 'Name', 'Email', 'Manager', 'Description', 'Active')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            width = 60 if col == 'ID' else 150
+            tree.column(col, width=width)
+
+        tree.pack(fill='both', expand=True, side='left')
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load departments
+        self.load_departments_list(tree)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def load_departments_list(self, tree):
+        """Load departments into treeview"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT d.dept_id, d.name, d.email, u.username as manager,
+                       d.description, d.is_active
+                FROM departments d
+                LEFT JOIN users u ON d.manager_id = u.id
+                ORDER BY d.name
+            ''')
+
+            departments = cursor.fetchall()
+            conn.close()
+
+            for dept in departments:
+                dept_id, name, email, manager, description, is_active = dept
+                active_text = "✓ Yes" if is_active else "✗ No"
+                manager_text = manager or 'None'
+
+                tree.insert('', 'end', values=(
+                    dept_id, name, email or 'N/A', manager_text,
+                    (description or 'N/A')[:50], active_text
+                ))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load departments: {str(e)}")
+
+    def create_department_gui(self):
+        """Create a new department"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Department")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Create New Department",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Form fields
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True)
+
+        ttk.Label(form_frame, text="Department Name *").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(form_frame, width=35)
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='nw', pady=5)
+        desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
+        desc_text.grid(row=1, column=1, sticky='ew', pady=5)
+
+        ttk.Label(form_frame, text="Email").grid(row=2, column=0, sticky='w', pady=5)
+        email_entry = ttk.Entry(form_frame, width=35)
+        email_entry.grid(row=2, column=1, sticky='ew', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def save_department():
+            name = name_entry.get().strip()
+
+            if not name:
+                messagebox.showerror("Error", "Department name is required")
+                return
+
+            try:
+                from university_system.infrastructure.database.db import get_connection
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO departments (name, description, email, created_at)
+                    VALUES (?, ?, ?, ?)
+                ''', (
+                    name,
+                    desc_text.get('1.0', 'end-1c').strip(),
+                    email_entry.get().strip(),
+                    now
+                ))
+
+                conn.commit()
+                dept_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success", f"Department #{dept_id} created successfully!")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create department: {str(e)}")
+
+        ttk.Button(button_frame, text="Create Department", command=save_department).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def edit_selected_department(self, tree):
+        """Edit selected department"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a department to edit")
+            return
+
+        dept_id = tree.item(selection[0])['values'][0]
+        self.edit_department_gui(dept_id)
+
+    def edit_department_gui(self, dept_id):
+        """Edit an existing department"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM departments WHERE dept_id = ?', (dept_id,))
+            dept = cursor.fetchone()
+            conn.close()
+
+            if not dept:
+                messagebox.showerror("Error", "Department not found")
+                return
+
+            # Create edit dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Edit Department #{dept_id}")
+            dialog.geometry("500x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"Edit Department: {dept[1]}",
+                     font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+            # Form fields
+            form_frame = ttk.Frame(main_frame)
+            form_frame.pack(fill='both', expand=True)
+
+            ttk.Label(form_frame, text="Department Name *").grid(row=0, column=0, sticky='w', pady=5)
+            name_entry = ttk.Entry(form_frame, width=35)
+            name_entry.insert(0, dept[1])
+            name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+            ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='nw', pady=5)
+            desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
+            desc_text.insert('1.0', dept[2] or '')
+            desc_text.grid(row=1, column=1, sticky='ew', pady=5)
+
+            ttk.Label(form_frame, text="Email").grid(row=2, column=0, sticky='w', pady=5)
+            email_entry = ttk.Entry(form_frame, width=35)
+            email_entry.insert(0, dept[3] or '')
+            email_entry.grid(row=2, column=1, sticky='ew', pady=5)
+
+            form_frame.columnconfigure(1, weight=1)
+
+            # Buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(10, 0))
+
+            def update_department():
+                name = name_entry.get().strip()
+
+                if not name:
+                    messagebox.showerror("Error", "Department name is required")
+                    return
+
+                try:
+                    from university_system.infrastructure.database.db import get_connection
+
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                        UPDATE departments
+                        SET name = ?, description = ?, email = ?
+                        WHERE dept_id = ?
+                    ''', (
+                        name,
+                        desc_text.get('1.0', 'end-1c').strip(),
+                        email_entry.get().strip(),
+                        dept_id
+                    ))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Department updated successfully!")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update department: {str(e)}")
+
+            ttk.Button(button_frame, text="Update Department", command=update_department).pack(side='right', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load department: {str(e)}")
+
+    def toggle_selected_department(self, tree):
+        """Toggle active status of selected department"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a department to toggle")
+            return
+
+        dept_id = tree.item(selection[0])['values'][0]
+        self.toggle_department_gui(dept_id, tree)
+
+    def toggle_department_gui(self, dept_id, tree):
+        """Toggle department active status"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT name, is_active FROM departments WHERE dept_id = ?', (dept_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Department not found")
+                conn.close()
+                return
+
+            name, is_active = result
+            new_status = not is_active
+
+            cursor.execute('UPDATE departments SET is_active = ? WHERE dept_id = ?',
+                          (new_status, dept_id))
+
+            conn.commit()
+            conn.close()
+
+            status_text = "activated" if new_status else "deactivated"
+            messagebox.showinfo("Success", f"Department '{name}' has been {status_text}")
+
+            # Refresh tree
+            self.load_departments_list(tree)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to toggle department: {str(e)}")
+
+    def view_departments_gui(self):
+        """View departments (read-only)"""
+        self.manage_departments_gui()
+
+    def manage_organizations_gui(self):
+        """Manage organizations"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to manage organizations.")
+            return
+
+        messagebox.showinfo("Organizations", "Organization management feature coming soon.\n\nCurrently supports department-level organization.")
+
+    def view_organizations_gui(self):
+        """View organizations"""
+        self.manage_organizations_gui()
+
+    # END OF DEPARTMENT & ORGANIZATION MANAGEMENT FUNCTIONS
+    # ============================================================================
+
     def send_ticket_notification_email(self, ticket_id, notification_type, admin_email, user_email=None):
         """Send ticket notification emails"""
         try:
