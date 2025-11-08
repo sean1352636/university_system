@@ -6651,6 +6651,790 @@ High Priority: {metrics[3]}"""
     # END OF DEPARTMENT & ORGANIZATION MANAGEMENT FUNCTIONS
     # ============================================================================
 
+    # ============================================================================
+    # WORKFLOW AUTOMATION FUNCTIONS (8 FUNCTIONS)
+    # ============================================================================
+
+    def manage_workflows_gui(self):
+        """Manage automated workflows"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to manage workflows.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Workflow Management")
+        dialog.geometry("1000x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Automated Workflow Management",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+        # Toolbar
+        toolbar = ttk.Frame(main_frame)
+        toolbar.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(toolbar, text="➕ Create Workflow",
+                  command=lambda: self.create_workflow_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="✏️ Edit Workflow",
+                  command=lambda: self.edit_selected_workflow(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔄 Toggle Active",
+                  command=lambda: self.toggle_selected_workflow(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔃 Refresh",
+                  command=lambda: self.load_workflows_list(tree)).pack(side='left', padx=5)
+
+        # Workflows list
+        columns = ('ID', 'Name', 'Trigger Type', 'Description', 'Active')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            width = 60 if col == 'ID' else 200
+            tree.column(col, width=width)
+
+        tree.pack(fill='both', expand=True, side='left')
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load workflows
+        self.load_workflows_list(tree)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def load_workflows_list(self, tree):
+        """Load workflows into treeview"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT workflow_id, name, trigger_type, description, is_active
+                FROM ticket_workflows
+                ORDER BY trigger_type, name
+            ''')
+
+            workflows = cursor.fetchall()
+            conn.close()
+
+            for workflow in workflows:
+                wf_id, name, trigger_type, description, is_active = workflow
+                active_text = "✓ Yes" if is_active else "✗ No"
+
+                tree.insert('', 'end', values=(
+                    wf_id, name, trigger_type or 'N/A',
+                    (description or 'N/A')[:50], active_text
+                ))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load workflows: {str(e)}")
+
+    def create_workflow_gui(self):
+        """Create a new automated workflow"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Workflow")
+        dialog.geometry("600x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Create New Automated Workflow",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Form fields
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True)
+
+        # Name
+        ttk.Label(form_frame, text="Workflow Name *").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(form_frame, width=40)
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Description
+        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        desc_entry = ttk.Entry(form_frame, width=40)
+        desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # Trigger Type
+        ttk.Label(form_frame, text="Trigger Type *").grid(row=2, column=0, sticky='w', pady=5)
+        trigger_var = tk.StringVar()
+        trigger_combo = ttk.Combobox(form_frame, textvariable=trigger_var, state="readonly", width=38)
+        trigger_combo['values'] = ['ticket_created', 'ticket_updated', 'status_changed',
+                                   'priority_changed', 'assigned', 'overdue']
+        trigger_combo.grid(row=2, column=1, sticky='ew', pady=5)
+
+        # Conditions (JSON)
+        ttk.Label(form_frame, text="Conditions (JSON)").grid(row=3, column=0, sticky='nw', pady=5)
+        conditions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
+        conditions_text.insert('1.0', '{\n  "priority": "high",\n  "category": "Technical Support"\n}')
+        conditions_text.grid(row=3, column=1, sticky='ew', pady=5)
+
+        # Actions (JSON)
+        ttk.Label(form_frame, text="Actions (JSON) *").grid(row=4, column=0, sticky='nw', pady=5)
+        actions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
+        actions_text.insert('1.0', '{\n  "assign_to_department": "IT Support",\n  "set_priority": "high"\n}')
+        actions_text.grid(row=4, column=1, sticky='ew', pady=5)
+
+        ttk.Label(form_frame, text="Actions: assign_to_department, set_priority, change_status",
+                 foreground='gray', font=('TkDefaultFont', 8)).grid(row=5, column=1, sticky='w')
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def save_workflow():
+            name = name_entry.get().strip()
+            trigger_type = trigger_var.get()
+
+            if not name or not trigger_type:
+                messagebox.showerror("Error", "Name and trigger type are required")
+                return
+
+            try:
+                import json
+                from university_system.infrastructure.database.db import get_connection
+
+                # Validate JSON
+                conditions_json = conditions_text.get('1.0', 'end-1c').strip()
+                actions_json = actions_text.get('1.0', 'end-1c').strip()
+
+                if conditions_json:
+                    json.loads(conditions_json)
+                if actions_json:
+                    json.loads(actions_json)
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO ticket_workflows
+                    (name, description, trigger_type, trigger_conditions, actions, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    name,
+                    desc_entry.get().strip(),
+                    trigger_type,
+                    conditions_json if conditions_json else None,
+                    actions_json if actions_json else None,
+                    now
+                ))
+
+                conn.commit()
+                workflow_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success", f"Workflow #{workflow_id} created successfully!")
+                dialog.destroy()
+
+            except json.JSONDecodeError as e:
+                messagebox.showerror("Error", f"Invalid JSON: {str(e)}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create workflow: {str(e)}")
+
+        ttk.Button(button_frame, text="Create Workflow", command=save_workflow).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def edit_selected_workflow(self, tree):
+        """Edit selected workflow"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a workflow to edit")
+            return
+
+        workflow_id = tree.item(selection[0])['values'][0]
+        self.edit_workflow_gui(workflow_id)
+
+    def edit_workflow_gui(self, workflow_id):
+        """Edit existing workflow - placeholder for full implementation"""
+        messagebox.showinfo("Info", f"Editing workflow #{workflow_id}\n\nFull edit form coming soon.")
+
+    def toggle_selected_workflow(self, tree):
+        """Toggle active status of selected workflow"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a workflow to toggle")
+            return
+
+        workflow_id = tree.item(selection[0])['values'][0]
+        self.toggle_workflow_gui(workflow_id, tree)
+
+    def toggle_workflow_gui(self, workflow_id, tree):
+        """Toggle workflow active status"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT name, is_active FROM ticket_workflows WHERE workflow_id = ?',
+                          (workflow_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Workflow not found")
+                conn.close()
+                return
+
+            name, is_active = result
+            new_status = not is_active
+
+            cursor.execute('UPDATE ticket_workflows SET is_active = ? WHERE workflow_id = ?',
+                          (new_status, workflow_id))
+
+            conn.commit()
+            conn.close()
+
+            status_text = "activated" if new_status else "deactivated"
+            messagebox.showinfo("Success", f"Workflow '{name}' has been {status_text}")
+
+            # Refresh tree
+            self.load_workflows_list(tree)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to toggle workflow: {str(e)}")
+
+    def run_ticket_workflows_gui(self, ticket_id, trigger_type):
+        """Run automated workflows based on triggers"""
+        try:
+            import json
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get active workflows for this trigger
+            cursor.execute('''
+                SELECT workflow_id, name, trigger_conditions, actions
+                FROM ticket_workflows
+                WHERE trigger_type = ? AND is_active = 1
+            ''', (trigger_type,))
+
+            workflows = cursor.fetchall()
+            executed_count = 0
+
+            for workflow in workflows:
+                workflow_id, name, conditions_json, actions_json = workflow
+
+                try:
+                    conditions = json.loads(conditions_json) if conditions_json else {}
+                    actions = json.loads(actions_json) if actions_json else {}
+
+                    # Check conditions and execute
+                    if self.check_workflow_conditions_gui(ticket_id, conditions):
+                        self.execute_workflow_actions_gui(ticket_id, actions)
+                        executed_count += 1
+
+                except json.JSONDecodeError:
+                    pass
+
+            conn.close()
+
+        except Exception as e:
+            print(f"Error running workflows: {e}")
+
+    def check_workflow_conditions_gui(self, ticket_id, conditions):
+        """Check if workflow conditions are met"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
+            ticket = cursor.fetchone()
+
+            if not ticket:
+                conn.close()
+                return False
+
+            # Convert to dict
+            columns = [desc[0] for desc in cursor.description]
+            ticket_dict = dict(zip(columns, ticket))
+            conn.close()
+
+            # Check each condition
+            for field, expected_value in conditions.items():
+                if field in ticket_dict:
+                    if ticket_dict[field] != expected_value:
+                        return False
+
+            return True
+
+        except Exception:
+            return False
+
+    def execute_workflow_actions_gui(self, ticket_id, actions):
+        """Execute workflow actions"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            for action, value in actions.items():
+                if action == 'set_priority':
+                    cursor.execute('''
+                        UPDATE support_tickets SET priority = ?, updated_at = ? WHERE ticket_id = ?
+                    ''', (value, now, ticket_id))
+                elif action == 'change_status':
+                    cursor.execute('''
+                        UPDATE support_tickets SET status = ?, updated_at = ? WHERE ticket_id = ?
+                    ''', (value, now, ticket_id))
+
+            conn.commit()
+            conn.close()
+
+        except Exception:
+            pass
+
+    def view_workflows_gui(self):
+        """View workflows (read-only)"""
+        self.manage_workflows_gui()
+
+    # END OF WORKFLOW AUTOMATION FUNCTIONS
+    # ============================================================================
+
+    # ============================================================================
+    # SLA POLICY MANAGEMENT FUNCTIONS (7 FUNCTIONS)
+    # ============================================================================
+
+    def manage_sla_policies_gui(self):
+        """Manage SLA policies"""
+        if not self.has_permission('manage_tickets'):
+            messagebox.showerror("Permission Denied", "You don't have permission to manage SLA policies.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("SLA Policy Management")
+        dialog.geometry("1100x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="SLA Policy Management",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+
+        # Toolbar
+        toolbar = ttk.Frame(main_frame)
+        toolbar.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(toolbar, text="➕ Create SLA Policy",
+                  command=lambda: self.create_sla_policy_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="✏️ Edit SLA Policy",
+                  command=lambda: self.edit_selected_sla(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔄 Toggle Active",
+                  command=lambda: self.toggle_selected_sla(tree)).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="📊 SLA Report",
+                  command=lambda: self.generate_sla_compliance_report_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="⚠️ Check Overdue",
+                  command=lambda: self.check_overdue_tickets_gui()).pack(side='left', padx=5)
+        ttk.Button(toolbar, text="🔃 Refresh",
+                  command=lambda: self.load_sla_policies_list(tree)).pack(side='left', padx=5)
+
+        # SLA policies list
+        columns = ('ID', 'Name', 'P/I/U', 'Response (h)', 'Resolution (h)',
+                  'Escalation (h)', 'Business Hours', 'Active')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            width = 60 if col == 'ID' else 120
+            tree.column(col, width=width)
+
+        tree.pack(fill='both', expand=True, side='left')
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load SLA policies
+        self.load_sla_policies_list(tree)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def load_sla_policies_list(self, tree):
+        """Load SLA policies into treeview"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT sla_id, name, priority, impact, urgency, first_response_hours,
+                       resolution_hours, escalation_hours, business_hours_only, is_active
+                FROM sla_policies
+                ORDER BY priority, impact, urgency
+            ''')
+
+            policies = cursor.fetchall()
+            conn.close()
+
+            for policy in policies:
+                sla_id, name, priority, impact, urgency, response_h, resolution_h, escalation_h, business_only, is_active = policy
+                p_i_u = f"{priority}/{impact}/{urgency}"
+                business_text = "Yes" if business_only else "No"
+                active_text = "✓ Yes" if is_active else "✗ No"
+
+                tree.insert('', 'end', values=(
+                    sla_id, name, p_i_u, response_h, resolution_h,
+                    escalation_h, business_text, active_text
+                ))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load SLA policies: {str(e)}")
+
+    def create_sla_policy_gui(self):
+        """Create a new SLA policy"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create SLA Policy")
+        dialog.geometry("500x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Create New SLA Policy",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
+
+        # Form fields
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True)
+
+        # Name
+        ttk.Label(form_frame, text="Policy Name *").grid(row=0, column=0, sticky='w', pady=5)
+        name_entry = ttk.Entry(form_frame, width=35)
+        name_entry.grid(row=0, column=1, sticky='ew', pady=5)
+
+        # Description
+        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        desc_entry = ttk.Entry(form_frame, width=35)
+        desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
+
+        # Priority, Impact, Urgency
+        ttk.Label(form_frame, text="Priority *").grid(row=2, column=0, sticky='w', pady=5)
+        priority_var = tk.StringVar(value='medium')
+        priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
+        priority_combo['values'] = ['low', 'medium', 'high']
+        priority_combo.grid(row=2, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Impact *").grid(row=3, column=0, sticky='w', pady=5)
+        impact_var = tk.StringVar(value='low')
+        impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
+        impact_combo['values'] = ['low', 'medium', 'high']
+        impact_combo.grid(row=3, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Urgency *").grid(row=4, column=0, sticky='w', pady=5)
+        urgency_var = tk.StringVar(value='low')
+        urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
+        urgency_combo['values'] = ['low', 'medium', 'high']
+        urgency_combo.grid(row=4, column=1, sticky='w', pady=5)
+
+        # Time targets
+        ttk.Label(form_frame, text="First Response (hours) *").grid(row=5, column=0, sticky='w', pady=5)
+        response_entry = ttk.Entry(form_frame, width=15)
+        response_entry.insert(0, '4')
+        response_entry.grid(row=5, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Resolution (hours) *").grid(row=6, column=0, sticky='w', pady=5)
+        resolution_entry = ttk.Entry(form_frame, width=15)
+        resolution_entry.insert(0, '24')
+        resolution_entry.grid(row=6, column=1, sticky='w', pady=5)
+
+        ttk.Label(form_frame, text="Escalation (hours) *").grid(row=7, column=0, sticky='w', pady=5)
+        escalation_entry = ttk.Entry(form_frame, width=15)
+        escalation_entry.insert(0, '8')
+        escalation_entry.grid(row=7, column=1, sticky='w', pady=5)
+
+        # Business hours only
+        business_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(form_frame, text="Business hours only",
+                       variable=business_var).grid(row=8, column=1, sticky='w', pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        def save_sla():
+            name = name_entry.get().strip()
+
+            if not name:
+                messagebox.showerror("Error", "Policy name is required")
+                return
+
+            try:
+                from university_system.infrastructure.database.db import get_connection
+
+                first_response = int(response_entry.get())
+                resolution = int(resolution_entry.get())
+                escalation = int(escalation_entry.get())
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO sla_policies
+                    (name, description, priority, impact, urgency, first_response_hours,
+                     resolution_hours, escalation_hours, business_hours_only, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    name,
+                    desc_entry.get().strip(),
+                    priority_var.get(),
+                    impact_var.get(),
+                    urgency_var.get(),
+                    first_response,
+                    resolution,
+                    escalation,
+                    business_var.get(),
+                    now
+                ))
+
+                conn.commit()
+                sla_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success", f"SLA Policy #{sla_id} created successfully!")
+                dialog.destroy()
+
+            except ValueError:
+                messagebox.showerror("Error", "Time values must be numbers")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create SLA policy: {str(e)}")
+
+        ttk.Button(button_frame, text="Create SLA Policy", command=save_sla).pack(side='right', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+
+    def edit_selected_sla(self, tree):
+        """Edit selected SLA policy"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select an SLA policy to edit")
+            return
+
+        sla_id = tree.item(selection[0])['values'][0]
+        self.edit_sla_policy_gui(sla_id)
+
+    def edit_sla_policy_gui(self, sla_id):
+        """Edit SLA policy - placeholder"""
+        messagebox.showinfo("Info", f"Editing SLA Policy #{sla_id}\n\nFull edit form coming soon.")
+
+    def toggle_selected_sla(self, tree):
+        """Toggle active status of selected SLA policy"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select an SLA policy to toggle")
+            return
+
+        sla_id = tree.item(selection[0])['values'][0]
+        self.toggle_sla_policy_gui(sla_id, tree)
+
+    def toggle_sla_policy_gui(self, sla_id, tree):
+        """Toggle SLA policy active status"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT name, is_active FROM sla_policies WHERE sla_id = ?', (sla_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "SLA policy not found")
+                conn.close()
+                return
+
+            name, is_active = result
+            new_status = not is_active
+
+            cursor.execute('UPDATE sla_policies SET is_active = ? WHERE sla_id = ?',
+                          (new_status, sla_id))
+
+            conn.commit()
+            conn.close()
+
+            status_text = "activated" if new_status else "deactivated"
+            messagebox.showinfo("Success", f"SLA Policy '{name}' has been {status_text}")
+
+            # Refresh tree
+            self.load_sla_policies_list(tree)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to toggle SLA policy: {str(e)}")
+
+    def check_overdue_tickets_gui(self):
+        """Check for overdue tickets based on SLA"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            now = datetime.now()
+
+            cursor.execute('''
+                SELECT ticket_id, subject, due_date, JULIANDAY(?) - JULIANDAY(due_date) as days_overdue
+                FROM support_tickets
+                WHERE status NOT IN ('resolved', 'closed')
+                  AND due_date IS NOT NULL
+                  AND due_date < ?
+                ORDER BY days_overdue DESC
+            ''', (now.strftime('%Y-%m-%d %H:%M:%S'), now.strftime('%Y-%m-%d %H:%M:%S')))
+
+            overdue = cursor.fetchall()
+            conn.close()
+
+            if not overdue:
+                messagebox.showinfo("SLA Check", "No overdue tickets found!")
+                return
+
+            # Create results window
+            result_window = tk.Toplevel(self.root)
+            result_window.title("Overdue Tickets")
+            result_window.geometry("800x400")
+
+            main_frame = ttk.Frame(result_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text=f"⚠️ {len(overdue)} Overdue Tickets Found",
+                     font=('TkDefaultFont', 12, 'bold'), foreground='red').pack(pady=(0, 10))
+
+            columns = ('Ticket ID', 'Subject', 'Due Date', 'Days Overdue')
+            tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            tree.pack(fill='both', expand=True)
+
+            for ticket_id, subject, due_date, days_overdue in overdue:
+                tree.insert('', 'end', values=(
+                    ticket_id, subject[:50], due_date, f"{days_overdue:.1f}"
+                ))
+
+            ttk.Button(main_frame, text="Close", command=result_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to check overdue tickets: {str(e)}")
+
+    def generate_sla_compliance_report_gui(self):
+        """Generate SLA compliance report"""
+        try:
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get SLA compliance metrics
+            cursor.execute('''
+                SELECT
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN resolved_at <= due_date THEN 1 END) as within_sla,
+                    COUNT(CASE WHEN resolved_at > due_date THEN 1 END) as breached,
+                    COUNT(CASE WHEN resolved_at IS NULL AND due_date < datetime('now') THEN 1 END) as at_risk
+                FROM support_tickets
+                WHERE due_date IS NOT NULL
+            ''')
+
+            metrics = cursor.fetchone()
+            conn.close()
+
+            if not metrics or metrics[0] == 0:
+                messagebox.showinfo("SLA Report", "No SLA data available")
+                return
+
+            total, within_sla, breached, at_risk = metrics
+            compliance_rate = (within_sla / total * 100) if total > 0 else 0
+
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title("SLA Compliance Report")
+            report_window.geometry("600x400")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="📊 SLA Compliance Report",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+
+            # Metrics display
+            metrics_frame = ttk.LabelFrame(main_frame, text="Compliance Metrics", padding="20")
+            metrics_frame.pack(fill='both', expand=True)
+
+            metrics_text = f"""
+Total Tickets with SLA: {total}
+Within SLA: {within_sla} ({compliance_rate:.1f}%)
+Breached SLA: {breached}
+At Risk (Overdue): {at_risk}
+
+Overall Compliance Rate: {compliance_rate:.1f}%
+"""
+
+            ttk.Label(metrics_frame, text=metrics_text, font=('TkDefaultFont', 11),
+                     justify='left').pack(anchor='w')
+
+            # Color-coded status
+            if compliance_rate >= 95:
+                status_color = 'green'
+                status_text = "✓ Excellent"
+            elif compliance_rate >= 80:
+                status_color = 'orange'
+                status_text = "⚠ Needs Improvement"
+            else:
+                status_color = 'red'
+                status_text = "✗ Critical"
+
+            ttk.Label(metrics_frame, text=f"Status: {status_text}",
+                     font=('TkDefaultFont', 12, 'bold'),
+                     foreground=status_color).pack(pady=(10, 0))
+
+            ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=20)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate SLA report: {str(e)}")
+
+    def view_sla_policies_gui(self):
+        """View SLA policies (read-only)"""
+        self.manage_sla_policies_gui()
+
+    # END OF SLA POLICY MANAGEMENT FUNCTIONS
+    # ============================================================================
+
     def send_ticket_notification_email(self, ticket_id, notification_type, admin_email, user_email=None):
         """Send ticket notification emails"""
         try:
