@@ -477,5 +477,67 @@ class TemplateManager:
     def use_assignment_template(self, *args, **kwargs):
         """Navigate to template usage flow."""
         self._launch_gui_feature(self.show_templates, "assignment templates")
-    
-    
+
+
+    def _create_from_template(self, template_id, assignment_title, module_code, due_date):
+        """Create assignment from template (instantiation logic)"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get template details
+            cursor.execute('SELECT * FROM assignment_templates WHERE id = ?', (template_id,))
+            template = cursor.fetchone()
+
+            if not template:
+                conn.close()
+                messagebox.showerror("Error", "Template not found")
+                return False
+
+            # Extract template data (assuming columns match structure)
+            template_name, description, assignment_type, max_marks, file_types, max_size = template[1:7]
+
+            # Create assignment from template
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            created_by = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
+
+            cursor.execute('''
+            INSERT INTO assignments
+            (title, description, module_code, assignment_type, max_marks, due_date,
+             file_types_allowed, max_file_size_mb, created_by, created_at, template_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (assignment_title, description, module_code, assignment_type, max_marks,
+                  due_date, file_types, max_size, created_by, timestamp, template_id))
+
+            assignment_id = cursor.lastrowid
+
+            # Copy template criteria if they exist
+            cursor.execute('SELECT * FROM template_criteria WHERE template_id = ?', (template_id,))
+            criteria = cursor.fetchall()
+
+            for criterion in criteria:
+                cursor.execute('''
+                INSERT INTO assignment_criteria
+                (assignment_id, criteria_name, max_points, weight, description)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (assignment_id, criterion[2], criterion[3], criterion[4], criterion[5]))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Assignment '{assignment_title}' created successfully from template!")
+            return True
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create assignment from template: {e}")
+            return False
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+

@@ -596,10 +596,195 @@ class NotificationManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load notifications: {str(e)}")
             print(f"Error in manage_notifications: {e}")
-    
+
 
     def run_due_date_reminders(self, *args, **kwargs):
         """Trigger the due-date reminder runner from CLI."""
         self._launch_gui_feature(self.run_due_date_reminders_ui, "due date reminders")
-    
-    
+
+
+    def _configure_notification_type(self, notification_type):
+        """Configure specific notification type settings"""
+        try:
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Configure {notification_type.replace('_', ' ').title()} Notifications")
+            dialog.geometry("500x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            ttk.Label(dialog, text=f"{notification_type.replace('_', ' ').title()} Settings",
+                     font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
+
+            # Get current settings
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            user_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
+
+            cursor.execute('''
+            SELECT enabled, email_enabled, push_enabled FROM notification_preferences
+            WHERE user_id = ? AND notification_type = ?
+            ''', (user_id, notification_type))
+
+            settings = cursor.fetchone()
+            conn.close()
+
+            if settings:
+                enabled, email_enabled, push_enabled = settings
+            else:
+                enabled, email_enabled, push_enabled = 1, 1, 0
+
+            # Settings frame
+            settings_frame = ttk.LabelFrame(dialog, text="Notification Channels", padding=20)
+            settings_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+            enabled_var = tk.BooleanVar(value=bool(enabled))
+            email_var = tk.BooleanVar(value=bool(email_enabled))
+            push_var = tk.BooleanVar(value=bool(push_enabled))
+
+            ttk.Checkbutton(settings_frame, text="Enable notifications for this type",
+                           variable=enabled_var).pack(anchor='w', pady=5)
+
+            ttk.Separator(settings_frame, orient='horizontal').pack(fill='x', pady=10)
+
+            ttk.Label(settings_frame, text="Delivery Methods:", font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(0, 10))
+
+            ttk.Checkbutton(settings_frame, text="In-app notifications",
+                           variable=enabled_var, state='disabled').pack(anchor='w', pady=2)
+
+            ttk.Checkbutton(settings_frame, text="Email notifications",
+                           variable=email_var).pack(anchor='w', pady=2)
+
+            ttk.Checkbutton(settings_frame, text="Push notifications (coming soon)",
+                           variable=push_var, state='disabled').pack(anchor='w', pady=2)
+
+            # Description
+            desc_frame = ttk.LabelFrame(dialog, text="Description", padding=10)
+            desc_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            descriptions = {
+                'assignment_created': 'Notifications when new assignments are posted',
+                'assignment_due': 'Reminders for upcoming assignment due dates',
+                'grade_posted': 'Notifications when grades are posted',
+                'extension_approved': 'Notifications for extension request decisions',
+                'peer_review_assigned': 'Notifications for peer review assignments'
+            }
+
+            desc_text = descriptions.get(notification_type, 'Notification settings for this type')
+            ttk.Label(desc_frame, text=desc_text, wraplength=450).pack()
+
+            # Save button
+            def save_notification_settings():
+                try:
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    INSERT OR REPLACE INTO notification_preferences
+                    (user_id, notification_type, enabled, email_enabled, push_enabled, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (user_id, notification_type, 1 if enabled_var.get() else 0,
+                          1 if email_var.get() else 0, 1 if push_var.get() else 0,
+                          datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Notification settings saved successfully!", parent=dialog)
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save settings: {e}", parent=dialog)
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Button(button_frame, text="Save Settings", command=save_notification_settings,
+                      style='Accent.TButton').pack(side='left')
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to configure notifications: {e}")
+
+
+    def _notify_new_assignment(self, assignment_id, assignment_title, module_code, due_date):
+        """Send notification for new assignment to all enrolled students"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get all students enrolled in the module
+            cursor.execute('''
+            SELECT DISTINCT s.student_id, s.email_address, s.first_name
+            FROM students s
+            JOIN student_modules sm ON s.student_id = sm.student_id
+            WHERE sm.module_code = ?
+            ''', (module_code,))
+
+            students = cursor.fetchall()
+
+            if not students:
+                conn.close()
+                return
+
+            # Create notification for each student
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            notification_count = 0
+
+            for student_id, email, first_name in students:
+                # Insert notification
+                cursor.execute('''
+                INSERT INTO notifications
+                (user_id, type, title, message, related_id, is_read, created_at)
+                VALUES (?, 'assignment_created', ?, ?, ?, 0, ?)
+                ''', (
+                    student_id,
+                    'New Assignment Posted',
+                    f"A new assignment '{assignment_title}' has been posted for {module_code}. Due: {due_date}",
+                    assignment_id,
+                    timestamp
+                ))
+
+                notification_count += 1
+
+                # Send email if enabled
+                try:
+                    cursor.execute('''
+                    SELECT email_enabled FROM notification_preferences
+                    WHERE user_id = ? AND notification_type = 'assignment_created'
+                    ''', (student_id,))
+
+                    pref = cursor.fetchone()
+                    if pref and pref[0]:  # Email enabled
+                        from university_system.infrastructure.email.email_service import send_email
+                        send_email(
+                            to_email=email,
+                            subject=f"New Assignment: {assignment_title}",
+                            body=f"Hello {first_name},\n\nA new assignment has been posted:\n\n"
+                                 f"Title: {assignment_title}\n"
+                                 f"Module: {module_code}\n"
+                                 f"Due Date: {due_date}\n\n"
+                                 f"Please log in to view the full details and submit your work.\n\n"
+                                 f"Best regards,\n"
+                                 f"Assignment System"
+                        )
+                except Exception as e:
+                    print(f"Failed to send email to {email}: {e}")
+
+            conn.commit()
+            conn.close()
+
+            print(f"Sent {notification_count} notifications for new assignment: {assignment_title}")
+
+        except Exception as e:
+            print(f"Failed to send new assignment notifications: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+

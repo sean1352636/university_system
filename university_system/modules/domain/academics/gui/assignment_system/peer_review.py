@@ -535,5 +535,226 @@ class PeerReviewManager:
     def setup_peer_review(self, *args, **kwargs):
         """Open peer review management tools."""
         self._launch_gui_feature(self.manage_peer_reviews, "peer review management")
-    
-    
+
+
+    def _configure_peer_review(self, assignment_id):
+        """Configure peer review parameters for an assignment"""
+        try:
+            # Create configuration dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Configure Peer Review Settings")
+            dialog.geometry("550x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            ttk.Label(dialog, text="Peer Review Configuration", font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
+
+            # Assignment info
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT title, due_date FROM assignments WHERE id = ?', (assignment_id,))
+            assignment_info = cursor.fetchone()
+            conn.close()
+
+            if not assignment_info:
+                messagebox.showerror("Error", "Assignment not found")
+                dialog.destroy()
+                return
+
+            title, due_date = assignment_info
+
+            info_frame = ttk.LabelFrame(dialog, text="Assignment", padding=10)
+            info_frame.pack(fill='x', padx=10, pady=(0, 10))
+            ttk.Label(info_frame, text=f"Title: {title}\nDue Date: {due_date}").pack(anchor='w')
+
+            # Review settings
+            settings_frame = ttk.LabelFrame(dialog, text="Review Settings", padding=10)
+            settings_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Label(settings_frame, text="Reviews per Student:").grid(row=0, column=0, sticky='w', pady=5)
+            reviews_per_student_var = tk.StringVar(value="3")
+            ttk.Entry(settings_frame, textvariable=reviews_per_student_var, width=10).grid(row=0, column=1, sticky='w', padx=(10, 0))
+
+            ttk.Label(settings_frame, text="Review Deadline (days after submission):").grid(row=1, column=0, sticky='w', pady=5)
+            review_deadline_var = tk.StringVar(value="7")
+            ttk.Entry(settings_frame, textvariable=review_deadline_var, width=10).grid(row=1, column=1, sticky='w', padx=(10, 0))
+
+            anonymous_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(settings_frame, text="Anonymous Reviews", variable=anonymous_var).grid(row=2, column=0, columnspan=2, sticky='w', pady=5)
+
+            # Review criteria
+            criteria_frame = ttk.LabelFrame(dialog, text="Review Criteria", padding=10)
+            criteria_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+            ttk.Label(criteria_frame, text="Enter criteria (one per line):").pack(anchor='w', pady=(0, 5))
+            criteria_text = scrolledtext.ScrolledText(criteria_frame, height=8, wrap=tk.WORD)
+            criteria_text.pack(fill='both', expand=True)
+
+            # Default criteria
+            default_criteria = "Content Quality (1-5)\nOrganization (1-5)\nClarity (1-5)\nCritical Thinking (1-5)\nOriginality (1-5)"
+            criteria_text.insert(tk.END, default_criteria)
+
+            # Grading weight
+            weight_frame = ttk.LabelFrame(dialog, text="Grading Weight", padding=10)
+            weight_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Label(weight_frame, text="Peer Review Weight (% of final grade):").grid(row=0, column=0, sticky='w', pady=5)
+            weight_var = tk.StringVar(value="20")
+            ttk.Entry(weight_frame, textvariable=weight_var, width=10).grid(row=0, column=1, sticky='w', padx=(10, 0))
+
+            # Save button
+            def save_peer_review_config():
+                try:
+                    reviews_per = int(reviews_per_student_var.get())
+                    deadline_days = int(review_deadline_var.get())
+                    weight = float(weight_var.get())
+
+                    if not (1 <= reviews_per <= 10):
+                        messagebox.showerror("Error", "Reviews per student must be between 1 and 10", parent=dialog)
+                        return
+
+                    if not (1 <= deadline_days <= 30):
+                        messagebox.showerror("Error", "Review deadline must be between 1 and 30 days", parent=dialog)
+                        return
+
+                    if not (0 <= weight <= 100):
+                        messagebox.showerror("Error", "Weight must be between 0 and 100", parent=dialog)
+                        return
+
+                    criteria_list = criteria_text.get(1.0, tk.END).strip().split('\n')
+                    criteria_list = [c.strip() for c in criteria_list if c.strip()]
+
+                    if not criteria_list:
+                        messagebox.showerror("Error", "At least one criterion is required", parent=dialog)
+                        return
+
+                    # Save configuration
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    # Save to database
+                    cursor.execute('''
+                    INSERT OR REPLACE INTO peer_review_config
+                    (assignment_id, reviews_per_student, review_deadline_days, is_anonymous, grading_weight, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (assignment_id, reviews_per, deadline_days, 1 if anonymous_var.get() else 0,
+                          weight, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+                    config_id = cursor.lastrowid or assignment_id
+
+                    # Save criteria
+                    cursor.execute('DELETE FROM peer_review_criteria_templates WHERE config_id = ?', (config_id,))
+                    for i, criterion in enumerate(criteria_list):
+                        cursor.execute('''
+                        INSERT INTO peer_review_criteria_templates (config_id, criteria_name, max_score, order_index)
+                        VALUES (?, ?, 5, ?)
+                        ''', (config_id, criterion, i))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Peer review configuration saved successfully!", parent=dialog)
+                    dialog.destroy()
+
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter valid numeric values", parent=dialog)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save configuration: {e}", parent=dialog)
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Button(button_frame, text="Save Configuration", command=save_peer_review_config,
+                      style='Accent.TButton').pack(side='left')
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open configuration: {e}")
+
+
+    def _assign_peer_reviewers(self, assignment_id):
+        """Assign peer reviewers automatically based on configuration"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get peer review configuration
+            cursor.execute('''
+            SELECT reviews_per_student, is_anonymous FROM peer_review_config
+            WHERE assignment_id = ?
+            ''', (assignment_id,))
+
+            config = cursor.fetchone()
+            if not config:
+                messagebox.showerror("Error", "Please configure peer review settings first")
+                conn.close()
+                return
+
+            reviews_per_student, is_anonymous = config
+
+            # Get all submitted assignments
+            cursor.execute('''
+            SELECT id, student_id FROM assignment_submissions
+            WHERE assignment_id = ? AND status = 'submitted'
+            ''', (assignment_id,))
+
+            submissions = cursor.fetchall()
+
+            if len(submissions) < 2:
+                messagebox.showwarning("Warning", "At least 2 submissions are required for peer review")
+                conn.close()
+                return
+
+            # Clear existing assignments
+            cursor.execute('DELETE FROM peer_review_assignments WHERE assignment_id = ?', (assignment_id,))
+
+            # Assign reviewers using round-robin algorithm
+            import random
+            submission_ids = [s[0] for s in submissions]
+            student_ids = [s[1] for s in submissions]
+
+            assignments_created = 0
+
+            for i, (submission_id, reviewee_id) in enumerate(submissions):
+                # Get potential reviewers (everyone except the submitter)
+                potential_reviewers = [(sid, stud_id) for sid, stud_id in submissions if stud_id != reviewee_id]
+
+                # Shuffle for randomness
+                random.shuffle(potential_reviewers)
+
+                # Assign reviews
+                assigned_count = min(reviews_per_student, len(potential_reviewers))
+
+                for j in range(assigned_count):
+                    reviewer_submission_id, reviewer_id = potential_reviewers[j]
+
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    cursor.execute('''
+                    INSERT INTO peer_review_assignments
+                    (assignment_id, submission_id, reviewer_id, reviewee_id, status, assigned_date)
+                    VALUES (?, ?, ?, ?, 'pending', ?)
+                    ''', (assignment_id, submission_id, reviewer_id, reviewee_id, timestamp))
+
+                    assignments_created += 1
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success",
+                              f"Peer review assignments created successfully!\n\n"
+                              f"Total assignments: {assignments_created}\n"
+                              f"Reviews per student: ~{reviews_per_student}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to assign peer reviewers: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+

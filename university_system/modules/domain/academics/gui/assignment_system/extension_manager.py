@@ -469,5 +469,89 @@ class ExtensionManager:
     def review_extension_requests(self, *args, **kwargs):
         """Navigate to instructor extension review tools."""
         self._launch_gui_feature(self.show_review_extensions, "extension review")
-    
-    
+
+
+    def _submit_extension_request(self, assignment_id, reason, requested_date):
+        """Submit extension request to database (helper function)"""
+        try:
+            student_id = self._get_student_id_safe()
+            if not student_id:
+                messagebox.showerror("Error", "Could not identify student")
+                return False
+
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            cursor.execute('''
+            INSERT INTO extension_requests
+            (assignment_id, student_id, reason, requested_due_date, status, request_date)
+            VALUES (?, ?, ?, ?, 'pending', ?)
+            ''', (assignment_id, student_id, reason, requested_date, timestamp))
+
+            conn.commit()
+            conn.close()
+
+            return True
+
+        except Exception as e:
+            print(f"Error submitting extension request: {e}")
+            return False
+
+
+    def _process_extension_request(self, request_id, decision, instructor_notes=""):
+        """Process single extension request (approve/deny logic)"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get request details
+            cursor.execute('''
+            SELECT assignment_id, student_id, requested_due_date
+            FROM extension_requests WHERE id = ?
+            ''', (request_id,))
+
+            request = cursor.fetchone()
+            if not request:
+                conn.close()
+                return False
+
+            assignment_id, student_id, new_due_date = request
+
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            instructor_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
+
+            # Update request status
+            cursor.execute('''
+            UPDATE extension_requests
+            SET status = ?, reviewed_by = ?, review_date = ?, instructor_notes = ?
+            WHERE id = ?
+            ''', (decision, instructor_id, timestamp, instructor_notes, request_id))
+
+            # If approved, update assignment due date for this student
+            if decision == 'approved':
+                cursor.execute('''
+                INSERT OR REPLACE INTO assignment_extensions
+                (assignment_id, student_id, original_due_date, extended_due_date, approved_by, approved_date)
+                VALUES (?, ?, (SELECT due_date FROM assignments WHERE id = ?), ?, ?, ?)
+                ''', (assignment_id, student_id, assignment_id, new_due_date, instructor_id, timestamp))
+
+            conn.commit()
+            conn.close()
+
+            return True
+
+        except Exception as e:
+            print(f"Error processing extension request: {e}")
+            return False
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+

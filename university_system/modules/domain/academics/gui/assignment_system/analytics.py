@@ -1007,5 +1007,64 @@ class AnalyticsManager:
     def generate_analytics_dashboard(self, *args, **kwargs):
         """Show the analytics dashboard."""
         self._launch_gui_feature(self.show_analytics, "analytics dashboard")
-    
-    
+
+
+    def _export_analytics_report(self, report_type, data, filename_prefix="analytics"):
+        """Export analytics report to file (CSV or Excel)"""
+        try:
+            # Ask user for save location and format
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                initialfile=f"{filename_prefix}_{datetime.now().strftime('%Y%m%d')}",
+                filetypes=[
+                    ("Excel files", "*.xlsx"),
+                    ("CSV files", "*.csv"),
+                    ("PDF files", "*.pdf"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if not save_path:
+                return
+
+            # Determine format from extension
+            file_ext = os.path.splitext(save_path)[1].lower()
+
+            if file_ext == '.csv':
+                # Export as CSV
+                import csv
+                with open(save_path, 'w', newline='') as f:
+                    if isinstance(data, list) and len(data) > 0:
+                        if isinstance(data[0], dict):
+                            writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                            writer.writeheader()
+                            writer.writerows(data)
+                        else:
+                            writer = csv.writer(f)
+                            writer.writerows(data)
+
+            elif file_ext == '.xlsx':
+                # Export as Excel
+                df = pd.DataFrame(data)
+                df.to_excel(save_path, index=False, sheet_name=report_type)
+
+            elif file_ext == '.pdf':
+                # Export as PDF
+                if isinstance(data, list) and len(data) > 0:
+                    headers = list(data[0].keys()) if isinstance(data[0], dict) else None
+                    self._create_pdf_report(save_path, f"{report_type} Report", headers, data)
+
+            messagebox.showinfo("Success", f"Analytics report exported successfully to:\n{save_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export analytics report: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+
