@@ -4767,6 +4767,759 @@ Developer: Academic Systems Team
 
             return schedule_data
 
+    # ==================== BACKUP AND RESTORE ====================
+
+    def create_backup(self, backup_name=None, description=""):
+        """Create a backup of the database"""
+        if not backup_name:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_name = f"backup_{timestamp}"
+
+        from university_system.modules.shared.constants import paths
+        import shutil
+        import os
+        os.makedirs(str(paths.BACKUP_DIR), exist_ok=True)
+
+        backup_path = os.path.join(str(paths.BACKUP_DIR), f"{backup_name}.db")
+
+        try:
+            # Check if source database exists
+            if not os.path.exists(DEFAULT_DB_PATH):
+                messagebox.showerror("Error", f"Database file not found: {DEFAULT_DB_PATH}")
+                return None
+
+            # Copy the database file
+            shutil.copy2(DEFAULT_DB_PATH, backup_path)
+
+            # Get file size
+            file_size = os.path.getsize(backup_path)
+
+            # Record backup in database
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                INSERT INTO backups (backup_name, backup_path, backup_size, description)
+                VALUES (?, ?, ?, ?)
+                ''', (backup_name, backup_path, file_size, description))
+
+            messagebox.showinfo("Success", f"Backup created successfully:\n{backup_path}")
+            return backup_path
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error creating backup: {str(e)}")
+            return None
+
+    def list_backups(self):
+        """List all available backups in a dialog"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT backup_name, backup_date, backup_size, description
+            FROM backups
+            ORDER BY backup_date DESC
+            ''')
+
+            backups = cursor.fetchall()
+
+        if not backups:
+            messagebox.showinfo("Backups", "No backups found.")
+            return
+
+        # Create dialog to show backups
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Available Backups")
+        dialog.geometry("800x400")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Name', 'Date', 'Size (KB)', 'Description')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=180)
+
+        for backup in backups:
+            name, date, size, desc = backup
+            backup_date = datetime.fromisoformat(date).strftime("%Y-%m-%d %H:%M") if date else "N/A"
+            size_kb = round(size / 1024, 2) if size else 0
+            tree.insert('', tk.END, values=(name, backup_date, size_kb, desc or ''))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def restore_backup(self, backup_name):
+        """Restore from a backup"""
+        from university_system.modules.shared.constants import paths
+        import shutil
+        import os
+
+        backup_path = os.path.join(str(paths.BACKUP_DIR), f"{backup_name}.db")
+
+        if not os.path.exists(backup_path):
+            messagebox.showerror("Error", f"Backup file not found: {backup_path}")
+            return False
+
+        # Confirm restoration
+        confirm = messagebox.askyesno(
+            "Confirm Restore",
+            f"WARNING: This will replace the current database with the backup from {backup_name}\n\n"
+            "A pre-restore backup will be created automatically.\n\n"
+            "Are you sure you want to continue?"
+        )
+
+        if not confirm:
+            return False
+
+        try:
+            # Create a backup of current state before restoring
+            self.create_backup("pre_restore_backup", "Automatic backup before restore")
+
+            # Replace current database
+            shutil.copy2(backup_path, DEFAULT_DB_PATH)
+
+            messagebox.showinfo("Success", f"Database restored from backup: {backup_name}\n\nPlease restart the application.")
+            return True
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error restoring backup: {str(e)}")
+            return False
+
+    # ==================== DATA VALIDATION AND MAINTENANCE ====================
+
+    def validate_data_consistency(self):
+        """Validate data consistency and integrity"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            issues = []
+
+            # Check for orphaned schedules (invalid room_id)
+            cursor.execute('''
+            SELECT ms.id, ms.module_code, ms.room_id
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            WHERE r.id IS NULL
+            ''')
+            orphaned_rooms = cursor.fetchall()
+            if orphaned_rooms:
+                issues.append(f"Found {len(orphaned_rooms)} schedules with invalid room references")
+
+            # Check for orphaned schedules (invalid instructor_id)
+            cursor.execute('''
+            SELECT ms.id, ms.module_code, ms.instructor_id
+            FROM module_schedule ms
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            WHERE i.id IS NULL
+            ''')
+            orphaned_instructors = cursor.fetchall()
+            if orphaned_instructors:
+                issues.append(f"Found {len(orphaned_instructors)} schedules with invalid instructor references")
+
+            # Check for duplicate schedules
+            cursor.execute('''
+            SELECT module_code, day_of_week, start_time, end_time, room_id, instructor_id, COUNT(*)
+            FROM module_schedule
+            GROUP BY module_code, day_of_week, start_time, end_time, room_id, instructor_id
+            HAVING COUNT(*) > 1
+            ''')
+            duplicates = cursor.fetchall()
+            if duplicates:
+                issues.append(f"Found {len(duplicates)} duplicate schedule entries")
+
+            # Check for invalid time formats
+            cursor.execute('''
+            SELECT id, start_time, end_time
+            FROM module_schedule
+            WHERE start_time NOT GLOB '[0-9][0-9]:[0-9][0-9]'
+               OR end_time NOT GLOB '[0-9][0-9]:[0-9][0-9]'
+            ''')
+            invalid_times = cursor.fetchall()
+            if invalid_times:
+                issues.append(f"Found {len(invalid_times)} schedules with invalid time formats")
+
+        if issues:
+            message = "Data Consistency Issues Found:\n\n" + "\n".join(f"{i}. {issue}" for i, issue in enumerate(issues, 1))
+            messagebox.showwarning("Data Validation", message)
+        else:
+            messagebox.showinfo("Data Validation", "No data consistency issues found.")
+
+        return issues
+
+    def clean_orphaned_records(self):
+        """Clean up orphaned records"""
+        confirm = messagebox.askyesno(
+            "Confirm Cleanup",
+            "This will remove schedules with invalid room or instructor references.\n\n"
+            "Are you sure you want to continue?"
+        )
+
+        if not confirm:
+            return
+
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                # Remove schedules with invalid room references
+                cursor.execute('''
+                DELETE FROM module_schedule
+                WHERE room_id NOT IN (SELECT id FROM rooms)
+                ''')
+                removed_room_refs = cursor.rowcount
+
+                # Remove schedules with invalid instructor references
+                cursor.execute('''
+                DELETE FROM module_schedule
+                WHERE instructor_id NOT IN (SELECT id FROM instructors)
+                ''')
+                removed_instructor_refs = cursor.rowcount
+
+            message = f"Cleanup completed:\n\n" \
+                     f"• Removed {removed_room_refs} schedules with invalid room references\n" \
+                     f"• Removed {removed_instructor_refs} schedules with invalid instructor references"
+
+            messagebox.showinfo("Cleanup Complete", message)
+            self.refresh_all_data()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error during cleanup: {str(e)}")
+
+    # ==================== SYSTEM SETTINGS ====================
+
+    def update_system_setting(self, key, value):
+        """Update a system setting"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                UPDATE scheduling_system_settings
+                SET value = ?, last_modified = CURRENT_TIMESTAMP
+                WHERE key = ?
+                ''', (value, key))
+
+                if cursor.rowcount == 0:
+                    # Setting doesn't exist, create it
+                    cursor.execute('''
+                    INSERT INTO scheduling_system_settings (key, value, description)
+                    VALUES (?, ?, ?)
+                    ''', (key, value, f"Custom setting: {key}"))
+
+            messagebox.showinfo("Success", f"System setting '{key}' updated to '{value}'")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error updating setting: {str(e)}")
+
+    def list_system_settings(self):
+        """List all system settings in a dialog"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT key, value, description, last_modified
+            FROM scheduling_system_settings
+            ORDER BY key
+            ''')
+
+            settings = cursor.fetchall()
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("System Settings")
+        dialog.geometry("900x500")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Key', 'Value', 'Description', 'Last Modified')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Key', width=200)
+        tree.column('Value', width=200)
+        tree.column('Description', width=300)
+        tree.column('Last Modified', width=180)
+
+        for setting in settings:
+            key, value, description, last_modified = setting
+            tree.insert('', tk.END, values=(key, value or '', description or '', last_modified or ''))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    # ==================== NOTIFICATIONS ====================
+
+    def create_notification(self, recipient_type, recipient_id, message, notification_type="info"):
+        """Create a notification"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                user_id = recipient_id if recipient_id else 'system'
+                title = f"{notification_type.upper()} Notification"
+                created_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                INSERT INTO notifications (user_id, title, message, notification_type, recipient_type, recipient_id, created_datetime)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (user_id, title, message, notification_type, recipient_type, recipient_id, created_datetime))
+
+        except Exception as e:
+            print(f"Error creating notification: {e}")
+
+    def send_schedule_change_notifications(self, schedule_id, change_description):
+        """Send notifications when schedules change"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get schedule details
+            cursor.execute('''
+            SELECT ms.module_code, ms.day_of_week, ms.start_time, ms.instructor_id,
+                   r.building, r.room_number
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            WHERE ms.id = ?
+            ''', (schedule_id,))
+
+            schedule = cursor.fetchone()
+            if not schedule:
+                return
+
+            module_code, day, start_time, instructor_id, building, room = schedule
+
+            # Notify instructor
+            message = f"Schedule change for {module_code}: {change_description}"
+            self.create_notification('instructor', str(instructor_id), message, 'schedule_change')
+
+            # Notify students enrolled in the module
+            cursor.execute('SELECT student_id FROM student_modules WHERE module_code = ?', (module_code,))
+            students = cursor.fetchall()
+
+            for student in students:
+                self.create_notification('student', student[0], message, 'schedule_change')
+
+        messagebox.showinfo("Notifications Sent", f"Notifications sent for schedule change: {change_description}")
+
+    def get_notifications(self, recipient_type, recipient_id, unread_only=True):
+        """Get notifications for a user"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = '''
+            SELECT id, message, notification_type, created_date, sent
+            FROM notifications
+            WHERE recipient_type = ? AND recipient_id = ?
+            '''
+            params = [recipient_type, recipient_id]
+
+            if unread_only:
+                query += ' AND sent = 0'
+
+            query += ' ORDER BY created_date DESC'
+
+            cursor.execute(query, params)
+            notifications = cursor.fetchall()
+
+        return notifications
+
+    def mark_notification_read(self, notification_id):
+        """Mark a notification as read"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                UPDATE notifications
+                SET sent = 1, sent_date = CURRENT_TIMESTAMP
+                WHERE id = ?
+                ''', (notification_id,))
+
+        except Exception as e:
+            print(f"Error marking notification as read: {e}")
+
+    # ==================== HOLIDAY MANAGEMENT ====================
+
+    def list_holidays(self):
+        """List all holidays in a dialog"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT name, start_date, end_date, description, recurring
+            FROM holidays
+            ORDER BY start_date
+            ''')
+
+            holidays = cursor.fetchall()
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Academic Holidays")
+        dialog.geometry("900x500")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Name', 'Start Date', 'End Date', 'Description', 'Recurring')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Name', width=180)
+        tree.column('Start Date', width=120)
+        tree.column('End Date', width=120)
+        tree.column('Description', width=300)
+        tree.column('Recurring', width=80)
+
+        for holiday in holidays:
+            name, start, end, desc, recurring = holiday
+            tree.insert('', tk.END, values=(name, start, end, desc or '', 'Yes' if recurring else 'No'))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def check_holiday_conflicts(self, date):
+        """Check if a date falls on a holiday"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT name, description
+            FROM holidays
+            WHERE ? BETWEEN start_date AND end_date
+            ''', (date,))
+
+            holiday = cursor.fetchone()
+
+        if holiday:
+            name, description = holiday
+            messagebox.showwarning(
+                "Holiday Conflict",
+                f"This date falls on a holiday: {name}\n\n"
+                f"{description if description else 'No description available.'}"
+            )
+            return True
+
+        return False
+
+    # ==================== TIMETABLE VIEWING ====================
+
+    def view_module_schedule(self, module_code=None):
+        """View schedule for a specific module"""
+        if not module_code:
+            # Show dialog to select module
+            module_code = self._select_module_dialog()
+            if not module_code:
+                return
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT ms.day_of_week, ms.start_time, ms.end_time,
+                   r.building, r.room_number,
+                   i.first_name, i.last_name,
+                   ms.session_type
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            WHERE ms.module_code = ?
+            ORDER BY ms.day_of_week, ms.start_time
+            ''', (module_code,))
+
+            schedules = cursor.fetchall()
+
+        if not schedules:
+            messagebox.showinfo("No Schedule", f"No schedule found for module {module_code}")
+            return
+
+        # Create dialog to show schedule
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Schedule for Module {module_code}")
+        dialog.geometry("900x400")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Day', 'Time', 'Room', 'Instructor', 'Type')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Day', width=120)
+        tree.column('Time', width=140)
+        tree.column('Room', width=150)
+        tree.column('Instructor', width=200)
+        tree.column('Type', width=120)
+
+        for schedule in schedules:
+            day, start, end, building, room, first, last, session_type = schedule
+            time_str = f"{start} - {end}"
+            room_str = f"{building}-{room}" if building and room else "TBA"
+            instructor = f"{first} {last}" if first and last else "TBA"
+            tree.insert('', tk.END, values=(day, time_str, room_str, instructor, session_type))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def view_room_schedule(self, room_id=None):
+        """View schedule for a specific room"""
+        if not room_id:
+            # Show dialog to select room
+            room_id = self._select_room_dialog()
+            if not room_id:
+                return
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT ms.day_of_week, ms.start_time, ms.end_time,
+                   ms.module_code, m.module_name,
+                   i.first_name, i.last_name,
+                   ms.session_type
+            FROM module_schedule ms
+            LEFT JOIN modules m ON ms.module_code = m.module_code
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            WHERE ms.room_id = ?
+            ORDER BY ms.day_of_week, ms.start_time
+            ''', (room_id,))
+
+            schedules = cursor.fetchall()
+
+            # Get room info
+            cursor.execute('SELECT building, room_number FROM rooms WHERE id = ?', (room_id,))
+            room_info = cursor.fetchone()
+
+        if not schedules:
+            messagebox.showinfo("No Schedule", f"No schedule found for room ID {room_id}")
+            return
+
+        room_name = f"{room_info[0]}-{room_info[1]}" if room_info else f"Room {room_id}"
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Schedule for {room_name}")
+        dialog.geometry("1000x400")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Day', 'Time', 'Module', 'Module Name', 'Instructor', 'Type')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Day', width=100)
+        tree.column('Time', width=120)
+        tree.column('Module', width=100)
+        tree.column('Module Name', width=250)
+        tree.column('Instructor', width=180)
+        tree.column('Type', width=100)
+
+        for schedule in schedules:
+            day, start, end, module_code, module_name, first, last, session_type = schedule
+            time_str = f"{start} - {end}"
+            instructor = f"{first} {last}" if first and last else "TBA"
+            tree.insert('', tk.END, values=(day, time_str, module_code, module_name or '', instructor, session_type))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def view_instructor_schedule(self, instructor_id=None):
+        """View schedule for a specific instructor"""
+        if not instructor_id:
+            # Show dialog to select instructor
+            instructor_id = self._select_instructor_dialog()
+            if not instructor_id:
+                return
+
+        schedules = self._get_instructor_schedule_data(instructor_id)
+
+        if not schedules:
+            messagebox.showinfo("No Schedule", f"No schedule found for instructor ID {instructor_id}")
+            return
+
+        # Get instructor name
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT first_name, last_name FROM instructors WHERE id = ?', (instructor_id,))
+            instructor_info = cursor.fetchone()
+
+        instructor_name = f"{instructor_info[0]} {instructor_info[1]}" if instructor_info else f"Instructor {instructor_id}"
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Schedule for {instructor_name}")
+        dialog.geometry("1000x400")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Day', 'Time', 'Module', 'Room', 'Type')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Day', width=120)
+        tree.column('Time', width=140)
+        tree.column('Module', width=150)
+        tree.column('Room', width=150)
+        tree.column('Type', width=120)
+
+        for schedule in schedules:
+            time_str = f"{schedule['start_time']} - {schedule['end_time']}"
+            tree.insert('', tk.END, values=(
+                schedule['day'],
+                time_str,
+                schedule['module_code'],
+                schedule['room'],
+                schedule['session_type']
+            ))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    # Helper dialogs for selection
+    def _select_module_dialog(self):
+        """Show dialog to select a module"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_code")
+            modules = cursor.fetchall()
+
+        if not modules:
+            messagebox.showinfo("No Modules", "No modules found in the system.")
+            return None
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Select Module")
+        dialog.geometry("600x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        selected = [None]
+
+        listbox = tk.Listbox(dialog, font=('Arial', 10))
+        for code, name in modules:
+            listbox.insert(tk.END, f"{code} - {name}")
+        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        def on_select():
+            if listbox.curselection():
+                idx = listbox.curselection()[0]
+                selected[0] = modules[idx][0]
+                dialog.destroy()
+
+        ttk.Button(dialog, text="Select", command=on_select).pack(pady=5)
+
+        dialog.wait_window()
+        return selected[0]
+
+    def _select_room_dialog(self):
+        """Show dialog to select a room"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, building, room_number FROM rooms WHERE is_active = 1 ORDER BY building, room_number")
+            rooms = cursor.fetchall()
+
+        if not rooms:
+            messagebox.showinfo("No Rooms", "No rooms found in the system.")
+            return None
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Select Room")
+        dialog.geometry("400x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        selected = [None]
+
+        listbox = tk.Listbox(dialog, font=('Arial', 10))
+        for room_id, building, room_num in rooms:
+            listbox.insert(tk.END, f"{building}-{room_num}")
+        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        def on_select():
+            if listbox.curselection():
+                idx = listbox.curselection()[0]
+                selected[0] = rooms[idx][0]
+                dialog.destroy()
+
+        ttk.Button(dialog, text="Select", command=on_select).pack(pady=5)
+
+        dialog.wait_window()
+        return selected[0]
+
+    def _select_instructor_dialog(self):
+        """Show dialog to select an instructor"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, first_name, last_name, department FROM instructors WHERE is_active = 1 ORDER BY last_name")
+            instructors = cursor.fetchall()
+
+        if not instructors:
+            messagebox.showinfo("No Instructors", "No instructors found in the system.")
+            return None
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Select Instructor")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        selected = [None]
+
+        listbox = tk.Listbox(dialog, font=('Arial', 10))
+        for instructor_id, first, last, dept in instructors:
+            listbox.insert(tk.END, f"{first} {last} ({dept})")
+        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        def on_select():
+            if listbox.curselection():
+                idx = listbox.curselection()[0]
+                selected[0] = instructors[idx][0]
+                dialog.destroy()
+
+        ttk.Button(dialog, text="Select", command=on_select).pack(pady=5)
+
+        dialog.wait_window()
+        return selected[0]
+
 
 # Dialog classes for adding/editing data
 class AddScheduleDialog:

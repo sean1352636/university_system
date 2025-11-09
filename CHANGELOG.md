@@ -233,6 +233,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+**Module Scheduling GUI - 21 Functions: Backup, Validation, Settings, Notifications & Views** (2025-11-09)
+- **ENHANCEMENT**: Added comprehensive system management, backup/restore, data validation, notifications, and viewing capabilities
+- **Impact**: Enterprise-grade scheduling system with complete data management and integrity features
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/module_scheduling_gui.py` - Added ~753 lines (6,120 → 6,873 lines)
+
+**NEW FUNCTIONS ADDED (21)**:
+
+**BACKUP AND RESTORE (3 functions):**
+1. `create_backup()` - Database backup with metadata (~40 lines)
+2. `list_backups()` - Display available backups (~50 lines)
+3. `restore_backup()` - Restore from backup with pre-restore backup (~35 lines)
+
+**DATA VALIDATION AND MAINTENANCE (2 functions):**
+4. `validate_data_consistency()` - Database integrity checks (~60 lines)
+5. `clean_orphaned_records()` - Remove invalid references (~40 lines)
+
+**SYSTEM SETTINGS (3 functions):**
+6. `update_system_setting()` - Update/create settings (~20 lines)
+7. `list_system_settings()` - Display settings dialog (~50 lines)
+8. Note: `get_system_setting()` already existed
+
+**NOTIFICATIONS (4 functions):**
+9. `create_notification()` - Create notification record (~20 lines)
+10. `send_schedule_change_notifications()` - Auto-notify affected users (~35 lines)
+11. `get_notifications()` - Retrieve user notifications (~20 lines)
+12. `mark_notification_read()` - Mark as read (~15 lines)
+
+**HOLIDAY MANAGEMENT (3 functions):**
+13. Note: `add_holiday()` already existed
+14. `list_holidays()` - Display holidays dialog (~45 lines)
+15. `check_holiday_conflicts()` - Warn if scheduling on holiday (~20 lines)
+
+**TIMETABLE VIEWING (6 functions):**
+16. `view_module_schedule()` - View module schedule (~65 lines)
+17. `view_room_schedule()` - View room schedule (~70 lines)
+18. `view_instructor_schedule()` - View instructor schedule (~60 lines)
+19. `_select_module_dialog()` - Module picker (~35 lines)
+20. `_select_room_dialog()` - Room picker (~35 lines)
+21. `_select_instructor_dialog()` - Instructor picker (~40 lines)
+
+**BUSINESS VALUE:**
+- Backup/restore for data protection
+- Data validation for integrity
+- System settings management
+- Automated notifications
+- Holiday conflict prevention
+- Quick schedule viewing by entity
+
+---
+
 **Module Scheduling GUI - 16 Additional Functions: Search, Conflicts & Export** (2025-11-09)
 - **ENHANCEMENT**: Added advanced search, comprehensive conflict detection, and calendar export capabilities
 - **Impact**: Complete scheduling toolkit with intelligent search, conflict resolution, and iCal integration
