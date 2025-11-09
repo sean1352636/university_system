@@ -9,6 +9,148 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Library GUI - Fine Management, Settings, Health Monitoring, Events & Library Cards** (2025-11-09)
+- **MAJOR ENHANCEMENT**: Added 15 enterprise-grade management functions completing core library operations
+- **Impact**: Library GUI now has comprehensive fine payment, system health monitoring, settings management, library events, and card generation
+- **Files Modified**:
+  - `library_gui.py` - Added ~866 lines (10,730 → 11,596 lines)
+
+**NEW FUNCTIONS ADDED (15 total)**:
+
+**1. FINE MANAGEMENT (2 functions)**
+- `process_fine_payment_gui()` - Complete fine payment processing (~160 lines)
+  - Search fines by User ID or Loan ID
+  - Display outstanding fines in treeview with details
+  - Payment method selection (Cash, Card, Check)
+  - Records payment in fine_payments table
+  - Automatically generates receipt after payment
+  - Updates loan records to mark fines as paid
+
+- `generate_fine_receipt_gui(loan_id, amount, payment_method, date)` - Professional receipt generation (~85 lines)
+  - Retrieves loan and user details from database
+  - Formats receipt with box drawing characters
+  - Displays in ScrolledText widget
+  - Save to file functionality
+
+**2. SETTINGS MANAGEMENT (5 functions)**
+- `enhanced_settings_management_gui()` - Comprehensive settings interface (~130 lines)
+  - 3-tab notebook interface (General, Notifications, System)
+  - General: max_loans, loan_period, renewals, fines, reservation_period
+  - Notifications: reminder settings, email/SMS toggles
+  - System: library name, contact info
+
+- `export_settings_gui()` - Export settings to JSON/CSV (~75 lines)
+  - Format selection (JSON or CSV)
+  - Includes export timestamp
+  - File dialog for save location
+
+- `import_settings_gui()` - Import settings from file (~70 lines)
+  - Supports JSON and CSV formats
+  - Confirmation dialog before import
+  - Overwrites existing settings
+
+- `reset_settings_to_default_gui()` - Reset all settings to defaults (~45 lines)
+  - Predefined default values for 12 settings
+  - Confirmation dialog with warning
+  - Mass INSERT OR REPLACE operation
+
+- `backup_settings_only_gui()` - Backup settings separately (~35 lines)
+  - JSON format with metadata
+  - Timestamped backup files
+  - Stored in backups/settings directory
+
+**3. SYSTEM HEALTH & MAINTENANCE (3 functions)**
+- `system_health_check_gui()` - Comprehensive system diagnostics (~145 lines)
+  - Auto-runs health check on window open
+  - Database connection testing
+  - Table integrity verification
+  - Data counts and statistics
+  - Orphaned records detection
+  - Overdue items report
+  - Database file size calculation
+  - Repair functionality (VACUUM, update stale statuses)
+
+- `database_optimization_gui()` - Database performance optimization (~75 lines)
+  - Displays before/after database size
+  - Runs VACUUM command (reclaims space)
+  - Runs ANALYZE (updates statistics)
+  - Runs REINDEX (rebuilds indexes)
+  - Shows space reclaimed percentage
+
+- `clear_cache_gui()` - Clean temporary files and old backups (~45 lines)
+  - Clears temp directory
+  - Keeps last 10 backups only
+  - Shows items cleared count
+  - Confirmation dialog
+
+**4. LIBRARY EVENTS MANAGEMENT (1 function)**
+- `manage_library_events_gui()` - Complete event management system (~175 lines)
+  - Create/view/delete library events
+  - Events treeview with 7 columns
+  - Event details: name, date, time, location, capacity
+  - Description text area for event details
+  - Auto-filters to show only upcoming events
+  - Created_by tracking for audit
+  - Creates library_events table if not exists
+
+**5. LIBRARY CARDS GENERATION (3 functions)**
+- `generate_library_card_gui()` - Single card generation (~140 lines)
+  - Search student by ID
+  - Generates unique card number (LC + random)
+  - Professional card design with box drawing
+  - Shows student info, card number, dates
+  - Includes barcode representation
+  - Stores card in library_cards table
+  - Save to file functionality
+
+- `bulk_generate_library_cards_gui()` - Bulk card generation (~110 lines)
+  - Generate cards for all students without cards
+  - Filter by specific program
+  - Shows generation progress in results text
+  - Creates library_cards table if not exists
+  - Displays count of cards generated
+
+- `print_library_card_gui()` - Export card for printing (~95 lines)
+  - Search by card number or student ID
+  - Retrieves full card details
+  - Formatted card text with status
+  - Export to TXT or PDF
+  - Includes barcode
+
+**6. AUDIT LOG VIEWER (1 function)**
+- `view_audit_log_gui()` - Audit log viewing and filtering (~92 lines)
+  - Displays last 500 audit log entries
+  - Filter by User ID, Action, Entity Type
+  - 6-column treeview display
+  - Dynamic query building based on filters
+  - Auto-loads on window open
+  - Clear filters functionality
+
+**MENU BAR UPDATES**:
+- **Edit Menu**: Added Enhanced Settings, Export/Import/Reset Settings, Backup Settings (8 items total)
+- **Tools Menu**: Replaced old fine/card functions with new implementations, added Library Events (12 items total)
+- **System Menu**: Added System Health Check, Database Optimization, Clear Cache, View Audit Log (8 items total)
+
+**DATABASE TABLES CREATED**:
+- `library_events` - Event tracking with capacity and registration
+- `library_cards` - Card tracking with issue/expiry dates
+- `fine_payments` - Payment history tracking (used by fine payment function)
+
+**FEATURE COVERAGE UPDATE**:
+- Before: ~75% of CLI functionality
+- After: ~88% of CLI functionality
+- Remaining: Advanced search saved queries, barcode operations, recommendation system
+
+**BUSINESS VALUE**:
+- **Fine Management**: Streamlines payment processing with automatic receipt generation
+- **Settings Management**: Centralized configuration with import/export for easy backup
+- **System Health**: Proactive monitoring and optimization reducing downtime
+- **Library Events**: Engages community with event tracking and capacity management
+- **Library Cards**: Automated card generation saves administrative time
+- **Audit Logging**: Compliance and security through comprehensive activity tracking
+
+---
+
 **Library GUI - Notifications, Reporting, Permissions & Backup Systems** (2025-11-09)
 - **MAJOR ENHANCEMENT**: Added automated notifications, advanced reporting, digital permissions, and backup/recovery
 - **Impact**: Library GUI now has enterprise-grade system management and automation

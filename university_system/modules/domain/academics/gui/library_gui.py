@@ -233,7 +233,13 @@ class LibraryGUI:
         edit_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(label="Settings", command=self.show_settings)
+        edit_menu.add_command(label="⚙️ Enhanced Settings Management", command=self.enhanced_settings_management_gui)
         edit_menu.add_command(label="User Preferences", command=self.show_user_preferences)
+        edit_menu.add_separator()
+        edit_menu.add_command(label="📤 Export Settings", command=self.export_settings_gui)
+        edit_menu.add_command(label="📥 Import Settings", command=self.import_settings_gui)
+        edit_menu.add_command(label="🔄 Reset to Defaults", command=self.reset_settings_to_default_gui)
+        edit_menu.add_command(label="💾 Backup Settings", command=self.backup_settings_only_gui)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
@@ -271,10 +277,14 @@ class LibraryGUI:
         tools_menu.add_command(label="🔒 Digital Access Permissions", command=self.manage_digital_access_permissions_gui)
         tools_menu.add_separator()
         tools_menu.add_command(label="Loan History", command=self.view_loan_history_gui)
-        tools_menu.add_command(label="Fine Management", command=self.show_fine_management)
+        tools_menu.add_command(label="💳 Process Fine Payment", command=self.process_fine_payment_gui)
         tools_menu.add_separator()
-        tools_menu.add_command(label="System Health Check", command=self.quick_system_health_check)
-        tools_menu.add_command(label="Library Card Generator", command=self.show_library_cards_generator)
+        tools_menu.add_command(label="📅 Library Events", command=self.manage_library_events_gui)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="💳 Generate Library Card", command=self.generate_library_card_gui)
+        tools_menu.add_command(label="💳 Bulk Generate Cards", command=self.bulk_generate_library_cards_gui)
+        tools_menu.add_command(label="🖨️ Print Library Card", command=self.print_library_card_gui)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Barcode Generator", command=self.show_barcode_generator)
 
         # Reports menu
@@ -291,6 +301,12 @@ class LibraryGUI:
         system_menu.add_separator()
         system_menu.add_command(label="💾 Backup & Recovery", command=self.system_backup_gui)
         system_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
+        system_menu.add_separator()
+        system_menu.add_command(label="🏥 System Health Check", command=self.system_health_check_gui)
+        system_menu.add_command(label="⚡ Database Optimization", command=self.database_optimization_gui)
+        system_menu.add_command(label="🧹 Clear Cache", command=self.clear_cache_gui)
+        system_menu.add_separator()
+        system_menu.add_command(label="📋 View Audit Log", command=self.view_audit_log_gui)
     
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -9818,6 +9834,1472 @@ Total Fines:        ${stats[4]:,.2f}
 
         # Close button
         ttk.Button(backup_window, text="Close", command=backup_window.destroy).pack(pady=10)
+
+    def process_fine_payment_gui(self):
+        """Process fine payment interface"""
+        payment_window = tk.Toplevel(self.master)
+        payment_window.title("Process Fine Payment")
+        payment_window.geometry("600x500")
+
+        ttk.Label(payment_window, text="Process Fine Payment",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Search frame
+        search_frame = ttk.LabelFrame(payment_window, text="Find Loan with Fine", padding=15)
+        search_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        search_type = tk.StringVar(value="user_id")
+        search_value = tk.StringVar()
+
+        ttk.Radiobutton(search_frame, text="By User ID", variable=search_type, value="user_id").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Radiobutton(search_frame, text="By Loan ID", variable=search_type, value="loan_id").grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        ttk.Entry(search_frame, textvariable=search_value, width=30).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(payment_window, text="Outstanding Fines", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Loan ID', 'Book Title', 'User', 'Fine Amount', 'Days Overdue')
+        fines_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=8)
+
+        for col in columns:
+            fines_tree.heading(col, text=col)
+            fines_tree.column(col, width=110)
+
+        fines_tree.pack(fill=tk.BOTH, expand=True)
+
+        def search_fines():
+            for item in fines_tree.get_children():
+                fines_tree.delete(item)
+
+            stype = search_type.get()
+            svalue = search_value.get().strip()
+
+            if not svalue:
+                messagebox.showwarning("Warning", "Please enter a search value")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                if stype == "user_id":
+                    query = '''
+                    SELECT l.loan_id, b.title, l.user_id, l.fine_amount,
+                           CAST((julianday('now') - julianday(l.due_date)) AS INTEGER) as days_overdue
+                    FROM book_loans l
+                    JOIN books b ON l.book_id = b.book_id
+                    WHERE l.user_id = ? AND l.fine_amount > 0 AND l.status != 'returned'
+                    '''
+                else:
+                    query = '''
+                    SELECT l.loan_id, b.title, l.user_id, l.fine_amount,
+                           CAST((julianday('now') - julianday(l.due_date)) AS INTEGER) as days_overdue
+                    FROM book_loans l
+                    JOIN books b ON l.book_id = b.book_id
+                    WHERE l.loan_id = ? AND l.fine_amount > 0 AND l.status != 'returned'
+                    '''
+
+                cursor.execute(query, (svalue,))
+                fines = cursor.fetchall()
+                conn.close()
+
+                for fine in fines:
+                    fines_tree.insert('', 'end', values=(
+                        fine[0], fine[1][:40], fine[2], f"${fine[3]:.2f}", fine[4]
+                    ))
+
+                if not fines:
+                    messagebox.showinfo("No Fines", "No outstanding fines found")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+        ttk.Button(search_frame, text="Search", command=search_fines).grid(row=1, column=2, padx=5)
+
+        def process_payment():
+            selection = fines_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a fine to pay")
+                return
+
+            item = fines_tree.item(selection[0])
+            loan_id = item['values'][0]
+            fine_amount_str = item['values'][3]
+            fine_amount = float(fine_amount_str.replace('$', ''))
+
+            # Payment dialog
+            pay_dialog = tk.Toplevel(payment_window)
+            pay_dialog.title("Process Payment")
+            pay_dialog.geometry("400x300")
+
+            ttk.Label(pay_dialog, text="Process Fine Payment",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            info_frame = ttk.Frame(pay_dialog, padding=15)
+            info_frame.pack(fill=tk.X)
+
+            ttk.Label(info_frame, text=f"Loan ID: {loan_id}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"Fine Amount: ${fine_amount:.2f}",
+                     font=('Arial', 11, 'bold')).pack(anchor=tk.W, pady=2)
+
+            payment_method_var = tk.StringVar(value="cash")
+            ttk.Label(info_frame, text="Payment Method:").pack(anchor=tk.W, pady=(10, 2))
+            ttk.Radiobutton(info_frame, text="Cash", variable=payment_method_var, value="cash").pack(anchor=tk.W, padx=20)
+            ttk.Radiobutton(info_frame, text="Card", variable=payment_method_var, value="card").pack(anchor=tk.W, padx=20)
+            ttk.Radiobutton(info_frame, text="Check", variable=payment_method_var, value="check").pack(anchor=tk.W, padx=20)
+
+            def confirm_payment():
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    payment_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    # Record payment
+                    cursor.execute('''
+                    INSERT INTO fine_payments (
+                        loan_id, amount, payment_method, payment_date, processed_by
+                    ) VALUES (?, ?, ?, ?, ?)
+                    ''', (loan_id, fine_amount, payment_method_var.get(), payment_date, get_current_user_id()))
+
+                    # Update loan - mark fine as paid
+                    cursor.execute('''
+                    UPDATE book_loans
+                    SET fine_amount = 0
+                    WHERE loan_id = ?
+                    ''', (loan_id,))
+
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(),
+                                  f"Processed fine payment: ${fine_amount:.2f} for loan {loan_id}",
+                                  "fine_payments")
+
+                    # Generate receipt
+                    self.generate_fine_receipt_gui(loan_id, fine_amount, payment_method_var.get(), payment_date)
+
+                    pay_dialog.destroy()
+                    messagebox.showinfo("Success", f"Payment processed successfully!\n\nAmount: ${fine_amount:.2f}")
+                    search_fines()  # Refresh list
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Payment failed: {str(e)}")
+
+            ttk.Button(info_frame, text="Process Payment", command=confirm_payment).pack(pady=20)
+
+        # Button frame
+        button_frame = ttk.Frame(payment_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Process Payment", command=process_payment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=payment_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def generate_fine_receipt_gui(self, loan_id, amount, payment_method, payment_date):
+        """Generate and display fine receipt"""
+        receipt_window = tk.Toplevel(self.master)
+        receipt_window.title("Fine Payment Receipt")
+        receipt_window.geometry("500x600")
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Get loan details
+            cursor.execute('''
+            SELECT b.title, b.author, l.user_id, l.checkout_date, l.due_date
+            FROM book_loans l
+            JOIN books b ON l.book_id = b.book_id
+            WHERE l.loan_id = ?
+            ''', (loan_id,))
+
+            loan_details = cursor.fetchone()
+            conn.close()
+
+            if loan_details:
+                title, author, user_id, checkout, due = loan_details
+
+                receipt_text = f"""
+╔══════════════════════════════════════════════════════════════╗
+║                  FINE PAYMENT RECEIPT                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+Receipt Date: {payment_date}
+Receipt ID: FP-{loan_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}
+
+PAYMENT DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Loan ID:         {loan_id}
+User ID:         {user_id}
+
+Book:            {title}
+Author:          {author}
+
+Checkout Date:   {checkout[:10]}
+Due Date:        {due[:10]}
+
+PAYMENT INFORMATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fine Amount:     ${amount:.2f}
+Payment Method:  {payment_method.upper()}
+Status:          PAID IN FULL
+
+Thank you for your payment!
+
+For questions, please contact the library front desk.
+"""
+
+                text_widget = ScrolledText(receipt_window, height=30, width=70, font=('Courier', 9))
+                text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+                text_widget.insert('1.0', receipt_text)
+                text_widget.config(state=tk.DISABLED)
+
+                def print_receipt():
+                    try:
+                        file_path = filedialog.asksaveasfilename(
+                            defaultextension=".txt",
+                            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                            initialfile=f"receipt_{loan_id}.txt"
+                        )
+
+                        if file_path:
+                            with open(file_path, 'w') as f:
+                                f.write(receipt_text)
+                            messagebox.showinfo("Success", f"Receipt saved to:\n{file_path}")
+
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to save receipt: {str(e)}")
+
+                button_frame = ttk.Frame(receipt_window)
+                button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+                ttk.Button(button_frame, text="Save Receipt", command=print_receipt).pack(side=tk.LEFT, padx=5)
+                ttk.Button(button_frame, text="Close", command=receipt_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate receipt: {str(e)}")
+            receipt_window.destroy()
+
+    def enhanced_settings_management_gui(self):
+        """Enhanced settings management interface"""
+        settings_window = tk.Toplevel(self.master)
+        settings_window.title("Library Settings Management")
+        settings_window.geometry("800x700")
+
+        ttk.Label(settings_window, text="Library Settings Management",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Notebook for settings categories
+        notebook = ttk.Notebook(settings_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Tab 1: General Settings
+        general_tab = ttk.Frame(notebook)
+        notebook.add(general_tab, text="General")
+
+        general_frame = ttk.LabelFrame(general_tab, text="General Library Settings", padding=15)
+        general_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        settings_data = {}
+
+        # Load current settings
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT setting_name, setting_value FROM library_settings')
+            for name, value in cursor.fetchall():
+                settings_data[name] = value
+            conn.close()
+        except:
+            pass
+
+        # Create settings inputs
+        settings_vars = {}
+
+        ttk.Label(general_frame, text="Max Loans Per User:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        settings_vars['max_loans'] = tk.IntVar(value=int(settings_data.get('max_loans', 5)))
+        ttk.Spinbox(general_frame, from_=1, to=20, textvariable=settings_vars['max_loans'], width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(general_frame, text="Loan Period (days):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        settings_vars['loan_period_days'] = tk.IntVar(value=int(settings_data.get('loan_period_days', 14)))
+        ttk.Spinbox(general_frame, from_=1, to=90, textvariable=settings_vars['loan_period_days'], width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(general_frame, text="Max Renewals:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        settings_vars['max_renewals'] = tk.IntVar(value=int(settings_data.get('max_renewals', 2)))
+        ttk.Spinbox(general_frame, from_=0, to=10, textvariable=settings_vars['max_renewals'], width=10).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(general_frame, text="Fine Per Day ($):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        settings_vars['fine_per_day'] = tk.DoubleVar(value=float(settings_data.get('fine_per_day', 0.50)))
+        ttk.Spinbox(general_frame, from_=0, to=10, increment=0.10, textvariable=settings_vars['fine_per_day'], width=10).grid(row=3, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(general_frame, text="Reservation Period (days):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        settings_vars['reservation_period_days'] = tk.IntVar(value=int(settings_data.get('reservation_period_days', 3)))
+        ttk.Spinbox(general_frame, from_=1, to=30, textvariable=settings_vars['reservation_period_days'], width=10).grid(row=4, column=1, sticky=tk.W, pady=5)
+
+        # Tab 2: Notification Settings
+        notif_tab = ttk.Frame(notebook)
+        notebook.add(notif_tab, text="Notifications")
+
+        notif_frame = ttk.LabelFrame(notif_tab, text="Notification Settings", padding=15)
+        notif_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        ttk.Label(notif_frame, text="Due Date Reminder (days before):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        settings_vars['due_reminder_days'] = tk.IntVar(value=int(settings_data.get('due_reminder_days', 3)))
+        ttk.Spinbox(notif_frame, from_=1, to=14, textvariable=settings_vars['due_reminder_days'], width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(notif_frame, text="Overdue Reminder Frequency (days):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        settings_vars['overdue_reminder_freq'] = tk.IntVar(value=int(settings_data.get('overdue_reminder_freq', 7)))
+        ttk.Spinbox(notif_frame, from_=1, to=30, textvariable=settings_vars['overdue_reminder_freq'], width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
+
+        settings_vars['email_notifications'] = tk.BooleanVar(value=settings_data.get('email_notifications', 'true') == 'true')
+        ttk.Checkbutton(notif_frame, text="Enable Email Notifications", variable=settings_vars['email_notifications']).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        settings_vars['sms_notifications'] = tk.BooleanVar(value=settings_data.get('sms_notifications', 'false') == 'true')
+        ttk.Checkbutton(notif_frame, text="Enable SMS Notifications", variable=settings_vars['sms_notifications']).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        # Tab 3: System Settings
+        system_tab = ttk.Frame(notebook)
+        notebook.add(system_tab, text="System")
+
+        system_frame = ttk.LabelFrame(system_tab, text="System Settings", padding=15)
+        system_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        ttk.Label(system_frame, text="Library Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        settings_vars['library_name'] = tk.StringVar(value=settings_data.get('library_name', 'University Library'))
+        ttk.Entry(system_frame, textvariable=settings_vars['library_name'], width=40).grid(row=0, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(system_frame, text="Library Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        settings_vars['library_email'] = tk.StringVar(value=settings_data.get('library_email', 'library@university.edu'))
+        ttk.Entry(system_frame, textvariable=settings_vars['library_email'], width=40).grid(row=1, column=1, sticky=tk.W, pady=5)
+
+        ttk.Label(system_frame, text="Library Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        settings_vars['library_phone'] = tk.StringVar(value=settings_data.get('library_phone', ''))
+        ttk.Entry(system_frame, textvariable=settings_vars['library_phone'], width=40).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+        def save_all_settings():
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                for setting_name, var in settings_vars.items():
+                    if isinstance(var, tk.BooleanVar):
+                        value = 'true' if var.get() else 'false'
+                    else:
+                        value = str(var.get())
+
+                    cursor.execute('''
+                    INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
+                    VALUES (?, ?)
+                    ''', (setting_name, value))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), "Updated library settings", "library_settings")
+
+                messagebox.showinfo("Success", "All settings saved successfully!")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(settings_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Save All Settings", command=save_all_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=settings_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def system_health_check_gui(self):
+        """System health check interface"""
+        health_window = tk.Toplevel(self.master)
+        health_window.title("System Health Check")
+        health_window.geometry("700x600")
+
+        ttk.Label(health_window, text="System Health Check",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Results display
+        results_frame = ttk.LabelFrame(health_window, text="Health Check Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        results_text = ScrolledText(results_frame, height=30, width=80, font=('Courier', 10))
+        results_text.pack(fill=tk.BOTH, expand=True)
+
+        def run_health_check():
+            results_text.delete('1.0', tk.END)
+
+            report = f"""
+╔══════════════════════════════════════════════════════════════╗
+║               LIBRARY SYSTEM HEALTH CHECK                    ║
+╚══════════════════════════════════════════════════════════════╝
+
+Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+DATABASE CONNECTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Test connection
+                cursor.execute('SELECT 1')
+                report += "✓ Database connection: OK\n"
+
+                # Check table integrity
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                tables = [row[0] for row in cursor.fetchall()]
+                report += f"✓ Tables found: {len(tables)}\n"
+
+                # Check data integrity
+                report += "\nDATA INTEGRITY:\n"
+                report += "━" * 60 + "\n"
+
+                # Books
+                cursor.execute('SELECT COUNT(*) FROM books')
+                book_count = cursor.fetchone()[0]
+                report += f"Books: {book_count:,}\n"
+
+                # Loans
+                cursor.execute('SELECT COUNT(*) FROM book_loans')
+                loan_count = cursor.fetchone()[0]
+                cursor.execute('SELECT COUNT(*) FROM book_loans WHERE status = "active"')
+                active_loans = cursor.fetchone()[0]
+                report += f"Total Loans: {loan_count:,} (Active: {active_loans:,})\n"
+
+                # Reservations
+                cursor.execute('SELECT COUNT(*) FROM book_reservations WHERE status = "active"')
+                active_res = cursor.fetchone()[0]
+                report += f"Active Reservations: {active_res:,}\n"
+
+                # Check for orphaned records
+                report += "\nORPHANED RECORDS CHECK:\n"
+                report += "━" * 60 + "\n"
+
+                cursor.execute('''
+                SELECT COUNT(*) FROM book_loans l
+                WHERE NOT EXISTS (SELECT 1 FROM books b WHERE b.book_id = l.book_id)
+                ''')
+                orphaned_loans = cursor.fetchone()[0]
+                if orphaned_loans > 0:
+                    report += f"⚠ Orphaned loans: {orphaned_loans}\n"
+                else:
+                    report += "✓ No orphaned loans\n"
+
+                # Check overdue books
+                report += "\nOVERDUE ITEMS:\n"
+                report += "━" * 60 + "\n"
+                cursor.execute('''
+                SELECT COUNT(*) FROM book_loans
+                WHERE status = 'active' AND due_date < datetime('now')
+                ''')
+                overdue_count = cursor.fetchone()[0]
+                report += f"Overdue books: {overdue_count:,}\n"
+
+                # Check database file size
+                from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+                db_size = os.path.getsize(DEFAULT_DB_PATH) / (1024 * 1024)  # MB
+                report += f"\nDATABASE SIZE: {db_size:.2f} MB\n"
+
+                report += "\n" + "="* 60 + "\n"
+                report += "HEALTH CHECK COMPLETE\n"
+                report += "Overall Status: " + ("✓ HEALTHY" if orphaned_loans == 0 else "⚠ NEEDS ATTENTION")
+
+                conn.close()
+
+            except Exception as e:
+                report += f"\n✗ Health check failed: {str(e)}"
+
+            results_text.insert('1.0', report)
+
+        def repair_database():
+            if messagebox.askyesno("Confirm Repair",
+                "This will attempt to repair database issues.\nContinue?"):
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    # Vacuum database
+                    cursor.execute('VACUUM')
+
+                    # Update stale statuses
+                    cursor.execute('''
+                    UPDATE book_loans SET status = 'overdue'
+                    WHERE status = 'active' AND due_date < datetime('now')
+                    ''')
+
+                    # Expire old reservations
+                    cursor.execute('''
+                    UPDATE book_reservations SET status = 'expired'
+                    WHERE status = 'active' AND expiry_date < datetime('now')
+                    ''')
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Database repaired successfully!")
+                    run_health_check()  # Re-run check
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Repair failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(health_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Run Health Check", command=run_health_check).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Repair Database", command=repair_database).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=health_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Auto-run on open
+        run_health_check()
+
+    def view_audit_log_gui(self):
+        """View audit log interface"""
+        audit_window = tk.Toplevel(self.master)
+        audit_window.title("Audit Log Viewer")
+        audit_window.geometry("1000x700")
+
+        ttk.Label(audit_window, text="Audit Log Viewer",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(audit_window, text="Filters", padding=10)
+        filter_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        user_filter = tk.StringVar()
+        action_filter = tk.StringVar()
+        entity_filter = tk.StringVar()
+
+        ttk.Label(filter_frame, text="User ID:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Entry(filter_frame, textvariable=user_filter, width=20).grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(filter_frame, text="Action:").grid(row=0, column=2, padx=5, pady=5)
+        ttk.Entry(filter_frame, textvariable=action_filter, width=20).grid(row=0, column=3, padx=5, pady=5)
+
+        ttk.Label(filter_frame, text="Entity:").grid(row=0, column=4, padx=5, pady=5)
+        ttk.Entry(filter_frame, textvariable=entity_filter, width=20).grid(row=0, column=5, padx=5, pady=5)
+
+        # Audit log table
+        table_frame = ttk.Frame(audit_window)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Details')
+        audit_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            audit_tree.heading(col, text=col)
+            audit_tree.column(col, width=150)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=audit_tree.yview)
+        audit_tree.configure(yscrollcommand=scrollbar.set)
+
+        audit_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_audit_log():
+            for item in audit_tree.get_children():
+                audit_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                query = 'SELECT timestamp, user_id, action, entity_type, entity_id, details FROM audit_log WHERE 1=1'
+                params = []
+
+                user = user_filter.get().strip()
+                if user:
+                    query += ' AND user_id = ?'
+                    params.append(user)
+
+                action = action_filter.get().strip()
+                if action:
+                    query += ' AND action LIKE ?'
+                    params.append(f'%{action}%')
+
+                entity = entity_filter.get().strip()
+                if entity:
+                    query += ' AND entity_type = ?'
+                    params.append(entity)
+
+                query += ' ORDER BY timestamp DESC LIMIT 500'
+
+                cursor.execute(query, params)
+
+                for row in cursor.fetchall():
+                    audit_tree.insert('', 'end', values=row)
+
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load audit log: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(audit_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Load Log", command=load_audit_log).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear Filters",
+                  command=lambda: [user_filter.set(''), action_filter.set(''), entity_filter.set('')]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=audit_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Auto-load on open
+        load_audit_log()
+
+    def export_settings_gui(self):
+        """Export library settings to file"""
+        export_window = tk.Toplevel(self.master)
+        export_window.title("Export Settings")
+        export_window.geometry("500x300")
+
+        ttk.Label(export_window, text="Export Library Settings",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Format selection
+        format_frame = ttk.LabelFrame(export_window, text="Export Format", padding=10)
+        format_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        format_var = tk.StringVar(value="json")
+        ttk.Radiobutton(format_frame, text="JSON Format", variable=format_var, value="json").pack(anchor=tk.W)
+        ttk.Radiobutton(format_frame, text="CSV Format", variable=format_var, value="csv").pack(anchor=tk.W)
+
+        def perform_export():
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT setting_name, setting_value FROM library_settings')
+                settings = cursor.fetchall()
+                conn.close()
+
+                format_type = format_var.get()
+
+                if format_type == "json":
+                    file_path = filedialog.asksaveasfilename(
+                        defaultextension=".json",
+                        filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                        initialfile="library_settings.json"
+                    )
+
+                    if file_path:
+                        import json
+                        settings_dict = {name: value for name, value in settings}
+                        settings_dict['export_date'] = datetime.now().isoformat()
+
+                        with open(file_path, 'w') as f:
+                            json.dump(settings_dict, f, indent=2)
+
+                        log_audit_event(get_current_user_id(), "Exported settings to JSON", "library_settings")
+                        messagebox.showinfo("Success", f"Settings exported successfully to:\n{file_path}")
+                        export_window.destroy()
+
+                else:  # CSV
+                    file_path = filedialog.asksaveasfilename(
+                        defaultextension=".csv",
+                        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                        initialfile="library_settings.csv"
+                    )
+
+                    if file_path:
+                        import csv
+                        with open(file_path, 'w', newline='') as f:
+                            writer = csv.writer(f)
+                            writer.writerow(['Setting Name', 'Setting Value'])
+                            writer.writerows(settings)
+
+                        log_audit_event(get_current_user_id(), "Exported settings to CSV", "library_settings")
+                        messagebox.showinfo("Success", f"Settings exported successfully to:\n{file_path}")
+                        export_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export settings: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(export_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=20)
+
+        ttk.Button(button_frame, text="Export", command=perform_export).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=export_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def import_settings_gui(self):
+        """Import library settings from file"""
+        file_path = filedialog.askopenfilename(
+            title="Select Settings File",
+            filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+
+        if not file_path:
+            return
+
+        try:
+            settings_to_import = []
+
+            if file_path.endswith('.json'):
+                import json
+                with open(file_path, 'r') as f:
+                    settings_dict = json.load(f)
+
+                # Remove metadata fields
+                settings_dict.pop('export_date', None)
+                settings_to_import = list(settings_dict.items())
+
+            elif file_path.endswith('.csv'):
+                import csv
+                with open(file_path, 'r') as f:
+                    reader = csv.reader(f)
+                    next(reader)  # Skip header
+                    settings_to_import = list(reader)
+
+            if not settings_to_import:
+                messagebox.showwarning("Warning", "No valid settings found in file")
+                return
+
+            # Confirm import
+            confirm = messagebox.askyesno(
+                "Confirm Import",
+                f"Import {len(settings_to_import)} settings?\nThis will overwrite existing values."
+            )
+
+            if not confirm:
+                return
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            for setting_name, setting_value in settings_to_import:
+                cursor.execute('''
+                INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
+                VALUES (?, ?)
+                ''', (setting_name, setting_value))
+
+            conn.commit()
+            conn.close()
+
+            log_audit_event(get_current_user_id(), f"Imported {len(settings_to_import)} settings", "library_settings")
+            messagebox.showinfo("Success", f"Successfully imported {len(settings_to_import)} settings")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import settings: {str(e)}")
+
+    def reset_settings_to_default_gui(self):
+        """Reset all settings to default values"""
+        confirm = messagebox.askyesno(
+            "Confirm Reset",
+            "Are you sure you want to reset ALL settings to default values?\n\nThis action cannot be undone."
+        )
+
+        if not confirm:
+            return
+
+        try:
+            default_settings = {
+                'max_loans_per_user': '5',
+                'loan_period_days': '14',
+                'max_renewals': '2',
+                'fine_per_day': '0.50',
+                'reservation_period_days': '7',
+                'due_reminder_days': '3',
+                'overdue_reminder_frequency_days': '7',
+                'enable_email_notifications': 'true',
+                'enable_sms_notifications': 'false',
+                'library_name': 'University Library',
+                'library_email': 'library@university.edu',
+                'library_phone': '555-0100'
+            }
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            for setting_name, setting_value in default_settings.items():
+                cursor.execute('''
+                INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
+                VALUES (?, ?)
+                ''', (setting_name, setting_value))
+
+            conn.commit()
+            conn.close()
+
+            log_audit_event(get_current_user_id(), "Reset all settings to defaults", "library_settings")
+            messagebox.showinfo("Success", f"Successfully reset {len(default_settings)} settings to default values")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to reset settings: {str(e)}")
+
+    def backup_settings_only_gui(self):
+        """Backup only library settings to a separate file"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_dir = os.path.join(os.path.dirname(DATABASE_FILE), 'backups', 'settings')
+            os.makedirs(backup_dir, exist_ok=True)
+
+            backup_file = os.path.join(backup_dir, f'settings_backup_{timestamp}.json')
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT setting_name, setting_value FROM library_settings')
+            settings = cursor.fetchall()
+            conn.close()
+
+            import json
+            settings_dict = {name: value for name, value in settings}
+            settings_dict['backup_date'] = datetime.now().isoformat()
+            settings_dict['backup_type'] = 'settings_only'
+
+            with open(backup_file, 'w') as f:
+                json.dump(settings_dict, f, indent=2)
+
+            log_audit_event(get_current_user_id(), "Created settings backup", "library_settings")
+            messagebox.showinfo("Success", f"Settings backup created:\n{backup_file}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to backup settings: {str(e)}")
+
+    def database_optimization_gui(self):
+        """Database optimization and maintenance"""
+        opt_window = tk.Toplevel(self.master)
+        opt_window.title("Database Optimization")
+        opt_window.geometry("600x500")
+
+        ttk.Label(opt_window, text="Database Optimization",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Results display
+        results_frame = ttk.LabelFrame(opt_window, text="Optimization Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        results_text = ScrolledText(results_frame, height=20, width=70, font=('Courier', 9))
+        results_text.pack(fill=tk.BOTH, expand=True)
+
+        def run_optimization():
+            results_text.delete('1.0', tk.END)
+            results_text.insert('1.0', "Starting database optimization...\n\n")
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Get database size before
+                cursor.execute("PRAGMA page_count")
+                page_count_before = cursor.fetchone()[0]
+                cursor.execute("PRAGMA page_size")
+                page_size = cursor.fetchone()[0]
+                size_before = (page_count_before * page_size) / (1024 * 1024)  # MB
+
+                results_text.insert(tk.END, f"Database size before: {size_before:.2f} MB\n\n")
+
+                # Run VACUUM
+                results_text.insert(tk.END, "Running VACUUM command...\n")
+                cursor.execute("VACUUM")
+                results_text.insert(tk.END, "✓ VACUUM completed\n\n")
+
+                # Analyze tables
+                results_text.insert(tk.END, "Analyzing tables...\n")
+                cursor.execute("ANALYZE")
+                results_text.insert(tk.END, "✓ ANALYZE completed\n\n")
+
+                # Reindex
+                results_text.insert(tk.END, "Rebuilding indexes...\n")
+                cursor.execute("REINDEX")
+                results_text.insert(tk.END, "✓ REINDEX completed\n\n")
+
+                # Get database size after
+                cursor.execute("PRAGMA page_count")
+                page_count_after = cursor.fetchone()[0]
+                size_after = (page_count_after * page_size) / (1024 * 1024)  # MB
+
+                saved = size_before - size_after
+                results_text.insert(tk.END, f"Database size after: {size_after:.2f} MB\n")
+                results_text.insert(tk.END, f"Space reclaimed: {saved:.2f} MB ({(saved/size_before*100):.1f}%)\n\n")
+
+                results_text.insert(tk.END, "=" * 60 + "\n")
+                results_text.insert(tk.END, "Optimization completed successfully!\n")
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), "Ran database optimization", "system")
+
+            except Exception as e:
+                results_text.insert(tk.END, f"\n❌ Error: {str(e)}\n")
+
+        # Button frame
+        button_frame = ttk.Frame(opt_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Run Optimization", command=run_optimization).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=opt_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def clear_cache_gui(self):
+        """Clear temporary files and cache"""
+        confirm = messagebox.askyesno(
+            "Confirm Clear Cache",
+            "This will clear temporary files and cached data.\n\nContinue?"
+        )
+
+        if not confirm:
+            return
+
+        try:
+            items_cleared = 0
+
+            # Clear temp directory if it exists
+            temp_dir = os.path.join(os.path.dirname(DATABASE_FILE), 'temp')
+            if os.path.exists(temp_dir):
+                for filename in os.listdir(temp_dir):
+                    file_path = os.path.join(temp_dir, filename)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                            items_cleared += 1
+                    except Exception as e:
+                        print(f"Error deleting {file_path}: {e}")
+
+            # Clear old backup files (keep last 10)
+            backup_dir = os.path.join(os.path.dirname(DATABASE_FILE), 'backups')
+            if os.path.exists(backup_dir):
+                backups = sorted([f for f in os.listdir(backup_dir) if f.endswith('.db')],
+                               key=lambda x: os.path.getmtime(os.path.join(backup_dir, x)),
+                               reverse=True)
+
+                for old_backup in backups[10:]:  # Keep last 10
+                    try:
+                        os.unlink(os.path.join(backup_dir, old_backup))
+                        items_cleared += 1
+                    except Exception as e:
+                        print(f"Error deleting backup {old_backup}: {e}")
+
+            log_audit_event(get_current_user_id(), f"Cleared cache ({items_cleared} items)", "system")
+            messagebox.showinfo("Success", f"Cache cleared successfully!\n{items_cleared} items removed")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to clear cache: {str(e)}")
+
+    def manage_library_events_gui(self):
+        """Manage library events (create, view, edit, delete)"""
+        events_window = tk.Toplevel(self.master)
+        events_window.title("Library Events Management")
+        events_window.geometry("900x600")
+
+        ttk.Label(events_window, text="Library Events Management",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Events list
+        list_frame = ttk.LabelFrame(events_window, text="Upcoming Events", padding=10)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Event Name', 'Date', 'Time', 'Location', 'Capacity', 'Registered')
+        events_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
+
+        for col in columns:
+            events_tree.heading(col, text=col)
+            events_tree.column(col, width=100 if col != 'Event Name' else 200)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=events_tree.yview)
+        events_tree.configure(yscrollcommand=scrollbar.set)
+
+        events_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_events():
+            for item in events_tree.get_children():
+                events_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Create table if not exists
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS library_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_name TEXT NOT NULL,
+                    event_date TEXT NOT NULL,
+                    event_time TEXT NOT NULL,
+                    location TEXT,
+                    description TEXT,
+                    max_capacity INTEGER DEFAULT 50,
+                    registered_count INTEGER DEFAULT 0,
+                    created_by TEXT,
+                    created_at TEXT
+                )
+                ''')
+
+                cursor.execute('''
+                SELECT event_id, event_name, event_date, event_time, location, max_capacity, registered_count
+                FROM library_events
+                WHERE event_date >= date('now')
+                ORDER BY event_date, event_time
+                ''')
+
+                for row in cursor.fetchall():
+                    events_tree.insert('', 'end', values=row)
+
+                conn.commit()
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load events: {str(e)}")
+
+        def add_event():
+            add_window = tk.Toplevel(events_window)
+            add_window.title("Add New Event")
+            add_window.geometry("500x600")
+
+            ttk.Label(add_window, text="Create New Event", font=('Arial', 12, 'bold')).pack(pady=10)
+
+            form_frame = ttk.Frame(add_window)
+            form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            ttk.Label(form_frame, text="Event Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            name_entry = ttk.Entry(form_frame, width=40)
+            name_entry.grid(row=0, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=5)
+            date_entry = ttk.Entry(form_frame, width=40)
+            date_entry.grid(row=1, column=1, pady=5)
+            date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+            ttk.Label(form_frame, text="Time (HH:MM):").grid(row=2, column=0, sticky=tk.W, pady=5)
+            time_entry = ttk.Entry(form_frame, width=40)
+            time_entry.grid(row=2, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Location:").grid(row=3, column=0, sticky=tk.W, pady=5)
+            location_entry = ttk.Entry(form_frame, width=40)
+            location_entry.grid(row=3, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Max Capacity:").grid(row=4, column=0, sticky=tk.W, pady=5)
+            capacity_spinbox = ttk.Spinbox(form_frame, from_=5, to=500, width=38)
+            capacity_spinbox.set(50)
+            capacity_spinbox.grid(row=4, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Description:").grid(row=5, column=0, sticky=tk.W, pady=5)
+            desc_text = tk.Text(form_frame, height=8, width=40)
+            desc_text.grid(row=5, column=1, pady=5)
+
+            def save_event():
+                try:
+                    event_name = name_entry.get().strip()
+                    event_date = date_entry.get().strip()
+                    event_time = time_entry.get().strip()
+                    location = location_entry.get().strip()
+                    capacity = int(capacity_spinbox.get())
+                    description = desc_text.get('1.0', tk.END).strip()
+
+                    if not event_name or not event_date or not event_time:
+                        messagebox.showwarning("Warning", "Please fill in all required fields")
+                        return
+
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                    INSERT INTO library_events (event_name, event_date, event_time, location, description,
+                                               max_capacity, registered_count, created_by, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+                    ''', (event_name, event_date, event_time, location, description, capacity,
+                         get_current_user_id(), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(), f"Created event: {event_name}", "library_events")
+                    messagebox.showinfo("Success", "Event created successfully!")
+                    add_window.destroy()
+                    load_events()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to create event: {str(e)}")
+
+            ttk.Button(form_frame, text="Create Event", command=save_event).grid(row=6, column=0, columnspan=2, pady=20)
+
+        def delete_event():
+            selected = events_tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select an event to delete")
+                return
+
+            event_id = events_tree.item(selected[0])['values'][0]
+            event_name = events_tree.item(selected[0])['values'][1]
+
+            confirm = messagebox.askyesno("Confirm Delete", f"Delete event '{event_name}'?")
+            if not confirm:
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM library_events WHERE event_id = ?', (event_id,))
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Deleted event: {event_name}", "library_events")
+                messagebox.showinfo("Success", "Event deleted successfully")
+                load_events()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete event: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(events_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Add Event", command=add_event).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Delete Event", command=delete_event).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh", command=load_events).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=events_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        load_events()
+
+    def generate_library_card_gui(self):
+        """Generate library card for a student"""
+        card_window = tk.Toplevel(self.master)
+        card_window.title("Generate Library Card")
+        card_window.geometry("700x600")
+
+        ttk.Label(card_window, text="Generate Library Card",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Student search
+        search_frame = ttk.LabelFrame(card_window, text="Find Student", padding=10)
+        search_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(search_frame, text="Student ID:").pack(side=tk.LEFT, padx=5)
+        student_id_entry = ttk.Entry(search_frame, width=30)
+        student_id_entry.pack(side=tk.LEFT, padx=5)
+
+        # Card preview
+        preview_frame = ttk.LabelFrame(card_window, text="Card Preview", padding=10)
+        preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        preview_text = ScrolledText(preview_frame, height=20, width=70, font=('Courier', 10))
+        preview_text.pack(fill=tk.BOTH, expand=True)
+
+        def generate_card():
+            student_id = student_id_entry.get().strip()
+            if not student_id:
+                messagebox.showwarning("Warning", "Please enter a student ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT student_id, first_name, last_name, email, program_name
+                FROM students
+                WHERE student_id = ?
+                ''', (student_id,))
+
+                result = cursor.fetchone()
+                if not result:
+                    messagebox.showwarning("Warning", f"Student ID {student_id} not found")
+                    conn.close()
+                    return
+
+                student_id, first_name, last_name, email, program = result
+
+                # Generate card number
+                import random
+                card_number = f"LC{student_id[:4]}{random.randint(1000, 9999)}"
+                issue_date = datetime.now().strftime('%Y-%m-%d')
+                expiry_date = (datetime.now().replace(year=datetime.now().year + 1)).strftime('%Y-%m-%d')
+
+                card_design = f"""
+╔══════════════════════════════════════════════════════════════╗
+║                    UNIVERSITY LIBRARY CARD                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  Name: {first_name} {last_name:<48} │
+│  Student ID: {student_id:<47} │
+│  Program: {program if program else 'N/A':<50} │
+│                                                              │
+│  Card Number: {card_number:<46} │
+│  Issue Date: {issue_date:<47} │
+│  Expiry Date: {expiry_date:<46} │
+│                                                              │
+│  This card is the property of University Library.           │
+│  If found, please return to library circulation desk.       │
+│                                                              │
+│  [Barcode: *{card_number}*]                          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+Cardholder Benefits:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Borrow up to 5 books simultaneously
+✓ Access to digital resources
+✓ Reserve books online
+✓ Participate in library events
+✓ Study room booking privileges
+
+For assistance, contact: library@university.edu
+"""
+
+                preview_text.delete('1.0', tk.END)
+                preview_text.insert('1.0', card_design)
+
+                # Store card info in database
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS library_cards (
+                    card_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id TEXT,
+                    card_number TEXT UNIQUE,
+                    issue_date TEXT,
+                    expiry_date TEXT,
+                    status TEXT DEFAULT 'active'
+                )
+                ''')
+
+                cursor.execute('''
+                INSERT OR REPLACE INTO library_cards (student_id, card_number, issue_date, expiry_date, status)
+                VALUES (?, ?, ?, ?, 'active')
+                ''', (student_id, card_number, issue_date, expiry_date))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Generated library card for {student_id}", "library_cards")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate card: {str(e)}")
+
+        def save_card():
+            content = preview_text.get('1.0', tk.END)
+            if not content.strip():
+                messagebox.showwarning("Warning", "No card to save. Generate a card first.")
+                return
+
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                initialfile=f"library_card_{student_id_entry.get()}.txt"
+            )
+
+            if file_path:
+                with open(file_path, 'w') as f:
+                    f.write(content)
+                messagebox.showinfo("Success", f"Card saved to:\n{file_path}")
+
+        # Button frame
+        button_frame = ttk.Frame(card_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Generate Card", command=generate_card).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Save to File", command=save_card).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=card_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def bulk_generate_library_cards_gui(self):
+        """Bulk generate library cards for multiple students"""
+        bulk_window = tk.Toplevel(self.master)
+        bulk_window.title("Bulk Generate Library Cards")
+        bulk_window.geometry("600x500")
+
+        ttk.Label(bulk_window, text="Bulk Generate Library Cards",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Selection criteria
+        criteria_frame = ttk.LabelFrame(bulk_window, text="Selection Criteria", padding=10)
+        criteria_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(criteria_frame, text="Generate cards for:").pack(anchor=tk.W)
+
+        selection_var = tk.StringVar(value="all")
+        ttk.Radiobutton(criteria_frame, text="All students without cards", variable=selection_var, value="all").pack(anchor=tk.W)
+        ttk.Radiobutton(criteria_frame, text="Specific program", variable=selection_var, value="program").pack(anchor=tk.W)
+
+        program_frame = ttk.Frame(criteria_frame)
+        program_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(program_frame, text="Program:").pack(side=tk.LEFT, padx=5)
+        program_entry = ttk.Entry(program_frame, width=30)
+        program_entry.pack(side=tk.LEFT, padx=5)
+
+        # Results display
+        results_frame = ttk.LabelFrame(bulk_window, text="Generation Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        results_text = ScrolledText(results_frame, height=15, width=70, font=('Courier', 9))
+        results_text.pack(fill=tk.BOTH, expand=True)
+
+        def generate_bulk():
+            results_text.delete('1.0', tk.END)
+            results_text.insert('1.0', "Starting bulk card generation...\n\n")
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Create table if not exists
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS library_cards (
+                    card_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id TEXT,
+                    card_number TEXT UNIQUE,
+                    issue_date TEXT,
+                    expiry_date TEXT,
+                    status TEXT DEFAULT 'active'
+                )
+                ''')
+
+                # Get students without cards
+                if selection_var.get() == "all":
+                    cursor.execute('''
+                    SELECT s.student_id, s.first_name, s.last_name
+                    FROM students s
+                    LEFT JOIN library_cards lc ON s.student_id = lc.student_id
+                    WHERE lc.card_id IS NULL
+                    ''')
+                else:
+                    program = program_entry.get().strip()
+                    cursor.execute('''
+                    SELECT s.student_id, s.first_name, s.last_name
+                    FROM students s
+                    LEFT JOIN library_cards lc ON s.student_id = lc.student_id
+                    WHERE lc.card_id IS NULL AND s.program_name = ?
+                    ''', (program,))
+
+                students = cursor.fetchall()
+
+                if not students:
+                    results_text.insert(tk.END, "No students found without library cards.\n")
+                    conn.close()
+                    return
+
+                results_text.insert(tk.END, f"Found {len(students)} students without cards\n\n")
+
+                import random
+                generated = 0
+
+                for student_id, first_name, last_name in students:
+                    card_number = f"LC{student_id[:4]}{random.randint(1000, 9999)}"
+                    issue_date = datetime.now().strftime('%Y-%m-%d')
+                    expiry_date = (datetime.now().replace(year=datetime.now().year + 1)).strftime('%Y-%m-%d')
+
+                    cursor.execute('''
+                    INSERT INTO library_cards (student_id, card_number, issue_date, expiry_date, status)
+                    VALUES (?, ?, ?, ?, 'active')
+                    ''', (student_id, card_number, issue_date, expiry_date))
+
+                    results_text.insert(tk.END, f"✓ {student_id}: {first_name} {last_name} - {card_number}\n")
+                    generated += 1
+
+                conn.commit()
+                conn.close()
+
+                results_text.insert(tk.END, f"\n{'='*60}\n")
+                results_text.insert(tk.END, f"Successfully generated {generated} library cards!\n")
+
+                log_audit_event(get_current_user_id(), f"Bulk generated {generated} library cards", "library_cards")
+
+            except Exception as e:
+                results_text.insert(tk.END, f"\n❌ Error: {str(e)}\n")
+
+        # Button frame
+        button_frame = ttk.Frame(bulk_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Generate Cards", command=generate_bulk).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=bulk_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def print_library_card_gui(self):
+        """Print/export library card design"""
+        print_window = tk.Toplevel(self.master)
+        print_window.title("Print Library Card")
+        print_window.geometry("600x400")
+
+        ttk.Label(print_window, text="Print Library Card",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Card number input
+        input_frame = ttk.LabelFrame(print_window, text="Card Information", padding=10)
+        input_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(input_frame, text="Card Number or Student ID:").pack(side=tk.LEFT, padx=5)
+        card_input = ttk.Entry(input_frame, width=30)
+        card_input.pack(side=tk.LEFT, padx=5)
+
+        info_frame = ttk.LabelFrame(print_window, text="Export Options", padding=10)
+        info_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(info_frame, text="Select export format and click Export").pack()
+
+        def export_card():
+            card_id = card_input.get().strip()
+            if not card_id:
+                messagebox.showwarning("Warning", "Please enter card number or student ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Try to find card
+                cursor.execute('''
+                SELECT lc.card_number, lc.issue_date, lc.expiry_date, lc.status,
+                       s.student_id, s.first_name, s.last_name, s.program_name
+                FROM library_cards lc
+                JOIN students s ON lc.student_id = s.student_id
+                WHERE lc.card_number = ? OR lc.student_id = ?
+                ''', (card_id, card_id))
+
+                result = cursor.fetchone()
+                conn.close()
+
+                if not result:
+                    messagebox.showwarning("Warning", "Card not found")
+                    return
+
+                card_number, issue_date, expiry_date, status, student_id, first_name, last_name, program = result
+
+                card_text = f"""
+╔══════════════════════════════════════════════════════════════╗
+║                    UNIVERSITY LIBRARY CARD                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+  Name: {first_name} {last_name}
+  Student ID: {student_id}
+  Program: {program if program else 'N/A'}
+
+  Card Number: {card_number}
+  Issue Date: {issue_date}
+  Expiry Date: {expiry_date}
+  Status: {status.upper()}
+
+  [Barcode: *{card_number}*]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This card is the property of University Library.
+Contact: library@university.edu
+"""
+
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".txt",
+                    filetypes=[("Text files", "*.txt"), ("PDF files", "*.pdf"), ("All files", "*.*")],
+                    initialfile=f"library_card_{card_number}.txt"
+                )
+
+                if file_path:
+                    with open(file_path, 'w') as f:
+                        f.write(card_text)
+
+                    log_audit_event(get_current_user_id(), f"Exported library card {card_number}", "library_cards")
+                    messagebox.showinfo("Success", f"Card exported to:\n{file_path}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export card: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(print_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=20)
+
+        ttk.Button(button_frame, text="Export Card", command=export_card).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=print_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 # DATABASE_FILE constant now defined at top of file using centralized path
