@@ -28,11 +28,14 @@ except ImportError:
 # Import original functions for backward compatibility
 from university_system.modules.domain.housing.services.housing_accommodation import (
     init_housing_db, generate_id, set_auth,
+    # Utility functions
+    select_student as orig_select_student,
     # Building functions - add the missing create_ prefix
     create_building as orig_create_building,
     view_building as orig_view_building,
     update_building as orig_update_building,
     delete_building as orig_delete_building,
+    create_rooms_for_building as orig_create_rooms_for_building,
     # Application functions
     create_application as orig_create_application,
     process_application as orig_process_application,
@@ -5006,10 +5009,12 @@ __all__ = [
     'orig_init_housing_db',  # These should reference the orig_ versions
     'orig_generate_id',
     'orig_set_auth',
+    'orig_select_student',
     'orig_create_building',
-    'orig_view_building', 
+    'orig_view_building',
     'orig_update_building',
     'orig_delete_building',
+    'orig_create_rooms_for_building',
     'orig_create_application',
     'orig_process_application',
     'orig_view_application',
