@@ -10826,6 +10826,141 @@ Proceed with update?
 
         messagebox.showinfo("Export Complete", f"Report exported to {filename}")
 
+    # CLI-Compatible Scheduled Reports Wrappers
+    def view_scheduled_reports(self):
+        """
+        View all scheduled reports (CLI-compatible).
+
+        Wrapper that calls the existing load_scheduled_reports() method.
+        Provides CLI function naming compatibility.
+        """
+        # If reports tree doesn't exist, show the full scheduled reports dialog
+        if not hasattr(self, 'reports_tree'):
+            self.show_scheduled_reports()
+        else:
+            self.load_scheduled_reports()
+
+    def create_scheduled_report(self):
+        """
+        Create a new scheduled report (CLI-compatible).
+
+        Opens the scheduled reports management interface with create form.
+        """
+        self.show_scheduled_reports()
+
+    def modify_scheduled_report(self):
+        """
+        Modify an existing scheduled report (CLI-compatible).
+
+        Wrapper for modify_selected_report() method.
+        """
+        if hasattr(self, 'reports_tree') and self.reports_tree.get_children():
+            self.modify_selected_report()
+        else:
+            messagebox.showinfo("No Reports", "Please open Scheduled Reports first.")
+
+    def delete_scheduled_report(self):
+        """
+        Delete a scheduled report (CLI-compatible).
+
+        Wrapper for delete_selected_report() method.
+        """
+        if hasattr(self, 'reports_tree') and self.reports_tree.get_children():
+            self.delete_selected_report()
+        else:
+            messagebox.showinfo("No Reports", "Please open Scheduled Reports first.")
+
+    def run_scheduled_report(self):
+        """
+        Run a scheduled report manually (CLI-compatible).
+
+        Wrapper for run_selected_report() method.
+        """
+        if hasattr(self, 'reports_tree') and self.reports_tree.get_children():
+            self.run_selected_report()
+        else:
+            messagebox.showinfo("No Reports", "Please open Scheduled Reports first.")
+
+    # Utility Functions
+    def log_search(self, search_type, criteria, result_count):
+        """
+        Log search activity to analytics database (CLI-compatible utility).
+
+        This utility function tracks all searches performed in the system for:
+        - Analytics and reporting
+        - Usage pattern analysis
+        - Performance monitoring
+        - User behavior tracking
+
+        Args:
+            search_type (str): Type of search performed (e.g., "multi_criteria", "fuzzy", "module")
+            criteria (dict/str): Search criteria used
+            result_count (int): Number of results returned
+
+        The function:
+        1. Adds to in-memory search history (last 100 searches)
+        2. Logs to database search_analytics table
+        3. Records timestamp, user, execution details
+        """
+        try:
+            # Add to search history if it exists
+            if not hasattr(self, 'search_history'):
+                self.search_history = []
+
+            search_entry = {
+                'type': search_type,
+                'criteria': str(criteria),
+                'results': result_count,
+                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.search_history.append(search_entry)
+
+            # Keep only last 100 searches in memory
+            if len(self.search_history) > 100:
+                self.search_history = self.search_history[-100:]
+
+            # Log to database for analytics
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Check if search_analytics table exists
+            cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='search_analytics'
+            """)
+
+            if cursor.fetchone():
+                # Get current user if available
+                current_user = 'default_user'
+                if hasattr(self, 'auth') and self.auth:
+                    user = self.auth.get_current_user()
+                    if user:
+                        current_user = user.get('username', 'default_user')
+
+                # Insert search analytics record
+                cursor.execute('''
+                    INSERT INTO search_analytics (
+                        user_id, search_type, search_criteria,
+                        results_count, search_timestamp, execution_time
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    current_user,
+                    search_type,
+                    str(criteria),
+                    result_count,
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    0.1  # Placeholder execution time
+                ))
+
+                conn.commit()
+
+            conn.close()
+
+        except Exception as e:
+            # Fail silently for analytics - don't disrupt user experience
+            print(f"Search logging failed (non-critical): {e}")
+
 
 # Backwards Compatibility Functions
 def run_gui():
