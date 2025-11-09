@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Grade Tracking Management GUI - Performance Analytics & Curve Analysis Functions Added (26/26 functions = 100%)** (2025-11-09)
+- **COMPLETION**: All 26 analytics functions (19 performance + 7 curve) now available via wrapper methods
+- **Impact**: Complete performance analytics, forecasting, and grade distribution analysis accessible from GUI
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/grade_tracking_management_gui.py` - Added ~682 lines (521 → 1,203 lines)
+
+**FUNCTIONS IMPLEMENTED (26 Total)**:
+
+**Performance Analytics Functions (19 functions):**
+1. `module_performance_summary_gui()` - Generate module performance summary with CLI threading
+2. `generate_performance_dashboard_gui()` - Comprehensive performance dashboard generation
+3. `analyze_course_performance_trends_gui()` - Analyze course performance trends with database connection
+4. `forecast_course_performance_gui()` - Forecast future course performance with database connection
+5. `performance_prediction_models_gui()` - Build and use ML performance prediction models with permission checks (manage_grades or use_ml_models)
+6. `forecast_overall_performance_gui()` - Forecast institution-wide performance with permission checks (manage_grades or view_reports)
+7. `forecast_single_course_gui(course_name=None)` - Forecast single course with optional parameter and dialog prompt
+8. `build_module_success_model_gui()` - Build ML model for module success prediction with permission checks (manage_grades or use_ml_models)
+9. `analyze_module_performance_gui(module_code=None)` - Analyze specific module with database lookup for module details
+10. `calculate_course_statistics_gui(course=None)` - Calculate comprehensive course statistics with optional parameter and dialog prompt
+11. `export_module_performance_gui(module_stats=None)` - Export module performance data to CSV
+12. `export_performance_summary_gui(summary_data=None, export_type="csv")` - Export performance summary with format selection
+13. `collect_dashboard_data_gui()` - Collect data for performance dashboard with database connection
+14. `display_performance_dashboard_gui(dashboard_data=None)` - Display dashboard with optional data parameter
+15. `display_module_performance_results_gui(module_stats=None)` - Display module performance results with threading
+
+**Utility Functions (4 functions - for internal use):**
+- `_table_exists()`, `_cols()`, `_first_existing_table()`, `_first_existing_column()` - Database utility functions
+
+**Curve Analysis Functions (7 functions):**
+16. `apply_grading_curve_gui()` - Apply grading curve to assessment with permission checks (manage_grades or apply_curve)
+17. `comparative_performance_analysis_gui()` - Compare performance across different groups with CLI threading
+18. `performance_trends_analysis_gui()` - Analyze performance trends over time with CLI threading
+19. `analyze_distribution_by_course_gui()` - Analyze grade distribution by course with database connection
+20. `analyze_distribution_by_module_type_gui()` - Analyze grade distribution by module type with database connection
+21. `analyze_overall_distribution_gui()` - Analyze overall institution-wide grade distribution with database connection
+22. `dropout_risk_analysis_gui()` - Analyze dropout risk factors with permission checks (manage_grades or view_risk_analysis)
+
+**TECHNICAL FEATURES**:
+- Imports from `performance_analytics` and `curve_analysis` modules
+- Fallback stub implementations with error logging if unavailable
+- Permission checks for ML models and sensitive analytics (manage_grades, use_ml_models, view_reports, apply_curve, view_risk_analysis)
+- Threading for non-blocking execution (daemon threads)
+- User input dialogs using `tk.simpledialog.askstring()` for parameters
+- Database connection management with proper cursor handling
+- Module detail lookup from database for analysis functions
+- Error handling with user-friendly messageboxes
+- Optional parameter support for programmatic calls
+- Export functionality with format selection
+
+**ARCHITECTURE**:
+- PERFORMANCE_ANALYTICS_AVAILABLE flag for graceful degradation
+- CURVE_ANALYSIS_AVAILABLE flag for graceful degradation
+- Background thread execution for analytics and forecasting
+- Dialog-based parameter input when not provided
+- Proper database connection lifecycle (open/close)
+- Authentication checks on all methods
+- Module lookup integration for performance analysis
+
+**IMPORTS ADDED**:
+- 19 functions from `performance_analytics` module with fallback stubs
+- 7 functions from `curve_analysis` module with fallback stubs
+
+**USER IMPACT**: Grade Tracking Management GUI now provides complete performance analytics and curve analysis functionality including module/course performance analysis, ML-based forecasting models, grade distribution analysis, dropout risk assessment, and comprehensive data export capabilities. All operations run in background threads to prevent GUI blocking, with proper authentication, permission checks, and database integration.
+
 **Grade Tracking Management GUI - Learning Outcomes Functions Added (8/8 functions = 100%)** (2025-11-09)
 - **COMPLETION**: All 8 learning outcomes functions now available via wrapper methods
 - **Impact**: Complete learning outcomes management and reporting accessible from GUI
