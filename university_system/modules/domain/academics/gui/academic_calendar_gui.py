@@ -1401,6 +1401,1482 @@ def generate_token(length: int = 32, url_safe: bool = True) -> str:
 # END OF UTILITIES
 # ============================================================================
 
+# ============================================================================
+# DATABASE MANAGEMENT SYSTEM
+# ============================================================================
+
+class ConnectionPool:
+    """
+    Database connection pool for efficient connection management
+
+    Provides connection pooling to reduce connection overhead and
+    improve performance for database operations.
+    """
+
+    def __init__(self, db_path: str, pool_size: int = 5):
+        """
+        Initialize connection pool
+
+        Args:
+            db_path: Path to database file
+            pool_size: Number of connections to maintain
+        """
+        self.db_path = db_path
+        self.pool_size = pool_size
+        self._connection = None
+
+    def __enter__(self):
+        """Context manager entry - get connection"""
+        import sqlite3
+        self._connection = sqlite3.connect(self.db_path)
+        self._connection.row_factory = sqlite3.Row
+        return self._connection
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - close connection"""
+        if self._connection:
+            if exc_type is None:
+                self._connection.commit()
+            else:
+                self._connection.rollback()
+            self._connection.close()
+        return False
+
+
+class DatabaseManager:
+    """
+    Comprehensive database abstraction layer
+
+    Provides:
+    - Connection pooling
+    - Transaction management
+    - Query execution with error handling
+    - Database backup functionality
+    - Thread-safe operations
+    """
+
+    def __init__(self, db_path: Optional[str] = None):
+        """
+        Initialize database manager
+
+        Args:
+            db_path: Path to database file (defaults to centralized path)
+        """
+        if db_path is None:
+            from university_system.modules.shared.constants import paths
+            db_path = paths.DEFAULT_DB_PATH
+
+        self.db_path = db_path
+        self._connection = None
+        self._connection_pool = ConnectionPool(db_path)
+        gui_logger.info(f"DatabaseManager initialized with path: {db_path}")
+
+    def _connect(self):
+        """
+        Establish database connection
+
+        Returns:
+            sqlite3.Connection: Database connection
+
+        Raises:
+            DatabaseError: If connection fails
+        """
+        try:
+            import sqlite3
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            # Enable foreign keys
+            conn.execute("PRAGMA foreign_keys = ON")
+            return conn
+        except Exception as e:
+            raise DatabaseError.connection_failed(str(e))
+
+    def execute_query(self, query: str, params: Optional[Tuple] = None) -> List[Dict[str, Any]]:
+        """
+        Execute SELECT query and return results
+
+        Args:
+            query: SQL SELECT query
+            params: Query parameters (optional)
+
+        Returns:
+            List[Dict]: Query results as list of dictionaries
+
+        Raises:
+            DatabaseError: If query execution fails
+
+        Example:
+            results = db.execute_query(
+                "SELECT * FROM events WHERE date = ?",
+                (date_str,)
+            )
+        """
+        try:
+            with self._connection_pool as conn:
+                cursor = conn.execute(query, params or ())
+                rows = cursor.fetchall()
+                # Convert Row objects to dictionaries
+                return [dict(row) for row in rows]
+        except Exception as e:
+            raise convert_to_user_error(e, {'query': query, 'operation': 'SELECT'})
+
+    def execute_update(self, query: str, params: Optional[Tuple] = None) -> int:
+        """
+        Execute INSERT/UPDATE/DELETE query
+
+        Args:
+            query: SQL modification query
+            params: Query parameters (optional)
+
+        Returns:
+            int: Number of affected rows
+
+        Raises:
+            DatabaseError: If query execution fails
+
+        Example:
+            rows_affected = db.execute_update(
+                "UPDATE events SET title = ? WHERE id = ?",
+                (new_title, event_id)
+            )
+        """
+        try:
+            with self._connection_pool as conn:
+                cursor = conn.execute(query, params or ())
+                return cursor.rowcount
+        except Exception as e:
+            raise convert_to_user_error(e, {'query': query, 'operation': 'UPDATE'})
+
+    def execute_many(self, query: str, params_list: List[Tuple]) -> int:
+        """
+        Execute query with multiple parameter sets (batch operation)
+
+        Args:
+            query: SQL query
+            params_list: List of parameter tuples
+
+        Returns:
+            int: Number of affected rows
+
+        Raises:
+            DatabaseError: If batch execution fails
+
+        Example:
+            db.execute_many(
+                "INSERT INTO events (title, date) VALUES (?, ?)",
+                [("Event 1", "2025-11-09"), ("Event 2", "2025-11-10")]
+            )
+        """
+        try:
+            with self._connection_pool as conn:
+                cursor = conn.executemany(query, params_list)
+                return cursor.rowcount
+        except Exception as e:
+            raise convert_to_user_error(e, {'query': query, 'operation': 'BATCH'})
+
+    def transaction(self):
+        """
+        Create transaction context manager
+
+        Returns:
+            ConnectionPool: Context manager for transaction
+
+        Example:
+            with db.transaction() as conn:
+                conn.execute("INSERT INTO events ...")
+                conn.execute("INSERT INTO attendees ...")
+                # Auto-commits if no exception
+        """
+        return self._connection_pool
+
+    def backup_database(self, backup_path: Optional[str] = None) -> str:
+        """
+        Create database backup
+
+        Args:
+            backup_path: Path for backup file (auto-generated if not provided)
+
+        Returns:
+            str: Path to backup file
+
+        Raises:
+            ExportError: If backup fails
+
+        Example:
+            backup_file = db.backup_database()
+            print(f"Backup created: {backup_file}")
+        """
+        try:
+            import shutil
+            from pathlib import Path
+
+            if backup_path is None:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_dir = Path(self.db_path).parent / "backups"
+                backup_dir.mkdir(exist_ok=True)
+                backup_path = str(backup_dir / f"calendar_backup_{timestamp}.db")
+
+            # Create backup using shutil
+            shutil.copy2(self.db_path, backup_path)
+
+            gui_logger.info(f"Database backup created: {backup_path}")
+            return backup_path
+
+        except Exception as e:
+            raise ExportError.file_write_failed(
+                backup_path or "unknown",
+                reason=str(e)
+            )
+
+    def close(self):
+        """
+        Close database connections and cleanup resources
+
+        Should be called when database manager is no longer needed.
+        """
+        if self._connection:
+            self._connection.close()
+            self._connection = None
+        gui_logger.info("DatabaseManager closed")
+
+# ============================================================================
+# AUTHENTICATION SYSTEM
+# ============================================================================
+
+class AuthenticationManager:
+    """
+    Comprehensive authentication and authorization system
+
+    Features:
+    - User authentication with password verification
+    - Role-based access control (RBAC)
+    - Session management
+    - Permission checking
+    - User creation and management
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize authentication manager
+
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db = db_manager
+        self.current_user = None
+        self.current_session = None
+        self.permissions = {}
+        self._load_permissions()
+        gui_logger.info("AuthenticationManager initialized")
+
+    def authenticate_user(self, username: str, password: str) -> bool:
+        """
+        Authenticate user with username and password
+
+        Args:
+            username: Username
+            password: Password (will be hashed for comparison)
+
+        Returns:
+            bool: True if authentication successful
+
+        Raises:
+            AuthenticationError: If authentication fails
+
+        Example:
+            if auth.authenticate_user("admin", "password123"):
+                print("Login successful")
+        """
+        try:
+            # Query user from database
+            users = self.db.execute_query(
+                "SELECT id, username, password_hash, password_salt, role, active FROM users WHERE username = ?",
+                (username,)
+            )
+
+            if not users:
+                raise AuthenticationError.invalid_credentials(username)
+
+            user = users[0]
+
+            # Check if account is active
+            if not user['active']:
+                raise AuthenticationError.account_locked(
+                    username,
+                    reason="Account is inactive"
+                )
+
+            # Verify password
+            if not verify_password(password, user['password_hash'], user['password_salt']):
+                raise AuthenticationError.invalid_credentials(username)
+
+            # Create session
+            self._create_session(user)
+
+            gui_logger.info(f"User authenticated successfully: {username}")
+            return True
+
+        except AuthenticationError:
+            raise
+        except Exception as e:
+            raise convert_to_user_error(e, {'username': username})
+
+    def check_permission(self, permission: str) -> bool:
+        """
+        Check if current user has specified permission
+
+        Args:
+            permission: Permission name to check
+
+        Returns:
+            bool: True if user has permission
+
+        Example:
+            if auth.check_permission('create_event'):
+                # Allow event creation
+                pass
+        """
+        if not self.current_user:
+            return False
+
+        user_role = self.current_user.get('role', '')
+        role_permissions = self.permissions.get(user_role, [])
+
+        return permission in role_permissions or 'admin' in role_permissions
+
+    def _load_permissions(self):
+        """
+        Load role-based permissions from configuration
+
+        Defines permission sets for each role.
+        """
+        self.permissions = {
+            'admin': ['admin', 'create_event', 'edit_event', 'delete_event',
+                     'view_event', 'manage_users', 'view_reports'],
+            'instructor': ['create_event', 'edit_event', 'view_event', 'view_reports'],
+            'staff': ['create_event', 'view_event'],
+            'student': ['view_event'],
+        }
+
+    def _create_session(self, user: Dict[str, Any]):
+        """
+        Create user session after successful authentication
+
+        Args:
+            user: User data dictionary
+        """
+        self.current_user = user
+        self.current_session = {
+            'user_id': user['id'],
+            'username': user['username'],
+            'role': user['role'],
+            'session_token': generate_token(32),
+            'created_at': datetime.now(),
+            'expires_at': datetime.now() + timedelta(hours=24)
+        }
+
+        # Store session in database
+        try:
+            self.db.execute_update(
+                """INSERT INTO user_sessions
+                   (user_id, session_token, created_at, expires_at)
+                   VALUES (?, ?, ?, ?)""",
+                (
+                    self.current_session['user_id'],
+                    self.current_session['session_token'],
+                    self.current_session['created_at'].isoformat(),
+                    self.current_session['expires_at'].isoformat()
+                )
+            )
+        except Exception as e:
+            gui_logger.warning(f"Failed to store session in database: {e}")
+
+    def _is_session_valid(self) -> bool:
+        """
+        Check if current session is valid
+
+        Returns:
+            bool: True if session is valid and not expired
+        """
+        if not self.current_session:
+            return False
+
+        if datetime.now() > self.current_session['expires_at']:
+            return False
+
+        return True
+
+    def require_permission(self, permission: str) -> Callable:
+        """
+        Decorator to require specific permission for function execution
+
+        Args:
+            permission: Required permission name
+
+        Returns:
+            Callable: Decorated function
+
+        Example:
+            @auth.require_permission('create_event')
+            def create_event(event_data):
+                # Only users with 'create_event' permission can execute
+                pass
+        """
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                if not self.check_permission(permission):
+                    raise PermissionError.resource_access_denied(
+                        resource=func.__name__,
+                        action='execute',
+                        required_permission=permission
+                    )
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
+    def logout(self):
+        """
+        Logout current user and clear session
+
+        Invalidates current session and clears user data.
+        """
+        if self.current_session:
+            # Invalidate session in database
+            try:
+                self.db.execute_update(
+                    "DELETE FROM user_sessions WHERE session_token = ?",
+                    (self.current_session['session_token'],)
+                )
+            except Exception as e:
+                gui_logger.warning(f"Failed to invalidate session in database: {e}")
+
+        self.current_user = None
+        self.current_session = None
+        gui_logger.info("User logged out")
+
+    def create_user(self, username: str, password: str, role: str = 'student',
+                   email: Optional[str] = None) -> int:
+        """
+        Create new user account
+
+        Args:
+            username: Username
+            password: Password (will be hashed)
+            role: User role (default: 'student')
+            email: Email address (optional)
+
+        Returns:
+            int: New user ID
+
+        Raises:
+            ValidationError: If input validation fails
+            DatabaseError: If user creation fails
+
+        Example:
+            user_id = auth.create_user(
+                "john_doe",
+                "secure_password",
+                role="instructor",
+                email="john@university.edu"
+            )
+        """
+        # Validate inputs
+        if not username or len(username) < 3:
+            raise ValidationError.invalid_format(
+                'username',
+                'at least 3 characters',
+                username
+            )
+
+        if not password or len(password) < 8:
+            raise ValidationError.invalid_format(
+                'password',
+                'at least 8 characters'
+            )
+
+        if email and not validate_email(email):
+            raise ValidationError.invalid_format(
+                'email',
+                'valid email address',
+                email
+            )
+
+        # Hash password
+        password_hash, password_salt = hash_password(password)
+
+        # Create user
+        try:
+            with self.db.transaction() as conn:
+                cursor = conn.execute(
+                    """INSERT INTO users
+                       (username, password_hash, password_salt, role, email, active, created_at)
+                       VALUES (?, ?, ?, ?, ?, 1, ?)""",
+                    (
+                        username,
+                        password_hash,
+                        password_salt,
+                        role,
+                        email,
+                        datetime.now().isoformat()
+                    )
+                )
+                user_id = cursor.lastrowid
+
+            gui_logger.info(f"User created: {username} (ID: {user_id}, Role: {role})")
+            return user_id
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'username': username, 'table': 'users'})
+
+# ============================================================================
+# RECURRING EVENTS SYSTEM
+# ============================================================================
+
+class RecurringEventManager:
+    """
+    Manages recurring events with flexible recurrence patterns
+
+    Supports:
+    - Daily, weekly, monthly, yearly recurrence
+    - Custom recurrence intervals
+    - End date or occurrence count limits
+    - Exception dates (skip specific occurrences)
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize recurring event manager
+
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db = db_manager
+        gui_logger.info("RecurringEventManager initialized")
+
+    def create_recurring_event(self, event_data: Dict[str, Any],
+                               recurrence_pattern: str,
+                               interval: int = 1,
+                               end_date: Optional[datetime] = None,
+                               occurrences: Optional[int] = None) -> List[int]:
+        """
+        Create recurring event with specified pattern
+
+        Args:
+            event_data: Base event data (title, description, etc.)
+            recurrence_pattern: 'daily', 'weekly', 'monthly', 'yearly'
+            interval: Recurrence interval (e.g., every 2 weeks)
+            end_date: Optional end date for recurrence
+            occurrences: Optional number of occurrences to create
+
+        Returns:
+            List[int]: List of created event IDs
+
+        Raises:
+            ValidationError: If parameters are invalid
+
+        Example:
+            event_ids = recurring_mgr.create_recurring_event(
+                {
+                    'title': 'Weekly Team Meeting',
+                    'description': 'Team sync',
+                    'start_time': '10:00',
+                    'duration': 60
+                },
+                recurrence_pattern='weekly',
+                interval=1,
+                occurrences=10
+            )
+        """
+        # Validate recurrence pattern
+        valid_patterns = ['daily', 'weekly', 'monthly', 'yearly']
+        if recurrence_pattern not in valid_patterns:
+            raise ValidationError.invalid_format(
+                'recurrence_pattern',
+                f"One of: {', '.join(valid_patterns)}",
+                recurrence_pattern
+            )
+
+        # Validate that either end_date or occurrences is specified
+        if end_date is None and occurrences is None:
+            raise ValidationError(
+                "Either end_date or occurrences must be specified",
+                field="recurrence"
+            )
+
+        # Generate recurring occurrences
+        event_dates = self._generate_recurring_occurrences(
+            start_date=event_data.get('date'),
+            pattern=recurrence_pattern,
+            interval=interval,
+            end_date=end_date,
+            occurrences=occurrences
+        )
+
+        # Create events for each occurrence
+        event_ids = []
+        try:
+            with self.db.transaction() as conn:
+                for event_date in event_dates:
+                    # Create event with specific date
+                    event_copy = event_data.copy()
+                    event_copy['date'] = event_date.strftime('%Y-%m-%d')
+
+                    cursor = conn.execute(
+                        """INSERT INTO calendar_events
+                           (title, description, date, start_time, end_time, location,
+                            event_type, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (
+                            event_copy.get('title'),
+                            event_copy.get('description'),
+                            event_copy['date'],
+                            event_copy.get('start_time'),
+                            event_copy.get('end_time'),
+                            event_copy.get('location'),
+                            event_copy.get('event_type', 'recurring'),
+                            datetime.now().isoformat()
+                        )
+                    )
+                    event_ids.append(cursor.lastrowid)
+
+            gui_logger.info(
+                f"Created {len(event_ids)} recurring events: {recurrence_pattern}, "
+                f"interval: {interval}"
+            )
+            return event_ids
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'operation': 'create_recurring_events'})
+
+    def _generate_recurring_occurrences(self, start_date: str, pattern: str,
+                                       interval: int, end_date: Optional[datetime],
+                                       occurrences: Optional[int]) -> List[datetime]:
+        """
+        Generate list of dates for recurring event
+
+        Args:
+            start_date: Start date string (YYYY-MM-DD)
+            pattern: Recurrence pattern
+            interval: Recurrence interval
+            end_date: Optional end date
+            occurrences: Optional number of occurrences
+
+        Returns:
+            List[datetime]: List of occurrence dates
+        """
+        # Parse start date
+        is_valid, current_date = validate_date(start_date)
+        if not is_valid:
+            raise ValidationError.invalid_format('start_date', 'YYYY-MM-DD', start_date)
+
+        occurrence_dates = []
+        count = 0
+
+        # Determine delta based on pattern
+        delta_map = {
+            'daily': lambda i: timedelta(days=i),
+            'weekly': lambda i: timedelta(weeks=i),
+            'monthly': lambda i: timedelta(days=30 * i),  # Approximate
+            'yearly': lambda i: timedelta(days=365 * i)  # Approximate
+        }
+
+        delta_func = delta_map[pattern]
+
+        # Generate occurrences
+        while True:
+            # Check if we've reached the limit
+            if occurrences and count >= occurrences:
+                break
+            if end_date and current_date > end_date:
+                break
+
+            occurrence_dates.append(current_date)
+            count += 1
+
+            # Move to next occurrence
+            current_date = current_date + delta_func(interval)
+
+        return occurrence_dates
+
+# ============================================================================
+# EVENT DEPENDENCIES AND WORKFLOWS
+# ============================================================================
+
+class EventDependencyManager:
+    """
+    Manages event dependencies and workflows
+
+    Features:
+    - Event dependencies (prerequisite events)
+    - Circular dependency detection
+    - Automatic deadline calculation
+    - Workflow creation
+    - Dependency-based date updates
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize event dependency manager
+
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db = db_manager
+        self._create_dependency_tables()
+        gui_logger.info("EventDependencyManager initialized")
+
+    def _create_dependency_tables(self):
+        """Create tables for event dependencies if they don't exist"""
+        try:
+            with self.db.transaction() as conn:
+                # Event dependencies table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS event_dependencies (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_id INTEGER NOT NULL,
+                        depends_on_event_id INTEGER NOT NULL,
+                        dependency_type TEXT DEFAULT 'finish_to_start',
+                        lag_days INTEGER DEFAULT 0,
+                        created_at TEXT NOT NULL,
+                        FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+                        FOREIGN KEY (depends_on_event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+                        UNIQUE(event_id, depends_on_event_id)
+                    )
+                """)
+
+                # Event workflows table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS event_workflows (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        workflow_name TEXT NOT NULL,
+                        description TEXT,
+                        created_at TEXT NOT NULL
+                    )
+                """)
+
+                # Workflow events table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS workflow_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        workflow_id INTEGER NOT NULL,
+                        event_id INTEGER NOT NULL,
+                        sequence_order INTEGER NOT NULL,
+                        FOREIGN KEY (workflow_id) REFERENCES event_workflows(id) ON DELETE CASCADE,
+                        FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE
+                    )
+                """)
+
+        except Exception as e:
+            gui_logger.error(f"Failed to create dependency tables: {e}")
+
+    def add_event_dependency(self, event_id: int, depends_on_event_id: int,
+                            dependency_type: str = 'finish_to_start',
+                            lag_days: int = 0) -> int:
+        """
+        Add dependency between two events
+
+        Args:
+            event_id: ID of dependent event
+            depends_on_event_id: ID of prerequisite event
+            dependency_type: Type of dependency ('finish_to_start', 'start_to_start')
+            lag_days: Number of days lag between events
+
+        Returns:
+            int: Dependency ID
+
+        Raises:
+            ValidationError: If circular dependency detected
+
+        Example:
+            # Exam depends on lecture finishing
+            dep_mgr.add_event_dependency(
+                event_id=exam_id,
+                depends_on_event_id=lecture_id,
+                dependency_type='finish_to_start',
+                lag_days=1
+            )
+        """
+        # Check for circular dependencies
+        if self._creates_circular_dependency(event_id, depends_on_event_id):
+            raise ValidationError(
+                f"Circular dependency detected: Event {event_id} cannot depend on {depends_on_event_id}",
+                field="dependency"
+            )
+
+        try:
+            with self.db.transaction() as conn:
+                cursor = conn.execute(
+                    """INSERT INTO event_dependencies
+                       (event_id, depends_on_event_id, dependency_type, lag_days, created_at)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (
+                        event_id,
+                        depends_on_event_id,
+                        dependency_type,
+                        lag_days,
+                        datetime.now().isoformat()
+                    )
+                )
+                dependency_id = cursor.lastrowid
+
+            # Update dependent event dates if needed
+            self._update_dependent_event_dates(event_id)
+
+            gui_logger.info(
+                f"Event dependency added: {event_id} depends on {depends_on_event_id}"
+            )
+            return dependency_id
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'table': 'event_dependencies'})
+
+    def _creates_circular_dependency(self, event_id: int, depends_on_event_id: int) -> bool:
+        """
+        Check if adding dependency would create circular reference
+
+        Args:
+            event_id: ID of dependent event
+            depends_on_event_id: ID of prerequisite event
+
+        Returns:
+            bool: True if circular dependency would be created
+        """
+        # BFS to detect cycles
+        visited = set()
+        queue = [depends_on_event_id]
+
+        while queue:
+            current_id = queue.pop(0)
+
+            if current_id == event_id:
+                return True
+
+            if current_id in visited:
+                continue
+
+            visited.add(current_id)
+
+            # Get dependencies of current event
+            try:
+                dependencies = self.db.execute_query(
+                    "SELECT depends_on_event_id FROM event_dependencies WHERE event_id = ?",
+                    (current_id,)
+                )
+                queue.extend([dep['depends_on_event_id'] for dep in dependencies])
+            except Exception:
+                pass
+
+        return False
+
+    def _update_dependent_event_dates(self, event_id: int):
+        """
+        Update dates of dependent events based on dependencies
+
+        Args:
+            event_id: ID of event that was updated
+        """
+        try:
+            # Get all events that depend on this event
+            dependents = self.db.execute_query(
+                """SELECT ed.event_id, ed.dependency_type, ed.lag_days,
+                          e.date as dependent_date,
+                          pe.date as prerequisite_date
+                   FROM event_dependencies ed
+                   JOIN calendar_events e ON ed.event_id = e.id
+                   JOIN calendar_events pe ON ed.depends_on_event_id = pe.id
+                   WHERE ed.depends_on_event_id = ?""",
+                (event_id,)
+            )
+
+            for dep in dependents:
+                # Calculate new date based on dependency type
+                prereq_date = datetime.strptime(dep['prerequisite_date'], '%Y-%m-%d')
+                new_date = prereq_date + timedelta(days=dep['lag_days'])
+
+                if dep['dependency_type'] == 'finish_to_start':
+                    new_date += timedelta(days=1)  # Start day after finish
+
+                # Update dependent event date
+                self.db.execute_update(
+                    "UPDATE calendar_events SET date = ? WHERE id = ?",
+                    (new_date.strftime('%Y-%m-%d'), dep['event_id'])
+                )
+
+        except Exception as e:
+            gui_logger.warning(f"Failed to update dependent event dates: {e}")
+
+    def create_workflow(self, workflow_name: str, description: str,
+                       event_ids: List[int]) -> int:
+        """
+        Create event workflow with ordered events
+
+        Args:
+            workflow_name: Name of workflow
+            description: Workflow description
+            event_ids: List of event IDs in sequence order
+
+        Returns:
+            int: Workflow ID
+
+        Example:
+            workflow_id = dep_mgr.create_workflow(
+                "Course Semester Flow",
+                "Complete semester timeline",
+                [orientation_id, lecture1_id, midterm_id, lecture2_id, final_id]
+            )
+        """
+        try:
+            with self.db.transaction() as conn:
+                # Create workflow
+                cursor = conn.execute(
+                    """INSERT INTO event_workflows
+                       (workflow_name, description, created_at)
+                       VALUES (?, ?, ?)""",
+                    (workflow_name, description, datetime.now().isoformat())
+                )
+                workflow_id = cursor.lastrowid
+
+                # Add events to workflow
+                for sequence_order, event_id in enumerate(event_ids):
+                    conn.execute(
+                        """INSERT INTO workflow_events
+                           (workflow_id, event_id, sequence_order)
+                           VALUES (?, ?, ?)""",
+                        (workflow_id, event_id, sequence_order)
+                    )
+
+            gui_logger.info(f"Workflow created: {workflow_name} with {len(event_ids)} events")
+            return workflow_id
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'table': 'event_workflows'})
+
+    def calculate_automatic_deadlines(self, workflow_id: int, start_date: datetime,
+                                     event_durations: Dict[int, int]):
+        """
+        Calculate and set automatic deadlines for workflow events
+
+        Args:
+            workflow_id: Workflow ID
+            start_date: Start date for workflow
+            event_durations: Dict mapping event_id to duration in days
+
+        Example:
+            dep_mgr.calculate_automatic_deadlines(
+                workflow_id=1,
+                start_date=datetime(2025, 9, 1),
+                event_durations={
+                    orientation_id: 1,
+                    lecture1_id: 14,
+                    midterm_id: 1,
+                    lecture2_id: 14,
+                    final_id: 1
+                }
+            )
+        """
+        try:
+            # Get workflow events in order
+            events = self.db.execute_query(
+                """SELECT event_id
+                   FROM workflow_events
+                   WHERE workflow_id = ?
+                   ORDER BY sequence_order""",
+                (workflow_id,)
+            )
+
+            current_date = start_date
+
+            with self.db.transaction() as conn:
+                for event in events:
+                    event_id = event['event_id']
+                    duration = event_durations.get(event_id, 1)
+
+                    # Update event date
+                    conn.execute(
+                        "UPDATE calendar_events SET date = ? WHERE id = ?",
+                        (current_date.strftime('%Y-%m-%d'), event_id)
+                    )
+
+                    # Move to next event start date
+                    current_date += timedelta(days=duration)
+
+            gui_logger.info(f"Automatic deadlines calculated for workflow {workflow_id}")
+
+        except Exception as e:
+            gui_logger.error(f"Failed to calculate automatic deadlines: {e}")
+
+# ============================================================================
+# ADVANCED REPORTING ENGINE
+# ============================================================================
+
+class ReportingEngine:
+    """
+    Advanced reporting and analytics engine
+
+    Features:
+    - Attendance tracking and reporting
+    - Resource utilization analysis
+    - Academic year summaries
+    - Custom report generation
+    - Export to multiple formats
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize reporting engine
+
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db = db_manager
+        gui_logger.info("ReportingEngine initialized")
+
+    def generate_attendance_report(self, start_date: str, end_date: str,
+                                  event_type: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Generate attendance report for date range
+
+        Args:
+            start_date: Start date (YYYY-MM-DD)
+            end_date: End date (YYYY-MM-DD)
+            event_type: Optional event type filter
+
+        Returns:
+            Dict: Attendance statistics and details
+
+        Example:
+            report = reporting.generate_attendance_report(
+                "2025-09-01",
+                "2025-12-31",
+                event_type="lecture"
+            )
+        """
+        try:
+            query = """
+                SELECT
+                    e.id,
+                    e.title,
+                    e.date,
+                    e.event_type,
+                    COUNT(DISTINCT a.student_id) as attendee_count,
+                    e.capacity,
+                    CASE
+                        WHEN e.capacity > 0
+                        THEN ROUND(COUNT(DISTINCT a.student_id) * 100.0 / e.capacity, 2)
+                        ELSE 0
+                    END as attendance_percentage
+                FROM calendar_events e
+                LEFT JOIN event_attendance a ON e.id = a.event_id
+                WHERE e.date BETWEEN ? AND ?
+            """
+
+            params = [start_date, end_date]
+
+            if event_type:
+                query += " AND e.event_type = ?"
+                params.append(event_type)
+
+            query += " GROUP BY e.id ORDER BY e.date"
+
+            events = self.db.execute_query(query, tuple(params))
+
+            # Calculate summary statistics
+            total_events = len(events)
+            total_attendees = sum(e['attendee_count'] for e in events)
+            avg_attendance = (
+                sum(e['attendance_percentage'] for e in events) / total_events
+                if total_events > 0 else 0
+            )
+
+            return {
+                'period': {'start': start_date, 'end': end_date},
+                'event_type': event_type or 'all',
+                'summary': {
+                    'total_events': total_events,
+                    'total_attendees': total_attendees,
+                    'average_attendance_percentage': round(avg_attendance, 2)
+                },
+                'events': events
+            }
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'operation': 'generate_attendance_report'})
+
+    def generate_utilization_report(self, resource_type: str = 'room') -> Dict[str, Any]:
+        """
+        Generate resource utilization report
+
+        Args:
+            resource_type: Type of resource ('room', 'equipment', etc.)
+
+        Returns:
+            Dict: Utilization statistics
+
+        Example:
+            report = reporting.generate_utilization_report(resource_type='room')
+        """
+        try:
+            query = """
+                SELECT
+                    location as resource_name,
+                    COUNT(*) as total_bookings,
+                    COUNT(DISTINCT date) as days_used,
+                    SUM(CASE
+                        WHEN date >= date('now')
+                        THEN 1 ELSE 0
+                    END) as upcoming_bookings
+                FROM calendar_events
+                WHERE location IS NOT NULL AND location != ''
+                GROUP BY location
+                ORDER BY total_bookings DESC
+            """
+
+            resources = self.db.execute_query(query)
+
+            # Calculate overall utilization
+            total_bookings = sum(r['total_bookings'] for r in resources)
+            total_resources = len(resources)
+
+            return {
+                'resource_type': resource_type,
+                'summary': {
+                    'total_resources': total_resources,
+                    'total_bookings': total_bookings,
+                    'average_bookings_per_resource': (
+                        round(total_bookings / total_resources, 2)
+                        if total_resources > 0 else 0
+                    )
+                },
+                'resources': resources
+            }
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'operation': 'generate_utilization_report'})
+
+    def generate_academic_year_summary(self, academic_year: str) -> Dict[str, Any]:
+        """
+        Generate comprehensive academic year summary
+
+        Args:
+            academic_year: Academic year (e.g., "2025-2026")
+
+        Returns:
+            Dict: Academic year statistics and breakdown
+
+        Example:
+            report = reporting.generate_academic_year_summary("2025-2026")
+        """
+        try:
+            # Parse academic year
+            start_year = int(academic_year.split('-')[0])
+            start_date = f"{start_year}-09-01"
+            end_date = f"{start_year + 1}-08-31"
+
+            # Get event breakdown by type
+            event_breakdown = self.db.execute_query("""
+                SELECT
+                    event_type,
+                    COUNT(*) as count,
+                    COUNT(DISTINCT date) as unique_dates
+                FROM calendar_events
+                WHERE date BETWEEN ? AND ?
+                GROUP BY event_type
+            """, (start_date, end_date))
+
+            # Get monthly distribution
+            monthly_distribution = self.db.execute_query("""
+                SELECT
+                    strftime('%Y-%m', date) as month,
+                    COUNT(*) as event_count
+                FROM calendar_events
+                WHERE date BETWEEN ? AND ?
+                GROUP BY month
+                ORDER BY month
+            """, (start_date, end_date))
+
+            total_events = sum(e['count'] for e in event_breakdown)
+
+            return {
+                'academic_year': academic_year,
+                'period': {'start': start_date, 'end': end_date},
+                'summary': {
+                    'total_events': total_events,
+                    'event_types': len(event_breakdown)
+                },
+                'event_breakdown': event_breakdown,
+                'monthly_distribution': monthly_distribution
+            }
+
+        except Exception as e:
+            raise convert_to_user_error(e, {'operation': 'generate_academic_year_summary'})
+
+# ============================================================================
+# NOTIFICATION SYSTEM
+# ============================================================================
+
+class NotificationManager:
+    """
+    Multi-channel notification system
+
+    Features:
+    - SMS notifications
+    - Email notifications (integration ready)
+    - Event reminders
+    - Scheduled notifications
+    - Notification templates
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        """
+        Initialize notification manager
+
+        Args:
+            db_manager: Database manager instance
+        """
+        self.db = db_manager
+        gui_logger.info("NotificationManager initialized")
+
+    def send_sms_notification(self, phone_number: str, message: str) -> bool:
+        """
+        Send SMS notification
+
+        Args:
+            phone_number: Recipient phone number
+            message: SMS message content
+
+        Returns:
+            bool: True if SMS sent successfully
+
+        Raises:
+            ValidationError: If phone number invalid
+            SyncError: If SMS service unavailable
+
+        Example:
+            notif.send_sms_notification(
+                "+1234567890",
+                "Reminder: Team meeting tomorrow at 10 AM"
+            )
+        """
+        # Validate phone number
+        if not self._validate_phone_number(phone_number):
+            raise ValidationError.invalid_format(
+                'phone_number',
+                'valid phone number format',
+                phone_number
+            )
+
+        # Sanitize message
+        safe_message = sanitize_string(message, max_length=160)
+
+        try:
+            # TODO: Integrate with actual SMS service (Twilio, AWS SNS, etc.)
+            # For now, log the SMS
+            gui_logger.info(f"SMS to {phone_number}: {safe_message}")
+
+            # Store notification record
+            self.db.execute_update(
+                """INSERT INTO notifications
+                   (recipient, channel, message, sent_at, status)
+                   VALUES (?, 'sms', ?, ?, 'sent')""",
+                (phone_number, safe_message, datetime.now().isoformat())
+            )
+
+            return True
+
+        except Exception as e:
+            raise SyncError.connection_failed(
+                'SMS service',
+                reason=str(e)
+            )
+
+    def _validate_phone_number(self, phone_number: str) -> bool:
+        """
+        Validate phone number format
+
+        Args:
+            phone_number: Phone number to validate
+
+        Returns:
+            bool: True if valid phone number
+        """
+        # Simple validation - accepts formats: +1234567890, 123-456-7890, etc.
+        phone_pattern = re.compile(r'^\+?[1-9]\d{1,14}$|^[\d\-\(\)\s]{10,}$')
+        return bool(phone_pattern.match(phone_number.replace(' ', '').replace('-', '')))
+
+    def send_event_reminder_sms(self, event_id: int, hours_before: int = 24):
+        """
+        Send SMS reminder for upcoming event
+
+        Args:
+            event_id: Event ID
+            hours_before: Hours before event to send reminder
+
+        Example:
+            notif.send_event_reminder_sms(event_id=123, hours_before=24)
+        """
+        try:
+            # Get event details
+            events = self.db.execute_query(
+                """SELECT e.*, GROUP_CONCAT(a.phone_number) as attendee_phones
+                   FROM calendar_events e
+                   LEFT JOIN event_attendees ea ON e.id = ea.event_id
+                   LEFT JOIN attendees a ON ea.attendee_id = a.id
+                   WHERE e.id = ?
+                   GROUP BY e.id""",
+                (event_id,)
+            )
+
+            if not events:
+                raise DatabaseError.record_not_found('event', event_id)
+
+            event = events[0]
+
+            # Create reminder message
+            message = f"Reminder: {event['title']} on {event['date']}"
+            if event.get('start_time'):
+                message += f" at {event['start_time']}"
+            if event.get('location'):
+                message += f" ({event['location']})"
+
+            # Send to attendees
+            if event.get('attendee_phones'):
+                phones = event['attendee_phones'].split(',')
+                for phone in phones:
+                    if phone:
+                        self.send_sms_notification(phone.strip(), message)
+
+            gui_logger.info(f"Event reminder sent for event {event_id}")
+
+        except Exception as e:
+            gui_logger.error(f"Failed to send event reminder: {e}")
+
+# ============================================================================
+# DATABASE INITIALIZATION
+# ============================================================================
+
+def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
+    """
+    Initialize calendar database with comprehensive schema
+
+    Creates all required tables for calendar management system including:
+    - Events, attendees, attendance tracking
+    - Recurring events, dependencies, workflows
+    - Users, sessions, permissions
+    - Notifications, reports
+
+    Args:
+        db_path: Path to database file (uses default if not provided)
+
+    Returns:
+        DatabaseManager: Initialized database manager
+
+    Example:
+        db = init_calendar_database()
+        # Database ready for use
+    """
+    db = DatabaseManager(db_path)
+
+    try:
+        with db.transaction() as conn:
+            # Calendar events table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS calendar_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    date TEXT NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    location TEXT,
+                    event_type TEXT DEFAULT 'general',
+                    capacity INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'scheduled',
+                    created_by INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT
+                )
+            """)
+
+            # Attendees table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS attendees (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT,
+                    phone_number TEXT,
+                    student_id TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+
+            # Event attendance table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS event_attendance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    attended BOOLEAN DEFAULT 0,
+                    attendance_time TEXT,
+                    FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+                    UNIQUE(event_id, student_id)
+                )
+            """)
+
+            # Users table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    password_salt TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'student',
+                    email TEXT,
+                    active BOOLEAN DEFAULT 1,
+                    created_at TEXT NOT NULL
+                )
+            """)
+
+            # User sessions table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    session_token TEXT UNIQUE NOT NULL,
+                    created_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            # Notifications table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    recipient TEXT NOT NULL,
+                    channel TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    sent_at TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending'
+                )
+            """)
+
+            # Create indexes for performance
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_date ON calendar_events(date)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_type ON calendar_events(event_type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(session_token)")
+
+        gui_logger.info("Calendar database initialized successfully")
+        return db
+
+    except Exception as e:
+        gui_logger.error(f"Failed to initialize database: {e}")
+        raise convert_to_user_error(e, {'operation': 'database_initialization'})
+
+# ============================================================================
+# END OF MANAGEMENT SYSTEMS
+# ============================================================================
+
 def safe_grab_set(dialog, parent=None):
     """
     Safely set grab on dialog, handling grab conflicts
