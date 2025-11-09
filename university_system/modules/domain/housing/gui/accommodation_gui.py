@@ -43,7 +43,8 @@ try:
         fix_accommodation_db_schema, generate_statistics_report,
         get_accommodation_types, init_accommodation_db, log_action,
         migrate_audit_log_schema, notify_student, save_template,
-        validate_student_id, validate_date, TEMPLATES_TABLE, set_auth
+        validate_student_id, validate_date, verify_database_schema,
+        TEMPLATES_TABLE, set_auth
     )
     CLI_AVAILABLE = True
 except ImportError:
@@ -195,6 +196,7 @@ class AccommodationGUI:
         tools_menu.add_command(label="Bulk Operations", command=self.bulk_operations_dialog)
         tools_menu.add_command(label="Template Usage Stats", command=self.show_templates_usage_dialog)
         tools_menu.add_command(label="Migrate Database", command=self.migrate_database_schema)
+        tools_menu.add_command(label="Verify Database Schema", command=self.verify_db_schema)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -2525,7 +2527,56 @@ class AccommodationGUI:
     def show_settings(self):
         """Show settings dialog"""
         SettingsDialog(self.root)
-    
+
+    def verify_db_schema(self):
+        """Verify database schema and display results"""
+        if not CLI_AVAILABLE:
+            messagebox.showerror("Error", "CLI module not available")
+            return
+
+        try:
+            import io
+            import contextlib
+
+            # Capture the output from verify_database_schema
+            output = io.StringIO()
+
+            with contextlib.redirect_stdout(output):
+                verify_database_schema()
+
+            result = output.getvalue()
+
+            # Create result dialog
+            result_window = tk.Toplevel(self.root)
+            result_window.title("Database Schema Verification")
+            result_window.geometry("700x600")
+
+            main_frame = ttk.Frame(result_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text="Database Schema Information",
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+            # Text widget for results
+            text_frame = ttk.Frame(main_frame)
+            text_frame.pack(fill=tk.BOTH, expand=True)
+
+            text_widget = ScrolledText(text_frame, wrap=tk.WORD, width=80, height=30)
+            text_widget.pack(fill=tk.BOTH, expand=True)
+            text_widget.insert('1.0', result)
+            text_widget.config(state='disabled')
+
+            # Close button
+            ttk.Button(main_frame, text="Close",
+                      command=result_window.destroy).pack(pady=10)
+
+            # Log activity
+            if CLI_AVAILABLE:
+                log_action('verify_schema', None, 'Verified database schema')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Schema verification failed: {str(e)}")
+
     def show_help(self):
         """Show help dialog"""
         HelpDialog(self.root)
