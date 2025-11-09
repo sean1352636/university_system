@@ -222,6 +222,70 @@ class AssignmentGUI:
     def view_all_submissions(self):
         return self.submissions.view_all_submissions()
 
+    def create_assignment(self, *args, **kwargs):
+        """Create new assignment (wrapper for GUI)"""
+        return self.assignments.show_create_assignment()
+
+    def submit_assignment(self, *args, **kwargs):
+        """Submit assignment (student wrapper for GUI)"""
+        return self.submissions.show_student_submissions()
+
+    def add_assignment_permissions(self):
+        """Add assignment permissions to roles"""
+        try:
+            from university_system.infrastructure.auth.authorization import add_permission
+
+            # Define assignment-related permissions
+            permissions = [
+                ('view_assignments', 'View assignments'),
+                ('create_assignments', 'Create new assignments'),
+                ('edit_assignments', 'Edit assignments'),
+                ('delete_assignments', 'Delete assignments'),
+                ('manage_assignments', 'Manage all assignments'),
+                ('grade_assignments', 'Grade assignments'),
+                ('view_all_submissions', 'View all submissions'),
+                ('manage_groups', 'Manage assignment groups'),
+                ('manage_peer_reviews', 'Manage peer reviews'),
+                ('export_analytics', 'Export assignment analytics'),
+            ]
+
+            # Add permissions to database
+            import sqlite3
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            for perm_code, perm_desc in permissions:
+                cursor.execute('''
+                INSERT OR IGNORE INTO permissions (code, description)
+                VALUES (?, ?)
+                ''', (perm_code, perm_desc))
+
+            # Assign permissions to roles
+            role_permissions = {
+                'Admin': ['manage_assignments', 'view_all_submissions', 'delete_assignments',
+                         'manage_groups', 'manage_peer_reviews', 'export_analytics'],
+                'Faculty': ['view_assignments', 'create_assignments', 'edit_assignments',
+                           'grade_assignments', 'view_all_submissions', 'manage_groups',
+                           'manage_peer_reviews', 'export_analytics'],
+                'Student': ['view_assignments'],
+                'Staff': ['view_assignments', 'view_all_submissions']
+            }
+
+            for role, perms in role_permissions.items():
+                for perm_code in perms:
+                    cursor.execute('''
+                    INSERT OR IGNORE INTO role_permissions (role_name, permission_code)
+                    VALUES (?, ?)
+                    ''', (role, perm_code))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Assignment permissions configured successfully")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add permissions: {e}")
+
 
 def launch_gui(assignment_system, auth):
     """Launch the assignment GUI"""

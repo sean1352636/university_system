@@ -1412,4 +1412,152 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open compose dialog: {str(e)}")
             print(f"Error in send_message: {e}")
-    
+
+
+    def _read_message(self, message_id):
+        """Read single message and mark as read"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Mark as read
+            cursor.execute('UPDATE messages SET is_read = 1 WHERE id = ?', (message_id,))
+            conn.commit()
+            conn.close()
+
+        except Exception as e:
+            print(f"Error marking message as read: {e}")
+
+
+    def _send_reply(self, message_id):
+        """Send reply to message (wrapper for _reply_to_message)"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT sender_id, subject FROM messages WHERE id = ?', (message_id,))
+            message = cursor.fetchone()
+            conn.close()
+
+            if message:
+                self._reply_to_message(message_id, message[0], message[1])
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send reply: {e}")
+
+
+    def _send_module_message(self, module_code, subject, message_body):
+        """Send message to all students in a module"""
+        try:
+            user_id = self.auth.current_user.get('id')
+            if not user_id:
+                messagebox.showerror("Error", "User not authenticated")
+                return
+
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get all students enrolled in the module
+            cursor.execute('''
+            SELECT DISTINCT s.student_id
+            FROM students s
+            JOIN student_modules sm ON s.student_id = sm.student_id
+            WHERE sm.module_code = ?
+            ''', (module_code,))
+
+            students = cursor.fetchall()
+
+            if not students:
+                messagebox.showinfo("No Students", f"No students found for module {module_code}")
+                conn.close()
+                return
+
+            # Send message to each student
+            timestamp = datetime.now().isoformat()
+            count = 0
+
+            for student_id_tuple in students:
+                student_id = student_id_tuple[0]
+
+                cursor.execute('''
+                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                    sent_at, is_read)
+                VALUES (?, ?, ?, ?, ?, ?, 0)
+                ''', (user_id, student_id, subject, message_body, message_body, timestamp))
+
+                count += 1
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Message sent to {count} students in {module_code}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send module message: {e}")
+
+
+    def _send_individual_message(self, recipient_username, subject, message_body):
+        """Send message to individual user (wrapper for send_message)"""
+        # This is handled by the main send_message() function
+        # Just call it
+        self.send_message()
+
+
+    def _send_instructor_broadcast(self, subject, message_body):
+        """Send broadcast message to all instructors/admins"""
+        try:
+            user_id = self.auth.current_user.get('id')
+            if not user_id:
+                messagebox.showerror("Error", "User not authenticated")
+                return
+
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get all instructors and admins
+            cursor.execute('''
+            SELECT id FROM users
+            WHERE (role = 'Faculty' OR role = 'Admin')
+            AND is_active = 1
+            AND id != ?
+            ''', (user_id,))
+
+            recipients = cursor.fetchall()
+
+            if not recipients:
+                messagebox.showinfo("No Recipients", "No instructors/admins found")
+                conn.close()
+                return
+
+            # Send message to each recipient
+            timestamp = datetime.now().isoformat()
+            count = 0
+
+            for recipient_id_tuple in recipients:
+                recipient_id = recipient_id_tuple[0]
+
+                cursor.execute('''
+                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                    sent_at, is_read)
+                VALUES (?, ?, ?, ?, ?, ?, 0)
+                ''', (user_id, recipient_id, subject, message_body, message_body, timestamp))
+
+                count += 1
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Broadcast message sent to {count} instructors/admins")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send broadcast: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+

@@ -645,3 +645,113 @@ class FilePreviewManager:
         self._launch_gui_feature(self.show_calendar, "assignment calendar")
 
 
+    def _show_file_preview(self, file_path, file_name):
+        """Show file preview content (helper function)"""
+        try:
+            file_ext = os.path.splitext(file_path)[1].lower()
+
+            # Create preview dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"File Preview - {file_name}")
+            dialog.geometry("800x600")
+            dialog.transient(self.root)
+
+            # Title frame
+            title_frame = ttk.Frame(dialog)
+            title_frame.pack(fill='x', padx=10, pady=10)
+
+            ttk.Label(title_frame, text=f"File: {file_name}",
+                     font=('TkDefaultFont', 12, 'bold')).pack(side='left')
+            ttk.Label(title_frame, text=f"Type: {file_ext}",
+                     style='Info.TLabel').pack(side='right')
+
+            # Content frame
+            content_frame = ttk.Frame(dialog)
+            content_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+            # Route to appropriate preview based on file type
+            if file_ext in ['.txt', '.py', '.java', '.c', '.cpp', '.h', '.js', '.html', '.css', '.json', '.xml', '.md']:
+                self.show_text_preview_in_dialog(file_path, content_frame)
+            elif file_ext == '.pdf':
+                self.show_pdf_preview_in_dialog(file_path, content_frame)
+            elif file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']:
+                self.show_image_preview_in_dialog(file_path, content_frame)
+            else:
+                self.show_generic_preview_in_dialog(file_path, file_ext, content_frame)
+
+            # Action buttons
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Button(button_frame, text="Download",
+                      command=lambda: self.download_preview_file(file_path, file_name)).pack(side='left', padx=(0, 10))
+            ttk.Button(button_frame, text="Open in External App",
+                      command=lambda: self.open_external(file_path)).pack(side='left')
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to preview file: {e}")
+
+
+    def show_text_preview_in_dialog(self, file_path, parent):
+        """Show text file preview in dialog"""
+        try:
+            text_widget = scrolledtext.ScrolledText(parent, wrap=tk.WORD, height=30, width=100)
+            text_widget.pack(fill='both', expand=True)
+
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                text_widget.insert(tk.END, content)
+
+            text_widget.config(state='disabled')
+        except Exception as e:
+            ttk.Label(parent, text=f"Error reading file: {e}").pack()
+
+
+    def show_pdf_preview_in_dialog(self, file_path, parent):
+        """Show PDF preview in dialog"""
+        ttk.Label(parent, text="PDF Preview", font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
+        ttk.Label(parent, text=f"PDF file: {os.path.basename(file_path)}").pack()
+        ttk.Label(parent, text="Click 'Open in External App' to view full PDF").pack(pady=20)
+
+
+    def show_image_preview_in_dialog(self, file_path, parent):
+        """Show image preview in dialog"""
+        try:
+            from PIL import Image, ImageTk
+
+            img = Image.open(file_path)
+
+            # Resize if too large
+            max_size = (750, 500)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+            photo = ImageTk.PhotoImage(img)
+
+            label = ttk.Label(parent, image=photo)
+            label.image = photo  # Keep reference
+            label.pack(pady=10)
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading image: {e}").pack()
+
+
+    def show_generic_preview_in_dialog(self, file_path, file_ext, parent):
+        """Show generic file info"""
+        info_text = f"File Type: {file_ext}\n"
+        info_text += f"Size: {os.path.getsize(file_path)} bytes\n"
+        info_text += f"Path: {file_path}\n\n"
+        info_text += "Preview not available for this file type.\n"
+        info_text += "Use 'Open in External App' to view the file."
+
+        ttk.Label(parent, text=info_text, justify='left').pack(pady=20)
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+
