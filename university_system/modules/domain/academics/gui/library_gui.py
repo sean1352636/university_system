@@ -219,8 +219,8 @@ class LibraryGUI:
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Import Books", command=self.import_books_gui)
-        file_menu.add_command(label="Export Books", command=self.export_books_gui)
+        file_menu.add_command(label="📥 Bulk Import Books", command=self.bulk_import_books_gui)
+        file_menu.add_command(label="📤 Bulk Export Books", command=self.bulk_export_books_gui)
         file_menu.add_separator()
         file_menu.add_command(label="Backup System", command=self.backup_system_gui)
         file_menu.add_command(label="Restore System", command=self.restore_system_gui)
@@ -228,13 +228,13 @@ class LibraryGUI:
         file_menu.add_command(label="Exit", command=self.exit_application)
         file_menu.add_separator()
         file_menu.add_command(label="Export Statistics", command=self.generate_library_statistics_export)
-        
+
         # Edit menu
         edit_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Edit", menu=edit_menu)
         edit_menu.add_command(label="Settings", command=self.show_settings)
         edit_menu.add_command(label="User Preferences", command=self.show_user_preferences)
-        
+
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
@@ -244,15 +244,17 @@ class LibraryGUI:
         view_menu.add_command(label="📅 Book Return Calendar", command=self.open_calendar_with_due_dates)
         view_menu.add_command(label="Reports", command=self.show_reports)
         view_menu.add_separator()
+        view_menu.add_command(label="📊 Advanced Analytics Dashboard", command=self.show_advanced_analytics_gui)
+        view_menu.add_separator()
         view_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
 
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Advanced Search", command=self.show_advanced_search)
+        tools_menu.add_command(label="🔍 Advanced Search", command=self.show_advanced_search_gui)
         tools_menu.add_command(label="Barcode Scanner", command=self.show_barcode_scanner)
         tools_menu.add_command(label="Reading Lists", command=self.show_reading_lists)
-        tools_menu.add_command(label="Digital Library", command=self.show_digital_library)
+        tools_menu.add_command(label="📚 Digital Library", command=self.show_digital_library_gui)
         tools_menu.add_command(label="Loan History", command=self.view_loan_history_gui)
         tools_menu.add_command(label="Fine Management", command=self.show_fine_management)
         tools_menu.add_command(label="System Health Check", command=self.quick_system_health_check)
@@ -7103,6 +7105,911 @@ system robust and user-friendly.
 
         # Close button
         ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def bulk_import_books_gui(self):
+        """Bulk import books from CSV/Excel with GUI"""
+        file_path = filedialog.askopenfilename(
+            title="Select Books File",
+            filetypes=[
+                ("CSV files", "*.csv"),
+                ("Excel files", "*.xlsx;*.xls"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if not file_path:
+            return
+
+        try:
+            import pandas as pd
+
+            # Read file based on extension
+            if file_path.lower().endswith('.csv'):
+                df = pd.read_csv(file_path)
+            elif file_path.lower().endswith(('.xlsx', '.xls')):
+                df = pd.read_excel(file_path)
+            else:
+                messagebox.showerror("Error", "Unsupported file format. Use CSV or Excel files.")
+                return
+
+            # Validate required columns
+            required_columns = ['title', 'author']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+
+            if missing_columns:
+                messagebox.showerror(
+                    "Error",
+                    f"Missing required columns: {', '.join(missing_columns)}\n\n" +
+                    "Required: title, author\n" +
+                    "Optional: isbn, publisher, category, year_published, description, location, reading_level, tags"
+                )
+                return
+
+            # Show preview dialog
+            preview_dialog = tk.Toplevel(self.master)
+            preview_dialog.title("Import Preview")
+            preview_dialog.geometry("900x600")
+
+            ttk.Label(preview_dialog, text=f"Found {len(df)} books to import",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Preview table
+            frame = ttk.Frame(preview_dialog)
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            tree = ttk.Treeview(frame, show='headings', height=15)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Setup columns
+            display_columns = ['title', 'author', 'isbn', 'category', 'year_published']
+            tree['columns'] = [col for col in display_columns if col in df.columns]
+
+            for col in tree['columns']:
+                tree.heading(col, text=col.replace('_', ' ').title())
+                tree.column(col, width=150)
+
+            # Add preview data (first 20 rows)
+            for idx, row in df.head(20).iterrows():
+                values = [row.get(col, '') for col in tree['columns']]
+                tree.insert('', 'end', values=values)
+
+            # Button frame
+            button_frame = ttk.Frame(preview_dialog)
+            button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            def do_import():
+                preview_dialog.destroy()
+                self._perform_import(df)
+
+            ttk.Button(button_frame, text="Import All", command=do_import).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=preview_dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        except ImportError:
+            messagebox.showerror("Error", "pandas library is required for bulk import.\nInstall it with: pip install pandas openpyxl")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to read file: {str(e)}")
+
+    def _perform_import(self, df):
+        """Perform the actual import operation"""
+        try:
+            import pandas as pd
+            import json
+            from university_system.modules.domain.academics.services.library import generate_barcode, generate_qr_code
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Get next book ID
+            cursor.execute('SELECT MAX(CAST(SUBSTR(book_id, 2) AS INTEGER)) FROM books')
+            result = cursor.fetchone()[0]
+            next_id = 10001 if result is None else result + 1
+
+            imported_count = 0
+            error_count = 0
+            errors = []
+
+            # Progress dialog
+            progress_dialog = tk.Toplevel(self.master)
+            progress_dialog.title("Importing Books")
+            progress_dialog.geometry("400x150")
+
+            ttk.Label(progress_dialog, text="Importing books...").pack(pady=10)
+            progress_var = tk.DoubleVar()
+            progress_bar = ttk.Progressbar(progress_dialog, variable=progress_var, maximum=len(df))
+            progress_bar.pack(fill=tk.X, padx=20, pady=10)
+
+            status_label = ttk.Label(progress_dialog, text="")
+            status_label.pack(pady=5)
+
+            for index, row in df.iterrows():
+                try:
+                    book_id = f"B{next_id + imported_count}"
+
+                    # Extract data
+                    title = str(row['title']).strip()
+                    author = str(row['author']).strip()
+                    isbn = str(row.get('isbn', '')).strip() if pd.notna(row.get('isbn')) else None
+                    publisher = str(row.get('publisher', '')).strip() if pd.notna(row.get('publisher')) else None
+                    category = str(row.get('category', 'General')).strip()
+                    year_published = int(row['year_published']) if pd.notna(row.get('year_published')) else None
+                    description = str(row.get('description', '')).strip() if pd.notna(row.get('description')) else None
+                    location = str(row.get('location', '')).strip() if pd.notna(row.get('location')) else None
+                    reading_level = str(row.get('reading_level', 'Unknown')).strip()
+                    tags_str = str(row.get('tags', '')).strip() if pd.notna(row.get('tags')) else ''
+                    tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
+
+                    # Generate barcode and QR code
+                    barcode = generate_barcode(book_id)
+                    qr_code_path = generate_qr_code(book_id, title)
+                    qr_code_str = str(qr_code_path) if qr_code_path else None
+
+                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    # Insert book
+                    cursor.execute('''
+                    INSERT INTO books (
+                        book_id, title, author, isbn, publisher, category, year_published,
+                        description, location, status, added_date, last_updated,
+                        reading_level, tags, cover_image_path, digital_copy_path, acquisition_cost,
+                        barcode, qr_code_path, total_pages, language, edition, condition_notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        book_id, title, author, isbn, publisher, category,
+                        year_published, description, location, 'available', now, now,
+                        reading_level, json.dumps(tags), None, None, 0.0,
+                        barcode, qr_code_str, None, 'English', None, None
+                    ))
+
+                    imported_count += 1
+                    progress_var.set(index + 1)
+                    status_label.config(text=f"Imported: {imported_count} | Errors: {error_count}")
+                    progress_dialog.update()
+
+                except Exception as e:
+                    error_count += 1
+                    errors.append(f"Row {index + 1} ({row.get('title', 'Unknown')}): {str(e)}")
+
+            conn.commit()
+            conn.close()
+            progress_dialog.destroy()
+
+            # Log the action
+            log_audit_event(get_current_user_id(), f"Bulk imported {imported_count} books", "books")
+
+            # Show results
+            result_msg = f"Import Complete!\n\nSuccessfully imported: {imported_count} books"
+            if error_count > 0:
+                result_msg += f"\nErrors: {error_count}\n\nFirst few errors:\n"
+                result_msg += "\n".join(errors[:5])
+
+            messagebox.showinfo("Import Complete", result_msg)
+
+            # Refresh the books display
+            if hasattr(self, 'show_all_books'):
+                self.show_all_books()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Import failed: {str(e)}")
+
+    def bulk_export_books_gui(self):
+        """Bulk export books to CSV/Excel with GUI"""
+        # Export options dialog
+        export_dialog = tk.Toplevel(self.master)
+        export_dialog.title("Export Books")
+        export_dialog.geometry("400x350")
+
+        ttk.Label(export_dialog, text="Export Books to CSV/Excel",
+                 font=('Arial', 14, 'bold')).pack(pady=15)
+
+        export_type = tk.StringVar(value="all")
+
+        ttk.Radiobutton(export_dialog, text="Export All Books",
+                       variable=export_type, value="all").pack(anchor=tk.W, padx=30, pady=5)
+        ttk.Radiobutton(export_dialog, text="Export by Category",
+                       variable=export_type, value="category").pack(anchor=tk.W, padx=30, pady=5)
+        ttk.Radiobutton(export_dialog, text="Export by Status",
+                       variable=export_type, value="status").pack(anchor=tk.W, padx=30, pady=5)
+        ttk.Radiobutton(export_dialog, text="Export by Date Range",
+                       variable=export_type, value="date").pack(anchor=tk.W, padx=30, pady=5)
+
+        # Additional options frame
+        options_frame = ttk.LabelFrame(export_dialog, text="Options", padding=10)
+        options_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        category_var = tk.StringVar()
+        status_var = tk.StringVar(value="available")
+        start_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+
+        # Category selection
+        ttk.Label(options_frame, text="Category:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        category_combo = ttk.Combobox(options_frame, textvariable=category_var, width=20)
+        category_combo.grid(row=0, column=1, pady=2)
+
+        # Status selection
+        ttk.Label(options_frame, text="Status:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        status_combo = ttk.Combobox(options_frame, textvariable=status_var,
+                                    values=["available", "checked_out", "reserved", "lost", "damaged"], width=20)
+        status_combo.grid(row=1, column=1, pady=2)
+
+        # Date range
+        ttk.Label(options_frame, text="Start Date:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(options_frame, textvariable=start_date_var, width=22).grid(row=2, column=1, pady=2)
+
+        ttk.Label(options_frame, text="End Date:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(options_frame, textvariable=end_date_var, width=22).grid(row=3, column=1, pady=2)
+
+        # Load categories
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT DISTINCT category FROM books ORDER BY category')
+            categories = [row[0] for row in cursor.fetchall()]
+            category_combo['values'] = categories
+            if categories:
+                category_var.set(categories[0])
+            conn.close()
+        except:
+            pass
+
+        def do_export():
+            export_dialog.destroy()
+            self._perform_export(export_type.get(), category_var.get(),
+                               status_var.get(), start_date_var.get(), end_date_var.get())
+
+        ttk.Button(export_dialog, text="Export", command=do_export).pack(pady=10)
+
+    def _perform_export(self, export_type, category, status, start_date, end_date):
+        """Perform the actual export operation"""
+        try:
+            import pandas as pd
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Build query based on export type
+            base_query = '''
+            SELECT book_id, title, author, isbn, publisher, category, year_published,
+                   description, location, status, reading_level, tags, barcode,
+                   acquisition_cost, total_pages, language, edition, added_date
+            FROM books
+            '''
+
+            if export_type == "all":
+                cursor.execute(base_query + " ORDER BY title")
+            elif export_type == "category":
+                cursor.execute(base_query + " WHERE category = ? ORDER BY title", (category,))
+            elif export_type == "status":
+                cursor.execute(base_query + " WHERE status = ? ORDER BY title", (status,))
+            elif export_type == "date":
+                cursor.execute(base_query + " WHERE added_date BETWEEN ? AND ? ORDER BY title",
+                             (start_date, end_date))
+
+            # Fetch data
+            columns = [desc[0] for desc in cursor.description]
+            data = cursor.fetchall()
+            conn.close()
+
+            if not data:
+                messagebox.showinfo("No Data", "No books found matching the criteria.")
+                return
+
+            # Create DataFrame
+            df = pd.DataFrame(data, columns=columns)
+
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[
+                    ("CSV files", "*.csv"),
+                    ("Excel files", "*.xlsx"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if file_path:
+                # Save based on extension
+                if file_path.lower().endswith('.csv'):
+                    df.to_csv(file_path, index=False)
+                elif file_path.lower().endswith('.xlsx'):
+                    df.to_excel(file_path, index=False, engine='openpyxl')
+
+                log_audit_event(get_current_user_id(), f"Exported {len(data)} books", "books")
+                messagebox.showinfo("Success", f"Exported {len(data)} books to:\n{file_path}")
+
+        except ImportError:
+            messagebox.showerror("Error", "pandas and openpyxl libraries are required for export.\nInstall them with: pip install pandas openpyxl")
+        except Exception as e:
+            messagebox.showerror("Error", f"Export failed: {str(e)}")
+
+    def show_advanced_analytics_gui(self):
+        """Show advanced analytics dashboard"""
+        analytics_window = tk.Toplevel(self.master)
+        analytics_window.title("Library Analytics Dashboard")
+        analytics_window.geometry("1200x800")
+
+        # Title
+        ttk.Label(analytics_window, text="Library Analytics Dashboard",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Notebook for different analytics
+        notebook = ttk.Notebook(analytics_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Tab 1: Collection Overview
+        overview_tab = ttk.Frame(notebook)
+        notebook.add(overview_tab, text="Collection Overview")
+        self._create_collection_overview(overview_tab)
+
+        # Tab 2: Circulation Stats
+        circulation_tab = ttk.Frame(notebook)
+        notebook.add(circulation_tab, text="Circulation")
+        self._create_circulation_stats(circulation_tab)
+
+        # Tab 3: User Activity
+        activity_tab = ttk.Frame(notebook)
+        notebook.add(activity_tab, text="User Activity")
+        self._create_user_activity(activity_tab)
+
+        # Tab 4: Category Analysis
+        category_tab = ttk.Frame(notebook)
+        notebook.add(category_tab, text="Categories")
+        self._create_category_analysis(category_tab)
+
+        # Export button
+        ttk.Button(analytics_window, text="Export Full Report",
+                  command=self.export_analytics_report).pack(pady=10)
+
+    def _create_collection_overview(self, parent):
+        """Create collection overview tab"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Get stats
+            cursor.execute('''
+            SELECT
+                COUNT(*) as total_books,
+                SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available,
+                SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END) as checked_out,
+                SUM(CASE WHEN status = 'reserved' THEN 1 ELSE 0 END) as reserved,
+                SUM(CASE WHEN status IN ('lost', 'damaged') THEN 1 ELSE 0 END) as unavailable
+            FROM books
+            ''')
+
+            stats = cursor.fetchone()
+            total, available, checked_out, reserved, unavailable = stats
+
+            # Display stats
+            stats_frame = ttk.Frame(parent)
+            stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            # Grid layout for stats cards
+            cards = [
+                ("Total Books", total, "#3498db"),
+                ("Available", available, "#2ecc71"),
+                ("Checked Out", checked_out, "#e74c3c"),
+                ("Reserved", reserved, "#f39c12"),
+                ("Unavailable", unavailable, "#95a5a6")
+            ]
+
+            for idx, (label, value, color) in enumerate(cards):
+                card = tk.Frame(stats_frame, bg=color, relief=tk.RAISED, borderwidth=2)
+                card.grid(row=0, column=idx, padx=10, pady=10, sticky='nsew')
+
+                tk.Label(card, text=str(value), font=('Arial', 24, 'bold'),
+                        bg=color, fg='white').pack(pady=(20, 5))
+                tk.Label(card, text=label, font=('Arial', 12),
+                        bg=color, fg='white').pack(pady=(0, 20))
+
+                stats_frame.grid_columnconfigure(idx, weight=1)
+
+            # Recent additions
+            cursor.execute('''
+            SELECT title, author, added_date
+            FROM books
+            ORDER BY added_date DESC
+            LIMIT 10
+            ''')
+
+            recent_frame = ttk.LabelFrame(parent, text="Recently Added Books", padding=10)
+            recent_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            recent_tree = ttk.Treeview(recent_frame, columns=('Title', 'Author', 'Date'),
+                                       show='headings', height=8)
+            recent_tree.pack(fill=tk.BOTH, expand=True)
+
+            for col in ('Title', 'Author', 'Date'):
+                recent_tree.heading(col, text=col)
+                recent_tree.column(col, width=200)
+
+            for row in cursor.fetchall():
+                recent_tree.insert('', 'end', values=row)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading collection overview: {str(e)}").pack(pady=20)
+
+    def _create_circulation_stats(self, parent):
+        """Create circulation statistics tab"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Get circulation stats
+            cursor.execute('''
+            SELECT
+                COUNT(*) as total_loans,
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_loans,
+                SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END) as returned_loans,
+                SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) as overdue_loans,
+                SUM(COALESCE(fine_amount, 0)) as total_fines
+            FROM book_loans
+            ''')
+
+            stats = cursor.fetchone()
+
+            # Display stats
+            stats_text = f"""
+Circulation Statistics:
+━━━━━━━━━━━━━━━━━━━━━━
+Total Loans: {stats[0]:,}
+Active Loans: {stats[1]:,}
+Returned Loans: {stats[2]:,}
+Overdue Loans: {stats[3]:,}
+Total Fines: ${stats[4]:.2f}
+"""
+
+            text_widget = ScrolledText(parent, height=30, width=80, font=('Courier', 11))
+            text_widget.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            text_widget.insert('1.0', stats_text)
+            text_widget.config(state=tk.DISABLED)
+
+            # Most checked out books
+            cursor.execute('''
+            SELECT b.title, b.author, COUNT(l.loan_id) as loan_count
+            FROM books b
+            JOIN book_loans l ON b.book_id = l.book_id
+            GROUP BY b.book_id
+            ORDER BY loan_count DESC
+            LIMIT 10
+            ''')
+
+            popular_text = "\n\nMost Popular Books:\n" + "━" * 60 + "\n"
+            for idx, (title, author, count) in enumerate(cursor.fetchall(), 1):
+                popular_text += f"{idx}. {title} by {author} ({count} loans)\n"
+
+            text_widget.config(state=tk.NORMAL)
+            text_widget.insert(tk.END, popular_text)
+            text_widget.config(state=tk.DISABLED)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading circulation stats: {str(e)}").pack(pady=20)
+
+    def _create_user_activity(self, parent):
+        """Create user activity tab"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Most active users
+            cursor.execute('''
+            SELECT user_id, COUNT(loan_id) as loan_count
+            FROM book_loans
+            GROUP BY user_id
+            ORDER BY loan_count DESC
+            LIMIT 20
+            ''')
+
+            activity_frame = ttk.LabelFrame(parent, text="Most Active Users", padding=10)
+            activity_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            tree = ttk.Treeview(activity_frame, columns=('User ID', 'Loan Count'),
+                               show='headings', height=15)
+            tree.pack(fill=tk.BOTH, expand=True)
+
+            tree.heading('User ID', text='User ID')
+            tree.heading('Loan Count', text='Total Loans')
+            tree.column('User ID', width=300)
+            tree.column('Loan Count', width=150)
+
+            for row in cursor.fetchall():
+                tree.insert('', 'end', values=row)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading user activity: {str(e)}").pack(pady=20)
+
+    def _create_category_analysis(self, parent):
+        """Create category analysis tab"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Books by category
+            cursor.execute('''
+            SELECT category, COUNT(*) as book_count,
+                   SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available_count
+            FROM books
+            GROUP BY category
+            ORDER BY book_count DESC
+            ''')
+
+            category_frame = ttk.LabelFrame(parent, text="Books by Category", padding=10)
+            category_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            tree = ttk.Treeview(category_frame, columns=('Category', 'Total', 'Available'),
+                               show='headings', height=20)
+            tree.pack(fill=tk.BOTH, expand=True)
+
+            for col in ('Category', 'Total', 'Available'):
+                tree.heading(col, text=col)
+                tree.column(col, width=200)
+
+            for row in cursor.fetchall():
+                tree.insert('', 'end', values=row)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading category analysis: {str(e)}").pack(pady=20)
+
+    def export_analytics_report(self):
+        """Export comprehensive analytics report"""
+        try:
+            import pandas as pd
+
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
+            )
+
+            if not file_path:
+                return
+
+            conn = get_db_connection()
+
+            # Create Excel writer
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                # Collection overview
+                df_books = pd.read_sql_query("SELECT * FROM books", conn)
+                df_books.to_excel(writer, sheet_name='All Books', index=False)
+
+                # Loans
+                df_loans = pd.read_sql_query("SELECT * FROM book_loans", conn)
+                df_loans.to_excel(writer, sheet_name='Loans', index=False)
+
+                # Statistics
+                stats_data = {
+                    'Metric': ['Total Books', 'Available', 'Checked Out', 'Overdue'],
+                    'Count': [len(df_books),
+                             len(df_books[df_books['status'] == 'available']),
+                             len(df_books[df_books['status'] == 'checked_out']),
+                             len(df_loans[df_loans['status'] == 'overdue'])]
+                }
+                df_stats = pd.DataFrame(stats_data)
+                df_stats.to_excel(writer, sheet_name='Statistics', index=False)
+
+            conn.close()
+            messagebox.showinfo("Success", f"Analytics report exported to:\n{file_path}")
+
+        except ImportError:
+            messagebox.showerror("Error", "pandas and openpyxl are required for export.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Export failed: {str(e)}")
+
+    def show_digital_library_gui(self):
+        """Show digital library management interface"""
+        digital_window = tk.Toplevel(self.master)
+        digital_window.title("Digital Library")
+        digital_window.geometry("1000x700")
+
+        ttk.Label(digital_window, text="Digital Library Management",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Button frame
+        button_frame = ttk.Frame(digital_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Upload Digital Resource",
+                  command=self.upload_digital_resource).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh",
+                  command=lambda: self.load_digital_library(tree)).pack(side=tk.LEFT, padx=5)
+
+        # Digital library table
+        frame = ttk.Frame(digital_window)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Title', 'Author', 'Type', 'Category', 'Downloads', 'Date Added')
+        tree = ttk.Treeview(frame, columns=columns, show='headings', height=20)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=120)
+
+        # Scrollbars
+        v_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        h_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=tree.xview)
+        tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        tree.grid(row=0, column=0, sticky='nsew')
+        v_scrollbar.grid(row=0, column=1, sticky='ns')
+        h_scrollbar.grid(row=1, column=0, sticky='ew')
+
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
+
+        # Double-click to download
+        tree.bind('<Double-Button-1>', lambda e: self.download_digital_resource_gui(tree))
+
+        # Load digital library
+        self.load_digital_library(tree)
+
+    def load_digital_library(self, tree):
+        """Load digital library items into tree"""
+        try:
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT digital_id, title, author, file_type, category, download_count, added_date
+            FROM digital_library
+            ORDER BY added_date DESC
+            ''')
+
+            for row in cursor.fetchall():
+                tree.insert('', 'end', values=row)
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load digital library: {str(e)}")
+
+    def upload_digital_resource(self):
+        """Upload a digital resource"""
+        file_path = filedialog.askopenfilename(
+            title="Select Digital Resource",
+            filetypes=[
+                ("PDF files", "*.pdf"),
+                ("EPUB files", "*.epub"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if not file_path:
+            return
+
+        # Get metadata dialog
+        metadata_dialog = tk.Toplevel(self.master)
+        metadata_dialog.title("Resource Metadata")
+        metadata_dialog.geometry("400x300")
+
+        ttk.Label(metadata_dialog, text="Enter Resource Details",
+                 font=('Arial', 12, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
+
+        ttk.Label(metadata_dialog, text="Title:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+        title_var = tk.StringVar(value=os.path.basename(file_path))
+        ttk.Entry(metadata_dialog, textvariable=title_var, width=30).grid(row=1, column=1, padx=10, pady=5)
+
+        ttk.Label(metadata_dialog, text="Author:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        author_var = tk.StringVar()
+        ttk.Entry(metadata_dialog, textvariable=author_var, width=30).grid(row=2, column=1, padx=10, pady=5)
+
+        ttk.Label(metadata_dialog, text="Category:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        category_var = tk.StringVar(value="General")
+        ttk.Entry(metadata_dialog, textvariable=category_var, width=30).grid(row=3, column=1, padx=10, pady=5)
+
+        ttk.Label(metadata_dialog, text="Description:").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+        desc_text = tk.Text(metadata_dialog, width=30, height=4)
+        desc_text.grid(row=4, column=1, padx=10, pady=5)
+
+        def save_resource():
+            try:
+                import shutil
+
+                title = title_var.get().strip()
+                author = author_var.get().strip()
+                category = category_var.get().strip()
+                description = desc_text.get('1.0', tk.END).strip()
+
+                if not title or not author:
+                    messagebox.showerror("Error", "Title and Author are required")
+                    return
+
+                # Copy file to digital library folder
+                from university_system.modules.shared.constants.paths import UPLOAD_DIR
+                digital_dir = UPLOAD_DIR / "digital_library"
+                digital_dir.mkdir(parents=True, exist_ok=True)
+
+                file_name = os.path.basename(file_path)
+                dest_path = digital_dir / file_name
+                shutil.copy2(file_path, dest_path)
+
+                # Get file info
+                file_type = os.path.splitext(file_name)[1].lstrip('.')
+                file_size = os.path.getsize(dest_path)
+
+                # Save to database
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                INSERT INTO digital_library (
+                    title, author, file_path, file_type, file_size, category,
+                    description, access_level, download_count, added_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    title, author, str(dest_path), file_type, file_size, category,
+                    description, 'public', 0, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Uploaded digital resource: {title}", "digital_library")
+
+                metadata_dialog.destroy()
+                messagebox.showinfo("Success", "Digital resource uploaded successfully!")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Upload failed: {str(e)}")
+
+        ttk.Button(metadata_dialog, text="Save", command=save_resource).grid(row=5, column=0, columnspan=2, pady=20)
+
+    def download_digital_resource_gui(self, tree):
+        """Download selected digital resource"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a resource to download")
+            return
+
+        item = tree.item(selection[0])
+        digital_id = item['values'][0]
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT file_path, title FROM digital_library WHERE digital_id = ?', (digital_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Resource not found")
+                return
+
+            file_path, title = result
+
+            # Ask where to save
+            save_path = filedialog.asksaveasfilename(
+                initialfile=os.path.basename(file_path),
+                defaultextension=os.path.splitext(file_path)[1]
+            )
+
+            if save_path:
+                import shutil
+                shutil.copy2(file_path, save_path)
+
+                # Update download count
+                cursor.execute('''
+                UPDATE digital_library
+                SET download_count = download_count + 1
+                WHERE digital_id = ?
+                ''', (digital_id,))
+                conn.commit()
+
+                messagebox.showinfo("Success", f"Downloaded to:\n{save_path}")
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Download failed: {str(e)}")
+
+    def show_advanced_search_gui(self):
+        """Show advanced search interface"""
+        search_window = tk.Toplevel(self.master)
+        search_window.title("Advanced Search")
+        search_window.geometry("800x700")
+
+        ttk.Label(search_window, text="Advanced Book Search",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Search criteria frame
+        criteria_frame = ttk.LabelFrame(search_window, text="Search Criteria", padding=15)
+        criteria_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        # Search fields
+        fields = {}
+
+        row = 0
+        for label, field in [
+            ("Title", "title"),
+            ("Author", "author"),
+            ("ISBN", "isbn"),
+            ("Publisher", "publisher"),
+            ("Category", "category"),
+            ("Year Published", "year"),
+            ("Reading Level", "reading_level"),
+            ("Status", "status")
+        ]:
+            ttk.Label(criteria_frame, text=f"{label}:").grid(row=row, column=0, sticky=tk.W, pady=5)
+            var = tk.StringVar()
+            ttk.Entry(criteria_frame, textvariable=var, width=40).grid(row=row, column=1, padx=10, pady=5)
+            fields[field] = var
+            row += 1
+
+        # Results frame
+        results_frame = ttk.LabelFrame(search_window, text="Search Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Title', 'Author', 'Category', 'Year', 'Status')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            results_tree.heading(col, text=col)
+            results_tree.column(col, width=120)
+
+        results_tree.pack(fill=tk.BOTH, expand=True)
+
+        def perform_search():
+            # Clear previous results
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Build dynamic query
+                query = "SELECT book_id, title, author, category, year_published, status FROM books WHERE 1=1"
+                params = []
+
+                for field, var in fields.items():
+                    value = var.get().strip()
+                    if value:
+                        if field == "year":
+                            query += " AND year_published = ?"
+                            params.append(int(value))
+                        else:
+                            query += f" AND {field} LIKE ?"
+                            params.append(f"%{value}%")
+
+                query += " ORDER BY title LIMIT 100"
+
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+                for row in results:
+                    results_tree.insert('', 'end', values=row)
+
+                conn.close()
+
+                messagebox.showinfo("Search Complete", f"Found {len(results)} books")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(search_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Search", command=perform_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear",
+                  command=lambda: [var.set('') for var in fields.values()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=search_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 # DATABASE_FILE constant now defined at top of file using centralized path
