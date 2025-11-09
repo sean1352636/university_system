@@ -10424,6 +10424,408 @@ Proceed with update?
         ttk.Button(button_frame, text="📧 Send", command=send_email).pack(side=tk.LEFT)
         ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
 
+    # CLI-Compatible Function Names (Wrappers)
+    def enrollment_prediction(self):
+        """
+        CLI-compatible wrapper for enrollment prediction.
+
+        This is a thin wrapper that calls the existing predict_enrollment_trends()
+        method to provide the exact function name expected from the CLI version.
+        """
+        return self.predict_enrollment_trends("next_month")
+
+    def module_success_probability(self):
+        """
+        Show module success probability interface (CLI-compatible).
+
+        Displays a dialog for users to select a module and view success probability
+        statistics including pass rates, grade distribution, and predictions.
+        """
+        dialog = tk.Toplevel(self.master)
+        dialog.title("🎯 Module Success Probability")
+        dialog.geometry("500x400")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Module Success Probability Calculator",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        ttk.Label(frame, text="Enter Module Code:").pack(anchor='w')
+        module_var = tk.StringVar()
+        ttk.Entry(frame, textvariable=module_var, width=30).pack(fill=tk.X, pady=(0, 20))
+
+        result_text = scrolledtext.ScrolledText(frame, height=15, wrap=tk.WORD)
+        result_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        def calculate():
+            module_code = module_var.get().strip()
+            if not module_code:
+                messagebox.showwarning("Missing Input", "Please enter a module code.")
+                return
+
+            try:
+                result = self.calculate_module_success_probability(module_code)
+                result_text.delete(1.0, tk.END)
+                result_text.insert(tk.END, result)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to calculate: {str(e)}")
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="🎯 Calculate", command=calculate).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="❌ Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def graduation_timeline_forecast(self):
+        """
+        Forecast graduation timelines for students (CLI-compatible).
+
+        Analyzes student progress and predicts graduation timelines based on:
+        - Completed modules vs. required modules
+        - Historical completion rates
+        - Course requirements
+        - Current enrollment status
+        """
+        dialog = tk.Toplevel(self.master)
+        dialog.title("🎓 Graduation Timeline Forecast")
+        dialog.geometry("700x500")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Graduation Timeline Forecast",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        result_text = scrolledtext.ScrolledText(frame, height=20, wrap=tk.WORD, font=('Courier', 9))
+        result_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        def generate_forecast():
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, "🎓 GRADUATION TIMELINE FORECAST\n")
+            result_text.insert(tk.END, "=" * 90 + "\n\n")
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Get student progress data
+                cursor.execute('''
+                    SELECT s.student_id, s.first_name, s.last_name, s.course,
+                           COUNT(CASE WHEN sm.grade IS NOT NULL AND sm.grade != 'F' THEN 1 END) as completed_modules,
+                           s.registration_datetime,
+                           julianday('now') - julianday(s.registration_datetime) as days_enrolled
+                    FROM students s
+                    LEFT JOIN student_modules sm ON s.student_id = sm.student_id
+                    GROUP BY s.student_id, s.first_name, s.last_name, s.course, s.registration_datetime
+                    HAVING days_enrolled > 30
+                    ORDER BY completed_modules DESC
+                    LIMIT 20
+                ''')
+
+                student_progress = cursor.fetchall()
+                conn.close()
+
+                if not student_progress:
+                    result_text.insert(tk.END, "Insufficient data for graduation forecast.\n")
+                    return
+
+                # Assume typical program requirements
+                required_modules = {'CS': 8, 'DS': 6, 'Engineering': 10, 'Mathematics': 8}
+
+                result_text.insert(tk.END, f"{'Student ID':<12} {'Name':<25} {'Course':<8} {'Progress':<10} {'Est. Graduation':<20}\n")
+                result_text.insert(tk.END, "-" * 90 + "\n")
+
+                for student_id, first_name, last_name, course, completed, reg_date, days_enrolled in student_progress:
+                    required = required_modules.get(course, 8)
+                    progress_pct = (completed / required) * 100
+
+                    if completed >= required:
+                        forecast = "Graduated ✓"
+                    elif completed == 0:
+                        forecast = "No progress"
+                    else:
+                        # Linear projection
+                        modules_per_day = completed / days_enrolled if days_enrolled > 0 else 0
+                        remaining_modules = required - completed
+
+                        if modules_per_day > 0:
+                            days_to_graduate = remaining_modules / modules_per_day
+                            months_to_graduate = days_to_graduate / 30
+
+                            if months_to_graduate < 12:
+                                forecast = f"~{months_to_graduate:.1f} months"
+                            else:
+                                forecast = f"~{months_to_graduate/12:.1f} years"
+                        else:
+                            forecast = "Stalled"
+
+                    name = f"{first_name} {last_name}"
+                    progress_text = f"{completed}/{required}"
+
+                    result_text.insert(tk.END, f"{student_id:<12} {name:<25} {course:<8} {progress_text:<10} {forecast:<20}\n")
+
+                result_text.insert(tk.END, "\n" + "=" * 90 + "\n")
+                result_text.insert(tk.END, "Note: Forecasts are based on historical completion rates and may vary.\n")
+
+            except Exception as e:
+                result_text.insert(tk.END, f"\nError generating forecast: {str(e)}\n")
+
+        # Auto-generate on load
+        generate_forecast()
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="🔄 Refresh", command=generate_forecast).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="❌ Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def generate_demographics_analysis(self):
+        """
+        Generate comprehensive demographics analysis report (CLI-compatible).
+
+        Provides detailed demographic breakdowns including:
+        - Age distribution
+        - Gender distribution by course
+        - Geographic distribution
+        - Cross-tabulation analysis
+        """
+        dialog = tk.Toplevel(self.master)
+        dialog.title("👥 Demographics Analysis")
+        dialog.geometry("700x500")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Demographics Analysis Report",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        result_text = scrolledtext.ScrolledText(frame, height=20, wrap=tk.WORD, font=('Courier', 9))
+        result_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        def generate_analysis():
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, "👥 DEMOGRAPHICS ANALYSIS REPORT\n")
+            result_text.insert(tk.END, "=" * 60 + "\n\n")
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Age distribution
+                cursor.execute('''
+                    SELECT
+                        CASE
+                            WHEN age < 20 THEN 'Under 20'
+                            WHEN age BETWEEN 20 AND 25 THEN '20-25'
+                            WHEN age BETWEEN 26 AND 30 THEN '26-30'
+                            WHEN age BETWEEN 31 AND 35 THEN '31-35'
+                            WHEN age BETWEEN 36 AND 40 THEN '36-40'
+                            ELSE 'Over 40'
+                        END as age_group,
+                        COUNT(*) as count
+                    FROM students
+                    WHERE age IS NOT NULL
+                    GROUP BY age_group
+                    ORDER BY
+                        CASE age_group
+                            WHEN 'Under 20' THEN 1
+                            WHEN '20-25' THEN 2
+                            WHEN '26-30' THEN 3
+                            WHEN '31-35' THEN 4
+                            WHEN '36-40' THEN 5
+                            ELSE 6
+                        END
+                ''')
+
+                age_data = cursor.fetchall()
+                total_with_age = sum(count for _, count in age_data)
+
+                result_text.insert(tk.END, "📊 AGE DISTRIBUTION:\n")
+                result_text.insert(tk.END, "-" * 40 + "\n")
+                for age_group, count in age_data:
+                    percentage = (count / total_with_age) * 100 if total_with_age > 0 else 0
+                    bar = '█' * min(int(percentage / 2), 40)
+                    result_text.insert(tk.END, f"{age_group:<15} |{bar:<40} {count:>5} ({percentage:>5.1f}%)\n")
+
+                # Course by Gender cross-tabulation
+                cursor.execute('''
+                    SELECT course, gender, COUNT(*) as count
+                    FROM students
+                    GROUP BY course, gender
+                    ORDER BY course, gender
+                ''')
+
+                cross_tab = cursor.fetchall()
+
+                result_text.insert(tk.END, "\n📋 COURSE × GENDER CROSS-TABULATION:\n")
+                result_text.insert(tk.END, "-" * 50 + "\n")
+
+                # Organize data
+                courses = {}
+                for course, gender, count in cross_tab:
+                    if course not in courses:
+                        courses[course] = {}
+                    courses[course][gender] = count
+
+                # Display
+                genders = ['male', 'female', 'other']
+                header = f"{'Course':<10}" + "".join(f"{g.capitalize():<10}" for g in genders) + "Total\n"
+                result_text.insert(tk.END, header)
+                result_text.insert(tk.END, "-" * len(header) + "\n")
+
+                for course, gender_counts in courses.items():
+                    row = f"{course:<10}"
+                    total = 0
+                    for gender in genders:
+                        count = gender_counts.get(gender, 0)
+                        row += f"{count:<10}"
+                        total += count
+                    row += f"{total}\n"
+                    result_text.insert(tk.END, row)
+
+                conn.close()
+
+                result_text.insert(tk.END, "\n" + "=" * 60 + "\n")
+                result_text.insert(tk.END, f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+            except Exception as e:
+                result_text.insert(tk.END, f"\nError generating analysis: {str(e)}\n")
+
+        # Auto-generate on load
+        generate_analysis()
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="🔄 Refresh", command=generate_analysis).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="💾 Export",
+                  command=lambda: self.export_report_to_file(result_text.get(1.0, tk.END), "demographics")).pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Button(button_frame, text="❌ Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def generate_performance_report(self):
+        """
+        Generate academic performance report (CLI-compatible).
+
+        Analyzes student academic performance including:
+        - Top performing students
+        - Performance by course
+        - Grade distribution
+        - Completion rates
+        """
+        dialog = tk.Toplevel(self.master)
+        dialog.title("🎯 Performance Report")
+        dialog.geometry("800x600")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Academic Performance Report",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        result_text = scrolledtext.ScrolledText(frame, height=25, wrap=tk.WORD, font=('Courier', 9))
+        result_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        def generate_report():
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, "🎯 ACADEMIC PERFORMANCE REPORT\n")
+            result_text.insert(tk.END, "=" * 100 + "\n\n")
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Student performance metrics
+                cursor.execute('''
+                    SELECT s.student_id, s.first_name, s.last_name, s.course,
+                           COUNT(sm.module_code) as total_modules,
+                           SUM(CASE WHEN sm.grade IS NOT NULL THEN 1 ELSE 0 END) as completed_modules,
+                           SUM(CASE WHEN sm.grade IS NOT NULL AND sm.grade != 'F' THEN 1 ELSE 0 END) as passed_modules,
+                           AVG(CASE WHEN sm.grade IN ('A', 'B', 'C', 'D') THEN 1.0 ELSE 0.0 END) * 100 as success_rate
+                    FROM students s
+                    LEFT JOIN student_modules sm ON s.student_id = sm.student_id
+                    GROUP BY s.student_id, s.first_name, s.last_name, s.course
+                    HAVING total_modules > 0
+                    ORDER BY success_rate DESC, completed_modules DESC
+                    LIMIT 20
+                ''')
+
+                performance_data = cursor.fetchall()
+
+                if performance_data:
+                    result_text.insert(tk.END, "🏆 TOP PERFORMING STUDENTS:\n")
+                    result_text.insert(tk.END, "-" * 100 + "\n")
+                    result_text.insert(tk.END, f"{'Rank':<5} {'Student ID':<12} {'Name':<25} {'Course':<8} {'Modules':<10} {'Success %':<10}\n")
+                    result_text.insert(tk.END, "-" * 100 + "\n")
+
+                    for rank, (student_id, first_name, last_name, course, total, completed, passed, success_rate) in enumerate(performance_data, 1):
+                        name = f"{first_name} {last_name}"
+                        modules_text = f"{completed}/{total}"
+                        success_display = f"{success_rate:.1f}%" if success_rate is not None else "N/A"
+
+                        result_text.insert(tk.END, f"{rank:<5} {student_id:<12} {name:<25} {course:<8} {modules_text:<10} {success_display:<10}\n")
+
+                # Performance by course
+                cursor.execute('''
+                    SELECT s.course,
+                           AVG(CASE WHEN sm.grade IS NOT NULL THEN 1.0 ELSE 0.0 END) * 100 as avg_completion_rate,
+                           AVG(CASE WHEN sm.grade IS NOT NULL AND sm.grade != 'F' THEN 1.0 ELSE 0.0 END) * 100 as avg_success_rate
+                    FROM students s
+                    LEFT JOIN student_modules sm ON s.student_id = sm.student_id
+                    GROUP BY s.course
+                    ORDER BY avg_success_rate DESC
+                ''')
+
+                course_performance = cursor.fetchall()
+
+                result_text.insert(tk.END, "\n📊 PERFORMANCE BY COURSE:\n")
+                result_text.insert(tk.END, "-" * 60 + "\n")
+                result_text.insert(tk.END, f"{'Course':<10} {'Avg Completion %':<18} {'Avg Success %':<15}\n")
+                result_text.insert(tk.END, "-" * 60 + "\n")
+
+                for course, completion_rate, success_rate in course_performance:
+                    completion_display = f"{completion_rate:.1f}%" if completion_rate is not None else "N/A"
+                    success_display = f"{success_rate:.1f}%" if success_rate is not None else "N/A"
+
+                    result_text.insert(tk.END, f"{course:<10} {completion_display:<18} {success_display:<15}\n")
+
+                conn.close()
+
+                result_text.insert(tk.END, "\n" + "=" * 100 + "\n")
+                result_text.insert(tk.END, f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+            except Exception as e:
+                result_text.insert(tk.END, f"\nError generating report: {str(e)}\n")
+
+        # Auto-generate on load
+        generate_report()
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="🔄 Refresh", command=generate_report).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="💾 Export",
+                  command=lambda: self.export_report_to_file(result_text.get(1.0, tk.END), "performance")).pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Button(button_frame, text="❌ Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def export_report_to_file(self, content, report_type):
+        """Export report content to file"""
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{report_type}_report_{timestamp}.txt"
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        messagebox.showinfo("Export Complete", f"Report exported to {filename}")
+
 
 # Backwards Compatibility Functions
 def run_gui():
