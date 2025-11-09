@@ -8669,33 +8669,127 @@ logging.info("Enhanced Library Management System loaded successfully")
 
 # Enhanced notification functions
 def send_email_notification(email: str, subject: str, message: str):
-    """Send email notification"""
-    # Implementation would depend on your email service
-    logging.info(f"Email sent to {email}: {subject}")
+    """
+    Send email notification via central infrastructure.
+
+    MIGRATED: Now uses central email service instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_email_unified
+
+    success = send_email_unified(email, subject, message)
+    if success:
+        logging.info(f"Email sent to {email}: {subject}")
+    else:
+        logging.warning(f"Failed to send email to {email}")
+    return success
 
 def send_sms_notification(user_id: str, message: str):
-    """Send SMS notification"""
-    # Implementation would depend on your SMS service
-    logging.info(f"SMS sent to {user_id}: {message}")
+    """
+    Send SMS notification via central infrastructure.
+
+    MIGRATED: Now uses central SMS service instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_sms_unified
+    from university_system.infrastructure.database.db import get_connection
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT phone_number FROM students WHERE student_id = ?", (user_id,))
+            result = cursor.fetchone()
+
+            if result and result[0]:
+                phone = result[0]
+                success = send_sms_unified(phone, message, student_id=user_id, related_to='library')
+                if success:
+                    logging.info(f"SMS sent to {user_id}: {message}")
+                return success
+            else:
+                logging.warning(f"No phone number found for user {user_id}")
+                return False
+    except Exception as e:
+        logging.error(f"Error sending SMS to {user_id}: {e}")
+        return False
 
 def send_due_date_reminder(user_id: str, book_id: str, title: str, due_date: str):
-    """Send due date reminder"""
-    message = f"Reminder: '{title}' ({book_id}) is due on {due_date}"
-    logging.info(f"Due date reminder sent to {user_id}")
+    """
+    Send due date reminder via central infrastructure.
+
+    MIGRATED: Now uses central infrastructure helper instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_library_notification
+
+    success = send_library_notification(
+        user_id=user_id,
+        notification_type='due_soon',
+        book_title=title,
+        due_date=due_date
+    )
+    if success:
+        logging.info(f"Due date reminder sent to {user_id}")
+    return success
 
 def send_reservation_confirmation(user_id: str, book_id: str, title: str, position: int, expiry: str):
-    """Send reservation confirmation"""
-    message = f"Book reserved: '{title}' - Position {position}, expires {expiry}"
-    logging.info(f"Reservation confirmation sent to {user_id}")
+    """
+    Send reservation confirmation via central infrastructure.
+
+    MIGRATED: Now uses central infrastructure helper instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_library_notification
+
+    success = send_library_notification(
+        user_id=user_id,
+        notification_type='reservation_ready',
+        book_title=title
+    )
+    if success:
+        logging.info(f"Reservation confirmation sent to {user_id}")
+    return success
 
 def send_reservation_available_notification(user_id: str, book_id: str, title: str):
-    """Send notification when reserved book becomes available"""
-    message = f"Your reserved book '{title}' is now available for pickup!"
-    logging.info(f"Reservation available notification sent to {user_id}")
+    """
+    Send notification when reserved book becomes available via central infrastructure.
+
+    MIGRATED: Now uses central infrastructure helper instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_library_notification
+
+    success = send_library_notification(
+        user_id=user_id,
+        notification_type='reservation_ready',
+        book_title=title
+    )
+    if success:
+        logging.info(f"Reservation available notification sent to {user_id}")
+    return success
 
 def send_generic_email_notification(user_id: str, title: str, message: str):
-    """Send generic email notification"""
-    logging.info(f"Generic notification sent to {user_id}: {title}")
+    """
+    Send generic email notification via central infrastructure.
+
+    MIGRATED: Now uses central email service instead of stub logging.
+    """
+    from university_system.modules.shared.utils.communication_integration import send_email_unified
+    from university_system.infrastructure.database.db import get_connection
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT email_address FROM students WHERE student_id = ?", (user_id,))
+            result = cursor.fetchone()
+
+            if result and result[0]:
+                email = result[0]
+                success = send_email_unified(email, title, message)
+                if success:
+                    logging.info(f"Generic notification sent to {user_id}: {title}")
+                return success
+            else:
+                logging.warning(f"No email found for user {user_id}")
+                return False
+    except Exception as e:
+        logging.error(f"Error sending email to {user_id}: {e}")
+        return False
 
 def get_library_settings(setting_name):
     """Get a library setting value"""

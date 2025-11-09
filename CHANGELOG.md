@@ -9,6 +9,211 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Communication Infrastructure Integration - Centralized Email & SMS** (2025-11-09)
+- **CRITICAL INTEGRATION**: Unified all standalone email/SMS systems with central infrastructure
+- **Impact**: All communications now flow through central services for unified logging, compliance, and audit
+- **NEW FILES**: 3 new infrastructure/integration files
+- **MODIFIED FILES**: 3 major service files integrated
+
+**INTEGRATION OVERVIEW**:
+All subsystem communications now use central infrastructure:
+- Email: Unified through `infrastructure.email.email_service`
+- SMS: New central service `infrastructure.communication.sms_service`
+- Templates: Centralized template management
+- Logging: Comprehensive audit trail for all communications
+- Compliance: Single source of truth for communication compliance
+
+**NEW INFRASTRUCTURE FILES (3 files)**:
+
+1. **Central SMS Service** (`infrastructure/communication/sms_service.py`) (~460 lines)
+   - Unified SMS infrastructure for non-MFA use (MFA uses separate auth module)
+   - Multi-provider support: Twilio, AWS SNS, Mock (development)
+   - Database logging to `sms_log` table with audit trail
+   - Phone number validation and E.164 formatting
+   - Bulk SMS capabilities with success/failure tracking
+   - Thread-safe global service instance
+   - Features:
+     * `SMSService` class with provider selection
+     * `send_sms()` - Single SMS with logging
+     * `send_bulk_sms()` - Bulk sending with results
+     * `get_sms_log()` - SMS audit retrieval
+     * Automatic phone number cleaning/formatting
+     * Error handling with fallback logging
+
+2. **Communication Integration Utility** (`modules/shared/utils/communication_integration.py`) (~500 lines)
+   - Unified wrapper for all communication methods across university
+   - Comprehensive integration helpers for all subsystems
+   - Domain-specific helper functions (library, calendar, restaurant)
+   - Migration helpers for converting standalone code
+   - Features:
+     * **Email Integration**:
+       - `send_email_unified()` - Central email with template support
+       - `send_bulk_email_unified()` - Bulk email sending
+       - `queue_email_unified()` - Async email queueing
+     * **SMS Integration**:
+       - `send_sms_unified()` - Central SMS with provider selection
+       - `send_bulk_sms_unified()` - Bulk SMS sending
+     * **Domain Helpers**:
+       - `send_library_notification()` - Library-specific (due dates, overdue, reservations)
+       - `send_calendar_reminder()` - Calendar event reminders (email/SMS)
+       - `send_restaurant_notification()` - Order/reservation confirmations
+     * **Migration Helpers**:
+       - `migrate_standalone_email()` - Convert old email functions
+       - `migrate_standalone_sms()` - Convert old SMS functions
+
+3. **Communication Module Init** (`infrastructure/communication/__init__.py`)
+   - Package initialization for central communication services
+   - Exports SMS service components for easy importing
+
+**INTEGRATED SUBSYSTEMS (3 systems)**:
+
+1. **Finance Communications Module** (`finance/finance_misc/communications.py`)
+   - **Previous State**: Complete standalone multi-provider implementation
+     * Direct SendGrid API integration
+     * Direct AWS SES integration
+     * Direct Twilio SMS integration
+     * Direct AWS SNS SMS integration
+     * Hardcoded credential placeholders
+   - **Current State**: All functions now wrapper to central services
+   - **Changes**:
+     * `send_email_sendgrid()` → Now uses `send_email_unified()`
+     * `send_email_aws_ses()` → Now uses `send_email_unified()`
+     * `send_sms_twilio()` → Now uses `send_sms_unified()`
+     * `send_sms_aws_sns()` → Now uses `send_sms_unified()`
+   - **Deprecation Warnings**: All functions show migration warnings
+   - **Backward Compatibility**: API signatures unchanged, existing code still works
+   - **Configuration Functions**: setup_email_config() and setup_sms_config() retained for legacy
+
+2. **Library Services** (`academics/services/library.py`)
+   - **Previous State**: Stub functions with logging only (no actual sending)
+   - **Current State**: Fully functional using central infrastructure
+   - **Changes** (6 functions migrated):
+     * `send_email_notification()` - Now sends actual emails via central service
+     * `send_sms_notification()` - Now sends actual SMS via central service with DB lookup
+     * `send_due_date_reminder()` - Uses `send_library_notification()` helper
+     * `send_reservation_confirmation()` - Uses `send_library_notification()` helper
+     * `send_reservation_available_notification()` - Uses helper
+     * `send_generic_email_notification()` - Sends via central with DB lookup
+   - **Features Added**:
+     * Database lookups for student email/phone
+     * Proper error handling with logging
+     * Return values indicating success/failure
+     * Related_to tagging for audit trail
+
+3. **Finance Communications** (Already partially integrated)
+   - Previous partial integration with `send_email_smtp()` maintained
+   - All alternative providers now unified
+
+**REMAINING SYSTEMS TO INTEGRATE** (documented for future work):
+
+**High Priority** (standalone implementations):
+1. **Academic Calendar Service** (`academics/services/academic_calendar.py`)
+   - Lines 1666-1724: Direct Twilio SMS integration (class-based)
+   - Functions: `send_sms_notification()`, `send_event_reminder_sms()`
+   - Complexity: Moderate (class methods, Twilio client initialization)
+
+2. **Restaurant Modules** (8 files with SMTP imports):
+   - `commerce/services/restaurant/customer/loyalty_program.py`
+   - `commerce/services/restaurant/customer/reservation_system.py`
+   - `commerce/services/restaurant/menu/menu_management.py`
+   - `commerce/services/restaurant/operations/inventory_management.py`
+   - `commerce/services/restaurant/operations/restaurant_core.py`
+   - `commerce/services/restaurant/operations/financial_reporting.py`
+   - `commerce/services/restaurant/operations/order_processing.py`
+   - `commerce/services/restaurant/staff/staff_administration.py`
+   - All import `smtplib` but need verification if actually using standalone
+
+3. **Communication Manager** (`shared/services/communication/communication_manager.py`)
+   - Parallel comprehensive communication system
+   - Database-backed with queuing
+   - Functions: queue_email, send_bulk_email, queue_sms, send_push_notification
+   - Should become wrapper to central services or be deprecated
+
+**Medium Priority** (hybrid or conditional):
+4. **Finance Security Automation** (`finance/core/security_automation.py`)
+   - Attempts central infrastructure with console fallback
+   - Functions: send_notification(), send_email_notification(), send_sms_notification()
+
+5. **Attendance Tracker** (`academics/services/attendance/attendance_tracker.py`)
+   - Conditional use of central infrastructure (EMAIL_SUPPORT flag)
+   - Functions: send_email_notification(), send_sms_notification()
+
+**Low Priority** (already use central or are stubs):
+6. **Health Modules** (6 files) - Already use central infrastructure correctly ✓
+7. **Alumni Management** - Already uses central infrastructure ✓
+8. **Helpdesk Service** - Already uses central infrastructure ✓
+9. **Early Warning/Mental Health** - Stub implementations only
+
+**TECHNICAL ARCHITECTURE**:
+
+**Central Email Infrastructure** (existing):
+- `infrastructure/email/email_service.py` - Main email service
+- Features: Queue, templates, scheduling, bulk sending, database logging
+- Functions: send_email(), send_template_email(), send_bulk(), queue_email()
+
+**Central SMS Infrastructure** (NEW):
+- `infrastructure/communication/sms_service.py` - Main SMS service
+- Features: Multi-provider, database logging, bulk sending, phone formatting
+- Database Table: `sms_log` (recipient_phone, message, provider, status, message_sid)
+
+**Integration Layer** (NEW):
+- `modules/shared/utils/communication_integration.py`
+- Unified API for all communications
+- Domain-specific helpers
+- Migration utilities
+
+**DATABASE CHANGES**:
+- New table: `sms_log` (created on-demand by SMSService)
+  * Columns: id, recipient_phone, message, provider, status, sent_at, student_id, related_to, error_message, message_sid
+  * Indexes: student_id, related_to, status, sent_at
+
+**MIGRATION STRATEGY**:
+
+**Phase 1** (COMPLETED):
+1. ✅ Create central SMS service
+2. ✅ Create communication integration utility
+3. ✅ Migrate Finance Communications (wrappers with deprecation warnings)
+4. ✅ Migrate Library Services (stubs → functional)
+
+**Phase 2** (RECOMMENDED NEXT):
+1. Integrate Academic Calendar SMS (class-based Twilio)
+2. Integrate Restaurant modules (verify actual usage first)
+3. Update Communication Manager to wrapper or deprecate
+
+**Phase 3** (FUTURE):
+1. Remove deprecation wrappers from Finance Communications
+2. Update all GUI email stubs to use central service
+3. Document migration guide for future subsystems
+
+**BUSINESS VALUE**:
+- **Unified Audit Trail**: All communications logged to central database
+- **Compliance**: Single source for GDPR/communication regulations
+- **Cost Control**: Centralized provider management and billing
+- **Reliability**: Single point of maintenance for email/SMS infrastructure
+- **Monitoring**: Comprehensive tracking of all university communications
+- **Debugging**: Easy troubleshooting with centralized logging
+
+**DEVELOPER EXPERIENCE**:
+- Simple API: `send_email_unified()`, `send_sms_unified()`
+- Domain helpers reduce boilerplate
+- Automatic database lookups for student contact info
+- Comprehensive error handling and logging
+- Migration helpers for converting old code
+
+**BACKWARD COMPATIBILITY**:
+- All existing function signatures maintained
+- Finance Communications shows deprecation warnings but still works
+- Library Services API unchanged (just became functional)
+- No breaking changes to consuming code
+
+**TESTING**:
+- All Python files compile without errors ✓
+- SMS service includes Mock provider for safe testing
+- Email service has database-only mode for testing
+- Logging confirms successful integration
+
+---
+
 **Revenue by Source GUI Integration** (2025-11-09)
 - **NEW FEATURE**: Revenue by Source analytics now available in Finance GUI
 - **NEW FILE**: `modules/domain/finance/gui/finance/revenue_source_manager.py` (~490 lines)

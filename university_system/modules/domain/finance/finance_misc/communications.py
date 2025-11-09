@@ -70,90 +70,65 @@ def send_email_smtp(to_email, subject, body):
         return False
 
 def send_email_sendgrid(to_email, subject, body):
-    """Send email using SendGrid API"""
+    """
+    Send email using SendGrid API.
+
+    DEPRECATED: This function now uses central email infrastructure.
+    Use university_system.modules.shared.utils.communication_integration.send_email_unified() directly.
+    """
+    print("⚠️  DEPRECATED: send_email_sendgrid() now uses central email service")
+
     try:
-        url = "https://api.sendgrid.com/v3/mail/send"
+        from university_system.modules.shared.utils.communication_integration import send_email_unified
 
-        headers = {
-            "Authorization": f"Bearer {SENDGRID_CONFIG['api_key']}",
-            "Content-Type": "application/json"
-        }
+        # Use central email service instead of direct SendGrid
+        success = send_email_unified(
+            recipient=to_email,
+            subject=subject,
+            body=body,
+            sender_type='system'
+        )
 
-        data = {
-            "personalizations": [{"to": [{"email": to_email}]}],
-            "from": {
-                "email": SENDGRID_CONFIG['from_email'],
-                "name": SENDGRID_CONFIG['from_name']
-            },
-            "subject": subject,
-            "content": [
-                {
-                    "type": "text/plain",
-                    "value": body
-                },
-                {
-                    "type": "text/html",
-                    "value": f"""
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2>University Finance Department</h2>
-                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
-                            <pre style="white-space: pre-wrap;">{body}</pre>
-                        </div>
-                    </div>
-                    """
-                }
-            ]
-        }
-
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-
-        if response.status_code == 202:
-            print(f"✅ SendGrid email sent successfully to {to_email}")
-            return True
+        if success:
+            print(f"✅ Email sent successfully to {to_email} (via central service)")
         else:
-            print(f"❌ SendGrid email failed: {response.status_code} - {response.text}")
-            return False
+            print(f"⚠️ Email sending failed for {to_email}")
+
+        return success
 
     except Exception as e:
-        print(f"❌ SendGrid email failed: {e}")
+        print(f"❌ Email failed: {e}")
         return False
 
 def send_email_aws_ses(to_email, subject, body):
-    """Send email using AWS SES"""
+    """
+    Send email using AWS SES.
+
+    DEPRECATED: This function now uses central email infrastructure.
+    Use university_system.modules.shared.utils.communication_integration.send_email_unified() directly.
+    """
+    print("⚠️  DEPRECATED: send_email_aws_ses() now uses central email service")
+
     try:
-        import boto3
+        from university_system.modules.shared.utils.communication_integration import send_email_unified
 
-        ses_client = boto3.client(
-            'ses',
-            aws_access_key_id=AWS_SNS_CONFIG['aws_access_key_id'],
-            aws_secret_access_key=AWS_SNS_CONFIG['aws_secret_access_key'],
-            region_name=AWS_SNS_CONFIG['region_name']
+        # Use central email service instead of direct AWS SES
+        success = send_email_unified(
+            recipient=to_email,
+            subject=subject,
+            body=body,
+            sender_type='system'
         )
 
-        response = ses_client.send_email(
-            Source=f"{EMAIL_CONFIG['sender_name']} <{EMAIL_CONFIG['sender_email']}>",
-            Destination={'ToAddresses': [to_email]},
-            Message={
-                'Subject': {'Data': subject},
-                'Body': {
-                    'Text': {'Data': body},
-                    'Html': {'Data': f"""
-                    <div style="font-family: Arial, sans-serif;">
-                        <h2>University Finance Department</h2>
-                        <div style="background-color: #f8f9fa; padding: 20px;">
-                            <pre style="white-space: pre-wrap;">{body}</pre>
-                        </div>
-                    </div>
-                    """}
-                }
-            }
-        )
+        if success:
+            print(f"✅ Email sent successfully to {to_email} (via central service)")
+        else:
+            print(f"⚠️ Email sending failed for {to_email}")
 
-        print(f"✅ AWS SES email sent successfully to {to_email}")
-        return True
+        return success
 
     except Exception as e:
-        print(f"❌ AWS SES email failed: {e}")
+        print(f"❌ Email failed: {e}")
         return False
 
 def setup_email_config():
@@ -210,65 +185,63 @@ def setup_sms_config():
     print("✅ SMS configuration updated!")
 
 def send_sms_twilio(phone_number, message):
-    """Send SMS using Twilio API"""
+    """
+    Send SMS using Twilio API.
+
+    DEPRECATED: This function now uses central SMS infrastructure.
+    Use university_system.modules.shared.utils.communication_integration.send_sms_unified() directly.
+    """
+    print("⚠️  DEPRECATED: send_sms_twilio() now uses central SMS service")
+
     try:
-        from twilio.rest import Client
+        from university_system.modules.shared.utils.communication_integration import send_sms_unified
 
-        client = Client(TWILIO_CONFIG['account_sid'], TWILIO_CONFIG['auth_token'])
-
-        # Format phone number (ensure it starts with +)
-        if not phone_number.startswith('+'):
-            phone_number = '+44' + phone_number.lstrip('0')  # UK format, adjust as needed
-
-        message_obj = client.messages.create(
-            body=f"University Finance: {message}",
-            from_=TWILIO_CONFIG['from_phone'],
-            to=phone_number
+        # Use central SMS service instead of direct Twilio
+        success = send_sms_unified(
+            phone_number=phone_number,
+            message=f"University Finance: {message}",
+            related_to='finance'
         )
 
-        print(f"✅ Twilio SMS sent successfully to {phone_number} (SID: {message_obj.sid})")
-        return True
+        if success:
+            print(f"✅ SMS sent successfully to {phone_number} (via central service)")
+        else:
+            print(f"⚠️ SMS sending failed for {phone_number}")
+
+        return success
 
     except Exception as e:
-        print(f"❌ Twilio SMS failed: {e}")
+        print(f"❌ SMS failed: {e}")
         return False
 
 def send_sms_aws_sns(phone_number, message):
-    """Send SMS using AWS SNS"""
+    """
+    Send SMS using AWS SNS.
+
+    DEPRECATED: This function now uses central SMS infrastructure.
+    Use university_system.modules.shared.utils.communication_integration.send_sms_unified() directly.
+    """
+    print("⚠️  DEPRECATED: send_sms_aws_sns() now uses central SMS service")
+
     try:
-        import boto3
+        from university_system.modules.shared.utils.communication_integration import send_sms_unified
 
-        sns_client = boto3.client(
-            'sns',
-            aws_access_key_id=AWS_SNS_CONFIG['aws_access_key_id'],
-            aws_secret_access_key=AWS_SNS_CONFIG['aws_secret_access_key'],
-            region_name=AWS_SNS_CONFIG['region_name']
+        # Use central SMS service instead of direct AWS SNS
+        success = send_sms_unified(
+            phone_number=phone_number,
+            message=f"University Finance: {message}",
+            related_to='finance'
         )
 
-        # Format phone number
-        if not phone_number.startswith('+'):
-            phone_number = '+44' + phone_number.lstrip('0')  # UK format
+        if success:
+            print(f"✅ SMS sent successfully to {phone_number} (via central service)")
+        else:
+            print(f"⚠️ SMS sending failed for {phone_number}")
 
-        response = sns_client.publish(
-            PhoneNumber=phone_number,
-            Message=f"University Finance: {message}",
-            MessageAttributes={
-                'AWS.SNS.SMS.SenderID': {
-                    'DataType': 'String',
-                    'StringValue': 'UniFinance'
-                },
-                'AWS.SNS.SMS.SMSType': {
-                    'DataType': 'String',
-                    'StringValue': 'Transactional'
-                }
-            }
-        )
-
-        print(f"✅ AWS SNS SMS sent successfully to {phone_number} (MessageId: {response['MessageId']})")
-        return True
+        return success
 
     except Exception as e:
-        print(f"❌ AWS SNS SMS failed: {e}")
+        print(f"❌ SMS failed: {e}")
         return False
 
 def test_email_service():
