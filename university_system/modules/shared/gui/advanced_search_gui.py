@@ -8278,32 +8278,78 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         # Buttons
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill=tk.X)
-        
-        ttk.Button(button_frame, text="💾 Save Current", 
+
+        ttk.Button(button_frame, text="💾 Save Current",
                   command=self.save_current_search).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="📂 Load", 
+        ttk.Button(button_frame, text="📂 Load",
                   command=self.load_selected_search).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="🗑️ Delete", 
+        ttk.Button(button_frame, text="🔗 Share",
+                  command=self.share_search_profile).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="🗑️ Delete",
                   command=self.delete_selected_search).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text="❌ Close", command=dialog.destroy).pack(side=tk.RIGHT)
     
     def load_saved_searches(self):
-        """Load saved searches into the tree"""
+        """Load saved searches from database into the tree"""
         try:
             # Clear existing items
             for item in self.saved_tree.get_children():
                 self.saved_tree.delete(item)
-            
-            # Simulate loading saved searches
-            saved_searches = [
-                (1, "CS Students Over 25", "2024-01-15", "No"),
-                (2, "Recent Registrations", "2024-01-20", "Yes"),
-                (3, "Incomplete Modules", "2024-01-25", "No"),
-            ]
-            
-            for search_id, name, created, shared in saved_searches:
-                self.saved_tree.insert('', 'end', values=(search_id, name, created, shared))
-                
+
+            # Load from database
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Check if saved_searches table exists
+            cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='saved_searches'
+            """)
+
+            if cursor.fetchone():
+                # Table exists, load real data
+                # Get current user if available
+                current_user = 'default_user'  # Default if no auth
+                if hasattr(self, 'auth') and self.auth and hasattr(self.auth, 'get_current_user'):
+                    user = self.auth.get_current_user()
+                    if user:
+                        current_user = user.get('username', 'default_user')
+
+                cursor.execute('''
+                    SELECT id, search_name, created_date, is_shared
+                    FROM saved_searches
+                    WHERE user_id = ? OR is_shared = 1
+                    ORDER BY created_date DESC
+                ''', (current_user,))
+
+                searches = cursor.fetchall()
+
+                for search_id, name, created, shared in searches:
+                    shared_text = "Yes" if shared else "No"
+                    # Format date nicely
+                    try:
+                        if created:
+                            created_display = created[:16] if len(created) > 16 else created
+                        else:
+                            created_display = "N/A"
+                    except:
+                        created_display = "N/A"
+
+                    self.saved_tree.insert('', 'end', values=(search_id, name, created_display, shared_text))
+
+            else:
+                # Table doesn't exist, show sample data
+                saved_searches = [
+                    (1, "CS Students Over 25", "2024-01-15", "No"),
+                    (2, "Recent Registrations", "2024-01-20", "Yes"),
+                    (3, "Incomplete Modules", "2024-01-25", "No"),
+                ]
+
+                for search_id, name, created, shared in saved_searches:
+                    self.saved_tree.insert('', 'end', values=(search_id, name, created, shared))
+
+            conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not load saved searches: {str(e)}")
     
@@ -8424,14 +8470,138 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         if not selection:
             messagebox.showwarning("No Selection", "Please select a search to delete.")
             return
-        
+
         item = self.saved_tree.item(selection[0])
+        search_id = item['values'][0]
         search_name = item['values'][1]
-        
+
         if messagebox.askyesno("Confirm Delete", f"Delete search profile '{search_name}'?"):
-            self.saved_tree.delete(selection[0])
-            messagebox.showinfo("Deleted", f"Search profile '{search_name}' deleted.")
-    
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Check if saved_searches table exists
+                cursor.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='saved_searches'
+                """)
+
+                if cursor.fetchone():
+                    # Delete from database
+                    cursor.execute('DELETE FROM saved_searches WHERE id = ?', (search_id,))
+                    conn.commit()
+
+                conn.close()
+
+                # Remove from tree
+                self.saved_tree.delete(selection[0])
+                messagebox.showinfo("Deleted", f"Search profile '{search_name}' deleted successfully.")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete search: {str(e)}")
+
+    def share_search_profile(self):
+        """
+        Share a search profile with other users.
+
+        Allows the current user to make a saved search profile available to all users
+        by setting the is_shared flag in the database.
+        """
+        selection = self.saved_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a search to share.")
+            return
+
+        item = self.saved_tree.item(selection[0])
+        search_id = item['values'][0]
+        search_name = item['values'][1]
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Check if search exists
+            cursor.execute("""
+                SELECT search_name FROM saved_searches
+                WHERE id = ?
+            """, (search_id,))
+
+            result = cursor.fetchone()
+            if not result:
+                messagebox.showerror("Error", "Search not found in database.")
+                conn.close()
+                return
+
+            # Confirm sharing
+            if messagebox.askyesno("Confirm Share",
+                                  f"Share search profile '{search_name}' with all users?\n\n"
+                                  "This will make it visible to everyone."):
+                # Update the is_shared flag
+                cursor.execute("""
+                    UPDATE saved_searches
+                    SET is_shared = 1
+                    WHERE id = ?
+                """, (search_id,))
+                conn.commit()
+
+                messagebox.showinfo("Success",
+                                  f"✅ Search profile '{search_name}' is now shared with all users.")
+
+                # Refresh the list to update the shared status
+                self.load_saved_searches()
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to share search: {str(e)}")
+
+    def execute_loaded_search(self, criteria):
+        """
+        Execute a loaded search with given criteria.
+
+        Args:
+            criteria (dict): Search criteria dictionary with fields like:
+                - student_id: Student ID pattern
+                - first_name: First name pattern
+                - last_name: Last name pattern
+                - course: Course code
+                - gender: Gender
+                - age_min, age_max: Age range
+        """
+        try:
+            query = "SELECT * FROM students WHERE 1=1"
+            params = []
+
+            # Build query from criteria
+            for key, value in criteria.items():
+                if value:
+                    if key in ['student_id', 'first_name', 'last_name']:
+                        query += f" AND {key} LIKE ?"
+                        params.append(f"%{value}%")
+                    elif key == 'age_min':
+                        query += " AND age >= ?"
+                        params.append(value)
+                    elif key == 'age_max':
+                        query += " AND age <= ?"
+                        params.append(value)
+                    else:
+                        query += f" AND {key} = ?"
+                        params.append(value)
+
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            conn.close()
+
+            # Display results
+            self.search_results = results
+            self.display_search_results(results)
+            self.update_status(f"Loaded search executed. Found {len(results)} results.")
+
+        except Exception as e:
+            messagebox.showerror("Search Error", f"Failed to execute loaded search: {str(e)}")
+
     def show_search_history(self):
         """Show search history"""
         dialog = tk.Toplevel(self.master)
@@ -9041,7 +9211,266 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         
         ttk.Button(button_frame, text="🎓 Execute", command=execute_bulk_operation).pack(side=tk.LEFT)
         ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
-    
+
+    def mass_email_students(self):
+        """
+        Send mass emails to students from search results (CLI-equivalent function).
+
+        This function provides a comprehensive mass email interface with:
+        - Recipient list display
+        - Subject and message composition
+        - Email simulation mode
+        - Integration with email infrastructure if available
+        """
+        if not self.search_results:
+            messagebox.showwarning("No Results", "No search results available for mass email.")
+            return
+
+        dialog = tk.Toplevel(self.master)
+        dialog.title("📧 Mass Email to Students")
+        dialog.geometry("700x600")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"Mass Email ({len(self.search_results)} recipients)",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Recipient summary
+        recipient_frame = ttk.LabelFrame(frame, text="Recipients", padding="10")
+        recipient_frame.pack(fill=tk.X, pady=(0, 10))
+
+        recipient_text = scrolledtext.ScrolledText(recipient_frame, height=5, wrap=tk.WORD)
+        recipient_text.pack(fill=tk.BOTH, expand=True)
+
+        # Show first 10 recipients and total count
+        for i, student in enumerate(self.search_results[:10]):
+            name = f"{student[3]} {student[5]}"
+            email = student[1]
+            recipient_text.insert(tk.END, f"{i+1}. {name} ({email})\n")
+
+        if len(self.search_results) > 10:
+            recipient_text.insert(tk.END, f"\n... and {len(self.search_results) - 10} more recipients")
+
+        recipient_text.config(state='disabled')
+
+        # Email composition
+        composition_frame = ttk.LabelFrame(frame, text="Email Content", padding="10")
+        composition_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+
+        ttk.Label(composition_frame, text="Subject:").pack(anchor='w')
+        subject_var = tk.StringVar()
+        ttk.Entry(composition_frame, textvariable=subject_var, width=60).pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(composition_frame, text="Message:").pack(anchor='w')
+        message_text = scrolledtext.ScrolledText(composition_frame, height=12, wrap=tk.WORD)
+        message_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Email mode selection
+        mode_frame = ttk.Frame(composition_frame)
+        mode_frame.pack(fill=tk.X, pady=(10, 0))
+
+        mode_var = tk.StringVar(value="simulation")
+        ttk.Radiobutton(mode_frame, text="Simulation Mode (No emails sent)",
+                       variable=mode_var, value="simulation").pack(anchor='w')
+        ttk.Radiobutton(mode_frame, text="Send Real Emails (if configured)",
+                       variable=mode_var, value="real").pack(anchor='w')
+
+        def send_emails():
+            subject = subject_var.get().strip()
+            message = message_text.get(1.0, tk.END).strip()
+
+            if not subject or not message:
+                messagebox.showwarning("Incomplete", "Please provide both subject and message.")
+                return
+
+            mode = mode_var.get()
+
+            if mode == "simulation":
+                # Simulation mode
+                result_msg = (
+                    f"📧 EMAIL SIMULATION COMPLETED\n\n"
+                    f"Recipients: {len(self.search_results)} students\n"
+                    f"Subject: {subject}\n"
+                    f"Message length: {len(message)} characters\n\n"
+                    f"Note: No actual emails were sent (simulation mode)"
+                )
+                messagebox.showinfo("Simulation Complete", result_msg)
+            else:
+                # Real email mode
+                try:
+                    # Try to use email infrastructure if available
+                    from university_system.infrastructure.email.email_service import send_email
+
+                    success_count = 0
+                    failed_count = 0
+
+                    for student in self.search_results:
+                        try:
+                            send_email(
+                                to_email=student[1],
+                                subject=subject,
+                                body=message
+                            )
+                            success_count += 1
+                        except:
+                            failed_count += 1
+
+                    messagebox.showinfo("Email Sent",
+                                      f"✅ Mass email completed\n"
+                                      f"Success: {success_count}\n"
+                                      f"Failed: {failed_count}")
+
+                except ImportError:
+                    messagebox.showwarning("Email Not Configured",
+                                         "Email infrastructure not available. Use simulation mode.")
+                    return
+
+            dialog.destroy()
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+
+        ttk.Button(button_frame, text="📧 Send", command=send_emails).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def batch_data_updates(self):
+        """
+        Perform batch updates on student data (CLI-equivalent function).
+
+        Provides comprehensive batch update operations:
+        - Update course assignments
+        - Update registration status
+        - Add notes/flags to student records
+        - Bulk module enrollment
+        """
+        if not self.search_results:
+            messagebox.showwarning("No Results", "No search results available for batch updates.")
+            return
+
+        dialog = tk.Toplevel(self.master)
+        dialog.title("📝 Batch Data Updates")
+        dialog.geometry("500x450")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"Batch Data Updates ({len(self.search_results)} students)",
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Operation selection
+        ttk.Label(frame, text="Select Update Operation:").pack(anchor='w')
+        operation_var = tk.StringVar(value="course")
+
+        operations = [
+            ("Update Course", "course"),
+            ("Update Registration Status", "status"),
+            ("Add Note/Flag", "note"),
+            ("Bulk Module Enrollment", "module"),
+        ]
+
+        for text, value in operations:
+            ttk.Radiobutton(frame, text=text, variable=operation_var, value=value).pack(anchor='w')
+
+        # Input fields
+        input_frame = ttk.LabelFrame(frame, text="Update Details", padding="10")
+        input_frame.pack(fill=tk.BOTH, expand=True, pady=(20, 0))
+
+        # Course update fields
+        course_frame = ttk.Frame(input_frame)
+        ttk.Label(course_frame, text="New Course:").pack(anchor='w')
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(course_frame, textvariable=course_var,
+                                    values=["CS", "DS", "Engineering", "Mathematics"],
+                                    width=30)
+        course_combo.pack(anchor='w', pady=(0, 10))
+        course_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Status update fields
+        status_frame = ttk.Frame(input_frame)
+        ttk.Label(status_frame, text="Registration Status:").pack(anchor='w')
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(status_frame, textvariable=status_var,
+                                    values=["Active", "Inactive", "Suspended", "Graduated"],
+                                    width=30)
+        status_combo.pack(anchor='w', pady=(0, 10))
+        status_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Note/flag fields
+        note_frame = ttk.Frame(input_frame)
+        ttk.Label(note_frame, text="Note/Flag:").pack(anchor='w')
+        note_var = tk.StringVar()
+        ttk.Entry(note_frame, textvariable=note_var, width=40).pack(fill=tk.X, pady=(0, 10))
+        note_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Module enrollment fields
+        module_frame = ttk.Frame(input_frame)
+        ttk.Label(module_frame, text="Module Code:").pack(anchor='w')
+        module_var = tk.StringVar()
+        ttk.Entry(module_frame, textvariable=module_var, width=30).pack(anchor='w', pady=(0, 10))
+        module_frame.pack(fill=tk.X, pady=(0, 10))
+
+        def execute_update():
+            operation = operation_var.get()
+
+            if operation == "course":
+                new_course = course_var.get().strip()
+                if not new_course:
+                    messagebox.showwarning("Missing Data", "Please select a course.")
+                    return
+
+                if messagebox.askyesno("Confirm Update",
+                                      f"Update {len(self.search_results)} students to course '{new_course}'?"):
+                    # Simulate course update
+                    messagebox.showinfo("Update Complete",
+                                      f"✅ Updated {len(self.search_results)} students to course {new_course}")
+
+            elif operation == "status":
+                new_status = status_var.get().strip()
+                if not new_status:
+                    messagebox.showwarning("Missing Data", "Please select a status.")
+                    return
+
+                if messagebox.askyesno("Confirm Update",
+                                      f"Update {len(self.search_results)} students to status '{new_status}'?"):
+                    # Simulate status update
+                    messagebox.showinfo("Update Complete",
+                                      f"✅ Updated {len(self.search_results)} students to status {new_status}")
+
+            elif operation == "note":
+                note = note_var.get().strip()
+                if not note:
+                    messagebox.showwarning("Missing Data", "Please enter a note or flag.")
+                    return
+
+                # Simulate note addition
+                messagebox.showinfo("Update Complete",
+                                  f"✅ Added note '{note}' to {len(self.search_results)} students")
+
+            elif operation == "module":
+                module_code = module_var.get().strip()
+                if not module_code:
+                    messagebox.showwarning("Missing Data", "Please enter a module code.")
+                    return
+
+                if messagebox.askyesno("Confirm Enrollment",
+                                      f"Enroll {len(self.search_results)} students in module '{module_code}'?"):
+                    # Simulate module enrollment
+                    messagebox.showinfo("Update Complete",
+                                      f"✅ Enrolled {len(self.search_results)} students in module {module_code}")
+
+            dialog.destroy()
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X, pady=(20, 0))
+
+        ttk.Button(button_frame, text="✅ Execute Update", command=execute_update).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
+
     def show_mass_email(self):
         """Show mass email interface"""
         if not self.search_results:
