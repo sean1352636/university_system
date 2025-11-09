@@ -200,6 +200,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+**Module Scheduling GUI - 16 Additional Functions: Search, Conflicts & Export** (2025-11-09)
+- **ENHANCEMENT**: Added advanced search, comprehensive conflict detection, and calendar export capabilities
+- **Impact**: Complete scheduling toolkit with intelligent search, conflict resolution, and iCal integration
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/module_scheduling_gui.py` - Added ~604 lines (5,516 → 6,120 lines)
+
+**NEW FUNCTIONS ADDED (16)**:
+
+**ADVANCED SEARCH AND FILTERING (4 functions):**
+
+1. `advanced_schedule_search(filters=None)` - Multi-criteria advanced search
+   - Dynamic query builder with 8 filter types
+   - Filters: module code, day, time range, session type, instructor, building, room type
+   - Returns sorted results with joins across schedules, rooms, instructors, modules (~60 lines)
+
+2. `find_free_rooms(day, start_time, end_time, min_capacity=0, room_type=None)` - Find available rooms
+   - Real-time room availability checking with capacity and type filtering
+   - Conflict detection via time overlap logic (~40 lines)
+
+3. `find_schedule_gaps(entity_type, entity_id)` - Find free periods
+   - Works for both students and instructors, identifies gaps of 30+ minutes (~40 lines)
+
+4. `_find_daily_gaps(day_schedules)` - Daily gap detection algorithm (~35 lines)
+
+**CONFLICT DETECTION AND RESOLUTION (9 functions):**
+
+5. `detect_all_conflicts()` - Comprehensive conflict detection
+   - Detects room, instructor, and student conflicts, saves to database (~20 lines)
+
+6. `_detect_room_conflicts()` - Room double-booking detection (~30 lines)
+
+7. `_detect_instructor_conflicts()` - Instructor time conflict detection (~30 lines)
+
+8. `_detect_student_conflicts()` - Student enrollment conflict detection (~20 lines)
+
+9. `_save_conflicts_to_db(conflicts)` - Persist conflicts to database (~20 lines)
+
+10. `resolve_conflict(conflict_id, resolution_notes="")` - Mark conflict as resolved (~15 lines)
+
+11. `_get_all_conflicts()` - Retrieve all conflicts from database (~20 lines)
+
+12. `check_student_conflicts(student_id)` - Student-specific conflict check (~75 lines)
+
+13. `_check_student_conflicts(student_id, day_of_week, start_time, end_time, except_module=None)` - Internal conflict validator (~35 lines)
+
+**CALENDAR EXPORT (3 functions):**
+
+14. `export_to_ical(entity_type, entity_id, filename=None)` - Export to iCal format
+    - iCalendar (RFC 5545) compliant for Google Calendar, Outlook, Apple Calendar
+    - Weekly recurrence for 15-week semester (~75 lines)
+
+15. `_get_student_schedule_data(student_id)` - Extract student schedule (~40 lines)
+
+16. `_get_instructor_schedule_data(instructor_id)` - Extract instructor schedule (~35 lines)
+
+**BUSINESS VALUE:**
+- **Search**: Find schedules instantly with complex criteria
+- **Room Finding**: Optimize space utilization
+- **Gap Analysis**: Identify scheduling optimization opportunities
+- **Conflict Detection**: Prevent double-booking
+- **Calendar Export**: Seamless integration with personal calendars
+
+---
+
 **Module Scheduling GUI - 8 Advanced Scheduling Functions Added** (2025-11-09)
 - **ENHANCEMENT**: Added missing advanced scheduling algorithms and utilities from CLI
 - **Impact**: AI-powered scheduling suggestions and conflict resolution now available in GUI

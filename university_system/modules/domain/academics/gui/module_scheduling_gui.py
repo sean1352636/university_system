@@ -4163,6 +4163,610 @@ Developer: Academic Systems Team
                                command=dialog.destroy)
         cancel_btn.pack(side=tk.LEFT, padx=5)
 
+    # ==================== ADVANCED SEARCH AND FILTERING ====================
+
+    def advanced_schedule_search(self, filters=None):
+        """Advanced search with multiple criteria"""
+        if filters is None:
+            filters = {}
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Build dynamic query
+            base_query = '''
+            SELECT ms.id, ms.module_code, m.module_name, ms.day_of_week,
+                   ms.start_time, ms.end_time, r.building, r.room_number,
+                   i.first_name, i.last_name, ms.session_type
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            LEFT JOIN modules m ON ms.module_code = m.module_code
+            WHERE 1=1
+            '''
+
+            params = []
+
+            # Add filters
+            if 'module_code' in filters and filters['module_code']:
+                base_query += " AND ms.module_code LIKE ?"
+                params.append(f"%{filters['module_code']}%")
+
+            if 'day' in filters and filters['day']:
+                base_query += " AND ms.day_of_week = ?"
+                params.append(filters['day'])
+
+            if 'time_from' in filters and filters['time_from']:
+                base_query += " AND ms.start_time >= ?"
+                params.append(filters['time_from'])
+
+            if 'time_to' in filters and filters['time_to']:
+                base_query += " AND ms.end_time <= ?"
+                params.append(filters['time_to'])
+
+            if 'session_type' in filters and filters['session_type']:
+                base_query += " AND ms.session_type = ?"
+                params.append(filters['session_type'])
+
+            if 'instructor' in filters and filters['instructor']:
+                base_query += " AND (i.first_name LIKE ? OR i.last_name LIKE ?)"
+                params.extend([f"%{filters['instructor']}%", f"%{filters['instructor']}%"])
+
+            if 'building' in filters and filters['building']:
+                base_query += " AND r.building LIKE ?"
+                params.append(f"%{filters['building']}%")
+
+            if 'room_type' in filters and filters['room_type']:
+                base_query += " AND r.room_type = ?"
+                params.append(filters['room_type'])
+
+            base_query += " ORDER BY ms.day_of_week, ms.start_time"
+
+            cursor.execute(base_query, params)
+            results = cursor.fetchall()
+
+            return results
+
+    def find_free_rooms(self, day, start_time, end_time, min_capacity=0, room_type=None):
+        """Find available rooms for a specific time slot"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Base query for rooms
+            query = '''
+            SELECT r.id, r.room_number, r.building, r.capacity, r.room_type, r.equipment
+            FROM rooms r
+            WHERE r.is_active = 1 AND r.capacity >= ?
+            '''
+            params = [min_capacity]
+
+            if room_type:
+                query += " AND r.room_type = ?"
+                params.append(room_type)
+
+            # Exclude rooms that are scheduled during this time
+            query += '''
+            AND r.id NOT IN (
+                SELECT ms.room_id FROM module_schedule ms
+                WHERE ms.day_of_week = ? AND (
+                    (ms.start_time < ? AND ms.end_time > ?) OR
+                    (ms.start_time < ? AND ms.end_time > ?) OR
+                    (ms.start_time >= ? AND ms.end_time <= ?)
+                )
+            )
+            '''
+            params.extend([day, end_time, start_time, end_time, start_time, start_time, end_time])
+
+            query += " ORDER BY r.building, r.room_number"
+
+            cursor.execute(query, params)
+            free_rooms = cursor.fetchall()
+
+            return free_rooms
+
+    def find_schedule_gaps(self, entity_type, entity_id):
+        """Find free periods in student or instructor schedules"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if entity_type == 'student':
+                # Get student's enrolled modules
+                cursor.execute('SELECT module_code FROM student_modules WHERE student_id = ?', (entity_id,))
+                modules = [row[0] for row in cursor.fetchall()]
+
+                if not modules:
+                    return "Student not enrolled in any modules"
+
+                # Get schedule for these modules
+                placeholders = ','.join(['?'] * len(modules))
+                query = f'''
+                SELECT day_of_week, start_time, end_time
+                FROM module_schedule
+                WHERE module_code IN ({placeholders})
+                ORDER BY day_of_week, start_time
+                '''
+                cursor.execute(query, modules)
+
+            elif entity_type == 'instructor':
+                query = '''
+                SELECT day_of_week, start_time, end_time
+                FROM module_schedule
+                WHERE instructor_id = ?
+                ORDER BY day_of_week, start_time
+                '''
+                cursor.execute(query, (entity_id,))
+
+            schedules = cursor.fetchall()
+
+            # Find gaps
+            gaps = {}
+            for day in DAYS_OF_WEEK:
+                day_schedules = [s for s in schedules if s[0] == day]
+                gaps[day] = self._find_daily_gaps(day_schedules)
+
+            return gaps
+
+    def _find_daily_gaps(self, day_schedules):
+        """Find gaps in a single day's schedule"""
+        if not day_schedules:
+            return [{'start': '09:00', 'end': '17:00', 'duration': 480}]
+
+        # Sort by start time
+        day_schedules.sort(key=lambda x: x[1])
+
+        gaps = []
+
+        # Gap before first class
+        first_start = day_schedules[0][1]
+        if first_start > '09:00':
+            duration = self._calculate_duration('09:00', first_start)
+            gaps.append({'start': '09:00', 'end': first_start, 'duration': duration})
+
+        # Gaps between classes
+        for i in range(len(day_schedules) - 1):
+            current_end = day_schedules[i][2]
+            next_start = day_schedules[i + 1][1]
+
+            if current_end < next_start:
+                duration = self._calculate_duration(current_end, next_start)
+                if duration >= 30:  # Only count gaps of 30+ minutes
+                    gaps.append({'start': current_end, 'end': next_start, 'duration': duration})
+
+        # Gap after last class
+        last_end = day_schedules[-1][2]
+        if last_end < '17:00':
+            duration = self._calculate_duration(last_end, '17:00')
+            gaps.append({'start': last_end, 'end': '17:00', 'duration': duration})
+
+        return gaps
+
+    # ==================== CONFLICT DETECTION AND RESOLUTION ====================
+
+    def detect_all_conflicts(self):
+        """Detect all types of scheduling conflicts"""
+        conflicts = []
+
+        # Room conflicts
+        room_conflicts = self._detect_room_conflicts()
+        conflicts.extend(room_conflicts)
+
+        # Instructor conflicts
+        instructor_conflicts = self._detect_instructor_conflicts()
+        conflicts.extend(instructor_conflicts)
+
+        # Student conflicts
+        student_conflicts = self._detect_student_conflicts()
+        conflicts.extend(student_conflicts)
+
+        # Save conflicts to database
+        self._save_conflicts_to_db(conflicts)
+
+        return conflicts
+
+    def _detect_room_conflicts(self):
+        """Detect room scheduling conflicts"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT ms1.id, ms1.module_code, ms1.day_of_week, ms1.start_time, ms1.end_time,
+                   ms2.id, ms2.module_code, ms2.day_of_week, ms2.start_time, ms2.end_time,
+                   r.building, r.room_number
+            FROM module_schedule ms1
+            JOIN module_schedule ms2 ON ms1.room_id = ms2.room_id AND ms1.id < ms2.id
+            JOIN rooms r ON ms1.room_id = r.id
+            WHERE ms1.day_of_week = ms2.day_of_week
+            AND ((ms1.start_time < ms2.end_time AND ms1.end_time > ms2.start_time))
+            ''')
+
+            conflicts = []
+            for row in cursor.fetchall():
+                conflicts.append({
+                    'type': 'room_conflict',
+                    'description': f"Room {row[10]}-{row[11]} double-booked on {row[2]} between {row[8]} modules {row[1]} and {row[6]}",
+                    'affected_schedules': [row[0], row[5]],
+                    'severity': 'high'
+                })
+
+            return conflicts
+
+    def _detect_instructor_conflicts(self):
+        """Detect instructor scheduling conflicts"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT ms1.id, ms1.module_code, ms1.day_of_week, ms1.start_time, ms1.end_time,
+                   ms2.id, ms2.module_code, ms2.day_of_week, ms2.start_time, ms2.end_time,
+                   i.first_name, i.last_name
+            FROM module_schedule ms1
+            JOIN module_schedule ms2 ON ms1.instructor_id = ms2.instructor_id AND ms1.id < ms2.id
+            JOIN instructors i ON ms1.instructor_id = i.id
+            WHERE ms1.day_of_week = ms2.day_of_week
+            AND ((ms1.start_time < ms2.end_time AND ms1.end_time > ms2.start_time))
+            ''')
+
+            conflicts = []
+            for row in cursor.fetchall():
+                conflicts.append({
+                    'type': 'instructor_conflict',
+                    'description': f"Instructor {row[10]} {row[11]} double-booked on {row[2]} between modules {row[1]} and {row[6]}",
+                    'affected_schedules': [row[0], row[5]],
+                    'severity': 'high'
+                })
+
+            return conflicts
+
+    def _detect_student_conflicts(self):
+        """Detect student scheduling conflicts"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get all students and their enrolled modules
+            cursor.execute('SELECT DISTINCT student_id FROM student_modules')
+            students = [row[0] for row in cursor.fetchall()]
+
+            conflicts = []
+            for student_id in students:
+                student_conflicts = self.check_student_conflicts(student_id)
+                for conflict in student_conflicts:
+                    conflicts.append({
+                        'type': 'student_conflict',
+                        'description': f"Student {student_id} has overlapping classes: {conflict['module1']['code']} and {conflict['module2']['code']} on {conflict['module1']['day']}",
+                        'affected_schedules': [],  # Would need schedule IDs
+                        'severity': 'medium',
+                        'student_id': student_id
+                    })
+
+            return conflicts
+
+    def _save_conflicts_to_db(self, conflicts):
+        """Save detected conflicts to database"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                # Clear existing unresolved conflicts
+                cursor.execute('DELETE FROM schedule_conflicts WHERE resolved = 0')
+
+                for conflict in conflicts:
+                    import json
+                    cursor.execute('''
+                    INSERT INTO schedule_conflicts
+                    (conflict_type, description, affected_schedules, resolved)
+                    VALUES (?, ?, ?, 0)
+                    ''', (conflict['type'], conflict['description'],
+                          json.dumps(conflict['affected_schedules'])))
+        except Exception as e:
+            print(f"Error saving conflicts: {e}")
+
+    def resolve_conflict(self, conflict_id, resolution_notes=""):
+        """Mark a conflict as resolved"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                UPDATE schedule_conflicts
+                SET resolved = 1, resolution_notes = ?, resolved_date = CURRENT_TIMESTAMP
+                WHERE id = ?
+                ''', (resolution_notes, conflict_id))
+
+                messagebox.showinfo("Success", f"Conflict {conflict_id} marked as resolved.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}")
+
+    def _get_all_conflicts(self):
+        """Get all conflicts from database"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT id, conflict_type, description, resolved, detected_date, resolution_notes
+            FROM schedule_conflicts
+            ORDER BY detected_date DESC
+            ''')
+
+            conflicts = []
+            for row in cursor.fetchall():
+                conflicts.append({
+                    'id': row[0],
+                    'type': row[1],
+                    'description': row[2],
+                    'resolved': bool(row[3]),
+                    'detected_date': row[4],
+                    'resolution_notes': row[5]
+                })
+
+            return conflicts
+
+    def check_student_conflicts(self, student_id):
+        """Check for scheduling conflicts in a student's timetable"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Check if student exists
+            cursor.execute('SELECT * FROM students WHERE student_id = ?', (student_id,))
+            student = cursor.fetchone()
+
+            if not student:
+                return []
+
+            # Get modules the student is enrolled in
+            cursor.execute('''
+            SELECT module_code FROM student_modules WHERE student_id = ?
+            ''', (student_id,))
+
+            enrolled_modules = [row[0] for row in cursor.fetchall()]
+
+            if not enrolled_modules:
+                return []
+
+            # Get schedule for the enrolled modules
+            placeholders = ','.join(['?'] * len(enrolled_modules))
+            query = f'''
+            SELECT ms.id, ms.module_code, m.module_name, ms.day_of_week, ms.start_time, ms.end_time,
+                   r.building, r.room_number
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            LEFT JOIN modules m ON ms.module_code = m.module_code
+            WHERE ms.module_code IN ({placeholders})
+            ORDER BY ms.day_of_week, ms.start_time
+            '''
+
+            cursor.execute(query, enrolled_modules)
+            schedules = cursor.fetchall()
+
+            # Check for conflicts
+            conflicts = []
+
+            for i, schedule1 in enumerate(schedules):
+                id1, code1, name1, day1, start1, end1, building1, room1 = schedule1
+                room1_str = f"{building1}-{room1}" if building1 and room1 else "TBA"
+
+                for j, schedule2 in enumerate(schedules):
+                    if i >= j:  # Skip comparing the same schedule or already compared pairs
+                        continue
+
+                    id2, code2, name2, day2, start2, end2, building2, room2 = schedule2
+                    room2_str = f"{building2}-{room2}" if building2 and room2 else "TBA"
+
+                    # Check if days match and times overlap
+                    if day1 == day2 and (
+                        (start1 <= start2 < end1) or
+                        (start1 < end2 <= end1) or
+                        (start2 <= start1 < end2) or
+                        (start2 < end1 <= end2)
+                    ):
+                        conflicts.append({
+                            'module1': {
+                                'code': code1,
+                                'name': name1,
+                                'day': day1,
+                                'time': f"{start1}-{end1}",
+                                'room': room1_str
+                            },
+                            'module2': {
+                                'code': code2,
+                                'name': name2,
+                                'day': day2,
+                                'time': f"{start2}-{end2}",
+                                'room': room2_str
+                            }
+                        })
+
+            return conflicts
+
+    def _check_student_conflicts(self, student_id, day_of_week, start_time, end_time, except_module=None):
+        """Internal student conflict checker"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get modules the student is enrolled in
+            cursor.execute('''
+            SELECT module_code FROM student_modules WHERE student_id = ?
+            ''', (student_id,))
+
+            enrolled_modules = [row[0] for row in cursor.fetchall()]
+
+            if not enrolled_modules:
+                return []
+
+            # Build query to check for conflicts
+            query = '''
+            SELECT ms.id, ms.module_code, ms.start_time, ms.end_time
+            FROM module_schedule ms
+            WHERE ms.module_code IN ({}) AND ms.day_of_week = ? AND
+            ((ms.start_time < ? AND ms.end_time > ?) OR
+            (ms.start_time < ? AND ms.end_time > ?) OR
+            (ms.start_time >= ? AND ms.end_time <= ?))
+            '''.format(','.join(['?'] * len(enrolled_modules)))
+
+            params = enrolled_modules + [day_of_week, end_time, start_time,
+                                        end_time, start_time, start_time, end_time]
+
+            # Exclude a specific module if needed (for updates)
+            if except_module:
+                query += " AND ms.module_code != ?"
+                params.append(except_module)
+
+            cursor.execute(query, params)
+            conflicts = cursor.fetchall()
+
+            return conflicts
+
+    # ==================== CALENDAR EXPORT ====================
+
+    def export_to_ical(self, entity_type, entity_id, filename=None):
+        """Export schedule to iCal format"""
+        try:
+            from icalendar import Calendar, Event
+        except ImportError:
+            messagebox.showerror("Error", "icalendar library not installed. Run: pip install icalendar")
+            return None
+
+        cal = Calendar()
+        cal.add('prodid', '-//University Schedule//EN')
+        cal.add('version', '2.0')
+
+        # Get schedule data
+        if entity_type == 'student':
+            schedules = self._get_student_schedule_data(entity_id)
+            cal.add('x-wr-calname', f'Student {entity_id} Schedule')
+        elif entity_type == 'instructor':
+            schedules = self._get_instructor_schedule_data(entity_id)
+            cal.add('x-wr-calname', f'Instructor {entity_id} Schedule')
+        else:
+            messagebox.showerror("Error", "Invalid entity type")
+            return None
+
+        # Add events
+        for schedule in schedules:
+            event = Event()
+            event.add('summary', f"{schedule['module_code']} - {schedule['session_type']}")
+            event.add('description', f"Module: {schedule['module_name']}\nRoom: {schedule['room']}\nInstructor: {schedule['instructor']}")
+
+            # Calculate event times (recurring weekly)
+            start_time = datetime.strptime(schedule['start_time'], "%H:%M").time()
+            end_time = datetime.strptime(schedule['end_time'], "%H:%M").time()
+
+            # Get day index (Monday = 0)
+            day_index = DAYS_OF_WEEK.index(schedule['day'])
+
+            # Find next occurrence of this day
+            today = datetime.now().date()
+            days_ahead = day_index - today.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+
+            event_date = today + timedelta(days=days_ahead)
+            event_start = datetime.combine(event_date, start_time)
+            event_end = datetime.combine(event_date, end_time)
+
+            event.add('dtstart', event_start)
+            event.add('dtend', event_end)
+            event.add('location', schedule['room'])
+
+            # Add recurrence rule (weekly for the semester)
+            event.add('rrule', {'freq': 'weekly', 'count': 15})  # 15 weeks typical semester
+
+            cal.add_component(event)
+
+        # Save to file
+        if not filename:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".ics",
+                filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
+                initialfile=f"{entity_type}_{entity_id}_schedule_{timestamp}.ics"
+            )
+
+        if filename:
+            with open(filename, 'wb') as f:
+                f.write(cal.to_ical())
+
+            messagebox.showinfo("Success", f"iCal file exported: {filename}")
+            return filename
+
+        return None
+
+    def _get_student_schedule_data(self, student_id):
+        """Get schedule data for a student"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT module_code FROM student_modules WHERE student_id = ?', (student_id,))
+            modules = [row[0] for row in cursor.fetchall()]
+
+            if not modules:
+                return []
+
+            placeholders = ','.join(['?'] * len(modules))
+            query = f'''
+            SELECT ms.module_code, m.module_name, ms.day_of_week, ms.start_time, ms.end_time,
+                   r.building, r.room_number, i.first_name, i.last_name, ms.session_type
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            LEFT JOIN modules m ON ms.module_code = m.module_code
+            WHERE ms.module_code IN ({placeholders})
+            ORDER BY ms.day_of_week, ms.start_time
+            '''
+
+            cursor.execute(query, modules)
+            schedules = cursor.fetchall()
+
+            schedule_data = []
+            for schedule in schedules:
+                module_code, module_name, day, start, end, building, room, first_name, last_name, session_type = schedule
+                schedule_data.append({
+                    'module_code': module_code,
+                    'module_name': module_name or "Unknown",
+                    'day': day,
+                    'start_time': start,
+                    'end_time': end,
+                    'room': f"{building}-{room}" if building and room else "TBA",
+                    'instructor': f"{first_name} {last_name}" if first_name and last_name else "TBA",
+                    'session_type': session_type
+                })
+
+            return schedule_data
+
+    def _get_instructor_schedule_data(self, instructor_id):
+        """Get schedule data for an instructor"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = '''
+            SELECT ms.module_code, m.module_name, ms.day_of_week, ms.start_time, ms.end_time,
+                   r.building, r.room_number, i.first_name, i.last_name, ms.session_type
+            FROM module_schedule ms
+            LEFT JOIN rooms r ON ms.room_id = r.id
+            LEFT JOIN instructors i ON ms.instructor_id = i.id
+            LEFT JOIN modules m ON ms.module_code = m.module_code
+            WHERE ms.instructor_id = ?
+            ORDER BY ms.day_of_week, ms.start_time
+            '''
+
+            cursor.execute(query, (instructor_id,))
+            schedules = cursor.fetchall()
+
+            schedule_data = []
+            for schedule in schedules:
+                module_code, module_name, day, start, end, building, room, first_name, last_name, session_type = schedule
+                schedule_data.append({
+                    'module_code': module_code,
+                    'module_name': module_name or "Unknown",
+                    'day': day,
+                    'start_time': start,
+                    'end_time': end,
+                    'room': f"{building}-{room}" if building and room else "TBA",
+                    'instructor': f"{first_name} {last_name}" if first_name and last_name else "TBA",
+                    'session_type': session_type
+                })
+
+            return schedule_data
+
 
 # Dialog classes for adding/editing data
 class AddScheduleDialog:
