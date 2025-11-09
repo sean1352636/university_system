@@ -117,6 +117,41 @@ Student pays library fine → Library system records to fine_payments table
                     Finance reports now include library fine revenue
 ```
 
+**ENHANCED FINANCE REPORTING - Revenue by Source**:
+- NEW MODULE: `revenue_by_source_report.py` (~430 lines)
+- Revenue breakdown by transaction source (Library, Housing, Shop, Restaurant, Alumni)
+- Monthly trend analysis per source
+- Period comparison reports
+- CSV export functionality
+- Integrated into main finance reports menu (Options 29-30)
+
+**NEW REPORT FUNCTIONS**:
+1. `get_revenue_by_source()` - Query revenue data by source with date filters
+2. `print_revenue_by_source_report()` - Formatted console report
+3. `get_source_revenue_trend()` - Monthly trends for specific source
+4. `compare_source_revenue_periods()` - Compare two time periods
+5. `export_revenue_by_source_csv()` - Export to CSV
+6. `revenue_by_source_menu()` - Interactive CLI menu
+
+**REPORT FEATURES**:
+- Shows transaction count, total revenue, averages per source
+- Percentage breakdown of total revenue
+- Min/max transaction amounts
+- Date range filtering
+- Trend analysis (up to 36 months)
+- Period-over-period comparison with % change
+
+**EXAMPLE OUTPUT**:
+```
+Source                    Count   Total Revenue          Avg    % of Total
+--------------------------------------------------------------------------------
+Housing                     450  £360,000.00   £800.00       75.5%
+Restaurant                  823   £45,678.90    £55.50        9.6%
+Shop                        234   £32,450.00   £138.67        6.8%
+Library                     156    £3,250.00    £20.83        0.7%
+Alumni                       25   £35,000.00  £1,400.00       7.4%
+```
+
 **FUTURE ENHANCEMENTS**:
 - Trip management payment integration
 - Parent portal fee payment integration

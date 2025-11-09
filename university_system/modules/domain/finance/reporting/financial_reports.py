@@ -30,6 +30,9 @@ from sklearn.metrics import classification_report, accuracy_score
 from threading import Timer
 import schedule
 import time
+from university_system.modules.domain.finance.reporting.revenue_by_source_report import (
+    print_revenue_by_source_report, revenue_by_source_menu
+)
 # NOTE: Import commented out - module does not exist
 # from university_system.modules.domain.finance.finance import auth, get_student_name
 
@@ -2128,14 +2131,18 @@ def display_enhanced_finance_menu():
         print("27. System Performance Optimization")
         print("28. Data Archive Management")
         
+        print("\n💰 REVENUE ANALYTICS")
+        print("29. Revenue by Source Report (NEW)")
+        print("30. Revenue Source Trends & Comparisons")
+
         print("\n📋 LEGACY FEATURES")
-        print("29. Original Financial Forecasting")
-        print("30. Original Budget Variance Report")
-        print("31. Original Financial Dashboard")
-        
-        print("\n32. Return to Main Finance Menu")
-        
-        choice = input("\nEnter your choice (1-32): ").strip()
+        print("31. Original Financial Forecasting")
+        print("32. Original Budget Variance Report")
+        print("33. Original Financial Dashboard")
+
+        print("\n34. Return to Main Finance Menu")
+
+        choice = input("\nEnter your choice (1-34): ").strip()
         
         try:
             if choice == '1':
@@ -2961,18 +2968,27 @@ def display_enhanced_finance_menu():
                     print(f"Error in archive management: {e}")
             
             elif choice == '29':
+                # Revenue by source report (NEW)
+                print_revenue_by_source_report()
+                input("\nPress Enter to continue...")
+
+            elif choice == '30':
+                # Revenue source trends & comparisons (NEW)
+                revenue_by_source_menu()
+
+            elif choice == '31':
                 # Original financial forecasting
                 generate_financial_forecasting()
-            
-            elif choice == '30':
+
+            elif choice == '32':
                 # Original budget variance
                 generate_budget_variance_report()
-            
-            elif choice == '31':
+
+            elif choice == '33':
                 # Original dashboard
                 financial_dashboard()
-            
-            elif choice == '32':
+
+            elif choice == '34':
                 return
             
             else:
