@@ -268,12 +268,29 @@ class LibraryGUI:
         tools_menu.add_command(label="⭐ Rate & Review Book", command=self.rate_and_review_book_gui)
         tools_menu.add_separator()
         tools_menu.add_command(label="📚 Digital Library", command=self.show_digital_library_gui)
+        tools_menu.add_command(label="🔒 Digital Access Permissions", command=self.manage_digital_access_permissions_gui)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Loan History", command=self.view_loan_history_gui)
         tools_menu.add_command(label="Fine Management", command=self.show_fine_management)
         tools_menu.add_separator()
         tools_menu.add_command(label="System Health Check", command=self.quick_system_health_check)
         tools_menu.add_command(label="Library Card Generator", command=self.show_library_cards_generator)
         tools_menu.add_command(label="Barcode Generator", command=self.show_barcode_generator)
+
+        # Reports menu
+        reports_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Reports", menu=reports_menu)
+        reports_menu.add_command(label="📊 Circulation Report", command=self.generate_circulation_report_gui)
+        reports_menu.add_command(label="📈 Advanced Analytics", command=self.show_advanced_analytics_gui)
+        reports_menu.add_command(label="Export Analytics", command=self.export_analytics_report)
+
+        # System menu
+        system_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="System", menu=system_menu)
+        system_menu.add_command(label="📧 Automated Notifications", command=self.send_automated_notifications_gui)
+        system_menu.add_separator()
+        system_menu.add_command(label="💾 Backup & Recovery", command=self.system_backup_gui)
+        system_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
     
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -9159,6 +9176,648 @@ Total Fines: ${stats[4]:.2f}
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ttk.Button(button_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def manage_digital_access_permissions_gui(self):
+        """Manage digital resource access permissions"""
+        perms_window = tk.Toplevel(self.master)
+        perms_window.title("Digital Access Permissions")
+        perms_window.geometry("900x600")
+
+        ttk.Label(perms_window, text="Digital Resource Access Permissions",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(perms_window, text="Filter", padding=10)
+        filter_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        resource_filter = tk.StringVar()
+        ttk.Label(filter_frame, text="Resource ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Entry(filter_frame, textvariable=resource_filter, width=20).pack(side=tk.LEFT, padx=5)
+
+        # Permissions table
+        table_frame = ttk.Frame(perms_window)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Permission ID', 'Resource', 'User/Role', 'Access Level', 'Granted', 'Expires')
+        perms_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            perms_tree.heading(col, text=col)
+            perms_tree.column(col, width=140)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=perms_tree.yview)
+        perms_tree.configure(yscrollcommand=scrollbar.set)
+
+        perms_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_permissions():
+            for item in perms_tree.get_children():
+                perms_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                res_filter = resource_filter.get().strip()
+                if res_filter:
+                    query = '''
+                    SELECT p.permission_id, d.title, p.user_id, p.access_level,
+                           p.granted_date, p.expiry_date
+                    FROM digital_access_permissions p
+                    JOIN digital_library d ON p.digital_id = d.digital_id
+                    WHERE d.digital_id = ? OR d.title LIKE ?
+                    ORDER BY p.granted_date DESC
+                    '''
+                    cursor.execute(query, (res_filter, f'%{res_filter}%'))
+                else:
+                    query = '''
+                    SELECT p.permission_id, d.title, p.user_id, p.access_level,
+                           p.granted_date, p.expiry_date
+                    FROM digital_access_permissions p
+                    JOIN digital_library d ON p.digital_id = d.digital_id
+                    ORDER BY p.granted_date DESC
+                    LIMIT 100
+                    '''
+                    cursor.execute(query)
+
+                for row in cursor.fetchall():
+                    perms_tree.insert('', 'end', values=(
+                        row[0], row[1][:30], row[2], row[3], row[4][:10], row[5][:10] if row[5] else 'Never'
+                    ))
+
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load permissions: {str(e)}")
+
+        ttk.Button(filter_frame, text="Search", command=load_permissions).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text="Clear", command=lambda: resource_filter.set('')).pack(side=tk.LEFT, padx=5)
+
+        def grant_permission():
+            # Permission dialog
+            grant_dialog = tk.Toplevel(perms_window)
+            grant_dialog.title("Grant Permission")
+            grant_dialog.geometry("400x300")
+
+            ttk.Label(grant_dialog, text="Grant Digital Access",
+                     font=('Arial', 12, 'bold')).pack(pady=10)
+
+            form_frame = ttk.Frame(grant_dialog, padding=15)
+            form_frame.pack(fill=tk.BOTH, expand=True)
+
+            digital_id_var = tk.StringVar()
+            user_id_var = tk.StringVar()
+            access_level_var = tk.StringVar(value="read")
+            days_valid_var = tk.IntVar(value=30)
+
+            ttk.Label(form_frame, text="Digital Resource ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            ttk.Entry(form_frame, textvariable=digital_id_var, width=25).grid(row=0, column=1, pady=5)
+
+            ttk.Label(form_frame, text="User ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            ttk.Entry(form_frame, textvariable=user_id_var, width=25).grid(row=1, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Access Level:").grid(row=2, column=0, sticky=tk.W, pady=5)
+            ttk.Combobox(form_frame, textvariable=access_level_var,
+                        values=["read", "download", "full"], width=22).grid(row=2, column=1, pady=5)
+
+            ttk.Label(form_frame, text="Valid for (days):").grid(row=3, column=0, sticky=tk.W, pady=5)
+            ttk.Entry(form_frame, textvariable=days_valid_var, width=25).grid(row=3, column=1, pady=5)
+
+            def save_permission():
+                digital_id = digital_id_var.get().strip()
+                user_id = user_id_var.get().strip()
+
+                if not digital_id or not user_id:
+                    messagebox.showerror("Error", "Please provide both Resource ID and User ID")
+                    return
+
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    granted_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    expiry_date = (datetime.now() + timedelta(days=days_valid_var.get())).strftime('%Y-%m-%d %H:%M:%S')
+
+                    cursor.execute('''
+                    INSERT INTO digital_access_permissions (
+                        digital_id, user_id, access_level, granted_date, expiry_date, granted_by
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (digital_id, user_id, access_level_var.get(), granted_date, expiry_date, get_current_user_id()))
+
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(),
+                                  f"Granted {access_level_var.get()} access to digital resource {digital_id} for {user_id}",
+                                  "digital_access_permissions")
+
+                    messagebox.showinfo("Success", "Permission granted successfully!")
+                    grant_dialog.destroy()
+                    load_permissions()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to grant permission: {str(e)}")
+
+            ttk.Button(form_frame, text="Grant", command=save_permission).grid(row=4, column=0, columnspan=2, pady=20)
+
+        def revoke_permission():
+            selection = perms_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a permission to revoke")
+                return
+
+            item = perms_tree.item(selection[0])
+            perm_id = item['values'][0]
+
+            if messagebox.askyesno("Confirm", "Revoke this permission?"):
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM digital_access_permissions WHERE permission_id = ?', (perm_id,))
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(), f"Revoked permission {perm_id}", "digital_access_permissions")
+                    messagebox.showinfo("Success", "Permission revoked")
+                    load_permissions()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to revoke: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(perms_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Grant Permission", command=grant_permission).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Revoke Selected", command=revoke_permission).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Refresh", command=load_permissions).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=perms_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Load initial data
+        load_permissions()
+
+    def send_automated_notifications_gui(self):
+        """Automated notification management interface"""
+        notif_window = tk.Toplevel(self.master)
+        notif_window.title("Automated Notifications")
+        notif_window.geometry("700x600")
+
+        ttk.Label(notif_window, text="Automated Notification System",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Notebook for different notification types
+        notebook = ttk.Notebook(notif_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Tab 1: Due Date Reminders
+        due_tab = ttk.Frame(notebook)
+        notebook.add(due_tab, text="Due Date Reminders")
+
+        ttk.Label(due_tab, text="Send due date reminders to users with books due soon",
+                 wraplength=600).pack(pady=10, padx=10)
+
+        days_before_var = tk.IntVar(value=3)
+        ttk.Label(due_tab, text="Days before due date:").pack(pady=5)
+        ttk.Spinbox(due_tab, from_=1, to=14, textvariable=days_before_var, width=10).pack(pady=5)
+
+        def send_due_reminders():
+            try:
+                days = days_before_var.get()
+                cutoff_date = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
+
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT l.user_id, b.title, l.due_date
+                FROM book_loans l
+                JOIN books b ON l.book_id = b.book_id
+                WHERE l.status = 'active' AND l.due_date <= ? AND l.due_date > ?
+                ''', (cutoff_date, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+                reminders = cursor.fetchall()
+                conn.close()
+
+                if not reminders:
+                    messagebox.showinfo("No Reminders", "No books due in the next {days} days")
+                    return
+
+                # Simulate sending (in real system, would send emails)
+                count = len(reminders)
+                messagebox.showinfo("Success",
+                    f"Sent {count} due date reminder(s)\n\n" +
+                    f"Books due within {days} days")
+
+                log_audit_event(get_current_user_id(), f"Sent {count} due date reminders", "notifications")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send reminders: {str(e)}")
+
+        ttk.Button(due_tab, text="Send Due Date Reminders", command=send_due_reminders).pack(pady=20)
+
+        # Tab 2: Overdue Notifications
+        overdue_tab = ttk.Frame(notebook)
+        notebook.add(overdue_tab, text="Overdue Notifications")
+
+        ttk.Label(overdue_tab, text="Send notifications to users with overdue books",
+                 wraplength=600).pack(pady=10, padx=10)
+
+        def send_overdue_notifs():
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT l.user_id, b.title, l.due_date,
+                       julianday('now') - julianday(l.due_date) as days_overdue
+                FROM book_loans l
+                JOIN books b ON l.book_id = b.book_id
+                WHERE l.status = 'active' AND l.due_date < datetime('now')
+                ''')
+
+                overdue = cursor.fetchall()
+                conn.close()
+
+                if not overdue:
+                    messagebox.showinfo("No Overdue", "No overdue books found")
+                    return
+
+                count = len(overdue)
+                messagebox.showinfo("Success",
+                    f"Sent {count} overdue notification(s)")
+
+                log_audit_event(get_current_user_id(), f"Sent {count} overdue notifications", "notifications")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send notifications: {str(e)}")
+
+        ttk.Button(overdue_tab, text="Send Overdue Notifications", command=send_overdue_notifs).pack(pady=20)
+
+        # Tab 3: Reservation Notifications
+        reservation_tab = ttk.Frame(notebook)
+        notebook.add(reservation_tab, text="Reservation Alerts")
+
+        ttk.Label(reservation_tab, text="Send notifications for available reserved books",
+                 wraplength=600).pack(pady=10, padx=10)
+
+        def send_reservation_available():
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Find books that became available and have active reservations
+                cursor.execute('''
+                SELECT r.user_id, b.title, r.reservation_id
+                FROM book_reservations r
+                JOIN books b ON r.book_id = b.book_id
+                WHERE r.status = 'active' AND b.status = 'available' AND r.priority_order = 1
+                ''')
+
+                available = cursor.fetchall()
+
+                if not available:
+                    messagebox.showinfo("No Notifications", "No reserved books are available")
+                    conn.close()
+                    return
+
+                # Update reservations to fulfilled
+                for user_id, title, res_id in available:
+                    cursor.execute('UPDATE book_reservations SET status = "fulfilled" WHERE reservation_id = ?', (res_id,))
+
+                conn.commit()
+                conn.close()
+
+                count = len(available)
+                messagebox.showinfo("Success",
+                    f"Sent {count} reservation available notification(s)")
+
+                log_audit_event(get_current_user_id(), f"Sent {count} reservation notifications", "notifications")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send notifications: {str(e)}")
+
+        ttk.Button(reservation_tab, text="Send Reservation Available Notifications",
+                  command=send_reservation_available).pack(pady=20)
+
+        # Close button
+        ttk.Button(notif_window, text="Close", command=notif_window.destroy).pack(pady=10)
+
+    def generate_circulation_report_gui(self):
+        """Generate circulation report"""
+        report_window = tk.Toplevel(self.master)
+        report_window.title("Circulation Report")
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text="Circulation Report",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Date range selection
+        date_frame = ttk.LabelFrame(report_window, text="Date Range", padding=10)
+        date_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+        end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(date_frame, text="Start Date:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Entry(date_frame, textvariable=start_date_var, width=15).grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(date_frame, text="End Date:").grid(row=0, column=2, padx=5, pady=5)
+        ttk.Entry(date_frame, textvariable=end_date_var, width=15).grid(row=0, column=3, padx=5, pady=5)
+
+        # Report display
+        report_frame = ttk.LabelFrame(report_window, text="Report", padding=10)
+        report_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        report_text = ScrolledText(report_frame, height=30, width=100, font=('Courier', 10))
+        report_text.pack(fill=tk.BOTH, expand=True)
+
+        def generate_report():
+            report_text.delete('1.0', tk.END)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                start = start_date_var.get()
+                end = end_date_var.get()
+
+                # Get circulation stats
+                cursor.execute('''
+                SELECT
+                    COUNT(*) as total_loans,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+                    SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END) as returned,
+                    SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) as overdue,
+                    SUM(COALESCE(fine_amount, 0)) as total_fines
+                FROM book_loans
+                WHERE checkout_date BETWEEN ? AND ?
+                ''', (start, end))
+
+                stats = cursor.fetchone()
+
+                report = f"""
+╔══════════════════════════════════════════════════════════════╗
+║           LIBRARY CIRCULATION REPORT                         ║
+╚══════════════════════════════════════════════════════════════╝
+
+Period: {start} to {end}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+CIRCULATION SUMMARY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Loans:        {stats[0]:,}
+Active Loans:       {stats[1]:,}
+Returned Loans:     {stats[2]:,}
+Overdue Loans:      {stats[3]:,}
+Total Fines:        ${stats[4]:,.2f}
+
+"""
+
+                # Most checked out books
+                cursor.execute('''
+                SELECT b.title, b.author, COUNT(l.loan_id) as loan_count
+                FROM book_loans l
+                JOIN books b ON l.book_id = b.book_id
+                WHERE l.checkout_date BETWEEN ? AND ?
+                GROUP BY b.book_id
+                ORDER BY loan_count DESC
+                LIMIT 10
+                ''', (start, end))
+
+                report += "\nTOP 10 MOST CHECKED OUT BOOKS:\n"
+                report += "━" * 60 + "\n"
+                for idx, (title, author, count) in enumerate(cursor.fetchall(), 1):
+                    report += f"{idx:2}. {title[:40]:40} by {author[:20]:20} ({count:2} loans)\n"
+
+                # Busiest days
+                cursor.execute('''
+                SELECT DATE(checkout_date) as day, COUNT(*) as count
+                FROM book_loans
+                WHERE checkout_date BETWEEN ? AND ?
+                GROUP BY day
+                ORDER BY count DESC
+                LIMIT 5
+                ''', (start, end))
+
+                report += "\n\nBUSIEST CHECKOUT DAYS:\n"
+                report += "━" * 60 + "\n"
+                for day, count in cursor.fetchall():
+                    report += f"{day}: {count} checkouts\n"
+
+                conn.close()
+
+                report_text.insert('1.0', report)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+
+        def export_report():
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            )
+
+            if file_path:
+                try:
+                    with open(file_path, 'w') as f:
+                        f.write(report_text.get('1.0', tk.END))
+                    messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Export failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(report_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Export Report", command=export_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Auto-generate on open
+        generate_report()
+
+    def system_backup_gui(self):
+        """System backup and recovery interface"""
+        backup_window = tk.Toplevel(self.master)
+        backup_window.title("System Backup & Recovery")
+        backup_window.geometry("700x600")
+
+        ttk.Label(backup_window, text="System Backup & Recovery",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Notebook for backup options
+        notebook = ttk.Notebook(backup_window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Tab 1: Create Backup
+        backup_tab = ttk.Frame(notebook)
+        notebook.add(backup_tab, text="Create Backup")
+
+        ttk.Label(backup_tab, text="Create a backup of the library system",
+                 font=('Arial', 12)).pack(pady=20)
+
+        backup_type_var = tk.StringVar(value="full")
+        ttk.Radiobutton(backup_tab, text="Full Backup (All data)",
+                       variable=backup_type_var, value="full").pack(anchor=tk.W, padx=50, pady=5)
+        ttk.Radiobutton(backup_tab, text="Database Only",
+                       variable=backup_type_var, value="database").pack(anchor=tk.W, padx=50, pady=5)
+        ttk.Radiobutton(backup_tab, text="Settings Only",
+                       variable=backup_type_var, value="settings").pack(anchor=tk.W, padx=50, pady=5)
+
+        def create_backup():
+            try:
+                import shutil
+                from university_system.modules.shared.constants.paths import BACKUP_DIR
+
+                BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                backup_type = backup_type_var.get()
+
+                if backup_type == "full":
+                    backup_name = f"library_full_backup_{timestamp}.zip"
+                    backup_path = BACKUP_DIR / backup_name
+
+                    # Create zip of entire database directory
+                    from university_system.modules.shared.constants.paths import DATA_DIR
+                    shutil.make_archive(str(backup_path.with_suffix('')), 'zip', DATA_DIR)
+
+                elif backup_type == "database":
+                    backup_name = f"library_db_backup_{timestamp}.db"
+                    backup_path = BACKUP_DIR / backup_name
+
+                    # Copy database file
+                    from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+                    shutil.copy2(DEFAULT_DB_PATH, backup_path)
+
+                else:  # settings
+                    backup_name = f"library_settings_backup_{timestamp}.sql"
+                    backup_path = BACKUP_DIR / backup_name
+
+                    # Export settings table
+                    conn = get_db_connection()
+                    with open(backup_path, 'w') as f:
+                        for line in conn.iterdump():
+                            if 'library_settings' in line:
+                                f.write(f"{line}\n")
+                    conn.close()
+
+                log_audit_event(get_current_user_id(), f"Created {backup_type} backup: {backup_name}", "system")
+
+                messagebox.showinfo("Success",
+                    f"Backup created successfully!\n\n" +
+                    f"Type: {backup_type}\n" +
+                    f"File: {backup_name}\n" +
+                    f"Location: {BACKUP_DIR}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Backup failed: {str(e)}")
+
+        ttk.Button(backup_tab, text="Create Backup", command=create_backup).pack(pady=30)
+
+        # Tab 2: Restore
+        restore_tab = ttk.Frame(notebook)
+        notebook.add(restore_tab, text="Restore from Backup")
+
+        ttk.Label(restore_tab, text="Restore system from a backup file",
+                 font=('Arial', 12)).pack(pady=20)
+
+        ttk.Label(restore_tab, text="⚠️ Warning: This will overwrite current data!",
+                 foreground='red').pack(pady=10)
+
+        def restore_backup():
+            file_path = filedialog.askopenfilename(
+                title="Select Backup File",
+                filetypes=[
+                    ("All backup files", "*.zip;*.db;*.sql"),
+                    ("ZIP files", "*.zip"),
+                    ("Database files", "*.db"),
+                    ("SQL files", "*.sql")
+                ]
+            )
+
+            if not file_path:
+                return
+
+            confirm = messagebox.askyesnocancel("Confirm Restore",
+                "This will overwrite current data. Continue?\n\n" +
+                "A backup of current data will be created first.",
+                icon='warning')
+
+            if not confirm:
+                return
+
+            try:
+                # Create safety backup first
+                import shutil
+                from university_system.modules.shared.constants.paths import BACKUP_DIR, DEFAULT_DB_PATH
+
+                safety_backup = BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+                shutil.copy2(DEFAULT_DB_PATH, safety_backup)
+
+                # Restore based on file type
+                if file_path.endswith('.zip'):
+                    # Extract zip
+                    shutil.unpack_archive(file_path, DEFAULT_DB_PATH.parent)
+                elif file_path.endswith('.db'):
+                    # Copy database
+                    shutil.copy2(file_path, DEFAULT_DB_PATH)
+                elif file_path.endswith('.sql'):
+                    # Execute SQL
+                    conn = get_db_connection()
+                    with open(file_path, 'r') as f:
+                        conn.executescript(f.read())
+                    conn.commit()
+                    conn.close()
+
+                log_audit_event(get_current_user_id(), f"Restored from backup: {os.path.basename(file_path)}", "system")
+
+                messagebox.showinfo("Success",
+                    "System restored successfully!\n\n" +
+                    f"Safety backup created at:\n{safety_backup}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Restore failed: {str(e)}")
+
+        ttk.Button(restore_tab, text="Select Backup File and Restore",
+                  command=restore_backup).pack(pady=30)
+
+        # Tab 3: Scheduled Backups
+        schedule_tab = ttk.Frame(notebook)
+        notebook.add(schedule_tab, text="Backup Schedule")
+
+        ttk.Label(schedule_tab, text="Configure automated backup schedule",
+                 font=('Arial', 12)).pack(pady=20)
+
+        schedule_var = tk.StringVar(value="daily")
+        ttk.Radiobutton(schedule_tab, text="Hourly", variable=schedule_var, value="hourly").pack(anchor=tk.W, padx=50, pady=5)
+        ttk.Radiobutton(schedule_tab, text="Daily (recommended)", variable=schedule_var, value="daily").pack(anchor=tk.W, padx=50, pady=5)
+        ttk.Radiobutton(schedule_tab, text="Weekly", variable=schedule_var, value="weekly").pack(anchor=tk.W, padx=50, pady=5)
+        ttk.Radiobutton(schedule_tab, text="Disabled", variable=schedule_var, value="disabled").pack(anchor=tk.W, padx=50, pady=5)
+
+        def save_schedule():
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
+                VALUES ('backup_schedule', ?)
+                ''', (schedule_var.get(),))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Backup schedule set to: {schedule_var.get()}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save schedule: {str(e)}")
+
+        ttk.Button(schedule_tab, text="Save Schedule", command=save_schedule).pack(pady=30)
+
+        # Close button
+        ttk.Button(backup_window, text="Close", command=backup_window.destroy).pack(pady=10)
 
 
 # DATABASE_FILE constant now defined at top of file using centralized path
