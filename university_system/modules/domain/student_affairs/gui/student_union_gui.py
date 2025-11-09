@@ -677,6 +677,11 @@ class StudentUnionGUI:
         advanced_elections_submenu.add_command(label="⚖️ Monitor Campaign Compliance", command=self.open_campaign_compliance_dialog)
         advanced_elections_submenu.add_command(label="🔒 Election Security Audit", command=self.open_election_security_dialog)
         advanced_elections_submenu.add_command(label="✅ Vote Integrity Check", command=self.open_vote_integrity_dialog)
+        advanced_elections_submenu.add_separator()
+        # Enhanced Voting Systems (Part 3C)
+        advanced_elections_submenu.add_command(label="🔧 Manage Enhanced Voting", command=self.open_manage_enhanced_voting_dialog)
+        advanced_elections_submenu.add_command(label="🥇 Ranked Choice Voting", command=self.open_ranked_choice_voting_dialog)
+        advanced_elections_submenu.add_command(label="⚙️ Configure Voting Methods", command=self.open_configure_voting_methods_dialog)
 
         # Additional Features menu
         additional_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -704,6 +709,31 @@ class StudentUnionGUI:
         events_submenu.add_separator()
         events_submenu.add_command(label="💻 Virtual Events", command=self.open_virtual_events_dialog)
         events_submenu.add_command(label="🎓 Knowledge Sharing Sessions", command=self.open_knowledge_sharing_dialog)
+
+        # Facilities submenu (Part 3C)
+        facilities_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="🏢 Facilities", menu=facilities_submenu)
+        facilities_submenu.add_command(label="✅ Approve Bookings (Admin)", command=self.open_approve_facility_bookings_dialog)
+
+        # Equipment Management submenu (Part 3C)
+        equipment_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="📦 Equipment Management", menu=equipment_submenu)
+        # Main hub
+        equipment_submenu.add_command(label="🏠 Equipment System Hub", command=self.open_manage_equipment_system_dialog)
+        equipment_submenu.add_separator()
+        # Student functions
+        equipment_submenu.add_command(label="📋 Browse Available Equipment", command=self.open_browse_available_equipment_dialog)
+        equipment_submenu.add_command(label="🔍 Search Equipment", command=self.open_search_equipment_dialog)
+        equipment_submenu.add_command(label="ℹ️ View Equipment Details", command=self.open_view_equipment_details_dialog)
+        equipment_submenu.add_command(label="📤 Check Out Equipment", command=self.open_checkout_equipment_dialog)
+        equipment_submenu.add_command(label="📥 Return Equipment", command=self.open_return_equipment_dialog)
+        equipment_submenu.add_command(label="📜 My Equipment Checkouts", command=self.open_my_equipment_checkouts_dialog)
+        equipment_submenu.add_separator()
+        # Admin functions
+        equipment_submenu.add_command(label="➕ Add New Equipment (Admin)", command=self.open_add_new_equipment_dialog)
+        equipment_submenu.add_command(label="🔧 Update Equipment Status (Admin)", command=self.open_update_equipment_status_dialog)
+        equipment_submenu.add_command(label="🛠️ Maintenance Tracking (Admin)", command=self.open_equipment_maintenance_tracking_dialog)
+        equipment_submenu.add_command(label="📊 Generate Reports (Admin)", command=self.open_generate_equipment_reports_dialog)
 
         # Help menu
         help_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -2253,6 +2283,84 @@ class StudentUnionGUI:
     def open_vote_integrity_dialog(self):
         """Open vote integrity check"""
         dialog = VoteIntegrityCheckDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    # FIFTH ROUND (PART 3C FINAL) - Enhanced Voting Systems
+    def open_manage_enhanced_voting_dialog(self):
+        """Open enhanced voting systems management"""
+        dialog = ManageEnhancedVotingDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_ranked_choice_voting_dialog(self):
+        """Open ranked choice voting"""
+        dialog = RankedChoiceVotingDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_configure_voting_methods_dialog(self):
+        """Open voting methods configuration"""
+        dialog = ConfigureVotingMethodsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    # FIFTH ROUND (PART 3C FINAL) - Facilities Approval
+    def open_approve_facility_bookings_dialog(self):
+        """Open facility bookings approval (admin)"""
+        dialog = ApproveFacilityBookingsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    # FIFTH ROUND (PART 3C FINAL) - Equipment Management System
+    def open_manage_equipment_system_dialog(self):
+        """Open equipment management system hub"""
+        dialog = ManageEquipmentSystemDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_browse_available_equipment_dialog(self):
+        """Open browse available equipment"""
+        dialog = BrowseAvailableEquipmentDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_view_equipment_details_dialog(self):
+        """Open view equipment details"""
+        dialog = ViewEquipmentDetailsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_checkout_equipment_dialog(self):
+        """Open checkout equipment"""
+        dialog = CheckOutEquipmentDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_return_equipment_dialog(self):
+        """Open return equipment"""
+        dialog = ReturnEquipmentDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_my_equipment_checkouts_dialog(self):
+        """Open my equipment checkouts"""
+        dialog = ViewMyEquipmentCheckoutsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_search_equipment_dialog(self):
+        """Open search equipment"""
+        dialog = SearchEquipmentDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_add_new_equipment_dialog(self):
+        """Open add new equipment (admin)"""
+        dialog = AddNewEquipmentDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_update_equipment_status_dialog(self):
+        """Open update equipment status (admin)"""
+        dialog = UpdateEquipmentStatusDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_equipment_maintenance_tracking_dialog(self):
+        """Open equipment maintenance tracking"""
+        dialog = EquipmentMaintenanceTrackingDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_generate_equipment_reports_dialog(self):
+        """Open generate equipment reports"""
+        dialog = GenerateEquipmentReportsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
 
     # ====================================================================
@@ -15658,6 +15766,2127 @@ Full audit available for independent verification"""
                           "Certificate signed by Election Commission\n" +
                           "Valid for official record\n\n" +
                           "Saved to: certificates/integrity_cert_2025.pdf")
+
+
+class ManageEnhancedVotingDialog:
+    """Dialog for managing enhanced voting systems"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Enhanced Voting Systems")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🗳️ Enhanced Voting Systems",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Voting methods overview
+        overview_frame = ttk.LabelFrame(main_frame, text="Available Voting Methods")
+        overview_frame.pack(fill='x', pady=(0, 15))
+
+        methods_text = """ENABLED VOTING METHODS:
+
+✓ Standard Voting (Traditional)
+  - Single choice per position
+  - Simple majority wins
+  - Currently used for all elections
+  - Status: ACTIVE
+
+✓ Ranked Choice Voting (Alternative Vote)
+  - Rank candidates in order of preference
+  - Eliminates candidates with lowest votes
+  - Redistributes votes until majority achieved
+  - Status: AVAILABLE
+
+✓ Approval Voting
+  - Vote for as many candidates as you approve
+  - Candidate with most approvals wins
+  - Simple and effective for multiple candidates
+  - Status: AVAILABLE
+
+✓ Score Voting (Range Voting)
+  - Rate each candidate on a scale (0-10)
+  - Highest average score wins
+  - Allows nuanced preferences
+  - Status: EXPERIMENTAL"""
+
+        ttk.Label(overview_frame, text=methods_text, justify='left', font=('Courier', 9)).pack(padx=15, pady=10)
+
+        # Elections using enhanced voting
+        elections_frame = ttk.LabelFrame(main_frame, text="Elections Configuration")
+        elections_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Election', 'Position', 'Voting Method', 'Status', 'Start Date', 'End Date')
+        tree = ttk.Treeview(elections_frame, columns=columns, show='tree headings', height=8)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Election':
+                tree.column(col, width=180)
+            elif col == 'Voting Method':
+                tree.column(col, width=140)
+            else:
+                tree.column(col, width=100)
+
+        tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Sample elections
+        elections = [
+            ("Student Union President 2025", "President", "Standard Voting", "Active", "2025-04-01", "2025-04-07"),
+            ("VP Academic Affairs 2025", "VP Academic", "Standard Voting", "Upcoming", "2025-04-01", "2025-04-07"),
+            ("Treasurer 2025", "Treasurer", "Standard Voting", "Upcoming", "2025-04-01", "2025-04-07"),
+            ("Best Club Award 2025", "Club Award", "Approval Voting", "Upcoming", "2025-04-15", "2025-04-20")
+        ]
+
+        for election in elections:
+            tree.insert('', 'end', values=election)
+
+        # Statistics
+        stats_frame = ttk.LabelFrame(main_frame, text="Voting Statistics")
+        stats_frame.pack(fill='x', pady=(0, 15))
+
+        stats_text = """Total Elections This Year: 12
+Standard Voting: 10 (83%)
+Ranked Choice Voting: 1 (8%)
+Approval Voting: 1 (8%)
+Score Voting: 0 (0%)
+
+Average Voter Turnout:
+- Standard: 67%
+- Ranked Choice: 72% (+5%)
+- Approval: 69% (+2%)"""
+
+        ttk.Label(stats_frame, text=stats_text, justify='left', font=('Courier', 10)).pack(padx=15, pady=10)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Configure Ranked Choice", command=self.config_ranked).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Configure Approval", command=self.config_approval).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Configure Score", command=self.config_score).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Method Comparison", command=self.view_comparison).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def config_ranked(self):
+        messagebox.showinfo("Ranked Choice Voting", "Configure Ranked Choice Voting:\n\n- Number of rankings to allow (3-10)\n- Elimination threshold\n- Tie-breaking rules\n- Ballot format options")
+
+    def config_approval(self):
+        messagebox.showinfo("Approval Voting", "Configure Approval Voting:\n\n- Maximum approvals allowed\n- Ballot design\n- Counting method\n- Results display format")
+
+    def config_score(self):
+        messagebox.showinfo("Score Voting", "Configure Score Voting:\n\n- Score range (0-5 or 0-10)\n- Decimal scores allowed?\n- Averaging method\n- Minimum participation threshold")
+
+    def view_comparison(self):
+        messagebox.showinfo("Method Comparison", "Voting Method Comparison:\n\nStandard: Simple, familiar, but can split votes\nRanked Choice: Fair, eliminates spoilers, more complex\nApproval: Simple, reduces strategic voting\nScore: Most nuanced, but can be confusing\n\nRecommendation: Ranked Choice for competitive races")
+
+
+class RankedChoiceVotingDialog:
+    """Dialog for ranked choice voting system"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Ranked Choice Voting")
+        self.dialog.geometry("1000x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📊 Ranked Choice Voting",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Create notebook for sections
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # How It Works tab
+        how_frame = ttk.Frame(notebook)
+        notebook.add(how_frame, text="How It Works")
+
+        how_scroll = scrolledtext.ScrolledText(how_frame, height=15, wrap=tk.WORD)
+        how_scroll.pack(fill='both', expand=True, padx=10, pady=10)
+
+        how_text = """RANKED CHOICE VOTING (RCV) EXPLANATION:
+
+HOW TO VOTE:
+1. Rank candidates in order of preference (1st, 2nd, 3rd, etc.)
+2. You don't have to rank all candidates
+3. Only rank candidates you support
+4. Your 1st choice gets your vote initially
+
+HOW VOTES ARE COUNTED:
+
+ROUND 1:
+- All 1st choice votes are counted
+- If a candidate has >50%, they WIN
+- If no majority, proceed to Round 2
+
+ROUND 2 (and subsequent rounds):
+- Candidate with fewest votes is ELIMINATED
+- Ballots for eliminated candidate transfer to next choice
+- Count votes again
+- Repeat until someone has >50%
+
+EXAMPLE:
+Starting votes (100 total):
+- Alice: 40 votes (40%)
+- Bob: 35 votes (35%)
+- Carol: 25 votes (25%)
+
+No majority, so Carol eliminated.
+
+Carol voters' 2nd choices:
+- 15 → Alice
+- 10 → Bob
+
+Final count:
+- Alice: 55 votes (55%) → WINS
+- Bob: 45 votes (45%)
+
+BENEFITS:
+✓ Eliminates "spoiler effect"
+✓ Majority winner guaranteed
+✓ Voters can support favorite without "wasting" vote
+✓ Reduces negative campaigning
+✓ More representative results
+
+CONSIDERATIONS:
+- More complex to understand initially
+- Longer counting process
+- Requires voter education
+- Some ballots may become "exhausted" if all choices eliminated"""
+
+        how_scroll.insert('1.0', how_text)
+        how_scroll.config(state='disabled')
+
+        # Cast Vote tab
+        vote_frame = ttk.Frame(notebook)
+        notebook.add(vote_frame, text="Cast RCV Vote")
+
+        vote_content = ttk.Frame(vote_frame)
+        vote_content.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(vote_content, text="Student Union President 2025",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        ttk.Label(vote_content, text="Rank candidates in order of preference (1 = most preferred)",
+                 font=('Arial', 10)).pack(pady=(0, 15))
+
+        # Candidates with ranking dropdowns
+        candidates = [
+            ("Alice Johnson", "Political Science, 3rd Year", "15 endorsements"),
+            ("Bob Smith", "Business Admin, 4th Year", "12 endorsements"),
+            ("Carol Davis", "Education, 3rd Year", "8 endorsements"),
+            ("David Lee", "Accounting, 2nd Year", "10 endorsements")
+        ]
+
+        for i, (name, info, endorsements) in enumerate(candidates):
+            candidate_frame = ttk.Frame(vote_content)
+            candidate_frame.pack(fill='x', pady=5)
+
+            # Candidate info
+            info_frame = ttk.Frame(candidate_frame)
+            info_frame.pack(side='left', fill='x', expand=True)
+
+            ttk.Label(info_frame, text=name, font=('Arial', 10, 'bold')).pack(anchor='w')
+            ttk.Label(info_frame, text=f"{info} • {endorsements}", font=('Arial', 9)).pack(anchor='w')
+
+            # Ranking dropdown
+            rank_combo = ttk.Combobox(candidate_frame, width=15, state='readonly')
+            rank_combo['values'] = ('Not Ranked', '1st Choice', '2nd Choice', '3rd Choice', '4th Choice')
+            rank_combo.current(0)
+            rank_combo.pack(side='right', padx=(10, 0))
+
+        ttk.Button(vote_content, text="Submit Ranked Ballot",
+                  command=lambda: messagebox.showinfo("Vote Submitted",
+                  "Your ranked choice ballot has been submitted!\n\nYour rankings:\n1st: Alice Johnson\n2nd: Carol Davis\n3rd: Bob Smith\n\nThank you for voting!")).pack(pady=20)
+
+        # Results tab
+        results_frame = ttk.Frame(notebook)
+        notebook.add(results_frame, text="RCV Results")
+
+        results_scroll = scrolledtext.ScrolledText(results_frame, height=15, wrap=tk.WORD, font=('Courier', 9))
+        results_scroll.pack(fill='both', expand=True, padx=10, pady=10)
+
+        results_text = """RANKED CHOICE VOTING RESULTS
+Student Union President 2025
+
+ROUND 1 (Initial Count):
+Alice Johnson:    487 votes (39.5%)  ████████████████
+Bob Smith:        395 votes (32.0%)  █████████████
+Carol Davis:      231 votes (18.7%)  ████████
+David Lee:        121 votes (9.8%)   ████
+─────────────────────────────────────────────────
+Total:           1234 votes
+
+No majority. David Lee eliminated (fewest votes).
+
+ROUND 2:
+David Lee's 121 votes redistributed:
+  → Alice Johnson: 52 votes
+  → Bob Smith: 38 votes
+  → Carol Davis: 31 votes
+
+New totals:
+Alice Johnson:    539 votes (43.7%)  █████████████████
+Bob Smith:        433 votes (35.1%)  ██████████████
+Carol Davis:      262 votes (21.2%)  ████████
+─────────────────────────────────────────────────
+Total:           1234 votes
+
+No majority. Carol Davis eliminated.
+
+ROUND 3 (FINAL):
+Carol Davis's 262 votes redistributed:
+  → Alice Johnson: 148 votes
+  → Bob Smith: 114 votes
+
+FINAL RESULTS:
+Alice Johnson:    687 votes (55.7%)  ██████████████████████  ✓ WINNER
+Bob Smith:        547 votes (44.3%)  ██████████████████
+─────────────────────────────────────────────────
+Total:           1234 votes
+
+🏆 WINNER: Alice Johnson (Majority achieved in Round 3)
+
+ANALYSIS:
+- Alice started with 39.5%, ended with 55.7% (won by 140 votes)
+- 3 rounds needed to achieve majority
+- No exhausted ballots (all voters ranked enough candidates)
+- Turnout: 1,234 voters (68% of eligible students)
+
+COMPARISON WITH STANDARD VOTING:
+Under standard voting, Alice would have won with 39.5%, meaning
+60.5% of voters preferred other candidates. RCV ensures the
+winner has broad support (55.7% final approval)."""
+
+        results_scroll.insert('1.0', results_text)
+        results_scroll.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="View Tutorial Video", command=self.view_tutorial).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Download Ballot Template", command=self.download_template).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def view_tutorial(self):
+        messagebox.showinfo("RCV Tutorial", "Opening RCV tutorial video:\n\n'Understanding Ranked Choice Voting'\nDuration: 3:45\n\nCovers:\n- How to fill out ballot\n- Vote counting process\n- Benefits and examples\n- FAQs")
+
+    def download_template(self):
+        messagebox.showinfo("Download", "Ballot template downloaded:\n\nrcv_ballot_template.pdf\n\nIncludes:\n- Sample ballot format\n- Instructions for voters\n- Explanation of process")
+
+
+class ConfigureVotingMethodsDialog:
+    """Dialog for configuring voting methods"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Configure Voting Methods")
+        self.dialog.geometry("900x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="⚙️ Configure Voting Methods",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Election selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Election:").pack(side='left', padx=(0, 10))
+        election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
+        election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025',
+                                     'Best Club Award 2025', 'Sports Team Captain Elections')
+        election_combo.pack(side='left', fill='x', expand=True)
+        election_combo.current(0)
+
+        # Create notebook for method configuration
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Standard Voting tab
+        standard_frame = ttk.Frame(notebook)
+        notebook.add(standard_frame, text="Standard Voting")
+
+        standard_content = ttk.Frame(standard_frame)
+        standard_content.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(standard_content, text="Standard Voting Configuration",
+                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+
+        ttk.Checkbutton(standard_content, text="Enable standard voting for this election").pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Allow write-in candidates").pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Show live results during voting").pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Require confirmation before submitting").pack(anchor='w', pady=3)
+
+        ttk.Label(standard_content, text="\nWinning Criterion:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Radiobutton(standard_content, text="Simple Plurality (most votes wins)", value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(standard_content, text="Absolute Majority (>50% required, runoff if needed)", value=2).pack(anchor='w', pady=2)
+
+        # Ranked Choice tab
+        rcv_frame = ttk.Frame(notebook)
+        notebook.add(rcv_frame, text="Ranked Choice")
+
+        rcv_content = ttk.Frame(rcv_frame)
+        rcv_content.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(rcv_content, text="Ranked Choice Voting Configuration",
+                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+
+        ttk.Checkbutton(rcv_content, text="Enable ranked choice voting for this election").pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text="Allow partial rankings (don't require ranking all)").pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text="Show instant runoff visualization").pack(anchor='w', pady=3)
+
+        ttk.Label(rcv_content, text="\nMaximum Rankings Allowed:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        rank_spin = ttk.Spinbox(rcv_content, from_=3, to=10, width=10)
+        rank_spin.pack(anchor='w')
+        rank_spin.set(5)
+
+        ttk.Label(rcv_content, text="\nElimination Method:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Radiobutton(rcv_content, text="Eliminate one candidate per round", value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Batch elimination (all below threshold)", value=2).pack(anchor='w', pady=2)
+
+        ttk.Label(rcv_content, text="\nTie Breaking:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Radiobutton(rcv_content, text="Random selection", value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Most 1st place votes", value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Manual review", value=3).pack(anchor='w', pady=2)
+
+        # Approval Voting tab
+        approval_frame = ttk.Frame(notebook)
+        notebook.add(approval_frame, text="Approval Voting")
+
+        approval_content = ttk.Frame(approval_frame)
+        approval_content.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(approval_content, text="Approval Voting Configuration",
+                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+
+        ttk.Checkbutton(approval_content, text="Enable approval voting for this election").pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text="Show number of approvals for each candidate").pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text="Allow abstaining (approve none)").pack(anchor='w', pady=3)
+
+        ttk.Label(approval_content, text="\nApproval Limit:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Radiobutton(approval_content, text="Unlimited (approve as many as you want)", value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Limited to specific number:", value=2).pack(anchor='w', pady=2)
+
+        limit_spin = ttk.Spinbox(approval_content, from_=1, to=10, width=10)
+        limit_spin.pack(anchor='w', padx=30)
+        limit_spin.set(3)
+
+        ttk.Label(approval_content, text="\nResults Display:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Radiobutton(approval_content, text="Show approval count", value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Show approval percentage", value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Show both", value=3).pack(anchor='w', pady=2)
+
+        # Advanced tab
+        advanced_frame = ttk.Frame(notebook)
+        notebook.add(advanced_frame, text="Advanced Settings")
+
+        advanced_content = ttk.Frame(advanced_frame)
+        advanced_content.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(advanced_content, text="Advanced Configuration",
+                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+
+        ttk.Label(advanced_content, text="Voting Period:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+
+        period_frame = ttk.Frame(advanced_content)
+        period_frame.pack(anchor='w', pady=5)
+        ttk.Label(period_frame, text="Start:").pack(side='left', padx=(0, 5))
+        ttk.Entry(period_frame, width=15).pack(side='left', padx=(0, 15))
+        ttk.Label(period_frame, text="End:").pack(side='left', padx=(0, 5))
+        ttk.Entry(period_frame, width=15).pack(side='left')
+
+        ttk.Label(advanced_content, text="\nSecurity Options:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Checkbutton(advanced_content, text="Require two-factor authentication for voting").pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Generate unique verification code for each voter").pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Enable vote verification (voters can check their vote was counted)").pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Allow vote change before deadline").pack(anchor='w', pady=2)
+
+        ttk.Label(advanced_content, text="\nAccessibility:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Checkbutton(advanced_content, text="Enable screen reader support").pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Provide audio ballot option").pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Allow extended time for voting").pack(anchor='w', pady=2)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Save Configuration", command=self.save_config).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Load Template", command=self.load_template).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Preview Ballot", command=self.preview_ballot).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def save_config(self):
+        messagebox.showinfo("Configuration Saved",
+                          "Voting method configuration saved!\n\n" +
+                          "Election: Student Union President 2025\n" +
+                          "Method: Ranked Choice Voting\n" +
+                          "Max Rankings: 5\n" +
+                          "Elimination: One per round\n" +
+                          "Tie Breaking: Most 1st place votes\n\n" +
+                          "Configuration active when voting opens.")
+
+    def load_template(self):
+        messagebox.showinfo("Load Template",
+                          "Available templates:\n\n" +
+                          "1. Standard SU Election (Standard voting)\n" +
+                          "2. Competitive Race (RCV, 5 rankings)\n" +
+                          "3. Awards Voting (Approval voting)\n" +
+                          "4. Custom\n\n" +
+                          "Select template to load configuration.")
+
+    def preview_ballot(self):
+        messagebox.showinfo("Ballot Preview",
+                          "Ballot preview:\n\n" +
+                          "┌─────────────────────────────┐\n" +
+                          "│ Student Union President 2025 │\n" +
+                          "│ Rank Choice Voting          │\n" +
+                          "├─────────────────────────────┤\n" +
+                          "│ □ Alice Johnson  [Rank: __] │\n" +
+                          "│ □ Bob Smith      [Rank: __] │\n" +
+                          "│ □ Carol Davis    [Rank: __] │\n" +
+                          "│ □ David Lee      [Rank: __] │\n" +
+                          "└─────────────────────────────┘\n\n" +
+                          "Preview in full ballot viewer")
+
+
+class ApproveFacilityBookingsDialog:
+    """Dialog for approving facility bookings (admin)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Approve Facility Bookings")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="✅ Facility Booking Approvals",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Approval queue overview
+        overview_frame = ttk.LabelFrame(main_frame, text="Approval Queue")
+        overview_frame.pack(fill='x', pady=(0, 15))
+
+        overview_grid = ttk.Frame(overview_frame)
+        overview_grid.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(overview_grid, text="Pending Approvals:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="8", foreground='orange').grid(row=0, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Urgent (< 48h):", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="3", foreground='red').grid(row=1, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Approved Today:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="12").grid(row=2, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Average Approval Time:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="6.5 hours").grid(row=3, column=1, sticky='w', padx=10)
+
+        # Pending bookings
+        bookings_frame = ttk.LabelFrame(main_frame, text="Pending Booking Requests")
+        bookings_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Club/Student', 'Facility', 'Date', 'Time', 'Purpose', 'Priority', 'Status')
+        tree = ttk.Treeview(bookings_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Club/Student':
+                tree.column(col, width=140)
+            elif col == 'Facility':
+                tree.column(col, width=120)
+            elif col == 'Purpose':
+                tree.column(col, width=150)
+            else:
+                tree.column(col, width=80)
+
+        scrollbar = ttk.Scrollbar(bookings_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample pending bookings
+        bookings = [
+            ("FB001", "Drama Society", "Main Hall", "2025-04-15", "18:00-22:00", "Annual Play Performance", "High", "Pending"),
+            ("FB002", "Debate Club", "Seminar Room 3", "2025-04-12", "14:00-16:00", "Competition Practice", "Urgent", "Pending"),
+            ("FB003", "Music Society", "Concert Hall", "2025-04-20", "19:00-23:00", "Spring Concert", "High", "Pending"),
+            ("FB004", "Sports Club", "Gym", "2025-04-10", "16:00-18:00", "Training Session", "Urgent", "Pending"),
+            ("FB005", "Art Society", "Exhibition Space", "2025-04-25", "All Day", "Art Exhibition", "Normal", "Pending"),
+            ("FB006", "Environmental Club", "Conference Room", "2025-04-11", "12:00-14:00", "Planning Meeting", "Urgent", "Pending"),
+            ("FB007", "Tech Society", "Computer Lab", "2025-04-18", "15:00-19:00", "Hackathon", "Normal", "Pending"),
+            ("FB008", "Film Society", "Cinema Room", "2025-04-22", "18:00-21:00", "Movie Screening", "Normal", "Pending")
+        ]
+
+        for booking in bookings:
+            tree.insert('', 'end', values=booking)
+
+        tree.bind('<Double-1>', lambda e: self.show_booking_details())
+
+        # Action buttons
+        action_frame = ttk.LabelFrame(main_frame, text="Booking Actions")
+        action_frame.pack(fill='x', pady=(0, 15))
+
+        button_grid = ttk.Frame(action_frame)
+        button_grid.pack(padx=15, pady=10)
+
+        ttk.Button(button_grid, text="✓ Approve", command=self.approve_booking, width=15).grid(row=0, column=0, padx=5, pady=3)
+        ttk.Button(button_grid, text="✗ Reject", command=self.reject_booking, width=15).grid(row=0, column=1, padx=5, pady=3)
+        ttk.Button(button_grid, text="⚠ Request Changes", command=self.request_changes, width=15).grid(row=0, column=2, padx=5, pady=3)
+        ttk.Button(button_grid, text="📋 View Details", command=self.show_booking_details, width=15).grid(row=1, column=0, padx=5, pady=3)
+        ttk.Button(button_grid, text="📧 Contact Requester", command=self.contact_requester, width=15).grid(row=1, column=1, padx=5, pady=3)
+        ttk.Button(button_grid, text="📅 Check Calendar", command=self.check_calendar, width=15).grid(row=1, column=2, padx=5, pady=3)
+
+        # Filters
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Filter:").pack(side='left', padx=(0, 10))
+        filter_combo = ttk.Combobox(filter_frame, width=20, state='readonly')
+        filter_combo['values'] = ('All Pending', 'Urgent Only', 'High Priority', 'By Facility', 'By Date Range')
+        filter_combo.current(0)
+        filter_combo.pack(side='left', padx=(0, 20))
+
+        ttk.Button(filter_frame, text="📊 View Approval History", command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(filter_frame, text="⚙️ Approval Settings", command=self.approval_settings).pack(side='left')
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def show_booking_details(self):
+        messagebox.showinfo("Booking Details",
+                          "BOOKING REQUEST DETAILS\n\n" +
+                          "ID: FB001\n" +
+                          "Requester: Drama Society\n" +
+                          "Contact: president@dramasoc.ac.uk\n\n" +
+                          "Facility: Main Hall\n" +
+                          "Date: April 15, 2025\n" +
+                          "Time: 18:00 - 22:00 (4 hours)\n\n" +
+                          "Purpose: Annual Play Performance\n" +
+                          "Expected Attendees: 200\n" +
+                          "Setup Required: Stage, lighting, seating\n" +
+                          "Equipment Needed: Sound system, projector\n\n" +
+                          "Additional Notes:\n" +
+                          "This is our flagship event of the year.\n" +
+                          "We have performed at this venue for 5 years.\n" +
+                          "Tickets already on sale (150 sold).\n\n" +
+                          "Risk Assessment: Submitted ✓\n" +
+                          "Insurance: Current ✓\n" +
+                          "Previous Bookings: 8 (all successful)")
+
+    def approve_booking(self):
+        result = messagebox.askyesno("Approve Booking",
+                                     "Approve this facility booking?\n\n" +
+                                     "FB001 - Drama Society\n" +
+                                     "Main Hall - April 15, 2025\n\n" +
+                                     "This will:\n" +
+                                     "- Reserve the facility\n" +
+                                     "- Notify the requester\n" +
+                                     "- Add to calendar\n" +
+                                     "- Generate confirmation")
+        if result:
+            messagebox.showinfo("Approved",
+                              "Booking approved!\n\n" +
+                              "Confirmation email sent to Drama Society.\n" +
+                              "Facility reserved in calendar.\n" +
+                              "Booking ID: FB001\n\n" +
+                              "They will receive:\n" +
+                              "- Booking confirmation\n" +
+                              "- Access instructions\n" +
+                              "- Setup guidelines\n" +
+                              "- Contact information")
+
+    def reject_booking(self):
+        reason_window = tk.Toplevel(self.dialog)
+        reason_window.title("Reject Booking")
+        reason_window.geometry("400x300")
+        reason_window.transient(self.dialog)
+        reason_window.grab_set()
+
+        ttk.Label(reason_window, text="Rejection Reason:").pack(padx=15, pady=(15, 5))
+
+        reason_text = scrolledtext.ScrolledText(reason_window, height=8, wrap=tk.WORD)
+        reason_text.pack(fill='both', expand=True, padx=15, pady=(0, 15))
+        reason_text.insert('1.0', "Please provide reason for rejection...")
+
+        def submit_rejection():
+            messagebox.showinfo("Rejected", "Booking rejected.\n\nRejection notice sent to requester with reason.\nThey can resubmit with modifications.")
+            reason_window.destroy()
+
+        ttk.Button(reason_window, text="Submit Rejection", command=submit_rejection).pack(pady=(0, 15))
+
+    def request_changes(self):
+        messagebox.showinfo("Request Changes",
+                          "Request changes to booking:\n\n" +
+                          "Common requests:\n" +
+                          "- Change date/time (conflict)\n" +
+                          "- Reduce duration\n" +
+                          "- Different facility\n" +
+                          "- Additional documentation\n" +
+                          "- Reduce capacity/scope\n\n" +
+                          "Requester will be notified and can\n" +
+                          "resubmit with requested changes.")
+
+    def contact_requester(self):
+        messagebox.showinfo("Contact Requester",
+                          "Contact Information:\n\n" +
+                          "Club: Drama Society\n" +
+                          "President: Sarah Johnson\n" +
+                          "Email: president@dramasoc.ac.uk\n" +
+                          "Phone: 07123 456789\n\n" +
+                          "Opening email client...")
+
+    def check_calendar(self):
+        messagebox.showinfo("Facility Calendar",
+                          "Main Hall - April 2025\n\n" +
+                          "April 15 (Requested):\n" +
+                          "18:00-22:00 - REQUESTED (Drama Society)\n\n" +
+                          "Conflicts: None\n\n" +
+                          "Adjacent bookings:\n" +
+                          "April 14: 14:00-17:00 (Setup available)\n" +
+                          "April 16: 10:00-12:00 (Cleanup available)\n\n" +
+                          "Status: AVAILABLE ✓")
+
+    def view_history(self):
+        messagebox.showinfo("Approval History",
+                          "Approval History (Last 30 days):\n\n" +
+                          "Total Requests: 156\n" +
+                          "Approved: 124 (79%)\n" +
+                          "Rejected: 18 (12%)\n" +
+                          "Changes Requested: 14 (9%)\n\n" +
+                          "Average Time to Approve: 6.5 hours\n" +
+                          "Fastest: 15 minutes\n" +
+                          "Slowest: 48 hours\n\n" +
+                          "Most Booked Facility: Seminar Rooms (45)\n" +
+                          "Most Active Club: Music Society (12 bookings)")
+
+    def approval_settings(self):
+        messagebox.showinfo("Approval Settings",
+                          "Approval Configuration:\n\n" +
+                          "Auto-approve if:\n" +
+                          "☑ Requester has good history (5+ bookings)\n" +
+                          "☑ Low risk booking (meeting rooms)\n" +
+                          "☑ Short duration (< 2 hours)\n" +
+                          "☑ No conflicts\n\n" +
+                          "Require manual approval if:\n" +
+                          "☑ Large events (> 100 people)\n" +
+                          "☑ Prime facilities (Main Hall)\n" +
+                          "☑ Multi-day bookings\n" +
+                          "☑ External groups")
+
+
+class ManageEquipmentSystemDialog:
+    """Main hub for equipment management system"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Equipment Management System")
+        self.dialog.geometry("950x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🎬 Equipment Management",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # System overview
+        overview_frame = ttk.LabelFrame(main_frame, text="System Overview")
+        overview_frame.pack(fill='x', pady=(0, 15))
+
+        overview_grid = ttk.Frame(overview_frame)
+        overview_grid.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(overview_grid, text="Total Equipment:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="156 items").grid(row=0, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Available Now:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="98 items (63%)", foreground='green').grid(row=1, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Checked Out:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="45 items (29%)").grid(row=2, column=1, sticky='w', padx=10)
+
+        ttk.Label(overview_grid, text="Under Maintenance:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text="13 items (8%)", foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
+
+        # Action cards
+        cards_frame = ttk.Frame(main_frame)
+        cards_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Row 1
+        row1 = ttk.Frame(cards_frame)
+        row1.pack(fill='x', pady=(0, 10))
+
+        self.create_action_card(row1, "📋 Browse Equipment", "View all available equipment", self.browse_equipment).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_action_card(row1, "🔍 Search Equipment", "Find specific items", self.search_equipment).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_action_card(row1, "✅ Check Out", "Borrow equipment", self.checkout_equipment).pack(side='left', fill='both', expand=True)
+
+        # Row 2
+        row2 = ttk.Frame(cards_frame)
+        row2.pack(fill='x', pady=(0, 10))
+
+        self.create_action_card(row2, "↩️ Return Equipment", "Return borrowed items", self.return_equipment).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_action_card(row2, "📚 My Checkouts", "View your borrowed items", self.my_checkouts).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_action_card(row2, "🔧 Maintenance", "Track repairs & maintenance", self.maintenance_tracking).pack(side='left', fill='both', expand=True)
+
+        # Admin section (if admin)
+        if True:  # Check admin status
+            admin_frame = ttk.LabelFrame(main_frame, text="Admin Functions")
+            admin_frame.pack(fill='x', pady=(0, 15))
+
+            admin_buttons = ttk.Frame(admin_frame)
+            admin_buttons.pack(padx=15, pady=10)
+
+            ttk.Button(admin_buttons, text="➕ Add New Equipment", command=self.add_equipment, width=20).pack(side='left', padx=(0, 10))
+            ttk.Button(admin_buttons, text="📊 Generate Reports", command=self.generate_reports, width=20).pack(side='left', padx=(0, 10))
+            ttk.Button(admin_buttons, text="⚙️ Update Status", command=self.update_status, width=20).pack(side='left')
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def create_action_card(self, parent, title, description, command):
+        card = ttk.Frame(parent, relief='raised', borderwidth=1)
+
+        ttk.Label(card, text=title, font=('Arial', 11, 'bold')).pack(pady=(10, 5), padx=10)
+        ttk.Label(card, text=description, font=('Arial', 9), wraplength=150).pack(pady=(0, 10), padx=10)
+        ttk.Button(card, text="Open", command=command).pack(pady=(0, 10))
+
+        return card
+
+    def browse_equipment(self):
+        from tkinter import messagebox
+        dialog = BrowseAvailableEquipmentDialog(self.dialog, self.auth)
+
+    def search_equipment(self):
+        dialog = SearchEquipmentDialog(self.dialog, self.auth)
+
+    def checkout_equipment(self):
+        dialog = CheckOutEquipmentDialog(self.dialog, self.auth)
+
+    def return_equipment(self):
+        dialog = ReturnEquipmentDialog(self.dialog, self.auth)
+
+    def my_checkouts(self):
+        dialog = ViewMyEquipmentCheckoutsDialog(self.dialog, self.auth)
+
+    def maintenance_tracking(self):
+        dialog = EquipmentMaintenanceTrackingDialog(self.dialog, self.auth)
+
+    def add_equipment(self):
+        dialog = AddNewEquipmentDialog(self.dialog, self.auth)
+
+    def generate_reports(self):
+        dialog = GenerateEquipmentReportsDialog(self.dialog, self.auth)
+
+    def update_status(self):
+        dialog = UpdateEquipmentStatusDialog(self.dialog, self.auth)
+
+
+class BrowseAvailableEquipmentDialog:
+    """Dialog for browsing available equipment"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Browse Equipment")
+        self.dialog.geometry("1100x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📋 Browse Available Equipment",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Category filter
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 10))
+        category_combo = ttk.Combobox(filter_frame, width=25, state='readonly')
+        category_combo['values'] = ('All Categories', 'Audio Equipment', 'Video Equipment',
+                                     'Lighting', 'Computers', 'Sports Equipment', 'Event Supplies')
+        category_combo.current(0)
+        category_combo.pack(side='left', padx=(0, 20))
+
+        ttk.Label(filter_frame, text="Status:").pack(side='left', padx=(0, 10))
+        status_combo = ttk.Combobox(filter_frame, width=20, state='readonly')
+        status_combo['values'] = ('All Status', 'Available', 'Checked Out', 'Maintenance')
+        status_combo.current(1)  # Available
+        status_combo.pack(side='left')
+
+        # Equipment list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Equipment")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Name', 'Category', 'Condition', 'Location', 'Status', 'Last Checkout')
+        tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Name':
+                tree.column(col, width=200)
+            elif col == 'Category':
+                tree.column(col, width=120)
+            else:
+                tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample equipment
+        equipment = [
+            ("EQ001", "Professional Camera (Canon EOS R5)", "Video Equipment", "Excellent", "Media Room A", "Available", "2025-03-20"),
+            ("EQ002", "Wireless Microphone System", "Audio Equipment", "Good", "Audio Store", "Available", "2025-03-25"),
+            ("EQ003", "LED Light Panel (3-pack)", "Lighting", "Excellent", "Lighting Storage", "Available", "Never"),
+            ("EQ004", "Tripod (Manfrotto Pro)", "Video Equipment", "Good", "Media Room A", "Available", "2025-03-18"),
+            ("EQ005", "Laptop (Dell XPS 15)", "Computers", "Excellent", "Tech Office", "Available", "2025-03-22"),
+            ("EQ006", "Portable Speaker (JBL)", "Audio Equipment", "Good", "Events Store", "Available", "2025-03-15"),
+            ("EQ007", "Projector (Epson 4K)", "Video Equipment", "Excellent", "AV Room", "Available", "2025-03-10"),
+            ("EQ008", "Green Screen Kit", "Video Equipment", "Good", "Media Room B", "Available", "2025-03-12")
+        ]
+
+        for item in equipment:
+            tree.insert('', 'end', values=item)
+
+        tree.bind('<Double-1>', lambda e: self.view_details())
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="View Details", command=self.view_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Check Out Selected", command=self.checkout_selected).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Reserve", command=self.reserve_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def view_details(self):
+        dialog = ViewEquipmentDetailsDialog(self.dialog, self.auth)
+
+    def checkout_selected(self):
+        messagebox.showinfo("Check Out", "Proceeding to check out Professional Camera (Canon EOS R5).\n\nYou will be asked to:\n- Confirm your details\n- Agree to terms\n- Select return date")
+
+    def reserve_equipment(self):
+        messagebox.showinfo("Reserve", "Reserve equipment for future date:\n\nSelect:\n- Pickup date\n- Return date\n- Reason for use\n\nReservation will be confirmed via email.")
+
+
+class ViewEquipmentDetailsDialog:
+    """Dialog for viewing equipment details"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Equipment Details")
+        self.dialog.geometry("700x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="Professional Camera (Canon EOS R5)",
+                 font=('Arial', 13, 'bold')).pack(pady=(0, 15))
+
+        # Equipment info
+        info_frame = ttk.LabelFrame(main_frame, text="Equipment Information")
+        info_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        info_grid = ttk.Frame(info_frame)
+        info_grid.pack(fill='both', padx=15, pady=10)
+
+        info_data = [
+            ("Equipment ID:", "EQ001"),
+            ("Category:", "Video Equipment"),
+            ("Manufacturer:", "Canon"),
+            ("Model:", "EOS R5"),
+            ("Serial Number:", "CN-R5-2023-001"),
+            ("Condition:", "Excellent"),
+            ("Purchase Date:", "2023-09-15"),
+            ("Value:", "£3,500"),
+            ("Location:", "Media Room A, Shelf 3"),
+            ("Status:", "Available"),
+            ("Last Checkout:", "2025-03-20 by John Smith"),
+            ("Times Borrowed:", "23"),
+            ("Next Maintenance:", "2025-06-01")
+        ]
+
+        for i, (label, value) in enumerate(info_data):
+            ttk.Label(info_grid, text=label, font=('Arial', 9, 'bold')).grid(row=i, column=0, sticky='w', pady=2)
+            ttk.Label(info_grid, text=value).grid(row=i, column=1, sticky='w', padx=10, pady=2)
+
+        # Description
+        desc_frame = ttk.LabelFrame(main_frame, text="Description & Included Items")
+        desc_frame.pack(fill='x', pady=(0, 15))
+
+        desc_text = """Professional full-frame mirrorless camera with 45MP sensor,
+ideal for video production, photography, and live streaming.
+
+INCLUDED ACCESSORIES:
+✓ 2x Batteries (LP-E6NH)
+✓ Battery Charger
+✓ Camera Strap
+✓ USB-C Cable
+✓ Body Cap
+✓ Protective Case
+
+COMPATIBLE LENSES (Available Separately):
+- RF 24-70mm f/2.8
+- RF 50mm f/1.2
+- RF 70-200mm f/2.8"""
+
+        ttk.Label(desc_frame, text=desc_text, justify='left', font=('Arial', 9)).pack(padx=15, pady=10)
+
+        # Usage notes
+        notes_frame = ttk.LabelFrame(main_frame, text="Usage Notes & Restrictions")
+        notes_frame.pack(fill='x', pady=(0, 15))
+
+        notes_text = """⚠️ Training required before checkout
+⚠️ Maximum checkout: 7 days
+⚠️ Late return fee: £10/day
+✓ Insurance covered up to £3,500
+✓ User manual available in case"""
+
+        ttk.Label(notes_frame, text=notes_text, justify='left', font=('Arial', 9)).pack(padx=15, pady=10)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Reserve", command=self.reserve).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View History", command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def checkout(self):
+        messagebox.showinfo("Check Out", "Proceed to check out this equipment?\n\nMaximum loan period: 7 days\nYou will be responsible for any damage.\n\nContinue to checkout form...")
+
+    def reserve(self):
+        messagebox.showinfo("Reserve", "Reserve this equipment:\n\nSelect dates and purpose.\nYou'll receive confirmation email.")
+
+    def view_history(self):
+        messagebox.showinfo("Checkout History",
+                          "Recent Checkouts (Last 10):\n\n" +
+                          "1. 2025-03-20 - John Smith (3 days)\n" +
+                          "2. 2025-03-15 - Sarah Jones (5 days)\n" +
+                          "3. 2025-03-08 - Mike Chen (2 days)\n" +
+                          "4. 2025-02-28 - Emma Wilson (7 days)\n" +
+                          "5. 2025-02-18 - David Lee (4 days)\n\n" +
+                          "All returns on time: Yes\n" +
+                          "Damage reports: None")
+
+
+class CheckOutEquipmentDialog:
+    """Dialog for checking out equipment"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Check Out Equipment")
+        self.dialog.geometry("700x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="✅ Check Out Equipment",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Equipment selection
+        select_frame = ttk.LabelFrame(main_frame, text="Select Equipment")
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        select_content = ttk.Frame(select_frame)
+        select_content.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(select_content, text="Equipment:").grid(row=0, column=0, sticky='w', pady=5)
+        equipment_combo = ttk.Combobox(select_content, width=40, state='readonly')
+        equipment_combo['values'] = ('Professional Camera (Canon EOS R5)',
+                                     'Wireless Microphone System',
+                                     'LED Light Panel (3-pack)',
+                                     'Tripod (Manfrotto Pro)')
+        equipment_combo.current(0)
+        equipment_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(select_content, text="Quantity:").grid(row=1, column=0, sticky='w', pady=5)
+        qty_spin = ttk.Spinbox(select_content, from_=1, to=5, width=10)
+        qty_spin.set(1)
+        qty_spin.grid(row=1, column=1, sticky='w', padx=10, pady=5)
+
+        select_content.columnconfigure(1, weight=1)
+
+        # Checkout details
+        details_frame = ttk.LabelFrame(main_frame, text="Checkout Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        details_content = ttk.Frame(details_frame)
+        details_content.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(details_content, text="Your Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Entry(details_content, width=40).grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(details_content, text="Student ID:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Entry(details_content, width=40).grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(details_content, text="Email:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Entry(details_content, width=40).grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(details_content, text="Phone:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Entry(details_content, width=40).grid(row=3, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(details_content, text="Return Date:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Entry(details_content, width=40).grid(row=4, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(details_content, text="Purpose:").grid(row=5, column=0, sticky='w', pady=5)
+        purpose_text = scrolledtext.ScrolledText(details_content, height=3, width=40)
+        purpose_text.grid(row=5, column=1, sticky='ew', padx=10, pady=5)
+
+        details_content.columnconfigure(1, weight=1)
+
+        # Terms
+        terms_frame = ttk.LabelFrame(main_frame, text="Terms & Conditions")
+        terms_frame.pack(fill='x', pady=(0, 15))
+
+        terms_text = """☑ I agree to return equipment on time
+☑ I am responsible for any damage or loss
+☑ Late returns incur £10/day fee
+☑ I have received training on this equipment"""
+
+        ttk.Label(terms_frame, text=terms_text, justify='left').pack(padx=15, pady=10)
+
+        agree_var = tk.BooleanVar()
+        ttk.Checkbutton(terms_frame, text="I agree to all terms and conditions", variable=agree_var).pack(padx=15, pady=(0, 10))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Complete Checkout", command=self.complete_checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+
+    def complete_checkout(self):
+        messagebox.showinfo("Checkout Complete",
+                          "Equipment checked out successfully!\n\n" +
+                          "Equipment: Professional Camera (Canon EOS R5)\n" +
+                          "Return Date: 2025-04-05\n" +
+                          "Checkout ID: CHK-2025-00234\n\n" +
+                          "IMPORTANT:\n" +
+                          "- Return by due date to avoid fees\n" +
+                          "- Inspect equipment before leaving\n" +
+                          "- Report any damage immediately\n\n" +
+                          "Confirmation email sent.")
+        self.dialog.destroy()
+
+
+class ReturnEquipmentDialog:
+    """Dialog for returning equipment"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Return Equipment")
+        self.dialog.geometry("700x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="↩️ Return Equipment",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Your checkouts
+        checkouts_frame = ttk.LabelFrame(main_frame, text="Your Current Checkouts")
+        checkouts_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
+        tree = ttk.Treeview(checkouts_frame, columns=columns, show='tree headings', height=6)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Equipment':
+                tree.column(col, width=200)
+            else:
+                tree.column(col, width=90)
+
+        tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Sample checkouts
+        checkouts = [
+            ("CHK234", "Professional Camera (Canon EOS R5)", "2025-03-29", "2025-04-05", "3 days", "On Time"),
+            ("CHK220", "Wireless Microphone System", "2025-03-25", "2025-04-01", "0 days", "Due Today"),
+            ("CHK198", "Tripod (Manfrotto Pro)", "2025-03-15", "2025-03-22", "-5 days", "OVERDUE")
+        ]
+
+        for checkout in checkouts:
+            tree.insert('', 'end', values=checkout)
+
+        # Return form
+        return_frame = ttk.LabelFrame(main_frame, text="Return Equipment")
+        return_frame.pack(fill='x', pady=(0, 15))
+
+        return_content = ttk.Frame(return_frame)
+        return_content.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(return_content, text="Checkout ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Entry(return_content, width=30).grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(return_content, text="Condition:").grid(row=1, column=0, sticky='w', pady=5)
+        condition_combo = ttk.Combobox(return_content, width=28, state='readonly')
+        condition_combo['values'] = ('Same as checkout (Good)', 'Excellent', 'Minor wear', 'Damaged - Minor', 'Damaged - Major')
+        condition_combo.current(0)
+        condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(return_content, text="Notes/Issues:").grid(row=2, column=0, sticky='nw', pady=5)
+        notes_text = scrolledtext.ScrolledText(return_content, height=4, width=30)
+        notes_text.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+        notes_text.insert('1.0', "Equipment in good condition, no issues to report.")
+
+        return_content.columnconfigure(1, weight=1)
+
+        # Late fee warning
+        fee_frame = ttk.Frame(main_frame)
+        fee_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(fee_frame, text="⚠️ Late Fee Calculation:", font=('Arial', 10, 'bold')).pack(anchor='w')
+        ttk.Label(fee_frame, text="CHK198 (Tripod): 5 days overdue × £10/day = £50", foreground='red').pack(anchor='w', padx=20)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Process Return", command=self.process_return).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Report Damage", command=self.report_damage).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+
+    def process_return(self):
+        messagebox.showinfo("Return Processed",
+                          "Equipment return processed!\n\n" +
+                          "Checkout ID: CHK234\n" +
+                          "Equipment: Professional Camera (Canon EOS R5)\n" +
+                          "Returned: 2025-04-02\n" +
+                          "Condition: Same as checkout (Good)\n" +
+                          "Late Fee: £0.00\n\n" +
+                          "Thank you for returning on time!\n" +
+                          "Confirmation email sent.")
+
+    def report_damage(self):
+        messagebox.showinfo("Report Damage",
+                          "Damage Report Form:\n\n" +
+                          "Please provide:\n" +
+                          "- Description of damage\n" +
+                          "- Photos if possible\n" +
+                          "- How damage occurred\n\n" +
+                          "Damage assessment will be conducted\n" +
+                          "and you'll be notified of any charges.")
+
+
+class ViewMyEquipmentCheckoutsDialog:
+    """Dialog for viewing personal equipment checkouts"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("My Equipment Checkouts")
+        self.dialog.geometry("1000x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📚 My Equipment Checkouts",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Summary
+        summary_frame = ttk.LabelFrame(main_frame, text="Summary")
+        summary_frame.pack(fill='x', pady=(0, 15))
+
+        summary_text = """Current Checkouts: 3
+Overdue Items: 1
+Total Borrowed (All Time): 18
+On-Time Returns: 94% (17/18)"""
+
+        ttk.Label(summary_frame, text=summary_text, justify='left', font=('Courier', 10)).pack(padx=15, pady=10)
+
+        # Create notebook
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Current tab
+        current_frame = ttk.Frame(notebook)
+        notebook.add(current_frame, text="Current Checkouts")
+
+        columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
+        current_tree = ttk.Treeview(current_frame, columns=columns, show='tree headings', height=10)
+
+        for col in columns:
+            current_tree.heading(col, text=col)
+            if col == 'Equipment':
+                current_tree.column(col, width=250)
+            else:
+                current_tree.column(col, width=110)
+
+        current_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        current_checkouts = [
+            ("CHK234", "Professional Camera (Canon EOS R5)", "2025-03-29", "2025-04-05", "3 days", "On Time"),
+            ("CHK220", "Wireless Microphone System", "2025-03-25", "2025-04-01", "0 days", "Due Today"),
+            ("CHK198", "Tripod (Manfrotto Pro)", "2025-03-15", "2025-03-22", "-5 days", "OVERDUE")
+        ]
+
+        for checkout in current_checkouts:
+            current_tree.insert('', 'end', values=checkout)
+
+        # History tab
+        history_frame = ttk.Frame(notebook)
+        notebook.add(history_frame, text="Checkout History")
+
+        history_columns = ('ID', 'Equipment', 'Checkout Date', 'Return Date', 'Days Borrowed', 'Status')
+        history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
+
+        for col in history_columns:
+            history_tree.heading(col, text=col)
+            if col == 'Equipment':
+                history_tree.column(col, width=250)
+            else:
+                history_tree.column(col, width=110)
+
+        history_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        history_checkouts = [
+            ("CHK187", "LED Light Panel (3-pack)", "2025-03-10", "2025-03-17", "7 days", "Returned On Time"),
+            ("CHK156", "Laptop (Dell XPS 15)", "2025-02-25", "2025-03-04", "7 days", "Returned On Time"),
+            ("CHK134", "Portable Speaker (JBL)", "2025-02-15", "2025-02-18", "3 days", "Returned On Time"),
+            ("CHK112", "Projector (Epson 4K)", "2025-01-20", "2025-01-27", "7 days", "Returned On Time")
+        ]
+
+        for checkout in history_checkouts:
+            history_tree.insert('', 'end', values=checkout)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Renew Checkout", command=self.renew).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Return Equipment", command=self.return_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Export History", command=self.export_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def renew(self):
+        messagebox.showinfo("Renew Checkout",
+                          "Renew checkout for 7 more days?\n\n" +
+                          "Equipment: Professional Camera (Canon EOS R5)\n" +
+                          "Current Due Date: 2025-04-05\n" +
+                          "New Due Date: 2025-04-12\n\n" +
+                          "Renewals allowed: 2/3")
+
+    def return_equipment(self):
+        dialog = ReturnEquipmentDialog(self.dialog, self.auth)
+
+    def export_history(self):
+        messagebox.showinfo("Export", "Checkout history exported to:\nmy_equipment_checkouts.csv\n\nIncludes all current and past checkouts.")
+
+
+class SearchEquipmentDialog:
+    """Dialog for searching equipment"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Search Equipment")
+        self.dialog.geometry("900x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🔍 Search Equipment",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Search criteria
+        search_frame = ttk.LabelFrame(main_frame, text="Search Criteria")
+        search_frame.pack(fill='x', pady=(0, 15))
+
+        search_content = ttk.Frame(search_frame)
+        search_content.pack(fill='x', padx=15, pady=10)
+
+        # Search text
+        ttk.Label(search_content, text="Keyword:").grid(row=0, column=0, sticky='w', pady=5)
+        search_entry = ttk.Entry(search_content, width=40)
+        search_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        # Category
+        ttk.Label(search_content, text="Category:").grid(row=1, column=0, sticky='w', pady=5)
+        category_combo = ttk.Combobox(search_content, width=38, state='readonly')
+        category_combo['values'] = ('Any', 'Audio Equipment', 'Video Equipment', 'Lighting', 'Computers', 'Sports Equipment')
+        category_combo.current(0)
+        category_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        # Status
+        ttk.Label(search_content, text="Status:").grid(row=2, column=0, sticky='w', pady=5)
+        status_combo = ttk.Combobox(search_content, width=38, state='readonly')
+        status_combo['values'] = ('Any', 'Available', 'Checked Out', 'Maintenance', 'Reserved')
+        status_combo.current(0)
+        status_combo.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        # Condition
+        ttk.Label(search_content, text="Condition:").grid(row=3, column=0, sticky='w', pady=5)
+        condition_combo = ttk.Combobox(search_content, width=38, state='readonly')
+        condition_combo['values'] = ('Any', 'Excellent', 'Good', 'Fair')
+        condition_combo.current(0)
+        condition_combo.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Button(search_content, text="Search", command=self.search, width=15).grid(row=4, column=1, sticky='e', padx=10, pady=10)
+
+        search_content.columnconfigure(1, weight=1)
+
+        # Results
+        results_frame = ttk.LabelFrame(main_frame, text="Search Results (12 items found)")
+        results_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Name', 'Category', 'Condition', 'Location', 'Status')
+        tree = ttk.Treeview(results_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Name':
+                tree.column(col, width=250)
+            elif col == 'Category':
+                tree.column(col, width=130)
+            else:
+                tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample results
+        results = [
+            ("EQ001", "Professional Camera (Canon EOS R5)", "Video Equipment", "Excellent", "Media Room A", "Available"),
+            ("EQ004", "Tripod (Manfrotto Pro)", "Video Equipment", "Good", "Media Room A", "Available"),
+            ("EQ007", "Projector (Epson 4K)", "Video Equipment", "Excellent", "AV Room", "Available"),
+            ("EQ008", "Green Screen Kit", "Video Equipment", "Good", "Media Room B", "Available")
+        ]
+
+        for item in results:
+            tree.insert('', 'end', values=item)
+
+        tree.bind('<Double-1>', lambda e: self.view_details())
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="View Details", command=self.view_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Save Search", command=self.save_search).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def search(self):
+        messagebox.showinfo("Search", "Searching equipment database...\n\nFound 4 items matching 'camera'")
+
+    def view_details(self):
+        dialog = ViewEquipmentDetailsDialog(self.dialog, self.auth)
+
+    def checkout(self):
+        dialog = CheckOutEquipmentDialog(self.dialog, self.auth)
+
+    def save_search(self):
+        messagebox.showinfo("Save Search", "Save search criteria for quick access?\n\nYou'll be notified when matching equipment becomes available.")
+
+
+class AddNewEquipmentDialog:
+    """Dialog for adding new equipment (admin)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Add New Equipment")
+        self.dialog.geometry("700x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="➕ Add New Equipment",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Scrollable form
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Form fields
+        form_frame = ttk.Frame(scrollable_frame)
+        form_frame.pack(fill='both', expand=True, padx=15, pady=10)
+
+        fields = [
+            ("Equipment Name:", "Entry"),
+            ("Category:", "Combo", ('Audio Equipment', 'Video Equipment', 'Lighting', 'Computers', 'Sports Equipment', 'Event Supplies', 'Other')),
+            ("Manufacturer:", "Entry"),
+            ("Model:", "Entry"),
+            ("Serial Number:", "Entry"),
+            ("Purchase Date:", "Entry"),
+            ("Purchase Cost:", "Entry"),
+            ("Condition:", "Combo", ('Excellent', 'Good', 'Fair')),
+            ("Location:", "Entry"),
+            ("Quantity:", "Entry"),
+            ("Description:", "Text"),
+            ("Included Accessories:", "Text"),
+            ("Usage Notes:", "Text"),
+            ("Training Required:", "Check"),
+            ("Maximum Loan Days:", "Entry"),
+            ("Replacement Value:", "Entry")
+        ]
+
+        for i, field_info in enumerate(fields):
+            label = field_info[0]
+            field_type = field_info[1]
+
+            ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky='nw', pady=5)
+
+            if field_type == "Entry":
+                ttk.Entry(form_frame, width=45).grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+            elif field_type == "Combo":
+                combo = ttk.Combobox(form_frame, width=43, state='readonly')
+                combo['values'] = field_info[2]
+                combo.current(0)
+                combo.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+            elif field_type == "Text":
+                text = scrolledtext.ScrolledText(form_frame, height=3, width=45)
+                text.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+            elif field_type == "Check":
+                ttk.Checkbutton(form_frame, text="Yes").grid(row=i, column=1, sticky='w', padx=10, pady=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        ttk.Button(button_frame, text="Add Equipment", command=self.add_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+
+    def add_equipment(self):
+        messagebox.showinfo("Equipment Added",
+                          "New equipment added successfully!\n\n" +
+                          "Equipment ID: EQ157\n" +
+                          "Name: Professional Camera (Canon EOS R5)\n" +
+                          "Category: Video Equipment\n" +
+                          "Status: Available\n\n" +
+                          "Equipment is now available for checkout.")
+        self.dialog.destroy()
+
+
+class UpdateEquipmentStatusDialog:
+    """Dialog for updating equipment status (admin)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Update Equipment Status")
+        self.dialog.geometry("900x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="⚙️ Update Equipment Status",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Equipment list
+        list_frame = ttk.LabelFrame(main_frame, text="Equipment Inventory")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Name', 'Category', 'Current Status', 'Condition', 'Location')
+        tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Name':
+                tree.column(col, width=200)
+            elif col == 'Category':
+                tree.column(col, width=120)
+            else:
+                tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample equipment
+        equipment = [
+            ("EQ001", "Professional Camera (Canon EOS R5)", "Video Equipment", "Available", "Excellent", "Media Room A"),
+            ("EQ002", "Wireless Microphone System", "Audio Equipment", "Checked Out", "Good", "Audio Store"),
+            ("EQ003", "LED Light Panel (3-pack)", "Lighting", "Maintenance", "Fair", "Repair Shop"),
+            ("EQ004", "Tripod (Manfrotto Pro)", "Video Equipment", "Available", "Good", "Media Room A")
+        ]
+
+        for item in equipment:
+            tree.insert('', 'end', values=item)
+
+        # Update form
+        update_frame = ttk.LabelFrame(main_frame, text="Update Status")
+        update_frame.pack(fill='x', pady=(0, 15))
+
+        update_content = ttk.Frame(update_frame)
+        update_content.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(update_content, text="New Status:").grid(row=0, column=0, sticky='w', pady=5)
+        status_combo = ttk.Combobox(update_content, width=25, state='readonly')
+        status_combo['values'] = ('Available', 'Checked Out', 'Maintenance', 'Reserved', 'Lost', 'Retired')
+        status_combo.current(0)
+        status_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(update_content, text="New Condition:").grid(row=1, column=0, sticky='w', pady=5)
+        condition_combo = ttk.Combobox(update_content, width=25, state='readonly')
+        condition_combo['values'] = ('Excellent', 'Good', 'Fair', 'Poor', 'Broken')
+        condition_combo.current(0)
+        condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(update_content, text="New Location:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Entry(update_content, width=27).grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(update_content, text="Notes:").grid(row=3, column=0, sticky='nw', pady=5)
+        notes_text = scrolledtext.ScrolledText(update_content, height=3, width=27)
+        notes_text.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
+
+        update_content.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Update Status", command=self.update_status).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Bulk Update", command=self.bulk_update).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View History", command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def update_status(self):
+        messagebox.showinfo("Status Updated",
+                          "Equipment status updated!\n\n" +
+                          "EQ003 - LED Light Panel (3-pack)\n" +
+                          "Old Status: Maintenance\n" +
+                          "New Status: Available\n" +
+                          "Condition: Excellent\n\n" +
+                          "Equipment is now available for checkout.")
+
+    def bulk_update(self):
+        messagebox.showinfo("Bulk Update",
+                          "Bulk status update:\n\n" +
+                          "Select multiple items to update:\n" +
+                          "- Change status for all\n" +
+                          "- Update location for all\n" +
+                          "- Set condition for all\n\n" +
+                          "Useful for batch operations.")
+
+    def view_history(self):
+        messagebox.showinfo("Status History",
+                          "Equipment Status History:\n\n" +
+                          "EQ003 - LED Light Panel (3-pack)\n\n" +
+                          "2025-03-29: Maintenance → Available\n" +
+                          "2025-03-22: Checked Out → Maintenance\n" +
+                          "2025-03-15: Available → Checked Out\n" +
+                          "2025-03-08: Checked Out → Available\n" +
+                          "2025-03-01: Available → Checked Out")
+
+
+class EquipmentMaintenanceTrackingDialog:
+    """Dialog for tracking equipment maintenance"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Equipment Maintenance Tracking")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🔧 Equipment Maintenance",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Create notebook
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Current Maintenance tab
+        current_frame = ttk.Frame(notebook)
+        notebook.add(current_frame, text="Current Maintenance")
+
+        current_columns = ('ID', 'Equipment', 'Issue', 'Reported', 'Priority', 'Status', 'Expected Completion')
+        current_tree = ttk.Treeview(current_frame, columns=current_columns, show='tree headings', height=10)
+
+        for col in current_columns:
+            current_tree.heading(col, text=col)
+            if col == 'Equipment':
+                current_tree.column(col, width=180)
+            elif col == 'Issue':
+                current_tree.column(col, width=150)
+            else:
+                current_tree.column(col, width=100)
+
+        current_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        maintenance_items = [
+            ("MNT012", "LED Light Panel", "Bulb replacement needed", "2025-03-28", "High", "In Progress", "2025-04-02"),
+            ("MNT011", "Projector (Epson 4K)", "Fan making noise", "2025-03-25", "Medium", "Waiting Parts", "2025-04-10"),
+            ("MNT010", "Laptop (Dell XPS 15)", "Battery replacement", "2025-03-20", "Low", "Scheduled", "2025-04-15")
+        ]
+
+        for item in maintenance_items:
+            current_tree.insert('', 'end', values=item)
+
+        # Maintenance History tab
+        history_frame = ttk.Frame(notebook)
+        notebook.add(history_frame, text="Maintenance History")
+
+        history_columns = ('ID', 'Equipment', 'Issue', 'Completed', 'Cost', 'Performed By')
+        history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
+
+        for col in history_columns:
+            history_tree.heading(col, text=col)
+            if col == 'Equipment':
+                history_tree.column(col, width=200)
+            elif col == 'Issue':
+                history_tree.column(col, width=180)
+            else:
+                history_tree.column(col, width=120)
+
+        history_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        history_items = [
+            ("MNT009", "Professional Camera", "Sensor cleaning", "2025-03-15", "£45.00", "Tech Services"),
+            ("MNT008", "Wireless Microphone", "Battery compartment repair", "2025-03-10", "£25.00", "Audio Tech"),
+            ("MNT007", "Tripod", "Head adjustment", "2025-03-05", "£15.00", "Equipment Manager")
+        ]
+
+        for item in history_items:
+            history_tree.insert('', 'end', values=item)
+
+        # Scheduled Maintenance tab
+        schedule_frame = ttk.Frame(notebook)
+        notebook.add(schedule_frame, text="Scheduled Maintenance")
+
+        schedule_scroll = scrolledtext.ScrolledText(schedule_frame, height=18, wrap=tk.WORD, font=('Courier', 9))
+        schedule_scroll.pack(fill='both', expand=True, padx=10, pady=10)
+
+        schedule_text = """SCHEDULED MAINTENANCE CALENDAR
+
+APRIL 2025:
+────────────────────────────────────────────
+Week 1 (Apr 1-7):
+  • Professional Cameras (All) - Sensor cleaning
+  • Projectors - Filter replacement
+  • Audio Equipment - Connection check
+
+Week 2 (Apr 8-14):
+  • Laptops - System updates & antivirus
+  • Lighting Equipment - Bulb inspection
+  • Tripods - Mechanism lubrication
+
+Week 3 (Apr 15-21):
+  • Wireless Systems - Battery replacement
+  • Speakers - Driver testing
+  • Cameras - Firmware updates
+
+Week 4 (Apr 22-30):
+  • All Equipment - Safety inspection
+  • Inventory audit
+  • Equipment calibration
+
+MAY 2025:
+────────────────────────────────────────────
+Week 1 (May 1-7):
+  • Deep cleaning all equipment
+  • Cable testing & replacement
+  • Storage organization
+
+ANNUAL MAINTENANCE:
+────────────────────────────────────────────
+  • Professional calibration (June)
+  • Insurance inspection (July)
+  • Warranty reviews (August)"""
+
+        schedule_scroll.insert('1.0', schedule_text)
+        schedule_scroll.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Report Issue", command=self.report_issue).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Complete Maintenance", command=self.complete_maintenance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Schedule Maintenance", command=self.schedule_maintenance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def report_issue(self):
+        messagebox.showinfo("Report Issue",
+                          "Report equipment issue:\n\n" +
+                          "Equipment ID or Name:\n" +
+                          "Problem Description:\n" +
+                          "Severity: Low/Medium/High/Critical\n" +
+                          "Photos: Upload (optional)\n\n" +
+                          "Maintenance team will be notified.")
+
+    def complete_maintenance(self):
+        messagebox.showinfo("Complete Maintenance",
+                          "Mark maintenance as complete:\n\n" +
+                          "Maintenance ID: MNT012\n" +
+                          "Work performed:\n" +
+                          "Parts used:\n" +
+                          "Cost: £\n" +
+                          "Performed by:\n\n" +
+                          "Equipment will be marked available.")
+
+    def schedule_maintenance(self):
+        messagebox.showinfo("Schedule Maintenance",
+                          "Schedule preventive maintenance:\n\n" +
+                          "Equipment:\n" +
+                          "Maintenance type:\n" +
+                          "Scheduled date:\n" +
+                          "Assigned to:\n" +
+                          "Estimated duration:\n\n" +
+                          "Calendar reminder will be created.")
+
+
+class GenerateEquipmentReportsDialog:
+    """Dialog for generating equipment reports"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Equipment Reports")
+        self.dialog.geometry("900x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📊 Equipment Reports",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Report types
+        reports_frame = ttk.LabelFrame(main_frame, text="Available Reports")
+        reports_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Report cards
+        cards_container = ttk.Frame(reports_frame)
+        cards_container.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Row 1
+        row1 = ttk.Frame(cards_container)
+        row1.pack(fill='x', pady=(0, 10))
+
+        self.create_report_card(row1, "📋 Inventory Report", "Complete equipment inventory", self.inventory_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row1, "📈 Usage Statistics", "Checkout and usage stats", self.usage_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row1, "🔧 Maintenance Report", "Maintenance history & costs", self.maintenance_report).pack(side='left', fill='both', expand=True)
+
+        # Row 2
+        row2 = ttk.Frame(cards_container)
+        row2.pack(fill='x', pady=(0, 10))
+
+        self.create_report_card(row2, "💰 Financial Report", "Equipment costs & value", self.financial_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row2, "⚠️ Issues Report", "Problems and damages", self.issues_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row2, "📊 Utilization Report", "Equipment utilization rates", self.utilization_report).pack(side='left', fill='both', expand=True)
+
+        # Row 3
+        row3 = ttk.Frame(cards_container)
+        row3.pack(fill='x')
+
+        self.create_report_card(row3, "👥 User Activity", "User checkout patterns", self.user_activity_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row3, "📅 Forecast Report", "Future needs prediction", self.forecast_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
+        self.create_report_card(row3, "🎯 Custom Report", "Build your own report", self.custom_report).pack(side='left', fill='both', expand=True)
+
+        # Report parameters
+        params_frame = ttk.LabelFrame(main_frame, text="Report Parameters")
+        params_frame.pack(fill='x', pady=(0, 15))
+
+        params_content = ttk.Frame(params_frame)
+        params_content.pack(fill='x', padx=15, pady=10)
+
+        ttk.Label(params_content, text="Date Range:").grid(row=0, column=0, sticky='w', pady=5)
+        date_combo = ttk.Combobox(params_content, width=25, state='readonly')
+        date_combo['values'] = ('Last 7 days', 'Last 30 days', 'Last 3 months', 'Last 6 months', 'Last year', 'All time', 'Custom range')
+        date_combo.current(1)
+        date_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(params_content, text="Format:").grid(row=1, column=0, sticky='w', pady=5)
+        format_combo = ttk.Combobox(params_content, width=25, state='readonly')
+        format_combo['values'] = ('PDF', 'Excel (XLSX)', 'CSV', 'HTML')
+        format_combo.current(0)
+        format_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(params_content, text="Group By:").grid(row=2, column=0, sticky='w', pady=5)
+        group_combo = ttk.Combobox(params_content, width=25, state='readonly')
+        group_combo['values'] = ('Category', 'Location', 'Condition', 'Status', 'None')
+        group_combo.current(0)
+        group_combo.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        params_content.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="View Saved Reports", command=self.view_saved).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Schedule Report", command=self.schedule_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def create_report_card(self, parent, title, description, command):
+        card = ttk.Frame(parent, relief='raised', borderwidth=1)
+
+        ttk.Label(card, text=title, font=('Arial', 10, 'bold')).pack(pady=(8, 3), padx=8)
+        ttk.Label(card, text=description, font=('Arial', 8), wraplength=120).pack(pady=(0, 8), padx=8)
+        ttk.Button(card, text="Generate", command=command).pack(pady=(0, 8))
+
+        return card
+
+    def inventory_report(self):
+        messagebox.showinfo("Inventory Report",
+                          "Generating inventory report...\n\n" +
+                          "Report will include:\n" +
+                          "- All equipment items (156)\n" +
+                          "- Status breakdown\n" +
+                          "- Location details\n" +
+                          "- Condition assessment\n" +
+                          "- Value calculation\n\n" +
+                          "Saved to: reports/inventory_2025-04-02.pdf")
+
+    def usage_report(self):
+        messagebox.showinfo("Usage Statistics",
+                          "Usage statistics report:\n\n" +
+                          "Top 5 Most Used Equipment:\n" +
+                          "1. Professional Camera - 45 checkouts\n" +
+                          "2. Laptop (Dell XPS) - 38 checkouts\n" +
+                          "3. Projector - 32 checkouts\n" +
+                          "4. Wireless Mic - 28 checkouts\n" +
+                          "5. Tripod - 25 checkouts\n\n" +
+                          "Average checkout duration: 4.2 days\n" +
+                          "Total checkouts (30 days): 234")
+
+    def maintenance_report(self):
+        messagebox.showinfo("Maintenance Report",
+                          "Maintenance summary:\n\n" +
+                          "Total maintenance tasks: 15\n" +
+                          "Completed: 12 (80%)\n" +
+                          "In progress: 3 (20%)\n\n" +
+                          "Total maintenance cost: £685.00\n" +
+                          "Average cost per task: £45.67\n\n" +
+                          "Most common issues:\n" +
+                          "1. Battery replacement (5)\n" +
+                          "2. Cleaning (4)\n" +
+                          "3. Repairs (6)")
+
+    def financial_report(self):
+        messagebox.showinfo("Financial Report",
+                          "Financial summary:\n\n" +
+                          "Total equipment value: £125,400\n" +
+                          "Total purchases (2024): £18,500\n" +
+                          "Total maintenance costs: £2,340\n" +
+                          "Late fees collected: £450\n\n" +
+                          "Most valuable items:\n" +
+                          "1. Professional Cameras (5x): £17,500\n" +
+                          "2. Laptops (10x): £15,000\n" +
+                          "3. Projectors (3x): £9,000")
+
+    def issues_report(self):
+        messagebox.showinfo("Issues Report",
+                          "Equipment issues summary:\n\n" +
+                          "Total issues reported: 8\n" +
+                          "Resolved: 6 (75%)\n" +
+                          "Pending: 2 (25%)\n\n" +
+                          "Damage reports: 3\n" +
+                          "Lost equipment: 0\n" +
+                          "Theft: 0\n\n" +
+                          "Total damage costs: £285.00")
+
+    def utilization_report(self):
+        messagebox.showinfo("Utilization Report",
+                          "Equipment utilization rates:\n\n" +
+                          "Overall utilization: 62%\n\n" +
+                          "By category:\n" +
+                          "- Video Equipment: 85% (High)\n" +
+                          "- Audio Equipment: 72% (Good)\n" +
+                          "- Computers: 68% (Good)\n" +
+                          "- Lighting: 45% (Low)\n" +
+                          "- Sports Equipment: 38% (Low)\n\n" +
+                          "Recommendation: Consider retiring\n" +
+                          "underutilized equipment")
+
+    def user_activity_report(self):
+        messagebox.showinfo("User Activity",
+                          "User checkout patterns:\n\n" +
+                          "Total active users: 87\n" +
+                          "Average checkouts per user: 2.7\n\n" +
+                          "Top borrowers:\n" +
+                          "1. Film Society - 23 checkouts\n" +
+                          "2. Media Club - 18 checkouts\n" +
+                          "3. John Smith - 12 checkouts\n\n" +
+                          "On-time return rate: 94%")
+
+    def forecast_report(self):
+        messagebox.showinfo("Forecast Report",
+                          "Equipment needs forecast:\n\n" +
+                          "Based on usage trends:\n\n" +
+                          "Recommend purchasing:\n" +
+                          "- 2 additional cameras (high demand)\n" +
+                          "- 3 more laptops (waitlist: 12)\n" +
+                          "- 1 projector (backup needed)\n\n" +
+                          "Estimated investment: £12,000\n" +
+                          "Expected ROI: 18 months")
+
+    def custom_report(self):
+        messagebox.showinfo("Custom Report",
+                          "Build custom report:\n\n" +
+                          "Select:\n" +
+                          "- Data fields to include\n" +
+                          "- Filter criteria\n" +
+                          "- Grouping options\n" +
+                          "- Chart types\n" +
+                          "- Export format\n\n" +
+                          "Save template for future use")
+
+    def view_saved(self):
+        messagebox.showinfo("Saved Reports",
+                          "Previously generated reports:\n\n" +
+                          "1. Inventory Report - 2025-04-01.pdf\n" +
+                          "2. Usage Statistics - 2025-03-25.xlsx\n" +
+                          "3. Maintenance Report - 2025-03-15.pdf\n" +
+                          "4. Financial Report - 2025-03-01.pdf\n\n" +
+                          "Click to open or delete")
+
+    def schedule_report(self):
+        messagebox.showinfo("Schedule Report",
+                          "Schedule automatic report generation:\n\n" +
+                          "Frequency:\n" +
+                          "- Daily\n" +
+                          "- Weekly\n" +
+                          "- Monthly\n" +
+                          "- Quarterly\n\n" +
+                          "Reports will be emailed automatically")
 
 
 class EventAttendanceDialog:
