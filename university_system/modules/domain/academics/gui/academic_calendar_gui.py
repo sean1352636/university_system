@@ -7,9 +7,15 @@ import threading
 import queue
 import json
 import os
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Callable
 import logging
 import platform
+import re
+import uuid
+import hashlib
+import secrets
+from functools import wraps
+from urllib.parse import urlparse
 
 # Import the original calendar functionality
 from university_system.modules.domain.academics.services.academic_calendar import (
@@ -767,6 +773,632 @@ class SyncError(CalendarError):
 
 # ============================================================================
 # END OF CUSTOM ERROR CLASSES
+# ============================================================================
+
+# ============================================================================
+# ERROR HANDLING UTILITIES
+# ============================================================================
+
+def handle_exception(error_class: type = CalendarError,
+                    default_return: Any = None,
+                    show_dialog: bool = True) -> Callable:
+    """
+    Decorator for automatic exception handling and conversion
+
+    Automatically catches exceptions, converts them to custom error types,
+    logs them, and optionally displays error dialogs to users.
+
+    Args:
+        error_class: Error class to convert exceptions to
+        default_return: Default return value on error
+        show_dialog: Whether to show error dialog to user
+
+    Returns:
+        Callable: Decorated function
+
+    Example:
+        @handle_exception(ValidationError, default_return=False)
+        def validate_form(data):
+            # validation logic
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except (CalendarError, ValidationError, DatabaseError,
+                   AuthenticationError, PermissionError, ExportError, SyncError) as e:
+                # Already a custom error, just log and handle
+                gui_logger.error(f"Error in {func.__name__}: {e.user_message}")
+                if show_dialog:
+                    safe_show_error("Error", e.user_message)
+                return default_return
+            except Exception as e:
+                # Convert to custom error
+                custom_error = error_class(
+                    str(e),
+                    context={
+                        'function': func.__name__,
+                        'original_error': type(e).__name__
+                    }
+                )
+                gui_logger.error(f"Unexpected error in {func.__name__}: {custom_error.user_message}")
+                if show_dialog:
+                    safe_show_error("Unexpected Error", custom_error.user_message)
+                return default_return
+        return wrapper
+    return decorator
+
+
+def log_and_suppress(error_message: str = "An error occurred",
+                    logger: Optional[logging.Logger] = None) -> Callable:
+    """
+    Decorator to log and suppress errors without propagating them
+
+    Useful for non-critical operations where failures should not interrupt
+    the main flow (e.g., analytics, optional features).
+
+    Args:
+        error_message: Custom error message to log
+        logger: Logger to use (defaults to gui_logger)
+
+    Returns:
+        Callable: Decorated function
+
+    Example:
+        @log_and_suppress("Failed to track analytics")
+        def track_user_action(action):
+            # analytics tracking that shouldn't fail the main flow
+            pass
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                log = logger or gui_logger
+                log.warning(
+                    f"{error_message} in {func.__name__}: {str(e)}",
+                    extra={'function': func.__name__, 'error': str(e)}
+                )
+                return None
+        return wrapper
+    return decorator
+
+
+def convert_to_user_error(error: Exception, context: Optional[Dict[str, Any]] = None) -> CalendarError:
+    """
+    Convert any exception to a user-friendly CalendarError
+
+    Analyzes the exception type and message to create appropriate
+    user-friendly error messages with helpful context.
+
+    Args:
+        error: Original exception
+        context: Additional context information
+
+    Returns:
+        CalendarError: User-friendly error instance
+
+    Example:
+        try:
+            conn.execute(query)
+        except Exception as e:
+            user_error = convert_to_user_error(e, {'query': 'SELECT...'})
+            raise user_error
+    """
+    error_str = str(error).lower()
+    error_type = type(error).__name__
+
+    # Database errors
+    if 'database' in error_str or 'sqlite' in error_str or error_type in ('DatabaseError', 'OperationalError'):
+        if 'locked' in error_str:
+            return DatabaseError(
+                "Database is temporarily locked. Please try again.",
+                operation="database_access",
+                context=context
+            )
+        elif 'constraint' in error_str or 'unique' in error_str:
+            return DatabaseError.constraint_violation(
+                "UNIQUE" if 'unique' in error_str else "CONSTRAINT",
+                table=context.get('table') if context else None
+            )
+        else:
+            return DatabaseError(
+                "A database error occurred. Please contact support.",
+                operation="unknown",
+                context=context
+            )
+
+    # Permission errors
+    elif 'permission' in error_str or 'access denied' in error_str or error_type == 'PermissionError':
+        return PermissionError(
+            "You do not have permission to perform this action.",
+            context=context
+        )
+
+    # File/IO errors
+    elif 'file' in error_str or error_type in ('IOError', 'OSError', 'FileNotFoundError'):
+        if 'not found' in error_str or error_type == 'FileNotFoundError':
+            return ExportError(
+                "File not found. Please check the file path.",
+                context=context
+            )
+        else:
+            return ExportError(
+                "A file operation error occurred.",
+                context=context
+            )
+
+    # Network/connection errors
+    elif 'connection' in error_str or 'network' in error_str or error_type in ('ConnectionError', 'TimeoutError'):
+        return SyncError.connection_failed(
+            context.get('sync_source', 'remote server') if context else 'remote server',
+            reason=str(error)
+        )
+
+    # Validation errors
+    elif 'invalid' in error_str or 'validation' in error_str or error_type == 'ValueError':
+        return ValidationError(
+            str(error),
+            field=context.get('field') if context else None,
+            context=context
+        )
+
+    # Generic error
+    else:
+        return CalendarError(
+            f"An unexpected error occurred: {str(error)}",
+            error_type=error_type,
+            context=context
+        )
+
+# ============================================================================
+# VALIDATION UTILITIES
+# ============================================================================
+
+def validate_date(date_string: str, format: str = "%Y-%m-%d") -> Tuple[bool, Optional[datetime]]:
+    """
+    Validate date string and convert to datetime
+
+    Args:
+        date_string: Date string to validate
+        format: Expected date format (default: YYYY-MM-DD)
+
+    Returns:
+        Tuple[bool, Optional[datetime]]: (is_valid, datetime_object or None)
+
+    Example:
+        is_valid, date_obj = validate_date("2025-11-09")
+        if is_valid:
+            print(f"Valid date: {date_obj}")
+    """
+    try:
+        date_obj = datetime.strptime(date_string.strip(), format)
+        return True, date_obj
+    except (ValueError, AttributeError, TypeError):
+        return False, None
+
+
+def validate_datetime(datetime_string: str, format: str = "%Y-%m-%d %H:%M:%S") -> Tuple[bool, Optional[datetime]]:
+    """
+    Validate datetime string and convert to datetime object
+
+    Args:
+        datetime_string: Datetime string to validate
+        format: Expected datetime format (default: YYYY-MM-DD HH:MM:SS)
+
+    Returns:
+        Tuple[bool, Optional[datetime]]: (is_valid, datetime_object or None)
+
+    Example:
+        is_valid, dt_obj = validate_datetime("2025-11-09 14:30:00")
+        if is_valid:
+            print(f"Valid datetime: {dt_obj}")
+    """
+    try:
+        dt_obj = datetime.strptime(datetime_string.strip(), format)
+        return True, dt_obj
+    except (ValueError, AttributeError, TypeError):
+        return False, None
+
+
+def validate_email(email: str) -> bool:
+    """
+    Validate email address format
+
+    Uses RFC 5322 compliant regex pattern for email validation.
+
+    Args:
+        email: Email address to validate
+
+    Returns:
+        bool: True if valid email format, False otherwise
+
+    Example:
+        if validate_email("user@example.com"):
+            print("Valid email")
+    """
+    if not email or not isinstance(email, str):
+        return False
+
+    # RFC 5322 compliant email regex (simplified)
+    email_pattern = re.compile(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    )
+
+    return bool(email_pattern.match(email.strip()))
+
+
+def validate_uuid(uuid_string: str) -> bool:
+    """
+    Validate UUID string format
+
+    Supports UUID versions 1, 3, 4, and 5.
+
+    Args:
+        uuid_string: UUID string to validate
+
+    Returns:
+        bool: True if valid UUID format, False otherwise
+
+    Example:
+        if validate_uuid("550e8400-e29b-41d4-a716-446655440000"):
+            print("Valid UUID")
+    """
+    if not uuid_string or not isinstance(uuid_string, str):
+        return False
+
+    try:
+        uuid_obj = uuid.UUID(uuid_string.strip())
+        return str(uuid_obj) == uuid_string.strip().lower()
+    except (ValueError, AttributeError):
+        return False
+
+# ============================================================================
+# SANITIZATION UTILITIES
+# ============================================================================
+
+def sanitize_string(input_string: str, max_length: int = 1000,
+                   allow_special_chars: bool = True) -> str:
+    """
+    Sanitize input string to prevent SQL injection and XSS
+
+    Removes potentially dangerous characters and limits length.
+
+    Args:
+        input_string: String to sanitize
+        max_length: Maximum allowed length
+        allow_special_chars: Whether to allow special characters
+
+    Returns:
+        str: Sanitized string
+
+    Example:
+        safe_input = sanitize_string(user_input, max_length=100)
+    """
+    if not input_string or not isinstance(input_string, str):
+        return ""
+
+    # Limit length
+    sanitized = input_string[:max_length]
+
+    # Remove null bytes (common SQL injection technique)
+    sanitized = sanitized.replace('\x00', '')
+
+    if not allow_special_chars:
+        # Keep only alphanumeric, spaces, and basic punctuation
+        sanitized = re.sub(r'[^a-zA-Z0-9\s\.,!?\-_@]', '', sanitized)
+    else:
+        # Remove potentially dangerous characters for SQL/XSS
+        dangerous_patterns = [
+            r'<script[^>]*>.*?</script>',  # Script tags
+            r'javascript:',                 # JavaScript protocol
+            r'on\w+\s*=',                  # Event handlers
+            r'--',                         # SQL comments
+            r'/\*.*?\*/',                  # SQL block comments
+        ]
+        for pattern in dangerous_patterns:
+            sanitized = re.sub(pattern, '', sanitized, flags=re.IGNORECASE | re.DOTALL)
+
+    return sanitized.strip()
+
+
+def sanitize_filename(filename: str, max_length: int = 255) -> str:
+    """
+    Sanitize filename to prevent path traversal attacks
+
+    Removes path separators and limits to valid filename characters.
+
+    Args:
+        filename: Filename to sanitize
+        max_length: Maximum filename length (default: 255)
+
+    Returns:
+        str: Sanitized filename
+
+    Example:
+        safe_filename = sanitize_filename("../../etc/passwd")
+        # Returns: "etc_passwd"
+    """
+    if not filename or not isinstance(filename, str):
+        return "unnamed_file"
+
+    # Remove path separators and parent directory references
+    sanitized = filename.replace('/', '_').replace('\\', '_')
+    sanitized = sanitized.replace('..', '')
+    sanitized = sanitized.replace('~', '')
+
+    # Keep only safe filename characters
+    # Allow: alphanumeric, spaces, dots, dashes, underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9\s\.\-_]', '', sanitized)
+
+    # Remove leading/trailing dots and spaces (problematic on Windows)
+    sanitized = sanitized.strip('. ')
+
+    # Ensure not empty after sanitization
+    if not sanitized:
+        sanitized = "unnamed_file"
+
+    # Limit length
+    if len(sanitized) > max_length:
+        # Preserve extension if present
+        name_parts = sanitized.rsplit('.', 1)
+        if len(name_parts) == 2:
+            name, ext = name_parts
+            max_name_length = max_length - len(ext) - 1
+            sanitized = f"{name[:max_name_length]}.{ext}"
+        else:
+            sanitized = sanitized[:max_length]
+
+    return sanitized
+
+
+def validate_file_path(file_path: str, allowed_directories: Optional[List[str]] = None,
+                      allowed_extensions: Optional[List[str]] = None) -> Tuple[bool, Optional[str]]:
+    """
+    Validate file path for security
+
+    Checks for path traversal, validates against allowed directories,
+    and checks file extensions.
+
+    Args:
+        file_path: File path to validate
+        allowed_directories: List of allowed directory paths (optional)
+        allowed_extensions: List of allowed file extensions (optional)
+
+    Returns:
+        Tuple[bool, Optional[str]]: (is_valid, error_message or None)
+
+    Example:
+        is_valid, error = validate_file_path(
+            user_path,
+            allowed_directories=['/home/user/uploads'],
+            allowed_extensions=['.txt', '.pdf']
+        )
+        if not is_valid:
+            print(f"Invalid path: {error}")
+    """
+    if not file_path or not isinstance(file_path, str):
+        return False, "File path is empty or invalid"
+
+    # Check for path traversal attempts
+    normalized_path = os.path.normpath(file_path)
+    if '..' in normalized_path or normalized_path.startswith('/..'):
+        return False, "Path traversal detected"
+
+    # Convert to absolute path
+    try:
+        abs_path = os.path.abspath(normalized_path)
+    except (ValueError, OSError):
+        return False, "Invalid file path"
+
+    # Check against allowed directories
+    if allowed_directories:
+        allowed = False
+        for allowed_dir in allowed_directories:
+            allowed_abs = os.path.abspath(allowed_dir)
+            if abs_path.startswith(allowed_abs):
+                allowed = True
+                break
+
+        if not allowed:
+            return False, f"File path not in allowed directories"
+
+    # Check file extension
+    if allowed_extensions:
+        _, ext = os.path.splitext(abs_path)
+        if ext.lower() not in [e.lower() for e in allowed_extensions]:
+            return False, f"File extension '{ext}' not allowed. Allowed: {', '.join(allowed_extensions)}"
+
+    return True, None
+
+
+def validate_url(url: str, allowed_schemes: Optional[List[str]] = None,
+                require_tld: bool = True) -> Tuple[bool, Optional[str]]:
+    """
+    Validate URL format and security
+
+    Checks URL structure, scheme, and optionally validates TLD.
+
+    Args:
+        url: URL to validate
+        allowed_schemes: List of allowed schemes (default: ['http', 'https'])
+        require_tld: Whether to require a valid TLD (default: True)
+
+    Returns:
+        Tuple[bool, Optional[str]]: (is_valid, error_message or None)
+
+    Example:
+        is_valid, error = validate_url("https://example.com/path")
+        if is_valid:
+            print("Valid URL")
+    """
+    if not url or not isinstance(url, str):
+        return False, "URL is empty or invalid"
+
+    # Default allowed schemes
+    if allowed_schemes is None:
+        allowed_schemes = ['http', 'https']
+
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False, "Invalid URL format"
+
+    # Check scheme
+    if not parsed.scheme:
+        return False, "URL must include a scheme (e.g., https://)"
+
+    if parsed.scheme.lower() not in [s.lower() for s in allowed_schemes]:
+        return False, f"URL scheme '{parsed.scheme}' not allowed. Allowed: {', '.join(allowed_schemes)}"
+
+    # Check netloc (domain)
+    if not parsed.netloc:
+        return False, "URL must include a domain"
+
+    # Check for valid TLD
+    if require_tld:
+        domain_parts = parsed.netloc.split('.')
+        if len(domain_parts) < 2:
+            return False, "URL must include a valid top-level domain"
+
+        tld = domain_parts[-1]
+        if not tld or len(tld) < 2:
+            return False, "Invalid top-level domain"
+
+    # Check for suspicious patterns
+    suspicious_patterns = [
+        r'@',  # Credentials in URL
+        r'javascript:',  # JavaScript protocol
+        r'data:',  # Data protocol (can be used for XSS)
+    ]
+
+    for pattern in suspicious_patterns:
+        if re.search(pattern, url, re.IGNORECASE):
+            return False, f"URL contains suspicious pattern: {pattern}"
+
+    return True, None
+
+# ============================================================================
+# SECURITY UTILITIES
+# ============================================================================
+
+def hash_password(password: str, salt: Optional[bytes] = None,
+                 iterations: int = 100000) -> Tuple[str, str]:
+    """
+    Hash password securely using PBKDF2-SHA256
+
+    Uses PBKDF2 with SHA256 for secure password hashing.
+
+    Args:
+        password: Password to hash
+        salt: Salt bytes (auto-generated if not provided)
+        iterations: Number of PBKDF2 iterations (default: 100,000)
+
+    Returns:
+        Tuple[str, str]: (hashed_password_hex, salt_hex)
+
+    Example:
+        password_hash, salt = hash_password("user_password")
+        # Store both password_hash and salt in database
+    """
+    if not password:
+        raise ValidationError.required_field("password")
+
+    # Generate salt if not provided
+    if salt is None:
+        salt = secrets.token_bytes(32)  # 256-bit salt
+
+    # Hash password using PBKDF2-SHA256
+    password_hash = hashlib.pbkdf2_hmac(
+        'sha256',
+        password.encode('utf-8'),
+        salt,
+        iterations
+    )
+
+    return password_hash.hex(), salt.hex()
+
+
+def verify_password(password: str, password_hash: str, salt: str,
+                   iterations: int = 100000) -> bool:
+    """
+    Verify hashed password
+
+    Compares provided password against stored hash using constant-time comparison.
+
+    Args:
+        password: Password to verify
+        password_hash: Stored password hash (hex)
+        salt: Stored salt (hex)
+        iterations: Number of PBKDF2 iterations (must match hash_password)
+
+    Returns:
+        bool: True if password matches, False otherwise
+
+    Example:
+        if verify_password(user_input, stored_hash, stored_salt):
+            print("Password correct")
+    """
+    if not password or not password_hash or not salt:
+        return False
+
+    try:
+        # Convert hex strings back to bytes
+        salt_bytes = bytes.fromhex(salt)
+        stored_hash_bytes = bytes.fromhex(password_hash)
+
+        # Hash the provided password with the same salt
+        computed_hash = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt_bytes,
+            iterations
+        )
+
+        # Constant-time comparison to prevent timing attacks
+        return secrets.compare_digest(computed_hash, stored_hash_bytes)
+
+    except (ValueError, AttributeError):
+        return False
+
+
+def generate_token(length: int = 32, url_safe: bool = True) -> str:
+    """
+    Generate secure random token
+
+    Creates cryptographically secure random tokens for sessions,
+    API keys, CSRF tokens, etc.
+
+    Args:
+        length: Token length in bytes (default: 32 = 256 bits)
+        url_safe: Whether to generate URL-safe token (default: True)
+
+    Returns:
+        str: Secure random token
+
+    Example:
+        session_token = generate_token(32)
+        api_key = generate_token(64)
+    """
+    if length < 16:
+        raise ValidationError(
+            "Token length must be at least 16 bytes for security",
+            field="length"
+        )
+
+    if url_safe:
+        # URL-safe base64 encoded token
+        return secrets.token_urlsafe(length)
+    else:
+        # Hexadecimal token
+        return secrets.token_hex(length)
+
+# ============================================================================
+# END OF UTILITIES
 # ============================================================================
 
 def safe_grab_set(dialog, parent=None):
