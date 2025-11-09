@@ -151,6 +151,8 @@ class ModuleSchedulingGUI:
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Interactive Scheduling Wizard", command=self.schedule_module_interactively)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Detect Conflicts", command=self.detect_all_conflicts)
         tools_menu.add_command(label="Data Validation", command=self.validate_data)
         tools_menu.add_command(label="Generate Reports", command=self.generate_reports)
@@ -3796,6 +3798,370 @@ Developer: Academic Systems Team
 
         except Exception as e:
             print(f"GUI Migration error: {e}")
+
+    # ==================== ADVANCED SCHEDULING FUNCTIONS ====================
+
+    def suggest_optimal_time_slot(self, module_code, session_type, duration_minutes=60):
+        """Suggest optimal time slots for a new schedule"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get module information
+            cursor.execute('SELECT module_code FROM modules WHERE module_code = ?', (module_code,))
+            if not cursor.fetchone():
+                messagebox.showerror("Error", f"Module {module_code} does not exist.")
+                return []
+
+            suggestions = []
+
+            for day in DAYS_OF_WEEK:
+                for time_slot in TIME_SLOTS:
+                    # Calculate end time
+                    start_hour, start_min = map(int, time_slot.split(':'))
+                    end_time = datetime.strptime(time_slot, "%H:%M") + timedelta(minutes=duration_minutes)
+                    end_time_str = end_time.strftime("%H:%M")
+
+                    # Check availability
+                    score = self._calculate_slot_score(day, time_slot, end_time_str, session_type)
+
+                    if score > 0:  # Only suggest available slots
+                        suggestions.append({
+                            'day': day,
+                            'start_time': time_slot,
+                            'end_time': end_time_str,
+                            'score': score,
+                            'reasons': self._get_score_reasons(day, time_slot, session_type)
+                        })
+
+            # Sort by score (highest first)
+            suggestions.sort(key=lambda x: x['score'], reverse=True)
+
+            return suggestions[:10]  # Return top 10 suggestions
+
+    def _calculate_slot_score(self, day, start_time, end_time, session_type):
+        """Calculate a score for a time slot based on various factors"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            score = 100  # Start with base score
+
+            # Check for conflicts
+            cursor.execute('''
+            SELECT COUNT(*) FROM module_schedule
+            WHERE day_of_week = ? AND (
+                (start_time < ? AND end_time > ?) OR
+                (start_time < ? AND end_time > ?) OR
+                (start_time >= ? AND end_time <= ?)
+            )
+            ''', (day, end_time, start_time, end_time, start_time, start_time, end_time))
+
+            conflicts = cursor.fetchone()[0]
+            if conflicts > 0:
+                score = 0  # No score for conflicting slots
+                return score
+
+            # Bonus for popular time slots (but not too crowded)
+            cursor.execute('''
+            SELECT COUNT(*) FROM module_schedule
+            WHERE day_of_week = ? AND start_time = ?
+            ''', (day, start_time))
+
+            same_time_count = cursor.fetchone()[0]
+            if 1 <= same_time_count <= 3:  # Sweet spot
+                score += 10
+            elif same_time_count > 5:  # Too crowded
+                score -= 20
+
+            # Preference bonuses
+            if session_type == 'Lecture' and start_time in ['09:00', '10:00', '11:00']:
+                score += 15  # Morning lectures preferred
+            elif session_type == 'Lab' and start_time in ['14:00', '15:00', '16:00']:
+                score += 10  # Afternoon labs preferred
+
+            # Day preferences
+            if day in ['Tuesday', 'Wednesday', 'Thursday']:
+                score += 5  # Mid-week preferred
+
+            return score
+
+    def _get_score_reasons(self, day, start_time, session_type):
+        """Get human-readable reasons for the score"""
+        reasons = []
+
+        if session_type == 'Lecture' and start_time in ['09:00', '10:00', '11:00']:
+            reasons.append("Good time for lectures")
+        elif session_type == 'Lab' and start_time in ['14:00', '15:00', '16:00']:
+            reasons.append("Preferred afternoon lab time")
+
+        if day in ['Tuesday', 'Wednesday', 'Thursday']:
+            reasons.append("Mid-week scheduling preferred")
+
+        if start_time in ['09:00', '10:00']:
+            reasons.append("Popular morning slot")
+
+        return reasons
+
+    def find_alternative_slots(self, day, start_time, end_time, room_type=None):
+        """Find alternative time slots when conflicts occur"""
+        alternatives = []
+
+        # Try same day, different times
+        for time_slot in TIME_SLOTS:
+            if time_slot != start_time:
+                duration = self._calculate_duration(start_time, end_time)
+                alt_end = self._add_minutes_to_time(time_slot, duration)
+
+                if self._is_slot_available(day, time_slot, alt_end):
+                    alternatives.append({
+                        'day': day,
+                        'start_time': time_slot,
+                        'end_time': alt_end,
+                        'type': 'same_day'
+                    })
+
+        # Try same time, different days
+        for alt_day in DAYS_OF_WEEK:
+            if alt_day != day and self._is_slot_available(alt_day, start_time, end_time):
+                alternatives.append({
+                    'day': alt_day,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'type': 'same_time'
+                })
+
+        return alternatives
+
+    def _calculate_duration(self, start_time, end_time):
+        """Calculate duration in minutes between two times"""
+        start = datetime.strptime(start_time, "%H:%M")
+        end = datetime.strptime(end_time, "%H:%M")
+        return int((end - start).total_seconds() / 60)
+
+    def _add_minutes_to_time(self, time_str, minutes):
+        """Add minutes to a time string"""
+        time_obj = datetime.strptime(time_str, "%H:%M")
+        new_time = time_obj + timedelta(minutes=minutes)
+        return new_time.strftime("%H:%M")
+
+    def _is_slot_available(self, day, start_time, end_time):
+        """Check if a time slot is available"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT COUNT(*) FROM module_schedule
+            WHERE day_of_week = ? AND (
+                (start_time < ? AND end_time > ?) OR
+                (start_time < ? AND end_time > ?) OR
+                (start_time >= ? AND end_time <= ?)
+            )
+            ''', (day, end_time, start_time, end_time, start_time, start_time, end_time))
+
+            conflicts = cursor.fetchone()[0]
+
+            return conflicts == 0
+
+    def schedule_module_interactively(self):
+        """Interactive module scheduling wizard with optimal time slot suggestions"""
+        # Create a dialog window for interactive scheduling
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Interactive Module Scheduling Wizard")
+        dialog.geometry("800x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Variables to store selections
+        selected_module = tk.StringVar()
+        selected_day = tk.StringVar()
+        selected_session_type = tk.StringVar(value="Lecture")
+        duration_var = tk.IntVar(value=60)
+
+        # Main frame with scrollbar
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        title_label = ttk.Label(main_frame, text="Module Scheduling Wizard",
+                               font=('Arial', 16, 'bold'))
+        title_label.pack(pady=(0, 20))
+
+        # Step 1: Select Module
+        step1_frame = ttk.LabelFrame(main_frame, text="Step 1: Select Module", padding="10")
+        step1_frame.pack(fill=tk.X, pady=10)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_code")
+            modules = cursor.fetchall()
+
+        module_options = [f"{code} - {name}" for code, name in modules]
+        module_combo = ttk.Combobox(step1_frame, textvariable=selected_module,
+                                   values=module_options, width=60, state='readonly')
+        module_combo.pack(fill=tk.X, pady=5)
+        if module_options:
+            module_combo.current(0)
+
+        # Step 2: Session Type and Duration
+        step2_frame = ttk.LabelFrame(main_frame, text="Step 2: Session Type & Duration", padding="10")
+        step2_frame.pack(fill=tk.X, pady=10)
+
+        type_frame = ttk.Frame(step2_frame)
+        type_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(type_frame, text="Session Type:").pack(side=tk.LEFT, padx=5)
+        session_combo = ttk.Combobox(type_frame, textvariable=selected_session_type,
+                                    values=SESSION_TYPES, width=20, state='readonly')
+        session_combo.pack(side=tk.LEFT, padx=5)
+        session_combo.current(0)
+
+        duration_frame = ttk.Frame(step2_frame)
+        duration_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(duration_frame, text="Duration (minutes):").pack(side=tk.LEFT, padx=5)
+        duration_spin = ttk.Spinbox(duration_frame, from_=30, to=180, increment=15,
+                                   textvariable=duration_var, width=10)
+        duration_spin.pack(side=tk.LEFT, padx=5)
+
+        # Step 3: Get Suggestions
+        step3_frame = ttk.LabelFrame(main_frame, text="Step 3: Suggested Time Slots", padding="10")
+        step3_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        # Suggestions tree
+        columns = ('Day', 'Start Time', 'End Time', 'Score', 'Reasons')
+        suggestions_tree = ttk.Treeview(step3_frame, columns=columns, show='headings', height=10)
+
+        for col in columns:
+            suggestions_tree.heading(col, text=col)
+            suggestions_tree.column(col, width=120 if col != 'Reasons' else 250)
+
+        suggestions_tree.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # Scrollbar for suggestions
+        suggestions_scroll = ttk.Scrollbar(step3_frame, orient=tk.VERTICAL,
+                                          command=suggestions_tree.yview)
+        suggestions_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        suggestions_tree.configure(yscrollcommand=suggestions_scroll.set)
+
+        def get_suggestions():
+            """Fetch and display suggestions"""
+            suggestions_tree.delete(*suggestions_tree.get_children())
+
+            module_text = selected_module.get()
+            if not module_text:
+                messagebox.showwarning("Warning", "Please select a module first.")
+                return
+
+            module_code = module_text.split(' - ')[0]
+            session_type = selected_session_type.get()
+            duration = duration_var.get()
+
+            suggestions = self.suggest_optimal_time_slot(module_code, session_type, duration)
+
+            for suggestion in suggestions:
+                reasons_text = ', '.join(suggestion['reasons']) if suggestion['reasons'] else 'Available slot'
+                suggestions_tree.insert('', tk.END, values=(
+                    suggestion['day'],
+                    suggestion['start_time'],
+                    suggestion['end_time'],
+                    suggestion['score'],
+                    reasons_text
+                ))
+
+        # Get Suggestions button
+        suggest_btn = ttk.Button(step3_frame, text="Get Optimal Time Slots",
+                                command=get_suggestions, style='Action.TButton')
+        suggest_btn.pack(pady=5)
+
+        # Step 4: Finalize Scheduling
+        step4_frame = ttk.LabelFrame(main_frame, text="Step 4: Finalize Schedule", padding="10")
+        step4_frame.pack(fill=tk.X, pady=10)
+
+        # Room and Instructor selection
+        room_var = tk.StringVar()
+        instructor_var = tk.StringVar()
+
+        room_frame = ttk.Frame(step4_frame)
+        room_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(room_frame, text="Room:").pack(side=tk.LEFT, padx=5)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, building, room_number, room_type FROM rooms WHERE is_active = 1")
+            rooms = cursor.fetchall()
+
+        room_options = [f"{building}-{room_num} ({room_type})" for _, building, room_num, room_type in rooms]
+        room_combo = ttk.Combobox(room_frame, textvariable=room_var,
+                                 values=room_options, width=40, state='readonly')
+        room_combo.pack(side=tk.LEFT, padx=5)
+        if room_options:
+            room_combo.current(0)
+
+        instructor_frame = ttk.Frame(step4_frame)
+        instructor_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(instructor_frame, text="Instructor:").pack(side=tk.LEFT, padx=5)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, first_name, last_name, department FROM instructors WHERE is_active = 1")
+            instructors = cursor.fetchall()
+
+        instructor_options = [f"{first} {last} ({dept})" for _, first, last, dept in instructors]
+        instructor_combo = ttk.Combobox(instructor_frame, textvariable=instructor_var,
+                                       values=instructor_options, width=40, state='readonly')
+        instructor_combo.pack(side=tk.LEFT, padx=5)
+        if instructor_options:
+            instructor_combo.current(0)
+
+        def schedule_selected():
+            """Schedule the module with selected time slot"""
+            selection = suggestions_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a suggested time slot.")
+                return
+
+            item = suggestions_tree.item(selection[0])
+            values = item['values']
+
+            module_text = selected_module.get()
+            module_code = module_text.split(' - ')[0]
+
+            day = values[0]
+            start_time = values[1]
+            end_time = values[2]
+            session_type = selected_session_type.get()
+
+            # Get room and instructor IDs
+            room_idx = room_combo.current()
+            instructor_idx = instructor_combo.current()
+
+            if room_idx < 0 or instructor_idx < 0:
+                messagebox.showwarning("Warning", "Please select both room and instructor.")
+                return
+
+            room_id = rooms[room_idx][0]
+            instructor_id = instructors[instructor_idx][0]
+
+            # Add the schedule
+            try:
+                self.scheduler.add_module_schedule(
+                    module_code, day, start_time, end_time,
+                    room_id, instructor_id, session_type
+                )
+                messagebox.showinfo("Success", "Module scheduled successfully!")
+                self.refresh_all_data()
+                dialog.destroy()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to schedule module: {str(e)}")
+
+        # Bottom buttons
+        button_frame = ttk.Frame(step4_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        schedule_btn = ttk.Button(button_frame, text="Schedule Selected Slot",
+                                 command=schedule_selected, style='Success.TButton')
+        schedule_btn.pack(side=tk.LEFT, padx=5)
+
+        cancel_btn = ttk.Button(button_frame, text="Cancel",
+                               command=dialog.destroy)
+        cancel_btn.pack(side=tk.LEFT, padx=5)
 
 
 # Dialog classes for adding/editing data

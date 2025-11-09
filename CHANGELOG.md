@@ -9,6 +9,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Module Scheduling GUI - 8 Advanced Scheduling Functions Added** (2025-11-09)
+- **ENHANCEMENT**: Added missing advanced scheduling algorithms and utilities from CLI
+- **Impact**: AI-powered scheduling suggestions and conflict resolution now available in GUI
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/module_scheduling_gui.py` - Added ~365 lines (5,150 → 5,515 lines)
+
+**NEW FUNCTIONS ADDED (8)**:
+
+**Core Scheduling Functions:**
+1. `suggest_optimal_time_slot(module_code, session_type, duration_minutes=60)` - AI-powered optimal time slot suggestion
+   - Analyzes all available time slots across the week
+   - Scores each slot based on multiple factors (conflicts, popularity, session type preferences)
+   - Returns top 10 suggestions with scores and reasons
+   - Considers peak times and day preferences (~35 lines)
+
+2. `_calculate_slot_score(day, start_time, end_time, session_type)` - Calculate quality score for time slots
+   - Base score of 100 points with bonuses/penalties
+   - Zero score for conflicting slots (automatic exclusion)
+   - Bonus for optimal times: Morning (09:00-11:00) for lectures, Afternoon (14:00-16:00) for labs
+   - Penalty for overcrowded time slots (>5 concurrent sessions)
+   - Mid-week preference bonus (Tuesday-Thursday)
+   - Sweet spot detection (1-3 concurrent sessions = +10 points) (~45 lines)
+
+3. `_get_score_reasons(day, start_time, session_type)` - Human-readable scoring explanations
+   - Explains why each time slot received its score
+   - Session type-specific recommendations
+   - Popularity indicators
+   - Helps users understand AI suggestions (~15 lines)
+
+4. `find_alternative_slots(day, start_time, end_time, room_type=None)` - Find alternatives when conflicts occur
+   - Same day, different times
+   - Same time, different days
+   - Returns categorized alternatives
+   - Useful for conflict resolution (~30 lines)
+
+**Utility Functions:**
+5. `_calculate_duration(start_time, end_time)` - Calculate session duration in minutes
+   - Time arithmetic utility
+   - Used by alternative slot finder (~5 lines)
+
+6. `_add_minutes_to_time(time_str, minutes)` - Add minutes to time string
+   - Handles time calculations
+   - Returns formatted time string (HH:MM) (~5 lines)
+
+7. `_is_slot_available(day, start_time, end_time)` - Check time slot availability
+   - Detects all types of conflicts (overlap, containment)
+   - Database-backed availability checking
+   - Thread-safe with connection pooling (~17 lines)
+
+**Interactive Wizard:**
+8. `schedule_module_interactively()` - Interactive scheduling wizard with AI suggestions
+   - 4-step wizard interface:
+     * Step 1: Select Module (dropdown with all modules)
+     * Step 2: Session Type & Duration (configurable 30-180 minutes)
+     * Step 3: AI-Suggested Time Slots (top 10 with scores and reasons)
+     * Step 4: Finalize with Room & Instructor
+   - Real-time suggestion updates
+   - Professional tabbed interface
+   - One-click scheduling from suggestions
+   - Integrated with existing database (~200 lines)
+
+**UI ENHANCEMENTS:**
+- Added "Interactive Scheduling Wizard" to Tools menu
+- Menu item triggers the AI-powered scheduling wizard
+- Seamless integration with existing GUI
+
+**TECHNICAL DETAILS:**
+- Uses database connection pooling (`get_connection()`)
+- Thread-safe operations
+- Comprehensive error handling
+- Activity logging for audit trail
+- Follows existing GUI patterns and styles
+
+**BUSINESS VALUE:**
+- Reduces scheduling conflicts through AI analysis
+- Saves time with intelligent suggestions
+- Improves resource utilization
+- Better user experience with guided wizard
+- Maintains data integrity with availability checking
+
+---
+
 **Medical Accommodation GUI - Complete Feature Parity Achieved (36/36 functions = 100%)** (2025-01-09)
 - **COMPLETION**: Added final missing function - ALL 36 CLI functions now accessible from GUI
 - **Impact**: 100% feature parity achieved - complete CLI functionality available in GUI
