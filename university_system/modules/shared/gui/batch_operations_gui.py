@@ -8024,6 +8024,891 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
             logger.error(f"Error updating student modules: {e}")
             raise
 
+    # ========================================
+    # BULK MODULE OPERATIONS - GUI WRAPPERS
+    # ========================================
+
+    def bulk_add_modules(self, module_code: str, module_name: str, module_type: str,
+                        student_ids: List[str] = None, course: str = None,
+                        progress_callback=None) -> int:
+        """Add module to multiple students - GUI version with progress tracking
+
+        Args:
+            module_code: Module code to add
+            module_name: Module name
+            module_type: Module type (compulsory_module_1, optional_module_1, etc.)
+            student_ids: List of specific student IDs (optional)
+            course: Course to filter students (optional)
+            progress_callback: Progress callback function
+
+        Returns:
+            Number of students updated
+        """
+        try:
+            updated_count = 0
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get student list
+                if student_ids:
+                    placeholders = ','.join('?' * len(student_ids))
+                    cursor.execute(
+                        f"SELECT student_id FROM students WHERE student_id IN ({placeholders})",
+                        student_ids
+                    )
+                elif course:
+                    cursor.execute("SELECT student_id FROM students WHERE course = ?", (course,))
+                else:
+                    cursor.execute("SELECT student_id FROM students")
+
+                students = cursor.fetchall()
+                total = len(students)
+
+                if progress_callback:
+                    progress_callback(0, f"Adding module to {total} students...")
+
+                # Update each student
+                for i, (student_id,) in enumerate(students):
+                    try:
+                        cursor.execute(
+                            f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
+                            (module_code, student_id)
+                        )
+                        updated_count += 1
+
+                        if progress_callback and i % 10 == 0:
+                            progress = int((i / total) * 100)
+                            progress_callback(progress, f"Updating: {i}/{total}")
+
+                    except Exception as e:
+                        logger.error(f"Error adding module to student {student_id}: {e}")
+
+                conn.commit()
+
+                if progress_callback:
+                    progress_callback(100, f"Complete: {updated_count} students updated")
+
+                logger.info(f"Bulk added module {module_code} to {updated_count} students")
+                return updated_count
+
+        except Exception as e:
+            logger.error(f"Error in bulk_add_modules: {e}")
+            raise
+
+    def bulk_remove_modules(self, module_type: str, student_ids: List[str] = None,
+                           course: str = None, progress_callback=None) -> int:
+        """Remove module from multiple students - GUI version
+
+        Args:
+            module_type: Module type to remove (e.g., 'optional_module_1')
+            student_ids: List of specific student IDs (optional)
+            course: Course to filter students (optional)
+            progress_callback: Progress callback function
+
+        Returns:
+            Number of students updated
+        """
+        try:
+            updated_count = 0
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get student list
+                if student_ids:
+                    placeholders = ','.join('?' * len(student_ids))
+                    cursor.execute(
+                        f"SELECT student_id FROM students WHERE student_id IN ({placeholders})",
+                        student_ids
+                    )
+                elif course:
+                    cursor.execute("SELECT student_id FROM students WHERE course = ?", (course,))
+                else:
+                    cursor.execute("SELECT student_id FROM students")
+
+                students = cursor.fetchall()
+                total = len(students)
+
+                if progress_callback:
+                    progress_callback(0, f"Removing module from {total} students...")
+
+                # Update each student
+                for i, (student_id,) in enumerate(students):
+                    try:
+                        cursor.execute(
+                            f"UPDATE students SET {module_type} = NULL WHERE student_id = ?",
+                            (student_id,)
+                        )
+                        updated_count += 1
+
+                        if progress_callback and i % 10 == 0:
+                            progress = int((i / total) * 100)
+                            progress_callback(progress, f"Updating: {i}/{total}")
+
+                    except Exception as e:
+                        logger.error(f"Error removing module from student {student_id}: {e}")
+
+                conn.commit()
+
+                if progress_callback:
+                    progress_callback(100, f"Complete: {updated_count} students updated")
+
+                logger.info(f"Bulk removed {module_type} from {updated_count} students")
+                return updated_count
+
+        except Exception as e:
+            logger.error(f"Error in bulk_remove_modules: {e}")
+            raise
+
+    def bulk_replace_modules(self, module_type: str, old_module_code: str,
+                            new_module_code: str, new_module_name: str,
+                            student_ids: List[str] = None, course: str = None,
+                            progress_callback=None) -> int:
+        """Replace one module with another for multiple students - GUI version
+
+        Args:
+            module_type: Module type (e.g., 'optional_module_1')
+            old_module_code: Module code to replace
+            new_module_code: New module code
+            new_module_name: New module name
+            student_ids: List of specific student IDs (optional)
+            course: Course to filter students (optional)
+            progress_callback: Progress callback function
+
+        Returns:
+            Number of students updated
+        """
+        try:
+            updated_count = 0
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get students with the old module
+                if student_ids:
+                    placeholders = ','.join('?' * len(student_ids))
+                    cursor.execute(
+                        f"SELECT student_id FROM students WHERE {module_type} = ? AND student_id IN ({placeholders})",
+                        [old_module_code] + student_ids
+                    )
+                elif course:
+                    cursor.execute(
+                        f"SELECT student_id FROM students WHERE {module_type} = ? AND course = ?",
+                        (old_module_code, course)
+                    )
+                else:
+                    cursor.execute(
+                        f"SELECT student_id FROM students WHERE {module_type} = ?",
+                        (old_module_code,)
+                    )
+
+                students = cursor.fetchall()
+                total = len(students)
+
+                if progress_callback:
+                    progress_callback(0, f"Replacing module for {total} students...")
+
+                # Update each student
+                for i, (student_id,) in enumerate(students):
+                    try:
+                        cursor.execute(
+                            f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
+                            (new_module_code, student_id)
+                        )
+                        updated_count += 1
+
+                        if progress_callback and i % 10 == 0:
+                            progress = int((i / total) * 100)
+                            progress_callback(progress, f"Updating: {i}/{total}")
+
+                    except Exception as e:
+                        logger.error(f"Error replacing module for student {student_id}: {e}")
+
+                conn.commit()
+
+                if progress_callback:
+                    progress_callback(100, f"Complete: {updated_count} students updated")
+
+                logger.info(f"Bulk replaced {old_module_code} with {new_module_code} for {updated_count} students")
+                return updated_count
+
+        except Exception as e:
+            logger.error(f"Error in bulk_replace_modules: {e}")
+            raise
+
+    def import_module_enrollments(self, file_path: str, progress_callback=None) -> ImportResult:
+        """Import module enrollments from file - GUI version
+
+        Expected columns: student_id, module_type, module_code, module_name
+
+        Args:
+            file_path: Path to CSV/Excel file
+            progress_callback: Progress callback function
+
+        Returns:
+            ImportResult with operation results
+        """
+        try:
+            result = ImportResult()
+
+            # Read file
+            if file_path.endswith('.csv'):
+                records = self.read_csv_file(file_path)
+            else:
+                records = self.read_excel_file(file_path)
+
+            result.total_records = len(records)
+
+            if progress_callback:
+                progress_callback(0, f"Processing {len(records)} module enrollments...")
+
+            # Validate and process records
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                for i, record in enumerate(records):
+                    student_id = record.get('student_id')
+                    module_type = record.get('module_type')
+                    module_code = record.get('module_code')
+
+                    # Validate required fields
+                    if not student_id or not module_type or not module_code:
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': 'Missing required fields',
+                            'data': record
+                        })
+                        continue
+
+                    # Check if student exists
+                    cursor.execute("SELECT student_id FROM students WHERE student_id = ?", (student_id,))
+                    if not cursor.fetchone():
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': f'Student {student_id} not found',
+                            'data': record
+                        })
+                        continue
+
+                    try:
+                        # Update module enrollment
+                        cursor.execute(
+                            f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
+                            (module_code, student_id)
+                        )
+                        result.successful_imports += 1
+
+                    except Exception as e:
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': str(e),
+                            'data': record
+                        })
+
+                    if progress_callback and i % 10 == 0:
+                        progress = int((i / len(records)) * 100)
+                        progress_callback(progress, f"Processing: {i}/{len(records)}")
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, f"Complete: {result.successful_imports} enrollments imported")
+
+            self.save_import_history(result, file_path, 'Module Enrollment Import')
+            logger.info(f"Imported {result.successful_imports} module enrollments from {file_path}")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error importing module enrollments: {e}")
+            raise
+
+    # ========================================
+    # GRADE MANAGEMENT - GUI WRAPPERS
+    # ========================================
+
+    def process_grade_data(self, grades: List[Dict], progress_callback=None) -> ImportResult:
+        """Process and validate grade data - GUI version with progress tracking
+
+        Expected fields: student_id, module_code, grade, grade_point, percentage
+
+        Args:
+            grades: List of grade records
+            progress_callback: Progress callback function
+
+        Returns:
+            ImportResult with processing results
+        """
+        try:
+            result = ImportResult()
+            result.total_records = len(grades)
+
+            if progress_callback:
+                progress_callback(0, f"Processing {len(grades)} grade records...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Ensure grades table exists
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS grades (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        student_id TEXT NOT NULL,
+                        module_code TEXT NOT NULL,
+                        grade TEXT,
+                        grade_point REAL,
+                        percentage REAL,
+                        semester TEXT,
+                        academic_year TEXT,
+                        recorded_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (student_id) REFERENCES students(student_id)
+                    )
+                """)
+
+                for i, grade_record in enumerate(grades):
+                    student_id = grade_record.get('student_id')
+                    module_code = grade_record.get('module_code')
+                    grade = grade_record.get('grade')
+                    grade_point = grade_record.get('grade_point')
+                    percentage = grade_record.get('percentage')
+
+                    # Validate required fields
+                    if not student_id or not module_code:
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': 'Missing student_id or module_code',
+                            'data': grade_record
+                        })
+                        continue
+
+                    # Verify student exists
+                    cursor.execute("SELECT student_id FROM students WHERE student_id = ?", (student_id,))
+                    if not cursor.fetchone():
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': f'Student {student_id} not found',
+                            'data': grade_record
+                        })
+                        continue
+
+                    try:
+                        # Insert or update grade
+                        cursor.execute("""
+                            INSERT OR REPLACE INTO grades
+                            (student_id, module_code, grade, grade_point, percentage, semester, academic_year)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            student_id,
+                            module_code,
+                            grade,
+                            grade_point,
+                            percentage,
+                            grade_record.get('semester'),
+                            grade_record.get('academic_year')
+                        ))
+                        result.successful_imports += 1
+
+                    except Exception as e:
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 2,
+                            'error': str(e),
+                            'data': grade_record
+                        })
+
+                    if progress_callback and i % 10 == 0:
+                        progress = int((i / len(grades)) * 100)
+                        progress_callback(progress, f"Processing: {i}/{len(grades)}")
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, f"Complete: {result.successful_imports} grades processed")
+
+            logger.info(f"Processed {result.successful_imports} grade records")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error processing grade data: {e}")
+            raise
+
+    # ========================================
+    # EXPORT FEATURES - GUI WRAPPERS
+    # ========================================
+
+    def export_data_to_file(self, data: List[Tuple], columns: List[str],
+                           filename: str, format_type: str = 'csv',
+                           progress_callback=None) -> str:
+        """Generic export utility function - GUI version
+
+        Args:
+            data: List of tuples containing data rows
+            columns: List of column names
+            filename: Output filename
+            format_type: 'csv' or 'excel'
+            progress_callback: Progress callback function
+
+        Returns:
+            Path to exported file
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Exporting {len(data)} records to {format_type.upper()}...")
+
+            # Ensure filename has correct extension
+            if format_type == 'csv' and not filename.endswith('.csv'):
+                filename += '.csv'
+            elif format_type == 'excel' and not filename.endswith('.xlsx'):
+                filename += '.xlsx'
+
+            # Create full path
+            export_path = DATA_DIR / 'exports' / filename
+            export_path.parent.mkdir(parents=True, exist_ok=True)
+
+            if format_type == 'csv':
+                # Export to CSV
+                with open(export_path, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(columns)
+                    writer.writerows(data)
+
+            elif format_type == 'excel':
+                # Export to Excel
+                df = pd.DataFrame(data, columns=columns)
+                df.to_excel(export_path, index=False, engine='openpyxl')
+
+            else:
+                raise ValueError(f"Unsupported format type: {format_type}")
+
+            if progress_callback:
+                progress_callback(100, f"Export complete: {export_path}")
+
+            logger.info(f"Exported {len(data)} records to {export_path}")
+            return str(export_path)
+
+        except Exception as e:
+            logger.error(f"Error exporting data: {e}")
+            raise
+
+    def export_enrollment_statistics(self, output_format: str = 'csv',
+                                     progress_callback=None) -> str:
+        """Export enrollment statistics report - GUI version
+
+        Args:
+            output_format: 'csv' or 'excel'
+            progress_callback: Progress callback function
+
+        Returns:
+            Path to exported file
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Gathering enrollment statistics...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get enrollment statistics by course
+                cursor.execute("""
+                    SELECT
+                        course,
+                        COUNT(*) as total_students,
+                        SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active_students,
+                        SUM(CASE WHEN status = 'Inactive' THEN 1 ELSE 0 END) as inactive_students,
+                        SUM(CASE WHEN status = 'Graduated' THEN 1 ELSE 0 END) as graduated_students,
+                        MIN(enrollment_date) as earliest_enrollment,
+                        MAX(enrollment_date) as latest_enrollment
+                    FROM students
+                    GROUP BY course
+                    ORDER BY total_students DESC
+                """)
+
+                stats = cursor.fetchall()
+
+                if not stats:
+                    raise ValueError("No enrollment data found")
+
+                columns = [
+                    'Course', 'Total Students', 'Active', 'Inactive', 'Graduated',
+                    'Earliest Enrollment', 'Latest Enrollment'
+                ]
+
+                if progress_callback:
+                    progress_callback(50, "Generating report...")
+
+                # Generate filename with timestamp
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f'enrollment_statistics_{timestamp}'
+
+                # Export data
+                export_path = self.export_data_to_file(
+                    stats,
+                    columns,
+                    filename,
+                    output_format,
+                    None  # Don't pass progress callback to avoid double updates
+                )
+
+                if progress_callback:
+                    progress_callback(100, f"Statistics exported: {export_path}")
+
+                logger.info(f"Exported enrollment statistics to {export_path}")
+                return export_path
+
+        except Exception as e:
+            logger.error(f"Error exporting enrollment statistics: {e}")
+            raise
+
+    # ========================================
+    # REPORTING FEATURES - GUI WRAPPERS
+    # ========================================
+
+    def generate_import_reports(self, report_type: str = 'summary',
+                                start_date: str = None, end_date: str = None,
+                                progress_callback=None) -> Dict:
+        """Generate import reports - GUI version
+
+        Args:
+            report_type: 'summary', 'detailed', 'errors', or 'trends'
+            start_date: Start date filter (ISO format)
+            end_date: End date filter (ISO format)
+            progress_callback: Progress callback function
+
+        Returns:
+            Dictionary containing report data
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Generating {report_type} import report...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Ensure import_history table exists
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS import_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TEXT NOT NULL,
+                        operation_type TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        total_records INTEGER DEFAULT 0,
+                        successful_imports INTEGER DEFAULT 0,
+                        failed_imports INTEGER DEFAULT 0,
+                        duplicates_found INTEGER DEFAULT 0,
+                        validation_errors INTEGER DEFAULT 0,
+                        error_details TEXT,
+                        duration_seconds REAL,
+                        status TEXT DEFAULT 'completed'
+                    )
+                """)
+
+                # Build query based on report type
+                query = "SELECT * FROM import_history WHERE 1=1"
+                params = []
+
+                if start_date:
+                    query += " AND timestamp >= ?"
+                    params.append(start_date)
+
+                if end_date:
+                    query += " AND timestamp <= ?"
+                    params.append(end_date)
+
+                query += " ORDER BY timestamp DESC"
+
+                cursor.execute(query, params)
+                history = cursor.fetchall()
+
+                if progress_callback:
+                    progress_callback(50, "Analyzing import history...")
+
+                # Generate report based on type
+                report = {
+                    'report_type': report_type,
+                    'generated_at': datetime.datetime.now().isoformat(),
+                    'period': {
+                        'start_date': start_date or 'All time',
+                        'end_date': end_date or 'Present'
+                    },
+                    'total_operations': len(history)
+                }
+
+                if report_type == 'summary':
+                    # Summary statistics
+                    total_records = sum(h[4] for h in history)  # total_records column
+                    successful = sum(h[5] for h in history)  # successful_imports column
+                    failed = sum(h[6] for h in history)  # failed_imports column
+                    duplicates = sum(h[7] for h in history)  # duplicates_found column
+
+                    report['summary'] = {
+                        'total_records_processed': total_records,
+                        'successful_imports': successful,
+                        'failed_imports': failed,
+                        'duplicates_found': duplicates,
+                        'success_rate': round((successful / total_records * 100) if total_records > 0 else 0, 2)
+                    }
+
+                elif report_type == 'detailed':
+                    # Detailed operation list
+                    report['operations'] = []
+                    for h in history:
+                        report['operations'].append({
+                            'id': h[0],
+                            'timestamp': h[1],
+                            'operation_type': h[2],
+                            'file_path': h[3],
+                            'total_records': h[4],
+                            'successful_imports': h[5],
+                            'failed_imports': h[6],
+                            'duplicates_found': h[7],
+                            'status': h[11] if len(h) > 11 else 'unknown'
+                        })
+
+                elif report_type == 'errors':
+                    # Error analysis
+                    report['errors'] = []
+                    for h in history:
+                        if h[6] > 0:  # failed_imports > 0
+                            error_details = json.loads(h[9]) if h[9] else {}
+                            report['errors'].append({
+                                'timestamp': h[1],
+                                'operation': h[2],
+                                'file': h[3],
+                                'failed_count': h[6],
+                                'error_details': error_details.get('errors', [])[:10]  # First 10 errors
+                            })
+
+                elif report_type == 'trends':
+                    # Import trends over time
+                    report['trends'] = []
+                    # Group by date
+                    date_groups = {}
+                    for h in history:
+                        date = h[1][:10]  # Extract date part
+                        if date not in date_groups:
+                            date_groups[date] = {'total': 0, 'successful': 0, 'failed': 0}
+                        date_groups[date]['total'] += h[4]
+                        date_groups[date]['successful'] += h[5]
+                        date_groups[date]['failed'] += h[6]
+
+                    report['trends'] = [
+                        {'date': date, **stats}
+                        for date, stats in sorted(date_groups.items())
+                    ]
+
+                if progress_callback:
+                    progress_callback(100, "Report generation complete")
+
+                logger.info(f"Generated {report_type} import report")
+                return report
+
+        except Exception as e:
+            logger.error(f"Error generating import reports: {e}")
+            raise
+
+    # ========================================
+    # DATA QUALITY FEATURES - GUI WRAPPERS
+    # ========================================
+
+    def merge_students(self, keep_id: str, delete_id: str, keep_first: bool = True,
+                      progress_callback=None) -> bool:
+        """Merge two student records - GUI version
+
+        Args:
+            keep_id: Student ID to keep
+            delete_id: Student ID to delete
+            keep_first: If True, keep data from first record when conflicts occur
+            progress_callback: Progress callback function
+
+        Returns:
+            True if merge successful
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Merging students: {delete_id} → {keep_id}")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Verify both students exist
+                cursor.execute("SELECT * FROM students WHERE student_id = ?", (keep_id,))
+                keep_student = cursor.fetchone()
+
+                cursor.execute("SELECT * FROM students WHERE student_id = ?", (delete_id,))
+                delete_student = cursor.fetchone()
+
+                if not keep_student or not delete_student:
+                    raise ValueError("One or both student IDs not found")
+
+                if progress_callback:
+                    progress_callback(25, "Merging student data...")
+
+                # Merge non-null fields if keep_first is False
+                if not keep_first:
+                    # Update keep_student with non-null values from delete_student
+                    # This is a simplified version - in production you'd handle all columns
+                    cursor.execute("""
+                        UPDATE students
+                        SET
+                            email = COALESCE(email, ?),
+                            phone_number = COALESCE(phone_number, ?),
+                            address = COALESCE(address, ?)
+                        WHERE student_id = ?
+                    """, (
+                        delete_student[4],  # email
+                        delete_student[5],  # phone_number
+                        delete_student[6],  # address
+                        keep_id
+                    ))
+
+                if progress_callback:
+                    progress_callback(50, "Updating related records...")
+
+                # Update related records (grades, enrollments, etc.)
+                # Update grades table if it exists
+                try:
+                    cursor.execute(
+                        "UPDATE grades SET student_id = ? WHERE student_id = ?",
+                        (keep_id, delete_id)
+                    )
+                except:
+                    pass  # Table might not exist
+
+                # Update any other related tables here as needed
+
+                if progress_callback:
+                    progress_callback(75, "Removing duplicate record...")
+
+                # Delete the duplicate student
+                cursor.execute("DELETE FROM students WHERE student_id = ?", (delete_id,))
+
+                conn.commit()
+
+                if progress_callback:
+                    progress_callback(100, f"Merge complete: {delete_id} merged into {keep_id}")
+
+                logger.info(f"Successfully merged student {delete_id} into {keep_id}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Error merging students: {e}")
+            raise
+
+    def data_quality_dashboard(self, progress_callback=None) -> Dict:
+        """Comprehensive data quality dashboard - GUI version
+
+        Args:
+            progress_callback: Progress callback function
+
+        Returns:
+            Dictionary containing quality metrics and statistics
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Gathering data quality metrics...")
+
+            dashboard = {
+                'generated_at': datetime.datetime.now().isoformat(),
+                'overall_score': 0,
+                'metrics': {},
+                'issues': [],
+                'recommendations': []
+            }
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Total student count
+                cursor.execute("SELECT COUNT(*) FROM students")
+                total_students = cursor.fetchone()[0]
+                dashboard['metrics']['total_students'] = total_students
+
+                if progress_callback:
+                    progress_callback(20, "Checking data completeness...")
+
+                # Missing data check
+                cursor.execute("""
+                    SELECT
+                        SUM(CASE WHEN email IS NULL OR email = '' THEN 1 ELSE 0 END) as missing_email,
+                        SUM(CASE WHEN phone_number IS NULL OR phone_number = '' THEN 1 ELSE 0 END) as missing_phone,
+                        SUM(CASE WHEN address IS NULL OR address = '' THEN 1 ELSE 0 END) as missing_address,
+                        SUM(CASE WHEN date_of_birth IS NULL OR date_of_birth = '' THEN 1 ELSE 0 END) as missing_dob
+                    FROM students
+                """)
+                missing = cursor.fetchone()
+                dashboard['metrics']['missing_data'] = {
+                    'email': missing[0],
+                    'phone': missing[1],
+                    'address': missing[2],
+                    'date_of_birth': missing[3]
+                }
+
+                if progress_callback:
+                    progress_callback(40, "Checking for duplicates...")
+
+                # Duplicate check
+                duplicates = self.find_duplicate_students(None)
+                dashboard['metrics']['duplicates_found'] = len(duplicates)
+
+                if progress_callback:
+                    progress_callback(60, "Validating data formats...")
+
+                # Invalid email format check
+                cursor.execute("""
+                    SELECT COUNT(*) FROM students
+                    WHERE email IS NOT NULL AND email != ''
+                    AND email NOT LIKE '%@%.%'
+                """)
+                invalid_emails = cursor.fetchone()[0]
+                dashboard['metrics']['invalid_emails'] = invalid_emails
+
+                if progress_callback:
+                    progress_callback(80, "Calculating quality score...")
+
+                # Calculate overall quality score (0-100)
+                completeness_score = (1 - sum(missing) / (total_students * 4)) * 100 if total_students > 0 else 0
+                duplicate_penalty = min(len(duplicates) * 5, 30)  # Max 30 point penalty
+                format_penalty = min(invalid_emails * 2, 20)  # Max 20 point penalty
+
+                overall_score = max(0, completeness_score - duplicate_penalty - format_penalty)
+                dashboard['overall_score'] = round(overall_score, 2)
+
+                # Generate issues
+                if sum(missing) > 0:
+                    dashboard['issues'].append(f"{sum(missing)} records with missing data")
+                if len(duplicates) > 0:
+                    dashboard['issues'].append(f"{len(duplicates)} potential duplicate records")
+                if invalid_emails > 0:
+                    dashboard['issues'].append(f"{invalid_emails} records with invalid email format")
+
+                # Generate recommendations
+                if overall_score < 70:
+                    dashboard['recommendations'].append("Data quality is below acceptable threshold - immediate action required")
+                if sum(missing) > total_students * 0.1:
+                    dashboard['recommendations'].append("Implement mandatory field validation for new entries")
+                if len(duplicates) > 0:
+                    dashboard['recommendations'].append("Review and merge duplicate records")
+                if invalid_emails > 0:
+                    dashboard['recommendations'].append("Validate and correct email formats")
+
+                dashboard['recommendations'].append("Schedule regular data quality audits")
+
+                if progress_callback:
+                    progress_callback(100, "Dashboard generation complete")
+
+                logger.info(f"Generated data quality dashboard - Score: {overall_score}")
+                return dashboard
+
+        except Exception as e:
+            logger.error(f"Error generating data quality dashboard: {e}")
+            raise
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
