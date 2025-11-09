@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from decimal import Decimal, ROUND_HALF_UP
 import threading
 import time
+from university_system.modules.shared.utils.finance_integration import record_payment_to_finance
 from collections import defaultdict
 from university_system.modules.core.services.restaurant_misc import get_db_connection
 import warnings
@@ -622,11 +623,25 @@ def process_cash_payment():
         ''', (order_id,))
 
         conn.commit()
+
+        # Record payment to central finance system
+        finance_payment_id = record_payment_to_finance(
+            student_id="EXTERNAL",  # Restaurant customers may not be students
+            amount=order[0],
+            payment_method='Cash',
+            transaction_source='Restaurant',
+            transaction_ref=order_id,
+            notes=f'Restaurant order payment',
+            created_by=auth.current_user['username'] if auth and auth.current_user else None
+        )
+
         conn.close()
 
         print(f"✅ Payment processed successfully!")
         print(f"Cash received: £{cash_received:.2f}")
         print(f"Change due: £{change:.2f}")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
 
         # Log audit action
         log_audit_action(
@@ -691,9 +706,23 @@ def process_card_payment():
         ''', (card_type, order_id))
 
         conn.commit()
+
+        # Record payment to central finance system
+        finance_payment_id = record_payment_to_finance(
+            student_id="EXTERNAL",
+            amount=order[0],
+            payment_method=card_type,
+            transaction_source='Restaurant',
+            transaction_ref=order_id,
+            notes=f'Restaurant order payment via {card_type}',
+            created_by=auth.current_user['username'] if auth and auth.current_user else None
+        )
+
         conn.close()
 
         print(f"Payment processed: £{order[0]:.2f} via {card_type}")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
 
         # Log audit action
         log_audit_action(
@@ -781,11 +810,25 @@ def process_meal_plan_payment():
         ''', (order_id,))
 
         conn.commit()
+
+        # Record payment to central finance system
+        finance_payment_id = record_payment_to_finance(
+            student_id=order[2],  # customer_id (student_id)
+            amount=order[0],
+            payment_method='Meal Plan',
+            transaction_source='Restaurant',
+            transaction_ref=order_id,
+            notes=f'Restaurant order via Meal Plan (Plan ID: {meal_plan[0]})',
+            created_by=auth.current_user['username'] if auth and auth.current_user else None
+        )
+
         conn.close()
 
         print(f"✅ Meal plan payment processed!")
         print(f"Amount charged: £{order[0]:.2f}")
         print(f"Remaining balance: £{new_balance:.2f}")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
 
         # Log audit action
         log_audit_action(

@@ -15,6 +15,7 @@ from university_system.modules.shared.utils.simple_activity_logger import (
     log_menu_navigation,
 )
 from university_system.infrastructure.database.db import get_connection
+from university_system.modules.shared.utils.finance_integration import record_payment_to_finance
 
 # Global variable to store the auth instance
 # Import auth instance management from user_authentication
@@ -3354,9 +3355,24 @@ def record_payment():
         ))
         
         conn.commit()
+
+        # Record payment to central finance system
+        finance_payment_id = record_payment_to_finance(
+            student_id=student_id,
+            amount=payment_amount,
+            payment_method=payment_method,
+            transaction_source='Housing',
+            transaction_ref=payment_id,
+            notes=f'Housing rent payment for period {period_start} to {period_end}',
+            created_by=auth.current_user['username'] if auth and auth.current_user else None
+        )
+
         print(f"\nPayment recorded successfully with ID: {payment_id}")
         print(f"Amount: ${payment_amount} | Method: {payment_method}")
         print(f"Period: {period_start} to {period_end}")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
+
         conn.close()
         
     except sqlite3.Error as e:

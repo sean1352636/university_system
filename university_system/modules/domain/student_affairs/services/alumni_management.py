@@ -18,6 +18,7 @@ from reportlab.lib import colors
 import time
 import threading
 from collections import defaultdict
+from university_system.modules.shared.utils.finance_integration import record_revenue_to_finance
 
 # Import statements for external integrations (would need to be installed)
 try:
@@ -1945,7 +1946,20 @@ def record_donation():
         donation_id = cursor.lastrowid
         conn.commit()
 
+        # Record donation to central finance system
+        finance_payment_id = record_revenue_to_finance(
+            student_id=auth.current_user.get('username', 'EXTERNAL'),
+            amount=amount,
+            revenue_category='Donation',
+            transaction_source='Alumni',
+            transaction_ref=f'DONATION-{donation_id}',
+            payment_method='Various',
+            notes=f'Alumni donation for {purpose}'
+        )
+
         print(f"Donation of ${amount:.2f} recorded successfully. Thank you for your generosity!")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
 
         # Automatically send donation receipt email
         try:

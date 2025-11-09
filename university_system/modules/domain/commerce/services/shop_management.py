@@ -25,6 +25,7 @@ from university_system.modules.shared.utils.simple_activity_logger import (
 )
 
 from university_system.infrastructure.database.db import get_connection
+from university_system.modules.shared.utils.finance_integration import record_payment_to_finance
 
 # Global variables
 # Import auth instance management from user_authentication
@@ -1057,15 +1058,28 @@ def checkout_process():
         )
         
         conn.commit()
-        
+
+        # Record transaction to central finance system
+        finance_payment_id = record_payment_to_finance(
+            student_id=student_id or "EXTERNAL",
+            amount=total,
+            payment_method=payment_method,
+            transaction_source='Shop',
+            transaction_ref=transaction_id,
+            notes=f'Shop purchase: {len(cart_items)} item(s)',
+            created_by=auth.current_user['username'] if auth and auth.current_user else None
+        )
+
         # Display confirmation
         print("\nOrder placed successfully!")
         print(f"Transaction ID: {transaction_id}")
         print(f"Total Amount: £{total:.2f}")
         print(f"Date: {transaction_date}")
         print(f"Payment Method: {payment_method}")
+        if finance_payment_id:
+            print(f"Finance System Payment ID: {finance_payment_id}")
         print("\nThank you for your purchase!")
-        
+
         conn.close()
         input("\nPress Enter to continue...")
         

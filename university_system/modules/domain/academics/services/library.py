@@ -33,6 +33,7 @@ from university_system.utils.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from university_system.modules.shared.utils.finance_integration import record_payment_to_finance
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Configure logging
@@ -5417,10 +5418,24 @@ def process_fine_payment(user_id, amount):
        ))
        
        payment_id = cursor.lastrowid
-       
+
        conn.commit()
        conn.close()
-       
+
+       # Record payment to central finance system
+       finance_payment_id = record_payment_to_finance(
+           student_id=user_id,
+           amount=amount,
+           payment_method='cash',
+           transaction_source='Library',
+           transaction_ref=f'FINE-{payment_id}',
+           notes=f'Library fine payment for {len(payments_made)} overdue item(s)',
+           created_by=get_current_user_id()
+       )
+
+       if finance_payment_id:
+           logger.info(f"Library fine payment recorded to finance system: Finance Payment ID {finance_payment_id}")
+
        # Generate receipt
        receipt_data = {
            'payment_id': payment_id,
@@ -5429,10 +5444,10 @@ def process_fine_payment(user_id, amount):
            'payments_made': payments_made,
            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
        }
-       
+
        generate_fine_receipt(receipt_data)
-       
-       log_audit_event(get_current_user_id(), 
+
+       log_audit_event(get_current_user_id(),
                       f"Processed fine payment: ${amount:.2f} for user {user_id}",
                       "fine_payments", str(payment_id))
        
