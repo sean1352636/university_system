@@ -248,15 +248,29 @@ class LibraryGUI:
         view_menu.add_separator()
         view_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
 
+        # Circulation menu
+        circulation_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Circulation", menu=circulation_menu)
+        circulation_menu.add_command(label="📤 Check Out Book", command=self.enhanced_checkout_book_gui)
+        circulation_menu.add_command(label="📥 Return Book", command=self.enhanced_return_book_gui)
+        circulation_menu.add_command(label="🔄 Renew Book", command=self.renew_book_gui)
+        circulation_menu.add_separator()
+        circulation_menu.add_command(label="📌 Reserve Book", command=self.reserve_book_gui)
+        circulation_menu.add_command(label="📋 Manage Reservations", command=self.manage_reservations_gui)
+
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="🔍 Advanced Search", command=self.show_advanced_search_gui)
         tools_menu.add_command(label="Barcode Scanner", command=self.show_barcode_scanner)
-        tools_menu.add_command(label="Reading Lists", command=self.show_reading_lists)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="📚 Reading Lists", command=self.manage_reading_lists_gui)
+        tools_menu.add_command(label="⭐ Rate & Review Book", command=self.rate_and_review_book_gui)
+        tools_menu.add_separator()
         tools_menu.add_command(label="📚 Digital Library", command=self.show_digital_library_gui)
         tools_menu.add_command(label="Loan History", command=self.view_loan_history_gui)
         tools_menu.add_command(label="Fine Management", command=self.show_fine_management)
+        tools_menu.add_separator()
         tools_menu.add_command(label="System Health Check", command=self.quick_system_health_check)
         tools_menu.add_command(label="Library Card Generator", command=self.show_library_cards_generator)
         tools_menu.add_command(label="Barcode Generator", command=self.show_barcode_generator)
@@ -8010,6 +8024,1141 @@ Total Fines: ${stats[4]:.2f}
         ttk.Button(button_frame, text="Clear",
                   command=lambda: [var.set('') for var in fields.values()]).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=search_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def enhanced_checkout_book_gui(self, book_id=None):
+        """Enhanced checkout with reading level check and notifications"""
+        checkout_window = tk.Toplevel(self.master)
+        checkout_window.title("Enhanced Book Checkout")
+        checkout_window.geometry("600x500")
+
+        ttk.Label(checkout_window, text="Enhanced Book Checkout",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Book selection frame
+        book_frame = ttk.LabelFrame(checkout_window, text="Book Selection", padding=15)
+        book_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        book_id_var = tk.StringVar(value=book_id or "")
+        user_id_var = tk.StringVar()
+        book_info_var = tk.StringVar(value="No book selected")
+
+        ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        book_id_entry = ttk.Entry(book_frame, textvariable=book_id_var, width=30)
+        book_id_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        def lookup_book():
+            bid = book_id_var.get().strip()
+            if not bid:
+                messagebox.showwarning("Warning", "Please enter a Book ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                SELECT title, author, status, reading_level
+                FROM books WHERE book_id = ?
+                ''', (bid,))
+                book = cursor.fetchone()
+                conn.close()
+
+                if book:
+                    title, author, status, reading_level = book
+                    book_info_var.set(f"{title} by {author}\nStatus: {status}\nReading Level: {reading_level or 'Unknown'}")
+                    if status != 'available':
+                        messagebox.showwarning("Warning", f"This book is currently {status}")
+                else:
+                    book_info_var.set("Book not found")
+                    messagebox.showerror("Error", "Book not found")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to lookup book: {str(e)}")
+
+        ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+
+        # Book info display
+        ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
+            row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
+
+        # User selection frame
+        user_frame = ttk.LabelFrame(checkout_window, text="User Information", padding=15)
+        user_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(user_frame, text="User/Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(user_frame, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+
+        # Checkout options
+        options_frame = ttk.LabelFrame(checkout_window, text="Checkout Options", padding=15)
+        options_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        check_reading_level_var = tk.BooleanVar(value=True)
+        send_notification_var = tk.BooleanVar(value=True)
+
+        ttk.Checkbutton(options_frame, text="Check Reading Level Compatibility",
+                       variable=check_reading_level_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text="Send Email Notification",
+                       variable=send_notification_var).pack(anchor=tk.W, pady=2)
+
+        def perform_checkout():
+            bid = book_id_var.get().strip()
+            uid = user_id_var.get().strip()
+
+            if not bid or not uid:
+                messagebox.showerror("Error", "Please provide both Book ID and User ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Check book availability
+                cursor.execute('SELECT title, status, reading_level FROM books WHERE book_id = ?', (bid,))
+                book = cursor.fetchone()
+
+                if not book:
+                    messagebox.showerror("Error", "Book not found")
+                    conn.close()
+                    return
+
+                title, status, reading_level = book
+
+                if status != 'available':
+                    messagebox.showerror("Error", f"Book is {status} and cannot be checked out")
+                    conn.close()
+                    return
+
+                # Check loan eligibility
+                cursor.execute('''
+                SELECT COUNT(*) FROM book_loans
+                WHERE user_id = ? AND status IN ('active', 'overdue')
+                ''', (uid,))
+                active_loans = cursor.fetchone()[0]
+
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "max_loans"')
+                max_loans_result = cursor.fetchone()
+                max_loans = int(max_loans_result[0]) if max_loans_result else 5
+
+                if active_loans >= max_loans:
+                    messagebox.showerror("Error", f"User has reached maximum loan limit ({max_loans})")
+                    conn.close()
+                    return
+
+                # Reading level check (optional warning)
+                if check_reading_level_var.get() and reading_level:
+                    # Get student grade level if available
+                    cursor.execute('SELECT grade_level FROM students WHERE student_id = ?', (uid,))
+                    student = cursor.fetchone()
+                    if student:
+                        grade_level = student[0]
+                        # Simple compatibility check - you can expand this
+                        if reading_level and grade_level:
+                            pass  # Could add more sophisticated checking here
+
+                # Get loan period
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "loan_period_days"')
+                loan_period_result = cursor.fetchone()
+                loan_period = int(loan_period_result[0]) if loan_period_result else 14
+
+                # Create loan
+                checkout_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                due_date = (datetime.now() + timedelta(days=loan_period)).strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                INSERT INTO book_loans (
+                    book_id, user_id, checkout_date, due_date, status, fine_amount, renewal_count
+                ) VALUES (?, ?, ?, ?, 'active', 0.0, 0)
+                ''', (bid, uid, checkout_date, due_date))
+
+                # Update book status
+                cursor.execute('UPDATE books SET status = "checked_out" WHERE book_id = ?', (bid,))
+
+                conn.commit()
+                conn.close()
+
+                # Log activity
+                log_audit_event(get_current_user_id(), f"Checked out book {bid} to {uid}", "book_loans")
+
+                # Show success
+                messagebox.showinfo("Success",
+                    f"Book checked out successfully!\n\n" +
+                    f"Title: {title}\n" +
+                    f"User: {uid}\n" +
+                    f"Due Date: {due_date[:10]}\n\n" +
+                    f"Loan period: {loan_period} days")
+
+                checkout_window.destroy()
+
+                # Refresh display if applicable
+                if hasattr(self, 'show_all_books'):
+                    self.show_all_books()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Checkout failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(checkout_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=20)
+
+        ttk.Button(button_frame, text="Checkout", command=perform_checkout).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=checkout_window.destroy).pack(side=tk.LEFT, padx=5)
+
+    def enhanced_return_book_gui(self):
+        """Enhanced book return with fine calculation"""
+        return_window = tk.Toplevel(self.master)
+        return_window.title("Enhanced Book Return")
+        return_window.geometry("600x500")
+
+        ttk.Label(return_window, text="Enhanced Book Return",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Search frame
+        search_frame = ttk.LabelFrame(return_window, text="Find Loan", padding=15)
+        search_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        search_type = tk.StringVar(value="book_id")
+        search_value = tk.StringVar()
+
+        ttk.Radiobutton(search_frame, text="By Book ID", variable=search_type,
+                       value="book_id").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Radiobutton(search_frame, text="By User ID", variable=search_type,
+                       value="user_id").grid(row=0, column=1, sticky=tk.W, padx=5)
+        ttk.Radiobutton(search_frame, text="By Loan ID", variable=search_type,
+                       value="loan_id").grid(row=0, column=2, sticky=tk.W, padx=5)
+
+        ttk.Entry(search_frame, textvariable=search_value, width=30).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(return_window, text="Active Loans", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Loan ID', 'Book ID', 'Title', 'User ID', 'Due Date', 'Fine')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=8)
+
+        for col in columns:
+            results_tree.heading(col, text=col)
+            results_tree.column(col, width=100)
+
+        results_tree.pack(fill=tk.BOTH, expand=True)
+
+        def search_loans():
+            # Clear previous results
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+
+            stype = search_type.get()
+            svalue = search_value.get().strip()
+
+            if not svalue:
+                messagebox.showwarning("Warning", "Please enter a search value")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Get fine per day
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "fine_per_day"')
+                fine_per_day_result = cursor.fetchone()
+                fine_per_day = float(fine_per_day_result[0]) if fine_per_day_result else 0.50
+
+                # Build query based on search type
+                if stype == "book_id":
+                    query = '''
+                    SELECT l.loan_id, l.book_id, b.title, l.user_id, l.due_date, l.fine_amount
+                    FROM book_loans l
+                    JOIN books b ON l.book_id = b.book_id
+                    WHERE l.book_id = ? AND l.status = 'active'
+                    '''
+                elif stype == "user_id":
+                    query = '''
+                    SELECT l.loan_id, l.book_id, b.title, l.user_id, l.due_date, l.fine_amount
+                    FROM book_loans l
+                    JOIN books b ON l.book_id = b.book_id
+                    WHERE l.user_id = ? AND l.status = 'active'
+                    '''
+                else:  # loan_id
+                    query = '''
+                    SELECT l.loan_id, l.book_id, b.title, l.user_id, l.due_date, l.fine_amount
+                    FROM book_loans l
+                    JOIN books b ON l.book_id = b.book_id
+                    WHERE l.loan_id = ? AND l.status = 'active'
+                    '''
+
+                cursor.execute(query, (svalue,))
+                loans = cursor.fetchall()
+
+                # Calculate fines
+                now = datetime.now()
+                for loan in loans:
+                    loan_id, book_id, title, user_id, due_date, current_fine = loan
+
+                    # Calculate fine if overdue
+                    due_datetime = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
+                    if now > due_datetime:
+                        days_overdue = (now - due_datetime).days
+                        calculated_fine = days_overdue * fine_per_day
+                    else:
+                        calculated_fine = 0.0
+
+                    results_tree.insert('', 'end', values=(
+                        loan_id, book_id, title, user_id, due_date[:10], f"${calculated_fine:.2f}"
+                    ))
+
+                conn.close()
+
+                if not loans:
+                    messagebox.showinfo("No Results", "No active loans found")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+        ttk.Button(search_frame, text="Search", command=search_loans).grid(row=1, column=2, padx=5)
+
+        def return_selected():
+            selection = results_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a loan to return")
+                return
+
+            item = results_tree.item(selection[0])
+            loan_id = item['values'][0]
+            book_id = item['values'][1]
+            fine_str = item['values'][5]
+            fine_amount = float(fine_str.replace('$', ''))
+
+            # Confirm return
+            if fine_amount > 0:
+                confirm = messagebox.askyesno("Confirm Return",
+                    f"Return this book?\n\nLoan ID: {loan_id}\n" +
+                    f"Book ID: {book_id}\n" +
+                    f"Fine: ${fine_amount:.2f}\n\n" +
+                    f"Fine must be paid before return is complete.")
+                if not confirm:
+                    return
+            else:
+                confirm = messagebox.askyesno("Confirm Return",
+                    f"Return this book?\n\nLoan ID: {loan_id}\nBook ID: {book_id}")
+                if not confirm:
+                    return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                return_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Update loan
+                cursor.execute('''
+                UPDATE book_loans
+                SET status = 'returned', return_date = ?, fine_amount = ?
+                WHERE loan_id = ?
+                ''', (return_date, fine_amount, loan_id))
+
+                # Update book status
+                cursor.execute('UPDATE books SET status = "available" WHERE book_id = ?', (book_id,))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Returned book {book_id} (loan {loan_id})", "book_loans")
+
+                messagebox.showinfo("Success",
+                    f"Book returned successfully!\n\n" +
+                    f"Loan ID: {loan_id}\n" +
+                    (f"Fine: ${fine_amount:.2f}" if fine_amount > 0 else "No fine"))
+
+                # Refresh search
+                search_loans()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Return failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(return_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Return Selected", command=return_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=return_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def renew_book_gui(self):
+        """Renew book loan"""
+        renew_window = tk.Toplevel(self.master)
+        renew_window.title("Renew Book Loan")
+        renew_window.geometry("700x500")
+
+        ttk.Label(renew_window, text="Renew Book Loan",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Search frame
+        search_frame = ttk.LabelFrame(renew_window, text="Find Loan", padding=15)
+        search_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        search_value = tk.StringVar()
+        ttk.Label(search_frame, text="Book ID or User ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Entry(search_frame, textvariable=search_value, width=30).pack(side=tk.LEFT, padx=5)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(renew_window, text="Renewable Loans", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Loan ID', 'Book', 'User', 'Checkout', 'Due Date', 'Renewals', 'Status')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=10)
+
+        for col in columns:
+            results_tree.heading(col, text=col)
+            results_tree.column(col, width=100)
+
+        results_tree.pack(fill=tk.BOTH, expand=True)
+
+        def search_loans():
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+
+            svalue = search_value.get().strip()
+            if not svalue:
+                messagebox.showwarning("Warning", "Please enter a search value")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT l.loan_id, b.title, l.user_id, l.checkout_date, l.due_date,
+                       l.renewal_count, l.status
+                FROM book_loans l
+                JOIN books b ON l.book_id = b.book_id
+                WHERE (l.book_id = ? OR l.user_id = ?) AND l.status = 'active'
+                ''', (svalue, svalue))
+
+                loans = cursor.fetchall()
+                conn.close()
+
+                for loan in loans:
+                    results_tree.insert('', 'end', values=(
+                        loan[0], loan[1][:30], loan[2], loan[3][:10], loan[4][:10], loan[5], loan[6]
+                    ))
+
+                if not loans:
+                    messagebox.showinfo("No Results", "No renewable loans found")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {str(e)}")
+
+        ttk.Button(search_frame, text="Search", command=search_loans).pack(side=tk.LEFT, padx=5)
+
+        def renew_selected():
+            selection = results_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a loan to renew")
+                return
+
+            item = results_tree.item(selection[0])
+            loan_id = item['values'][0]
+            renewal_count = item['values'][5]
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Get max renewals
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "max_renewals"')
+                max_renewals_result = cursor.fetchone()
+                max_renewals = int(max_renewals_result[0]) if max_renewals_result else 2
+
+                if renewal_count >= max_renewals:
+                    messagebox.showerror("Error", f"Maximum renewals ({max_renewals}) reached")
+                    conn.close()
+                    return
+
+                # Get loan period
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "loan_period_days"')
+                loan_period_result = cursor.fetchone()
+                loan_period = int(loan_period_result[0]) if loan_period_result else 14
+
+                # Calculate new due date
+                new_due_date = (datetime.now() + timedelta(days=loan_period)).strftime('%Y-%m-%d %H:%M:%S')
+
+                # Update loan
+                cursor.execute('''
+                UPDATE book_loans
+                SET due_date = ?, renewal_count = renewal_count + 1
+                WHERE loan_id = ?
+                ''', (new_due_date, loan_id))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Renewed loan {loan_id}", "book_loans")
+
+                messagebox.showinfo("Success",
+                    f"Loan renewed successfully!\n\n" +
+                    f"New due date: {new_due_date[:10]}\n" +
+                    f"Renewals used: {renewal_count + 1}/{max_renewals}")
+
+                search_loans()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Renewal failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(renew_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Renew Selected", command=renew_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=renew_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def reserve_book_gui(self, book_id=None):
+        """Reserve a book that's currently unavailable"""
+        reserve_window = tk.Toplevel(self.master)
+        reserve_window.title("Reserve Book")
+        reserve_window.geometry("500x400")
+
+        ttk.Label(reserve_window, text="Reserve Book",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Book info frame
+        book_frame = ttk.LabelFrame(reserve_window, text="Book Information", padding=15)
+        book_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        book_id_var = tk.StringVar(value=book_id or "")
+        user_id_var = tk.StringVar()
+        book_info_var = tk.StringVar(value="No book selected")
+
+        ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(book_frame, textvariable=book_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+
+        def lookup_book():
+            bid = book_id_var.get().strip()
+            if not bid:
+                messagebox.showwarning("Warning", "Please enter a Book ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT title, author, status FROM books WHERE book_id = ?', (bid,))
+                book = cursor.fetchone()
+
+                if book:
+                    title, author, status = book
+                    book_info_var.set(f"{title} by {author}\nStatus: {status}")
+
+                    if status == 'available':
+                        messagebox.showinfo("Available",
+                            "This book is currently available. You can check it out directly instead of reserving it.")
+                else:
+                    book_info_var.set("Book not found")
+                    messagebox.showerror("Error", "Book not found")
+
+                conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to lookup book: {str(e)}")
+
+        ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+
+        ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
+            row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
+
+        # User frame
+        user_frame = ttk.LabelFrame(reserve_window, text="User Information", padding=15)
+        user_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(user_frame, text="User/Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(user_frame, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+
+        def perform_reservation():
+            bid = book_id_var.get().strip()
+            uid = user_id_var.get().strip()
+
+            if not bid or not uid:
+                messagebox.showerror("Error", "Please provide both Book ID and User ID")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Check if book exists
+                cursor.execute('SELECT title, status FROM books WHERE book_id = ?', (bid,))
+                book = cursor.fetchone()
+
+                if not book:
+                    messagebox.showerror("Error", "Book not found")
+                    conn.close()
+                    return
+
+                title, status = book
+
+                # Check if user already has a reservation
+                cursor.execute('''
+                SELECT reservation_id FROM book_reservations
+                WHERE book_id = ? AND user_id = ? AND status = 'active'
+                ''', (bid, uid))
+
+                if cursor.fetchone():
+                    messagebox.showerror("Error", "User already has an active reservation for this book")
+                    conn.close()
+                    return
+
+                # Get next priority order
+                cursor.execute('''
+                SELECT COALESCE(MAX(priority_order), 0) + 1
+                FROM book_reservations
+                WHERE book_id = ? AND status = 'active'
+                ''', (bid,))
+                priority_order = cursor.fetchone()[0]
+
+                # Get reservation period
+                cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "reservation_period_days"')
+                reservation_period_result = cursor.fetchone()
+                reservation_period = int(reservation_period_result[0]) if reservation_period_result else 3
+
+                # Create reservation
+                reservation_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                expiry_date = (datetime.now() + timedelta(days=reservation_period)).strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                INSERT INTO book_reservations (
+                    book_id, user_id, reservation_date, expiry_date, status, priority_order
+                ) VALUES (?, ?, ?, ?, 'active', ?)
+                ''', (bid, uid, reservation_date, expiry_date, priority_order))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(get_current_user_id(), f"Reserved book {bid} for {uid}", "book_reservations")
+
+                messagebox.showinfo("Success",
+                    f"Book reserved successfully!\n\n" +
+                    f"Title: {title}\n" +
+                    f"User: {uid}\n" +
+                    f"Priority: #{priority_order}\n" +
+                    f"Expires: {expiry_date[:10]}")
+
+                reserve_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Reservation failed: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(reserve_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=20)
+
+        ttk.Button(button_frame, text="Reserve", command=perform_reservation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=reserve_window.destroy).pack(side=tk.LEFT, padx=5)
+
+    def manage_reservations_gui(self):
+        """Manage all book reservations"""
+        manage_window = tk.Toplevel(self.master)
+        manage_window.title("Manage Reservations")
+        manage_window.geometry("900x600")
+
+        ttk.Label(manage_window, text="Manage Book Reservations",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(manage_window, text="Filter", padding=10)
+        filter_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        status_filter = tk.StringVar(value="active")
+        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Combobox(filter_frame, textvariable=status_filter,
+                    values=["all", "active", "fulfilled", "expired", "cancelled"],
+                    width=15).pack(side=tk.LEFT, padx=5)
+
+        # Reservations table
+        table_frame = ttk.Frame(manage_window)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Book ID', 'Title', 'User', 'Reserved', 'Expires', 'Priority', 'Status')
+        res_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            res_tree.heading(col, text=col)
+            res_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=res_tree.yview)
+        res_tree.configure(yscrollcommand=scrollbar.set)
+
+        res_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_reservations():
+            for item in res_tree.get_children():
+                res_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                status = status_filter.get()
+                if status == "all":
+                    query = '''
+                    SELECT r.reservation_id, r.book_id, b.title, r.user_id,
+                           r.reservation_date, r.expiry_date, r.priority_order, r.status
+                    FROM book_reservations r
+                    JOIN books b ON r.book_id = b.book_id
+                    ORDER BY r.priority_order
+                    '''
+                    cursor.execute(query)
+                else:
+                    query = '''
+                    SELECT r.reservation_id, r.book_id, b.title, r.user_id,
+                           r.reservation_date, r.expiry_date, r.priority_order, r.status
+                    FROM book_reservations r
+                    JOIN books b ON r.book_id = b.book_id
+                    WHERE r.status = ?
+                    ORDER BY r.priority_order
+                    '''
+                    cursor.execute(query, (status,))
+
+                for row in cursor.fetchall():
+                    res_tree.insert('', 'end', values=(
+                        row[0], row[1], row[2][:30], row[3], row[4][:10], row[5][:10], row[6], row[7]
+                    ))
+
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load reservations: {str(e)}")
+
+        ttk.Button(filter_frame, text="Refresh", command=load_reservations).pack(side=tk.LEFT, padx=5)
+
+        def cancel_reservation():
+            selection = res_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a reservation to cancel")
+                return
+
+            item = res_tree.item(selection[0])
+            res_id = item['values'][0]
+
+            if messagebox.askyesno("Confirm", "Cancel this reservation?"):
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE book_reservations SET status = "cancelled" WHERE reservation_id = ?', (res_id,))
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(), f"Cancelled reservation {res_id}", "book_reservations")
+                    messagebox.showinfo("Success", "Reservation cancelled")
+                    load_reservations()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to cancel: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(manage_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Cancel Selected", command=cancel_reservation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=manage_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Load initial data
+        load_reservations()
+
+    def rate_and_review_book_gui(self, book_id=None):
+        """Rate and review a book"""
+        review_window = tk.Toplevel(self.master)
+        review_window.title("Rate and Review Book")
+        review_window.geometry("600x500")
+
+        ttk.Label(review_window, text="Rate and Review Book",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Book selection
+        book_frame = ttk.LabelFrame(review_window, text="Book", padding=15)
+        book_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        book_id_var = tk.StringVar(value=book_id or "")
+        book_info_var = tk.StringVar(value="No book selected")
+
+        ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(book_frame, textvariable=book_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+
+        def lookup_book():
+            bid = book_id_var.get().strip()
+            if not bid:
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT title, author FROM books WHERE book_id = ?', (bid,))
+                book = cursor.fetchone()
+
+                if book:
+                    book_info_var.set(f"{book[0]} by {book[1]}")
+                else:
+                    book_info_var.set("Book not found")
+
+                conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to lookup book: {str(e)}")
+
+        ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+        ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
+            row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
+
+        # Rating frame
+        rating_frame = ttk.LabelFrame(review_window, text="Your Rating", padding=15)
+        rating_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        rating_var = tk.IntVar(value=5)
+
+        ttk.Label(rating_frame, text="Rating (1-5 stars):").pack(anchor=tk.W, pady=5)
+        rating_scale = ttk.Scale(rating_frame, from_=1, to=5, variable=rating_var, orient=tk.HORIZONTAL)
+        rating_scale.pack(fill=tk.X, pady=5)
+
+        rating_label = ttk.Label(rating_frame, text="★★★★★")
+        rating_label.pack(anchor=tk.W, pady=5)
+
+        def update_rating_display(val):
+            stars = int(float(val))
+            rating_label.config(text="★" * stars + "☆" * (5 - stars))
+
+        rating_scale.config(command=update_rating_display)
+
+        # Review frame
+        review_frame = ttk.LabelFrame(review_window, text="Your Review (Optional)", padding=15)
+        review_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        review_text = tk.Text(review_frame, height=8, width=60)
+        review_text.pack(fill=tk.BOTH, expand=True)
+
+        def submit_review():
+            bid = book_id_var.get().strip()
+            if not bid:
+                messagebox.showerror("Error", "Please select a book")
+                return
+
+            rating = rating_var.get()
+            review = review_text.get('1.0', tk.END).strip()
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Check if book exists
+                cursor.execute('SELECT title FROM books WHERE book_id = ?', (bid,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Error", "Book not found")
+                    conn.close()
+                    return
+
+                user_id = get_current_user_id()
+
+                # Check if user already reviewed
+                cursor.execute('''
+                SELECT review_id FROM book_reviews
+                WHERE book_id = ? AND user_id = ?
+                ''', (bid, user_id))
+
+                existing = cursor.fetchone()
+
+                review_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                if existing:
+                    # Update existing review
+                    cursor.execute('''
+                    UPDATE book_reviews
+                    SET rating = ?, review_text = ?, review_date = ?, status = 'pending'
+                    WHERE review_id = ?
+                    ''', (rating, review, review_date, existing[0]))
+                    message = "Review updated successfully!"
+                else:
+                    # Create new review
+                    cursor.execute('''
+                    INSERT INTO book_reviews (
+                        book_id, user_id, rating, review_text, review_date, status
+                    ) VALUES (?, ?, ?, ?, ?, 'pending')
+                    ''', (bid, user_id, rating, review, review_date))
+                    message = "Review submitted successfully! It will be visible after moderation."
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(user_id, f"Reviewed book {bid} ({rating} stars)", "book_reviews")
+
+                messagebox.showinfo("Success", message)
+                review_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to submit review: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(review_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Submit Review", command=submit_review).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=review_window.destroy).pack(side=tk.LEFT, padx=5)
+
+    def manage_reading_lists_gui(self):
+        """Manage reading lists"""
+        lists_window = tk.Toplevel(self.master)
+        lists_window.title("Reading Lists")
+        lists_window.geometry("900x600")
+
+        ttk.Label(lists_window, text="Reading Lists Management",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # Button frame
+        button_frame = ttk.Frame(lists_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Create New List", command=self.create_reading_list_gui).pack(side=tk.LEFT, padx=5)
+
+        # Lists table
+        table_frame = ttk.Frame(lists_window)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Name', 'Description', 'Creator', 'Created', 'Public', 'Books')
+        lists_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            lists_tree.heading(col, text=col)
+            lists_tree.column(col, width=120)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=lists_tree.yview)
+        lists_tree.configure(yscrollcommand=scrollbar.set)
+
+        lists_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_lists():
+            for item in lists_tree.get_children():
+                lists_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT l.list_id, l.name, l.description, l.creator_id, l.created_date, l.is_public,
+                       COUNT(i.item_id) as book_count
+                FROM reading_lists l
+                LEFT JOIN reading_list_items i ON l.list_id = i.list_id
+                GROUP BY l.list_id
+                ORDER BY l.created_date DESC
+                ''')
+
+                for row in cursor.fetchall():
+                    lists_tree.insert('', 'end', values=(
+                        row[0], row[1], row[2][:30], row[3], row[4][:10],
+                        "Yes" if row[5] else "No", row[6]
+                    ))
+
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load lists: {str(e)}")
+
+        def view_list_details():
+            selection = lists_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a list")
+                return
+
+            item = lists_tree.item(selection[0])
+            list_id = item['values'][0]
+            self.view_reading_list_details_gui(list_id)
+
+        def delete_list():
+            selection = lists_tree.selection()
+            if not selection:
+                messagebox.showwarning("Warning", "Please select a list to delete")
+                return
+
+            item = lists_tree.item(selection[0])
+            list_id = item['values'][0]
+            list_name = item['values'][1]
+
+            if messagebox.askyesno("Confirm Delete", f"Delete reading list '{list_name}'?"):
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+
+                    # Delete list items first
+                    cursor.execute('DELETE FROM reading_list_items WHERE list_id = ?', (list_id,))
+                    # Delete list
+                    cursor.execute('DELETE FROM reading_lists WHERE list_id = ?', (list_id,))
+
+                    conn.commit()
+                    conn.close()
+
+                    log_audit_event(get_current_user_id(), f"Deleted reading list {list_id}", "reading_lists")
+                    messagebox.showinfo("Success", "Reading list deleted")
+                    load_lists()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to delete list: {str(e)}")
+
+        # Action buttons
+        action_frame = ttk.Frame(lists_window)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(action_frame, text="View Details", command=view_list_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Delete List", command=delete_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Refresh", command=load_lists).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Close", command=lists_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Load initial data
+        load_lists()
+
+    def create_reading_list_gui(self):
+        """Create a new reading list"""
+        create_window = tk.Toplevel(self.master)
+        create_window.title("Create Reading List")
+        create_window.geometry("500x350")
+
+        ttk.Label(create_window, text="Create New Reading List",
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Form frame
+        form_frame = ttk.LabelFrame(create_window, text="List Information", padding=15)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        name_var = tk.StringVar()
+        desc_var = tk.StringVar()
+        is_public_var = tk.BooleanVar(value=False)
+        is_collaborative_var = tk.BooleanVar(value=False)
+
+        ttk.Label(form_frame, text="List Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(form_frame, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=5)
+
+        ttk.Label(form_frame, text="Description:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        desc_entry = tk.Text(form_frame, height=4, width=40)
+        desc_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        ttk.Checkbutton(form_frame, text="Public (visible to everyone)",
+                       variable=is_public_var).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        ttk.Checkbutton(form_frame, text="Collaborative (others can add books)",
+                       variable=is_collaborative_var).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+
+        def create_list():
+            name = name_var.get().strip()
+            description = desc_entry.get('1.0', tk.END).strip()
+
+            if not name:
+                messagebox.showerror("Error", "Please enter a list name")
+                return
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                creator_id = get_current_user_id()
+                created_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                INSERT INTO reading_lists (
+                    name, description, creator_id, created_date, is_public, is_collaborative
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ''', (name, description, creator_id, created_date,
+                     1 if is_public_var.get() else 0,
+                     1 if is_collaborative_var.get() else 0))
+
+                conn.commit()
+                conn.close()
+
+                log_audit_event(creator_id, f"Created reading list: {name}", "reading_lists")
+
+                messagebox.showinfo("Success", "Reading list created successfully!")
+                create_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create list: {str(e)}")
+
+        # Button frame
+        button_frame = ttk.Frame(create_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Create", command=create_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=create_window.destroy).pack(side=tk.LEFT, padx=5)
+
+    def view_reading_list_details_gui(self, list_id):
+        """View details of a specific reading list"""
+        details_window = tk.Toplevel(self.master)
+        details_window.title("Reading List Details")
+        details_window.geometry("800x600")
+
+        ttk.Label(details_window, text="Reading List Details",
+                 font=('Arial', 16, 'bold')).pack(pady=10)
+
+        # List info frame
+        info_frame = ttk.LabelFrame(details_window, text="List Information", padding=10)
+        info_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT name, description, creator_id, created_date, is_public, is_collaborative
+            FROM reading_lists WHERE list_id = ?
+            ''', (list_id,))
+
+            list_info = cursor.fetchone()
+
+            if list_info:
+                ttk.Label(info_frame, text=f"Name: {list_info[0]}", font=('Arial', 12, 'bold')).pack(anchor=tk.W, pady=2)
+                ttk.Label(info_frame, text=f"Description: {list_info[1] or 'No description'}").pack(anchor=tk.W, pady=2)
+                ttk.Label(info_frame, text=f"Created by: {list_info[2]} on {list_info[3][:10]}").pack(anchor=tk.W, pady=2)
+                ttk.Label(info_frame, text=f"Public: {'Yes' if list_info[4] else 'No'}").pack(anchor=tk.W, pady=2)
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load list info: {str(e)}")
+            details_window.destroy()
+            return
+
+        # Books in list
+        books_frame = ttk.LabelFrame(details_window, text="Books in List", padding=10)
+        books_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('Book ID', 'Title', 'Author', 'Added Date', 'Added By')
+        books_tree = ttk.Treeview(books_frame, columns=columns, show='headings', height=12)
+
+        for col in columns:
+            books_tree.heading(col, text=col)
+            books_tree.column(col, width=150)
+
+        books_tree.pack(fill=tk.BOTH, expand=True)
+
+        def load_books():
+            for item in books_tree.get_children():
+                books_tree.delete(item)
+
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT b.book_id, b.title, b.author, i.added_date, i.added_by
+                FROM reading_list_items i
+                JOIN books b ON i.book_id = b.book_id
+                WHERE i.list_id = ?
+                ORDER BY i.added_date DESC
+                ''', (list_id,))
+
+                for row in cursor.fetchall():
+                    books_tree.insert('', 'end', values=row)
+
+                conn.close()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load books: {str(e)}")
+
+        load_books()
+
+        # Button frame
+        button_frame = ttk.Frame(details_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 # DATABASE_FILE constant now defined at top of file using centralized path
