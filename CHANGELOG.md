@@ -9,6 +9,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Batch Operations GUI - Complete Function Set** (2025-11-09)
+- **New Update**: Added 15 missing batch operation functions to EnhancedBatchOperationManager class
+- **Impact**: Complete import/export, validation, duplicate handling, and batch update capabilities with GUI progress tracking
+- **Files Modified**:
+  - `university_system/modules/shared/gui/batch_operations_gui.py` - Added ~575 lines (7,608 → 8,183 lines)
+
+**FUNCTIONS IMPLEMENTED (15 Total)**:
+
+**IMPORT UTILITIES (3 functions):**
+- `resume_failed_import()` - Resume interrupted import operations from saved progress with tracking
+- `read_csv_file()` - CSV file parsing with automatic delimiter detection and header normalization
+- `read_excel_file()` - Excel file parsing with sheet selection and NaN handling
+
+**VALIDATION & ERROR HANDLING (3 functions):**
+- `display_validation_errors()` - GUI-friendly error display with customizable limit
+- `interactive_error_resolution()` - Interactive error fixing with callback-based resolution
+- `fix_record_interactive()` - Field-by-field record correction with validation
+
+**DUPLICATE DETECTION (3 functions):**
+- `find_duplicates_in_import()` - Find potential duplicates with progress tracking
+- `calculate_duplicate_confidence()` - Weighted confidence scoring (student_id: 40%, email: 30%, names: 20%, DOB: 10%)
+- `handle_duplicates()` - Handle duplicates with skip/overwrite/update strategies
+
+**IMPORT MANAGEMENT (3 functions):**
+- `import_valid_records()` - Import filtered valid records (wrapper for progress version)
+- `save_import_progress()` - Save interrupted import state for resume capability
+- `save_import_history()` - Database logging of all import operations with audit trail
+
+**BATCH UPDATE FEATURES (3 functions):**
+- `batch_update_records()` - Batch update entry point with file selection support
+- `update_batch_records()` - Execute batch updates with progress tracking (wrapper)
+- `update_student_modules()` - Update module enrollments based on course changes (CS/DS/General tracks)
+
+**TECHNICAL FEATURES**:
+- Progress callback support for all long-running operations
+- Comprehensive error handling with logging
+- Database transaction safety with context managers
+- Import history tracking with error details (first 100 errors stored)
+- Fuzzy matching for duplicate detection (fuzzywuzzy integration)
+- CSV/Excel format support with automatic normalization
+- Resume capability for failed imports (pickle-based progress storage)
+
+**USER IMPACT**: Users can now handle complex batch operations with progress tracking, resume failed imports, interactively resolve validation errors, detect and handle duplicates intelligently, and maintain complete audit trails of all import/update operations. All 15 functions integrate seamlessly with the GUI's progress callback system.
+
+**Housing Accommodation GUI - Architectural Consistency Improvements** (2025-11-09)
+- **Update**: Added 2 missing CLI function imports to align with service layer architecture
+- **Impact**: Complete architectural consistency - all 18 core CLI functions now properly imported from services layer
+- **Files Modified**:
+  - `university_system/modules/domain/housing/gui/housing_accommodation_gui.py` - Added 2 imports + exports
+
+**FUNCTIONS ADDED TO IMPORTS (2 Total)**:
+1. **select_student** (as `orig_select_student`) - CLI student selection utility, previously reimplemented in GUI
+2. **create_rooms_for_building** (as `orig_create_rooms_for_building`) - CLI room batch creation, previously reimplemented in GUI
+
+**ALL 18 CLI FUNCTIONS NOW IMPORTED**:
+
+**UTILITY FUNCTIONS (3):**
+- `set_auth()` - Global authentication configuration ✓
+- `generate_id()` - Unique ID generation with prefix ✓
+- `select_student()` - Interactive student selection ✓ **[NEWLY ADDED]**
+
+**BUILDING MANAGEMENT (5):**
+- `create_building()` - Building creation ✓
+- `view_building()` - Building details viewer ✓
+- `update_building()` - Building editor ✓
+- `delete_building()` - Building deletion ✓
+- `create_rooms_for_building()` - Batch room creation ✓ **[NEWLY ADDED]**
+
+**APPLICATION MANAGEMENT (3):**
+- `create_application()` - Housing application form ✓
+- `process_application()` - Application processing ✓
+- `view_application()` - Application viewer ✓
+
+**ASSIGNMENT MANAGEMENT (2):**
+- `view_assignment()` - Room assignment viewer ✓
+- `update_assignment_status()` - Assignment status updater ✓
+
+**MAINTENANCE MANAGEMENT (3):**
+- `create_maintenance_request()` - Maintenance request form ✓
+- `view_maintenance_requests()` - Maintenance list viewer ✓
+- `update_maintenance_request()` - Request update handler ✓
+
+**PAYMENT MANAGEMENT (2):**
+- `record_payment()` - Payment recording ✓
+- `view_payment_history()` - Payment history viewer ✓
+
+**TECHNICAL BENEFITS**:
+- **4-Layer Architecture Compliance**: All GUI database operations now route through service layer
+- **Code Reusability**: Eliminates duplicate database logic between CLI and GUI
+- **Maintainability**: Single source of truth for business logic in services layer
+- **Backward Compatibility**: All imports available via `orig_*` aliases in `__all__` exports
+
+**ARCHITECTURAL IMPACT**: Before this change, 2 functions (student selection and room batch creation) bypassed the service layer with direct database calls in the GUI. Now all 18 core functions properly use the service layer, ensuring consistent business logic and easier maintenance.
+
 **Course Management GUI - Core Functions Addition** (2025-11-09)
 - **New Update**: Added 16 missing core GUI functions for validation, database initialization, and prerequisite management
 - **Impact**: Enhanced course management with proper validation, circular dependency detection, and comprehensive prerequisite handling

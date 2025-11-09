@@ -7449,6 +7449,581 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
 
         return recommendations
 
+    # ========================================
+    # ENHANCED IMPORT/EXPORT UTILITY FUNCTIONS
+    # ========================================
+
+    def resume_failed_import(self, progress_callback=None):
+        """Resume previously failed import operations - GUI version with progress tracking"""
+        try:
+            resume_file = DATA_DIR / "import_resume.pkl"
+            if not resume_file.exists():
+                raise FileNotFoundError("No failed import found to resume")
+
+            with open(resume_file, 'rb') as f:
+                resume_data = pickle.load(f)
+
+            remaining_records = resume_data['remaining_records']
+            original_total = resume_data['original_total']
+            filename = resume_data['filename']
+
+            if progress_callback:
+                already_processed = original_total - len(remaining_records)
+                progress_callback(0, f"Resuming import: {already_processed}/{original_total} already processed")
+
+            # Import remaining records
+            result = self.import_valid_records_with_progress(
+                remaining_records,
+                start_progress=int((original_total - len(remaining_records)) / original_total * 100) if progress_callback else 0
+            )
+            result.total_records = original_total
+
+            # Clean up resume file on success
+            if result.successful_imports > 0:
+                resume_file.unlink()
+
+            self.save_import_history(result, filename, 'Resumed Import')
+
+            if progress_callback:
+                progress_callback(100, f"Resume complete: {result.successful_imports} records imported")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error resuming import: {e}")
+            raise
+
+    def read_csv_file(self, file_path: str) -> List[Dict]:
+        """Utility to read and parse CSV files - GUI-friendly version"""
+        try:
+            records = []
+            with open(file_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
+                # Detect delimiter
+                sample = csvfile.read(1024)
+                csvfile.seek(0)
+
+                sniffer = csv.Sniffer()
+                try:
+                    delimiter = sniffer.sniff(sample).delimiter
+                except csv.Error:
+                    delimiter = ','  # Default to comma
+
+                reader = csv.DictReader(csvfile, delimiter=delimiter)
+                # Normalize headers
+                reader.fieldnames = [
+                    header.strip().lower().replace(' ', '_')
+                    for header in reader.fieldnames
+                ]
+
+                records = list(reader)
+
+            logger.info(f"Read {len(records)} records from CSV: {file_path}")
+            return records
+
+        except Exception as e:
+            logger.error(f"Error reading CSV file: {e}")
+            raise
+
+    def read_excel_file(self, file_path: str, sheet_name: str = None) -> List[Dict]:
+        """Utility to read and parse Excel files - GUI-friendly version"""
+        try:
+            # Read Excel file
+            df = pd.read_excel(file_path, sheet_name=sheet_name or 0)
+
+            # Normalize column names
+            df.columns = [col.strip().lower().replace(' ', '_') for col in df.columns]
+
+            # Convert to list of dictionaries, handling NaN values
+            records = df.to_dict('records')
+            records = [{k: (None if pd.isna(v) else v) for k, v in record.items()} for record in records]
+
+            logger.info(f"Read {len(records)} records from Excel: {file_path} (sheet: {sheet_name or 'default'})")
+            return records
+
+        except Exception as e:
+            logger.error(f"Error reading Excel file: {e}")
+            raise
+
+    def display_validation_errors(self, error_records: List[Dict], max_display: int = 10,
+                                  callback=None) -> str:
+        """Display validation errors in GUI-friendly format"""
+        if not error_records:
+            return "No validation errors found."
+
+        error_text = f"Found {len(error_records)} validation errors:\n\n"
+
+        # Display first N errors
+        display_count = min(len(error_records), max_display)
+        for i, error_record in enumerate(error_records[:display_count]):
+            row_num = error_record.get('row', i + 1)
+            errors = error_record.get('errors', {})
+            data = error_record.get('data', {})
+
+            error_text += f"Row {row_num}:\n"
+            for field, error_msg in errors.items():
+                error_text += f"  • {field}: {error_msg}\n"
+            error_text += f"  Data: {data.get('student_id', 'N/A')} - {data.get('first_name', '')} {data.get('last_name', '')}\n\n"
+
+        if len(error_records) > max_display:
+            error_text += f"\n... and {len(error_records) - max_display} more errors\n"
+
+        if callback:
+            callback(error_text)
+
+        return error_text
+
+    def interactive_error_resolution(self, error_records: List[Dict],
+                                     resolution_callback=None) -> List[Dict]:
+        """Interactive menu to fix validation errors - GUI version
+
+        Args:
+            error_records: List of error records to resolve
+            resolution_callback: Callback function(error_record, action) -> fixed_record or None
+                                Returns: 'fix' (with fixed record), 'skip', or 'abort'
+
+        Returns:
+            List of fixed records ready for import
+        """
+        fixed_records = []
+
+        if not resolution_callback:
+            # No interactive resolution available, return empty list
+            logger.warning("No resolution callback provided for interactive error resolution")
+            return fixed_records
+
+        for error_record in error_records:
+            try:
+                result = resolution_callback(error_record)
+
+                if result is None or result.get('action') == 'abort':
+                    logger.info("User aborted error resolution")
+                    break
+                elif result.get('action') == 'skip':
+                    continue
+                elif result.get('action') == 'fix' and result.get('record'):
+                    # Validate fixed record
+                    fixed_data = result['record']
+                    errors = self.validate_student_data(fixed_data)
+                    if not errors:
+                        fixed_records.append(fixed_data)
+                    else:
+                        logger.warning(f"Fixed record still has errors: {errors}")
+
+            except Exception as e:
+                logger.error(f"Error in interactive resolution: {e}")
+                continue
+
+        return fixed_records
+
+    def fix_record_interactive(self, record: Dict, field_callback=None) -> Optional[Dict]:
+        """Fix individual record interactively - GUI version
+
+        Args:
+            record: Record to fix
+            field_callback: Callback function(field_name, current_value, error) -> new_value
+
+        Returns:
+            Fixed record or None if user cancels
+        """
+        if not field_callback:
+            return None
+
+        fixed_record = record.copy()
+        errors = self.validate_student_data(fixed_record)
+
+        if not errors:
+            return fixed_record
+
+        # Fix each field with errors
+        for field, error_msg in errors.items():
+            current_value = fixed_record.get(field, '')
+            new_value = field_callback(field, current_value, error_msg)
+
+            if new_value is None:
+                # User cancelled
+                return None
+
+            fixed_record[field] = new_value
+
+        return fixed_record
+
+    def find_duplicates_in_import(self, records: List[Dict], progress_callback=None) -> List[Dict]:
+        """Find potential duplicates in import data - GUI version with progress"""
+        duplicates = []
+
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                total = len(records)
+                for i, record in enumerate(records):
+                    if progress_callback and i % 10 == 0:
+                        progress = int((i / total) * 100)
+                        progress_callback(progress, f"Checking for duplicates: {i}/{total}")
+
+                    # Check for existing student with same student_id or email
+                    student_id = record.get('student_id', '')
+                    email = record.get('email', '')
+
+                    if student_id:
+                        cursor.execute(
+                            "SELECT * FROM students WHERE student_id = ?",
+                            (student_id,)
+                        )
+                        existing = cursor.fetchone()
+                        if existing:
+                            confidence = self.calculate_duplicate_confidence(record, existing)
+                            duplicates.append({
+                                'import_record': record,
+                                'existing_record': existing,
+                                'confidence': confidence,
+                                'match_type': 'student_id'
+                            })
+                            continue
+
+                    if email:
+                        cursor.execute(
+                            "SELECT * FROM students WHERE email = ?",
+                            (email,)
+                        )
+                        existing = cursor.fetchone()
+                        if existing:
+                            confidence = self.calculate_duplicate_confidence(record, existing)
+                            duplicates.append({
+                                'import_record': record,
+                                'existing_record': existing,
+                                'confidence': confidence,
+                                'match_type': 'email'
+                            })
+
+                if progress_callback:
+                    progress_callback(100, f"Found {len(duplicates)} potential duplicates")
+
+                logger.info(f"Found {len(duplicates)} potential duplicates in import data")
+                return duplicates
+
+        except Exception as e:
+            logger.error(f"Error finding duplicates: {e}")
+            raise
+
+    def calculate_duplicate_confidence(self, import_record: Dict, existing_record: Tuple) -> float:
+        """Calculate confidence score for duplicate matches using weighted scoring"""
+        score = 0.0
+        max_score = 0.0
+
+        # Field weights (higher = more important for matching)
+        weights = {
+            'student_id': 40.0,
+            'email': 30.0,
+            'first_name': 10.0,
+            'last_name': 10.0,
+            'date_of_birth': 10.0
+        }
+
+        # Get column names from existing record (assuming it's from SELECT *)
+        # Typical columns: student_id, first_name, last_name, email, course, date_of_birth, ...
+        existing_dict = {
+            'student_id': existing_record[0] if len(existing_record) > 0 else None,
+            'first_name': existing_record[1] if len(existing_record) > 1 else None,
+            'last_name': existing_record[2] if len(existing_record) > 2 else None,
+            'date_of_birth': existing_record[3] if len(existing_record) > 3 else None,
+            'email': existing_record[4] if len(existing_record) > 4 else None,
+            'course': existing_record[5] if len(existing_record) > 5 else None,
+        }
+
+        # Compare each field
+        for field, weight in weights.items():
+            max_score += weight
+
+            import_value = str(import_record.get(field, '')).lower().strip()
+            existing_value = str(existing_dict.get(field, '')).lower().strip()
+
+            if not import_value or not existing_value:
+                continue
+
+            # Exact match
+            if import_value == existing_value:
+                score += weight
+            # Fuzzy match for names
+            elif field in ['first_name', 'last_name']:
+                similarity = fuzz.ratio(import_value, existing_value)
+                score += (similarity / 100.0) * weight
+
+        # Calculate percentage confidence
+        confidence = (score / max_score * 100) if max_score > 0 else 0
+        return round(confidence, 2)
+
+    def handle_duplicates(self, records: List[Dict], duplicates: List[Dict],
+                         choice: str, progress_callback=None) -> ImportResult:
+        """Handle duplicate records based on user choice - GUI version
+
+        Args:
+            records: All import records
+            duplicates: List of duplicate matches
+            choice: 'skip', 'overwrite', or 'update'
+            progress_callback: Optional progress callback
+
+        Returns:
+            ImportResult with handling results
+        """
+        result = ImportResult()
+        result.total_records = len(records)
+
+        # Build set of duplicate import records
+        duplicate_ids = {dup['import_record'].get('student_id') for dup in duplicates}
+
+        # Separate unique and duplicate records
+        unique_records = [r for r in records if r.get('student_id') not in duplicate_ids]
+        duplicate_records = [r for r in records if r.get('student_id') in duplicate_ids]
+
+        try:
+            # Import unique records first
+            if unique_records:
+                if progress_callback:
+                    progress_callback(0, f"Importing {len(unique_records)} unique records...")
+                unique_result = self.import_valid_records_with_progress(unique_records, 0)
+                result.successful_imports += unique_result.successful_imports
+                result.failed_imports += unique_result.failed_imports
+                result.errors.extend(unique_result.errors)
+
+            # Handle duplicates based on choice
+            if choice == 'skip':
+                result.duplicates_found = len(duplicate_records)
+                if progress_callback:
+                    progress_callback(100, f"Skipped {len(duplicate_records)} duplicates")
+
+            elif choice in ['overwrite', 'update']:
+                with self.db_manager.get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    for i, dup in enumerate(duplicates):
+                        if progress_callback and i % 5 == 0:
+                            progress = 50 + int((i / len(duplicates)) * 50)
+                            progress_callback(progress, f"Handling duplicates: {i}/{len(duplicates)}")
+
+                        import_rec = dup['import_record']
+                        student_id = import_rec.get('student_id')
+
+                        try:
+                            if choice == 'overwrite':
+                                # Delete and re-insert
+                                cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
+                                cursor.execute(
+                                    """INSERT INTO students (student_id, first_name, last_name, date_of_birth,
+                                       email, phone_number, address, course, enrollment_date, status)
+                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                    (
+                                        student_id,
+                                        import_rec.get('first_name'),
+                                        import_rec.get('last_name'),
+                                        import_rec.get('date_of_birth'),
+                                        import_rec.get('email'),
+                                        import_rec.get('phone_number'),
+                                        import_rec.get('address'),
+                                        import_rec.get('course', 'GENERAL'),
+                                        import_rec.get('enrollment_date', datetime.date.today().isoformat()),
+                                        import_rec.get('status', 'Active')
+                                    )
+                                )
+                                result.successful_imports += 1
+
+                            elif choice == 'update':
+                                # Update only non-empty fields
+                                update_fields = []
+                                update_values = []
+                                for field in ['first_name', 'last_name', 'email', 'phone_number', 'address', 'course']:
+                                    if import_rec.get(field):
+                                        update_fields.append(f"{field} = ?")
+                                        update_values.append(import_rec[field])
+
+                                if update_fields:
+                                    update_values.append(student_id)
+                                    cursor.execute(
+                                        f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?",
+                                        update_values
+                                    )
+                                    result.successful_imports += 1
+
+                        except Exception as e:
+                            logger.error(f"Error handling duplicate {student_id}: {e}")
+                            result.failed_imports += 1
+                            result.errors.append({
+                                'student_id': student_id,
+                                'error': str(e)
+                            })
+
+                    conn.commit()
+                    result.duplicates_found = len(duplicates)
+
+                    if progress_callback:
+                        progress_callback(100, f"Handled {len(duplicates)} duplicates")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error handling duplicates: {e}")
+            raise
+
+    def import_valid_records(self, records: List[Dict]) -> ImportResult:
+        """Import only valid records after filtering - wrapper for GUI compatibility"""
+        return self.import_valid_records_with_progress(records, start_progress=0)
+
+    def save_import_progress(self, remaining_records: List[Dict], original_total: int,
+                            filename: str):
+        """Save progress of interrupted imports for resume capability"""
+        try:
+            resume_data = {
+                'remaining_records': remaining_records,
+                'original_total': original_total,
+                'filename': filename,
+                'timestamp': datetime.datetime.now().isoformat()
+            }
+
+            resume_file = DATA_DIR / "import_resume.pkl"
+            with open(resume_file, 'wb') as f:
+                pickle.dump(resume_data, f)
+
+            logger.info(f"Saved import progress: {len(remaining_records)}/{original_total} remaining")
+
+        except Exception as e:
+            logger.error(f"Error saving import progress: {e}")
+
+    def save_import_history(self, result: ImportResult, file_path: str, operation_type: str):
+        """Save detailed import history to database for tracking and auditing"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Create history table if not exists
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS import_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TEXT NOT NULL,
+                        operation_type TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        total_records INTEGER DEFAULT 0,
+                        successful_imports INTEGER DEFAULT 0,
+                        failed_imports INTEGER DEFAULT 0,
+                        duplicates_found INTEGER DEFAULT 0,
+                        validation_errors INTEGER DEFAULT 0,
+                        error_details TEXT,
+                        duration_seconds REAL,
+                        status TEXT DEFAULT 'completed'
+                    )
+                """)
+
+                # Calculate error details
+                error_details = json.dumps({
+                    'errors': result.errors[:100] if hasattr(result, 'errors') else [],  # Limit to first 100
+                    'warnings': result.warnings[:100] if hasattr(result, 'warnings') else []
+                })
+
+                # Insert history record
+                cursor.execute("""
+                    INSERT INTO import_history
+                    (timestamp, operation_type, file_path, total_records, successful_imports,
+                     failed_imports, duplicates_found, error_details, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    datetime.datetime.now().isoformat(),
+                    operation_type,
+                    file_path,
+                    result.total_records,
+                    result.successful_imports,
+                    result.failed_imports,
+                    result.duplicates_found,
+                    error_details,
+                    'completed' if result.successful_imports > 0 else 'failed'
+                ))
+
+                conn.commit()
+                logger.info(f"Saved import history: {operation_type} - {file_path}")
+
+        except Exception as e:
+            logger.error(f"Error saving import history: {e}")
+
+    # ========================================
+    # BATCH UPDATE FEATURES
+    # ========================================
+
+    def batch_update_records(self, file_path: str = None, progress_callback=None) -> ImportResult:
+        """Batch update records from file - GUI-friendly version
+
+        If file_path is not provided, this can be used as a menu entry point
+        """
+        if file_path:
+            return self.batch_update_from_file(file_path, progress_callback)
+        else:
+            # This is a menu entry point - the GUI should handle file selection
+            logger.info("Batch update menu accessed - awaiting file selection")
+            return ImportResult()
+
+    def update_batch_records(self, records: List[Dict], progress_callback=None) -> ImportResult:
+        """Execute batch update - wrapper for GUI compatibility"""
+        return self.update_batch_records_with_progress(records)
+
+    def update_student_modules(self, cursor, student_id: str, new_course: str):
+        """Update student module enrollments when course changes
+
+        This method updates module assignments based on the new course.
+        It clears existing optional modules and assigns new ones based on course type.
+        """
+        try:
+            # Get current modules
+            cursor.execute(
+                "SELECT compulsory_module_1, compulsory_module_2 FROM students WHERE student_id = ?",
+                (student_id,)
+            )
+            current = cursor.fetchone()
+
+            if not current:
+                logger.warning(f"Student {student_id} not found for module update")
+                return
+
+            # Determine new modules based on course
+            if new_course == 'COMPUTER SCIENCE':
+                optional_1 = CS_optional_module_1
+                optional_2 = CS_optional_module_2
+                optional_3 = CS_optional_module_3
+                optional_4 = CS_optional_module_4
+            elif new_course == 'DATA SCIENCE':
+                optional_1 = DS_optional_module_1
+                optional_2 = DS_optional_module_2
+                optional_3 = DS_optional_module_3
+                optional_4 = DS_optional_module_4
+            else:
+                # Default modules for general or other courses
+                optional_1 = optional_module_1
+                optional_2 = optional_module_2
+                optional_3 = optional_module_3
+                optional_4 = optional_module_4
+
+            # Update modules
+            cursor.execute("""
+                UPDATE students
+                SET compulsory_module_1 = ?,
+                    compulsory_module_2 = ?,
+                    optional_module_1 = ?,
+                    optional_module_2 = ?,
+                    optional_module_3 = ?,
+                    optional_module_4 = ?
+                WHERE student_id = ?
+            """, (
+                compulsory_module_1,
+                compulsory_module_2,
+                optional_1,
+                optional_2,
+                optional_3,
+                optional_4,
+                student_id
+            ))
+
+            logger.info(f"Updated modules for student {student_id} to {new_course} track")
+
+        except Exception as e:
+            logger.error(f"Error updating student modules: {e}")
+            raise
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
