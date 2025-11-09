@@ -217,6 +217,7 @@ from university_system.modules.domain.finance.gui.finance.report_manager import 
 from university_system.modules.domain.finance.gui.finance.analytics import AnalyticsManager
 from university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
 from university_system.modules.domain.finance.gui.finance.settings import SettingsManager
+from university_system.modules.domain.finance.gui.finance.revenue_source_manager import RevenueSourceManager
 
 
 class FinanceGUI:
@@ -250,6 +251,7 @@ class FinanceGUI:
         self.analytics = AnalyticsManager(self)
         self.compliance = ComplianceManager(self)
         self.settings = SettingsManager(self)
+        self.revenue_source = RevenueSourceManager(self)
 
         # Initialize system
         self.initialize_system()

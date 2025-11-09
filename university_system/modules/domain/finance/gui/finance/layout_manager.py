@@ -357,6 +357,7 @@ class LayoutManager:
         self.create_analytics_tab()
         # self.create_scholarships_tab()  # Removed - integrated into Financial Aid tab
         self.create_reports_tab()
+        self.create_revenue_source_tab()
         self.create_collections_tab()
         self.create_aid_tab()
         self.create_budget_tab()
@@ -381,6 +382,7 @@ class LayoutManager:
             ("📋 Fees", "fees"),
             ("👤 Students", "students"),
             ("📈 Reports", "reports"),
+            ("💵 Revenue by Source", "revenue_source"),
             ("📞 Collections", "collections"),
             ("🎓 Aid", "aid"),
             ("💼 Budget", "budget"),
@@ -1697,6 +1699,18 @@ Click the button above to access the full Financial Reporting & Analytics system
         """
         info_text.insert('1.0', info_content)
         info_text.config(state='disabled')
+
+    def create_revenue_source_tab(self):
+        """Create revenue by source tab"""
+        try:
+            # Delegate to revenue source manager if available
+            if hasattr(self.gui, 'revenue_source') and hasattr(self.gui.revenue_source, 'create_revenue_source_tab'):
+                self.gui.revenue_source.create_revenue_source_tab()
+            else:
+                self._create_placeholder_tab('revenue_source', '💵 Revenue by Source')
+        except Exception as e:
+            print(f"Error creating revenue source tab: {e}")
+            self._create_placeholder_tab('revenue_source', '💵 Revenue by Source')
 
     def create_collections_tab(self):
         """Create collections management tab"""

@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Revenue by Source GUI Integration** (2025-11-09)
+- **NEW FEATURE**: Revenue by Source analytics now available in Finance GUI
+- **NEW FILE**: `modules/domain/finance/gui/finance/revenue_source_manager.py` (~490 lines)
+- **Impact**: Finance administrators can now visually analyze revenue breakdown by transaction source
+- **Integration**: Seamlessly integrated into Finance GUI manager pattern
+
+**GUI FEATURES**:
+- **Interactive Data Table**: Displays revenue breakdown by source (Library, Housing, Shop, Restaurant, Alumni, etc.)
+  - Transaction count per source
+  - Total revenue, average, min, max amounts
+  - Percentage of total revenue
+  - Real-time summary (total revenue & transaction count)
+
+- **Visual Analytics**:
+  - Pie chart showing revenue distribution by source with percentages
+  - Bar chart displaying revenue amounts with value labels
+  - Color-coded by source for easy identification
+  - Professional matplotlib-based charts embedded in GUI
+
+- **Trend Analysis**:
+  - Monthly revenue trends for individual sources (configurable months)
+  - Dual-axis chart: revenue line + transaction count bars
+  - Historical analysis for up to 12 months
+  - Interactive source selection
+
+- **Filters & Export**:
+  - Date range filtering (start/end date)
+  - CSV export with file dialog
+  - Data refresh on demand
+  - Period comparison capabilities
+
+**FILES MODIFIED**:
+1. `modules/domain/finance/gui/finance/finance_gui.py`:
+   - Added RevenueSourceManager import (line 220)
+   - Initialized revenue_source manager (line 254)
+
+2. `modules/domain/finance/gui/finance/layout_manager.py`:
+   - Added "Revenue by Source" navigation button (line 384)
+   - Added create_revenue_source_tab() method (lines 1703-1713)
+   - Integrated tab into main interface (line 360)
+
+**INTEGRATION WITH BACKEND**:
+- Uses `revenue_by_source_report.py` functions:
+  - `get_revenue_by_source()` - Data retrieval
+  - `get_source_revenue_trend()` - Trend analysis
+  - `compare_source_revenue_periods()` - Period comparison
+  - `export_revenue_by_source_csv()` - CSV export
+
+**USER EXPERIENCE**:
+- Accessible via "💵 Revenue by Source" button in Finance GUI sidebar
+- Default date range: Last 12 months
+- Automatic data loading on tab open
+- Professional color scheme matching Finance GUI
+- Responsive layout with paned window (data table | charts)
+
+**TECHNICAL DETAILS**:
+- Manager pattern following Finance GUI architecture
+- Matplotlib integration for charts (FigureCanvasTkAgg)
+- Tkinter Treeview for tabular data display
+- Thread-safe data loading
+- Error handling with user-friendly messages
+
+---
+
 **Finance System Integration - Centralized Financial Tracking** (2025-11-09)
 - **CRITICAL INTEGRATION**: Unified all standalone finance systems with central finance module
 - **Impact**: All financial transactions across university now flow into central finance system for unified reporting, compliance, and oversight
