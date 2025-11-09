@@ -9,6 +9,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Advanced Search GUI - Missing Functions Implementation** (2025-11-09)
+- **New Update**: Added 2 missing critical functions to complete Advanced Search GUI feature parity with CLI version
+- **Impact**: Full database integrity checking and comprehensive combined filters search capability
+- **Files Modified**:
+  - `university_system/modules/shared/gui/advanced_search_gui.py` - Added ~330 lines
+  - **Total File Size**: 9,970 lines (complete advanced search system)
+
+**FUNCTIONS IMPLEMENTED:**
+
+**1. ensure_tables_exist() - Database Integrity Function**
+- Quick validation function to ensure all required tables exist before running analytics
+- Checks for presence of search_analytics table
+- Automatically initializes database with init_enhanced_database() if tables are missing
+- Prevents runtime errors when accessing search and analytics features
+- Returns bool indicating whether initialization was needed
+- Used internally before critical database operations
+
+**2. show_combined_search() - Comprehensive Multi-Filter Search GUI** (~230 lines)
+- Full GUI implementation of combined filters search from CLI version
+- Professional scrollable dialog (700x700) with organized sections
+- **Three Major Filter Categories:**
+  - **Student Data Filters**: ID, first name, last name, gender, course, age range (min/max)
+  - **Module Enrollment Filters**: Multi-select listbox with ALL/ANY matching logic
+  - **Date Range Filters**: Registration date filtering with YYYY-MM-DD validation
+- **Smart Features:**
+  - Optional filter enabling (checkboxes for modules and dates)
+  - Live module loading from database
+  - Input validation for age (integers) and dates (format checking)
+  - Real-time error handling with user-friendly messages
+- Threaded execution with progress tracking
+- Replaces previous stub that redirected to multi-criteria search
+
+**3. perform_combined_filters_search() - Backend Search Logic** (~130 lines)
+- Executes complex combined searches across multiple dimensions
+- **Two Query Strategies:**
+  - **ALL modules match**: Uses EXISTS subqueries for precise matching
+  - **ANY module match**: Uses JOIN with IN clause for performance
+- **Comprehensive Filter Support:**
+  - Partial matching for student ID, names (LIKE with wildcards)
+  - Case-insensitive gender matching
+  - Exact course matching
+  - Age range filtering (>=, <=)
+  - Date range filtering for registration_datetime
+  - Module code filtering with configurable logic (ALL vs ANY)
+- Query parameterization to prevent SQL injection
+- Proper connection handling and error reporting
+
+**TECHNICAL DETAILS:**
+- Added docstrings with parameter and return type documentation
+- Thread-safe database operations
+- Proper exception handling with descriptive error messages
+- Integration with existing GUI queue system for async results
+- Follows existing code patterns and conventions
+
+**USER IMPACT:**
+- Students/admins can now perform complex multi-dimensional searches
+- Combine up to 3 filter types (student data, modules, dates) in single query
+- Example use cases:
+  - Find all CS students aged 20-25 enrolled in specific modules
+  - Search students by name registered in last 6 months
+  - Locate students in ANY of 5 modules with specific age criteria
+- Significantly reduces time to find specific student cohorts
+
+**DATABASE INTEGRITY:**
+- ensure_tables_exist() prevents crashes from missing analytics tables
+- Automatic recovery through database initialization
+- Silent operation unless tables need creation
+
 **Academic Calendar GUI - Management Systems Infrastructure** (2025-11-09)
 - **New Update**: Implemented 8 comprehensive management classes with complete calendar infrastructure (~1,475 lines of new code)
 - **Impact**: Production-ready database layer, authentication system, recurring events, dependencies, reporting, and notifications

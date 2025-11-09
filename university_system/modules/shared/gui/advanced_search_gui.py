@@ -500,6 +500,40 @@ def init_enhanced_database():
         print(f"Error initializing enhanced database: {e}")
         return False
 
+def ensure_tables_exist():
+    """
+    Quick function to ensure all required tables exist before running analytics.
+
+    This function checks for the presence of the search_analytics table and
+    initializes the database if it's missing. This prevents errors when running
+    search and analytics features.
+
+    Returns:
+        bool: True if tables were created/initialized, False if they already existed
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Check if search_analytics table exists
+        cursor.execute("""
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name='search_analytics'
+        """)
+
+        if not cursor.fetchone():
+            conn.close()
+            print("🔧 Required tables missing. Initializing database...")
+            init_enhanced_database()
+            return True
+
+        conn.close()
+        return False
+
+    except sqlite3.Error:
+        init_enhanced_database()
+        return True
+
 def student_demographics_reports():
     """Generate demographics reports with actual database data"""
     try:
@@ -7411,7 +7445,140 @@ class AdvancedSearchGUI:
             
         except Exception as e:
             raise Exception(f"Module search error: {str(e)}")
-    
+
+    def perform_combined_filters_search(self, filters):
+        """
+        Perform combined filters search with student data, modules, and date range.
+
+        Args:
+            filters (dict): Dictionary containing:
+                - student_data: Dict with student field filters
+                - module_codes: List of module codes
+                - date_range: Dict with start and end dates
+                - module_match_all: Bool for ALL vs ANY module matching
+
+        Returns:
+            list: List of matching student records
+        """
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Build query based on filters
+            if filters["module_codes"] and filters["module_match_all"]:
+                # ALL modules - need EXISTS for each module
+                query = "SELECT s.* FROM students s WHERE 1=1"
+                params = []
+
+                # Student data filters
+                for field, op, val in [
+                    ("student_id", "LIKE", f"%{filters['student_data'].get('student_id', '')}%"),
+                    ("first_name", "LIKE LOWER", f"%{filters['student_data'].get('first_name', '')}%"),
+                    ("last_name", "LIKE LOWER", f"%{filters['student_data'].get('last_name', '')}%"),
+                ]:
+                    if filters["student_data"].get(field.replace('_', ' ').title().replace(' ', '')):
+                        if "LOWER" in op:
+                            query += f" AND LOWER(s.{field}) {op.replace(' LOWER', '')} ?"
+                        else:
+                            query += f" AND s.{field} {op} ?"
+                        params.append(val)
+
+                if "gender" in filters["student_data"]:
+                    query += " AND LOWER(s.gender) = LOWER(?)"
+                    params.append(filters["student_data"]["gender"])
+
+                if "course" in filters["student_data"]:
+                    query += " AND s.course = ?"
+                    params.append(filters["student_data"]["course"])
+
+                if "age_min" in filters["student_data"]:
+                    query += " AND s.age >= ?"
+                    params.append(filters["student_data"]["age_min"])
+
+                if "age_max" in filters["student_data"]:
+                    query += " AND s.age <= ?"
+                    params.append(filters["student_data"]["age_max"])
+
+                if filters["date_range"]["start"]:
+                    query += " AND s.registration_datetime >= ?"
+                    params.append(filters["date_range"]["start"])
+
+                if filters["date_range"]["end"]:
+                    query += " AND s.registration_datetime <= ?"
+                    params.append(filters["date_range"]["end"])
+
+                # Add EXISTS clause for each module
+                for code in filters["module_codes"]:
+                    query += """
+                    AND EXISTS (
+                        SELECT 1 FROM student_modules sm
+                        WHERE sm.student_id = s.student_id AND sm.module_code = ?
+                    )
+                    """
+                    params.append(code)
+
+            else:
+                # ANY modules or no modules
+                query = "SELECT DISTINCT s.* FROM students s"
+                params = []
+
+                if filters["module_codes"]:
+                    query += " JOIN student_modules sm ON s.student_id = sm.student_id"
+
+                query += " WHERE 1=1"
+
+                # Student data filters
+                for field, op in [
+                    ("student_id", "LIKE"),
+                    ("first_name", "LIKE LOWER"),
+                    ("last_name", "LIKE LOWER"),
+                ]:
+                    filter_key = field
+                    if filters["student_data"].get(filter_key):
+                        if "LOWER" in op:
+                            query += f" AND LOWER(s.{field}) {op.replace(' LOWER', '')} ?"
+                        else:
+                            query += f" AND s.{field} {op} ?"
+                        params.append(f"%{filters['student_data'][filter_key]}%")
+
+                if "gender" in filters["student_data"]:
+                    query += " AND LOWER(s.gender) = LOWER(?)"
+                    params.append(filters["student_data"]["gender"])
+
+                if "course" in filters["student_data"]:
+                    query += " AND s.course = ?"
+                    params.append(filters["student_data"]["course"])
+
+                if "age_min" in filters["student_data"]:
+                    query += " AND s.age >= ?"
+                    params.append(filters["student_data"]["age_min"])
+
+                if "age_max" in filters["student_data"]:
+                    query += " AND s.age <= ?"
+                    params.append(filters["student_data"]["age_max"])
+
+                if filters["date_range"]["start"]:
+                    query += " AND s.registration_datetime >= ?"
+                    params.append(filters["date_range"]["start"])
+
+                if filters["date_range"]["end"]:
+                    query += " AND s.registration_datetime <= ?"
+                    params.append(filters["date_range"]["end"])
+
+                if filters["module_codes"]:
+                    placeholders = ",".join("?" for _ in filters["module_codes"])
+                    query += f" AND sm.module_code IN ({placeholders})"
+                    params.extend(filters["module_codes"])
+
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            conn.close()
+
+            return results
+
+        except Exception as e:
+            raise Exception(f"Combined filters search error: {str(e)}")
+
     def show_date_search(self):
         """Complete date range search implementation"""
         dialog = tk.Toplevel(self.master)
@@ -7529,9 +7696,237 @@ class AdvancedSearchGUI:
             raise Exception(f"Date search error: {str(e)}")
    
     def show_combined_search(self):
-        """Show combined filters search"""
-        messagebox.showinfo("Combined Search", "Combined filters search will use the multi-criteria search form with additional options.")
-        self.create_search_form()
+        """
+        Show combined filters search - allows combining multiple types of filters.
+
+        This comprehensive search interface combines:
+        - Student data filters (ID, name, gender, course, age)
+        - Module enrollment filters
+        - Date range filters
+        """
+        dialog = tk.Toplevel(self.master)
+        dialog.title("🔎 Combined Filters Search")
+        dialog.geometry("700x700")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        # Main container with scrollbar
+        main_frame = ttk.Frame(dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas, padding="20")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        ttk.Label(scrollable_frame, text="Combined Filters Search", style='Title.TLabel').pack(pady=(0, 20))
+
+        # ========== STUDENT DATA FILTERS ==========
+        student_frame = ttk.LabelFrame(scrollable_frame, text="Student Data Filters", padding="10")
+        student_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Student ID
+        ttk.Label(student_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+        student_id_var = tk.StringVar()
+        ttk.Entry(student_frame, textvariable=student_id_var, width=30).grid(row=0, column=1, sticky='w', padx=(10, 0))
+
+        # First Name
+        ttk.Label(student_frame, text="First Name:").grid(row=1, column=0, sticky='w', pady=5)
+        first_name_var = tk.StringVar()
+        ttk.Entry(student_frame, textvariable=first_name_var, width=30).grid(row=1, column=1, sticky='w', padx=(10, 0))
+
+        # Last Name
+        ttk.Label(student_frame, text="Last Name:").grid(row=2, column=0, sticky='w', pady=5)
+        last_name_var = tk.StringVar()
+        ttk.Entry(student_frame, textvariable=last_name_var, width=30).grid(row=2, column=1, sticky='w', padx=(10, 0))
+
+        # Gender
+        ttk.Label(student_frame, text="Gender:").grid(row=3, column=0, sticky='w', pady=5)
+        gender_var = tk.StringVar()
+        gender_combo = ttk.Combobox(student_frame, textvariable=gender_var,
+                                    values=["", "male", "female", "other"], state='readonly', width=28)
+        gender_combo.grid(row=3, column=1, sticky='w', padx=(10, 0))
+        gender_combo.set("")
+
+        # Course
+        ttk.Label(student_frame, text="Course:").grid(row=4, column=0, sticky='w', pady=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(student_frame, textvariable=course_var,
+                                   values=["", "CS", "DS"], state='readonly', width=28)
+        course_combo.grid(row=4, column=1, sticky='w', padx=(10, 0))
+        course_combo.set("")
+
+        # Age Range
+        ttk.Label(student_frame, text="Age Range:").grid(row=5, column=0, sticky='w', pady=5)
+        age_frame = ttk.Frame(student_frame)
+        age_frame.grid(row=5, column=1, sticky='w', padx=(10, 0))
+
+        age_min_var = tk.StringVar()
+        ttk.Label(age_frame, text="Min:").pack(side=tk.LEFT)
+        ttk.Entry(age_frame, textvariable=age_min_var, width=8).pack(side=tk.LEFT, padx=(5, 10))
+
+        age_max_var = tk.StringVar()
+        ttk.Label(age_frame, text="Max:").pack(side=tk.LEFT)
+        ttk.Entry(age_frame, textvariable=age_max_var, width=8).pack(side=tk.LEFT, padx=(5, 0))
+
+        # ========== MODULE FILTERS ==========
+        module_frame = ttk.LabelFrame(scrollable_frame, text="Module Enrollment Filters", padding="10")
+        module_frame.pack(fill=tk.X, pady=(0, 10))
+
+        module_enabled_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(module_frame, text="Enable module filtering",
+                       variable=module_enabled_var).pack(anchor='w', pady=(0, 10))
+
+        # Module listbox
+        module_list_frame = ttk.Frame(module_frame)
+        module_list_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(module_list_frame, text="Select Modules:").pack(anchor='w')
+
+        module_listbox_frame = ttk.Frame(module_list_frame)
+        module_listbox_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
+
+        combined_module_listbox = tk.Listbox(module_listbox_frame, selectmode=tk.MULTIPLE, height=6)
+        module_scroll = ttk.Scrollbar(module_listbox_frame, orient=tk.VERTICAL,
+                                     command=combined_module_listbox.yview)
+        combined_module_listbox.configure(yscrollcommand=module_scroll.set)
+
+        combined_module_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        module_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Load modules
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT module_code, module_name FROM student_modules ORDER BY module_name")
+            available_modules = cursor.fetchall()
+            conn.close()
+
+            for code, name in available_modules:
+                combined_module_listbox.insert(tk.END, f"{code} - {name}")
+        except Exception as e:
+            print(f"Could not load modules: {e}")
+            available_modules = []
+
+        # Module match type
+        module_match_var = tk.StringVar(value="any")
+        ttk.Label(module_list_frame, text="Students must be enrolled in:").pack(anchor='w')
+        ttk.Radiobutton(module_list_frame, text="ANY of the selected modules",
+                       variable=module_match_var, value="any").pack(anchor='w')
+        ttk.Radiobutton(module_list_frame, text="ALL of the selected modules",
+                       variable=module_match_var, value="all").pack(anchor='w')
+
+        # ========== DATE RANGE FILTERS ==========
+        date_frame = ttk.LabelFrame(scrollable_frame, text="Registration Date Filters", padding="10")
+        date_frame.pack(fill=tk.X, pady=(0, 20))
+
+        date_enabled_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(date_frame, text="Enable date filtering",
+                       variable=date_enabled_var).pack(anchor='w', pady=(0, 10))
+
+        # Start date
+        date_fields_frame = ttk.Frame(date_frame)
+        date_fields_frame.pack(fill=tk.X)
+
+        ttk.Label(date_fields_frame, text="Start Date (YYYY-MM-DD):").grid(row=0, column=0, sticky='w', pady=5)
+        start_date_var = tk.StringVar()
+        ttk.Entry(date_fields_frame, textvariable=start_date_var, width=20).grid(row=0, column=1, sticky='w', padx=(10, 0))
+
+        # End date
+        ttk.Label(date_fields_frame, text="End Date (YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        end_date_var = tk.StringVar()
+        ttk.Entry(date_fields_frame, textvariable=end_date_var, width=20).grid(row=1, column=1, sticky='w', padx=(10, 0))
+
+        # ========== EXECUTE SEARCH ==========
+        def execute_combined_search():
+            """Execute the combined filters search"""
+            # Collect all filters
+            filters = {
+                "student_data": {},
+                "module_codes": [],
+                "date_range": {"start": None, "end": None},
+                "module_match_all": module_match_var.get() == "all"
+            }
+
+            # Student data filters
+            if student_id_var.get().strip():
+                filters["student_data"]["student_id"] = student_id_var.get().strip()
+            if first_name_var.get().strip():
+                filters["student_data"]["first_name"] = first_name_var.get().strip()
+            if last_name_var.get().strip():
+                filters["student_data"]["last_name"] = last_name_var.get().strip()
+            if gender_var.get() and gender_var.get() != "":
+                filters["student_data"]["gender"] = gender_var.get()
+            if course_var.get() and course_var.get() != "":
+                filters["student_data"]["course"] = course_var.get()
+            if age_min_var.get().strip():
+                try:
+                    filters["student_data"]["age_min"] = int(age_min_var.get().strip())
+                except ValueError:
+                    messagebox.showwarning("Invalid Input", "Minimum age must be a number")
+                    return
+            if age_max_var.get().strip():
+                try:
+                    filters["student_data"]["age_max"] = int(age_max_var.get().strip())
+                except ValueError:
+                    messagebox.showwarning("Invalid Input", "Maximum age must be a number")
+                    return
+
+            # Module filters
+            if module_enabled_var.get():
+                selected_indices = combined_module_listbox.curselection()
+                if selected_indices:
+                    filters["module_codes"] = [available_modules[i][0] for i in selected_indices]
+
+            # Date range filters
+            if date_enabled_var.get():
+                if start_date_var.get().strip():
+                    try:
+                        datetime.strptime(start_date_var.get().strip(), "%Y-%m-%d")
+                        filters["date_range"]["start"] = start_date_var.get().strip() + " 00:00:00"
+                    except ValueError:
+                        messagebox.showwarning("Invalid Date", "Start date must be in YYYY-MM-DD format")
+                        return
+                if end_date_var.get().strip():
+                    try:
+                        datetime.strptime(end_date_var.get().strip(), "%Y-%m-%d")
+                        filters["date_range"]["end"] = end_date_var.get().strip() + " 23:59:59"
+                    except ValueError:
+                        messagebox.showwarning("Invalid Date", "End date must be in YYYY-MM-DD format")
+                        return
+
+            dialog.destroy()
+            self.update_status("Executing combined search...")
+            self.start_progress()
+
+            def run_combined_search():
+                try:
+                    results = self.perform_combined_filters_search(filters)
+                    self.output_queue.put(("search_results", results))
+                    self.output_queue.put(("log", f"Combined search completed. Found {len(results)} results."))
+                except Exception as e:
+                    self.output_queue.put(("error", f"Combined search error: {str(e)}"))
+                finally:
+                    self.output_queue.put(("stop_progress", None))
+
+            threading.Thread(target=run_combined_search, daemon=True).start()
+
+        # Buttons
+        button_frame = ttk.Frame(scrollable_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(button_frame, text="🔍 Search", command=execute_combined_search).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
     
     def show_text_search(self):
         """Show advanced text search dialog with all options"""
