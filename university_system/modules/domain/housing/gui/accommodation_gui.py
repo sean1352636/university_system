@@ -43,13 +43,33 @@ try:
         fix_accommodation_db_schema, generate_statistics_report,
         get_accommodation_types, init_accommodation_db, log_action,
         migrate_audit_log_schema, notify_student, save_template,
-        validate_student_id, TEMPLATES_TABLE, set_auth
+        validate_student_id, validate_date, TEMPLATES_TABLE, set_auth
     )
     CLI_AVAILABLE = True
 except ImportError:
     CLI_AVAILABLE = False
     TEMPLATES_TABLE = 'accommodation_templates'
     print("Warning: Original accommodation module not found. GUI-only mode.")
+    # Fallback validate_date function
+    def validate_date(date_str):
+        """Validate date format"""
+        if not date_str:
+            return True, None
+        try:
+            datetime.fromisoformat(date_str)
+            return True, None
+        except ValueError:
+            return False, "Invalid date format. Please use YYYY-MM-DD format."
+
+# Import backup functionality
+try:
+    from university_system.infrastructure.database.data_backup import backup_before_operation
+    BACKUP_AVAILABLE = True
+except ImportError:
+    BACKUP_AVAILABLE = False
+    def backup_before_operation(operation_type):
+        """Fallback when backup module not available"""
+        logging.info(f"Backup requested for {operation_type} but backup module not available")
 
 
 def resolve_user_identifier(default: str = 'gui_user', auth_instance=None) -> str:
@@ -162,6 +182,7 @@ class AccommodationGUI:
         menubar.add_cascade(label="Reports", menu=reports_menu)
         reports_menu.add_command(label="Dashboard Metrics", command=self.show_dashboard)
         reports_menu.add_command(label="Statistics Report", command=self.generate_statistics)
+        reports_menu.add_command(label="View by Accommodation Type", command=self.view_students_by_accommodation_type)
         reports_menu.add_command(label="Expiry Check", command=self.check_expiry)
         
         # Tools menu
@@ -2324,7 +2345,154 @@ class AccommodationGUI:
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Expiry check failed: {str(e)}")
-    
+
+    def view_students_by_accommodation_type(self):
+        """View students grouped by accommodation type"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get all accommodation types with student counts
+            cursor.execute("""
+                SELECT accommodation_type, COUNT(*) as count
+                FROM accommodations
+                WHERE status = 'active'
+                GROUP BY accommodation_type
+                ORDER BY count DESC, accommodation_type
+            """)
+            type_summary = cursor.fetchall()
+
+            if not type_summary:
+                messagebox.showinfo("No Data", "No active accommodations found")
+                conn.close()
+                return
+
+            # Create display window
+            view_window = tk.Toplevel(self.root)
+            view_window.title("Students by Accommodation Type")
+            view_window.geometry("900x700")
+
+            # Main frame
+            main_frame = ttk.Frame(view_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Title
+            title_label = ttk.Label(main_frame, text="Students Grouped by Accommodation Type",
+                                   font=('Arial', 14, 'bold'))
+            title_label.pack(pady=(0, 10))
+
+            # Summary frame
+            summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
+            summary_frame.pack(fill=tk.X, pady=5)
+
+            total_students = sum(count for _, count in type_summary)
+            summary_text = f"Total Active Accommodations: {total_students}\n"
+            summary_text += f"Number of Types: {len(type_summary)}"
+
+            ttk.Label(summary_frame, text=summary_text, font=('Arial', 10)).pack(anchor='w')
+
+            # Create notebook for types
+            type_notebook = ttk.Notebook(main_frame)
+            type_notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+
+            # Create tab for each accommodation type
+            for acc_type, count in type_summary:
+                # Get students with this accommodation type
+                cursor.execute("""
+                    SELECT a.id, a.student_id, s.first_name, s.last_name,
+                           a.start_date, a.end_date, a.description, a.status
+                    FROM accommodations a
+                    LEFT JOIN students s ON a.student_id = s.student_id
+                    WHERE a.accommodation_type = ? AND a.status = 'active'
+                    ORDER BY a.student_id
+                """, (acc_type,))
+                students = cursor.fetchall()
+
+                # Create tab frame
+                tab_frame = ttk.Frame(type_notebook)
+                type_notebook.add(tab_frame, text=f"{acc_type} ({count})")
+
+                # Create treeview for students
+                tree_frame = ttk.Frame(tab_frame)
+                tree_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+                columns = ('Accom ID', 'Student ID', 'Name', 'Start Date', 'End Date', 'Status')
+                tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+                # Configure columns
+                tree.column('Accom ID', width=80)
+                tree.column('Student ID', width=100)
+                tree.column('Name', width=200)
+                tree.column('Start Date', width=100)
+                tree.column('End Date', width=100)
+                tree.column('Status', width=80)
+
+                for col in columns:
+                    tree.heading(col, text=col)
+
+                # Add scrollbars
+                vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+                hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=tree.xview)
+                tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+                tree.grid(row=0, column=0, sticky='nsew')
+                vsb.grid(row=0, column=1, sticky='ns')
+                hsb.grid(row=1, column=0, sticky='ew')
+
+                tree_frame.grid_rowconfigure(0, weight=1)
+                tree_frame.grid_columnconfigure(0, weight=1)
+
+                # Populate tree with student data
+                for student in students:
+                    acc_id, student_id, first_name, last_name, start_date, end_date, description, status = student
+                    name = f"{first_name or ''} {last_name or ''}".strip() or 'N/A'
+
+                    tree.insert('', 'end', values=(
+                        acc_id,
+                        student_id,
+                        name,
+                        start_date or 'N/A',
+                        end_date or 'Indefinite',
+                        status
+                    ))
+
+                # Add details text area
+                details_frame = ttk.LabelFrame(tab_frame, text="Description", padding="5")
+                details_frame.pack(fill=tk.X, padx=5, pady=5)
+
+                details_text = ScrolledText(details_frame, height=4, wrap=tk.WORD)
+                details_text.pack(fill=tk.X)
+
+                # Bind selection event to show description
+                def on_select(event, t=tree, dt=details_text, studs=students):
+                    selection = t.selection()
+                    if selection:
+                        item = t.item(selection[0])
+                        acc_id = item['values'][0]
+                        # Find matching student record
+                        for s in studs:
+                            if s[0] == acc_id:
+                                dt.delete('1.0', 'end')
+                                desc = s[6] if s[6] else 'No description available'
+                                dt.insert('1.0', desc)
+                                break
+
+                tree.bind('<<TreeviewSelect>>', on_select)
+
+            # Close button
+            ttk.Button(main_frame, text="Close", command=view_window.destroy).pack(pady=5)
+
+            conn.close()
+
+            # Log activity
+            if CLI_AVAILABLE:
+                log_action('view_by_type', None, f'Viewed students grouped by accommodation type')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate view: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
     def launch_cli(self):
         """Launch CLI mode"""
         if not CLI_AVAILABLE:
