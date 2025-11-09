@@ -14,12 +14,49 @@ except ImportError as e:
     GradeTrackingApp = None
     GRADE_TRACKING_GUI_AVAILABLE = False
 
-# Import CLI fallback
+# Import CLI fallback and grade tracking functions
 try:
-    from university_system.modules.students.grade_tracking import display_enhanced_grade_menu
-except ImportError:
+    from university_system.modules.domain.academics.grading.grade_tracking import (
+        init_basic_database,
+        init_enhanced_grades_db,
+        display_enhanced_grade_menu,
+        grade_curve_analysis_menu,
+        learning_outcome_menu,
+        competency_assessment_menu,
+        predictive_analytics_menu,
+        performance_analysis_menu
+    )
+    GRADE_TRACKING_CLI_AVAILABLE = True
+except ImportError as e:
+    print(f"Grade tracking CLI functions not available: {e}")
+    GRADE_TRACKING_CLI_AVAILABLE = False
+
+    # Define fallback functions
+    def init_basic_database():
+        print("Grade tracking database initialization not available")
+        return False
+
+    def init_enhanced_grades_db():
+        print("Enhanced grades database initialization not available")
+        return False
+
     def display_enhanced_grade_menu():
         print("Grade tracking CLI menu not available")
+
+    def grade_curve_analysis_menu():
+        print("Grade curve analysis menu not available")
+
+    def learning_outcome_menu():
+        print("Learning outcome menu not available")
+
+    def competency_assessment_menu():
+        print("Competency assessment menu not available")
+
+    def predictive_analytics_menu():
+        print("Predictive analytics menu not available")
+
+    def performance_analysis_menu():
+        print("Performance analysis menu not available")
 
 from university_system.infrastructure.auth.user_authentication import UserAuth
 
@@ -98,3 +135,120 @@ class GradeTrackingManagementGUI:
     def show_grades(self):
         """Alias method for compatibility"""
         self.show_grade_tracking_gui()
+
+    # Database initialization methods
+    def initialize_basic_database(self):
+        """Initialize basic grade tracking database tables"""
+        try:
+            return init_basic_database()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to initialize database: {str(e)}")
+            print(f"Database initialization error: {e}")
+            return False
+
+    def initialize_enhanced_database(self):
+        """Initialize enhanced grades database with all required tables"""
+        try:
+            return init_enhanced_grades_db()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to initialize enhanced database: {str(e)}")
+            print(f"Enhanced database initialization error: {e}")
+            return False
+
+    # Menu access methods
+    def show_enhanced_grade_menu(self):
+        """Display the enhanced grade and performance tracking menu (CLI fallback)"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access grade tracking.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                # Run CLI menu in a separate thread to prevent GUI blocking
+                thread = threading.Thread(target=display_enhanced_grade_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Grade tracking menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open grade menu: {str(e)}")
+            print(f"Grade menu error: {e}")
+
+    def show_curve_analysis_menu(self):
+        """Display the grade curve analysis menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access grade curve analysis.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                thread = threading.Thread(target=grade_curve_analysis_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Grade curve analysis menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open curve analysis menu: {str(e)}")
+            print(f"Curve analysis menu error: {e}")
+
+    def show_learning_outcome_menu(self):
+        """Display the learning outcome tracking menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access learning outcomes.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                thread = threading.Thread(target=learning_outcome_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Learning outcome menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open learning outcome menu: {str(e)}")
+            print(f"Learning outcome menu error: {e}")
+
+    def show_competency_assessment_menu(self):
+        """Display the competency-based assessment menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access competency assessment.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                thread = threading.Thread(target=competency_assessment_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Competency assessment menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open competency assessment menu: {str(e)}")
+            print(f"Competency assessment menu error: {e}")
+
+    def show_predictive_analytics_menu(self):
+        """Display the predictive analytics menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access predictive analytics.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                thread = threading.Thread(target=predictive_analytics_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Predictive analytics menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open predictive analytics menu: {str(e)}")
+            print(f"Predictive analytics menu error: {e}")
+
+    def show_performance_analysis_menu(self):
+        """Display the performance analysis menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access performance analysis.")
+            return
+
+        try:
+            if GRADE_TRACKING_CLI_AVAILABLE:
+                thread = threading.Thread(target=performance_analysis_menu, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Performance analysis menu not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open performance analysis menu: {str(e)}")
+            print(f"Performance analysis menu error: {e}")
