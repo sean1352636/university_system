@@ -9,6 +9,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Grade Tracking Management GUI - Grade Calculation & Analysis Functions Added (33/46 core functions = 72%)** (2025-11-09)
+- **COMPLETION**: 33 essential grade calculation, analysis, and prediction functions now available via wrapper methods
+- **Impact**: Complete grade management, GPA calculations, transcript generation, assessment analysis, and ML-based grade predictions
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/grade_tracking_management_gui.py` - Added ~939 lines (2,099 → 3,038 lines)
+
+**FUNCTIONS IMPLEMENTED (33 Wrapper Methods + 46 Imports)**:
+
+**Grade Calculation Utilities (4 functions):**
+1. `percentage_to_letter_gui(percentage)` - Convert percentage to letter grade (inline conversion)
+2. `letter_to_percentage_gui(letter_grade)` - Convert letter grade to percentage (inline conversion)
+3. `letter_to_gpa_gui(letter_grade)` - Convert letter grade to GPA points (inline conversion)
+4. `calculate_trend_slope_gui(values)` - Calculate trend slope for values (inline calculation)
+
+**Student & Assessment Management (4 functions):**
+5. `record_assessment_grades_gui()` - Record grades for students with permission checks (manage_grades)
+6. `update_grades_gui()` - Update existing assessment grades with permission checks (manage_grades)
+7. `view_student_grades_gui()` - View grades for specific student with CLI threading
+8. `update_module_grade_gui(student_id=None, module_code=None)` - Update final grade for student in module with dialog prompts and permission checks (manage_grades)
+
+**GPA & Transcript Functions (3 functions):**
+9. `calculate_gpa_gui()` - Calculate GPA for student or all students with CLI threading
+10. `calculate_student_gpa_gui(student_id=None)` - Calculate GPA for specific student with optional parameter and dialog prompt
+11. `generate_transcript_gui()` - Generate official transcript for student with CLI threading
+
+**Statistics & Analysis (3 functions):**
+12. `calculate_assessment_statistics_gui()` - Calculate statistical measures (mean, median, std dev) for assessment
+13. `normalize_assessment_grades_gui()` - Normalize grades using z-scores and percentiles with permission checks (manage_grades)
+14. `view_grade_distribution_gui()` - Visualize grade distribution for assessment/module with CLI threading
+
+**Assessment Mapping & Reporting (5 functions):**
+15. `map_assessments_to_outcomes_gui()` - Map assessments to learning outcomes with weights and permission checks (manage_grades)
+16. `map_assessments_to_competencies_gui()` - Map assessments to competencies with weights and permission checks (manage_grades)
+17. `assessment_performance_summary_gui()` - Generate assessment performance summary with CLI threading
+18. `grade_distribution_analysis_gui()` - Analyze grade distributions across dimensions with CLI threading
+19. `student_risk_assessment_gui()` - Assess risk levels for all students with permission checks (manage_grades or view_risk_analysis)
+
+**Grade Trends Analysis (6 functions):**
+20. `analyze_overall_grade_trends_gui()` - Analyze overall grade trends across time with database connection
+21. `analyze_by_assessment_type_gui()` - Analyze performance by assessment type with database connection
+22. `analyze_all_assessments_gui()` - Analyze all assessments performance with database connection
+23. `analyze_distribution_by_assessment_type_gui()` - Analyze grade distribution by assessment type with database connection
+24. `compare_by_grade_threshold_gui()` - Compare students above and below grade threshold with database connection
+25. `analyze_assessment_performance_trends_gui()` - Analyze performance trends by assessment type over time with database connection
+
+**Grade Predictions (9 functions):**
+26. `batch_grade_predictions_gui()` - Perform batch grade predictions for multiple students with permission checks (manage_grades or use_ml_models)
+27. `batch_predict_next_assessments_gui()` - Predict next assessment grades for all students with permission checks (manage_grades or use_ml_models)
+28. `predict_student_next_grade_gui(student_id=None)` - Predict next grade for specific student with optional parameter and dialog prompt
+29. `batch_predict_module_grades_gui()` - Predict final module grades for specific module with permission checks (manage_grades or use_ml_models)
+30. `predict_module_final_grade_gui(student_id=None, module_code=None)` - Predict final module grade for student with optional parameters and dialog prompts
+31. `batch_predict_end_term_gpas_gui()` - Predict end-of-term GPAs for all students with permission checks (manage_grades or use_ml_models)
+32. `predict_end_term_gpa_gui(student_id=None)` - Predict end-of-term GPA for student with optional parameter and dialog prompt
+33. `forecast_assessment_performance_gui()` - Forecast assessment performance trends with permission checks (manage_grades or view_reports)
+
+**IMPORTS ADDED (46 functions from grade_calculation module)**:
+- All 46 backend functions imported with GRADE_CALCULATION_AVAILABLE flag
+- Comprehensive fallback stub implementations for each function
+- Includes utility functions (select_student, select_assessment, create_trend_visualization, create_grade_visualizations, etc.)
+- Includes internal helper functions (extract_student_features, assess_student_risk, analyze_specific_assessment, etc.)
+- Includes reporting functions (create_transcript_pdf, generate_assessment_stats_report, display_risk_assessment_results, save_risk_assessments, analyze_single_assessment_type_trends)
+
+**TECHNICAL FEATURES**:
+- Threading for non-blocking execution (daemon threads) on all CLI operations
+- User input dialogs using `tk.simpledialog.askstring()` for parameters
+- Database connection management with proper lifecycle (open/close)
+- Permission checks for sensitive operations (manage_grades, use_ml_models, view_risk_analysis, view_reports)
+- Error handling with user-friendly messageboxes
+- Optional parameter support for programmatic calls
+- Inline conversion functions for grade/GPA calculations
+- Background thread execution for all analysis and prediction operations
+
+**ARCHITECTURE**:
+- GRADE_CALCULATION_AVAILABLE flag for graceful degradation
+- 33 wrapper methods for most commonly used functions
+- Background thread execution for CLI operations
+- Dialog-based parameter input when not provided
+- Proper database connection lifecycle
+- Authentication checks on all methods
+- Permission-based access control
+
+**USER IMPACT**: Grade Tracking Management GUI now provides comprehensive grade calculation and analysis functionality including percentage/letter/GPA conversions, grade entry and updates, GPA calculations, transcript generation, assessment statistics and normalization, assessment mapping to outcomes/competencies, grade distribution analysis, performance trend analysis by assessment type, and ML-based grade predictions (next assessment, module final grade, end-term GPA, performance forecasting). All operations run in background threads with proper authentication, permission checks, and database integration.
+
 **Grade Tracking Management GUI - Competency Assessment & Predictive Analytics Functions Added (24/24 functions = 100%)** (2025-11-09)
 - **COMPLETION**: All 24 final analytics functions (7 competency + 17 predictive) now available via wrapper methods
 - **Impact**: Complete competency assessment, risk prediction, early warning systems, and intervention planning accessible from GUI

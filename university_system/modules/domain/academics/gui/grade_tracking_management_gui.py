@@ -344,6 +344,208 @@ except ImportError as e:
     def generate_comprehensive_risk_report(risk_data):
         print("Generate comprehensive risk report not available")
 
+# Import grade calculation utility functions
+try:
+    from university_system.modules.domain.academics.grading.grade_calculation import (
+        percentage_to_letter,
+        letter_to_percentage,
+        select_student,
+        calculate_trend_slope,
+        create_trend_visualization,
+        export_batch_predictions,
+        extract_student_features,
+        assess_student_risk,
+        select_assessment,
+        record_assessment_grades,
+        update_module_grade,
+        update_grades,
+        view_student_grades,
+        calculate_gpa,
+        calculate_student_gpa,
+        generate_transcript,
+        create_transcript_pdf,
+        letter_to_gpa,
+        calculate_assessment_statistics,
+        normalize_assessment_grades,
+        view_grade_distribution,
+        create_grade_visualizations,
+        generate_assessment_stats_report,
+        map_assessments_to_outcomes,
+        map_assessments_to_competencies,
+        assessment_performance_summary,
+        analyze_specific_assessment,
+        grade_distribution_analysis,
+        student_risk_assessment,
+        display_risk_assessment_results,
+        save_risk_assessments,
+        analyze_overall_grade_trends,
+        analyze_by_assessment_type,
+        analyze_all_assessments,
+        analyze_distribution_by_assessment_type,
+        compare_by_grade_threshold,
+        analyze_assessment_performance_trends,
+        analyze_single_assessment_type_trends,
+        batch_grade_predictions,
+        batch_predict_next_assessments,
+        predict_student_next_grade,
+        batch_predict_module_grades,
+        predict_module_final_grade,
+        batch_predict_end_term_gpas,
+        predict_end_term_gpa,
+        forecast_assessment_performance
+    )
+    GRADE_CALCULATION_AVAILABLE = True
+except ImportError as e:
+    print(f"Grade calculation functions not available: {e}")
+    GRADE_CALCULATION_AVAILABLE = False
+
+    # Define fallback functions
+    def percentage_to_letter(percentage):
+        return "N/A"
+
+    def letter_to_percentage(letter_grade):
+        return 0
+
+    def select_student(cursor):
+        print("Select student not available")
+        return None
+
+    def calculate_trend_slope(values):
+        return 0
+
+    def create_trend_visualization(daily_trends, monthly_trends, filename_prefix):
+        print("Create trend visualization not available")
+
+    def export_batch_predictions(predictions, filename_prefix):
+        print("Export batch predictions not available")
+
+    def extract_student_features(cursor, student_id):
+        print("Extract student features not available")
+        return {}
+
+    def assess_student_risk(cursor, student_id, first_name, last_name, course):
+        print("Assess student risk not available")
+        return None
+
+    def select_assessment(cursor):
+        print("Select assessment not available")
+        return None
+
+    def record_assessment_grades():
+        print("Record assessment grades not available")
+
+    def update_module_grade(cursor, student_id, module_code):
+        print("Update module grade not available")
+
+    def update_grades():
+        print("Update grades not available")
+
+    def view_student_grades():
+        print("View student grades not available")
+
+    def calculate_gpa():
+        print("Calculate GPA not available")
+
+    def calculate_student_gpa(cursor, student_id):
+        print("Calculate student GPA not available")
+        return 0
+
+    def generate_transcript():
+        print("Generate transcript not available")
+
+    def create_transcript_pdf(filename, student_id, first_name, middle_name, last_name, course, email, gender, dob, gpa, credits, module_grades, assessment_grades=None):
+        print("Create transcript PDF not available")
+
+    def letter_to_gpa(letter_grade):
+        return 0
+
+    def calculate_assessment_statistics():
+        print("Calculate assessment statistics not available")
+
+    def normalize_assessment_grades():
+        print("Normalize assessment grades not available")
+
+    def view_grade_distribution():
+        print("View grade distribution not available")
+
+    def create_grade_visualizations(scores, letters, max_points, title, entity_type, entity_id):
+        print("Create grade visualizations not available")
+
+    def generate_assessment_stats_report(cursor, assessment_id, reports_dir, timestamp):
+        print("Generate assessment stats report not available")
+
+    def map_assessments_to_outcomes():
+        print("Map assessments to outcomes not available")
+
+    def map_assessments_to_competencies():
+        print("Map assessments to competencies not available")
+
+    def assessment_performance_summary():
+        print("Assessment performance summary not available")
+
+    def analyze_specific_assessment(cursor, assessment_id):
+        print("Analyze specific assessment not available")
+
+    def grade_distribution_analysis():
+        print("Grade distribution analysis not available")
+
+    def student_risk_assessment():
+        print("Student risk assessment not available")
+
+    def display_risk_assessment_results(risk_assessments):
+        print("Display risk assessment results not available")
+
+    def save_risk_assessments(cursor, risk_assessments):
+        print("Save risk assessments not available")
+
+    def analyze_overall_grade_trends(cursor):
+        print("Analyze overall grade trends not available")
+
+    def analyze_by_assessment_type(cursor):
+        print("Analyze by assessment type not available")
+
+    def analyze_all_assessments(cursor):
+        print("Analyze all assessments not available")
+
+    def analyze_distribution_by_assessment_type(cursor):
+        print("Analyze distribution by assessment type not available")
+
+    def compare_by_grade_threshold(cursor):
+        print("Compare by grade threshold not available")
+
+    def analyze_assessment_performance_trends(cursor):
+        print("Analyze assessment performance trends not available")
+
+    def analyze_single_assessment_type_trends(cursor, assess_type):
+        print("Analyze single assessment type trends not available")
+
+    def batch_grade_predictions(cursor):
+        print("Batch grade predictions not available")
+
+    def batch_predict_next_assessments(cursor):
+        print("Batch predict next assessments not available")
+
+    def predict_student_next_grade(cursor, student_id):
+        print("Predict student next grade not available")
+        return None
+
+    def batch_predict_module_grades(cursor):
+        print("Batch predict module grades not available")
+
+    def predict_module_final_grade(cursor, student_id, module_code):
+        print("Predict module final grade not available")
+        return None
+
+    def batch_predict_end_term_gpas(cursor):
+        print("Batch predict end term GPAs not available")
+
+    def predict_end_term_gpa(cursor, student_id):
+        print("Predict end term GPA not available")
+        return 0
+
+    def forecast_assessment_performance(cursor):
+        print("Forecast assessment performance not available")
+
 from university_system.infrastructure.auth.user_authentication import UserAuth
 
 class GradeTrackingManagementGUI:
@@ -2096,3 +2298,742 @@ class GradeTrackingManagementGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate comprehensive risk report: {str(e)}")
             print(f"Generate comprehensive risk report error: {e}")
+
+    # Grade Calculation Utility Functions
+    def percentage_to_letter_gui(self, percentage):
+        """Convert percentage to letter grade"""
+        if GRADE_CALCULATION_AVAILABLE:
+            return percentage_to_letter(percentage)
+        else:
+            return "N/A"
+
+    def letter_to_percentage_gui(self, letter_grade):
+        """Convert letter grade to percentage"""
+        if GRADE_CALCULATION_AVAILABLE:
+            return letter_to_percentage(letter_grade)
+        else:
+            return 0
+
+    def letter_to_gpa_gui(self, letter_grade):
+        """Convert letter grade to GPA points"""
+        if GRADE_CALCULATION_AVAILABLE:
+            return letter_to_gpa(letter_grade)
+        else:
+            return 0
+
+    def calculate_trend_slope_gui(self, values):
+        """Calculate trend slope for values"""
+        if GRADE_CALCULATION_AVAILABLE:
+            return calculate_trend_slope(values)
+        else:
+            return 0
+
+    # Student & Assessment Management
+    def record_assessment_grades_gui(self):
+        """Record grades for students for specific assessment"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to record grades.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to record grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=record_assessment_grades, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Record assessment grades not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to record assessment grades: {str(e)}")
+
+    def update_grades_gui(self):
+        """Update existing grades for assessments"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to update grades.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to update grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=update_grades, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Update grades not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update grades: {str(e)}")
+
+    def view_student_grades_gui(self):
+        """View grades for specific student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to view student grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=view_student_grades, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "View student grades not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view student grades: {str(e)}")
+
+    def update_module_grade_gui(self, student_id=None, module_code=None):
+        """Update final grade for student in module"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to update module grades.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to update module grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                if not student_id:
+                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    if not student_id:
+                        return
+
+                if not module_code:
+                    module_code = simpledialog.askstring("Module Code", "Enter Module Code:", parent=self.root)
+                    if not module_code:
+                        return
+
+                def update():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        update_module_grade(cursor, student_id, module_code)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error updating module grade: {e}")
+
+                thread = threading.Thread(target=update, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Update module grade not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update module grade: {str(e)}")
+
+    # GPA & Transcript Functions
+    def calculate_gpa_gui(self):
+        """Calculate GPA for student or all students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to calculate GPA.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=calculate_gpa, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Calculate GPA not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate GPA: {str(e)}")
+
+    def calculate_student_gpa_gui(self, student_id=None):
+        """Calculate GPA for specific student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to calculate student GPA.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                if not student_id:
+                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    if not student_id:
+                        return
+
+                def calculate():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        gpa = calculate_student_gpa(cursor, student_id)
+                        print(f"GPA for {student_id}: {gpa}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error calculating student GPA: {e}")
+
+                thread = threading.Thread(target=calculate, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Calculate student GPA not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate student GPA: {str(e)}")
+
+    def generate_transcript_gui(self):
+        """Generate official transcript for student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate transcripts.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=generate_transcript, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate transcript not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate transcript: {str(e)}")
+
+    # Statistics & Analysis
+    def calculate_assessment_statistics_gui(self):
+        """Calculate statistical measures for assessment"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to calculate statistics.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=calculate_assessment_statistics, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Calculate assessment statistics not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate statistics: {str(e)}")
+
+    def normalize_assessment_grades_gui(self):
+        """Normalize grades for assessment using z-scores"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to normalize grades.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to normalize grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=normalize_assessment_grades, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Normalize assessment grades not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to normalize grades: {str(e)}")
+
+    def view_grade_distribution_gui(self):
+        """Visualize grade distribution for assessment/module"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to view grade distribution.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=view_grade_distribution, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "View grade distribution not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view grade distribution: {str(e)}")
+
+    # Assessment Mapping & Reporting
+    def map_assessments_to_outcomes_gui(self):
+        """Map assessments to learning outcomes with weights"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to map assessments.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to map assessments.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=map_assessments_to_outcomes, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Map assessments to outcomes not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to map assessments to outcomes: {str(e)}")
+
+    def map_assessments_to_competencies_gui(self):
+        """Map assessments to competencies with weights"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to map assessments.")
+            return
+
+        if not self.auth.check_permission('manage_grades'):
+            messagebox.showerror("Error", "You don't have permission to map assessments.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=map_assessments_to_competencies, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Map assessments to competencies not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to map assessments to competencies: {str(e)}")
+
+    def assessment_performance_summary_gui(self):
+        """Generate assessment performance summary"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to view performance summary.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=assessment_performance_summary, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Assessment performance summary not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate performance summary: {str(e)}")
+
+    def grade_distribution_analysis_gui(self):
+        """Analyze grade distributions across dimensions"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze grade distribution.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=grade_distribution_analysis, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Grade distribution analysis not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze grade distribution: {str(e)}")
+
+    def student_risk_assessment_gui(self):
+        """Assess risk levels for all students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to assess student risk.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to assess student risk.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                thread = threading.Thread(target=student_risk_assessment, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Student risk assessment not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to assess student risk: {str(e)}")
+
+    # Grade Trends Analysis
+    def analyze_overall_grade_trends_gui(self):
+        """Analyze overall grade trends across time"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze grade trends.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_overall_grade_trends(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing overall grade trends: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze overall grade trends not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze overall grade trends: {str(e)}")
+
+    def analyze_by_assessment_type_gui(self):
+        """Analyze performance by assessment type"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze by assessment type.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_by_assessment_type(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing by assessment type: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze by assessment type not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze by assessment type: {str(e)}")
+
+    def analyze_all_assessments_gui(self):
+        """Analyze all assessments performance"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze all assessments.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_all_assessments(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing all assessments: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze all assessments not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze all assessments: {str(e)}")
+
+    def analyze_distribution_by_assessment_type_gui(self):
+        """Analyze grade distribution by assessment type"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze distribution.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_distribution_by_assessment_type(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing distribution by assessment type: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze distribution by assessment type not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze distribution: {str(e)}")
+
+    def compare_by_grade_threshold_gui(self):
+        """Compare students above and below grade threshold"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to compare by threshold.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def compare():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        compare_by_grade_threshold(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error comparing by grade threshold: {e}")
+
+                thread = threading.Thread(target=compare, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Compare by grade threshold not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to compare by threshold: {str(e)}")
+
+    def analyze_assessment_performance_trends_gui(self):
+        """Analyze performance trends by assessment type over time"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze performance trends.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_assessment_performance_trends(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing assessment performance trends: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze assessment performance trends not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze performance trends: {str(e)}")
+
+    # Grade Predictions
+    def batch_grade_predictions_gui(self):
+        """Perform batch grade predictions for multiple students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to batch predict grades.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to use batch predictions.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        batch_grade_predictions(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error with batch grade predictions: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Batch grade predictions not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform batch predictions: {str(e)}")
+
+    def batch_predict_next_assessments_gui(self):
+        """Predict next assessment grades for all students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict next assessments.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to use batch predictions.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        batch_predict_next_assessments(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting next assessments: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Batch predict next assessments not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict next assessments: {str(e)}")
+
+    def predict_student_next_grade_gui(self, student_id=None):
+        """Predict next grade for specific student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict student grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                if not student_id:
+                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    if not student_id:
+                        return
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        prediction = predict_student_next_grade(cursor, student_id)
+                        print(f"Predicted next grade for {student_id}: {prediction}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting student next grade: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Predict student next grade not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict next grade: {str(e)}")
+
+    def batch_predict_module_grades_gui(self):
+        """Predict final module grades for specific module"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict module grades.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to predict module grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        batch_predict_module_grades(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting module grades: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Batch predict module grades not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict module grades: {str(e)}")
+
+    def predict_module_final_grade_gui(self, student_id=None, module_code=None):
+        """Predict final module grade for student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict module grades.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                if not student_id:
+                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    if not student_id:
+                        return
+
+                if not module_code:
+                    module_code = simpledialog.askstring("Module Code", "Enter Module Code:", parent=self.root)
+                    if not module_code:
+                        return
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        prediction = predict_module_final_grade(cursor, student_id, module_code)
+                        print(f"Predicted module grade for {student_id} in {module_code}: {prediction}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting module final grade: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Predict module final grade not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict module final grade: {str(e)}")
+
+    def batch_predict_end_term_gpas_gui(self):
+        """Predict end-of-term GPAs for all students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict end-term GPAs.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to predict GPAs.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        batch_predict_end_term_gpas(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting end-term GPAs: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Batch predict end-term GPAs not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict end-term GPAs: {str(e)}")
+
+    def predict_end_term_gpa_gui(self, student_id=None):
+        """Predict end-of-term GPA for student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to predict student GPA.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                if not student_id:
+                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    if not student_id:
+                        return
+
+                def predict():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        prediction = predict_end_term_gpa(cursor, student_id)
+                        print(f"Predicted end-term GPA for {student_id}: {prediction}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error predicting end-term GPA: {e}")
+
+                thread = threading.Thread(target=predict, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Predict end-term GPA not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to predict end-term GPA: {str(e)}")
+
+    def forecast_assessment_performance_gui(self):
+        """Forecast assessment performance trends"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to forecast assessment performance.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_reports')):
+            messagebox.showerror("Error", "You don't have permission to forecast performance.")
+            return
+
+        try:
+            if GRADE_CALCULATION_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def forecast():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        forecast_assessment_performance(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error forecasting assessment performance: {e}")
+
+                thread = threading.Thread(target=forecast, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Forecast assessment performance not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to forecast assessment performance: {str(e)}")
