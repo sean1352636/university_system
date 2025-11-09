@@ -225,6 +225,125 @@ except ImportError as e:
     def dropout_risk_analysis():
         print("Dropout risk analysis not available")
 
+# Import competency assessment functions
+try:
+    from university_system.modules.domain.academics.grading.competency_assessment import (
+        add_competency_levels,
+        manage_competency_levels,
+        view_student_competency_profile,
+        generate_competency_report,
+        generate_student_competency_report,
+        generate_course_competency_report,
+        assess_comprehensive_student_risk
+    )
+    COMPETENCY_ASSESSMENT_AVAILABLE = True
+except ImportError as e:
+    print(f"Competency assessment functions not available: {e}")
+    COMPETENCY_ASSESSMENT_AVAILABLE = False
+
+    # Define fallback functions
+    def add_competency_levels(cursor, competency_id, competency_name):
+        print("Add competency levels not available")
+
+    def manage_competency_levels():
+        print("Manage competency levels not available")
+
+    def view_student_competency_profile():
+        print("View student competency profile not available")
+
+    def generate_competency_report():
+        print("Generate competency report not available")
+
+    def generate_student_competency_report(cursor, student_id):
+        print("Generate student competency report not available")
+
+    def generate_course_competency_report(cursor, course):
+        print("Generate course competency report not available")
+
+    def assess_comprehensive_student_risk(cursor, student_id, first_name, last_name, course, email):
+        print("Assess comprehensive student risk not available")
+
+# Import predictive analytics functions
+try:
+    from university_system.modules.domain.academics.grading.predictive_analytics import (
+        identify_at_risk_students,
+        calculate_risk_factors,
+        early_warning_system,
+        generate_early_warning_alert,
+        export_at_risk_students,
+        export_early_warning_alerts,
+        export_dropout_risk_list,
+        build_at_risk_prediction_model,
+        analyze_dropout_risk_factors,
+        build_dropout_prediction_model,
+        generate_dropout_interventions,
+        generate_dropout_intervention_plan,
+        identify_high_dropout_risk,
+        calculate_dropout_risk_score,
+        generate_risk_report,
+        collect_comprehensive_risk_data,
+        generate_comprehensive_risk_report
+    )
+    PREDICTIVE_ANALYTICS_AVAILABLE = True
+except ImportError as e:
+    print(f"Predictive analytics functions not available: {e}")
+    PREDICTIVE_ANALYTICS_AVAILABLE = False
+
+    # Define fallback functions
+    def identify_at_risk_students():
+        print("Identify at-risk students not available")
+
+    def calculate_risk_factors(cursor, student_id):
+        print("Calculate risk factors not available")
+        return 0, []
+
+    def early_warning_system():
+        print("Early warning system not available")
+
+    def generate_early_warning_alert(cursor, student_id, first_name, last_name, course, email, risk_score, risk_level):
+        print("Generate early warning alert not available")
+
+    def export_at_risk_students(at_risk_students, threshold):
+        print("Export at-risk students not available")
+
+    def export_early_warning_alerts(alerts):
+        print("Export early warning alerts not available")
+
+    def export_dropout_risk_list(high_risk_students):
+        print("Export dropout risk list not available")
+
+    def build_at_risk_prediction_model(cursor):
+        print("Build at-risk prediction model not available")
+
+    def analyze_dropout_risk_factors(cursor):
+        print("Analyze dropout risk factors not available")
+
+    def build_dropout_prediction_model(cursor):
+        print("Build dropout prediction model not available")
+
+    def generate_dropout_interventions(cursor):
+        print("Generate dropout interventions not available")
+
+    def generate_dropout_intervention_plan(cursor, student_id, first_name, last_name, course, email):
+        print("Generate dropout intervention plan not available")
+
+    def identify_high_dropout_risk(cursor):
+        print("Identify high dropout risk not available")
+
+    def calculate_dropout_risk_score(cursor, student_id):
+        print("Calculate dropout risk score not available")
+        return 0
+
+    def generate_risk_report():
+        print("Generate risk report not available")
+
+    def collect_comprehensive_risk_data(cursor):
+        print("Collect comprehensive risk data not available")
+        return {}
+
+    def generate_comprehensive_risk_report(risk_data):
+        print("Generate comprehensive risk report not available")
+
 from university_system.infrastructure.auth.user_authentication import UserAuth
 
 class GradeTrackingManagementGUI:
@@ -1200,3 +1319,780 @@ class GradeTrackingManagementGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to analyze dropout risk: {str(e)}")
             print(f"Dropout risk analysis error: {e}")
+
+    # Competency Assessment Functions
+    def manage_competency_levels_gui(self):
+        """Manage competency levels - view, add, edit, delete"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to manage competency levels.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('manage_competencies')):
+            messagebox.showerror("Error", "You don't have permission to manage competency levels.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                thread = threading.Thread(target=manage_competency_levels, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Competency levels management not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to manage competency levels: {str(e)}")
+            print(f"Competency levels management error: {e}")
+
+    def add_competency_levels_gui(self, competency_id=None, competency_name=None):
+        """Add proficiency levels for a competency"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to add competency levels.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('manage_competencies')):
+            messagebox.showerror("Error", "You don't have permission to add competency levels.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If parameters not provided, prompt for them
+                if not competency_id:
+                    competency_id = simpledialog.askinteger(
+                        "Competency ID",
+                        "Enter Competency ID:",
+                        parent=self.root
+                    )
+
+                    if not competency_id:
+                        return
+
+                if not competency_name:
+                    competency_name = simpledialog.askstring(
+                        "Competency Name",
+                        "Enter Competency Name:",
+                        parent=self.root
+                    )
+
+                    if not competency_name:
+                        return
+
+                def add_levels():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        add_competency_levels(cursor, competency_id, competency_name)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error adding competency levels: {e}")
+
+                thread = threading.Thread(target=add_levels, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Add competency levels not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add competency levels: {str(e)}")
+            print(f"Add competency levels error: {e}")
+
+    def view_student_competency_profile_gui(self):
+        """View a student's competency profile"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to view competency profiles.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                thread = threading.Thread(target=view_student_competency_profile, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "View student competency profile not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view competency profile: {str(e)}")
+            print(f"View competency profile error: {e}")
+
+    def generate_competency_report_gui(self):
+        """Generate comprehensive competency report menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate competency reports.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                thread = threading.Thread(target=generate_competency_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate competency report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate competency report: {str(e)}")
+            print(f"Generate competency report error: {e}")
+
+    def generate_student_competency_report_gui(self, student_id=None):
+        """Generate detailed competency report for a student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate student competency reports.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_student_competency_report(cursor, student_id)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating student competency report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate student competency report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate student competency report: {str(e)}")
+            print(f"Generate student competency report error: {e}")
+
+    def generate_course_competency_report_gui(self, course=None):
+        """Generate competency report for a course"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate course competency reports.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no course provided, prompt for one
+                if not course:
+                    course = simpledialog.askstring(
+                        "Course",
+                        "Enter Course Name:",
+                        parent=self.root
+                    )
+
+                    if not course:
+                        return
+
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_course_competency_report(cursor, course)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating course competency report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate course competency report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate course competency report: {str(e)}")
+            print(f"Generate course competency report error: {e}")
+
+    def assess_comprehensive_student_risk_gui(self, student_id=None):
+        """Assess comprehensive risk for a student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to assess student risk.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to assess student risk.")
+            return
+
+        try:
+            if COMPETENCY_ASSESSMENT_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def assess_risk():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        # Fetch student details
+                        cursor.execute(
+                            "SELECT first_name, last_name, course, email_address FROM students WHERE student_id = ?",
+                            (student_id,)
+                        )
+                        result = cursor.fetchone()
+
+                        if not result:
+                            print(f"Student {student_id} not found in database")
+                            conn.close()
+                            return
+
+                        first_name, last_name, course, email = result
+                        assess_comprehensive_student_risk(cursor, student_id, first_name, last_name, course, email)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error assessing student risk: {e}")
+
+                thread = threading.Thread(target=assess_risk, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Comprehensive student risk assessment not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to assess student risk: {str(e)}")
+            print(f"Assess student risk error: {e}")
+
+    # Predictive Analytics Functions
+    def identify_at_risk_students_gui(self):
+        """Identify students at risk of academic failure"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to identify at-risk students.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to identify at-risk students.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                thread = threading.Thread(target=identify_at_risk_students, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Identify at-risk students not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to identify at-risk students: {str(e)}")
+            print(f"Identify at-risk students error: {e}")
+
+    def calculate_risk_factors_gui(self, student_id=None):
+        """Calculate risk factors for a student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to calculate risk factors.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def calculate():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        risk_score, risk_factors = calculate_risk_factors(cursor, student_id)
+                        print(f"Risk Score: {risk_score}")
+                        print(f"Risk Factors: {risk_factors}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error calculating risk factors: {e}")
+
+                thread = threading.Thread(target=calculate, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Calculate risk factors not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate risk factors: {str(e)}")
+            print(f"Calculate risk factors error: {e}")
+
+    def early_warning_system_gui(self):
+        """Implement early warning system for at-risk students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to use early warning system.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to use early warning system.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                thread = threading.Thread(target=early_warning_system, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Early warning system not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to run early warning system: {str(e)}")
+            print(f"Early warning system error: {e}")
+
+    def generate_early_warning_alert_gui(self, student_id=None):
+        """Generate early warning alert for a student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate early warning alerts.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('generate_alerts')):
+            messagebox.showerror("Error", "You don't have permission to generate alerts.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def generate_alert():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        # Fetch student details
+                        cursor.execute(
+                            "SELECT first_name, last_name, course, email_address FROM students WHERE student_id = ?",
+                            (student_id,)
+                        )
+                        result = cursor.fetchone()
+
+                        if not result:
+                            print(f"Student {student_id} not found in database")
+                            conn.close()
+                            return
+
+                        first_name, last_name, course, email = result
+
+                        # Calculate risk
+                        risk_score, _ = calculate_risk_factors(cursor, student_id)
+
+                        # Determine risk level
+                        if risk_score >= 70:
+                            risk_level = "High"
+                        elif risk_score >= 40:
+                            risk_level = "Medium"
+                        else:
+                            risk_level = "Low"
+
+                        generate_early_warning_alert(cursor, student_id, first_name, last_name, course, email, risk_score, risk_level)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating early warning alert: {e}")
+
+                thread = threading.Thread(target=generate_alert, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate early warning alert not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate early warning alert: {str(e)}")
+            print(f"Generate early warning alert error: {e}")
+
+    def export_at_risk_students_gui(self, at_risk_students=None, threshold=None):
+        """Export at-risk students list to file"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to export at-risk students.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                if at_risk_students and threshold is not None:
+                    export_at_risk_students(at_risk_students, threshold)
+                    messagebox.showinfo("Success", "At-risk students list exported successfully")
+                else:
+                    messagebox.showinfo("Info", "Please identify at-risk students first.")
+            else:
+                messagebox.showerror("Error", "Export at-risk students not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export at-risk students: {str(e)}")
+            print(f"Export at-risk students error: {e}")
+
+    def export_early_warning_alerts_gui(self, alerts=None):
+        """Export early warning alerts to file"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to export alerts.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                if alerts:
+                    export_early_warning_alerts(alerts)
+                    messagebox.showinfo("Success", "Early warning alerts exported successfully")
+                else:
+                    messagebox.showinfo("Info", "Please generate early warning alerts first.")
+            else:
+                messagebox.showerror("Error", "Export early warning alerts not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export alerts: {str(e)}")
+            print(f"Export alerts error: {e}")
+
+    def export_dropout_risk_list_gui(self, high_risk_students=None):
+        """Export dropout risk list to file"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to export dropout risk list.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                if high_risk_students:
+                    export_dropout_risk_list(high_risk_students)
+                    messagebox.showinfo("Success", "Dropout risk list exported successfully")
+                else:
+                    messagebox.showinfo("Info", "Please identify high dropout risk students first.")
+            else:
+                messagebox.showerror("Error", "Export dropout risk list not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export dropout risk list: {str(e)}")
+            print(f"Export dropout risk list error: {e}")
+
+    def build_at_risk_prediction_model_gui(self):
+        """Build ML model to predict at-risk students"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to build prediction models.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to build ML models.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def build_model():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        build_at_risk_prediction_model(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error building at-risk prediction model: {e}")
+
+                thread = threading.Thread(target=build_model, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Build at-risk prediction model not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to build prediction model: {str(e)}")
+            print(f"Build prediction model error: {e}")
+
+    def analyze_dropout_risk_factors_gui(self):
+        """Analyze common dropout risk factors"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to analyze dropout risk factors.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to analyze dropout risk factors.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def analyze():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        analyze_dropout_risk_factors(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error analyzing dropout risk factors: {e}")
+
+                thread = threading.Thread(target=analyze, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Analyze dropout risk factors not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to analyze dropout risk factors: {str(e)}")
+            print(f"Analyze dropout risk factors error: {e}")
+
+    def build_dropout_prediction_model_gui(self):
+        """Build predictive model for dropout risk"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to build dropout prediction model.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('use_ml_models')):
+            messagebox.showerror("Error", "You don't have permission to build ML models.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def build_model():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        build_dropout_prediction_model(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error building dropout prediction model: {e}")
+
+                thread = threading.Thread(target=build_model, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Build dropout prediction model not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to build dropout prediction model: {str(e)}")
+            print(f"Build dropout prediction model error: {e}")
+
+    def generate_dropout_interventions_gui(self):
+        """Generate dropout prevention interventions"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate interventions.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('generate_interventions')):
+            messagebox.showerror("Error", "You don't have permission to generate interventions.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def generate():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_dropout_interventions(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating dropout interventions: {e}")
+
+                thread = threading.Thread(target=generate, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate dropout interventions not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate interventions: {str(e)}")
+            print(f"Generate interventions error: {e}")
+
+    def generate_dropout_intervention_plan_gui(self, student_id=None):
+        """Generate individual dropout intervention plan"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate intervention plans.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('generate_interventions')):
+            messagebox.showerror("Error", "You don't have permission to generate intervention plans.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def generate_plan():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        # Fetch student details
+                        cursor.execute(
+                            "SELECT first_name, last_name, course, email_address FROM students WHERE student_id = ?",
+                            (student_id,)
+                        )
+                        result = cursor.fetchone()
+
+                        if not result:
+                            print(f"Student {student_id} not found in database")
+                            conn.close()
+                            return
+
+                        first_name, last_name, course, email = result
+                        generate_dropout_intervention_plan(cursor, student_id, first_name, last_name, course, email)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating intervention plan: {e}")
+
+                thread = threading.Thread(target=generate_plan, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate dropout intervention plan not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate intervention plan: {str(e)}")
+            print(f"Generate intervention plan error: {e}")
+
+    def identify_high_dropout_risk_gui(self):
+        """Identify students at high risk of dropping out"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to identify high dropout risk students.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_risk_analysis')):
+            messagebox.showerror("Error", "You don't have permission to identify high dropout risk students.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                def identify():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        identify_high_dropout_risk(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error identifying high dropout risk students: {e}")
+
+                thread = threading.Thread(target=identify, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Identify high dropout risk not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to identify high dropout risk students: {str(e)}")
+            print(f"Identify high dropout risk error: {e}")
+
+    def calculate_dropout_risk_score_gui(self, student_id=None):
+        """Calculate dropout risk score for a student"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to calculate dropout risk score.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                def calculate():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        risk_score = calculate_dropout_risk_score(cursor, student_id)
+                        print(f"Dropout Risk Score for {student_id}: {risk_score}")
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error calculating dropout risk score: {e}")
+
+                thread = threading.Thread(target=calculate, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Calculate dropout risk score not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate dropout risk score: {str(e)}")
+            print(f"Calculate dropout risk score error: {e}")
+
+    def generate_risk_report_gui(self):
+        """Generate comprehensive risk assessment report"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate risk reports.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_reports')):
+            messagebox.showerror("Error", "You don't have permission to generate risk reports.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                thread = threading.Thread(target=generate_risk_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate risk report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate risk report: {str(e)}")
+            print(f"Generate risk report error: {e}")
+
+    def collect_comprehensive_risk_data_gui(self):
+        """Collect comprehensive risk assessment data"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to collect risk data.")
+            return None
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                conn = get_connection()
+                cursor = conn.cursor()
+                risk_data = collect_comprehensive_risk_data(cursor)
+                conn.close()
+                return risk_data
+            else:
+                messagebox.showerror("Error", "Collect risk data not available.")
+                return None
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to collect risk data: {str(e)}")
+            print(f"Collect risk data error: {e}")
+            return None
+
+    def generate_comprehensive_risk_report_gui(self, risk_data=None):
+        """Generate comprehensive risk assessment report"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate comprehensive risk reports.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_reports')):
+            messagebox.showerror("Error", "You don't have permission to generate comprehensive risk reports.")
+            return
+
+        try:
+            if PREDICTIVE_ANALYTICS_AVAILABLE:
+                if not risk_data:
+                    risk_data = self.collect_comprehensive_risk_data_gui()
+
+                if risk_data:
+                    def generate():
+                        generate_comprehensive_risk_report(risk_data)
+
+                    thread = threading.Thread(target=generate, daemon=True)
+                    thread.start()
+            else:
+                messagebox.showerror("Error", "Generate comprehensive risk report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate comprehensive risk report: {str(e)}")
+            print(f"Generate comprehensive risk report error: {e}")
