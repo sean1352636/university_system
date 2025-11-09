@@ -25,6 +25,22 @@ from university_system.modules.domain.academics.services.academic_calendar impor
     handle_view_calendar, handle_export_calendar, auth, set_auth
 )
 
+# Import central auth system
+try:
+    from university_system.infrastructure.auth.user_authentication import _current_auth_instance
+    CENTRAL_AUTH_AVAILABLE = True
+except ImportError:
+    _current_auth_instance = None
+    CENTRAL_AUTH_AVAILABLE = False
+
+# Import activity logger for audit trail
+try:
+    from university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
 # Configure logging for GUI
 gui_logger = logging.getLogger('calendar_gui')
 
@@ -1902,6 +1918,28 @@ class AuthenticationManager:
                 email
             )
 
+        # Try to use central auth system first
+        if CENTRAL_AUTH_AVAILABLE and _current_auth_instance:
+            try:
+                user_id = _current_auth_instance.create_user(
+                    username=username,
+                    password=password,
+                    email=email,
+                    role=role,
+                    first_name='',
+                    last_name=''
+                )
+
+                if user_id:
+                    gui_logger.info(f"User created via central auth: {username} (ID: {user_id}, Role: {role})")
+                    # Log activity
+                    if ACTIVITY_LOGGER_AVAILABLE:
+                        log_activity('create', 'user', user_id=user_id, details={'username': username, 'role': role, 'email': email})
+                    return user_id
+            except Exception as e:
+                gui_logger.warning(f"Failed to create user via central auth, falling back to local: {e}")
+
+        # Fallback to local user creation
         # Hash password
         password_hash, password_salt = hash_password(password)
 
@@ -1923,7 +1961,10 @@ class AuthenticationManager:
                 )
                 user_id = cursor.lastrowid
 
-            gui_logger.info(f"User created: {username} (ID: {user_id}, Role: {role})")
+            gui_logger.info(f"User created (fallback): {username} (ID: {user_id}, Role: {role})")
+            # Log activity even in fallback mode
+            if ACTIVITY_LOGGER_AVAILABLE:
+                log_activity('create', 'user', user_id=user_id, details={'username': username, 'role': role, 'email': email, 'method': 'fallback'})
             return user_id
 
         except Exception as e:

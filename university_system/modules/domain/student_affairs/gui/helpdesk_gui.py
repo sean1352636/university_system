@@ -14,6 +14,14 @@ from university_system.infrastructure.email.template_utils import render_templat
 from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
 from university_system.infrastructure.shared_context import get_auth
 
+# Import activity logger for audit trail
+try:
+    from university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
 # Import all the original functions from helpdesk.py
 # This ensures backwards compatibility
 try:
@@ -689,9 +697,54 @@ class HelpdeskGUI:
             messagebox.showerror("Error", f"Registration failed: {str(e)}")
 
     def create_user_account(self, data):
-        """Create user account - integrate with existing system"""
-        # This would integrate with your existing user creation system
-        return True  # Simplified for demo
+        """Create user account - integrate with central auth system"""
+        try:
+            if not self.auth:
+                messagebox.showerror("Error", "Authentication system not available")
+                return False
+
+            # Extract user data
+            username = data.get('username', '')
+            password = data.get('password', '')
+            email = data.get('email', '')
+            first_name = data.get('first_name', '')
+            last_name = data.get('last_name', '')
+            role = data.get('role', 'student')  # Default to student role
+
+            # Validate required fields
+            if not username or not password or not email:
+                messagebox.showerror("Error", "Username, password, and email are required")
+                return False
+
+            # Create user via central auth system
+            user_id = self.auth.create_user(
+                username=username,
+                password=password,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                role=role,
+                password_reset_required=False
+            )
+
+            if not user_id:
+                messagebox.showerror("Error", "Failed to create user account")
+                return False
+
+            # Log activity
+            if ACTIVITY_LOGGER_AVAILABLE:
+                log_activity('create', 'user', user_id=user_id, details={
+                    'username': username,
+                    'email': email,
+                    'role': role,
+                    'source': 'helpdesk_registration'
+                })
+
+            return True
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create user account: {str(e)}")
+            return False
 
     def switch_to_cli(self):
         """Switch to CLI mode"""

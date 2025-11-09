@@ -9,6 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+**CRITICAL USER MANAGEMENT FIX: Replace Direct SQL with Central Authentication System** (2025-11-09)
+- **SEVERITY**: High - Direct SQL user operations bypassed central auth security
+- **IMPACT**: All user management operations now use centralized auth with proper password hashing
+- **SCOPE**: 6 files across GUI, CLI, and utility modules
+- **SECURITY IMPROVEMENTS**:
+  * Replaced direct SQL INSERT/UPDATE/DELETE with UserAuth methods
+  * Added comprehensive activity logging for all user operations
+  * Improved fallback mechanisms with proper error handling
+  * Upgraded PBKDF2 password hashing in bootstrap scenarios
+
+**FILES FIXED (6 files)**:
+
+1. **main_gui.py** - Main GUI user management
+   - Line ~2537-2623: User editing now uses `auth.update_user()` instead of direct SQL UPDATE
+   - Line ~4951: User deletion now uses `auth.delete_user()` instead of direct SQL DELETE
+   - Added activity logging for all user modifications
+
+2. **student_support_gui.py** - Student support role management
+   - Line ~5020: Role changes now use `auth.update_user(user_id, role=new_role)` instead of direct SQL UPDATE
+   - Added activity logging for role changes
+
+3. **cli_main.py** - CLI user deletion
+   - Line ~4527: User deletion now uses `auth.delete_user(user_id)` instead of direct SQL DELETE
+   - Added activity logging with context
+
+4. **academic_calendar_gui.py** - Academic calendar user creation
+   - Line ~1912: User creation now delegates to central auth system first
+   - Falls back to local creation only if central auth unavailable
+   - Added activity logging for both paths
+
+5. **helpdesk_gui.py** - Helpdesk user registration
+   - Line ~691: Implemented proper user registration using `auth.create_user()`
+   - Replaced demo stub with full implementation
+   - Added activity logging for registration events
+
+6. **document_manager.py** - Bootstrap admin creation
+   - Line ~485: Improved fallback admin creation with PBKDF2 instead of SHA256
+   - Better error handling for bootstrap scenarios
+   - Added activity logging for both central and fallback creation paths
+
+**VULNERABILITY DETAILS**:
+
+**Issue 1: Direct SQL User Operations Bypass Central Auth**
+```python
+# BEFORE (INSECURE - bypasses central auth security)
+cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
+cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+cursor.execute('INSERT INTO users (username, password_hash, ...) VALUES (...)')
+
+# AFTER (SECURE - uses central auth system)
+auth.update_user(user_id, role=new_role)
+auth.delete_user(user_id)
+auth.create_user(username=username, password=password, ...)
+```
+
+**Issue 2: Missing Activity Logging**
+- All user management operations now logged for audit compliance
+- Includes user_id, username, role changes, and operation context
+
+**Issue 3: Weak Fallback Password Hashing**
+- Upgraded from SHA256 to PBKDF2-HMAC-SHA256 (100,000 iterations)
+- Only used in bootstrap scenarios when central auth unavailable
+
+---
+
 **CRITICAL SECURITY FIX: Remove All Standalone Authentication Implementations** (2025-11-09)
 - **SEVERITY**: Critical - Hardcoded admin accounts and permission bypasses removed
 - **IMPACT**: All GUI modules now properly require central authentication

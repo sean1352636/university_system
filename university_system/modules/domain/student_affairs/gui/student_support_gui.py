@@ -12,6 +12,14 @@ from pathlib import Path
 import logging
 from university_system.modules.shared.constants import paths
 
+# Import activity logger for audit trail
+try:
+    from university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
@@ -5013,14 +5021,31 @@ class StudentSupportGUI:
             if new_role == current_role:
                 role_dialog.destroy()
                 return
-            
+
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
-                conn.commit()
-                conn.close()
-                
+                # Use auth system to update user role if available
+                if self.auth:
+                    success = self.auth.update_user(user_id, role=new_role)
+
+                    if not success:
+                        messagebox.showerror("Error", "Failed to update role via auth system")
+                        return
+                else:
+                    # Fallback to direct DB access
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
+                    conn.commit()
+                    conn.close()
+
+                # Log activity
+                if ACTIVITY_LOGGER_AVAILABLE:
+                    log_activity('update', 'user_role', user_id=user_id, details={
+                        'username': username,
+                        'old_role': current_role,
+                        'new_role': new_role
+                    })
+
                 messagebox.showinfo("Success", f"Role changed to {new_role}")
                 role_dialog.destroy()
                 self.show_user_management()  # Refresh

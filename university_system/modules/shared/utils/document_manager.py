@@ -15,6 +15,14 @@ from university_system.infrastructure.database.db import sqlite3, DatabaseManage
 # Local imports - Authentication
 from university_system.infrastructure.auth.user_authentication import UserAuth, get_current_user, set_auth_instance
 
+# Import activity logger for audit trail
+try:
+    from university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
 # Optional imports - Email system
 try:
     from university_system.infrastructure.email import (
@@ -465,10 +473,13 @@ class DocumentManager:
             # WARNING: Change DEFAULT_ADMIN_PASSWORD environment variable in production!
             # Load admin password from environment variable for security
             admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')
+            admin_created = False
+            user_id = None
+
             try:
                 from university_system.infrastructure.auth.user_authentication import UserAuth
                 auth_system = UserAuth()
-                auth_system.create_user(
+                user_id = auth_system.create_user(
                     username="admin",
                     password=admin_password,
                     email="admin@school.edu",
@@ -476,15 +487,49 @@ class DocumentManager:
                     last_name="Administrator",
                     role="admin"
                 )
-                print("Default admin user created via centralized auth system")
+                if user_id:
+                    print("Default admin user created via centralized auth system")
+                    admin_created = True
+                    # Log activity
+                    if ACTIVITY_LOGGER_AVAILABLE:
+                        log_activity('create', 'user', user_id=user_id, details={
+                            'username': 'admin',
+                            'role': 'admin',
+                            'source': 'bootstrap',
+                            'method': 'central_auth'
+                        })
+                else:
+                    raise Exception("Auth system returned no user_id")
             except Exception as e:
                 # Fallback to direct insertion if auth system not available during initialization
-                print(f"Using fallback admin creation: {e}")
-                admin_hash = hashlib.sha256(admin_password.encode()).hexdigest()
+                # This is ONLY for bootstrap scenarios where the auth system may not be fully initialized
+                print(f"WARNING: Using fallback admin creation (auth system unavailable): {e}")
+                print("NOTE: This fallback uses weaker password hashing and should only occur during initial setup.")
+
+                # Use PBKDF2 for better security instead of SHA256
+                import secrets
+                salt = secrets.token_hex(16)
+                # Simple PBKDF2 implementation
+                password_hash = hashlib.pbkdf2_hmac('sha256', admin_password.encode(), salt.encode(), 100000).hex()
+
                 cursor.execute('''
-                INSERT INTO users (username, password_hash, role, email, first_name, last_name, created_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', ("admin", admin_hash, "admin", "admin@school.edu", "System", "Administrator", datetime.now().strftime('%Y-%m-%d')))
+                INSERT INTO users (username, password_hash, password_salt, role, email, first_name, last_name, created_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ("admin", password_hash, salt, "admin", "admin@school.edu", "System", "Administrator", datetime.now().strftime('%Y-%m-%d')))
+                user_id = cursor.lastrowid
+                admin_created = True
+
+                # Log activity even in fallback mode
+                if ACTIVITY_LOGGER_AVAILABLE:
+                    log_activity('create', 'user', user_id=user_id, details={
+                        'username': 'admin',
+                        'role': 'admin',
+                        'source': 'bootstrap',
+                        'method': 'fallback'
+                    })
+
+            if not admin_created:
+                print("ERROR: Failed to create default admin user")
             
         # Check if document types exist
         cursor.execute('SELECT COUNT(*) FROM document_types')

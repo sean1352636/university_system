@@ -4513,19 +4513,30 @@ def delete_student_record():
             print(f"Deleted {cursor.rowcount} module assignments.")
             
             # Delete user account (if exists) - first get the user_id
-            cursor.execute('SELECT id FROM users WHERE student_id = ?', (id_num,))
+            cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (id_num,))
             user_record = cursor.fetchone()
-            
+
             if user_record:
                 user_id = user_record['id']
-                
-                # Delete from user_accounts table
-                cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
-                print(f"Deleted {cursor.rowcount} user account records.")
-                
-                # Delete from users table
-                cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                print(f"Deleted {cursor.rowcount} user profile records.")
+                username = user_record['username']
+
+                # Use auth system to delete user if available
+                if auth:
+                    if auth.delete_user(user_id):
+                        print(f"Deleted user account via auth system (username: {username}).")
+                        # Log activity
+                        log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion'})
+                    else:
+                        print(f"Warning: Failed to delete user via auth system for {username}.")
+                else:
+                    # Fallback to direct deletion if auth not available
+                    cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
+                    print(f"Deleted {cursor.rowcount} user account records.")
+
+                    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                    print(f"Deleted {cursor.rowcount} user profile records.")
+                    # Log activity even in fallback mode
+                    log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion (fallback)'})
             
             # Delete any parking permits
             try:

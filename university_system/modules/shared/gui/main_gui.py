@@ -105,6 +105,14 @@ except ImportError:
     SecurityDashboard = None
     SECURITY_DASHBOARD_AVAILABLE = False
 
+# Import activity logger for audit trail
+try:
+    from university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
 auth = None
 
 def set_auth(auth_instance):
@@ -2534,20 +2542,43 @@ PERMISSIONS:
 
         # Get current user data
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT u.username, u.email, u.first_name, u.last_name, u.role, u.is_active, u.student_id
-                FROM users u
-                WHERE u.username = ?
-            ''', (username,))
-            user_data = cursor.fetchone()
-            conn.close()
+            # Use auth system to get user info if available
+            if self.auth:
+                user_info = self.auth.get_user_by_username(username)
+                if not user_info:
+                    messagebox.showerror("Error", "User not found")
+                    dialog.destroy()
+                    return
+                # Convert to tuple format for compatibility
+                user_data = (
+                    user_info.get('username'),
+                    user_info.get('email'),
+                    user_info.get('first_name'),
+                    user_info.get('last_name'),
+                    user_info.get('role'),
+                    user_info.get('is_active', 1),
+                    user_info.get('student_id')
+                )
+                user_id = user_info.get('id')
+            else:
+                # Fallback to direct DB access
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.is_active, u.student_id
+                    FROM users u
+                    WHERE u.username = ?
+                ''', (username,))
+                result = cursor.fetchone()
+                conn.close()
 
-            if not user_data:
-                messagebox.showerror("Error", "User not found")
-                dialog.destroy()
-                return
+                if not result:
+                    messagebox.showerror("Error", "User not found")
+                    dialog.destroy()
+                    return
+
+                user_id = result[0]
+                user_data = result[1:]
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load user data: {str(e)}")
@@ -2593,27 +2624,67 @@ PERMISSIONS:
 
         def save_changes():
             try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
+                new_email = fields['email'].get().strip()
+                new_first_name = fields['first_name'].get().strip()
+                new_last_name = fields['last_name'].get().strip()
+                new_role = role_var.get()
+                new_active = active_var.get()
 
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                # Track old values for logging
+                old_role = user_data[4]
+                old_active = bool(user_data[5])
 
-                cursor.execute('''
-                    UPDATE users
-                    SET email = ?, first_name = ?, last_name = ?, role = ?, is_active = ?, updated_at = ?
-                    WHERE username = ?
-                ''', (
-                    fields['email'].get().strip(),
-                    fields['first_name'].get().strip(),
-                    fields['last_name'].get().strip(),
-                    role_var.get(),
-                    1 if active_var.get() else 0,
-                    timestamp,
-                    username
-                ))
+                # Use auth system to update user if available
+                if self.auth:
+                    success = self.auth.update_user(
+                        user_id,
+                        email=new_email,
+                        first_name=new_first_name,
+                        last_name=new_last_name,
+                        role=new_role,
+                        is_active=new_active
+                    )
 
-                conn.commit()
-                conn.close()
+                    if not success:
+                        messagebox.showerror("Error", "Failed to update user via auth system")
+                        return
+                else:
+                    # Fallback to direct DB access
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    cursor.execute('''
+                        UPDATE users
+                        SET email = ?, first_name = ?, last_name = ?, role = ?, is_active = ?, updated_at = ?
+                        WHERE username = ?
+                    ''', (
+                        new_email,
+                        new_first_name,
+                        new_last_name,
+                        new_role,
+                        1 if new_active else 0,
+                        timestamp,
+                        username
+                    ))
+                    conn.commit()
+                    conn.close()
+
+                # Log activity
+                changes = {}
+                if new_email != user_data[1]:
+                    changes['email'] = {'old': user_data[1], 'new': new_email}
+                if new_first_name != user_data[2]:
+                    changes['first_name'] = {'old': user_data[2], 'new': new_first_name}
+                if new_last_name != user_data[3]:
+                    changes['last_name'] = {'old': user_data[3], 'new': new_last_name}
+                if new_role != old_role:
+                    changes['role'] = {'old': old_role, 'new': new_role}
+                if new_active != old_active:
+                    changes['is_active'] = {'old': old_active, 'new': new_active}
+
+                if ACTIVITY_LOGGER_AVAILABLE and changes:
+                    log_activity('update', 'user', user_id=user_id, details={'username': username, 'changes': changes})
 
                 messagebox.showinfo("Success", f"User {username} updated successfully!")
                 self.refresh_user_list()
@@ -4935,22 +5006,35 @@ University Administration"""
                             # Table might not exist
                             pass
 
-                    # Delete user accounts
-                    cursor.execute('SELECT id FROM users WHERE student_id = ?', (student_id,))
+                    # Delete user accounts using central auth system
+                    cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (student_id,))
                     user_record = cursor.fetchone()
 
                     if user_record:
                         user_id = user_record[0]
+                        username = user_record[1]
 
-                        # Delete from user_accounts
-                        cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
-                        if cursor.rowcount > 0:
-                            deletion_log.append("Deleted user account")
+                        # Use auth system to delete user if available
+                        if self.auth:
+                            if self.auth.delete_user(user_id):
+                                deletion_log.append(f"Deleted user account via auth system (username: {username})")
+                                # Log activity
+                                if ACTIVITY_LOGGER_AVAILABLE:
+                                    log_activity('delete', 'user', user_id=user_id, details={'username': username, 'student_id': student_id, 'reason': 'Student deletion'})
+                            else:
+                                deletion_log.append(f"Warning: Failed to delete user via auth system for {username}")
+                        else:
+                            # Fallback to direct deletion if auth not available
+                            cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
+                            if cursor.rowcount > 0:
+                                deletion_log.append("Deleted user account")
 
-                        # Delete from users
-                        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                        if cursor.rowcount > 0:
-                            deletion_log.append("Deleted user profile")
+                            cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                            if cursor.rowcount > 0:
+                                deletion_log.append("Deleted user profile")
+                                # Log activity even in fallback mode
+                                if ACTIVITY_LOGGER_AVAILABLE:
+                                    log_activity('delete', 'user', user_id=user_id, details={'username': username, 'student_id': student_id, 'reason': 'Student deletion (fallback)'})
 
                     # Update course enrollment count before deleting student
                     cursor.execute('SELECT course FROM students WHERE student_id = ?', (student_id,))
