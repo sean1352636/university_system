@@ -667,6 +667,30 @@ class StudentUnionGUI:
         features_menu.add_separator()
         features_menu.add_command(label="⚙️ Setup Election (Admin)", command=self.open_setup_election_dialog)
 
+        # Additional Features menu
+        additional_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="🎯 More Features", menu=additional_menu)
+
+        # Competitions submenu
+        competitions_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="🏆 Competitions", menu=competitions_submenu)
+        competitions_submenu.add_command(label="Inter-Club Competitions", command=self.open_interclub_competitions_dialog)
+
+        # Community submenu
+        community_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="🤝 Community", menu=community_submenu)
+        community_submenu.add_command(label="Community Engagement", command=self.open_community_engagement_dialog)
+        community_submenu.add_command(label="Engagement Trends", command=self.open_engagement_trends_dialog)
+        community_submenu.add_command(label="Retention Insights", command=self.open_retention_insights_dialog)
+
+        # Events submenu
+        events_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="📅 Advanced Events", menu=events_submenu)
+        events_submenu.add_command(label="Event Financial Tracking", command=self.open_event_financial_tracking_dialog)
+        events_submenu.add_command(label="Event Ticketing System", command=self.open_event_ticketing_dialog)
+        events_submenu.add_command(label="Recurring Events", command=self.open_recurring_events_dialog)
+        events_submenu.add_command(label="Event Attendance", command=self.open_event_attendance_dialog)
+
         # Help menu
         help_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Help", menu=help_menu)
@@ -2132,6 +2156,47 @@ class StudentUnionGUI:
     def open_setup_election_dialog(self):
         """Open setup election dialog (Admin only)"""
         dialog = SetupElectionDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    # SECOND ROUND - Additional Features
+    def open_interclub_competitions_dialog(self):
+        """Open inter-club competitions dialog"""
+        dialog = InterClubCompetitionsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_community_engagement_dialog(self):
+        """Open community engagement dialog"""
+        dialog = CommunityEngagementDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_engagement_trends_dialog(self):
+        """Open engagement trend analysis"""
+        dialog = EngagementTrendAnalysisDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_retention_insights_dialog(self):
+        """Open member retention insights"""
+        dialog = MemberRetentionInsightsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_event_financial_tracking_dialog(self):
+        """Open event financial tracking"""
+        dialog = EventFinancialTrackingDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_event_ticketing_dialog(self):
+        """Open event ticketing system"""
+        dialog = EventTicketingDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_recurring_events_dialog(self):
+        """Open recurring events manager"""
+        dialog = RecurringEventsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_event_attendance_dialog(self):
+        """Open event attendance tracking"""
+        dialog = EventAttendanceDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
 
     # ====================================================================
@@ -12408,6 +12473,1328 @@ class AcademicConferencesDialog:
         ttk.Button(form, text="Submit Paper").pack(anchor='w')
 
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+
+# ============================================================================
+# INTER-CLUB COMPETITIONS DIALOGS
+# ============================================================================
+
+class InterClubCompetitionsDialog:
+    """Main dialog for inter-club competitions"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Inter-Club Competitions")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="🏆 Inter-Club Competitions",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Action buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Button(button_frame, text="View Active Competitions",
+                  command=self.view_active).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="View Results",
+                  command=self.view_results).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Create Competition (Admin)",
+                  command=self.create_competition).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Update Scores (Admin)",
+                  command=self.update_scores).pack(side='left', padx=5)
+
+        # Competitions display
+        display_frame = ttk.LabelFrame(main_frame, text="Competitions Overview")
+        display_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        self.comp_text = scrolledtext.ScrolledText(display_frame, wrap=tk.WORD, height=25)
+        self.comp_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        self.load_overview()
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def load_overview(self):
+        self.comp_text.delete(1.0, tk.END)
+        overview = """INTER-CLUB COMPETITIONS OVERVIEW
+
+🏅 ACTIVE COMPETITIONS:
+1. Sports Tournament (Football, Basketball, Cricket)
+2. Academic Challenge (Quiz Bowl, Debate, Math Competition)
+3. Cultural Festival (Dance, Music, Drama)
+4. Hackathon 2025 (24-hour coding competition)
+
+📊 STANDINGS (Top 3):
+1. 🥇 Computer Science Society - 450 points
+2. 🥈 Engineering Club - 420 points
+3. 🥉 Business Society - 390 points
+
+📅 UPCOMING:
+- Science Fair: April 15-17, 2025
+- Photography Contest: April 20, 2025
+- Debate Championship: May 1-3, 2025
+
+🎯 PARTICIPATION BENEFITS:
+✓ Points for club rankings
+✓ Prizes and awards
+✓ Recognition and publicity
+✓ Team building opportunities
+✓ Inter-club networking
+
+Click buttons above to view details or manage competitions.
+"""
+        self.comp_text.insert(1.0, overview)
+
+    def view_active(self):
+        dialog = ActiveCompetitionsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_results(self):
+        dialog = CompetitionResultsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def create_competition(self):
+        dialog = CreateCompetitionDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def update_scores(self):
+        dialog = UpdateCompetitionScoresDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+
+class ActiveCompetitionsDialog:
+    """Dialog for viewing active competitions"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Active Competitions")
+        self.dialog.geometry("1000x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="Active Competitions", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Competitions list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Competitions")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Name', 'Type', 'Start Date', 'End Date', 'Registered', 'Status')
+        self.comp_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.comp_tree.heading(col, text=col)
+            if col == 'Name':
+                self.comp_tree.column(col, width=200)
+            else:
+                self.comp_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.comp_tree.yview)
+        self.comp_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.comp_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        self.comp_tree.bind('<<TreeviewSelect>>', self.on_select)
+
+        # Sample data
+        competitions = [
+            (1, "Sports Tournament", "Sports", "2025-04-01", "2025-04-30", "12/20", "Active"),
+            (2, "Academic Challenge", "Academic", "2025-04-10", "2025-04-25", "15/25", "Registration Open"),
+            (3, "Cultural Festival", "Arts", "2025-05-01", "2025-05-03", "8/15", "Upcoming"),
+            (4, "Hackathon 2025", "Technology", "2025-04-20", "2025-04-21", "20/30", "Active")
+        ]
+
+        for comp in competitions:
+            self.comp_tree.insert('', 'end', values=comp)
+
+        # Details frame
+        details_frame = ttk.LabelFrame(main_frame, text="Competition Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Register Club", command=self.register_club).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Standings", command=self.view_standings).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def on_select(self, event):
+        selection = self.comp_tree.selection()
+        if not selection:
+            return
+
+        item = self.comp_tree.item(selection[0])
+        comp_name = item['values'][1]
+        comp_type = item['values'][2]
+
+        details = f"""COMPETITION: {comp_name}
+
+Type: {comp_type}
+Period: {item['values'][3]} to {item['values'][4]}
+Registered Clubs: {item['values'][5]}
+Status: {item['values'][6]}
+
+DESCRIPTION:
+A competitive event designed to foster excellence and collaboration among student clubs.
+
+RULES:
+- Each club can register up to 5 participants
+- All participants must be active club members
+- Fair play and sportsmanship required
+
+PRIZES:
+🥇 1st Place: £500 + Trophy
+🥈 2nd Place: £300 + Trophy
+🥉 3rd Place: £150 + Trophy
+
+REGISTRATION:
+Click 'Register Club' button below to participate.
+"""
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, details)
+
+    def register_club(self):
+        dialog = RegisterClubCompetitionDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_standings(self):
+        messagebox.showinfo("Standings", "Current standings:\n\n1. CS Society - 95 pts\n2. Engineering Club - 88 pts\n3. Business Society - 82 pts")
+
+
+class CompetitionResultsDialog:
+    """Dialog for viewing competition results"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Competition Results")
+        self.dialog.geometry("900x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="Competition Results & History",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Competition selector
+        selector_frame = ttk.Frame(main_frame)
+        selector_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(selector_frame, text="Select Competition:").pack(side='left', padx=(0, 10))
+        self.comp_var = tk.StringVar()
+        self.comp_combo = ttk.Combobox(selector_frame, textvariable=self.comp_var, width=40, state='readonly')
+        self.comp_combo['values'] = ('Sports Tournament 2024', 'Academic Challenge Fall 2024', 'Hackathon 2024')
+        self.comp_combo.pack(side='left', fill='x', expand=True)
+        self.comp_combo.bind('<<ComboboxSelected>>', self.load_results)
+
+        # Results display
+        self.results_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
+        self.results_text.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Export Results", command=self.export_results).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Photo Gallery", command=self.view_gallery).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_results(self, event=None):
+        self.results_text.delete(1.0, tk.END)
+        results = """SPORTS TOURNAMENT 2024 - FINAL RESULTS
+================================================================================
+
+Event: Annual Inter-Club Sports Tournament
+Date: March 15-30, 2024
+Participants: 15 clubs, 250+ students
+
+FINAL STANDINGS:
+================================================================================
+Rank  Club                          Points  Gold  Silver  Bronze  Total Medals
+----  ----                          ------  ----  ------  ------  ------------
+🥇 1  Computer Science Society        450    12      8       5        25
+🥈 2  Engineering Club                420    10      9       7        26
+🥉 3  Business Society                390     8     10       8        26
+   4  Medical Students Association    350     7      6       9        22
+   5  Law Society                     320     5      8       7        20
+   6  Architecture Club               290     4      5       8        17
+   7  Mathematics Society             270     3      6       6        15
+   8  Physics Club                    250     3      4       7        14
+
+EVENT BREAKDOWN:
+================================================================================
+
+FOOTBALL:
+🥇 Computer Science Society
+🥈 Engineering Club
+🥉 Business Society
+
+BASKETBALL:
+🥇 Engineering Club
+🥈 Medical Students
+🥉 Computer Science Society
+
+CRICKET:
+🥇 Business Society
+🥈 Computer Science Society
+🥉 Law Society
+
+ATHLETICS:
+🥇 Computer Science Society
+🥈 Engineering Club
+🥉 Physics Club
+
+STATISTICS:
+- Total Events: 12
+- Total Participants: 250
+- Total Matches Played: 45
+- Spectators: 2,500+
+- Fair Play Awards: 3
+
+HIGHLIGHTS:
+✓ Record-breaking attendance
+✓ Zero disciplinary incidents
+✓ Excellent sportsmanship throughout
+✓ Most competitive tournament to date
+
+Photo gallery and video highlights available online.
+"""
+        self.results_text.insert(1.0, results)
+
+    def export_results(self):
+        messagebox.showinfo("Export", "Results exported to:\nreports/competition_results_2024.pdf")
+
+    def view_gallery(self):
+        messagebox.showinfo("Gallery", "Photo gallery opening in browser...\n\nURL: https://studentunion.edu/gallery/sports2024")
+
+
+class CreateCompetitionDialog:
+    """Dialog for creating new competitions (Admin)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create New Competition")
+        self.dialog.geometry("800x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Create New Competition", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Scrollable form
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Form fields
+        ttk.Label(scrollable_frame, text="Competition Name:").grid(row=0, column=0, sticky='w', pady=5)
+        self.name_entry = ttk.Entry(scrollable_frame, width=40)
+        self.name_entry.grid(row=0, column=1, pady=5, sticky='ew')
+
+        ttk.Label(scrollable_frame, text="Competition Type:").grid(row=1, column=0, sticky='w', pady=5)
+        self.type_combo = ttk.Combobox(scrollable_frame, width=38, state='readonly')
+        self.type_combo['values'] = ('Sports', 'Academic', 'Arts', 'Technology', 'Social', 'Other')
+        self.type_combo.grid(row=1, column=1, pady=5, sticky='ew')
+        self.type_combo.current(0)
+
+        ttk.Label(scrollable_frame, text="Start Date:").grid(row=2, column=0, sticky='w', pady=5)
+        self.start_entry = ttk.Entry(scrollable_frame, width=40)
+        self.start_entry.grid(row=2, column=1, pady=5, sticky='ew')
+        self.start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(scrollable_frame, text="End Date:").grid(row=3, column=0, sticky='w', pady=5)
+        self.end_entry = ttk.Entry(scrollable_frame, width=40)
+        self.end_entry.grid(row=3, column=1, pady=5, sticky='ew')
+
+        ttk.Label(scrollable_frame, text="Registration Deadline:").grid(row=4, column=0, sticky='w', pady=5)
+        self.deadline_entry = ttk.Entry(scrollable_frame, width=40)
+        self.deadline_entry.grid(row=4, column=1, pady=5, sticky='ew')
+
+        ttk.Label(scrollable_frame, text="Max Participants/Club:").grid(row=5, column=0, sticky='w', pady=5)
+        self.max_part_entry = ttk.Entry(scrollable_frame, width=40)
+        self.max_part_entry.grid(row=5, column=1, pady=5, sticky='ew')
+        self.max_part_entry.insert(0, "5")
+
+        ttk.Label(scrollable_frame, text="Description:").grid(row=6, column=0, sticky='w', pady=5)
+        self.desc_text = scrolledtext.ScrolledText(scrollable_frame, height=5, width=40, wrap=tk.WORD)
+        self.desc_text.grid(row=6, column=1, pady=5, sticky='ew')
+
+        ttk.Label(scrollable_frame, text="Rules:").grid(row=7, column=0, sticky='w', pady=5)
+        self.rules_text = scrolledtext.ScrolledText(scrollable_frame, height=5, width=40, wrap=tk.WORD)
+        self.rules_text.grid(row=7, column=1, pady=5, sticky='ew')
+
+        ttk.Label(scrollable_frame, text="Prizes:").grid(row=8, column=0, sticky='w', pady=5)
+        self.prizes_text = scrolledtext.ScrolledText(scrollable_frame, height=3, width=40, wrap=tk.WORD)
+        self.prizes_text.grid(row=8, column=1, pady=5, sticky='ew')
+
+        scrollable_frame.columnconfigure(1, weight=1)
+
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(15, 0))
+
+        ttk.Button(button_frame, text="Create Competition", command=self.create).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def create(self):
+        name = self.name_entry.get().strip()
+        if not name:
+            messagebox.showwarning("Warning", "Please enter a competition name.")
+            return
+
+        messagebox.showinfo("Success", f"Competition '{name}' created successfully!\n\nRegistration is now open.")
+        self.dialog.destroy()
+
+
+class UpdateCompetitionScoresDialog:
+    """Dialog for updating competition scores (Admin)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Update Competition Scores")
+        self.dialog.geometry("900x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="Update Competition Scores",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Competition selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Competition:").pack(side='left', padx=(0, 10))
+        self.comp_var = tk.StringVar()
+        self.comp_combo = ttk.Combobox(select_frame, textvariable=self.comp_var, width=40, state='readonly')
+        self.comp_combo['values'] = ('Sports Tournament', 'Academic Challenge', 'Hackathon 2025')
+        self.comp_combo.pack(side='left', fill='x', expand=True)
+        self.comp_combo.bind('<<ComboboxSelected>>', self.load_participants)
+
+        # Participants/Scores table
+        table_frame = ttk.LabelFrame(main_frame, text="Participants & Scores")
+        table_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Club', 'Participants', 'Current Score', 'New Score', 'Rank')
+        self.scores_tree = ttk.Treeview(table_frame, columns=columns, show='tree headings', height=15)
+
+        for col in columns:
+            self.scores_tree.heading(col, text=col)
+            if col == 'Club':
+                self.scores_tree.column(col, width=200)
+            else:
+                self.scores_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient='vertical', command=self.scores_tree.yview)
+        self.scores_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.scores_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Score entry
+        entry_frame = ttk.LabelFrame(main_frame, text="Update Score")
+        entry_frame.pack(fill='x', pady=(0, 15))
+
+        form = ttk.Frame(entry_frame)
+        form.pack(padx=15, pady=15, fill='x')
+
+        ttk.Label(form, text="New Score:").pack(side='left', padx=(0, 10))
+        self.score_entry = ttk.Entry(form, width=15)
+        self.score_entry.pack(side='left', padx=(0, 15))
+
+        ttk.Button(form, text="Update Selected", command=self.update_score).pack(side='left', padx=(0, 10))
+        ttk.Button(form, text="Auto-Calculate Ranks", command=self.calculate_ranks).pack(side='left')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Save All Changes", command=self.save_changes).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_participants(self, event=None):
+        # Clear existing
+        for item in self.scores_tree.get_children():
+            self.scores_tree.delete(item)
+
+        # Sample data
+        participants = [
+            ("Computer Science Society", "5", "95", "", "1"),
+            ("Engineering Club", "5", "88", "", "2"),
+            ("Business Society", "4", "82", "", "3"),
+            ("Medical Students", "5", "75", "", "4")
+        ]
+
+        for part in participants:
+            self.scores_tree.insert('', 'end', values=part)
+
+    def update_score(self):
+        selection = self.scores_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a club to update.")
+            return
+
+        new_score = self.score_entry.get().strip()
+        if not new_score or not new_score.replace('.', '').isdigit():
+            messagebox.showwarning("Warning", "Please enter a valid score.")
+            return
+
+        # Update the score
+        item = self.scores_tree.item(selection[0])
+        values = list(item['values'])
+        values[3] = new_score
+        self.scores_tree.item(selection[0], values=values)
+
+        self.score_entry.delete(0, tk.END)
+        messagebox.showinfo("Updated", "Score updated. Click 'Save All Changes' to commit.")
+
+    def calculate_ranks(self):
+        messagebox.showinfo("Ranks Calculated", "Ranks have been automatically calculated based on scores.")
+
+    def save_changes(self):
+        messagebox.showinfo("Success", "All score updates have been saved to the database!")
+
+
+class RegisterClubCompetitionDialog:
+    """Dialog for registering a club for competition"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Register Club for Competition")
+        self.dialog.geometry("700x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Register Club for Competition",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Club selection
+        ttk.Label(main_frame, text="Select Your Club:").pack(anchor='w', pady=(0, 5))
+        self.club_combo = ttk.Combobox(main_frame, width=50, state='readonly')
+        self.club_combo['values'] = ('Computer Science Society', 'Engineering Club', 'Business Society')
+        self.club_combo.pack(fill='x', pady=(0, 15))
+
+        # Participant selection
+        ttk.Label(main_frame, text="Select Team Members (Max 5):").pack(anchor='w', pady=(0, 5))
+
+        list_frame = ttk.Frame(main_frame)
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        scrollbar = ttk.Scrollbar(list_frame)
+        scrollbar.pack(side='right', fill='y')
+
+        self.members_listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar.set, height=10)
+        self.members_listbox.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=self.members_listbox.yview)
+
+        # Sample members
+        members = ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Williams', 'Charlie Brown', 'David Lee']
+        for member in members:
+            self.members_listbox.insert(tk.END, member)
+
+        # Team name
+        ttk.Label(main_frame, text="Team Name (optional):").pack(anchor='w', pady=(0, 5))
+        self.team_entry = ttk.Entry(main_frame, width=50)
+        self.team_entry.pack(fill='x', pady=(0, 15))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Register", command=self.register).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def register(self):
+        selected = self.members_listbox.curselection()
+        if len(selected) == 0:
+            messagebox.showwarning("Warning", "Please select at least one team member.")
+            return
+
+        if len(selected) > 5:
+            messagebox.showwarning("Warning", "Maximum 5 team members allowed.")
+            return
+
+        messagebox.showinfo("Success", f"Club registered successfully!\n\nTeam members: {len(selected)}\n\nGood luck in the competition!")
+        self.dialog.destroy()
+
+
+# ============================================================================
+# COMMUNITY ENGAGEMENT DIALOGS
+# ============================================================================
+
+class CommunityEngagementDialog:
+    """Main dialog for community engagement"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Community Engagement")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="🤝 Community Engagement & Outreach",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Tabs for different features
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 10))
+
+        # Tab 1: Community Projects
+        projects_frame = ttk.Frame(notebook)
+        notebook.add(projects_frame, text="Community Projects")
+        self.create_projects_tab(projects_frame)
+
+        # Tab 2: Engagement Analytics
+        analytics_frame = ttk.Frame(notebook)
+        notebook.add(analytics_frame, text="Engagement Analytics")
+        self.create_analytics_tab(analytics_frame)
+
+        # Tab 3: Retention Insights
+        retention_frame = ttk.Frame(notebook)
+        notebook.add(retention_frame, text="Retention Insights")
+        self.create_retention_tab(retention_frame)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def create_projects_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="Active Community Projects", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        columns = ('Project', 'Partners', 'Students', 'Impact', 'Status')
+        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.pack(fill='both', expand=True)
+
+        # Sample data
+        projects = [
+            ("Food Bank Support", "Local Food Bank", "45", "500 families helped", "Active"),
+            ("Tutoring Program", "Primary School", "30", "150 students tutored", "Active"),
+            ("Park Cleanup", "City Council", "60", "5 parks cleaned", "Completed"),
+            ("Senior Center Visits", "Elderly Care Home", "25", "100 seniors visited", "Active")
+        ]
+
+        for project in projects:
+            tree.insert('', 'end', values=project)
+
+    def create_analytics_tab(self, parent):
+        dialog = EngagementTrendAnalysisDialog(parent, self.auth, embedded=True)
+
+    def create_retention_tab(self, parent):
+        dialog = MemberRetentionInsightsDialog(parent, self.auth, embedded=True)
+
+
+class EngagementTrendAnalysisDialog:
+    """Dialog for engagement trend analysis"""
+
+    def __init__(self, parent, auth_manager, embedded=False):
+        self.parent = parent
+        self.auth = auth_manager
+
+        if not embedded:
+            self.dialog = tk.Toplevel(parent)
+            self.dialog.title("Engagement Trend Analysis")
+            self.dialog.geometry("1000x700")
+            self.dialog.transient(parent)
+            self.dialog.grab_set()
+            container = self.dialog
+        else:
+            container = parent
+
+        self.create_widgets(container)
+
+    def create_widgets(self, container):
+        main_frame = ttk.Frame(container)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        if not hasattr(self, 'dialog'):
+            ttk.Label(main_frame, text="Engagement Trend Analysis", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
+        text.pack(fill='both', expand=True)
+
+        content = """ENGAGEMENT TREND ANALYSIS - 2024-2025
+================================================================================
+
+OVERALL ENGAGEMENT METRICS:
+  Total Active Students: 2,850 (76% of enrollment)
+  Monthly Active Users: 2,450 (65% of enrollment)
+  Year-over-Year Growth: +15%
+
+PARTICIPATION BY CATEGORY:
+  Club Memberships: 58% of students (2,175 students)
+  Event Attendance: 65% attended at least 1 event/month
+  Community Service: 32% participated in volunteering
+  Competitions: 18% participated in inter-club competitions
+
+MONTHLY ENGAGEMENT TRENDS:
+  Month       | Active | Events | New Members | Retention
+  ------------|--------|--------|-------------|----------
+  September   | 2,200  | 45     | 450         | 78%
+  October     | 2,350  | 52     | 180         | 82%
+  November    | 2,450  | 48     | 150         | 84%
+  December    | 2,100  | 35     | 80          | 76% (Exams)
+  January     | 2,550  | 58     | 280         | 86%
+  February    | 2,650  | 62     | 220         | 87%
+  March       | 2,850  | 68     | 310         | 89%
+
+PEAK ENGAGEMENT PERIODS:
+  🔥 Monday-Thursday: 18:00-20:00 (highest club activity)
+  🔥 Friday: 14:00-17:00 (social events)
+  🔥 Weekend mornings: 10:00-13:00 (sports & competitions)
+
+ENGAGEMENT DRIVERS:
+  ✓ Events with free food: +180% attendance
+  ✓ Guest speakers: +90% attendance
+  ✓ Social media promotions: +60% awareness
+  ✓ Peer recommendations: +75% sign-ups
+  ✓ Gamification (points/badges): +45% participation
+
+AT-RISK INDICATORS:
+  ⚠ No club activity in 30+ days: 320 students
+  ⚠ Declining event attendance: 180 students
+  ⚠ No point activity: 250 students
+
+RECOMMENDATIONS:
+  1. Schedule major events during peak periods
+  2. Increase social media engagement
+  3. Implement re-engagement campaigns for at-risk members
+  4. Expand gamification elements
+  5. Partner with more guest speakers
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+
+class MemberRetentionInsightsDialog:
+    """Dialog for member retention insights"""
+
+    def __init__(self, parent, auth_manager, embedded=False):
+        self.parent = parent
+        self.auth = auth_manager
+
+        if not embedded:
+            self.dialog = tk.Toplevel(parent)
+            self.dialog.title("Member Retention Insights")
+            self.dialog.geometry("1000x700")
+            self.dialog.transient(parent)
+            self.dialog.grab_set()
+            container = self.dialog
+        else:
+            container = parent
+
+        self.create_widgets(container)
+
+    def create_widgets(self, container):
+        main_frame = ttk.Frame(container)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        if not hasattr(self, 'dialog'):
+            ttk.Label(main_frame, text="Member Retention Insights", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
+        text.pack(fill='both', expand=True)
+
+        content = """MEMBER RETENTION ANALYSIS - 2024-2025
+================================================================================
+
+OVERALL RETENTION:
+  Year-over-Year Retention: 82% (↑4% from last year)
+  Active Members Retained: 87%
+  Members at Risk: 440 students (15%)
+  Churn Rate: 18% annually
+
+RETENTION BY CLUB TYPE:
+  Sports Clubs: 88% retention (Excellent)
+  Academic Societies: 82% retention (Good)
+  Social Clubs: 78% retention (Fair)
+  Special Interest: 72% retention (Needs Improvement)
+  Technology Clubs: 85% retention (Very Good)
+
+COHORT RETENTION:
+  1st Year Students: 75% retention (expected lower)
+  2nd Year Students: 85% retention
+  3rd Year Students: 90% retention
+  4th Year Students: 80% retention (graduation prep)
+
+AT-RISK MEMBER INDICATORS:
+  ⚠ No event attendance in 60+ days: 220 students
+  ⚠ Missed 3+ consecutive meetings: 180 students
+  ⚠ No communication engagement: 160 students
+  ⚠ Declined leadership opportunity: 90 students
+  ⚠ Payment issues: 40 students
+
+RETENTION FACTORS (Correlation Analysis):
+  ✓ Strong Factors:
+    - Regular event attendance (r=0.78)
+    - Leadership positions (r=0.72)
+    - Social connections (≥3 friends in club) (r=0.69)
+    - Early semester engagement (r=0.65)
+
+  ✓ Moderate Factors:
+    - Freshmen orientation quality (r=0.52)
+    - Email engagement rate (r=0.48)
+    - Points/badges earned (r=0.45)
+
+SUCCESSFUL RETENTION STRATEGIES:
+  ✓ Welcome events for new members (+22% retention)
+  ✓ Buddy/mentorship program (+18% retention)
+  ✓ Regular communication (weekly emails) (+15% retention)
+  ✓ Leadership development opportunities (+25% retention)
+  ✓ Flexible meeting times (+12% retention)
+
+INTERVENTION RECOMMENDATIONS:
+
+  1. IMMEDIATE ACTIONS (Next 30 days):
+     - Personal outreach to 440 at-risk members
+     - "We miss you" email campaign
+     - Phone calls from club leaders
+
+  2. SHORT-TERM (Next 90 days):
+     - Re-engagement events (low commitment)
+     - "Welcome back" socials
+     - Flexible participation options
+     - One-on-one check-ins
+
+  3. LONG-TERM STRATEGIES:
+     - Enhanced buddy/mentorship program
+     - Exit surveys to understand reasons
+     - Quarterly satisfaction surveys
+     - Leadership pipeline development
+     - More diverse event offerings
+
+PREDICTED OUTCOMES:
+  With Interventions: 88% retention (↑6%)
+  Without Interventions: 82% retention (status quo)
+  ROI of Interventions: £45,000 in retained membership fees
+
+CLUBS NEEDING IMMEDIATE ATTENTION:
+  🔴 Photography Society: 62% retention - needs major revitalization
+  🔴 Chess Club: 65% retention - leadership transition issues
+  🟡 Drama Club: 72% retention - at risk, needs support
+  🟡 Poetry Club: 74% retention - small membership base vulnerable
+
+SUCCESS STORIES:
+  🟢 Robotics Club: 92% retention (up from 75% last year)
+  🟢 Environmental Society: 91% retention (excellent community)
+  🟢 Debate Society: 90% retention (strong leadership)
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+
+# ============================================================================
+# ADVANCED EVENTS DIALOGS
+# ============================================================================
+
+class EventFinancialTrackingDialog:
+    """Dialog for tracking event finances"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Event Financial Tracking")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="💰 Event Financial Tracking",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Select Event:").pack(side='left', padx=(0, 10))
+        self.event_var = tk.StringVar()
+        self.event_combo = ttk.Combobox(select_frame, textvariable=self.event_var, width=40, state='readonly')
+        self.event_combo['values'] = ('Spring Festival 2025', 'Tech Workshop Series', 'Annual Gala')
+        self.event_combo.pack(side='left', fill='x', expand=True)
+        self.event_combo.bind('<<ComboboxSelected>>', self.load_finances)
+
+        # Notebook for income/expenses
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Income tab
+        income_frame = ttk.Frame(notebook)
+        notebook.add(income_frame, text="Income")
+        self.create_income_tab(income_frame)
+
+        # Expenses tab
+        expenses_frame = ttk.Frame(notebook)
+        notebook.add(expenses_frame, text="Expenses")
+        self.create_expenses_tab(expenses_frame)
+
+        # Summary tab
+        summary_frame = ttk.Frame(notebook)
+        notebook.add(summary_frame, text="Financial Summary")
+        self.create_summary_tab(summary_frame)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Add Income", command=self.add_income).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Generate Report", command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def create_income_tab(self, parent):
+        columns = ('Source', 'Amount', 'Date', 'Method', 'Notes')
+        self.income_tree = ttk.Treeview(parent, columns=columns, show='tree headings')
+
+        for col in columns:
+            self.income_tree.heading(col, text=col)
+
+        self.income_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+    def create_expenses_tab(self, parent):
+        columns = ('Category', 'Amount', 'Date', 'Vendor', 'Notes')
+        self.expenses_tree = ttk.Treeview(parent, columns=columns, show='tree headings')
+
+        for col in columns:
+            self.expenses_tree.heading(col, text=col)
+
+        self.expenses_tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+    def create_summary_tab(self, parent):
+        self.summary_text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, font=('Courier', 10))
+        self.summary_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+    def load_finances(self, event=None):
+        # Clear existing
+        for item in self.income_tree.get_children():
+            self.income_tree.delete(item)
+        for item in self.expenses_tree.get_children():
+            self.expenses_tree.delete(item)
+
+        # Sample income
+        income_data = [
+            ("Ticket Sales", "£2,500.00", "2025-03-15", "Card", "250 tickets sold"),
+            ("Sponsorships", "£1,000.00", "2025-03-10", "Transfer", "Local business sponsor"),
+            ("Merchandise", "£450.00", "2025-03-15", "Cash/Card", "Event merchandise")
+        ]
+
+        for income in income_data:
+            self.income_tree.insert('', 'end', values=income)
+
+        # Sample expenses
+        expenses_data = [
+            ("Venue", "£800.00", "2025-03-01", "University Facilities", "Hall booking"),
+            ("Catering", "£1,200.00", "2025-03-14", "Catering Co", "Food for 250"),
+            ("Equipment", "£350.00", "2025-03-10", "AV Rentals", "Sound system"),
+            ("Marketing", "£150.00", "2025-03-05", "Print Shop", "Posters and flyers")
+        ]
+
+        for expense in expenses_data:
+            self.expenses_tree.insert('', 'end', values=expense)
+
+        # Update summary
+        summary = """FINANCIAL SUMMARY - Spring Festival 2025
+================================================================================
+
+INCOME:
+  Ticket Sales:         £2,500.00
+  Sponsorships:         £1,000.00
+  Merchandise:            £450.00
+  --------------------------------
+  Total Income:         £3,950.00
+
+EXPENSES:
+  Venue:                  £800.00
+  Catering:             £1,200.00
+  Equipment:              £350.00
+  Marketing:              £150.00
+  --------------------------------
+  Total Expenses:       £2,500.00
+
+NET PROFIT/LOSS:
+  ================================
+  Net Profit:           £1,450.00
+  ================================
+
+BUDGET ANALYSIS:
+  Budgeted Income:      £3,500.00
+  Actual Income:        £3,950.00
+  Variance:               +£450.00 (+12.9%)
+
+  Budgeted Expenses:    £3,000.00
+  Actual Expenses:      £2,500.00
+  Variance:               -£500.00 (-16.7%)
+
+COST PER ATTENDEE:
+  Total Attendees: 250
+  Cost per Attendee: £10.00
+  Revenue per Attendee: £15.80
+  Profit per Attendee: £5.80
+
+STATUS: ✓ Event was profitable and under budget
+"""
+        self.summary_text.delete(1.0, tk.END)
+        self.summary_text.insert(1.0, summary)
+
+    def add_income(self):
+        messagebox.showinfo("Add Income", "Income entry dialog would open here.")
+
+    def add_expense(self):
+        messagebox.showinfo("Add Expense", "Expense entry dialog would open here.")
+
+    def generate_report(self):
+        messagebox.showinfo("Report Generated", "Financial report exported to:\nreports/spring_festival_2025_finances.pdf")
+
+
+class EventTicketingDialog:
+    """Dialog for event ticketing system"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Event Ticketing System")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🎫 Event Ticketing System",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Event:").pack(side='left', padx=(0, 10))
+        event_combo = ttk.Combobox(select_frame, width=40, state='readonly')
+        event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference')
+        event_combo.pack(side='left', fill='x', expand=True)
+        event_combo.current(0)
+
+        # Ticket types
+        types_frame = ttk.LabelFrame(main_frame, text="Ticket Types")
+        types_frame.pack(fill='x', pady=(0, 15))
+
+        columns = ('Type', 'Price', 'Available', 'Sold', 'Revenue')
+        tree = ttk.Treeview(types_frame, columns=columns, show='tree headings', height=6)
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Sample ticket types
+        tickets = [
+            ("General Admission", "£10.00", "200/300", "100", "£1,000"),
+            ("VIP", "£25.00", "40/50", "10", "£250"),
+            ("Student", "£5.00", "450/500", "50", "£250"),
+            ("Early Bird", "£8.00", "0/100", "100", "£800")
+        ]
+
+        for ticket in tickets:
+            tree.insert('', 'end', values=ticket)
+
+        # Sales summary
+        summary_frame = ttk.LabelFrame(main_frame, text="Sales Summary")
+        summary_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        summary_text = scrolledtext.ScrolledText(summary_frame, height=12, wrap=tk.WORD, font=('Courier', 10))
+        summary_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        summary = """TICKET SALES SUMMARY
+
+Total Tickets Available: 950
+Total Tickets Sold: 260 (27.4%)
+Total Revenue: £2,300
+
+SALES BY TYPE:
+- General Admission: 100 sold (£1,000)
+- VIP: 10 sold (£250)
+- Student: 50 sold (£250)
+- Early Bird: 100 sold (£800) [SOLD OUT]
+
+WAITLIST:
+- General Admission: 15 people
+- VIP: 5 people
+
+SALES TREND:
+Week 1: 45 tickets
+Week 2: 78 tickets
+Week 3: 92 tickets
+Week 4: 45 tickets
+
+PROJECTED FINAL SALES: 420 tickets (44% capacity)
+"""
+        summary_text.insert(1.0, summary)
+        summary_text.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create Ticket Type", command=self.create_ticket_type).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Process Refund", command=self.process_refund).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Manage Waitlist", command=self.manage_waitlist).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def create_ticket_type(self):
+        messagebox.showinfo("Create Ticket", "Ticket type creation dialog would open here.")
+
+    def process_refund(self):
+        messagebox.showinfo("Refund", "Refund processing dialog would open here.")
+
+    def manage_waitlist(self):
+        messagebox.showinfo("Waitlist", "Waitlist management dialog would open here.")
+
+
+class RecurringEventsDialog:
+    """Dialog for managing recurring events"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Recurring Events")
+        self.dialog.geometry("1000x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📅 Recurring Events Manager",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Series list
+        list_frame = ttk.LabelFrame(main_frame, text="Event Series")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Series', 'Pattern', 'Next Occurrence', 'Total', 'Status')
+        tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Sample recurring events
+        series = [
+            ("Weekly Tech Talks", "Every Tuesday", "2025-04-08", "52/year", "Active"),
+            ("Monthly Networking", "1st Friday", "2025-05-02", "12/year", "Active"),
+            ("Bi-Weekly Study Group", "Every 2 Wednesdays", "2025-04-16", "26/year", "Active"),
+            ("Quarterly Workshops", "Every 3 months", "2025-06-01", "4/year", "Active")
+        ]
+
+        for s in series:
+            tree.insert('', 'end', values=s)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create Series", command=self.create_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Edit Series", command=self.edit_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel Occurrence", command=self.cancel_occurrence).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def create_series(self):
+        messagebox.showinfo("Create Series", "Recurring event series creation dialog would open here.\n\nSelect pattern:\n- Daily\n- Weekly\n- Monthly\n- Custom")
+
+    def edit_series(self):
+        messagebox.showinfo("Edit Series", "Edit series dialog would open here.\n\nModify future occurrences or entire series.")
+
+    def cancel_occurrence(self):
+        messagebox.showinfo("Cancel", "Select specific occurrence to cancel.\n\nSeries will continue after canceled event.")
+
+
+class EventAttendanceDialog:
+    """Dialog for tracking event attendance"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Event Attendance Tracking")
+        self.dialog.geometry("1000x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="✅ Event Attendance Tracking",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Select Event:").pack(side='left', padx=(0, 10))
+        event_combo = ttk.Combobox(select_frame, width=40, state='readonly')
+        event_combo['values'] = ('Spring Festival 2025', 'Tech Workshop', 'Annual Gala')
+        event_combo.pack(side='left', fill='x', expand=True)
+        event_combo.current(0)
+
+        # Attendance list
+        list_frame = ttk.LabelFrame(main_frame, text="Registered Attendees")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('ID', 'Name', 'Email', 'Ticket Type', 'Status', 'Check-in Time')
+        tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Name':
+                tree.column(col, width=150)
+            elif col == 'Email':
+                tree.column(col, width=180)
+            else:
+                tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample data
+        attendees = [
+            ("001", "John Doe", "john@email.com", "General", "Checked In", "10:15 AM"),
+            ("002", "Jane Smith", "jane@email.com", "VIP", "Checked In", "10:20 AM"),
+            ("003", "Bob Johnson", "bob@email.com", "Student", "Registered", ""),
+            ("004", "Alice Williams", "alice@email.com", "General", "No Show", "")
+        ]
+
+        for attendee in attendees:
+            tree.insert('', 'end', values=attendee)
+
+        # Stats
+        stats_frame = ttk.LabelFrame(main_frame, text="Attendance Statistics")
+        stats_frame.pack(fill='x', pady=(0, 15))
+
+        stats_text = """Total Registered: 250
+Checked In: 180 (72%)
+No Shows: 25 (10%)
+Late Arrivals: 15 (6%)
+
+Check-in Rate: 72%
+"""
+        ttk.Label(stats_frame, text=stats_text, justify='left', font=('Courier', 10)).pack(padx=15, pady=10)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Manual Check-in", command=self.manual_checkin).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="QR Scan Check-in", command=self.qr_checkin).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Export Report", command=self.export_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def manual_checkin(self):
+        messagebox.showinfo("Manual Check-in", "Select attendee and click OK to check them in manually.")
+
+    def qr_checkin(self):
+        messagebox.showinfo("QR Check-in", "QR code scanner would launch here.\n\nScan attendee's ticket QR code to check them in.")
+
+    def export_report(self):
+        messagebox.showinfo("Export", "Attendance report exported to:\nreports/spring_festival_attendance.pdf")
 
 
 # Main application launcher - FIXED: Added proper parameter handling
