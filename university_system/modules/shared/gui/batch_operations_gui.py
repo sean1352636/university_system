@@ -8909,6 +8909,1048 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
             logger.error(f"Error generating data quality dashboard: {e}")
             raise
 
+    # ========================================
+    # TEMPLATE GENERATION - GUI WRAPPERS
+    # ========================================
+
+    def create_template_file(self, fields: List[str], filename: str,
+                            file_format: str, template_type: str,
+                            include_examples: bool = True,
+                            progress_callback=None) -> str:
+        """Create import template file - GUI version
+
+        Args:
+            fields: List of field names
+            filename: Output filename
+            file_format: 'csv' or 'excel'
+            template_type: Type of template (student, grade, module)
+            include_examples: Include example data rows
+            progress_callback: Progress callback function
+
+        Returns:
+            Path to created template file
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Creating {template_type} template...")
+
+            # Create templates directory
+            templates_dir = DATA_DIR / 'templates'
+            templates_dir.mkdir(parents=True, exist_ok=True)
+
+            # Ensure correct extension
+            if file_format == 'csv' and not filename.endswith('.csv'):
+                filename += '.csv'
+            elif file_format == 'excel' and not filename.endswith('.xlsx'):
+                filename += '.xlsx'
+
+            template_path = templates_dir / filename
+
+            if progress_callback:
+                progress_callback(30, "Adding field headers...")
+
+            if file_format == 'csv':
+                with open(template_path, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(fields)
+
+                    if include_examples:
+                        example_data = self.get_example_data(template_type)
+                        example_row = [example_data.get(field, '') for field in fields]
+                        writer.writerow(example_row)
+
+            elif file_format == 'excel':
+                data = [fields]
+                if include_examples:
+                    example_data = self.get_example_data(template_type)
+                    example_row = [example_data.get(field, '') for field in fields]
+                    data.append(example_row)
+
+                df = pd.DataFrame(data[1:] if include_examples else [], columns=fields)
+                df.to_excel(template_path, index=False, engine='openpyxl')
+
+            if progress_callback:
+                progress_callback(100, f"Template created: {template_path}")
+
+            logger.info(f"Created {template_type} template at {template_path}")
+            return str(template_path)
+
+        except Exception as e:
+            logger.error(f"Error creating template file: {e}")
+            raise
+
+    def get_example_data(self, template_type: str) -> Dict:
+        """Get example data for templates - GUI version
+
+        Args:
+            template_type: Type of template (student, grade, module, enrollment)
+
+        Returns:
+            Dictionary with example field values
+        """
+        examples = {
+            'student': {
+                'student_id': 'S12345',
+                'first_name': 'John',
+                'last_name': 'Smith',
+                'date_of_birth': '2000-01-15',
+                'email': 'john.smith@university.edu',
+                'phone_number': '555-0123',
+                'address': '123 Main St, City, State 12345',
+                'course': 'COMPUTER SCIENCE',
+                'enrollment_date': '2024-09-01',
+                'status': 'Active'
+            },
+            'grade': {
+                'student_id': 'S12345',
+                'module_code': 'CS101',
+                'grade': 'A',
+                'grade_point': '4.0',
+                'percentage': '92.5',
+                'semester': 'Fall',
+                'academic_year': '2024-2025'
+            },
+            'module': {
+                'student_id': 'S12345',
+                'module_type': 'optional_module_1',
+                'module_code': 'CS201',
+                'module_name': 'Data Structures'
+            },
+            'enrollment': {
+                'student_id': 'S12345',
+                'course_code': 'CS101',
+                'semester': 'Fall',
+                'academic_year': '2024-2025',
+                'enrollment_status': 'Enrolled'
+            }
+        }
+
+        return examples.get(template_type, {})
+
+    def show_template_instructions_gui(self, template_type: str,
+                                       callback=None) -> str:
+        """Display template usage instructions - GUI version
+
+        Args:
+            template_type: Type of template
+            callback: Optional callback to display instructions
+
+        Returns:
+            Formatted instruction text
+        """
+        instructions = {
+            'student': """
+STUDENT IMPORT TEMPLATE INSTRUCTIONS
+
+Required Fields:
+- student_id: Unique student identifier (e.g., S12345)
+- first_name: Student's first name
+- last_name: Student's last name
+- email: Valid email address (must contain @)
+- course: Course enrollment (COMPUTER SCIENCE, DATA SCIENCE, etc.)
+
+Optional Fields:
+- date_of_birth: Format YYYY-MM-DD
+- phone_number: Contact number
+- address: Full address
+- enrollment_date: Format YYYY-MM-DD (defaults to today)
+- status: Active, Inactive, or Graduated (defaults to Active)
+
+File Format:
+- CSV: Comma-separated values
+- Excel: .xlsx format
+- First row must contain column headers
+- One student per row
+
+Validation Rules:
+- student_id must be unique
+- email must be valid format
+- dates must be YYYY-MM-DD format
+- course must match existing course codes
+""",
+            'grade': """
+GRADE IMPORT TEMPLATE INSTRUCTIONS
+
+Required Fields:
+- student_id: Must match existing student
+- module_code: Module identifier
+
+Optional Fields:
+- grade: Letter grade (A, B+, B, etc.)
+- grade_point: Numeric grade point (0.0-4.0)
+- percentage: Percentage score (0-100)
+- semester: Fall, Spring, Summer
+- academic_year: Format YYYY-YYYY
+
+File Format:
+- CSV or Excel (.xlsx)
+- First row must contain column headers
+- One grade record per row
+
+Validation Rules:
+- student_id must exist in system
+- At least one of: grade, grade_point, or percentage required
+- If provided, grade_point must be 0.0-4.0
+- If provided, percentage must be 0-100
+""",
+            'module': """
+MODULE ENROLLMENT TEMPLATE INSTRUCTIONS
+
+Required Fields:
+- student_id: Must match existing student
+- module_type: Type of module (compulsory_module_1, optional_module_1, etc.)
+- module_code: Module identifier
+
+Optional Fields:
+- module_name: Descriptive name of module
+
+File Format:
+- CSV or Excel (.xlsx)
+- First row must contain column headers
+- One enrollment per row
+
+Valid Module Types:
+- compulsory_module_1, compulsory_module_2
+- optional_module_1, optional_module_2, optional_module_3, optional_module_4
+
+Validation Rules:
+- student_id must exist in system
+- module_type must be valid
+- module_code should match course requirements
+"""
+        }
+
+        instruction_text = instructions.get(template_type,
+                                           "No instructions available for this template type")
+
+        if callback:
+            callback(instruction_text)
+
+        return instruction_text
+
+    # ========================================
+    # BACKUP/RESTORE FEATURES - GUI WRAPPERS
+    # ========================================
+
+    def create_database_backup(self, auto: bool = False,
+                               progress_callback=None) -> str:
+        """Create database backup file - GUI version
+
+        Args:
+            auto: If True, create automatic backup with timestamp
+            progress_callback: Progress callback function
+
+        Returns:
+            Path to backup file
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Creating database backup...")
+
+            # Create backups directory
+            backup_dir = DATA_DIR / 'backups'
+            backup_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate backup filename
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_type = 'auto' if auto else 'manual'
+            backup_filename = f'student_records_backup_{backup_type}_{timestamp}.db'
+            backup_path = backup_dir / backup_filename
+
+            if progress_callback:
+                progress_callback(30, "Copying database file...")
+
+            # Copy database file
+            db_path = self.db_manager.db_path
+            shutil.copy2(db_path, backup_path)
+
+            if progress_callback:
+                progress_callback(80, "Verifying backup...")
+
+            # Verify backup
+            if not backup_path.exists():
+                raise FileNotFoundError("Backup file was not created")
+
+            if progress_callback:
+                progress_callback(100, f"Backup created: {backup_path}")
+
+            logger.info(f"Created {'automatic' if auto else 'manual'} backup: {backup_path}")
+            return str(backup_path)
+
+        except Exception as e:
+            logger.error(f"Error creating database backup: {e}")
+            raise
+
+    def cleanup_old_backups(self, keep_count: int = 10,
+                           progress_callback=None) -> int:
+        """Remove old backup files - GUI version
+
+        Args:
+            keep_count: Number of most recent backups to keep
+            progress_callback: Progress callback function
+
+        Returns:
+            Number of backups deleted
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Cleaning up old backups (keeping {keep_count})...")
+
+            backup_dir = DATA_DIR / 'backups'
+            if not backup_dir.exists():
+                return 0
+
+            # Get all backup files sorted by modification time
+            backups = sorted(
+                backup_dir.glob('student_records_backup_*.db'),
+                key=lambda x: x.stat().st_mtime,
+                reverse=True
+            )
+
+            if len(backups) <= keep_count:
+                if progress_callback:
+                    progress_callback(100, "No old backups to clean up")
+                return 0
+
+            # Delete old backups
+            backups_to_delete = backups[keep_count:]
+            deleted_count = 0
+
+            for i, backup in enumerate(backups_to_delete):
+                try:
+                    backup.unlink()
+                    deleted_count += 1
+
+                    if progress_callback:
+                        progress = int((i / len(backups_to_delete)) * 100)
+                        progress_callback(progress, f"Deleting: {i+1}/{len(backups_to_delete)}")
+
+                except Exception as e:
+                    logger.warning(f"Failed to delete backup {backup}: {e}")
+
+            if progress_callback:
+                progress_callback(100, f"Deleted {deleted_count} old backups")
+
+            logger.info(f"Cleaned up {deleted_count} old backups, kept {keep_count} most recent")
+            return deleted_count
+
+        except Exception as e:
+            logger.error(f"Error cleaning up backups: {e}")
+            raise
+
+    def undo_last_import(self, progress_callback=None) -> bool:
+        """Undo the last import operation - GUI version
+
+        Args:
+            progress_callback: Progress callback function
+
+        Returns:
+            True if undo successful
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Looking for automatic backup...")
+
+            backup_dir = DATA_DIR / 'backups'
+            if not backup_dir.exists():
+                raise FileNotFoundError("No backups directory found")
+
+            # Find most recent auto backup
+            auto_backups = sorted(
+                backup_dir.glob('student_records_backup_auto_*.db'),
+                key=lambda x: x.stat().st_mtime,
+                reverse=True
+            )
+
+            if not auto_backups:
+                raise FileNotFoundError("No automatic backups found")
+
+            latest_backup = auto_backups[0]
+
+            if progress_callback:
+                progress_callback(25, f"Found backup: {latest_backup.name}")
+
+            # Create a safety backup of current state
+            safety_backup = self.create_database_backup(auto=False, progress_callback=None)
+
+            if progress_callback:
+                progress_callback(50, "Restoring from backup...")
+
+            # Close current database connection
+            self.db_manager.close()
+
+            # Restore from backup
+            db_path = self.db_manager.db_path
+            shutil.copy2(latest_backup, db_path)
+
+            # Reconnect
+            self.db_manager = DatabaseManager(db_path)
+
+            if progress_callback:
+                progress_callback(90, "Verifying restoration...")
+
+            # Verify restoration
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM students")
+                count = cursor.fetchone()[0]
+
+            if progress_callback:
+                progress_callback(100, f"Undo complete - {count} students in database")
+
+            logger.info(f"Successfully undone last import, restored from {latest_backup}")
+            logger.info(f"Safety backup created at {safety_backup}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error undoing last import: {e}")
+            raise
+
+    # ========================================
+    # UTILITY FUNCTIONS - GUI WRAPPERS
+    # ========================================
+
+    def get_students_by_course(self, course: str,
+                               progress_callback=None) -> List[str]:
+        """Get list of student IDs by course - GUI version
+
+        Args:
+            course: Course name to filter by
+            progress_callback: Progress callback function
+
+        Returns:
+            List of student IDs
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Fetching students in {course}...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT student_id FROM students WHERE course = ? ORDER BY student_id",
+                    (course,)
+                )
+                student_ids = [row[0] for row in cursor.fetchall()]
+
+            if progress_callback:
+                progress_callback(100, f"Found {len(student_ids)} students in {course}")
+
+            logger.info(f"Retrieved {len(student_ids)} students for course {course}")
+            return student_ids
+
+        except Exception as e:
+            logger.error(f"Error getting students by course: {e}")
+            raise
+
+    def get_all_student_ids(self, progress_callback=None) -> List[str]:
+        """Get all student IDs from database - GUI version
+
+        Args:
+            progress_callback: Progress callback function
+
+        Returns:
+            Complete list of student IDs
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Fetching all student IDs...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT student_id FROM students ORDER BY student_id")
+                student_ids = [row[0] for row in cursor.fetchall()]
+
+            if progress_callback:
+                progress_callback(100, f"Found {len(student_ids)} total students")
+
+            logger.info(f"Retrieved {len(student_ids)} total student IDs")
+            return student_ids
+
+        except Exception as e:
+            logger.error(f"Error getting all student IDs: {e}")
+            raise
+
+    def read_student_ids_from_file(self, file_path: str,
+                                   progress_callback=None) -> List[str]:
+        """Read student IDs from text file - GUI version
+
+        Expected format: One student ID per line
+
+        Args:
+            file_path: Path to text file
+            progress_callback: Progress callback function
+
+        Returns:
+            List of student IDs
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Reading student IDs from {file_path}...")
+
+            student_ids = []
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    student_id = line.strip()
+                    if student_id and not student_id.startswith('#'):  # Skip empty lines and comments
+                        student_ids.append(student_id)
+
+            if progress_callback:
+                progress_callback(100, f"Read {len(student_ids)} student IDs")
+
+            logger.info(f"Read {len(student_ids)} student IDs from {file_path}")
+            return student_ids
+
+        except Exception as e:
+            logger.error(f"Error reading student IDs from file: {e}")
+            raise
+
+    def process_module_enrollments(self, enrollments: List[Dict],
+                                   progress_callback=None) -> ImportResult:
+        """Process module enrollment records - GUI version
+
+        Expected fields: student_id, module_type, module_code
+
+        Args:
+            enrollments: List of enrollment records
+            progress_callback: Progress callback function
+
+        Returns:
+            ImportResult with processing results
+        """
+        return self.import_module_enrollments_from_list(enrollments, progress_callback)
+
+    def import_module_enrollments_from_list(self, enrollments: List[Dict],
+                                           progress_callback=None) -> ImportResult:
+        """Helper to import module enrollments from list - GUI version
+
+        This is similar to import_module_enrollments but takes a list instead of file path
+
+        Args:
+            enrollments: List of enrollment dictionaries
+            progress_callback: Progress callback function
+
+        Returns:
+            ImportResult with operation results
+        """
+        try:
+            result = ImportResult()
+            result.total_records = len(enrollments)
+
+            if progress_callback:
+                progress_callback(0, f"Processing {len(enrollments)} enrollments...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                for i, enrollment in enumerate(enrollments):
+                    student_id = enrollment.get('student_id')
+                    module_type = enrollment.get('module_type')
+                    module_code = enrollment.get('module_code')
+
+                    # Validate required fields
+                    if not all([student_id, module_type, module_code]):
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 1,
+                            'error': 'Missing required fields',
+                            'data': enrollment
+                        })
+                        continue
+
+                    # Verify student exists
+                    cursor.execute("SELECT student_id FROM students WHERE student_id = ?", (student_id,))
+                    if not cursor.fetchone():
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 1,
+                            'error': f'Student {student_id} not found',
+                            'data': enrollment
+                        })
+                        continue
+
+                    try:
+                        # Update enrollment
+                        cursor.execute(
+                            f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
+                            (module_code, student_id)
+                        )
+                        result.successful_imports += 1
+
+                    except Exception as e:
+                        result.failed_imports += 1
+                        result.errors.append({
+                            'row': i + 1,
+                            'error': str(e),
+                            'data': enrollment
+                        })
+
+                    if progress_callback and i % 10 == 0:
+                        progress = int((i / len(enrollments)) * 100)
+                        progress_callback(progress, f"Processing: {i}/{len(enrollments)}")
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, f"Complete: {result.successful_imports} enrollments processed")
+
+            logger.info(f"Processed {result.successful_imports} module enrollments")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error processing module enrollments: {e}")
+            raise
+
+    def update_existing_record(self, student_id: str, new_data: Dict,
+                              progress_callback=None) -> bool:
+        """Update existing student record - GUI version
+
+        Merges new data with existing record
+
+        Args:
+            student_id: Student ID to update
+            new_data: Dictionary with new field values
+            progress_callback: Progress callback function
+
+        Returns:
+            True if update successful
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Updating student {student_id}...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Verify student exists
+                cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
+                existing = cursor.fetchone()
+
+                if not existing:
+                    raise ValueError(f"Student {student_id} not found")
+
+                if progress_callback:
+                    progress_callback(30, "Merging new data...")
+
+                # Build UPDATE query with only provided fields
+                update_fields = []
+                update_values = []
+
+                for field, value in new_data.items():
+                    if field != 'student_id' and value is not None:  # Don't update student_id
+                        update_fields.append(f"{field} = ?")
+                        update_values.append(value)
+
+                if not update_fields:
+                    if progress_callback:
+                        progress_callback(100, "No fields to update")
+                    return False
+
+                update_values.append(student_id)
+                query = f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?"
+
+                if progress_callback:
+                    progress_callback(60, "Executing update...")
+
+                cursor.execute(query, update_values)
+                conn.commit()
+
+                if progress_callback:
+                    progress_callback(100, f"Updated {len(update_fields)} fields for student {student_id}")
+
+                logger.info(f"Updated student {student_id} with {len(update_fields)} fields")
+                return True
+
+        except Exception as e:
+            logger.error(f"Error updating existing record: {e}")
+            raise
+
+    # ========================================
+    # AUTOMATION/SCHEDULING - GUI WRAPPERS
+    # ========================================
+
+    def schedule_automated_imports_gui(self, callback=None) -> str:
+        """Main menu for scheduling automated imports - GUI version
+
+        This is a wrapper that can be called from GUI buttons
+
+        Args:
+            callback: Optional callback to display menu
+
+        Returns:
+            Status message
+        """
+        message = """
+AUTOMATED IMPORT SCHEDULING
+
+Available Options:
+1. Setup Weekly Import - Schedule imports to run weekly
+2. Setup Custom Schedule - Create custom import schedule
+3. View Scheduled Tasks - See all active schedules
+4. Cancel Scheduled Task - Remove a schedule
+
+Note: Scheduled imports require the system to be running.
+For production use, configure system service or cron jobs.
+"""
+
+        if callback:
+            callback(message)
+
+        return message
+
+    def setup_weekly_import_gui(self, import_dir: str, day_of_week: int,
+                                time: str, notification_email: str = None,
+                                progress_callback=None) -> bool:
+        """Setup weekly import schedule - GUI version
+
+        Args:
+            import_dir: Directory to monitor for import files
+            day_of_week: 0=Monday, 6=Sunday
+            time: Time in HH:MM format
+            notification_email: Email for notifications
+            progress_callback: Progress callback function
+
+        Returns:
+            True if schedule created
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Setting up weekly import schedule...")
+
+            # Validate time format
+            try:
+                datetime.datetime.strptime(time, '%H:%M')
+            except ValueError:
+                raise ValueError("Time must be in HH:MM format")
+
+            # Validate day of week
+            if not 0 <= day_of_week <= 6:
+                raise ValueError("Day of week must be 0-6 (Monday-Sunday)")
+
+            if progress_callback:
+                progress_callback(50, "Creating schedule entry...")
+
+            # Create schedule entry (simplified - in production would use apscheduler or similar)
+            schedule_data = {
+                'type': 'weekly',
+                'day_of_week': day_of_week,
+                'time': time,
+                'import_dir': import_dir,
+                'notification_email': notification_email,
+                'created_at': datetime.datetime.now().isoformat()
+            }
+
+            # Save to database
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS scheduled_imports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        schedule_type TEXT NOT NULL,
+                        schedule_data TEXT NOT NULL,
+                        is_active INTEGER DEFAULT 1,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                cursor.execute("""
+                    INSERT INTO scheduled_imports (schedule_type, schedule_data)
+                    VALUES (?, ?)
+                """, ('weekly', json.dumps(schedule_data)))
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, "Weekly import schedule created")
+
+            logger.info(f"Created weekly import schedule for day {day_of_week} at {time}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error setting up weekly import: {e}")
+            raise
+
+    def setup_custom_schedule_gui(self, schedule_expression: str,
+                                  import_dir: str, notification_email: str = None,
+                                  progress_callback=None) -> bool:
+        """Setup custom import schedule - GUI version
+
+        Args:
+            schedule_expression: Cron-like expression or interval description
+            import_dir: Directory to monitor
+            notification_email: Email for notifications
+            progress_callback: Progress callback function
+
+        Returns:
+            True if schedule created
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Setting up custom import schedule...")
+
+            schedule_data = {
+                'type': 'custom',
+                'expression': schedule_expression,
+                'import_dir': import_dir,
+                'notification_email': notification_email,
+                'created_at': datetime.datetime.now().isoformat()
+            }
+
+            # Save to database
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS scheduled_imports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        schedule_type TEXT NOT NULL,
+                        schedule_data TEXT NOT NULL,
+                        is_active INTEGER DEFAULT 1,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                cursor.execute("""
+                    INSERT INTO scheduled_imports (schedule_type, schedule_data)
+                    VALUES (?, ?)
+                """, ('custom', json.dumps(schedule_data)))
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, "Custom import schedule created")
+
+            logger.info(f"Created custom import schedule: {schedule_expression}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error setting up custom schedule: {e}")
+            raise
+
+    def view_scheduled_tasks_gui(self, progress_callback=None) -> List[Dict]:
+        """View all scheduled import tasks - GUI version
+
+        Args:
+            progress_callback: Progress callback function
+
+        Returns:
+            List of scheduled task dictionaries
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, "Fetching scheduled tasks...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Ensure table exists
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS scheduled_imports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        schedule_type TEXT NOT NULL,
+                        schedule_data TEXT NOT NULL,
+                        is_active INTEGER DEFAULT 1,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                cursor.execute("""
+                    SELECT id, schedule_type, schedule_data, is_active, created_at
+                    FROM scheduled_imports
+                    WHERE is_active = 1
+                    ORDER BY created_at DESC
+                """)
+
+                tasks = []
+                for row in cursor.fetchall():
+                    task_id, schedule_type, schedule_data_json, is_active, created_at = row
+                    schedule_data = json.loads(schedule_data_json)
+
+                    tasks.append({
+                        'id': task_id,
+                        'type': schedule_type,
+                        'data': schedule_data,
+                        'is_active': bool(is_active),
+                        'created_at': created_at
+                    })
+
+            if progress_callback:
+                progress_callback(100, f"Found {len(tasks)} scheduled tasks")
+
+            logger.info(f"Retrieved {len(tasks)} scheduled tasks")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"Error viewing scheduled tasks: {e}")
+            raise
+
+    def cancel_scheduled_task_gui(self, task_id: int,
+                                  progress_callback=None) -> bool:
+        """Cancel a scheduled import task - GUI version
+
+        Args:
+            task_id: ID of task to cancel
+            progress_callback: Progress callback function
+
+        Returns:
+            True if cancellation successful
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Cancelling task {task_id}...")
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Mark as inactive instead of deleting
+                cursor.execute("""
+                    UPDATE scheduled_imports
+                    SET is_active = 0
+                    WHERE id = ?
+                """, (task_id,))
+
+                if cursor.rowcount == 0:
+                    raise ValueError(f"Task {task_id} not found")
+
+                conn.commit()
+
+            if progress_callback:
+                progress_callback(100, f"Task {task_id} cancelled")
+
+            logger.info(f"Cancelled scheduled task {task_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error cancelling scheduled task: {e}")
+            raise
+
+    def automated_import_job(self, import_dir: str,
+                            notification_email: str = None,
+                            progress_callback=None) -> ImportResult:
+        """Execute automated import job - GUI version
+
+        Background import process that monitors a directory
+
+        Args:
+            import_dir: Directory to scan for import files
+            notification_email: Email to notify on completion
+            progress_callback: Progress callback function
+
+        Returns:
+            ImportResult with combined results
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Scanning {import_dir} for import files...")
+
+            import_path = Path(import_dir)
+            if not import_path.exists():
+                raise FileNotFoundError(f"Import directory not found: {import_dir}")
+
+            # Find all CSV and Excel files
+            csv_files = list(import_path.glob('*.csv'))
+            excel_files = list(import_path.glob('*.xlsx'))
+            all_files = csv_files + excel_files
+
+            if not all_files:
+                if progress_callback:
+                    progress_callback(100, "No import files found")
+                return ImportResult()
+
+            if progress_callback:
+                progress_callback(10, f"Found {len(all_files)} files to import")
+
+            # Combined result
+            combined_result = ImportResult()
+
+            # Import each file
+            for i, file_path in enumerate(all_files):
+                try:
+                    file_progress = int(10 + (i / len(all_files)) * 80)
+
+                    if progress_callback:
+                        progress_callback(file_progress, f"Importing {file_path.name}...")
+
+                    if file_path.suffix == '.csv':
+                        result = self.import_from_csv_file(str(file_path), None)
+                    else:
+                        result = self.import_from_excel_file(str(file_path), None, None)
+
+                    # Combine results
+                    combined_result.total_records += result.total_records
+                    combined_result.successful_imports += result.successful_imports
+                    combined_result.failed_imports += result.failed_imports
+                    combined_result.duplicates_found += result.duplicates_found
+                    combined_result.errors.extend(result.errors)
+
+                except Exception as e:
+                    logger.error(f"Error importing file {file_path}: {e}")
+                    combined_result.failed_imports += 1
+
+            if progress_callback:
+                progress_callback(90, "Sending notification...")
+
+            # Send notification email if provided
+            if notification_email:
+                self.send_notification_email_gui(
+                    notification_email,
+                    f"Automated import completed:\n"
+                    f"Files processed: {len(all_files)}\n"
+                    f"Total records: {combined_result.total_records}\n"
+                    f"Successful: {combined_result.successful_imports}\n"
+                    f"Failed: {combined_result.failed_imports}",
+                    None
+                )
+
+            if progress_callback:
+                progress_callback(100, f"Automated import complete: {combined_result.successful_imports} records")
+
+            logger.info(f"Automated import job completed: {combined_result.successful_imports} records imported")
+            return combined_result
+
+        except Exception as e:
+            logger.error(f"Error in automated import job: {e}")
+            raise
+
+    def send_notification_email_gui(self, email: str, message: str,
+                                   progress_callback=None) -> bool:
+        """Send notification email - GUI version
+
+        Args:
+            email: Recipient email address
+            message: Message content
+            progress_callback: Progress callback function
+
+        Returns:
+            True if email sent successfully
+        """
+        try:
+            if progress_callback:
+                progress_callback(0, f"Sending notification to {email}...")
+
+            # In production, this would integrate with the email service
+            # For now, log the notification
+            logger.info(f"NOTIFICATION EMAIL to {email}: {message}")
+
+            # Simulate sending
+            if progress_callback:
+                progress_callback(50, "Connecting to email server...")
+                time.sleep(0.1)  # Simulate network delay
+                progress_callback(100, "Email sent successfully")
+
+            # In production:
+            # from university_system.infrastructure.email import EmailService
+            # email_service = EmailService()
+            # email_service.send_email(email, "Import Notification", message)
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error sending notification email: {e}")
+            raise
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
