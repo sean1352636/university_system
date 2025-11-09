@@ -5520,6 +5520,802 @@ Developer: Academic Systems Team
         dialog.wait_window()
         return selected[0]
 
+    # ==================== ANALYTICS AND REPORTING ====================
+
+    def generate_room_utilization_report(self):
+        """Generate comprehensive room utilization analytics in a dialog"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get room utilization data
+            cursor.execute('''
+            SELECT r.id, r.building, r.room_number, r.capacity, r.room_type,
+                   COUNT(ms.id) as scheduled_sessions,
+                   AVG(CASE
+                       WHEN ms.end_time IS NOT NULL AND ms.start_time IS NOT NULL
+                       THEN (CAST(SUBSTR(ms.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.end_time, 4, 2) AS INTEGER)) -
+                            (CAST(SUBSTR(ms.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.start_time, 4, 2) AS INTEGER))
+                       ELSE 0 END) as avg_session_duration
+            FROM rooms r
+            LEFT JOIN module_schedule ms ON r.id = ms.room_id
+            WHERE r.is_active = 1
+            GROUP BY r.id, r.building, r.room_number, r.capacity, r.room_type
+            ORDER BY scheduled_sessions DESC
+            ''')
+
+            room_data = cursor.fetchall()
+
+        if not room_data:
+            messagebox.showinfo("No Data", "No room data available.")
+            return
+
+        # Calculate utilization metrics
+        total_possible_slots = len(DAYS_OF_WEEK) * len(TIME_SLOTS)
+
+        analytics_data = []
+        for room in room_data:
+            room_id, building, room_number, capacity, room_type, sessions, avg_duration = room
+            utilization_rate = (sessions / total_possible_slots) * 100 if total_possible_slots > 0 else 0
+
+            analytics_data.append({
+                'Room': f"{building}-{room_number}",
+                'Type': room_type,
+                'Capacity': capacity,
+                'Sessions': sessions,
+                'Utilization': round(utilization_rate, 2),
+                'Avg Duration': round(avg_duration or 0, 2)
+            })
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Room Utilization Report")
+        dialog.geometry("1000x600")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Room', 'Type', 'Capacity', 'Sessions', 'Utilization %', 'Avg Duration (min)')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Room', width=120)
+        tree.column('Type', width=150)
+        tree.column('Capacity', width=80)
+        tree.column('Sessions', width=80)
+        tree.column('Utilization %', width=120)
+        tree.column('Avg Duration (min)', width=150)
+
+        for data in analytics_data:
+            tree.insert('', tk.END, values=(
+                data['Room'], data['Type'], data['Capacity'],
+                data['Sessions'], data['Utilization'], data['Avg Duration']
+            ))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Summary frame
+        summary_frame = ttk.Frame(dialog)
+        summary_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        if analytics_data:
+            avg_util = sum(d['Utilization'] for d in analytics_data) / len(analytics_data)
+            most_used = max(analytics_data, key=lambda x: x['Utilization'])
+            least_used = min(analytics_data, key=lambda x: x['Utilization'])
+
+            summary_text = f"Total Rooms: {len(analytics_data)} | " \
+                          f"Avg Utilization: {avg_util:.2f}% | " \
+                          f"Most Used: {most_used['Room']} ({most_used['Utilization']:.2f}%) | " \
+                          f"Least Used: {least_used['Room']} ({least_used['Utilization']:.2f}%)"
+
+            ttk.Label(summary_frame, text=summary_text).pack()
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def generate_instructor_workload_report(self):
+        """Generate instructor workload analysis in a dialog"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT i.id, i.first_name, i.last_name, i.department, i.max_hours_per_week,
+                   COUNT(ms.id) as total_sessions,
+                   SUM(CASE
+                       WHEN ms.end_time IS NOT NULL AND ms.start_time IS NOT NULL
+                       THEN (CAST(SUBSTR(ms.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.end_time, 4, 2) AS INTEGER)) -
+                            (CAST(SUBSTR(ms.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.start_time, 4, 2) AS INTEGER))
+                       ELSE 0 END) / 60.0 as total_hours
+            FROM instructors i
+            LEFT JOIN module_schedule ms ON i.id = ms.instructor_id
+            WHERE i.is_active = 1
+            GROUP BY i.id, i.first_name, i.last_name, i.department, i.max_hours_per_week
+            ORDER BY total_hours DESC
+            ''')
+
+            instructor_data = cursor.fetchall()
+
+        workload_data = []
+        for instructor in instructor_data:
+            inst_id, first_name, last_name, dept, max_hours, sessions, total_hours = instructor
+            name = f"{first_name} {last_name}"
+            total_hours = total_hours or 0
+            max_hours = max_hours or 40
+            workload_percentage = (total_hours / max_hours) * 100
+
+            workload_data.append({
+                'Instructor': name,
+                'Department': dept,
+                'Sessions': sessions,
+                'Hours': round(total_hours, 2),
+                'Max': max_hours,
+                'Workload': round(workload_percentage, 2),
+                'Status': 'Overloaded' if workload_percentage > 100 else 'Normal'
+            })
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Instructor Workload Report")
+        dialog.geometry("1100x600")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Instructor', 'Department', 'Sessions', 'Hours', 'Max Hours', 'Workload %', 'Status')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Instructor', width=180)
+        tree.column('Department', width=140)
+        tree.column('Sessions', width=80)
+        tree.column('Hours', width=80)
+        tree.column('Max Hours', width=80)
+        tree.column('Workload %', width=100)
+        tree.column('Status', width=100)
+
+        overloaded_count = 0
+        for data in workload_data:
+            # Color code overloaded instructors
+            tag = 'overloaded' if data['Status'] == 'Overloaded' else ''
+            if data['Status'] == 'Overloaded':
+                overloaded_count += 1
+
+            tree.insert('', tk.END, values=(
+                data['Instructor'], data['Department'], data['Sessions'],
+                data['Hours'], data['Max'], data['Workload'], data['Status']
+            ), tags=(tag,))
+
+        # Configure tag colors
+        tree.tag_configure('overloaded', background='#ffcccc')
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Warning if overloaded
+        if overloaded_count > 0:
+            warning_frame = ttk.Frame(dialog)
+            warning_frame.pack(fill=tk.X, padx=10, pady=5)
+            ttk.Label(warning_frame, text=f"⚠ WARNING: {overloaded_count} instructor(s) are overloaded!",
+                     foreground='red', font=('Arial', 10, 'bold')).pack()
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def generate_scheduling_analytics_dashboard(self):
+        """Generate comprehensive scheduling analytics dashboard"""
+        # This combines multiple analytics into one dashboard
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Scheduling Analytics Dashboard")
+        dialog.geometry("1200x700")
+        dialog.transient(self.root)
+
+        # Create notebook for different analytics
+        notebook = ttk.Notebook(dialog)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Tab 1: Peak Usage Analysis
+        peak_frame = ttk.Frame(notebook)
+        notebook.add(peak_frame, text="Peak Usage")
+
+        peak_data = self._analyze_peak_usage()
+        if peak_data:
+            text_widget = scrolledtext.ScrolledText(peak_frame, wrap=tk.WORD, width=80, height=20)
+            text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            text_widget.insert(tk.END, "Peak Usage Analysis\n")
+            text_widget.insert(tk.END, "=" * 60 + "\n\n")
+
+            for day, times in peak_data.items():
+                text_widget.insert(tk.END, f"{day}:\n")
+                for time, count in times.items():
+                    text_widget.insert(tk.END, f"  {time}: {count} sessions\n")
+                text_widget.insert(tk.END, "\n")
+
+            text_widget.config(state=tk.DISABLED)
+
+        # Tab 2: Module Distribution
+        dist_frame = ttk.Frame(notebook)
+        notebook.add(dist_frame, text="Module Distribution")
+
+        dist_data = self._analyze_module_distribution()
+        if dist_data:
+            text_widget2 = scrolledtext.ScrolledText(dist_frame, wrap=tk.WORD, width=80, height=20)
+            text_widget2.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            text_widget2.insert(tk.END, "Module Distribution Analysis\n")
+            text_widget2.insert(tk.END, "=" * 60 + "\n\n")
+
+            for category, data in dist_data.items():
+                text_widget2.insert(tk.END, f"{category}: {data}\n")
+
+            text_widget2.config(state=tk.DISABLED)
+
+        # Tab 3: Room Efficiency
+        efficiency_frame = ttk.Frame(notebook)
+        notebook.add(efficiency_frame, text="Room Efficiency")
+
+        efficiency_data = self._analyze_room_efficiency()
+        if efficiency_data:
+            columns = ('Room', 'Efficiency %', 'Total Sessions', 'Avg Duration')
+            tree = ttk.Treeview(efficiency_frame, columns=columns, show='headings')
+
+            for col in columns:
+                tree.heading(col, text=col)
+
+            for room_data in efficiency_data:
+                tree.insert('', tk.END, values=(
+                    room_data['room'],
+                    room_data['efficiency'],
+                    room_data['sessions'],
+                    room_data['avg_duration']
+                ))
+
+            tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def _analyze_room_efficiency(self):
+        """Analyze room efficiency"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT r.building || '-' || r.room_number as room,
+                   COUNT(ms.id) as sessions,
+                   AVG(CASE
+                       WHEN ms.end_time IS NOT NULL AND ms.start_time IS NOT NULL
+                       THEN (CAST(SUBSTR(ms.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.end_time, 4, 2) AS INTEGER)) -
+                            (CAST(SUBSTR(ms.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(ms.start_time, 4, 2) AS INTEGER))
+                       ELSE 0 END) as avg_duration
+            FROM rooms r
+            LEFT JOIN module_schedule ms ON r.id = ms.room_id
+            WHERE r.is_active = 1
+            GROUP BY r.id, r.building, r.room_number
+            ''')
+
+            results = cursor.fetchall()
+
+        efficiency_data = []
+        max_possible = len(DAYS_OF_WEEK) * len(TIME_SLOTS)
+
+        for room, sessions, avg_dur in results:
+            efficiency = (sessions / max_possible * 100) if max_possible > 0 else 0
+            efficiency_data.append({
+                'room': room,
+                'efficiency': round(efficiency, 2),
+                'sessions': sessions,
+                'avg_duration': round(avg_dur or 0, 2)
+            })
+
+        return efficiency_data
+
+    # ==================== IMPORT/EXPORT ====================
+
+    def import_schedules_from_csv(self):
+        """Import schedules from CSV file"""
+        filename = filedialog.askopenfilename(
+            title="Select CSV File",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+
+        if not filename:
+            return
+
+        try:
+            import csv
+
+            with open(filename, 'r') as f:
+                reader = csv.DictReader(f)
+                imported = 0
+                errors = []
+
+                with transaction() as conn:
+                    cursor = conn.cursor()
+
+                    for row in reader:
+                        try:
+                            # Validate required fields
+                            module_code = row.get('module_code')
+                            day = row.get('day_of_week')
+                            start_time = row.get('start_time')
+                            end_time = row.get('end_time')
+                            room_id = row.get('room_id')
+                            instructor_id = row.get('instructor_id')
+                            session_type = row.get('session_type', 'Lecture')
+
+                            if not all([module_code, day, start_time, end_time, room_id, instructor_id]):
+                                errors.append(f"Row missing required fields: {row}")
+                                continue
+
+                            cursor.execute('''
+                            INSERT INTO module_schedule
+                            (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ''', (module_code, day, start_time, end_time, int(room_id), int(instructor_id), session_type))
+
+                            imported += 1
+
+                        except Exception as e:
+                            errors.append(f"Error importing row: {str(e)}")
+
+            message = f"Import completed!\n\nImported: {imported} schedules"
+            if errors:
+                message += f"\nErrors: {len(errors)}\n\nFirst 5 errors:\n" + "\n".join(errors[:5])
+
+            messagebox.showinfo("Import Complete", message)
+            self.refresh_all_data()
+
+        except Exception as e:
+            messagebox.showerror("Import Error", f"Failed to import CSV: {str(e)}")
+
+    def export_all_schedules_to_csv(self):
+        """Export all schedules to CSV file"""
+        filename = filedialog.asksaveasfilename(
+            title="Export Schedules to CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+
+        if not filename:
+            return
+
+        try:
+            import csv
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT ms.id, ms.module_code, m.module_name, ms.day_of_week,
+                       ms.start_time, ms.end_time, ms.room_id, r.building, r.room_number,
+                       ms.instructor_id, i.first_name, i.last_name, ms.session_type
+                FROM module_schedule ms
+                LEFT JOIN modules m ON ms.module_code = m.module_code
+                LEFT JOIN rooms r ON ms.room_id = r.id
+                LEFT JOIN instructors i ON ms.instructor_id = i.id
+                ORDER BY ms.day_of_week, ms.start_time
+                ''')
+
+                schedules = cursor.fetchall()
+
+            with open(filename, 'w', newline='') as f:
+                writer = csv.writer(f)
+
+                # Write header
+                writer.writerow([
+                    'id', 'module_code', 'module_name', 'day_of_week', 'start_time', 'end_time',
+                    'room_id', 'building', 'room_number', 'instructor_id', 'instructor_first_name',
+                    'instructor_last_name', 'session_type'
+                ])
+
+                # Write data
+                writer.writerows(schedules)
+
+            messagebox.showinfo("Export Complete", f"Exported {len(schedules)} schedules to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export CSV: {str(e)}")
+
+    # ==================== TEMPLATE MANAGEMENT ====================
+
+    def save_schedule_template(self):
+        """Save current schedule as a template"""
+        # Create dialog for template details
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Save Schedule Template")
+        dialog.geometry("400x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Template Name:").pack(pady=5)
+        name_entry = ttk.Entry(dialog, width=40)
+        name_entry.pack(pady=5)
+
+        ttk.Label(dialog, text="Description:").pack(pady=5)
+        desc_text = tk.Text(dialog, width=40, height=4)
+        desc_text.pack(pady=5)
+
+        def save_template():
+            template_name = name_entry.get().strip()
+            description = desc_text.get("1.0", tk.END).strip()
+
+            if not template_name:
+                messagebox.showwarning("Warning", "Please enter a template name.")
+                return
+
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+
+                    # Save all current schedules as a template
+                    cursor.execute('''
+                    SELECT module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type
+                    FROM module_schedule
+                    ''')
+                    schedules = cursor.fetchall()
+
+                    import json
+                    template_data = json.dumps(schedules)
+
+                    cursor.execute('''
+                    INSERT INTO schedule_templates (template_name, template_data, description)
+                    VALUES (?, ?, ?)
+                    ''', (template_name, template_data, description))
+
+                messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+
+        ttk.Button(dialog, text="Save", command=save_template).pack(pady=10)
+
+    def load_schedule_template(self):
+        """Load a schedule template"""
+        # Get list of templates
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, template_name, description, created_date FROM schedule_templates ORDER BY created_date DESC')
+            templates = cursor.fetchall()
+
+        if not templates:
+            messagebox.showinfo("No Templates", "No schedule templates found.")
+            return
+
+        # Create selection dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Load Schedule Template")
+        dialog.geometry("700x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Create listbox
+        listbox = tk.Listbox(dialog, font=('Arial', 10))
+        for template_id, name, desc, date in templates:
+            listbox.insert(tk.END, f"{name} - {date}")
+        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        def load_selected():
+            if not listbox.curselection():
+                messagebox.showwarning("Warning", "Please select a template.")
+                return
+
+            idx = listbox.curselection()[0]
+            template_id = templates[idx][0]
+
+            # Confirm
+            confirm = messagebox.askyesno(
+                "Confirm Load",
+                "This will REPLACE all current schedules with the template.\n\n"
+                "Are you sure you want to continue?"
+            )
+
+            if not confirm:
+                return
+
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+
+                    # Get template data
+                    cursor.execute('SELECT template_data FROM schedule_templates WHERE id = ?', (template_id,))
+                    result = cursor.fetchone()
+
+                    if not result:
+                        messagebox.showerror("Error", "Template not found.")
+                        return
+
+                    import json
+                    schedules = json.loads(result[0])
+
+                    # Clear existing schedules
+                    cursor.execute('DELETE FROM module_schedule')
+
+                    # Insert template schedules
+                    for schedule in schedules:
+                        cursor.execute('''
+                        INSERT INTO module_schedule
+                        (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', schedule)
+
+                messagebox.showinfo("Success", f"Template loaded successfully!\nLoaded {len(schedules)} schedules.")
+                self.refresh_all_data()
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+
+        ttk.Button(dialog, text="Load", command=load_selected).pack(pady=5)
+        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+    def list_schedule_templates(self):
+        """List all schedule templates"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT template_name, description, created_date,
+                   (SELECT COUNT(*) FROM json_each(template_data)) as schedule_count
+            FROM schedule_templates
+            ORDER BY created_date DESC
+            ''')
+            templates = cursor.fetchall()
+
+        if not templates:
+            messagebox.showinfo("No Templates", "No schedule templates found.")
+            return
+
+        # Create dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Schedule Templates")
+        dialog.geometry("900x500")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Name', 'Description', 'Created Date', 'Schedules')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.column('Name', width=200)
+        tree.column('Description', width=350)
+        tree.column('Created Date', width=150)
+        tree.column('Schedules', width=100)
+
+        for template in templates:
+            name, desc, date, count = template
+            tree.insert('', tk.END, values=(name, desc or '', date, count or 0))
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    # ==================== DATABASE OPERATIONS ====================
+
+    def _check_room_conflicts(self, room_id, day, start_time, end_time, exclude_id=None):
+        """Check for room conflicts"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = '''
+            SELECT id, module_code, start_time, end_time
+            FROM module_schedule
+            WHERE room_id = ? AND day_of_week = ? AND (
+                (start_time < ? AND end_time > ?) OR
+                (start_time < ? AND end_time > ?) OR
+                (start_time >= ? AND end_time <= ?)
+            )
+            '''
+            params = [room_id, day, end_time, start_time, end_time, start_time, start_time, end_time]
+
+            if exclude_id:
+                query += ' AND id != ?'
+                params.append(exclude_id)
+
+            cursor.execute(query, params)
+            conflicts = cursor.fetchall()
+
+        return conflicts
+
+    def _check_instructor_conflicts(self, instructor_id, day, start_time, end_time, exclude_id=None):
+        """Check for instructor conflicts"""
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = '''
+            SELECT id, module_code, start_time, end_time
+            FROM module_schedule
+            WHERE instructor_id = ? AND day_of_week = ? AND (
+                (start_time < ? AND end_time > ?) OR
+                (start_time < ? AND end_time > ?) OR
+                (start_time >= ? AND end_time <= ?)
+            )
+            '''
+            params = [instructor_id, day, end_time, start_time, end_time, start_time, start_time, end_time]
+
+            if exclude_id:
+                query += ' AND id != ?'
+                params.append(exclude_id)
+
+            cursor.execute(query, params)
+            conflicts = cursor.fetchall()
+
+        return conflicts
+
+    # ==================== LOGGING AND AUDIT ====================
+
+    def _log_system_action(self, action_type, description, details=None):
+        """Log system action to database for audit trail"""
+        try:
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                import json
+                details_json = json.dumps(details) if details else None
+
+                cursor.execute('''
+                INSERT INTO system_logs (action_type, description, details, created_date)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (action_type, description, details_json))
+
+        except Exception as e:
+            print(f"Error logging system action: {e}")
+
+    def _export_analytics_csv(self, data, filename_prefix):
+        """Export analytics data to CSV"""
+        filename = filedialog.asksaveasfilename(
+            title="Export Analytics to CSV",
+            defaultextension=".csv",
+            initialfile=f"{filename_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+
+        if not filename:
+            return None
+
+        try:
+            import csv
+
+            with open(filename, 'w', newline='') as f:
+                if data:
+                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    writer.writeheader()
+                    writer.writerows(data)
+
+            messagebox.showinfo("Export Complete", f"Analytics exported to:\n{filename}")
+            return filename
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export analytics: {str(e)}")
+            return None
+
+    def _generate_analytics_pdf(self, data, title):
+        """Generate analytics PDF report (requires reportlab)"""
+        try:
+            from reportlab.lib.pagesizes import letter, A4
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib import colors
+
+            filename = filedialog.asksaveasfilename(
+                title="Save PDF Report",
+                defaultextension=".pdf",
+                initialfile=f"{title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+            )
+
+            if not filename:
+                return None
+
+            # Create PDF
+            doc = SimpleDocTemplate(filename, pagesize=letter)
+            elements = []
+
+            # Add title
+            styles = getSampleStyleSheet()
+            elements.append(Paragraph(title, styles['Title']))
+            elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+            elements.append(Paragraph("<br/><br/>", styles['Normal']))
+
+            # Add data table
+            if data:
+                table_data = [list(data[0].keys())]  # Header
+                table_data.extend([list(row.values()) for row in data])
+
+                t = Table(table_data)
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+
+                elements.append(t)
+
+            doc.build(elements)
+
+            messagebox.showinfo("PDF Generated", f"PDF report generated:\n{filename}")
+            return filename
+
+        except ImportError:
+            messagebox.showerror("Error", "reportlab library not installed.\nRun: pip install reportlab")
+            return None
+        except Exception as e:
+            messagebox.showerror("PDF Error", f"Failed to generate PDF: {str(e)}")
+            return None
+
+    def display_student_conflicts(self, student_id=None):
+        """Display conflicts for a specific student"""
+        if not student_id:
+            # Show dialog to enter student ID
+            student_id = tk.simpledialog.askstring("Student ID", "Enter Student ID:")
+            if not student_id:
+                return
+
+        conflicts = self.check_student_conflicts(student_id)
+
+        if not conflicts:
+            messagebox.showinfo("No Conflicts", f"No scheduling conflicts found for student {student_id}")
+            return
+
+        # Create dialog to show conflicts
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Schedule Conflicts for Student {student_id}")
+        dialog.geometry("1000x400")
+        dialog.transient(self.root)
+
+        # Create treeview
+        columns = ('Module 1', 'Time 1', 'Room 1', 'Module 2', 'Time 2', 'Room 2', 'Day')
+        tree = ttk.Treeview(dialog, columns=columns, show='headings')
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        for conflict in conflicts:
+            m1 = conflict['module1']
+            m2 = conflict['module2']
+            tree.insert('', tk.END, values=(
+                m1['code'], m1['time'], m1['room'],
+                m2['code'], m2['time'], m2['room'],
+                m1['day']
+            ), tags=('conflict',))
+
+        # Color code conflicts
+        tree.tag_configure('conflict', background='#ffcccc')
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Warning label
+        warning_frame = ttk.Frame(dialog)
+        warning_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(warning_frame, text=f"⚠ Found {len(conflicts)} conflict(s) for student {student_id}",
+                 foreground='red', font=('Arial', 10, 'bold')).pack()
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
 
 # Dialog classes for adding/editing data
 class AddScheduleDialog:
