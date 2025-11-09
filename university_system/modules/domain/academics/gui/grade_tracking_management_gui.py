@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import sys
 import threading
 import logging
@@ -57,6 +57,48 @@ except ImportError as e:
 
     def performance_analysis_menu():
         print("Performance analysis menu not available")
+
+# Import learning outcomes functions
+try:
+    from university_system.modules.domain.academics.grading.learning_outcomes import (
+        manage_learning_outcomes,
+        record_outcome_achievement,
+        view_student_outcome_achievement,
+        generate_outcome_report,
+        generate_student_outcome_report,
+        generate_course_outcome_report,
+        generate_all_courses_outcome_report,
+        generate_module_outcome_report
+    )
+    LEARNING_OUTCOMES_AVAILABLE = True
+except ImportError as e:
+    print(f"Learning outcomes functions not available: {e}")
+    LEARNING_OUTCOMES_AVAILABLE = False
+
+    # Define fallback functions
+    def manage_learning_outcomes():
+        print("Manage learning outcomes not available")
+
+    def record_outcome_achievement():
+        print("Record outcome achievement not available")
+
+    def view_student_outcome_achievement():
+        print("View student outcome achievement not available")
+
+    def generate_outcome_report():
+        print("Generate outcome report not available")
+
+    def generate_student_outcome_report(cursor, student_id):
+        print("Generate student outcome report not available")
+
+    def generate_course_outcome_report(cursor, course):
+        print("Generate course outcome report not available")
+
+    def generate_all_courses_outcome_report(cursor):
+        print("Generate all courses outcome report not available")
+
+    def generate_module_outcome_report(cursor, module_code):
+        print("Generate module outcome report not available")
 
 from university_system.infrastructure.auth.user_authentication import UserAuth
 
@@ -252,3 +294,228 @@ class GradeTrackingManagementGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open performance analysis menu: {str(e)}")
             print(f"Performance analysis menu error: {e}")
+
+    # Learning Outcomes Functions
+    def manage_learning_outcomes_gui(self):
+        """Manage learning outcomes - add, edit, delete"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to manage learning outcomes.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('manage_learning_outcomes')):
+            messagebox.showerror("Error", "You don't have permission to manage learning outcomes.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                thread = threading.Thread(target=manage_learning_outcomes, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Learning outcomes management not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open learning outcomes management: {str(e)}")
+            print(f"Learning outcomes management error: {e}")
+
+    def record_outcome_achievement_gui(self):
+        """Record student outcome achievement"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to record outcome achievement.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('record_outcomes')):
+            messagebox.showerror("Error", "You don't have permission to record outcome achievements.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                thread = threading.Thread(target=record_outcome_achievement, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Record outcome achievement not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to record outcome achievement: {str(e)}")
+            print(f"Record outcome achievement error: {e}")
+
+    def view_student_outcome_achievement_gui(self):
+        """View student outcome achievements"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to view outcome achievements.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                thread = threading.Thread(target=view_student_outcome_achievement, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "View student outcome achievement not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view student outcome achievement: {str(e)}")
+            print(f"View student outcome achievement error: {e}")
+
+    def generate_outcome_report_gui(self):
+        """Generate learning outcome reports menu"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate outcome reports.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                thread = threading.Thread(target=generate_outcome_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate outcome report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate outcome report: {str(e)}")
+            print(f"Generate outcome report error: {e}")
+
+    def generate_student_outcome_report_gui(self, student_id=None):
+        """Generate student outcome report"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate student outcome reports.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no student_id provided, prompt for one
+                if not student_id:
+                    student_id = tk.simpledialog.askstring(
+                        "Student ID",
+                        "Enter Student ID:",
+                        parent=self.root
+                    )
+
+                    if not student_id:
+                        return
+
+                # Generate report in background thread
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_student_outcome_report(cursor, student_id)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating student outcome report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate student outcome report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate student outcome report: {str(e)}")
+            print(f"Generate student outcome report error: {e}")
+
+    def generate_course_outcome_report_gui(self, course=None):
+        """Generate course outcome report"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate course outcome reports.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no course provided, prompt for one
+                if not course:
+                    course = tk.simpledialog.askstring(
+                        "Course",
+                        "Enter Course Name:",
+                        parent=self.root
+                    )
+
+                    if not course:
+                        return
+
+                # Generate report in background thread
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_course_outcome_report(cursor, course)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating course outcome report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate course outcome report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate course outcome report: {str(e)}")
+            print(f"Generate course outcome report error: {e}")
+
+    def generate_all_courses_outcome_report_gui(self):
+        """Generate outcomes for all courses"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate all courses outcome report.")
+            return
+
+        if not (self.auth.check_permission('manage_grades') or
+                self.auth.check_permission('view_reports')):
+            messagebox.showerror("Error", "You don't have permission to generate institution-wide reports.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # Generate report in background thread
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_all_courses_outcome_report(cursor)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating all courses outcome report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate all courses outcome report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate all courses outcome report: {str(e)}")
+            print(f"Generate all courses outcome report error: {e}")
+
+    def generate_module_outcome_report_gui(self, module_code=None):
+        """Generate module outcome report"""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to generate module outcome reports.")
+            return
+
+        try:
+            if LEARNING_OUTCOMES_AVAILABLE:
+                from university_system.infrastructure.database.db import get_connection
+
+                # If no module_code provided, prompt for one
+                if not module_code:
+                    module_code = tk.simpledialog.askstring(
+                        "Module Code",
+                        "Enter Module Code:",
+                        parent=self.root
+                    )
+
+                    if not module_code:
+                        return
+
+                # Generate report in background thread
+                def generate_report():
+                    try:
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        generate_module_outcome_report(cursor, module_code)
+                        conn.close()
+                    except Exception as e:
+                        print(f"Error generating module outcome report: {e}")
+
+                thread = threading.Thread(target=generate_report, daemon=True)
+                thread.start()
+            else:
+                messagebox.showerror("Error", "Generate module outcome report not available.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate module outcome report: {str(e)}")
+            print(f"Generate module outcome report error: {e}")
