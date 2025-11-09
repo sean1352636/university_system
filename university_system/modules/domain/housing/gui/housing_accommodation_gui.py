@@ -62,7 +62,15 @@ from university_system.modules.domain.housing.services.housing_accommodation imp
     check_room_availability as orig_check_room_availability,
     maintenance_summary as orig_maintenance_summary,
     upcoming_moveouts_report as orig_upcoming_moveouts_report,
-    display_housing_accommodation_menu as orig_display_housing_accommodation_menu
+    # Menu functions (CLI-specific)
+    display_housing_accommodation_menu as orig_display_housing_accommodation_menu,
+    display_reports_menu as orig_display_reports_menu,
+    display_building_menu as orig_display_building_menu,
+    display_application_menu as orig_display_application_menu,
+    display_assignment_menu as orig_display_assignment_menu,
+    display_maintenance_menu as orig_display_maintenance_menu,
+    display_payment_menu as orig_display_payment_menu,
+    display_inspection_menu as orig_display_inspection_menu
 )
 
 class HousingGUI:
@@ -5035,7 +5043,14 @@ __all__ = [
     'orig_check_room_availability',
     'orig_maintenance_summary',
     'orig_upcoming_moveouts_report',
-    'orig_display_housing_accommodation_menu'
+    'orig_display_housing_accommodation_menu',
+    'orig_display_reports_menu',
+    'orig_display_building_menu',
+    'orig_display_application_menu',
+    'orig_display_assignment_menu',
+    'orig_display_maintenance_menu',
+    'orig_display_payment_menu',
+    'orig_display_inspection_menu'
 ]
 
 # Create aliases for backward compatibility
