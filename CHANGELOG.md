@@ -9,6 +9,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Academic Calendar GUI - 7 Custom Error Classes with Detailed Tracking** (2025-11-09)
+- **New Update**: Implemented 7 comprehensive error classes with detailed error tracking (~750 lines of new code)
+- **Impact**: Enterprise-grade error handling with unique error codes, automatic logging, context tracking, and JSON serialization
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/academic_calendar_gui.py` - Added ~750 lines
+
+**ERROR CLASSES IMPLEMENTED:**
+
+**1. CalendarError (Base Class)**
+- **Core Methods**:
+  - `_generate_error_code()` - Unique error codes (ERR-{TYPE}-{TIMESTAMP})
+  - `_generate_user_message()` - User-friendly error messages
+  - `_log_error()` - Automatic logging with full context
+  - `to_dict()` - JSON serialization for error reporting
+  - `add_context()` - Dynamic context addition with method chaining
+- **Features**: Timestamp tracking, error type classification, context dictionary
+
+**2. ValidationError**
+- **Factory Methods**:
+  - `required_field(field)` - Missing required field errors
+  - `invalid_format(field, expected_format, actual_value)` - Format validation errors
+  - `out_of_range(field, min_value, max_value, actual_value)` - Range validation errors
+- **Error Codes**: ERR-VAL-{FIELD}-{TIMESTAMP}
+- **Use Cases**: Form validation, input validation, data integrity checks
+
+**3. DatabaseError**
+- **Factory Methods**:
+  - `connection_failed(reason)` - Database connection failures
+  - `constraint_violation(constraint, table)` - Constraint violation errors
+  - `record_not_found(record_type, identifier)` - Record lookup failures
+- **Error Codes**: ERR-DB-{OPERATION}-{TIMESTAMP}
+- **Use Cases**: Database operations, transaction failures, data retrieval
+
+**4. AuthenticationError**
+- **Factory Methods**:
+  - `invalid_credentials(username)` - Login failures
+  - `session_expired(username)` - Session timeout errors
+  - `account_locked(username, reason)` - Account lockout errors
+- **Error Codes**: ERR-AUTH-{TIMESTAMP}
+- **Security**: Username not exposed in user messages
+- **Use Cases**: Login, session management, account security
+
+**5. PermissionError**
+- **Factory Methods**:
+  - `insufficient_role(required_role, user_role)` - Role-based access errors
+  - `resource_access_denied(resource, action, required_permission)` - Resource access errors
+- **Error Codes**: ERR-PERM-{PERMISSION}-{TIMESTAMP}
+- **Use Cases**: Authorization, access control, role verification
+
+**6. ExportError**
+- **Factory Methods**:
+  - `file_write_failed(file_path, reason)` - File write failures
+  - `data_too_large(export_format, size, max_size)` - Size limit errors
+  - `unsupported_format(requested_format, supported_formats)` - Format validation
+- **Error Codes**: ERR-EXPORT-{FORMAT}-{TIMESTAMP}
+- **Use Cases**: Calendar exports, report generation, file operations
+
+**7. SyncError**
+- **Factory Methods**:
+  - `connection_failed(sync_source, reason)` - Sync connection failures
+  - `data_conflict(sync_source, sync_target, conflicting_records)` - Conflict errors
+  - `partial_sync(sync_source, sync_target, successful, failed, failed_records)` - Partial sync tracking
+- **Error Codes**: ERR-SYNC-{SOURCE}-{TIMESTAMP}
+- **Use Cases**: External calendar sync, data synchronization, import/export
+
+**KEY FEATURES:**
+- **Unique Error Codes**: Every error gets a unique timestamp-based code for tracking
+- **Automatic Logging**: All errors logged to GUI logger with full context
+- **User-Friendly Messages**: Separate technical and user-facing messages
+- **Context Tracking**: Rich context dictionaries for debugging
+- **JSON Serialization**: Export errors for reporting and analysis
+- **Factory Pattern**: Convenient static methods for common error scenarios
+- **Method Chaining**: add_context() returns self for fluent API
+
+**TECHNICAL BENEFITS:**
+- **Debugging**: Unique error codes make issue tracking easier
+- **Audit Trail**: Automatic logging provides complete audit trail
+- **User Experience**: Clear, helpful error messages with error codes
+- **Analytics**: JSON export enables error analytics and reporting
+- **Maintainability**: Centralized error handling reduces code duplication
+
+**BUSINESS IMPACT:**
+- **Support Efficiency**: Error codes enable faster issue resolution
+- **Compliance**: Comprehensive error logging for audit requirements
+- **User Satisfaction**: Clear error messages reduce user frustration
+- **System Reliability**: Better error handling improves overall stability
+
+---
+
 **Restaurant Management GUI - 20 Critical Missing Features Implementation** (2025-11-08)
 - **New Update**: Implemented 20 missing critical features from CLI version (~3,869 lines of new code)
 - **Impact**: Completed parity with CLI functionality - adds order management, payment processing, purchase orders, customer feedback, and loyalty program features
