@@ -654,8 +654,200 @@ class GradingManager:
             self.load_ungraded_submissions()  # Refresh list
     
 
-    def grade_submission(self, *args, **kwargs):
-        """Open grading workspace."""
-        self._launch_gui_feature(self.show_grade_submissions, "grading workspace")
-    
-    
+    def grade_submission(self, submission_id=None):
+        """Interactive grading interface for a specific submission or open grading workspace"""
+        if submission_id:
+            # Grade specific submission
+            self.show_grading_interface(submission_id)
+        else:
+            # Show grading workspace
+            self.show_grade_submissions()
+
+
+    def _grade_simple(self, submission_id):
+        """Simple grading without rubric - basic points-based grading"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get submission details
+            cursor.execute('''
+            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.id = ?
+            ''', (submission_id,))
+
+            submission = cursor.fetchone()
+            conn.close()
+
+            if not submission:
+                messagebox.showerror("Error", "Submission not found")
+                return
+
+            # Create simple grading dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Grade Submission - {submission[11]}")
+            dialog.geometry("500x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            # Submission info
+            info_frame = ttk.LabelFrame(dialog, text="Submission Details", padding=10)
+            info_frame.pack(fill='x', padx=10, pady=10)
+
+            info_text = f"Student: {submission[14]} {submission[15]}\n"
+            info_text += f"Assignment: {submission[11]}\n"
+            info_text += f"File: {submission[6]}\n"
+            info_text += f"Submitted: {submission[4]}\n"
+            info_text += f"Max Marks: {submission[12]}"
+
+            ttk.Label(info_frame, text=info_text, justify='left').pack(anchor='w')
+
+            # File actions
+            file_frame = ttk.Frame(info_frame)
+            file_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Button(file_frame, text="Open File",
+                      command=lambda: self.open_submission_file(submission[5])).pack(side='left', padx=(0, 10))
+            ttk.Button(file_frame, text="Download File",
+                      command=lambda: self.download_file(submission[5])).pack(side='left')
+
+            # Grading section
+            grade_frame = ttk.LabelFrame(dialog, text="Grade", padding=10)
+            grade_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+            ttk.Label(grade_frame, text=f"Score (out of {submission[12]}):").pack(anchor='w', pady=(0, 5))
+
+            score_frame = ttk.Frame(grade_frame)
+            score_frame.pack(fill='x', pady=(0, 10))
+
+            score_var = tk.StringVar()
+            ttk.Entry(score_frame, textvariable=score_var, width=10).pack(side='left')
+            ttk.Label(score_frame, text=f" / {submission[12]}").pack(side='left', padx=(5, 0))
+
+            # Percentage display
+            percentage_var = tk.StringVar()
+            percentage_label = ttk.Label(score_frame, textvariable=percentage_var, font=('Arial', 10, 'bold'))
+            percentage_label.pack(side='left', padx=(20, 0))
+
+            def update_percentage(*args):
+                try:
+                    score = float(score_var.get()) if score_var.get() else 0
+                    percentage = (score / submission[12]) * 100
+                    percentage_var.set(f"({percentage:.1f}%)")
+                except ValueError:
+                    percentage_var.set("(0.0%)")
+
+            score_var.trace('w', update_percentage)
+
+            # Feedback
+            ttk.Label(grade_frame, text="Feedback:").pack(anchor='w', pady=(10, 5))
+            feedback_text = scrolledtext.ScrolledText(grade_frame, height=8, width=50)
+            feedback_text.pack(fill='both', expand=True)
+
+            # Submit button
+            def submit_simple_grade():
+                try:
+                    score = float(score_var.get())
+                    max_marks = submission[12]
+
+                    if not (0 <= score <= max_marks):
+                        messagebox.showerror("Error", f"Score must be between 0 and {max_marks}", parent=dialog)
+                        return
+
+                    feedback = feedback_text.get(1.0, tk.END).strip()
+                    percentage = (score / max_marks) * 100
+
+                    # Save to database
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    cursor.execute('''
+                    UPDATE assignment_submissions
+                    SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+                    WHERE id = ?
+                    ''', (percentage, self.auth.current_user['id'], timestamp, feedback, submission_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({score}/{max_marks})", parent=dialog)
+                    dialog.destroy()
+
+                    # Refresh grading list if available
+                    if hasattr(self, 'grading_tree'):
+                        self.load_ungraded_submissions()
+
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter a valid score", parent=dialog)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to submit grade: {e}", parent=dialog)
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Button(button_frame, text="Submit Grade", command=submit_simple_grade,
+                      style='Accent.TButton').pack(side='right')
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=(0, 10))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open grading interface: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+
+
+    def open_submission_file(self, file_path):
+        """Open submission file with default application"""
+        if not file_path or not os.path.exists(file_path):
+            messagebox.showerror("Error", "File not found")
+            return
+
+        try:
+            import platform
+            import subprocess
+
+            if platform.system() == 'Windows':
+                os.startfile(file_path)
+            elif platform.system() == 'Darwin':  # macOS
+                subprocess.run(['open', file_path])
+            else:  # Linux
+                subprocess.run(['xdg-open', file_path])
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open file: {e}")
+
+
+    def download_file(self, file_path):
+        """Download (copy) submission file to user-selected location"""
+        if not file_path or not os.path.exists(file_path):
+            messagebox.showerror("Error", "File not found")
+            return
+
+        try:
+            # Get file name
+            file_name = os.path.basename(file_path)
+
+            # Ask user where to save
+            save_path = filedialog.asksaveasfilename(
+                initialfile=file_name,
+                defaultextension=os.path.splitext(file_name)[1],
+                filetypes=[("All files", "*.*")]
+            )
+
+            if save_path:
+                shutil.copy2(file_path, save_path)
+                messagebox.showinfo("Success", f"File saved to:\n{save_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to download file: {e}")
+
+

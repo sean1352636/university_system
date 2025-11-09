@@ -9,6 +9,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Assignment GUI - Missing Rubric & Group Functions Implementation** (2025-11-09)
+- **New Update**: Added 7 missing critical functions to complete Assignment GUI feature parity with CLI version
+- **Impact**: Full rubric-based and simple grading capability, plus complete student group management workflow
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/assignment_system/grading_manager.py` - Added ~234 lines
+  - `university_system/modules/domain/academics/gui/assignment_system/group_manager.py` - Added ~584 lines
+  - **Total New Code**: ~818 lines (complete grading and group management)
+
+**GRADING FUNCTIONS IMPLEMENTED:**
+
+**1. grade_submission() - Interactive Grading Wrapper**
+- Enhanced wrapper function that supports both specific submission grading and workspace view
+- Accepts optional submission_id parameter for direct grading
+- Falls back to show_grade_submissions() for grading workspace view
+- Provides flexible entry point for grading operations
+
+**2. _grade_simple() - Simple Grading Without Rubric** (~150 lines)
+- Basic points-based grading interface for quick grading
+- Professional dialog (500x400) with complete submission details
+- **Key Features:**
+  - Display student info, assignment, file details, and submission date
+  - File operations: Open file and download file buttons
+  - Score input with real-time percentage calculation
+  - Rich text feedback editor
+  - Input validation (0 to max_marks range)
+  - Database persistence with graded_by and graded_date tracking
+  - Automatic grading list refresh after submission
+- Alternative to rubric-based grading for simpler assignments
+- Integrates with existing file preview system
+
+**3. Helper Methods Added:**
+- `open_submission_file()` - Cross-platform file opening (Windows/macOS/Linux)
+- `download_file()` - File dialog for saving submission files locally
+- `_launch_gui_feature()` - Error-wrapped GUI feature launcher
+
+**GROUP MANAGEMENT FUNCTIONS IMPLEMENTED:**
+
+**4. _join_existing_group() - Student Group Joining Interface** (~177 lines)
+- Allows students to browse and join available groups for assignments
+- Professional dialog (600x500) with assignment and group selection
+- **Key Features:**
+  - Assignment selection dropdown (group assignments only, not overdue)
+  - Available groups treeview with columns: Group Name, Members, Status, Description
+  - Dynamic group loading based on assignment selection
+  - Capacity checking (shows groups with available slots)
+  - Duplicate membership prevention (one group per assignment per student)
+  - Database validation and error handling
+- Supports both assignment_id parameter and interactive selection
+- Member count display (e.g., "3/4" showing current/max members)
+
+**5. _create_new_group() - Student Group Creation** (~138 lines)
+- Enables students to create their own groups for self-select assignments
+- Professional dialog (500x400) with comprehensive group details
+- **Key Features:**
+  - Assignment selection (group assignments only, future due dates)
+  - Group name and description input
+  - Automatic creator assignment as group leader
+  - Duplicate group membership prevention
+  - Timestamp tracking for group creation
+  - User-friendly confirmation messages
+- Creator becomes group leader with special permissions
+- Database transaction safety
+
+**6. _view_group_details() - Student Group Viewer** (~105 lines)
+- Student-facing view of group information and members
+- Professional dialog (600x500) with organized information display
+- **Key Features:**
+  - Automatic group lookup by assignment_id for current student
+  - Comprehensive group information: name, assignment, due date, description
+  - Members treeview with columns: Name, Email, Role, Joined date
+  - Leader/member role display
+  - Clean, read-only interface
+- Supports both direct group_id and assignment_id lookups
+- Handles "no group" scenarios gracefully
+
+**7. _handle_group_submission() - Group Assignment Submission** (~155 lines)
+- Complete group submission workflow with member verification
+- Professional dialog (550x450) with full submission interface
+- **Key Features:**
+  - Member verification (student must be in group)
+  - Role display (leader/member) in submission info
+  - File type validation based on assignment constraints
+  - File size checking (max MB limit enforcement)
+  - File browser with allowed types filtering
+  - Optional submission comments
+  - File copying to organized submissions directory
+  - Database persistence with group_id tracking
+  - Success confirmation with file and timestamp details
+- Filename format: `{group_id}_{timestamp}_{original_filename}`
+- Integrates with centralized upload directory structure
+
+**TECHNICAL DETAILS:**
+
+**Grading System:**
+- Database-backed grade persistence
+- Support for both rubric and simple grading modes
+- Percentage and raw score tracking
+- Feedback storage and retrieval
+- Graded_by and graded_date audit trail
+- Integration with existing grading workflows
+
+**Group Management:**
+- Complete student group lifecycle (create, join, view, submit)
+- Role-based permissions (leader vs member)
+- Assignment type validation (group assignments only)
+- Capacity management (min/max group sizes)
+- Duplicate prevention across system
+- Temporal validation (due date checking)
+- Database referential integrity (foreign keys)
+
+**USER INTERFACE:**
+- Professional dialog design with consistent sizing
+- Treeview components for data display
+- Input validation with user-friendly error messages
+- Confirmation dialogs for critical actions
+- Real-time calculation and feedback
+- Cross-platform file operations
+- Themed button styles (Accent.TButton)
+
+**DATABASE OPERATIONS:**
+- SQLite with DEFAULT_DB_PATH constant
+- Parameterized queries (SQL injection prevention)
+- Transaction safety with commit/rollback
+- Proper connection handling (open/close)
+- Complex joins for data aggregation
+- Aggregate functions (COUNT) for group sizes
+
+**USER IMPACT:**
+- **Instructors** can now:
+  - Grade submissions with or without rubrics
+  - Choose simple grading for quick assessments
+  - Preview and download submission files
+  - Track grading completion and feedback
+
+- **Students** can now:
+  - Create groups for self-select assignments
+  - Join existing groups with available capacity
+  - View their group members and roles
+  - Submit assignments on behalf of their group
+  - See file requirements and constraints
+  - Add submission comments
+
+- **System** improvements:
+  - Complete feature parity with CLI version
+  - Professional GUI for all group operations
+  - Reduced time for group formation
+  - Clear visibility into group membership
+  - Audit trail for all grading actions
+
+**INTEGRATION:**
+- Leverages existing manager-based architecture
+- Uses centralized paths module for file storage
+- Integrates with authentication system (current_user)
+- Follows established GUI patterns and conventions
+- Compatible with existing database schema
+
 **Advanced Search GUI - Missing Functions Implementation** (2025-11-09)
 - **New Update**: Added 2 missing critical functions to complete Advanced Search GUI feature parity with CLI version
 - **Impact**: Full database integrity checking and comprehensive combined filters search capability
