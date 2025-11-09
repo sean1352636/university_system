@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Course Management GUI - Core Functions Addition** (2025-11-09)
+- **New Update**: Added 16 missing core GUI functions for validation, database initialization, and prerequisite management
+- **Impact**: Enhanced course management with proper validation, circular dependency detection, and comprehensive prerequisite handling
+- **Files Modified**:
+  - `university_system/modules/domain/academics/gui/course_management_gui.py` - Added ~516 lines (7,048 → 7,564 lines)
+
+**FUNCTIONS IMPLEMENTED (16 Total)**:
+
+**VALIDATION HELPERS (4 functions):**
+- `validate_course_code()` - Validates course code format (e.g., CS101, MATH200)
+- `validate_email()` - Email format validation with regex
+- `validate_time_format()` - Time format validation (HH:MM)
+- `validate_days_of_week()` - Days of week format validation
+
+**DATABASE INITIALIZATION (1 function):**
+- `initialize_enhanced_database_wrapper()` - GUI wrapper for enhanced database schema creation with all advanced tables
+
+**CORE COURSE WRAPPERS (6 functions):**
+- `create_enhanced_course_wrapper()` - Opens enhanced course creation dialog
+- `create_course_wrapper()` - Basic course creation wrapper
+- `view_all_courses_wrapper()` - Refresh course list and switch to course tab
+- `update_course_wrapper()` - Calls edit dialog for selected course
+- `delete_course_wrapper()` - Calls delete function for selected course
+- `view_course_details_wrapper()` - Switch to details tab and display course info
+
+**PREREQUISITE MANAGEMENT (5 functions):**
+- `add_prerequisite_gui()` - Add prerequisite with full dialog (course selection, prerequisite selection, required/recommended option, circular dependency checking)
+- `check_circular_prerequisite_db()` - Circular dependency detection using recursive algorithm with visited set
+- `has_prerequisite()` - Nested helper function for recursive prerequisite traversal (embedded in check_circular_prerequisite_db)
+- `view_prerequisites_gui()` - View prerequisites for selected course or all courses with formatted display
+- `remove_prerequisite_gui()` - Remove prerequisite with course selection and confirmation
+
+**TECHNICAL FEATURES**:
+- Circular dependency prevention using recursive graph traversal
+- Professional dialog-based interfaces with proper validation
+- Database integrity checks (duplicate prevention, self-prerequisite blocking)
+- Real-time course/prerequisite loading from database
+- Status updates and user feedback
+- Error handling with user-friendly messages
+
+**USER IMPACT**: Users can now validate course codes and emails, manage prerequisites with circular dependency protection, and access enhanced database initialization. All validation functions ensure data integrity before database operations.
+
 **Assignment GUI - Final Phase (Phase 5)** (2025-11-09)
 - **Ultimate Update**: Added 12 internal/helper functions to complete the entire assignment system
 - **Impact**: 100% COMPLETE - All 62 functions from requirements list now implemented
