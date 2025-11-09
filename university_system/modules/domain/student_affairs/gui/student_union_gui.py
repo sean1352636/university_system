@@ -735,6 +735,30 @@ class StudentUnionGUI:
         equipment_submenu.add_command(label="🛠️ Maintenance Tracking (Admin)", command=self.open_equipment_maintenance_tracking_dialog)
         equipment_submenu.add_command(label="📊 Generate Reports (Admin)", command=self.open_generate_equipment_reports_dialog)
 
+        # Peer Support & Wellness submenu
+        peer_support_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="🤝 Peer Support & Wellness", menu=peer_support_submenu)
+        peer_support_submenu.add_command(label="🏠 Peer Support Hub", command=self.open_peer_support_wellness_dialog)
+        peer_support_submenu.add_separator()
+        peer_support_submenu.add_command(label="📋 Browse Support Groups", command=lambda: self.open_peer_support_wellness_dialog())
+        peer_support_submenu.add_command(label="👥 My Support Groups", command=lambda: self.open_peer_support_wellness_dialog())
+        peer_support_submenu.add_command(label="➕ Create Support Group", command=lambda: self.open_peer_support_wellness_dialog())
+        peer_support_submenu.add_command(label="🤝 Anonymous Peer Matching", command=lambda: self.open_peer_support_wellness_dialog())
+        peer_support_submenu.add_separator()
+        peer_support_submenu.add_command(label="📚 Wellness Resources", command=lambda: self.open_peer_support_wellness_dialog())
+        peer_support_submenu.add_command(label="🆘 Crisis Resources", command=lambda: self.open_peer_support_wellness_dialog())
+
+        # Academic Support submenu
+        academic_support_submenu = tk.Menu(additional_menu, tearoff=0)
+        additional_menu.add_cascade(label="🎓 Academic Support", menu=academic_support_submenu)
+        academic_support_submenu.add_command(label="🏠 Academic Support Hub", command=self.open_academic_support_dialog)
+        academic_support_submenu.add_separator()
+        academic_support_submenu.add_command(label="📚 Study Groups", command=lambda: self.open_academic_support_dialog())
+        academic_support_submenu.add_command(label="👨‍🏫 Peer Tutoring", command=lambda: self.open_academic_support_dialog())
+        academic_support_submenu.add_command(label="📂 Shared Resources", command=lambda: self.open_academic_support_dialog())
+        academic_support_submenu.add_command(label="📝 Exam Prep Groups", command=lambda: self.open_academic_support_dialog())
+        academic_support_submenu.add_command(label="🎯 Academic Workshops", command=lambda: self.open_academic_support_dialog())
+
         # Help menu
         help_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Help", menu=help_menu)
@@ -2185,6 +2209,16 @@ class StudentUnionGUI:
     def open_advanced_analytics_dialog(self):
         """Open advanced analytics dashboard"""
         dialog = AdvancedAnalyticsDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_peer_support_wellness_dialog(self):
+        """Open peer support and wellness hub"""
+        dialog = PeerSupportWellnessDialog(self.root, self.auth_manager)
+        self.root.wait_window(dialog.dialog)
+
+    def open_academic_support_dialog(self):
+        """Open academic support hub"""
+        dialog = AcademicSupportDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
 
     def open_live_streaming_dialog(self):
@@ -17984,6 +18018,2650 @@ Check-in Rate: 72%
 
     def export_report(self):
         messagebox.showinfo("Export", "Attendance report exported to:\nreports/spring_festival_attendance.pdf")
+
+
+# ============================================================================
+# PEER SUPPORT & WELLNESS SYSTEM - 7 Features
+# ============================================================================
+
+class PeerSupportWellnessDialog:
+    """Main hub for peer support and wellness features"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Peer Support & Wellness")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="🤝 Peer Support & Wellness Hub",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Info banner
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_text = ("Access peer support, join support groups, find wellness resources, "
+                    "and connect with others in a safe, confidential environment.")
+        ttk.Label(info_frame, text=info_text, wraplength=1000,
+                 justify='left', font=('Arial', 10)).pack(padx=10, pady=10)
+
+        # Create grid of support options
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        options = [
+            ("Support Groups", "browse", "📋 Browse and join support groups", "blue"),
+            ("My Groups", "my_groups", "👥 View my support group memberships", "green"),
+            ("Create Group", "create", "➕ Create a new support group", "orange"),
+            ("Peer Matching", "matching", "🤝 Anonymous peer support matching", "purple"),
+            ("Wellness Resources", "resources", "📚 Mental health & wellness resources", "teal"),
+            ("Crisis Support", "crisis", "🆘 Immediate crisis resources", "red"),
+            ("Group Management", "manage", "⚙️ Manage my support groups", "gray")
+        ]
+
+        for i, (title, key, description, color) in enumerate(options):
+            card = ttk.LabelFrame(buttons_frame, text=title)
+            card.grid(row=i//2, column=i%2, padx=10, pady=10, sticky='nsew')
+
+            ttk.Label(card, text=description, wraplength=450,
+                     foreground=color).pack(padx=10, pady=5)
+
+            command_map = {
+                'browse': self.browse_support_groups,
+                'my_groups': self.view_my_support_groups,
+                'create': self.create_support_group,
+                'matching': self.anonymous_peer_matching,
+                'resources': self.view_wellness_resources,
+                'crisis': self.crisis_resources,
+                'manage': self.manage_peer_support_system
+            }
+
+            ttk.Button(card, text="Open",
+                      command=command_map[key]).pack(padx=10, pady=5)
+
+        for i in range(4):
+            buttons_frame.rowconfigure(i, weight=1)
+        for i in range(2):
+            buttons_frame.columnconfigure(i, weight=1)
+
+        # Confidentiality notice
+        notice_frame = ttk.LabelFrame(main_frame, text="⚠️ Confidentiality & Privacy")
+        notice_frame.pack(fill='x', pady=(10, 10))
+
+        notice_text = ("All peer support activities are confidential. If you're experiencing a mental health "
+                      "crisis, please contact emergency services or use the Crisis Support button above.")
+        ttk.Label(notice_frame, text=notice_text, wraplength=1000,
+                 foreground='red').pack(padx=10, pady=8)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def browse_support_groups(self):
+        dialog = BrowseSupportGroupsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_my_support_groups(self):
+        dialog = MySupportGroupsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def create_support_group(self):
+        dialog = CreateSupportGroupDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def anonymous_peer_matching(self):
+        dialog = AnonymousPeerMatchingDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_wellness_resources(self):
+        dialog = WellnessResourcesDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def crisis_resources(self):
+        dialog = CrisisResourcesDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def manage_peer_support_system(self):
+        dialog = ManagePeerSupportDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+
+class BrowseSupportGroupsDialog:
+    """Browse available support groups"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Browse Support Groups")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_groups()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📋 Support Group Directory",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Topic:").pack(side='left', padx=(0, 5))
+        self.topic_var = tk.StringVar()
+        topic_combo = ttk.Combobox(filter_frame, textvariable=self.topic_var, width=20, state='readonly')
+        topic_combo['values'] = ('All', 'Anxiety', 'Depression', 'Stress Management',
+                                 'Academic Pressure', 'Social Connection', 'Grief & Loss', 'Self-Care')
+        topic_combo.current(0)
+        topic_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left')
+
+        # Groups list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Groups")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Group Name', 'Topic', 'Meeting Schedule', 'Members', 'Privacy', 'Status')
+        self.groups_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.groups_tree.heading(col, text=col)
+            if col == 'Group Name':
+                self.groups_tree.column(col, width=200)
+            elif col == 'Meeting Schedule':
+                self.groups_tree.column(col, width=150)
+            else:
+                self.groups_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.groups_tree.yview)
+        self.groups_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.groups_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        self.groups_tree.bind('<<TreeviewSelect>>', self.on_select)
+
+        # Details frame
+        details_frame = ttk.LabelFrame(main_frame, text="Group Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=6, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Details", command=self.view_full_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_groups(self):
+        for item in self.groups_tree.get_children():
+            self.groups_tree.delete(item)
+
+        # Sample support groups
+        groups = [
+            ("Stress Busters", "Stress Management", "Mon/Wed 6PM", "12/15", "Closed", "Active",
+             "Weekly peer support for managing academic and life stress. Share coping strategies and support each other."),
+            ("Anxiety Support Circle", "Anxiety", "Tuesday 7PM", "8/12", "Closed", "Active",
+             "Safe space to discuss anxiety, share experiences, and learn from peers dealing with similar challenges."),
+            ("First Year Friends", "Social Connection", "Thursday 5PM", "15/20", "Open", "Active",
+             "Connect with other first-year students, make friends, and navigate university life together."),
+            ("Academic Success Group", "Academic Pressure", "Friday 4PM", "10/15", "Open", "Active",
+             "Support for students dealing with academic pressure. Share study tips and encourage each other."),
+            ("Mindfulness Together", "Self-Care", "Saturday 10AM", "6/10", "Open", "Active",
+             "Practice mindfulness, meditation, and self-care techniques together in a supportive environment.")
+        ]
+
+        for group in groups:
+            self.groups_tree.insert('', 'end', values=group[:6], tags=(group[6],))
+
+    def on_select(self, event):
+        selection = self.groups_tree.selection()
+        if not selection:
+            return
+
+        item = self.groups_tree.item(selection[0])
+        details = item['tags'][0] if item['tags'] else "No details available."
+
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, details)
+
+    def join_group(self):
+        selection = self.groups_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a group to join.")
+            return
+
+        item = self.groups_tree.item(selection[0])
+        group_name = item['values'][0]
+        privacy = item['values'][4]
+
+        if privacy == "Closed":
+            if messagebox.askyesno("Join Request",
+                                  f"'{group_name}' is a closed group.\n\nSubmit a join request?"):
+                messagebox.showinfo("Success",
+                                   f"Join request submitted for '{group_name}'.\n\n"
+                                   "The group moderator will review your request.")
+        else:
+            if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+                messagebox.showinfo("Success",
+                                   f"You've joined '{group_name}'!\n\n"
+                                   "You'll receive meeting reminders and can access group resources.")
+
+    def view_full_details(self):
+        selection = self.groups_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a group.")
+            return
+
+        item = self.groups_tree.item(selection[0])
+        values = item['values']
+        details = item['tags'][0] if item['tags'] else ""
+
+        info = f"""Group: {values[0]}
+Topic: {values[1]}
+Schedule: {values[2]}
+Members: {values[3]}
+Privacy: {values[4]}
+Status: {values[5]}
+
+Description:
+{details}
+
+Moderator: Anonymous (for privacy)
+Established: 3 months ago
+Meeting Location: Private (shared with members)
+"""
+        messagebox.showinfo("Group Details", info)
+
+
+class MySupportGroupsDialog:
+    """View student's support group memberships"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("My Support Groups")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="👥 My Support Groups",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Stats frame
+        stats_frame = ttk.LabelFrame(main_frame, text="My Participation")
+        stats_frame.pack(fill='x', pady=(0, 15))
+
+        stats_text = """Active Memberships: 3
+Total Meetings Attended: 18
+Groups Moderated: 1
+Peer Connections Made: 7
+"""
+        ttk.Label(stats_frame, text=stats_text, justify='left',
+                 font=('Courier', 10)).pack(padx=15, pady=10)
+
+        # My groups
+        groups_frame = ttk.LabelFrame(main_frame, text="My Groups")
+        groups_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Group', 'Role', 'Joined Date', 'Meetings Attended', 'Next Meeting')
+        tree = ttk.Treeview(groups_frame, columns=columns, show='tree headings', height=8)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Group':
+                tree.column(col, width=200)
+            else:
+                tree.column(col, width=150)
+
+        scrollbar = ttk.Scrollbar(groups_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample data
+        my_groups = [
+            ("Stress Busters", "Member", "2025-01-15", "8", "Mon, Apr 14, 6PM"),
+            ("Academic Success Group", "Member", "2025-02-01", "6", "Fri, Apr 11, 4PM"),
+            ("Mindfulness Together", "Moderator", "2025-01-20", "4", "Sat, Apr 12, 10AM")
+        ]
+
+        for group in my_groups:
+            tree.insert('', 'end', values=group)
+
+        # Recent activity
+        activity_frame = ttk.LabelFrame(main_frame, text="Recent Group Activity")
+        activity_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        activity_text = scrolledtext.ScrolledText(activity_frame, height=6, wrap=tk.WORD)
+        activity_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        activity_content = """📅 Apr 8: Stress Busters meeting - Discussed exam stress management
+💬 Apr 7: New message in Academic Success Group from Sarah
+📅 Apr 5: Mindfulness Together session - Guided meditation practice
+👥 Apr 3: New member joined Stress Busters
+📝 Apr 1: You were mentioned in a Mindfulness Together discussion
+"""
+        activity_text.insert(1.0, activity_content)
+        activity_text.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Access Group Resources",
+                  command=self.access_resources).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Leave Group",
+                  command=self.leave_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=self.dialog.destroy).pack(side='right')
+
+    def access_resources(self):
+        messagebox.showinfo("Group Resources",
+                           "Accessing group resources:\n\n"
+                           "• Shared documents\n"
+                           "• Meeting notes\n"
+                           "• Recommended readings\n"
+                           "• Member directory (anonymous)")
+
+    def leave_group(self):
+        if messagebox.askyesno("Confirm",
+                              "Are you sure you want to leave this support group?"):
+            messagebox.showinfo("Left Group", "You have left the group.")
+
+
+class CreateSupportGroupDialog:
+    """Create a new support group"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Support Group")
+        self.dialog.geometry("800x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="➕ Create New Support Group",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Form frame
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Group name
+        ttk.Label(form_frame, text="Group Name:").grid(row=0, column=0, sticky='w', pady=5)
+        self.name_entry = ttk.Entry(form_frame, width=50)
+        self.name_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        # Topic
+        ttk.Label(form_frame, text="Topic/Focus:").grid(row=1, column=0, sticky='w', pady=5)
+        self.topic_combo = ttk.Combobox(form_frame, width=47, state='readonly')
+        self.topic_combo['values'] = ('Anxiety', 'Depression', 'Stress Management',
+                                       'Academic Pressure', 'Social Connection',
+                                       'Grief & Loss', 'Self-Care', 'Other')
+        self.topic_combo.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        # Description
+        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        self.desc_text = scrolledtext.ScrolledText(form_frame, width=50, height=4)
+        self.desc_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        # Meeting schedule
+        ttk.Label(form_frame, text="Meeting Schedule:").grid(row=3, column=0, sticky='w', pady=5)
+        self.schedule_entry = ttk.Entry(form_frame, width=50)
+        self.schedule_entry.grid(row=3, column=1, sticky='ew', pady=5, padx=(10, 0))
+        ttk.Label(form_frame, text="(e.g., 'Every Monday 6PM')",
+                 font=('Arial', 8)).grid(row=4, column=1, sticky='w', padx=(10, 0))
+
+        # Privacy settings
+        ttk.Label(form_frame, text="Privacy:").grid(row=5, column=0, sticky='w', pady=5)
+        self.privacy_var = tk.StringVar(value="Open")
+        privacy_frame = ttk.Frame(form_frame)
+        privacy_frame.grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
+        ttk.Radiobutton(privacy_frame, text="Open (Anyone can join)",
+                       variable=self.privacy_var, value="Open").pack(anchor='w')
+        ttk.Radiobutton(privacy_frame, text="Closed (Approval required)",
+                       variable=self.privacy_var, value="Closed").pack(anchor='w')
+
+        # Member limit
+        ttk.Label(form_frame, text="Member Limit:").grid(row=6, column=0, sticky='w', pady=5)
+        self.limit_spin = ttk.Spinbox(form_frame, from_=5, to=50, width=10)
+        self.limit_spin.grid(row=6, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.limit_spin.set(15)
+
+        # Moderation rules
+        ttk.Label(form_frame, text="Group Rules:").grid(row=7, column=0, sticky='nw', pady=5)
+        self.rules_text = scrolledtext.ScrolledText(form_frame, width=50, height=4)
+        self.rules_text.grid(row=7, column=1, sticky='ew', pady=5, padx=(10, 0))
+        self.rules_text.insert(1.0, "• Respect confidentiality\n• Be supportive and non-judgmental\n• Attend regularly")
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Info box
+        info_frame = ttk.LabelFrame(main_frame, text="📌 Important Information")
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_text = ("As group creator, you'll be the moderator. You'll be responsible for:\n"
+                    "• Managing membership requests (if closed group)\n"
+                    "• Facilitating meetings\n"
+                    "• Maintaining a safe, supportive environment")
+        ttk.Label(info_frame, text=info_text, wraplength=700).pack(padx=10, pady=10)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create Group",
+                  command=self.create_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel",
+                  command=self.dialog.destroy).pack(side='right')
+
+    def create_group(self):
+        if not self.name_entry.get():
+            messagebox.showwarning("Warning", "Please enter a group name.")
+            return
+
+        if messagebox.askyesno("Confirm",
+                              f"Create support group '{self.name_entry.get()}'?"):
+            messagebox.showinfo("Success",
+                               "Support group created successfully!\n\n"
+                               "You are now the group moderator.\n"
+                               "Your group will appear in the directory shortly.")
+            self.dialog.destroy()
+
+
+class AnonymousPeerMatchingDialog:
+    """Anonymous peer matching system"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Anonymous Peer Matching")
+        self.dialog.geometry("900x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🤝 Anonymous Peer Support Matching",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Info banner
+        info_frame = ttk.LabelFrame(main_frame, text="How It Works")
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_text = ("Get matched with peers facing similar challenges. All matches are anonymous "
+                    "and confidential. Connect through secure messaging without revealing identities.")
+        ttk.Label(info_frame, text=info_text, wraplength=850).pack(padx=10, pady=10)
+
+        # Matching preferences
+        pref_frame = ttk.LabelFrame(main_frame, text="Matching Preferences")
+        pref_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        pref_content = ttk.Frame(pref_frame)
+        pref_content.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Issue/interest
+        ttk.Label(pref_content, text="What would you like support with?").grid(
+            row=0, column=0, columnspan=2, sticky='w', pady=(0, 5))
+
+        issues = ['Stress & Anxiety', 'Academic Pressure', 'Loneliness/Social Connection',
+                 'Family Issues', 'Relationship Concerns', 'Self-Esteem', 'Life Transitions']
+
+        for i, issue in enumerate(issues):
+            ttk.Checkbutton(pref_content, text=issue).grid(
+                row=i+1, column=0, sticky='w', padx=(20, 0))
+
+        # Match type
+        ttk.Label(pref_content, text="\nPreferred Match Type:",
+                 font=('Arial', 10, 'bold')).grid(row=len(issues)+1, column=0, sticky='w', pady=(10, 5))
+
+        match_type_var = tk.StringVar(value="One-on-one")
+        ttk.Radiobutton(pref_content, text="One-on-one peer matching",
+                       variable=match_type_var, value="One-on-one").grid(
+                           row=len(issues)+2, column=0, sticky='w', padx=(20, 0))
+        ttk.Radiobutton(pref_content, text="Small group (3-4 peers)",
+                       variable=match_type_var, value="Group").grid(
+                           row=len(issues)+3, column=0, sticky='w', padx=(20, 0))
+
+        # Privacy notice
+        privacy_frame = ttk.LabelFrame(main_frame, text="🔒 Privacy & Security")
+        privacy_frame.pack(fill='x', pady=(0, 15))
+
+        privacy_text = ("• Your identity remains anonymous\n"
+                       "• Secure encrypted messaging\n"
+                       "• You can unmatch at any time\n"
+                       "• Conversations are not monitored (unless safety concern)")
+        ttk.Label(privacy_frame, text=privacy_text, justify='left').pack(padx=10, pady=10)
+
+        # My matches
+        matches_frame = ttk.LabelFrame(main_frame, text="My Current Matches")
+        matches_frame.pack(fill='x', pady=(0, 15))
+
+        match_text = """Active Matches: 2
+
+Match #1: Support Buddy (matched 2 weeks ago)
+  Common interests: Academic stress, time management
+  Messages exchanged: 15
+  Last contact: 2 days ago
+
+Match #2: Anonymous Friend (matched 1 week ago)
+  Common interests: Social connection, first-year adjustment
+  Messages exchanged: 8
+  Last contact: Yesterday
+"""
+        ttk.Label(matches_frame, text=match_text, justify='left',
+                 font=('Courier', 9)).pack(padx=15, pady=10)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Find New Match",
+                  command=self.find_match).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View My Matches",
+                  command=self.view_matches).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Messaging",
+                  command=self.open_messaging).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=self.dialog.destroy).pack(side='right')
+
+    def find_match(self):
+        if messagebox.askyesno("Find Match",
+                              "Start searching for a peer match based on your preferences?"):
+            messagebox.showinfo("Matching",
+                               "Searching for compatible peer matches...\n\n"
+                               "You'll be notified when a match is found.\n"
+                               "This usually takes 1-2 days.")
+
+    def view_matches(self):
+        messagebox.showinfo("My Matches",
+                           "Match details:\n\n"
+                           "Match #1: Support Buddy\n"
+                           "  Status: Active\n"
+                           "  Compatibility: 85%\n\n"
+                           "Match #2: Anonymous Friend\n"
+                           "  Status: Active\n"
+                           "  Compatibility: 78%")
+
+    def open_messaging(self):
+        messagebox.showinfo("Messaging",
+                           "Secure messaging system:\n\n"
+                           "• Send/receive anonymous messages\n"
+                           "• End-to-end encryption\n"
+                           "• Report concerns if needed")
+
+
+class WellnessResourcesDialog:
+    """Wellness and mental health resources library"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Wellness Resources")
+        self.dialog.geometry("1000x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📚 Wellness Resource Library",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Create notebook for categories
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Mental Health Resources tab
+        mental_health_frame = ttk.Frame(notebook)
+        notebook.add(mental_health_frame, text="Mental Health")
+        self.create_mental_health_tab(mental_health_frame)
+
+        # Counseling Services tab
+        counseling_frame = ttk.Frame(notebook)
+        notebook.add(counseling_frame, text="Counseling Services")
+        self.create_counseling_tab(counseling_frame)
+
+        # Crisis Hotlines tab
+        crisis_frame = ttk.Frame(notebook)
+        notebook.add(crisis_frame, text="Crisis Hotlines")
+        self.create_crisis_tab(crisis_frame)
+
+        # Self-Help Materials tab
+        selfhelp_frame = ttk.Frame(notebook)
+        notebook.add(selfhelp_frame, text="Self-Help Materials")
+        self.create_selfhelp_tab(selfhelp_frame)
+
+        # Professional Support tab
+        professional_frame = ttk.Frame(notebook)
+        notebook.add(professional_frame, text="Professional Support")
+        self.create_professional_tab(professional_frame)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def create_mental_health_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Arial', 10))
+        text.pack(fill='both', expand=True)
+
+        content = """MENTAL HEALTH RESOURCES
+================================================================================
+
+UNDERSTANDING MENTAL HEALTH
+
+Mental health includes our emotional, psychological, and social well-being.
+It affects how we think, feel, and act.
+
+COMMON CONCERNS FOR STUDENTS:
+  • Stress and anxiety
+  • Depression
+  • Sleep problems
+  • Eating disorders
+  • Substance use
+  • Relationship issues
+  • Academic pressure
+
+SELF-CARE STRATEGIES:
+
+1. Physical Health
+   - Regular exercise (30 min/day)
+   - Healthy eating
+   - Adequate sleep (7-9 hours)
+   - Limit alcohol/caffeine
+
+2. Emotional Health
+   - Practice mindfulness/meditation
+   - Keep a journal
+   - Express emotions healthily
+   - Connect with supportive people
+
+3. Mental Health
+   - Take breaks from studying
+   - Set realistic goals
+   - Challenge negative thoughts
+   - Learn stress management techniques
+
+4. Social Health
+   - Maintain relationships
+   - Join clubs/activities
+   - Seek support when needed
+   - Help others
+
+WHEN TO SEEK HELP:
+  ✓ Persistent sadness or hopelessness
+  ✓ Excessive worry or fear
+  ✓ Extreme mood changes
+  ✓ Withdrawal from activities
+  ✓ Difficulty concentrating
+  ✓ Changes in sleep/eating patterns
+  ✓ Thoughts of self-harm
+
+Remember: Seeking help is a sign of strength, not weakness.
+
+RECOMMENDED READING:
+  • "The Anxiety and Phobia Workbook" - Edmund Bourne
+  • "Feeling Good" - David Burns
+  • "Lost Connections" - Johann Hari
+  • "The Body Keeps the Score" - Bessel van der Kolk
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def create_counseling_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Arial', 10))
+        text.pack(fill='both', expand=True)
+
+        content = """COUNSELING SERVICES
+================================================================================
+
+UNIVERSITY COUNSELING CENTER
+
+Location: Student Services Building, 2nd Floor
+Hours: Monday-Friday, 9AM-5PM
+Phone: (555) 123-4567
+Email: counseling@university.edu
+Website: www.university.edu/counseling
+
+SERVICES OFFERED:
+
+Individual Counseling
+  • One-on-one sessions with licensed counselors
+  • Confidential and free for students
+  • Short-term solution-focused therapy
+  • Up to 10 sessions per semester
+
+Group Counseling
+  • Anxiety management groups
+  • Depression support groups
+  • Relationship skills workshops
+  • Stress reduction groups
+
+Crisis Intervention
+  • Same-day emergency appointments
+  • 24/7 crisis hotline
+  • Safety planning
+  • Referrals to emergency services if needed
+
+Workshops & Events
+  • Mental Health Awareness Week
+  • Stress management workshops
+  • Mindfulness sessions
+  • Sleep hygiene seminars
+
+MAKING AN APPOINTMENT:
+
+1. Call (555) 123-4567 during business hours
+2. Email counseling@university.edu
+3. Visit in person (walk-ins welcome for crisis)
+4. Use the online booking portal
+
+First appointments usually available within 3-5 days.
+Crisis appointments available same-day.
+
+WHAT TO EXPECT:
+
+First Session (50 minutes):
+  • Discuss what brings you to counseling
+  • Review confidentiality and limits
+  • Develop initial treatment plan
+  • Schedule follow-up sessions
+
+Ongoing Sessions:
+  • Work on identified goals
+  • Learn coping strategies
+  • Process emotions and experiences
+  • Track progress
+
+CONFIDENTIALITY:
+
+Your counseling records are confidential and separate from
+academic records. Information is only shared:
+  • With your written permission
+  • If there's risk of harm to self/others
+  • If child abuse is disclosed
+  • If required by court order
+
+OFF-CAMPUS REFERRALS:
+
+For students needing long-term therapy, medication management,
+or specialized treatment, we provide referrals to:
+  • Local therapists
+  • Psychiatrists
+  • Intensive outpatient programs
+  • Support groups in the community
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def create_crisis_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Arial', 10))
+        text.pack(fill='both', expand=True)
+
+        content = """CRISIS HOTLINES & EMERGENCY RESOURCES
+================================================================================
+
+🆘 IF YOU ARE IN IMMEDIATE DANGER:
+   CALL 911 or go to the nearest emergency room
+
+NATIONAL CRISIS HOTLINES (24/7):
+
+National Suicide Prevention Lifeline
+  📞 1-800-273-8255 (TALK)
+  💬 Text "HELLO" to 741741
+  🌐 suicidepreventionlifeline.org
+  Available 24/7, free and confidential
+
+Crisis Text Line
+  💬 Text "HOME" to 741741
+  Connect with a crisis counselor via text
+  Available 24/7
+
+National Alliance on Mental Illness (NAMI)
+  📞 1-800-950-6264
+  Monday-Friday, 10AM-6PM ET
+  Information and referrals
+
+Substance Abuse and Mental Health Services (SAMHSA)
+  📞 1-800-662-4357 (HELP)
+  24/7 treatment referral service
+
+SPECIALIZED HOTLINES:
+
+LGBTQ+ Support
+  📞 Trevor Project: 1-866-488-7386
+  💬 Text "START" to 678678
+
+Sexual Assault
+  📞 RAINN: 1-800-656-4673 (HOPE)
+  24/7 confidential support
+
+Domestic Violence
+  📞 National Hotline: 1-800-799-7233
+  💬 Text "START" to 88788
+
+Veterans Crisis Line
+  📞 1-800-273-8255, Press 1
+  💬 Text 838255
+
+UNIVERSITY RESOURCES:
+
+Campus Police (Emergency)
+  📞 (555) 123-9111
+  Available 24/7
+
+Counseling Center Crisis Line
+  📞 (555) 123-HELP
+  After hours crisis support
+
+Student Health Center
+  📞 (555) 123-4500
+  Monday-Friday 8AM-6PM
+
+LOCAL RESOURCES:
+
+City Hospital Emergency Room
+  24/7 psychiatric emergency services
+  123 Main Street
+  📞 (555) 987-6543
+
+Community Mental Health Center
+  Walk-in crisis services
+  456 Oak Avenue
+  📞 (555) 456-7890
+  Monday-Friday 8AM-8PM
+
+SAFETY PLANNING:
+
+If you're struggling with thoughts of self-harm:
+
+1. Remove means (secure medications, sharp objects)
+2. Call a crisis hotline
+3. Tell someone you trust
+4. Go to a safe place with people
+5. Use coping strategies you've learned
+6. Seek professional help
+
+WARNING SIGNS:
+  • Talking about wanting to die
+  • Looking for ways to end one's life
+  • Feeling hopeless or having no purpose
+  • Feeling trapped or in unbearable pain
+  • Talking about being a burden
+  • Increasing substance use
+  • Withdrawing from activities
+  • Extreme mood swings
+  • Giving away possessions
+
+YOU ARE NOT ALONE. HELP IS AVAILABLE.
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def create_selfhelp_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Arial', 10))
+        text.pack(fill='both', expand=True)
+
+        content = """SELF-HELP MATERIALS
+================================================================================
+
+ONLINE RESOURCES:
+
+Mental Health Apps:
+  • Headspace - Meditation and mindfulness
+  • Calm - Sleep and relaxation
+  • Moodfit - Mood tracking and CBT tools
+  • Sanvello - Anxiety and depression support
+  • Insight Timer - Free meditation library
+
+Websites:
+  • MentalHealth.gov - Government mental health portal
+  • Mindful.org - Mindfulness resources
+  • Psychology Today - Find a therapist, articles
+  • HelpGuide.org - Mental health guides
+  • Verywell Mind - Mental health information
+
+Online Courses:
+  • Yale's "The Science of Well-Being" (Coursera)
+  • "Managing Anxiety" (FutureLearn)
+  • "Mindfulness for Wellbeing" (Monash University)
+
+BOOKS & WORKBOOKS:
+
+Anxiety:
+  • "The Anxiety and Phobia Workbook" - Edmund Bourne
+  • "Dare: The New Way to End Anxiety" - Barry McDonagh
+  • "The Worry Cure" - Robert Leahy
+
+Depression:
+  • "Feeling Good" - David Burns
+  • "The Upward Spiral" - Alex Korb
+  • "Lost Connections" - Johann Hari
+
+Stress Management:
+  • "The Relaxation and Stress Reduction Workbook" - Davis, Eshelman, McKay
+  • "Why Zebras Don't Get Ulcers" - Robert Sapolsky
+
+Mindfulness:
+  • "Wherever You Go, There You Are" - Jon Kabat-Zinn
+  • "The Mindful Way Through Depression" - Williams, Teasdale, Segal, Kabat-Zinn
+  • "Full Catastrophe Living" - Jon Kabat-Zinn
+
+Self-Esteem:
+  • "Self-Compassion" - Kristin Neff
+  • "The Gifts of Imperfection" - Brené Brown
+
+VIDEOS & PODCASTS:
+
+TED Talks:
+  • "The Power of Vulnerability" - Brené Brown
+  • "How to Make Stress Your Friend" - Kelly McGonigal
+  • "Depression: The Secret We Share" - Andrew Solomon
+
+Podcasts:
+  • The Happiness Lab - Yale professor's science of happiness
+  • Terrible, Thanks for Asking - Mental health stories
+  • The Anxiety Coaches Podcast - Anxiety management
+
+YouTube Channels:
+  • Therapy in a Nutshell - Mental health education
+  • Psych2Go - Psychology and mental health
+  • The School of Life - Emotional intelligence
+
+WORKSHEETS & EXERCISES:
+
+Available in Counseling Center or online:
+  • Cognitive Behavioral Therapy (CBT) worksheets
+  • Thought records
+  • Behavioral activation schedules
+  • Relaxation scripts
+  • Gratitude journals
+  • Sleep hygiene checklists
+  • Emotion regulation tools
+
+PEER-LED RESOURCES:
+
+  • Active Minds chapter (mental health awareness)
+  • Mental Health First Aid training
+  • Peer support groups
+  • Wellness workshops
+
+Remember: Self-help materials are great supplements to professional help,
+but they're not a replacement for therapy if you're struggling significantly.
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def create_professional_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Arial', 10))
+        text.pack(fill='both', expand=True)
+
+        content = """PROFESSIONAL SUPPORT OPTIONS
+================================================================================
+
+TYPES OF MENTAL HEALTH PROFESSIONALS:
+
+Psychiatrist (MD/DO)
+  • Medical doctor specializing in mental health
+  • Can prescribe medication
+  • Often focuses on medication management
+  • May provide therapy
+  Insurance: Usually covered
+
+Psychologist (PhD/PsyD)
+  • Doctoral degree in psychology
+  • Specializes in assessment and therapy
+  • Cannot prescribe medication (in most states)
+  • Evidence-based treatment approaches
+  Insurance: Usually covered
+
+Licensed Clinical Social Worker (LCSW)
+  • Master's degree in social work
+  • Provides therapy and case management
+  • Connects clients with community resources
+  Insurance: Usually covered
+
+Licensed Professional Counselor (LPC)
+  • Master's degree in counseling
+  • Provides individual, group, couples therapy
+  • Various specializations available
+  Insurance: Usually covered
+
+THERAPY APPROACHES:
+
+Cognitive Behavioral Therapy (CBT)
+  • Focus on thoughts, feelings, behaviors
+  • Evidence-based for anxiety, depression
+  • Short-term, goal-oriented
+  • Homework between sessions
+
+Dialectical Behavior Therapy (DBT)
+  • Skills for emotion regulation
+  • Mindfulness-based
+  • Effective for mood disorders, BPD
+  • Individual + group components
+
+Acceptance and Commitment Therapy (ACT)
+  • Mindfulness and acceptance strategies
+  • Values-based action
+  • Psychological flexibility
+
+Psychodynamic Therapy
+  • Explores unconscious patterns
+  • Childhood experiences
+  • Long-term insight-oriented
+
+Interpersonal Therapy (IPT)
+  • Focus on relationships
+  • Short-term, structured
+  • Effective for depression
+
+FINDING A THERAPIST:
+
+University Counseling Center
+  • Free for students
+  • Short-term therapy
+  • Can provide referrals
+
+Student Health Insurance
+  • Check coverage for mental health
+  • In-network providers list
+  • Co-pay information
+
+Online Directories:
+  • Psychology Today therapist finder
+  • GoodTherapy.org
+  • TherapyDen
+  • Insurance provider website
+
+Questions to Ask:
+  ✓ What's your experience with [my concern]?
+  ✓ What therapy approaches do you use?
+  ✓ What are your fees/do you take insurance?
+  ✓ What's your availability?
+  ✓ How long are sessions?
+  ✓ How often would we meet?
+
+MEDICATION OPTIONS:
+
+Common Medications:
+  • Antidepressants (SSRIs, SNRIs)
+  • Anti-anxiety medications
+  • Mood stabilizers
+  • Antipsychotics (for severe cases)
+
+Getting Medication:
+  1. See primary care doctor OR
+  2. See psychiatrist OR
+  3. Use Student Health Center
+
+Important Notes:
+  • May take 4-6 weeks to feel effects
+  • Don't stop suddenly without doctor approval
+  • Report side effects
+  • Medication + therapy often most effective
+
+ALTERNATIVE/COMPLEMENTARY:
+
+  • Acupuncture
+  • Massage therapy
+  • Exercise programs
+  • Nutrition counseling
+  • Yoga/meditation classes
+  • Art/music therapy
+  • Support groups
+
+PAYING FOR TREATMENT:
+
+Student Health Insurance
+  • Check mental health benefits
+  • In-network vs out-of-network
+  • Co-pays and deductibles
+
+Sliding Scale
+  • Income-based fees
+  • Community mental health centers
+  • University training clinics
+
+Free/Low-Cost:
+  • University counseling (free)
+  • Support groups (often free)
+  • Community mental health centers
+  • Online resources and apps
+  • Crisis hotlines (free)
+
+INSURANCE TIPS:
+
+  • Verify provider is in-network
+  • Check session limits
+  • Understand co-pays
+  • Get pre-authorization if required
+  • Keep EOBs (Explanation of Benefits)
+
+Remember: Finding the right therapist may take time. It's okay to try
+a few before finding the best fit. The therapeutic relationship is key!
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+
+class CrisisResourcesDialog:
+    """Immediate crisis resources and support"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Crisis Resources - IMMEDIATE HELP")
+        self.dialog.geometry("900x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        # Red background for urgency
+        self.dialog.configure(bg='#FFE6E6')
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        # Emergency header
+        emergency_frame = tk.Frame(main_frame, bg='#FF0000', relief='raised', bd=3)
+        emergency_frame.pack(fill='x', pady=(0, 20))
+
+        ttk.Label(emergency_frame, text="🆘 CRISIS RESOURCES - IMMEDIATE HELP",
+                 font=('Arial', 16, 'bold'), background='#FF0000',
+                 foreground='white').pack(pady=15)
+
+        # If in immediate danger
+        danger_frame = ttk.LabelFrame(main_frame, text="⚠️ IF YOU ARE IN IMMEDIATE DANGER")
+        danger_frame.pack(fill='x', pady=(0, 15))
+
+        danger_text = """CALL 911 IMMEDIATELY
+or go to the nearest emergency room
+
+Campus Police: (555) 123-9111 (24/7)
+"""
+        ttk.Label(danger_frame, text=danger_text, font=('Arial', 12, 'bold'),
+                 foreground='red', justify='center').pack(padx=20, pady=15)
+
+        # Quick access buttons
+        quick_frame = ttk.LabelFrame(main_frame, text="Quick Access - Click to Call/Text")
+        quick_frame.pack(fill='x', pady=(0, 15))
+
+        buttons_grid = ttk.Frame(quick_frame)
+        buttons_grid.pack(fill='x', padx=10, pady=10)
+
+        crisis_contacts = [
+            ("National Suicide Prevention Lifeline", "1-800-273-8255", "24/7 Support"),
+            ("Crisis Text Line", "Text HOME to 741741", "24/7 Text Support"),
+            ("Campus Counseling Crisis", "(555) 123-HELP", "After Hours"),
+            ("NAMI Helpline", "1-800-950-6264", "Mon-Fri 10AM-6PM")
+        ]
+
+        for i, (name, number, hours) in enumerate(crisis_contacts):
+            btn_frame = ttk.Frame(buttons_grid)
+            btn_frame.grid(row=i//2, column=i%2, padx=10, pady=5, sticky='ew')
+
+            ttk.Label(btn_frame, text=name, font=('Arial', 10, 'bold')).pack(anchor='w')
+            ttk.Label(btn_frame, text=number, font=('Arial', 11),
+                     foreground='blue').pack(anchor='w')
+            ttk.Label(btn_frame, text=hours, font=('Arial', 9, 'italic')).pack(anchor='w')
+
+        buttons_grid.columnconfigure(0, weight=1)
+        buttons_grid.columnconfigure(1, weight=1)
+
+        # Safety planning
+        safety_frame = ttk.LabelFrame(main_frame, text="Safety Planning")
+        safety_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        safety_text = scrolledtext.ScrolledText(safety_frame, height=10, wrap=tk.WORD,
+                                                font=('Arial', 10))
+        safety_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        safety_content = """IF YOU'RE HAVING THOUGHTS OF SELF-HARM:
+
+1. TELL SOMEONE
+   • Call a crisis hotline above
+   • Text a friend or family member
+   • Go to someone you trust
+   • Go to a public place
+
+2. REMOVE MEANS
+   • Give medications to trusted person
+   • Remove sharp objects
+   • Get rid of items that could be harmful
+
+3. USE COPING STRATEGIES
+   • Deep breathing exercises
+   • Go for a walk
+   • Listen to calming music
+   • Hold ice cubes
+   • Take a cold shower
+   • Call or text a friend
+
+4. DISTRACT YOURSELF
+   • Watch a favorite movie/show
+   • Play a game
+   • Exercise
+   • Draw or color
+   • Write in a journal
+
+5. SEEK PROFESSIONAL HELP
+   • Call counseling center
+   • Go to emergency room
+   • Call 911
+   • Use crisis services above
+
+WARNING SIGNS TO WATCH FOR:
+  • Talking about wanting to die or to hurt oneself
+  • Looking for a way to kill oneself
+  • Talking about feeling hopeless or having no purpose
+  • Talking about feeling trapped or being in unbearable pain
+  • Talking about being a burden to others
+  • Increasing use of alcohol or drugs
+  • Acting anxious, agitated, or recklessly
+  • Sleeping too little or too much
+  • Withdrawing or feeling isolated
+  • Showing rage or talking about seeking revenge
+  • Displaying extreme mood swings
+
+YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
+"""
+        safety_text.insert(1.0, safety_content)
+        safety_text.config(state='disabled')
+
+        # Bottom buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="View All Wellness Resources",
+                  command=self.view_all_resources).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Create Safety Plan",
+                  command=self.create_safety_plan).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=self.dialog.destroy).pack(side='right')
+
+    def view_all_resources(self):
+        self.dialog.destroy()
+        # Would open WellnessResourcesDialog
+        messagebox.showinfo("Resources", "Opening full wellness resources library...")
+
+    def create_safety_plan(self):
+        messagebox.showinfo("Safety Plan",
+                           "Safety plan template:\n\n"
+                           "1. Warning signs I notice\n"
+                           "2. Coping strategies that work for me\n"
+                           "3. People/places that distract me\n"
+                           "4. People I can call\n"
+                           "5. Professionals to contact\n"
+                           "6. How to make environment safe\n\n"
+                           "Would you like to create a personalized plan?")
+
+
+class ManagePeerSupportDialog:
+    """Manage peer support system (for moderators/admins)"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Manage Peer Support System")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="⚙️ Manage Peer Support System",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Tabs for different management areas
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Group moderation tab
+        moderation_frame = ttk.Frame(notebook)
+        notebook.add(moderation_frame, text="Group Moderation")
+        self.create_moderation_tab(moderation_frame)
+
+        # Pending requests tab
+        requests_frame = ttk.Frame(notebook)
+        notebook.add(requests_frame, text="Join Requests")
+        self.create_requests_tab(requests_frame)
+
+        # Reports tab
+        reports_frame = ttk.Frame(notebook)
+        notebook.add(reports_frame, text="Reports & Analytics")
+        self.create_reports_tab(reports_frame)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def create_moderation_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="Groups You Moderate",
+                 font=('Arial', 11, 'bold')).pack(pady=(0, 10))
+
+        columns = ('Group', 'Members', 'Status', 'Last Activity')
+        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=10)
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.pack(fill='both', expand=True)
+
+        # Sample data
+        groups = [
+            ("Mindfulness Together", "6/10", "Active", "2 hours ago"),
+            ("Study Support Group", "12/15", "Active", "1 day ago")
+        ]
+
+        for group in groups:
+            tree.insert('', 'end', values=group)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Manage Members").pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Edit Group Settings").pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="View Activity").pack(side='left')
+
+    def create_requests_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="Pending Join Requests",
+                 font=('Arial', 11, 'bold')).pack(pady=(0, 10))
+
+        columns = ('Student', 'Group', 'Requested', 'Reason')
+        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=8)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Reason':
+                tree.column(col, width=250)
+
+        tree.pack(fill='both', expand=True)
+
+        # Sample requests
+        requests = [
+            ("Anonymous User #123", "Mindfulness Together", "2 days ago",
+             "Interested in learning mindfulness techniques"),
+            ("Anonymous User #456", "Mindfulness Together", "1 day ago",
+             "Looking for support with stress management")
+        ]
+
+        for req in requests:
+            tree.insert('', 'end', values=req)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Approve", command=self.approve_request).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Deny", command=self.deny_request).pack(side='left')
+
+    def create_reports_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
+        text.pack(fill='both', expand=True)
+
+        content = """PEER SUPPORT SYSTEM ANALYTICS
+================================================================================
+
+OVERALL STATISTICS:
+
+Total Support Groups: 24
+Active Members: 156 students
+Average Group Size: 8.5 members
+Groups Created (This Month): 3
+Total Peer Matches: 47 active connections
+
+ENGAGEMENT METRICS:
+
+Weekly Active Users: 112 (72% of members)
+Average Meetings per Group: 3.2/month
+Message Activity: 847 messages (last 30 days)
+Resource Downloads: 234 (last 30 days)
+
+TOP SUPPORT GROUP TOPICS:
+
+1. Stress Management (6 groups, 52 members)
+2. Academic Pressure (4 groups, 34 members)
+3. Social Connection (4 groups, 29 members)
+4. Anxiety (3 groups, 21 members)
+5. Self-Care (3 groups, 18 members)
+
+PEER MATCHING STATISTICS:
+
+Active Matches: 47
+Match Success Rate: 82%
+Average Match Duration: 6.3 weeks
+Satisfaction Rating: 4.6/5.0
+
+WELLNESS RESOURCE USAGE:
+
+Most Viewed Resources:
+  • Stress management techniques (127 views)
+  • Anxiety coping strategies (98 views)
+  • Crisis hotline information (76 views)
+  • Self-care activities (65 views)
+
+CRISIS INTERVENTIONS:
+
+Crisis Resources Accessed: 12 (last month)
+Follow-up Completed: 12/12 (100%)
+Professional Referrals Made: 8
+
+MODERATOR ACTIVITY:
+
+Active Moderators: 18
+Average Groups per Moderator: 1.3
+Join Requests Processed: 32 (last week)
+Average Response Time: 1.8 days
+
+GROWTH TRENDS:
+
+  Month      | New Groups | New Members | Activity
+  -----------|------------|-------------|----------
+  January    | 2          | 23          | ↗
+  February   | 3          | 31          | ↗↗
+  March      | 3          | 28          | ↗
+  April (YTD)| 1          | 12          | →
+
+RECOMMENDATIONS:
+
+✓ Peer support engagement is strong
+✓ Consider creating groups for underserved topics
+✓ Moderator recruitment needed for growing demand
+✓ Continue promoting wellness resources
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def approve_request(self):
+        messagebox.showinfo("Approved", "Join request approved.")
+
+    def deny_request(self):
+        if messagebox.askyesno("Deny Request", "Deny this join request?"):
+            messagebox.showinfo("Denied", "Join request denied.")
+
+
+# ============================================================================
+# ACADEMIC SUPPORT SYSTEM - 6 Features
+# ============================================================================
+
+class AcademicSupportDialog:
+    """Main hub for academic support features"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Academic Support Hub")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="🎓 Academic Support Hub",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Info banner
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_text = ("Access peer tutoring, study groups, shared academic resources, "
+                    "exam preparation support, and academic workshops.")
+        ttk.Label(info_frame, text=info_text, wraplength=1000,
+                 justify='left', font=('Arial', 10)).pack(padx=10, pady=10)
+
+        # Create grid of support options
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        options = [
+            ("Study Groups", "study_groups", "📚 Join or create study groups", "blue"),
+            ("Peer Tutoring", "tutoring", "👨‍🏫 Find tutors or become one", "green"),
+            ("Shared Resources", "resources", "📂 Notes, textbooks, study guides", "orange"),
+            ("Exam Prep Groups", "exam_prep", "📝 Prepare for exams together", "purple"),
+            ("Academic Workshops", "workshops", "🎯 Skill-building workshops", "teal"),
+            ("My Academic Activity", "my_activity", "📊 Track my participation", "gray")
+        ]
+
+        for i, (title, key, description, color) in enumerate(options):
+            card = ttk.LabelFrame(buttons_frame, text=title)
+            card.grid(row=i//2, column=i%2, padx=10, pady=10, sticky='nsew')
+
+            ttk.Label(card, text=description, wraplength=450,
+                     foreground=color).pack(padx=10, pady=5)
+
+            command_map = {
+                'study_groups': self.manage_study_groups,
+                'tutoring': self.manage_peer_tutoring,
+                'resources': self.manage_shared_resources,
+                'exam_prep': self.exam_preparation_groups,
+                'workshops': self.view_academic_workshops,
+                'my_activity': self.view_my_activity
+            }
+
+            ttk.Button(card, text="Open",
+                      command=command_map[key]).pack(padx=10, pady=5)
+
+        for i in range(3):
+            buttons_frame.rowconfigure(i, weight=1)
+        for i in range(2):
+            buttons_frame.columnconfigure(i, weight=1)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def manage_study_groups(self):
+        dialog = StudyGroupsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def manage_peer_tutoring(self):
+        dialog = PeerTutoringDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def manage_shared_resources(self):
+        dialog = SharedResourcesDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def exam_preparation_groups(self):
+        dialog = ExamPrepGroupsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_academic_workshops(self):
+        dialog = AcademicWorkshopsDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+    def view_my_activity(self):
+        dialog = MyAcademicActivityDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+
+class StudyGroupsDialog:
+    """Study group management platform"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Study Groups")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_groups()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📚 Study Groups",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        self.course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
+        course_combo['values'] = ('All Courses', 'CS101 - Intro to Programming',
+                                  'MATH201 - Calculus II', 'BIO150 - Biology',
+                                  'CHEM101 - General Chemistry', 'PHYS200 - Physics II')
+        course_combo.current(0)
+        course_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left', padx=(0, 20))
+        ttk.Button(filter_frame, text="➕ Create Study Group",
+                  command=self.create_group).pack(side='left')
+
+        # Groups list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Study Groups")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Course', 'Group Name', 'Members', 'Next Session', 'Location', 'Status')
+        self.groups_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.groups_tree.heading(col, text=col)
+            if col == 'Course':
+                self.groups_tree.column(col, width=150)
+            elif col == 'Group Name':
+                self.groups_tree.column(col, width=180)
+            else:
+                self.groups_tree.column(col, width=120)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.groups_tree.yview)
+        self.groups_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.groups_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        self.groups_tree.bind('<<TreeviewSelect>>', self.on_select)
+
+        # Details frame
+        details_frame = ttk.LabelFrame(main_frame, text="Group Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Schedule Session", command=self.schedule_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Share Materials", command=self.share_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_groups(self):
+        for item in self.groups_tree.get_children():
+            self.groups_tree.delete(item)
+
+        # Sample study groups
+        groups = [
+            ("CS101", "Python Basics Study Group", "5/8", "Mon, Apr 14, 7PM", "Library Room 203", "Open",
+             "Weekly study sessions covering Python fundamentals, homework help, and project collaboration."),
+            ("MATH201", "Calculus II Mastery", "6/10", "Wed, Apr 16, 6PM", "Math Building 105", "Open",
+             "Working through problem sets together, reviewing lecture material, and preparing for exams."),
+            ("BIO150", "Biology Study Squad", "4/6", "Thu, Apr 17, 5PM", "Science Center 201", "Open",
+             "Chapter reviews, lab report help, and exam preparation for Biology 150."),
+            ("CHEM101", "Chem Study Crew", "7/12", "Tue, Apr 15, 7:30PM", "Chemistry Lab 3", "Open",
+             "Problem-solving sessions, lab review, and test preparation strategies."),
+            ("PHYS200", "Physics II Workshop", "3/8", "Fri, Apr 18, 4PM", "Physics Building 110", "Open",
+             "Collaborative problem solving and concept clarification for Physics II topics.")
+        ]
+
+        for group in groups:
+            self.groups_tree.insert('', 'end', values=group[:6], tags=(group[6],))
+
+    def on_select(self, event):
+        selection = self.groups_tree.selection()
+        if not selection:
+            return
+
+        item = self.groups_tree.item(selection[0])
+        details = item['tags'][0] if item['tags'] else "No details available."
+
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, details)
+
+    def join_group(self):
+        selection = self.groups_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a study group.")
+            return
+
+        item = self.groups_tree.item(selection[0])
+        group_name = item['values'][1]
+
+        if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+            messagebox.showinfo("Success",
+                               f"You've joined '{group_name}'!\n\n"
+                               "You'll receive notifications about upcoming sessions.")
+
+    def schedule_session(self):
+        messagebox.showinfo("Schedule Session",
+                           "Schedule a new study session:\n\n"
+                           "• Select date and time\n"
+                           "• Choose location\n"
+                           "• Set agenda/topics\n"
+                           "• Notify group members")
+
+    def share_materials(self):
+        messagebox.showinfo("Share Materials",
+                           "Share study materials with your group:\n\n"
+                           "• Upload notes\n"
+                           "• Share practice problems\n"
+                           "• Post helpful resources")
+
+    def create_group(self):
+        dialog = CreateStudyGroupDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+
+class CreateStudyGroupDialog:
+    """Create a new study group"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Study Group")
+        self.dialog.geometry("700x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="➕ Create New Study Group",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Form
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        ttk.Label(form_frame, text="Course:").grid(row=0, column=0, sticky='w', pady=5)
+        self.course_combo = ttk.Combobox(form_frame, width=47, state='readonly')
+        self.course_combo['values'] = ('CS101 - Intro to Programming', 'MATH201 - Calculus II',
+                                        'BIO150 - Biology', 'CHEM101 - General Chemistry')
+        self.course_combo.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Group Name:").grid(row=1, column=0, sticky='w', pady=5)
+        self.name_entry = ttk.Entry(form_frame, width=50)
+        self.name_entry.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        self.desc_text = scrolledtext.ScrolledText(form_frame, width=50, height=3)
+        self.desc_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Member Limit:").grid(row=3, column=0, sticky='w', pady=5)
+        self.limit_spin = ttk.Spinbox(form_frame, from_=3, to=20, width=10)
+        self.limit_spin.grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
+        self.limit_spin.set(8)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create", command=self.create).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+
+    def create(self):
+        if not self.name_entry.get():
+            messagebox.showwarning("Warning", "Please enter a group name.")
+            return
+
+        messagebox.showinfo("Success", "Study group created successfully!")
+        self.dialog.destroy()
+
+
+class PeerTutoringDialog:
+    """Peer tutoring system"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Peer Tutoring")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_tutors()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="👨‍🏫 Peer Tutoring",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Top buttons
+        top_btn_frame = ttk.Frame(main_frame)
+        top_btn_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Button(top_btn_frame, text="🎓 Become a Tutor",
+                  command=self.become_tutor).pack(side='left', padx=(0, 10))
+        ttk.Button(top_btn_frame, text="📅 My Tutoring Schedule",
+                  command=self.view_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(top_btn_frame, text="📊 My Tutoring Hours",
+                  command=self.view_hours).pack(side='left')
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Subject:").pack(side='left', padx=(0, 5))
+        self.subject_var = tk.StringVar()
+        subject_combo = ttk.Combobox(filter_frame, textvariable=self.subject_var, width=25, state='readonly')
+        subject_combo['values'] = ('All Subjects', 'Computer Science', 'Mathematics',
+                                   'Biology', 'Chemistry', 'Physics', 'English', 'History')
+        subject_combo.current(0)
+        subject_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_tutors).pack(side='left')
+
+        # Tutors list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Tutors")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Tutor', 'Subject', 'Rating', 'Sessions', 'Availability', 'Rate')
+        self.tutors_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.tutors_tree.heading(col, text=col)
+            if col == 'Tutor':
+                self.tutors_tree.column(col, width=150)
+            elif col == 'Subject':
+                self.tutors_tree.column(col, width=180)
+            else:
+                self.tutors_tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.tutors_tree.yview)
+        self.tutors_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tutors_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        self.tutors_tree.bind('<<TreeviewSelect>>', self.on_select)
+
+        # Details frame
+        details_frame = ttk.LabelFrame(main_frame, text="Tutor Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Request Session", command=self.request_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Reviews", command=self.view_reviews).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_tutors(self):
+        for item in self.tutors_tree.get_children():
+            self.tutors_tree.delete(item)
+
+        # Sample tutors
+        tutors = [
+            ("Sarah Johnson", "Computer Science (Python, Java)", "4.9/5", "45", "Mon/Wed 4-7PM", "Free",
+             "CS senior, experienced with intro programming and data structures. Patient and encouraging!"),
+            ("Michael Chen", "Mathematics (Calculus I-III)", "4.8/5", "38", "Tue/Thu 5-8PM", "Free",
+             "Math major, tutoring calculus for 2 years. Specializes in breaking down complex concepts."),
+            ("Emily Rodriguez", "Biology (General Bio, Anatomy)", "5.0/5", "52", "Wed/Fri 3-6PM", "Free",
+             "Biology grad student. Can help with lecture review, lab reports, and exam prep."),
+            ("David Kim", "Chemistry (Gen Chem, Organic)", "4.7/5", "29", "Mon/Thu 6-9PM", "Free",
+             "Chemistry tutor for 1 year. Good at problem-solving strategies and lab techniques."),
+            ("Jessica Lee", "Physics (Mechanics, E&M)", "4.9/5", "41", "Tue/Fri 4-7PM", "Free",
+             "Physics major, loves helping students understand difficult concepts through examples.")
+        ]
+
+        for tutor in tutors:
+            self.tutors_tree.insert('', 'end', values=tutor[:6], tags=(tutor[6],))
+
+    def on_select(self, event):
+        selection = self.tutors_tree.selection()
+        if not selection:
+            return
+
+        item = self.tutors_tree.item(selection[0])
+        details = item['tags'][0] if item['tags'] else "No details available."
+
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, details)
+
+    def request_session(self):
+        selection = self.tutors_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a tutor.")
+            return
+
+        item = self.tutors_tree.item(selection[0])
+        tutor_name = item['values'][0]
+
+        if messagebox.askyesno("Request Session",
+                              f"Request a tutoring session with {tutor_name}?\n\n"
+                              "You'll be able to select a time from their available slots."):
+            messagebox.showinfo("Success",
+                               "Tutoring session request sent!\n\n"
+                               f"{tutor_name} will confirm your session request shortly.")
+
+    def view_reviews(self):
+        messagebox.showinfo("Tutor Reviews",
+                           "Student Reviews:\n\n"
+                           "⭐⭐⭐⭐⭐ 'Excellent tutor, very patient!'\n"
+                           "⭐⭐⭐⭐⭐ 'Helped me improve my grade significantly'\n"
+                           "⭐⭐⭐⭐ 'Clear explanations, very helpful'")
+
+    def become_tutor(self):
+        if messagebox.askyesno("Become a Tutor",
+                              "Interested in becoming a peer tutor?\n\n"
+                              "Requirements:\n"
+                              "• GPA 3.5+ in subject area\n"
+                              "• Professor recommendation\n"
+                              "• Complete tutor training\n\n"
+                              "Would you like to apply?"):
+            messagebox.showinfo("Application",
+                               "Tutor application process:\n\n"
+                               "1. Fill out application form\n"
+                               "2. Get professor recommendation\n"
+                               "3. Attend training session\n"
+                               "4. Start tutoring!\n\n"
+                               "Applications reviewed weekly.")
+
+    def view_schedule(self):
+        messagebox.showinfo("My Schedule",
+                           "Upcoming Tutoring Sessions:\n\n"
+                           "Mon, Apr 14, 5PM - John Doe (CS101)\n"
+                           "Wed, Apr 16, 6PM - Jane Smith (CS101)\n"
+                           "Fri, Apr 18, 5PM - Bob Johnson (CS102)")
+
+    def view_hours(self):
+        messagebox.showinfo("Tutoring Hours",
+                           "My Tutoring Statistics:\n\n"
+                           "Total Hours: 24.5\n"
+                           "Sessions Completed: 18\n"
+                           "Average Rating: 4.8/5\n"
+                           "Students Helped: 12")
+
+
+class SharedResourcesDialog:
+    """Shared academic resources platform"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Shared Academic Resources")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_resources()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📂 Shared Academic Resources",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Top button
+        top_btn_frame = ttk.Frame(main_frame)
+        top_btn_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Button(top_btn_frame, text="📤 Upload Resource",
+                  command=self.upload_resource).pack(side='left')
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        self.course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
+        course_combo['values'] = ('All Courses', 'CS101', 'MATH201', 'BIO150', 'CHEM101', 'PHYS200')
+        course_combo.current(0)
+        course_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Label(filter_frame, text="Type:").pack(side='left', padx=(0, 5))
+        self.type_var = tk.StringVar()
+        type_combo = ttk.Combobox(filter_frame, textvariable=self.type_var, width=20, state='readonly')
+        type_combo['values'] = ('All Types', 'Notes', 'Textbooks', 'Practice Problems',
+                                'Study Guides', 'Past Exams')
+        type_combo.current(0)
+        type_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_resources).pack(side='left')
+
+        # Resources list
+        list_frame = ttk.LabelFrame(main_frame, text="Available Resources")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Resource Name', 'Course', 'Type', 'Uploaded By', 'Date', 'Rating', 'Downloads')
+        self.resources_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.resources_tree.heading(col, text=col)
+            if col == 'Resource Name':
+                self.resources_tree.column(col, width=250)
+            elif col == 'Course':
+                self.resources_tree.column(col, width=100)
+            else:
+                self.resources_tree.column(col, width=110)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.resources_tree.yview)
+        self.resources_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.resources_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Download", command=self.download_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Preview", command=self.preview_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Rate Resource", command=self.rate_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_resources(self):
+        for item in self.resources_tree.get_children():
+            self.resources_tree.delete(item)
+
+        # Sample resources
+        resources = [
+            ("Python Basics - Comprehensive Notes", "CS101", "Notes", "Sarah J.", "Apr 1, 2025", "4.8/5", "142"),
+            ("Calculus II Formula Sheet", "MATH201", "Study Guide", "Mike C.", "Mar 28, 2025", "4.9/5", "205"),
+            ("Biology 150 - Chapter 5-8 Study Guide", "BIO150", "Study Guide", "Emily R.", "Apr 3, 2025", "5.0/5", "89"),
+            ("Gen Chem Practice Problems with Solutions", "CHEM101", "Practice Problems", "David K.", "Mar 30, 2025", "4.7/5", "156"),
+            ("Physics II - Past Exam Solutions", "PHYS200", "Past Exams", "Jessica L.", "Apr 5, 2025", "4.8/5", "178"),
+            ("Data Structures Lecture Notes (Complete)", "CS102", "Notes", "Alex P.", "Apr 2, 2025", "4.9/5", "94"),
+            ("Organic Chemistry Reaction Mechanisms", "CHEM201", "Study Guide", "Lisa M.", "Mar 29, 2025", "4.6/5", "67")
+        ]
+
+        for resource in resources:
+            self.resources_tree.insert('', 'end', values=resource)
+
+    def upload_resource(self):
+        messagebox.showinfo("Upload Resource",
+                           "Upload a new academic resource:\n\n"
+                           "• Select file to upload\n"
+                           "• Choose course\n"
+                           "• Select resource type\n"
+                           "• Add description\n\n"
+                           "Help your peers succeed!")
+
+    def download_resource(self):
+        selection = self.resources_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a resource.")
+            return
+
+        item = self.resources_tree.item(selection[0])
+        resource_name = item['values'][0]
+
+        messagebox.showinfo("Download",
+                           f"Downloading '{resource_name}'...\n\n"
+                           "Resource will be saved to your downloads folder.")
+
+    def preview_resource(self):
+        messagebox.showinfo("Preview", "Preview window would open here with resource contents.")
+
+    def rate_resource(self):
+        messagebox.showinfo("Rate Resource", "Rate this resource:\n\n⭐⭐⭐⭐⭐\n\nYour feedback helps others!")
+
+
+class ExamPrepGroupsDialog:
+    """Exam preparation groups"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Exam Preparation Groups")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_groups()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📝 Exam Preparation Groups",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Info banner
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_text = ("Join exam-specific study groups to prepare together. Share practice materials, "
+                    "quiz each other, and support your peers!")
+        ttk.Label(info_frame, text=info_text, wraplength=1000).pack()
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        self.course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
+        course_combo['values'] = ('All Courses', 'CS101', 'MATH201', 'BIO150', 'CHEM101', 'PHYS200')
+        course_combo.current(0)
+        course_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left', padx=(0, 20))
+        ttk.Button(filter_frame, text="➕ Create Exam Prep Group",
+                  command=self.create_group).pack(side='left')
+
+        # Groups list
+        list_frame = ttk.LabelFrame(main_frame, text="Upcoming Exam Prep Groups")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Course', 'Exam Date', 'Group Name', 'Members', 'Next Session', 'Focus')
+        self.groups_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.groups_tree.heading(col, text=col)
+            if col == 'Group Name':
+                self.groups_tree.column(col, width=180)
+            elif col == 'Focus':
+                self.groups_tree.column(col, width=200)
+            else:
+                self.groups_tree.column(col, width=120)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.groups_tree.yview)
+        self.groups_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.groups_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Study Schedule", command=self.view_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Practice Tests", command=self.practice_tests).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_groups(self):
+        for item in self.groups_tree.get_children():
+            self.groups_tree.delete(item)
+
+        # Sample exam prep groups
+        groups = [
+            ("CS101", "Apr 22, 2025", "Midterm Crashers", "8/15", "Mon, Apr 14, 8PM", "Chapters 1-5, Algorithms"),
+            ("MATH201", "Apr 25, 2025", "Calc II Conquerors", "6/12", "Tue, Apr 15, 7PM", "Integration techniques"),
+            ("BIO150", "Apr 20, 2025", "Bio Exam Warriors", "10/15", "Wed, Apr 16, 6PM", "Cell biology, genetics"),
+            ("CHEM101", "Apr 23, 2025", "Chem Final Prep", "5/10", "Thu, Apr 17, 7:30PM", "Stoichiometry, bonding"),
+            ("PHYS200", "Apr 24, 2025", "Physics Study Marathon", "7/12", "Fri, Apr 18, 5PM", "Electromagnetism")
+        ]
+
+        for group in groups:
+            self.groups_tree.insert('', 'end', values=group)
+
+    def join_group(self):
+        selection = self.groups_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an exam prep group.")
+            return
+
+        item = self.groups_tree.item(selection[0])
+        group_name = item['values'][2]
+
+        if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+            messagebox.showinfo("Success",
+                               f"You've joined '{group_name}'!\n\n"
+                               "Check your email for session details and study materials.")
+
+    def create_group(self):
+        messagebox.showinfo("Create Group",
+                           "Create an exam prep group:\n\n"
+                           "• Select course and exam date\n"
+                           "• Name your group\n"
+                           "• Define study schedule\n"
+                           "• Invite classmates")
+
+    def view_schedule(self):
+        messagebox.showinfo("Study Schedule",
+                           "Exam Prep Study Schedule:\n\n"
+                           "Week 1: Review chapters 1-3\n"
+                           "Week 2: Practice problems, chapters 4-5\n"
+                           "Week 3: Past exams, mock tests\n"
+                           "Final Week: Last-minute review")
+
+    def practice_tests(self):
+        messagebox.showinfo("Practice Tests",
+                           "Available Practice Resources:\n\n"
+                           "• Past exam papers\n"
+                           "• Practice quiz bank\n"
+                           "• Timed mock exams\n"
+                           "• Solution explanations")
+
+
+class AcademicWorkshopsDialog:
+    """Academic workshops and skill-building sessions"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Academic Workshops")
+        self.dialog.geometry("1100x750")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_workshops()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="🎯 Academic Workshops",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 5))
+        self.category_var = tk.StringVar()
+        category_combo = ttk.Combobox(filter_frame, textvariable=self.category_var, width=25, state='readonly')
+        category_combo['values'] = ('All Categories', 'Study Skills', 'Time Management',
+                                    'Writing Skills', 'Research Skills', 'Test Strategies',
+                                    'Note-Taking', 'Critical Thinking')
+        category_combo.current(0)
+        category_combo.pack(side='left', padx=(0, 15))
+
+        ttk.Button(filter_frame, text="Filter", command=self.load_workshops).pack(side='left')
+
+        # Workshops list
+        list_frame = ttk.LabelFrame(main_frame, text="Upcoming Workshops")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Workshop Title', 'Category', 'Date/Time', 'Location', 'Seats', 'Duration')
+        self.workshops_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+
+        for col in columns:
+            self.workshops_tree.heading(col, text=col)
+            if col == 'Workshop Title':
+                self.workshops_tree.column(col, width=280)
+            elif col == 'Category':
+                self.workshops_tree.column(col, width=140)
+            else:
+                self.workshops_tree.column(col, width=130)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.workshops_tree.yview)
+        self.workshops_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.workshops_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        self.workshops_tree.bind('<<TreeviewSelect>>', self.on_select)
+
+        # Details frame
+        details_frame = ttk.LabelFrame(main_frame, text="Workshop Description")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Register", command=self.register).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="View Materials", command=self.view_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="My Workshops", command=self.my_workshops).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def load_workshops(self):
+        for item in self.workshops_tree.get_children():
+            self.workshops_tree.delete(item)
+
+        # Sample workshops
+        workshops = [
+            ("Effective Note-Taking Strategies", "Study Skills", "Mon, Apr 14, 2PM", "Library 301", "12/20", "90 min",
+             "Learn Cornell, mapping, and outline methods. Discover digital note-taking tools and organization strategies."),
+            ("Time Management for Students", "Time Management", "Wed, Apr 16, 3PM", "Student Center 205", "8/25", "2 hours",
+             "Master scheduling, prioritization, and avoiding procrastination. Create a personalized time management system."),
+            ("Academic Writing Workshop", "Writing Skills", "Thu, Apr 17, 4PM", "Writing Center", "15/20", "2 hours",
+             "Improve essay structure, argumentation, and citation. Get feedback on your writing from peers and experts."),
+            ("Research Skills 101", "Research Skills", "Fri, Apr 18, 1PM", "Library 205", "10/15", "90 min",
+             "Navigate academic databases, evaluate sources, and organize research. Perfect for research papers and projects."),
+            ("Test-Taking Strategies", "Test Strategies", "Tue, Apr 15, 5PM", "Academic Building 110", "6/30", "75 min",
+             "Learn strategies for multiple choice, essay, and short answer exams. Manage test anxiety effectively."),
+            ("Speed Reading Techniques", "Study Skills", "Mon, Apr 21, 3PM", "Library 302", "14/25", "90 min",
+             "Double your reading speed while maintaining comprehension. Learn skimming and scanning techniques."),
+            ("Critical Thinking Skills", "Critical Thinking", "Wed, Apr 23, 2PM", "Philosophy Hall 101", "11/20", "2 hours",
+             "Develop analytical and evaluative thinking skills. Apply logic and reasoning to academic challenges.")
+        ]
+
+        for workshop in workshops:
+            self.workshops_tree.insert('', 'end', values=workshop[:6], tags=(workshop[6],))
+
+    def on_select(self, event):
+        selection = self.workshops_tree.selection()
+        if not selection:
+            return
+
+        item = self.workshops_tree.item(selection[0])
+        details = item['tags'][0] if item['tags'] else "No description available."
+
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, details)
+
+    def register(self):
+        selection = self.workshops_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a workshop.")
+            return
+
+        item = self.workshops_tree.item(selection[0])
+        workshop_title = item['values'][0]
+
+        if messagebox.askyesno("Register", f"Register for '{workshop_title}'?"):
+            messagebox.showinfo("Success",
+                               "Registration successful!\n\n"
+                               "You'll receive a confirmation email with workshop details.")
+
+    def view_materials(self):
+        messagebox.showinfo("Workshop Materials",
+                           "Workshop materials:\n\n"
+                           "• Presentation slides\n"
+                           "• Handouts and worksheets\n"
+                           "• Recommended reading\n"
+                           "• Practice exercises\n\n"
+                           "Available after attendance")
+
+    def my_workshops(self):
+        messagebox.showinfo("My Workshops",
+                           "Registered Workshops:\n\n"
+                           "Upcoming:\n"
+                           "• Note-Taking Strategies (Apr 14)\n"
+                           "• Time Management (Apr 16)\n\n"
+                           "Completed:\n"
+                           "• Academic Writing (Mar 20)\n"
+                           "• Research Skills (Feb 15)")
+
+
+class MyAcademicActivityDialog:
+    """View student's academic support activity"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("My Academic Activity")
+        self.dialog.geometry("1000x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="📊 My Academic Support Activity",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Create notebook for different activity areas
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Study groups tab
+        study_groups_frame = ttk.Frame(notebook)
+        notebook.add(study_groups_frame, text="Study Groups")
+        self.create_study_groups_tab(study_groups_frame)
+
+        # Tutoring tab
+        tutoring_frame = ttk.Frame(notebook)
+        notebook.add(tutoring_frame, text="Tutoring")
+        self.create_tutoring_tab(tutoring_frame)
+
+        # Resources tab
+        resources_frame = ttk.Frame(notebook)
+        notebook.add(resources_frame, text="My Resources")
+        self.create_resources_tab(resources_frame)
+
+        # Workshops tab
+        workshops_frame = ttk.Frame(notebook)
+        notebook.add(workshops_frame, text="Workshops")
+        self.create_workshops_tab(workshops_frame)
+
+        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def create_study_groups_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="My Study Groups",
+                 font=('Arial', 11, 'bold')).pack(pady=(0, 10))
+
+        columns = ('Group', 'Course', 'Members', 'Sessions Attended', 'Next Meeting')
+        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=8)
+
+        for col in columns:
+            tree.heading(col, text=col)
+
+        tree.pack(fill='both', expand=True)
+
+        # Sample data
+        groups = [
+            ("Python Basics", "CS101", "5/8", "6", "Mon, Apr 14, 7PM"),
+            ("Calculus II Mastery", "MATH201", "6/10", "4", "Wed, Apr 16, 6PM")
+        ]
+
+        for group in groups:
+            tree.insert('', 'end', values=group)
+
+        stats_label = ttk.Label(frame, text="\nTotal study hours: 15\nGroups joined: 2",
+                               font=('Arial', 10))
+        stats_label.pack(pady=(10, 0))
+
+    def create_tutoring_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
+        text.pack(fill='both', expand=True)
+
+        content = """TUTORING ACTIVITY
+================================================================================
+
+AS A TUTEE (Receiving Tutoring):
+
+Subjects: Computer Science, Mathematics
+Total Sessions: 8
+Total Hours: 12
+Tutors: Sarah Johnson (CS), Michael Chen (Math)
+Average Rating Given: 4.9/5
+
+Upcoming Sessions:
+  • Apr 14, 5PM - Sarah Johnson (Python debugging)
+  • Apr 16, 6PM - Michael Chen (Integration techniques)
+
+Progress Notes:
+  • Improved Python programming skills significantly
+  • Better understanding of calculus concepts
+  • More confident with problem-solving
+
+
+AS A TUTOR (Providing Tutoring):
+
+Subject: Biology
+Students Helped: 3
+Total Sessions: 5
+Total Hours: 7.5
+Average Rating Received: 5.0/5
+
+Recent Sessions:
+  • Apr 10 - Helped with cell biology concepts
+  • Apr 8 - Reviewed genetics problems
+  • Apr 5 - Lab report assistance
+
+Student Feedback:
+  ⭐⭐⭐⭐⭐ "Very patient and helpful!"
+  ⭐⭐⭐⭐⭐ "Excellent explanations"
+  ⭐⭐⭐⭐⭐ "Made difficult concepts easy to understand"
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
+
+    def create_resources_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="Resources I've Shared",
+                 font=('Arial', 11, 'bold')).pack(pady=(0, 10))
+
+        columns = ('Resource', 'Course', 'Type', 'Downloads', 'Rating')
+        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=6)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Resource':
+                tree.column(col, width=300)
+
+        tree.pack(fill='both', expand=True)
+
+        # Sample uploaded resources
+        resources = [
+            ("Biology Chapter 5 Notes", "BIO150", "Notes", "42", "4.9/5"),
+            ("CS101 Midterm Study Guide", "CS101", "Study Guide", "38", "5.0/5")
+        ]
+
+        for resource in resources:
+            tree.insert('', 'end', values=resource)
+
+        ttk.Label(frame, text="\nTotal uploads: 2 | Total downloads: 80 | Avg rating: 4.95/5",
+                 font=('Arial', 10)).pack(pady=(10, 0))
+
+    def create_workshops_tab(self, parent):
+        frame = ttk.Frame(parent)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
+        text.pack(fill='both', expand=True)
+
+        content = """WORKSHOP ATTENDANCE
+================================================================================
+
+COMPLETED WORKSHOPS:
+
+1. Academic Writing Workshop
+   Date: Mar 20, 2025
+   Duration: 2 hours
+   Certificate: ✓ Earned
+   Rating Given: ⭐⭐⭐⭐⭐
+   Notes: Learned essay structure, improved citation skills
+
+2. Research Skills 101
+   Date: Feb 15, 2025
+   Duration: 90 minutes
+   Certificate: ✓ Earned
+   Rating Given: ⭐⭐⭐⭐
+   Notes: Database navigation, source evaluation
+
+3. Test-Taking Strategies
+   Date: Jan 28, 2025
+   Duration: 75 minutes
+   Certificate: ✓ Earned
+   Rating Given: ⭐⭐⭐⭐⭐
+   Notes: Reduced test anxiety, learned time management
+
+
+UPCOMING REGISTRATIONS:
+
+1. Note-Taking Strategies
+   Date: Apr 14, 2025, 2PM
+   Location: Library 301
+
+2. Time Management for Students
+   Date: Apr 16, 2025, 3PM
+   Location: Student Center 205
+
+
+STATISTICS:
+
+Workshops Completed: 3
+Total Hours: 5.25
+Certificates Earned: 3
+Average Rating Given: 4.7/5
+
+Skills Developed:
+  ✓ Academic writing
+  ✓ Research methodology
+  ✓ Test preparation
+  ✓ Time management (in progress)
+  ✓ Note-taking (registered)
+"""
+        text.insert(1.0, content)
+        text.config(state='disabled')
 
 
 # Main application launcher - FIXED: Added proper parameter handling
