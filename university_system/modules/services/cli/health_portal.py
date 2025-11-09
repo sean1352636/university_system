@@ -14,18 +14,24 @@ logger = logging.getLogger(__name__)
 try:
     from university_system.modules.domain.health.services.health_portal import (
         display_health_portal_menu as _real_display_menu,
+        display_basic_health_menu as _real_display_basic_menu,
         view_health_records as _real_view_records,
         schedule_appointment as _real_schedule_appointment,
         view_medical_history as _real_view_history,
         manage_emergency_contacts as _real_manage_contacts,
+        generate_health_reports as _real_generate_reports,
+        view_vaccination_records as _real_view_vaccinations,
     )
 
     # Re-export the real implementations
     display_health_portal_menu = _real_display_menu
+    display_basic_health_menu = _real_display_basic_menu
     view_health_records = _real_view_records
     schedule_appointment = _real_schedule_appointment
     view_medical_history = _real_view_history
     manage_emergency_contacts = _real_manage_contacts
+    generate_health_reports = _real_generate_reports
+    view_vaccination_records = _real_view_vaccinations
     REAL_IMPLEMENTATION_AVAILABLE = True
 
 except ImportError as e:
@@ -38,6 +44,12 @@ except ImportError as e:
         """Display the health portal CLI menu (stub)."""
         logger.warning("display_health_portal_menu() called but full implementation not available")
         print("Health Portal menu not available. Please check installation.")
+        return None
+
+    def display_basic_health_menu(*args: Any, **kwargs: Any) -> None:
+        """Display basic health menu (stub)."""
+        logger.warning("display_basic_health_menu() called but full implementation not available")
+        print("Basic health menu not available. Please check installation.")
         return None
 
     def view_health_records(*args: Any, **kwargs: Any) -> None:
@@ -64,31 +76,27 @@ except ImportError as e:
         print("Manage emergency contacts feature not available. Please check installation.")
         return None
 
+    def generate_health_reports(*args: Any, **kwargs: Any) -> None:
+        """Generate health reports (stub)."""
+        logger.warning("generate_health_reports() called but full implementation not available")
+        print("Generate health reports feature not available. Please check installation.")
+        return None
 
-__all__ = [
-    'display_health_portal_menu',
-    'view_health_records',
-    'schedule_appointment',
-    'view_medical_history',
-    'manage_emergency_contacts',
-    'REAL_IMPLEMENTATION_AVAILABLE'
-]
-
-
-def generate_health_reports(*args: Any, **kwargs: Any) -> None:
-    return None
-
-
-def view_vaccination_records(*args: Any, **kwargs: Any) -> None:
-    return None
+    def view_vaccination_records(*args: Any, **kwargs: Any) -> None:
+        """View vaccination records (stub)."""
+        logger.warning("view_vaccination_records() called but full implementation not available")
+        print("View vaccination records feature not available. Please check installation.")
+        return None
 
 
 __all__ = [
     'display_health_portal_menu',
+    'display_basic_health_menu',
     'view_health_records',
     'schedule_appointment',
     'view_medical_history',
     'manage_emergency_contacts',
     'generate_health_reports',
     'view_vaccination_records',
+    'REAL_IMPLEMENTATION_AVAILABLE'
 ]
