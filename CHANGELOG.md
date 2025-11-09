@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Student Union GUI - Add Missing Admin Buttons to Tabs** (2025-11-09)
+- **FIXED MISSING BUTTONS**: Added previously inaccessible admin functions to tabs
+- **Impact**: Admin users can now access all administrative features directly from tabs, not just menus
+- **Files Modified**:
+  - `student_union_gui.py` - Added 5 missing buttons across 3 tabs
+
+**NEW BUTTONS ADDED**:
+- **Competitions Tab** (2 admin buttons):
+  - "Create New Competition (Admin)" - Create and configure new inter-club competitions
+  - "Update Competition Scores (Admin)" - Update scores and results for ongoing competitions
+
+- **Rewards Tab** (2 admin buttons):
+  - "Create New Badge (Admin)" - Design and create new achievement badges
+  - "Manage Reward System (Admin)" - Configure point values, badge criteria, and reward rules
+
+- **Clubs Tab** (1 new button):
+  - "Book Clubs" - Access specialized book club management features and reading groups
+
+**Technical Details**:
+- Added visual separators before admin sections for better UI organization
+- All buttons properly linked to existing methods that were previously menu-only
+- Methods already had permission checks in place (admin verification)
+- No new code required - just surface-level button additions for accessibility
+
 **Student Union GUI - Part 4: Peer Support, Wellness & Academic Support Systems (27 Features)** (2025-11-09)
 - **COMPREHENSIVE STUDENT WELLBEING INITIATIVE**: Added complete peer support, mental health, and academic assistance systems
 - **Impact**: Student Union GUI now includes enterprise-grade student wellness and academic success features spanning mental health, peer support, academic tutoring, and skill development
