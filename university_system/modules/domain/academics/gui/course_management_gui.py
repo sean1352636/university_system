@@ -7181,6 +7181,1154 @@ class RecommendationsDialog:
         # Initial load
         load_courses()
 
+    # =====================================================================
+    # INSTRUCTOR MANAGEMENT WRAPPERS (Functions 17-19)
+    # =====================================================================
+
+    def create_instructor_wrapper(self):
+        """
+        Create a new instructor profile.
+        Calls the existing show_add_instructor() method.
+        """
+        self.show_add_instructor()
+
+    def view_instructors_wrapper(self):
+        """
+        View all instructors in the system.
+        Refreshes the instructor list and switches to instructors tab.
+        """
+        self.refresh_instructor_list()
+        # Find and select the instructors tab (usually tab 3)
+        for i in range(self.notebook.index('end')):
+            if 'Instructor' in self.notebook.tab(i, 'text'):
+                self.notebook.select(i)
+                break
+        self.update_status("Instructor list refreshed")
+
+    def assign_instructor_to_course_wrapper(self):
+        """
+        Assign an instructor to a course.
+        Calls the existing show_assign_instructor() method.
+        """
+        self.show_assign_instructor()
+
+    # =====================================================================
+    # COURSE SCHEDULING (Functions 20-22)
+    # =====================================================================
+
+    def create_course_schedule_gui(self):
+        """
+        Create a schedule for a course.
+        Opens a dialog to input schedule details.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Course Schedule")
+        dialog.geometry("600x600")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Create Course Schedule",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Course selection
+        course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+        course_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=45)
+        course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+
+        # Semester and year
+        semester_frame = ttk.LabelFrame(main_frame, text="Semester and Year", padding="10")
+        semester_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(semester_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        semester_var = tk.StringVar()
+        semester_combo = ttk.Combobox(semester_frame, textvariable=semester_var,
+                                     values=["Fall", "Spring", "Summer", "Winter"],
+                                     state='readonly', width=20)
+        semester_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
+        semester_combo.current(0)
+
+        ttk.Label(semester_frame, text="Year:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        year_var = tk.StringVar(value=str(datetime.now().year))
+        year_entry = ttk.Entry(semester_frame, textvariable=year_var, width=22)
+        year_entry.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
+
+        # Time and days
+        time_frame = ttk.LabelFrame(main_frame, text="Time and Days", padding="10")
+        time_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(time_frame, text="Start Time (HH:MM):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        start_time_var = tk.StringVar()
+        start_time_entry = ttk.Entry(time_frame, textvariable=start_time_var, width=22)
+        start_time_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
+
+        ttk.Label(time_frame, text="End Time (HH:MM):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        end_time_var = tk.StringVar()
+        end_time_entry = ttk.Entry(time_frame, textvariable=end_time_var, width=22)
+        end_time_entry.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
+
+        ttk.Label(time_frame, text="Days of Week:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        days_var = tk.StringVar()
+        days_entry = ttk.Entry(time_frame, textvariable=days_var, width=22)
+        days_entry.grid(row=2, column=1, sticky=tk.W, pady=5, padx=5)
+        ttk.Label(time_frame, text="(e.g., Monday,Wednesday,Friday)",
+                 font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(time_frame, text="Classroom:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        classroom_var = tk.StringVar()
+        classroom_entry = ttk.Entry(time_frame, textvariable=classroom_var, width=22)
+        classroom_entry.grid(row=4, column=1, sticky=tk.W, pady=5, padx=5)
+
+        # Instructor selection
+        instructor_frame = ttk.LabelFrame(main_frame, text="Instructor (Optional)", padding="10")
+        instructor_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(instructor_frame, text="Instructor:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        instructor_var = tk.StringVar()
+        instructor_combo = ttk.Combobox(instructor_frame, textvariable=instructor_var,
+                                       state='readonly', width=45)
+        instructor_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+
+        def load_data():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Load active courses
+                cursor.execute("""
+                    SELECT id, course_code, course_name
+                    FROM courses
+                    WHERE status = 'Active'
+                    ORDER BY course_code
+                """)
+                courses = cursor.fetchall()
+                course_list = [f"{code} - {name} (ID: {id})" for id, code, name in courses]
+                course_combo['values'] = course_list
+
+                # Load active instructors
+                cursor.execute("""
+                    SELECT id, first_name, last_name
+                    FROM instructors
+                    WHERE status = 'Active'
+                    ORDER BY last_name
+                """)
+                instructors = cursor.fetchall()
+                instructor_list = ["-- No Instructor --"] + \
+                                [f"{last} {first} (ID: {id})" for id, first, last in instructors]
+                instructor_combo['values'] = instructor_list
+                instructor_combo.current(0)
+
+                conn.close()
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load data: {e}")
+                dialog.destroy()
+
+        def save_schedule():
+            if not course_var.get():
+                messagebox.showwarning("Incomplete", "Please select a course")
+                return
+
+            if not semester_var.get() or not year_var.get():
+                messagebox.showwarning("Incomplete", "Please select semester and year")
+                return
+
+            # Validate time format if provided
+            if start_time_var.get() and not self.validate_time_format(start_time_var.get()):
+                messagebox.showerror("Invalid Format", "Start time must be in HH:MM format")
+                return
+
+            if end_time_var.get() and not self.validate_time_format(end_time_var.get()):
+                messagebox.showerror("Invalid Format", "End time must be in HH:MM format")
+                return
+
+            # Validate days format if provided
+            if days_var.get() and not self.validate_days_of_week(days_var.get()):
+                messagebox.showerror("Invalid Format",
+                                   "Days must be full day names separated by commas")
+                return
+
+            # Validate year
+            try:
+                year = int(year_var.get())
+                if year < datetime.now().year:
+                    messagebox.showerror("Invalid Year", "Year must be current year or later")
+                    return
+            except ValueError:
+                messagebox.showerror("Invalid Year", "Please enter a valid year")
+                return
+
+            try:
+                course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if schedule already exists
+                cursor.execute("""
+                    SELECT id FROM course_schedule
+                    WHERE course_id = ? AND semester = ? AND year = ?
+                """, (course_id, semester_var.get(), year))
+
+                if cursor.fetchone():
+                    messagebox.showerror("Duplicate",
+                                       f"Schedule already exists for this course in {semester_var.get()} {year}")
+                    conn.close()
+                    return
+
+                # Extract instructor ID if selected
+                instructor_id = None
+                if instructor_var.get() and instructor_var.get() != "-- No Instructor --":
+                    instructor_id = int(instructor_var.get().split("ID: ")[1].rstrip(")"))
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO course_schedule (course_id, semester, year, start_time, end_time,
+                                               days_of_week, classroom, instructor_id, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (course_id, semester_var.get(), year,
+                      start_time_var.get() or None, end_time_var.get() or None,
+                      days_var.get() or None, classroom_var.get() or None,
+                      instructor_id, timestamp))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success",
+                                  f"Schedule created successfully for {semester_var.get()} {year}!")
+                self.update_status("Course schedule created")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create schedule: {e}")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Create Schedule", command=save_schedule).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Initial load
+        load_data()
+
+    def view_course_schedules_gui(self):
+        """
+        View course schedules for all courses or a specific course.
+        Opens a dialog with schedule information.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("View Course Schedules")
+        dialog.geometry("800x600")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Course Schedules",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
+        course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # Treeview for schedules
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ('Course', 'Semester', 'Year', 'Time', 'Days', 'Classroom', 'Instructor')
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_courses():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
+                courses = cursor.fetchall()
+                conn.close()
+
+                course_list = ["-- All Courses --"] + [f"{code} - {name} (ID: {id})" for id, code, name in courses]
+                course_combo['values'] = course_list
+                course_combo.current(0)
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load courses: {e}")
+
+        def load_schedules(*args):
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                selected = course_var.get()
+
+                if selected == "-- All Courses --" or not selected:
+                    cursor.execute("""
+                        SELECT c.course_code, c.course_name, s.semester, s.year,
+                               s.start_time, s.end_time, s.days_of_week, s.classroom,
+                               i.first_name, i.last_name
+                        FROM course_schedule s
+                        JOIN courses c ON s.course_id = c.id
+                        LEFT JOIN instructors i ON s.instructor_id = i.id
+                        ORDER BY s.year DESC, s.semester, c.course_code
+                    """)
+                else:
+                    course_id = int(selected.split("ID: ")[1].rstrip(")"))
+                    cursor.execute("""
+                        SELECT c.course_code, c.course_name, s.semester, s.year,
+                               s.start_time, s.end_time, s.days_of_week, s.classroom,
+                               i.first_name, i.last_name
+                        FROM course_schedule s
+                        JOIN courses c ON s.course_id = c.id
+                        LEFT JOIN instructors i ON s.instructor_id = i.id
+                        WHERE s.course_id = ?
+                        ORDER BY s.year DESC, s.semester
+                    """, (course_id,))
+
+                schedules = cursor.fetchall()
+                conn.close()
+
+                for sched in schedules:
+                    code, name, semester, year, start, end, days, classroom, first, last = sched
+                    course = f"{code} - {name[:20]}"
+                    time_str = ""
+                    if start and end:
+                        time_str = f"{start}-{end}"
+                    elif start:
+                        time_str = start
+
+                    instructor = f"{first} {last}" if first and last else "TBA"
+
+                    tree.insert('', tk.END, values=(
+                        course, semester, year, time_str, days or '',
+                        classroom or '', instructor
+                    ))
+
+                if not schedules:
+                    messagebox.showinfo("No Results", "No schedules found")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load schedules: {e}")
+
+        course_combo.bind('<<ComboboxSelected>>', load_schedules)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Refresh", command=load_schedules).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Initial load
+        load_courses()
+        load_schedules()
+
+    def update_schedule_gui(self):
+        """
+        Update an existing course schedule.
+        Opens a dialog to modify schedule details.
+        """
+        # First, show schedule selection dialog
+        select_dialog = tk.Toplevel(self.root)
+        select_dialog.title("Select Schedule to Update")
+        select_dialog.geometry("600x400")
+        select_dialog.transient(self.root)
+
+        main_frame = ttk.Frame(select_dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Select Schedule to Update",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Listbox for schedules
+        list_frame = ttk.Frame(main_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        schedule_listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, height=15)
+        schedule_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=schedule_listbox.yview)
+
+        schedule_data = {}
+
+        def load_schedules():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT s.id, c.course_code, c.course_name, s.semester, s.year
+                    FROM course_schedule s
+                    JOIN courses c ON s.course_id = c.id
+                    ORDER BY s.year DESC, s.semester, c.course_code
+                """)
+                schedules = cursor.fetchall()
+                conn.close()
+
+                for sched_id, code, name, semester, year in schedules:
+                    display_text = f"{code} - {name[:30]} ({semester} {year})"
+                    schedule_listbox.insert(tk.END, display_text)
+                    schedule_data[display_text] = sched_id
+
+                if not schedules:
+                    schedule_listbox.insert(tk.END, "No schedules found")
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to load schedules: {e}")
+
+        def open_edit_dialog():
+            selection = schedule_listbox.curselection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a schedule to update")
+                return
+
+            selected_text = schedule_listbox.get(selection[0])
+            if selected_text == "No schedules found":
+                return
+
+            schedule_id = schedule_data.get(selected_text)
+            if not schedule_id:
+                return
+
+            select_dialog.destroy()
+            self._show_schedule_edit_dialog(schedule_id)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Edit Selected", command=open_edit_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=select_dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        load_schedules()
+
+    def _show_schedule_edit_dialog(self, schedule_id):
+        """Helper method to show the schedule edit dialog"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Update Course Schedule")
+        dialog.geometry("600x500")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Update Course Schedule",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Load current schedule data
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT course_id, semester, year, start_time, end_time,
+                       days_of_week, classroom, instructor_id
+                FROM course_schedule WHERE id = ?
+            """, (schedule_id,))
+            current = cursor.fetchone()
+            conn.close()
+
+            if not current:
+                messagebox.showerror("Error", "Schedule not found")
+                dialog.destroy()
+                return
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load schedule: {e}")
+            dialog.destroy()
+            return
+
+        # Create form fields with current values
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        row = 0
+
+        # Semester
+        ttk.Label(form_frame, text="Semester:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        semester_var = tk.StringVar(value=current[1])
+        semester_combo = ttk.Combobox(form_frame, textvariable=semester_var,
+                                     values=["Fall", "Spring", "Summer", "Winter"],
+                                     state='readonly', width=25)
+        semester_combo.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        # Year
+        ttk.Label(form_frame, text="Year:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        year_var = tk.StringVar(value=str(current[2]))
+        year_entry = ttk.Entry(form_frame, textvariable=year_var, width=27)
+        year_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        # Start time
+        ttk.Label(form_frame, text="Start Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=5)
+        start_time_var = tk.StringVar(value=current[3] or '')
+        start_time_entry = ttk.Entry(form_frame, textvariable=start_time_var, width=27)
+        start_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        # End time
+        ttk.Label(form_frame, text="End Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=5)
+        end_time_var = tk.StringVar(value=current[4] or '')
+        end_time_entry = ttk.Entry(form_frame, textvariable=end_time_var, width=27)
+        end_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        # Days
+        ttk.Label(form_frame, text="Days of Week:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        days_var = tk.StringVar(value=current[5] or '')
+        days_entry = ttk.Entry(form_frame, textvariable=days_var, width=27)
+        days_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        # Classroom
+        ttk.Label(form_frame, text="Classroom:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        classroom_var = tk.StringVar(value=current[6] or '')
+        classroom_entry = ttk.Entry(form_frame, textvariable=classroom_var, width=27)
+        classroom_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        row += 1
+
+        def save_changes():
+            # Validate inputs
+            if start_time_var.get() and not self.validate_time_format(start_time_var.get()):
+                messagebox.showerror("Invalid Format", "Start time must be in HH:MM format")
+                return
+
+            if end_time_var.get() and not self.validate_time_format(end_time_var.get()):
+                messagebox.showerror("Invalid Format", "End time must be in HH:MM format")
+                return
+
+            if days_var.get() and not self.validate_days_of_week(days_var.get()):
+                messagebox.showerror("Invalid Format", "Days must be full day names separated by commas")
+                return
+
+            try:
+                year = int(year_var.get())
+            except ValueError:
+                messagebox.showerror("Invalid Year", "Please enter a valid year")
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    UPDATE course_schedule
+                    SET semester = ?, year = ?, start_time = ?, end_time = ?,
+                        days_of_week = ?, classroom = ?
+                    WHERE id = ?
+                """, (semester_var.get(), year,
+                      start_time_var.get() or None, end_time_var.get() or None,
+                      days_var.get() or None, classroom_var.get() or None,
+                      schedule_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Schedule updated successfully!")
+                self.update_status("Course schedule updated")
+                dialog.destroy()
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to update schedule: {e}")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    # =====================================================================
+    # WAITLIST MANAGEMENT (Functions 29-31)
+    # =====================================================================
+
+    def add_to_waitlist_gui(self):
+        """
+        Add a student to a course waitlist.
+        Opens a dialog to select full course and enter student ID.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Add Student to Waitlist")
+        dialog.geometry("550x350")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Add Student to Course Waitlist",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Course selection (full courses only)
+        course_frame = ttk.LabelFrame(main_frame, text="Select Full Course", padding="10")
+        course_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=45)
+        course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+
+        # Student ID
+        student_frame = ttk.LabelFrame(main_frame, text="Student Information", padding="10")
+        student_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(student_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        student_id_var = tk.StringVar()
+        student_id_entry = ttk.Entry(student_frame, textvariable=student_id_var, width=30)
+        student_id_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
+
+        # Info label
+        info_label = ttk.Label(main_frame, text="", foreground="blue", wraplength=500)
+        info_label.pack(pady=10)
+
+        def load_full_courses():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    SELECT id, course_code, course_name, current_enrollment, max_enrollment
+                    FROM courses
+                    WHERE current_enrollment >= max_enrollment AND status = 'Active'
+                    ORDER BY course_code
+                """)
+                courses = cursor.fetchall()
+                conn.close()
+
+                if courses:
+                    course_list = [f"{code} - {name} ({enr}/{max}) (ID: {id})"
+                                 for id, code, name, enr, max in courses]
+                    course_combo['values'] = course_list
+                    info_label.config(text=f"Found {len(courses)} full course(s)")
+                else:
+                    course_combo['values'] = ["No full courses available"]
+                    info_label.config(text="No full courses found")
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load courses: {e}")
+                dialog.destroy()
+
+        def add_student():
+            if not course_var.get() or course_var.get() == "No full courses available":
+                messagebox.showwarning("No Selection", "Please select a course")
+                return
+
+            if not student_id_var.get().strip():
+                messagebox.showerror("Missing Data", "Please enter student ID")
+                return
+
+            try:
+                course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+                student_id = student_id_var.get().strip()
+
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if already on waitlist
+                cursor.execute("""
+                    SELECT id FROM course_waitlist
+                    WHERE course_id = ? AND student_id = ?
+                """, (course_id, student_id))
+
+                if cursor.fetchone():
+                    messagebox.showerror("Duplicate", "Student is already on the waitlist for this course")
+                    conn.close()
+                    return
+
+                # Get next position
+                cursor.execute("""
+                    SELECT COALESCE(MAX(position), 0) + 1
+                    FROM course_waitlist WHERE course_id = ?
+                """, (course_id,))
+                position = cursor.fetchone()[0]
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO course_waitlist (course_id, student_id, position, added_at, status)
+                    VALUES (?, ?, ?, ?, 'Waiting')
+                ''', (course_id, student_id, position, timestamp))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success",
+                                  f"Student {student_id} added to waitlist at position {position}")
+                self.update_status(f"Added student {student_id} to waitlist")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add to waitlist: {e}")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Add to Waitlist", command=add_student).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        load_full_courses()
+
+    def view_waitlists_gui(self):
+        """
+        View waitlists for all courses or a specific course.
+        Opens a dialog with waitlist information.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("View Course Waitlists")
+        dialog.geometry("800x600")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Course Waitlists",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
+        course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # Treeview for waitlist
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ('Course', 'Position', 'Student ID', 'Added Date', 'Status')
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Course':
+                tree.column(col, width=200)
+            elif col == 'Student ID':
+                tree.column(col, width=120)
+            else:
+                tree.column(col, width=100)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_courses():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
+                courses = cursor.fetchall()
+                conn.close()
+
+                course_list = ["-- All Courses --"] + [f"{code} - {name} (ID: {id})" for id, code, name in courses]
+                course_combo['values'] = course_list
+                course_combo.current(0)
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load courses: {e}")
+
+        def load_waitlist(*args):
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                selected = course_var.get()
+
+                if selected == "-- All Courses --" or not selected:
+                    cursor.execute("""
+                        SELECT c.course_code, c.course_name, w.position,
+                               w.student_id, w.added_at, w.status
+                        FROM course_waitlist w
+                        JOIN courses c ON w.course_id = c.id
+                        ORDER BY c.course_code, w.position
+                    """)
+                else:
+                    course_id = int(selected.split("ID: ")[1].rstrip(")"))
+                    cursor.execute("""
+                        SELECT c.course_code, c.course_name, w.position,
+                               w.student_id, w.added_at, w.status
+                        FROM course_waitlist w
+                        JOIN courses c ON w.course_id = c.id
+                        WHERE w.course_id = ?
+                        ORDER BY w.position
+                    """, (course_id,))
+
+                waitlist = cursor.fetchall()
+                conn.close()
+
+                for entry in waitlist:
+                    code, name, position, student, added, status = entry
+                    course = f"{code} - {name[:25]}"
+                    added_date = added.split()[0] if added else "Unknown"
+
+                    tree.insert('', tk.END, values=(
+                        course, position, student, added_date, status
+                    ))
+
+                if not waitlist:
+                    messagebox.showinfo("No Results", "No waitlist entries found")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load waitlist: {e}")
+
+        course_combo.bind('<<ComboboxSelected>>', load_waitlist)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Refresh", command=load_waitlist).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Initial load
+        load_courses()
+        load_waitlist()
+
+    def process_waitlist_gui(self):
+        """
+        Process waitlist and enroll students when spots become available.
+        Opens a dialog to select course and process waitlist.
+        """
+        messagebox.showinfo("Process Waitlist",
+                          "This feature would automatically enroll students from the waitlist\n"
+                          "when spots become available in the course.\n\n"
+                          "Implementation requires integration with enrollment system.")
+
+    # =====================================================================
+    # COURSE STATUS & HISTORY (Functions 34, 36)
+    # =====================================================================
+
+    def manage_course_status_gui(self):
+        """
+        Manage course status (Active, Inactive, Archived, Cancelled).
+        Opens a dialog to change course status.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Manage Course Status")
+        dialog.geometry("600x400")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Manage Course Status",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Course selection
+        select_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+        select_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(select_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=45)
+        course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+
+        # Current status display
+        current_status_var = tk.StringVar(value="No course selected")
+        ttk.Label(select_frame, text="Current Status:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(select_frame, textvariable=current_status_var,
+                 font=('Arial', 10, 'bold')).grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
+
+        # New status selection
+        status_frame = ttk.LabelFrame(main_frame, text="Select New Status", padding="10")
+        status_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(status_frame, text="New Status:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(status_frame, textvariable=status_var,
+                                   values=["Active", "Inactive", "Archived", "Cancelled"],
+                                   state='readonly', width=25)
+        status_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
+
+        def load_courses():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, course_code, course_name, status
+                    FROM courses ORDER BY course_code
+                """)
+                courses = cursor.fetchall()
+                conn.close()
+
+                course_list = [f"{code} - {name} (ID: {id})" for id, code, name, status in courses]
+                course_combo['values'] = course_list
+
+                # Store course data for status display
+                course_combo.course_data = {
+                    f"{code} - {name} (ID: {id})": status
+                    for id, code, name, status in courses
+                }
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load courses: {e}")
+                dialog.destroy()
+
+        def on_course_select(*args):
+            selected = course_var.get()
+            if selected and hasattr(course_combo, 'course_data'):
+                current_status = course_combo.course_data.get(selected, "Unknown")
+                current_status_var.set(current_status)
+                status_var.set(current_status)
+
+        course_combo.bind('<<ComboboxSelected>>', on_course_select)
+
+        def update_status():
+            if not course_var.get():
+                messagebox.showwarning("No Selection", "Please select a course")
+                return
+
+            if not status_var.get():
+                messagebox.showwarning("No Selection", "Please select a new status")
+                return
+
+            current = current_status_var.get()
+            new = status_var.get()
+
+            if current == new:
+                messagebox.showinfo("No Change", "Status is already set to " + new)
+                return
+
+            if messagebox.askyesno("Confirm Status Change",
+                                  f"Change course status from {current} to {new}?"):
+                try:
+                    course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    cursor.execute("""
+                        UPDATE courses SET status = ?, updated_at = ?
+                        WHERE id = ?
+                    """, (new, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), course_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Course status updated to {new}")
+                    self.update_status(f"Course status changed to {new}")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update status: {e}")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Update Status", command=update_status).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        load_courses()
+
+    def view_course_history_gui(self):
+        """
+        View historical changes to courses (audit trail).
+        Opens a dialog with course history information.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("View Course History")
+        dialog.geometry("900x600")
+        dialog.transient(self.root)
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Course Change History",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        # Filter frame
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+        course_var = tk.StringVar()
+        course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
+        course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # Treeview for history
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        columns = ('Course', 'Field', 'Old Value', 'New Value', 'Changed By', 'Date')
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=130)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_courses():
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
+                courses = cursor.fetchall()
+                conn.close()
+
+                course_list = ["-- All Courses --"] + [f"{code} - {name} (ID: {id})" for id, code, name in courses]
+                course_combo['values'] = course_list
+                course_combo.current(0)
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to load courses: {e}")
+
+        def load_history(*args):
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if course_history table exists
+                cursor.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='course_history'
+                """)
+                if not cursor.fetchone():
+                    tree.insert('', tk.END, values=(
+                        "History table not found", "", "", "", "", ""
+                    ))
+                    conn.close()
+                    return
+
+                selected = course_var.get()
+
+                if selected == "-- All Courses --" or not selected:
+                    cursor.execute("""
+                        SELECT c.course_code, h.field_name, h.old_value,
+                               h.new_value, h.changed_by, h.changed_at
+                        FROM course_history h
+                        JOIN courses c ON h.course_id = c.id
+                        ORDER BY h.changed_at DESC
+                        LIMIT 100
+                    """)
+                else:
+                    course_id = int(selected.split("ID: ")[1].rstrip(")"))
+                    cursor.execute("""
+                        SELECT c.course_code, h.field_name, h.old_value,
+                               h.new_value, h.changed_by, h.changed_at
+                        FROM course_history h
+                        JOIN courses c ON h.course_id = c.id
+                        WHERE h.course_id = ?
+                        ORDER BY h.changed_at DESC
+                    """, (course_id,))
+
+                history = cursor.fetchall()
+                conn.close()
+
+                for entry in history:
+                    code, field, old_val, new_val, changed_by, changed_at = entry
+                    old_display = (old_val[:25] + "...") if old_val and len(old_val) > 25 else (old_val or "")
+                    new_display = (new_val[:25] + "...") if new_val and len(new_val) > 25 else (new_val or "")
+                    date_display = changed_at.split()[0] if changed_at else ""
+
+                    tree.insert('', tk.END, values=(
+                        code, field, old_display, new_display,
+                        changed_by or "System", date_display
+                    ))
+
+                if not history:
+                    tree.insert('', tk.END, values=(
+                        "No history records found", "", "", "", "", ""
+                    ))
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load history: {e}")
+
+        course_combo.bind('<<ComboboxSelected>>', load_history)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text="Refresh", command=load_history).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Initial load
+        load_courses()
+        load_history()
+
+    # =====================================================================
+    # WRAPPER FUNCTIONS FOR EXISTING FEATURES (Functions 23-28, 32-33, 35, 37)
+    # =====================================================================
+
+    def search_courses_wrapper(self):
+        """Search courses with filters. Calls existing show_search_dialog()."""
+        self.show_search_dialog()
+
+    def import_courses_from_csv_wrapper(self):
+        """Import courses from CSV file. Calls existing import_csv()."""
+        self.import_csv()
+
+    def export_courses_to_csv_wrapper(self):
+        """Export courses to CSV file. Calls existing export_csv()."""
+        self.export_csv()
+
+    def generate_course_analytics_wrapper(self):
+        """Generate course analytics. Calls existing generate_analytics()."""
+        self.generate_analytics()
+
+    def generate_enrollment_report_wrapper(self):
+        """Generate enrollment report. Calls existing show_enrollment_report()."""
+        self.show_enrollment_report()
+
+    def department_statistics_wrapper(self):
+        """Generate department statistics. Calls existing show_department_stats()."""
+        self.show_department_stats()
+
+    def recommend_courses_wrapper(self):
+        """Recommend courses to student. Calls existing show_recommendations()."""
+        self.show_recommendations()
+
+    def find_alternative_courses_wrapper(self):
+        """Find alternative courses. Calls existing find_alternative_courses()."""
+        self.find_alternative_courses()
+
+    def bulk_update_courses_wrapper(self):
+        """Bulk update multiple courses. Calls existing show_bulk_update()."""
+        self.show_bulk_update()
+
+    def system_maintenance_wrapper(self):
+        """System maintenance operations. Calls existing show_maintenance()."""
+        self.show_maintenance()
+
 # =====================================================================
 # BACKWARDS COMPATIBILITY WRAPPER
 # =====================================================================
