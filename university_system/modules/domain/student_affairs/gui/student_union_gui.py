@@ -1804,29 +1804,40 @@ class StudentUnionGUI:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a user to modify")
             return
-        
+
         item = self.users_tree.item(selection[0])
         user_id = item['values'][0]
         username = item['values'][1]
         current_role = item['values'][3]
-        
-        new_role = simpledialog.askstring("Change Role", 
+
+        new_role = simpledialog.askstring("Change Role",
                                          f"Change role for {username} (current: {current_role})\nOptions: student, staff, admin")
-        
+
         if new_role and new_role in ['student', 'staff', 'admin']:
+            # Use central authentication system for role changes
+            if not self.auth_manager:
+                messagebox.showerror("Error", "Authentication system not available")
+                return
+
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                
-                cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
-                conn.commit()
-                conn.close()
-                
-                messagebox.showinfo("Success", f"Role changed to {new_role}")
-                self.refresh_users_list()
-                
-            except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to change role: {e}")
+                success = self.auth_manager.update_user(user_id, role=new_role)
+
+                if success:
+                    messagebox.showinfo("Success", f"Role changed to {new_role}")
+                    self.refresh_users_list()
+
+                    # Log activity
+                    try:
+                        from university_system.modules.shared.utils.activity_logger import log_activity
+                        log_activity('update', 'user_role', user_id=user_id,
+                                    details={'username': username, 'old_role': current_role, 'new_role': new_role})
+                    except Exception as log_error:
+                        print(f"Activity logging failed: {log_error}")
+                else:
+                    messagebox.showerror("Error", "Failed to change role")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to change role: {e}")
         elif new_role:
             messagebox.showerror("Error", "Invalid role. Use: student, staff, or admin")
     
@@ -1836,32 +1847,43 @@ class StudentUnionGUI:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a user to delete")
             return
-        
+
         item = self.users_tree.item(selection[0])
         user_id = item['values'][0]
         username = item['values'][1]
-        
+
         if user_id == self.current_user['id']:
             messagebox.showerror("Error", "You cannot delete your own account")
             return
-        
-        response = messagebox.askyesno("Confirm Delete", 
+
+        response = messagebox.askyesno("Confirm Delete",
                                      f"Are you sure you want to delete user '{username}'?\nThis action cannot be undone.")
-        
+
         if response:
+            # Use central authentication system for user deletion
+            if not self.auth_manager:
+                messagebox.showerror("Error", "Authentication system not available")
+                return
+
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                
-                cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                conn.commit()
-                conn.close()
-                
-                messagebox.showinfo("Success", f"User '{username}' deleted")
-                self.refresh_users_list()
-                
-            except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to delete user: {e}")
+                success = self.auth_manager.delete_user(user_id)
+
+                if success:
+                    messagebox.showinfo("Success", f"User '{username}' deleted")
+                    self.refresh_users_list()
+
+                    # Log activity
+                    try:
+                        from university_system.modules.shared.utils.activity_logger import log_activity
+                        log_activity('delete', 'user', user_id=user_id,
+                                    details={'username': username})
+                    except Exception as log_error:
+                        print(f"Activity logging failed: {log_error}")
+                else:
+                    messagebox.showerror("Error", "Failed to delete user")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete user: {e}")
     
     def view_all_clubs_admin(self):
         """View all clubs with admin details"""

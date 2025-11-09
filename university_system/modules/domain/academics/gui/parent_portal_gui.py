@@ -6502,13 +6502,47 @@ class ParentPortalGUI:
                 username = f"{first_name.lower()}.{last_name.lower()}.{random.randint(100, 999)}"
                 password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
-                # Create user account (simplified - in production use proper authentication)
-                cursor.execute('''
-                INSERT INTO users (username, password, role, email)
-                VALUES (?, ?, ?, ?)
-                ''', (username, password, 'parent', email))
+                # Close the connection - we'll use central auth now
+                conn.commit()
+                conn.close()
 
-                user_id = cursor.lastrowid
+                # Create user account using central authentication (SECURE)
+                if not self.auth:
+                    messagebox.showerror("Error", "Authentication system not available.")
+                    return
+
+                success = self.auth.create_user(
+                    username=username,
+                    password=password,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    role='parent',
+                    password_reset_required=True  # Force password change on first login
+                )
+
+                if not success:
+                    messagebox.showerror("Error", "Failed to create user account.")
+                    # Rollback parent account creation
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM parent_accounts WHERE parent_id = ?', (parent_id,))
+                    conn.commit()
+                    conn.close()
+                    return
+
+                # Get the created user ID
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('SELECT user_id FROM user_accounts WHERE username = ?', (username,))
+                user_result = cursor.fetchone()
+
+                if not user_result:
+                    messagebox.showerror("Error", "User created but ID not found.")
+                    conn.close()
+                    return
+
+                user_id = user_result[0]
 
                 # Link user to parent
                 cursor.execute('''
@@ -6518,6 +6552,14 @@ class ParentPortalGUI:
 
                 conn.commit()
                 conn.close()
+
+                # Log activity
+                try:
+                    from university_system.modules.shared.utils.activity_logger import log_activity
+                    log_activity('create', 'parent_account', parent_id=parent_id,
+                                details={'username': username, 'email': email})
+                except Exception as log_error:
+                    print(f"Activity logging failed: {log_error}")
 
                 # Show success and account details
                 result_text = f"Parent ID: {parent_id}\n\n" \

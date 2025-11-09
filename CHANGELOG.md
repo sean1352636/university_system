@@ -10,48 +10,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 **CRITICAL USER MANAGEMENT FIX: Replace Direct SQL with Central Authentication System** (2025-11-09)
-- **SEVERITY**: High - Direct SQL user operations bypassed central auth security
+- **SEVERITY**: Critical - Plaintext passwords and direct SQL user operations bypassed central auth
 - **IMPACT**: All user management operations now use centralized auth with proper password hashing
-- **SCOPE**: 6 files across GUI, CLI, and utility modules
+- **SCOPE**: 8 files across GUI, CLI, and utility modules (15 total issues identified and fixed)
 - **SECURITY IMPROVEMENTS**:
+  * Eliminated plaintext password storage (parent_portal_gui.py)
   * Replaced direct SQL INSERT/UPDATE/DELETE with UserAuth methods
   * Added comprehensive activity logging for all user operations
   * Improved fallback mechanisms with proper error handling
   * Upgraded PBKDF2 password hashing in bootstrap scenarios
 
-**FILES FIXED (6 files)**:
+**FILES FIXED (8 files)**:
 
-1. **main_gui.py** - Main GUI user management
+1. **parent_portal_gui.py** - 🚨 CRITICAL: Plaintext password storage
+   - Line 6507: Replaced plaintext password INSERT with `auth.create_user()`
+   - Now uses PBKDF2-HMAC-SHA256 (1M iterations) via central auth
+   - Added password_reset_required flag for security
+   - Added activity logging and rollback handling
+   - **Risk Eliminated**: No more plaintext passwords in database
+
+2. **student_union_gui.py** - Student union user management
+   - Line 1801: Role changes now use `auth.update_user(user_id, role=new_role)` instead of direct SQL
+   - Line 1833: User deletion now uses `auth.delete_user(user_id)` instead of direct SQL
+   - Added activity logging for both operations
+
+3. **main_gui.py** - Main GUI user management
    - Line ~2537-2623: User editing now uses `auth.update_user()` instead of direct SQL UPDATE
    - Line ~4951: User deletion now uses `auth.delete_user()` instead of direct SQL DELETE
    - Added activity logging for all user modifications
 
-2. **student_support_gui.py** - Student support role management
+4. **student_support_gui.py** - Student support role management
    - Line ~5020: Role changes now use `auth.update_user(user_id, role=new_role)` instead of direct SQL UPDATE
    - Added activity logging for role changes
 
-3. **cli_main.py** - CLI user deletion
+5. **cli_main.py** - CLI user deletion
    - Line ~4527: User deletion now uses `auth.delete_user(user_id)` instead of direct SQL DELETE
    - Added activity logging with context
 
-4. **academic_calendar_gui.py** - Academic calendar user creation
+6. **academic_calendar_gui.py** - Academic calendar user creation
    - Line ~1912: User creation now delegates to central auth system first
    - Falls back to local creation only if central auth unavailable
    - Added activity logging for both paths
 
-5. **helpdesk_gui.py** - Helpdesk user registration
+7. **helpdesk_gui.py** - Helpdesk user registration
    - Line ~691: Implemented proper user registration using `auth.create_user()`
    - Replaced demo stub with full implementation
    - Added activity logging for registration events
 
-6. **document_manager.py** - Bootstrap admin creation
+8. **document_manager.py** - Bootstrap admin creation
    - Line ~485: Improved fallback admin creation with PBKDF2 instead of SHA256
    - Better error handling for bootstrap scenarios
    - Added activity logging for both central and fallback creation paths
 
 **VULNERABILITY DETAILS**:
 
-**Issue 1: Direct SQL User Operations Bypass Central Auth**
+**Issue 1: CRITICAL - Plaintext Password Storage** (parent_portal_gui.py)
+```python
+# BEFORE (CRITICAL VULNERABILITY):
+cursor.execute('''
+INSERT INTO users (username, password, role, email)
+VALUES (?, ?, ?, ?)
+''', (username, password, 'parent', email))  # ⚠️ PLAINTEXT PASSWORD!
+
+# AFTER (SECURE):
+success = self.auth.create_user(
+    username=username,
+    password=password,  # Hashed automatically with PBKDF2-HMAC-SHA256
+    email=email,
+    first_name=first_name,
+    last_name=last_name,
+    role='parent',
+    password_reset_required=True  # Force password change on first login
+)
+```
+- **Risk**: Database compromise would expose all parent passwords in cleartext
+- **Impact**: Parent account credentials could be used for unauthorized access
+- **Compliance**: Violation of PCI-DSS, GDPR, FERPA password storage requirements
+
+**Issue 2: Direct SQL User Operations Bypass Central Auth**
 ```python
 # BEFORE (INSECURE - bypasses central auth security)
 cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
