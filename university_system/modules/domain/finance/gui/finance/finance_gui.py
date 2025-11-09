@@ -29,23 +29,20 @@ from io import BytesIO
 import base64
 from university_system.modules.domain.finance.gui.finance_reporting_gui import launch_financial_gui
 
-# Import your existing modules - keep backward compatibility
+# Import authentication - REQUIRED (no fallback for security)
+from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
+from university_system.infrastructure.shared_context import get_auth
+
+# Import other modules with backward compatibility fallbacks
 try:
     from university_system.infrastructure.email.email_service import send_email
-    from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
     from university_system.infrastructure.database.db import get_connection
     from university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
-    # Fallback for backward compatibility
+    # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):
         return True
-    
-    class UserAuth:
-        def __init__(self):
-            self.current_user = {"username": "admin"}
-        def check_permission(self, p):
-            return True
-    
+
     from pathlib import Path
     def get_connection():
         """
@@ -60,10 +57,10 @@ except ImportError:
         base_dir = Path(__file__).resolve().parents[1]
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
         return sqlite3.connect(str(DEFAULT_DB_PATH))
-    
+
     def configure_logging(name=None):
         return logging.getLogger(name or __name__)
-    
+
     def get_log_file(name):
         from university_system.modules.shared.constants import paths
         return str(paths.LOG_DIR / name)
@@ -223,21 +220,32 @@ from university_system.modules.domain.finance.gui.finance.revenue_source_manager
 class FinanceGUI:
     """Main Finance GUI class that coordinates all managers"""
 
-    def __init__(self, root):
+    def __init__(self, root, auth=None):
+        """
+        Initialize Finance GUI.
+
+        Args:
+            root: Tkinter root window
+            auth: Authentication instance (if None, will use get_auth())
+
+        Raises:
+            RuntimeError: If authentication system is not available
+        """
         self.root = root
         self.conn = None
         self.finance_system = None
-        self.auth = None  # Initialize auth attribute
 
-        # Try to get global auth instance
-        try:
+        # Get authentication instance - REQUIRED for security
+        self.auth = auth if auth is not None else get_auth()
+        if self.auth is None:
+            # Try global auth as fallback
             self.auth = get_global_auth()
-        except:
-            # Fallback: create a basic auth instance
-            try:
-                self.auth = UserAuth()
-            except:
-                pass
+
+        if self.auth is None:
+            raise RuntimeError(
+                "Authentication system not available. "
+                "Finance GUI cannot start without proper authentication."
+            )
 
         # Initialize all manager classes
         self.db = DatabaseManager(self)

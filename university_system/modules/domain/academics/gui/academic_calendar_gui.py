@@ -22,7 +22,7 @@ from university_system.modules.domain.academics.services.academic_calendar impor
     AcademicCalendarManager, CalendarConfig, CalendarError, ValidationError,
     DatabaseError, PermissionError, display_academic_calendar_menu,
     handle_add_event, handle_update_event, handle_delete_event,
-    handle_view_calendar, handle_export_calendar, calendar_auth, set_auth
+    handle_view_calendar, handle_export_calendar, auth, set_auth
 )
 
 # Configure logging for GUI
@@ -9060,8 +9060,8 @@ if __name__ == "__main__":
     # Try to set up authentication
     auth_manager = None
     try:
-        from university_system.modules.domain.academics.services.academic_calendar import calendar_auth
-        auth_manager = calendar_auth
+        from university_system.modules.domain.academics.services.academic_calendar import auth
+        auth_manager = auth
     except:
         print("Running without authentication")
     

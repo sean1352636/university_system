@@ -7,6 +7,124 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+**CRITICAL SECURITY FIX: Remove All Standalone Authentication Implementations** (2025-11-09)
+- **SEVERITY**: Critical - Hardcoded admin accounts and permission bypasses removed
+- **IMPACT**: All GUI modules now properly require central authentication
+- **SCOPE**: 16 files across Finance, Commerce, Student Affairs, and Academic modules
+- **SECURITY IMPROVEMENTS**:
+  * Eliminated hardcoded admin fallback accounts
+  * Removed mock authentication accepting any credentials
+  * Enforced dependency injection pattern for authentication
+  * Standardized auth variable naming across codebase
+
+**FILES FIXED (16 files)**:
+
+**Finance GUI Modules (12 files)** - Removed dangerous hardcoded admin fallback:
+1. `finance/gui/finance/finance_gui.py` - Main Finance GUI entry point
+2. `finance/gui/finance/layout_manager.py` - Layout management
+3. `finance/gui/finance/analytics.py` - Analytics dashboard
+4. `finance/gui/finance/budget_manager.py` - Budget management
+5. `finance/gui/finance/compliance.py` - Compliance reporting
+6. `finance/gui/finance/dashboard.py` - Financial dashboard
+7. `finance/gui/finance/db_manager.py` - Database operations
+8. `finance/gui/finance/expense_manager.py` - Expense tracking
+9. `finance/gui/finance/invoice_manager.py` - Invoice management
+10. `finance/gui/finance/report_manager.py` - Report generation
+11. `finance/gui/finance/settings.py` - System settings
+12. `finance/gui/finance/transaction_manager.py` - Transaction processing
+
+**Commerce & Student Affairs GUI Modules (3 files)** - Removed mock auth:
+13. `commerce/gui/restaurant_management_gui.py` - Restaurant management (~4,595 lines)
+14. `commerce/gui/shop_management_gui.py` - Shop management (~1,680 lines)
+15. `student_affairs/gui/helpdesk_gui.py` - IT helpdesk (~9,500 lines)
+
+**Academic Calendar Service (1 file)** - Standardized auth naming:
+16. `academics/services/academic_calendar.py` - Renamed `calendar_auth` → `auth`
+    - Updated caller: `academics/gui/academic_calendar_gui.py` (2 import locations)
+
+**VULNERABILITY DETAILS**:
+
+**Issue 1: Hardcoded Admin Fallback** (Finance GUI - 12 files)
+```python
+# BEFORE (DANGEROUS):
+try:
+    from infrastructure.auth.user_authentication import UserAuth
+except ImportError:
+    class UserAuth:
+        def __init__(self):
+            self.current_user = {"username": "admin"}  # ⚠️ HARDCODED ADMIN
+        def check_permission(self, p):
+            return True  # ⚠️ BYPASSES ALL PERMISSIONS
+```
+- **Risk**: Any user could access all Finance GUI functions with admin privileges
+- **Financial Data Exposure**: Budget, expenses, invoices, transactions, compliance reports
+- **Permission Bypass**: All `check_permission()` calls returned True
+
+**Issue 2: Mock Authentication** (Commerce/Helpdesk - 3 files)
+```python
+# BEFORE (DANGEROUS):
+class UserAuth:
+    def login(self, username, password):
+        if username and password:  # ⚠️ ANY CREDENTIALS ACCEPTED
+            self.current_user = {'username': username, 'role': 'manager'}
+            return True
+```
+- **Risk**: Any username/password combination granted manager access
+- **Affected Systems**: Restaurant orders, shop inventory, helpdesk tickets
+- **Permission Bypass**: Automatic manager role assignment
+
+**Issue 3: Non-Standard Auth Naming** (Academic Calendar)
+- **Issue**: Used `calendar_auth` instead of standard `auth` global variable
+- **Risk**: Inconsistency could lead to maintenance errors and confusion
+- **Impact**: Potential for auth checks to be bypassed due to variable confusion
+
+**REMEDIATION IMPLEMENTED**:
+
+**For Finance & Commerce/Helpdesk GUIs**:
+1. **Removed all fallback auth classes** - No more mock implementations
+2. **Made auth imports REQUIRED** - Moved outside try/except blocks:
+   ```python
+   # AFTER (SECURE):
+   from infrastructure.auth.user_authentication import UserAuth, get_global_auth
+   from infrastructure.shared_context import get_auth
+   ```
+3. **Updated __init__ methods** - Proper dependency injection:
+   ```python
+   def __init__(self, root, auth=None):
+       self.auth = auth if auth is not None else get_auth()
+       if self.auth is None:
+           self.auth = get_global_auth()
+       if self.auth is None:
+           messagebox.showerror("Authentication Required", ...)
+           root.destroy()
+           return
+   ```
+4. **Error handling** - GUI refuses to start without proper authentication
+
+**For Academic Calendar**:
+1. **Renamed global variable**: `calendar_auth` → `auth` for consistency
+2. **Updated all references** in `academic_calendar.py` (~15 occurrences)
+3. **Updated imports** in `academic_calendar_gui.py` (2 locations)
+
+**TESTING & VALIDATION**:
+- ✓ All 16 files verified with `python3 -m py_compile`
+- ✓ No syntax errors
+- ✓ Proper import structure maintained
+- ✓ Backward compatibility preserved for non-security imports
+- ✓ All changes follow established dependency injection pattern
+
+**AUDIT TRAIL**:
+- Finance GUI fixes: Committed in 8e58c13 (10 manager files)
+- Remaining fixes: This commit
+
+**COMPLIANCE IMPACT**:
+- **GDPR**: Closes unauthorized access vulnerability to personal/financial data
+- **PCI-DSS**: Eliminates weak authentication in payment processing systems
+- **SOX**: Fixes financial data access controls
+- **FERPA**: Secures student financial aid and billing information
+
 ### Added
 
 **Communication Infrastructure Integration - Centralized Email & SMS** (2025-11-09)

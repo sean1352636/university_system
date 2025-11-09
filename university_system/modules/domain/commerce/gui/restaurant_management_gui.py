@@ -9,13 +9,9 @@ import sys
 import os
 
 # Import centralized authentication system
-try:
-    from university_system.infrastructure.auth.user_authentication import UserAuth
-    AUTH_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: Could not import UserAuth: {e}")
-    AUTH_AVAILABLE = False
-    # Will define fallback below
+# Import authentication - REQUIRED (no fallback for security)
+from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
+from university_system.infrastructure.shared_context import get_auth
 
 # Attempt to import the enhanced restaurant DB initializer from the CLI version.
 # If available, calling this will create the full set of tables defined in
@@ -152,37 +148,38 @@ def init_db():
         print(f"Database initialization error: {e}")
         return False
 
-# Fallback Authentication class for when centralized auth is not available
-if not AUTH_AVAILABLE:
-    class UserAuth:
-        def __init__(self):
-            self.current_user = None
-
-        def login(self, username, password):
-            if username and password:
-                self.current_user = {'username': username, 'role': 'manager'}
-                return True
-            return False
-
-        def logout(self):
-            self.current_user = None
-
-        def check_permission(self, permission):
-            return bool(self.current_user)
-
 class RestaurantManagementGUI:
     def __init__(self, root, auth=None):
+        """
+        Initialize Restaurant Management GUI.
+
+        Args:
+            root: Tkinter root window
+            auth: Authentication instance (if None, will use get_auth())
+
+        Raises:
+            RuntimeError: If authentication system is not available
+        """
         self.root = root
-        self.auth = auth
+
+        # Get authentication instance - REQUIRED for security
+        self.auth = auth if auth is not None else get_auth()
+        if self.auth is None:
+            # Try global auth as fallback
+            self.auth = get_global_auth()
+
+        if self.auth is None:
+            messagebox.showerror(
+                "Authentication Required",
+                "Authentication system not available. Restaurant Management GUI cannot start."
+            )
+            root.destroy()
+            return
 
         # Initialize database
         if not init_db():
             messagebox.showerror("Database Error", "Failed to initialize database")
             return
-
-        # Set up authentication using centralized system
-        if self.auth is None:
-            self.auth = UserAuth()
 
         # Check if user is already authenticated
         self.current_user = None

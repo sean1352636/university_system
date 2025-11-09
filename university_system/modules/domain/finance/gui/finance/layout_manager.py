@@ -45,23 +45,20 @@ except ImportError:
     FINANCIAL_AID_GUI_AVAILABLE = False
     launch_financial_aid_gui = None
 
-# Import your existing modules - keep backward compatibility
+# Import authentication - REQUIRED (no fallback for security)
+from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
+from university_system.infrastructure.shared_context import get_auth
+
+# Import other modules with backward compatibility fallbacks
 try:
     from university_system.infrastructure.email.email_service import send_email
-    from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
     from university_system.infrastructure.database.db import get_connection
     from university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
-    # Fallback for backward compatibility
+    # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):
         return True
-    
-    class UserAuth:
-        def __init__(self):
-            self.current_user = {"username": "admin"}
-        def check_permission(self, p):
-            return True
-    
+
     from pathlib import Path
     def get_connection():
         """
@@ -76,10 +73,10 @@ except ImportError:
         base_dir = Path(__file__).resolve().parents[1]
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
         return sqlite3.connect(str(DEFAULT_DB_PATH))
-    
+
     def configure_logging(name=None):
         return logging.getLogger(name or __name__)
-    
+
     def get_log_file(name):
         from university_system.modules.shared.constants import paths
         return str(paths.LOG_DIR / name)

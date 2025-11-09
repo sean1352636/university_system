@@ -5719,52 +5719,52 @@ except ImportError:
     get_current_user = lambda: None
     set_auth_instance = lambda x: None
 
-calendar_auth = None
+auth = None
 
 def set_auth(auth_manager):
     """Set the authentication manager for the calendar system"""
-    global calendar_auth
-    calendar_auth = auth_manager
+    global auth
+    auth = auth_manager
     # Also set it in the global auth instance if available
     if HAS_AUTH:
         set_auth_instance(auth_manager)
 
 def display_academic_calendar_menu():
     """Display the academic calendar management menu with trip integration"""
-    global calendar_auth
+    global auth
     
-    if not calendar_auth or not calendar_auth.current_user:
+    if not auth or not auth.current_user:
         print("You must be logged in to access the academic calendar.")
         return
     
     # Check if user has any calendar-related permissions
-    if not (calendar_auth.check_permission('manage_schedules') or 
-            calendar_auth.check_permission('view_own_timetable') or 
-            calendar_auth.check_permission('export_data')):
+    if not (auth.check_permission('manage_schedules') or 
+            auth.check_permission('view_own_timetable') or 
+            auth.check_permission('export_data')):
         print("You don't have permission to access the academic calendar.")
         return
     
     try:
         # Create calendar manager with authentication
         config = CalendarConfig()
-        calendar_manager = AcademicCalendarManager(config=config, auth_manager=calendar_auth)
+        calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
         
         # Set auth for trip management if available
         if TRIP_MANAGEMENT_AVAILABLE:
-            trip_management.set_auth(calendar_auth)
+            trip_management.set_auth(auth)
         
         # Create a simple menu interface
         while True:
             print("\nIntegrated Academic Calendar & Trip Management")
             print("=" * 55)
-            print(f"Logged in as: {calendar_auth.current_user['username']} ({calendar_auth.current_user['role']})")
+            print(f"Logged in as: {auth.current_user['username']} ({auth.current_user['role']})")
             
             options = []
             option_num = 1
             
             # Calendar options
             print(f"\n📅 CALENDAR MANAGEMENT:")
-            if calendar_auth.check_permission('manage_schedules'):
+            if auth.check_permission('manage_schedules'):
                 print(f"{option_num}. Add Event")
                 options.append(('add_event', lambda: handle_add_event(calendar_manager)))
                 option_num += 1
@@ -5781,7 +5781,7 @@ def display_academic_calendar_menu():
             options.append(('view_calendar', lambda: handle_view_calendar(calendar_manager)))
             option_num += 1
             
-            if calendar_auth.check_permission('export_data'):
+            if auth.check_permission('export_data'):
                 print(f"{option_num}. Export Calendar")
                 options.append(('export_calendar', lambda: handle_export_calendar(calendar_manager)))
                 option_num += 1
@@ -5790,28 +5790,28 @@ def display_academic_calendar_menu():
             if TRIP_MANAGEMENT_AVAILABLE:
                 print(f"\n🎒 TRIP MANAGEMENT:")
                 
-                if calendar_auth.check_permission('view_trips'):
+                if auth.check_permission('view_trips'):
                     print(f"{option_num}. View All Trips")
                     options.append(('view_trips', trip_management.view_trips))
                     option_num += 1
                 
-                if calendar_auth.check_permission('create_trips'):
+                if auth.check_permission('create_trips'):
                     print(f"{option_num}. Create New Trip")
                     options.append(('create_trip', trip_management.create_trip))
                     option_num += 1
                 
-                if calendar_auth.check_permission('register_for_trips'):
+                if auth.check_permission('register_for_trips'):
                     print(f"{option_num}. Register for Trip")
                     options.append(('register_trip', trip_management.register_for_trip))
                     option_num += 1
                 
-                if calendar_auth.check_permission('view_own_trip_registrations'):
+                if auth.check_permission('view_own_trip_registrations'):
                     print(f"{option_num}. View My Trip Registrations")
                     options.append(('view_registrations', trip_management.view_my_trip_registrations))
                     option_num += 1
             
             # Integration options
-            if TRIP_MANAGEMENT_AVAILABLE and calendar_auth.check_permission('manage_schedules'):
+            if TRIP_MANAGEMENT_AVAILABLE and auth.check_permission('manage_schedules'):
                 print(f"\n🔗 INTEGRATION:")
                 print(f"{option_num}. Create Calendar Event for Trip")
                 options.append(('create_trip_event', lambda: handle_create_trip_event(calendar_manager)))
