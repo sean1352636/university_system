@@ -17,7 +17,32 @@ from university_system.infrastructure.email.email_db_utilities import _ensure_db
 from university_system.modules.shared.utils.logs import handle_exception, log_event
 from university_system.infrastructure.email.reports import log_email_metrics
 from university_system.infrastructure.email.smtp import send_email_via_smtp
-from university_system.infrastructure.email.state import auth_proxy as auth
+# Import auth access - use function to get current auth instance
+try:
+    from university_system.infrastructure.shared_context import get_auth as _get_shared_auth
+    HAS_SHARED_AUTH = True
+except ImportError:
+    HAS_SHARED_AUTH = False
+    _get_shared_auth = None
+
+# Fallback to email state auth
+from university_system.infrastructure.email.state import auth_proxy as _state_auth
+
+def _get_current_auth():
+    """Get the current auth instance with proper fallback"""
+    if HAS_SHARED_AUTH:
+        try:
+            auth = _get_shared_auth()
+            if hasattr(auth, 'current_user') and auth.current_user:
+                return auth
+        except:
+            pass
+    # Fallback to state auth
+    return _state_auth if _state_auth else None
+
+# For backward compatibility, expose as 'auth' variable
+# But it should be called via _get_current_auth() in critical paths
+auth = _state_auth
 from university_system.infrastructure.email.templates import (
     ensure_templates_directory,
     list_templates,
@@ -169,8 +194,32 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
        Robust against sender resolution failures and ensures commit.
     """
     def _store_email(cursor):
-        sender_email = config.get('sender_email', "noreply@university.edu")
-        sender_name  = config.get('sender_name',  "University System")
+        # Use logged-in user's email/name if available, otherwise use config defaults
+        current_auth = _get_current_auth()
+        if current_auth and hasattr(current_auth, 'current_user') and current_auth.current_user:
+            # Get full user details from database (current_user only has id, username, role)
+            user_id = current_auth.current_user.get('id')
+            if user_id:
+                cursor.execute("SELECT email, first_name, last_name FROM users WHERE id = ?", (user_id,))
+                user_data = cursor.fetchone()
+                if user_data:
+                    sender_email = user_data[0]
+                    first_name = (user_data[1] or '').strip()
+                    last_name = (user_data[2] or '').strip()
+                    if first_name or last_name:
+                        sender_name = f"{first_name} {last_name}".strip()
+                    else:
+                        sender_name = current_auth.current_user.get('username', 'University System')
+                else:
+                    # Fallback if user not found
+                    sender_email = config.get('sender_email', "noreply@university.edu")
+                    sender_name = config.get('sender_name', "University System")
+            else:
+                sender_email = config.get('sender_email', "noreply@university.edu")
+                sender_name = config.get('sender_name', "University System")
+        else:
+            sender_email = config.get('sender_email', "noreply@university.edu")
+            sender_name  = config.get('sender_name',  "University System")
 
         # 1) Store in stored_emails (admin/storage view)
         cursor.execute('''
@@ -407,11 +456,12 @@ def get_appropriate_sender_id(cursor, sender_email, sender_name, current_time):
     2. If sender_email matches a real user, use that user's ID
     3. Otherwise, create/use a system user with the appropriate name
     """
-    
+
     # Method 1: If we have an authenticated user sending the email, use their ID
-    if auth and auth.current_user:
-        log_event('info', f"Using authenticated user as sender: {auth.current_user['username']} (ID: {auth.current_user['id']})")
-        return auth.current_user['id']
+    current_auth = _get_current_auth()
+    if current_auth and hasattr(current_auth, 'current_user') and current_auth.current_user:
+        log_event('info', f"Using authenticated user as sender: {current_auth.current_user['username']} (ID: {current_auth.current_user['id']})")
+        return current_auth.current_user['id']
     
     # Method 2: Look for a real user with the sender email
     cursor.execute("SELECT id, username FROM users WHERE email = ?", (sender_email,))

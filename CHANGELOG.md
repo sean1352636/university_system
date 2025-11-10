@@ -8,6 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Staff Account Role and Email Sender Issues** - Fixed two critical staff account bugs
+  - **Issue 1: Staff Account Had Admin Role**
+    - **Problem**: Default staff account (username='staff') had role='admin' instead of role='staff'
+    - **Root Cause**: Database mismatch - user_accounts table had 'staff', but users table had 'system_teessideuniversity' with role='admin' for the same user_id (193)
+    - **Fix**: Updated user_id 193 in users table to proper staff credentials:
+      * Username: staff (was: system_teessideuniversity)
+      * Email: staff@university.edu (was: noreply@university.edu)
+      * Role: staff (was: admin)
+      * Name: Staff Member
+    - **Impact**: 24 messages previously sent as 'system_teessideuniversity' now correctly attributed to 'staff' account
+
+  - **Issue 2: Staff Emails Sent from System Email**
+    - **Problem**: When staff (or any logged-in user) sent emails, sender showed as "system_teessideuniversity" instead of their actual email
+    - **Root Cause**: `send_email_db_only()` hardcoded sender to config values (noreply@university.edu / "University System") instead of using logged-in user's credentials
+    - **Fix 1**: Updated `send_email_db_only()` to check for logged-in user first (lines 172-196)
+      * Queries users table for full name and email using current_user.id
+      * Uses logged-in user's email and name as sender
+      * Falls back to config defaults only if no user is logged in
+    - **Fix 2**: Updated auth access to use `get_auth()` from shared_context (lines 20-43)
+      * Created `_get_current_auth()` to properly access current session
+      * Checks shared_context auth first, falls back to email state auth
+      * Ensures email system sees the actual logged-in user
+    - **Fix 3**: Updated `get_appropriate_sender_id()` to use current auth instance (line 420)
+
+  - **Result**: Emails now correctly show sender as the logged-in user who sent them
+  - **Files Modified**:
+    * `infrastructure/email/email_service.py` (lines 20-43, 172-196, 420-430)
+  - **Database Updates**:
+    * Fixed user ID 193 credentials (SQL UPDATE on users table)
+
 - **Backup Folder Organization** - Fixed backup folders being created in project root instead of centralized location
   - **Problem**: `backups/` and `finance_backups/` were being created in project root
   - **Root Cause**: Multiple files using relative paths (`'backups'`) instead of centralized `paths.BACKUP_DIR`
