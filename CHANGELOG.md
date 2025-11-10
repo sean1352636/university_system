@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Library Management, Academic Calendar, and Module Scheduling GUIs** - Implemented comprehensive role-based menu filtering
+  - **Library Management GUI**:
+    * Admin: Full access (all menus), Staff: Most features (no system admin), Student: Basic access (view/borrow books)
+    * Menu filtering: File, Edit (admin/staff), View, Circulation, Tools, Reports (admin/staff), System (admin), Help
+  - **Academic Calendar GUI**:
+    * Admin: Full access, Staff: Teaching access, Student: View-only
+    * Menu filtering: File, Events, Resources (admin/staff), View, Tools, Settings (admin/staff), Help
+  - **Module Scheduling GUI**:
+    * Admin: Full access, Staff: Scheduling access, Student: View-only
+    * Menu filtering: File, View, Tools (admin/staff), Help
+  - **Files Modified**:
+    * `library_gui.py:116-387`, `academic_calendar_gui.py:2716-3199`, `module_scheduling_gui.py:38-212`
+  - **Impact**: Enhanced security and cleaner interfaces for all three academic modules
+
 - **Updated Permissions System for Role-Based Access Control** - Added comprehensive permissions for academic modules
   - **New Permission Categories**:
     * Course Management permissions (35 new permissions)

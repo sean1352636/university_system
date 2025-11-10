@@ -2713,6 +2713,35 @@ class CalendarGUI:
         self._setup_gui()
         self._setup_calendar_manager()
 
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth_manager:
+                if hasattr(self.auth_manager, 'current_user') and self.auth_manager.current_user:
+                    role = self.auth_manager.current_user.get('role', '').lower()
+                    return role
+                elif hasattr(self.auth_manager, 'user_role'):
+                    return self.auth_manager.user_role.lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/instructor"""
+        role = self.get_user_role()
+        return role in ['staff', 'instructor', 'faculty']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def init_calendar_database():
         """Initialize the academic calendar database tables"""
         try:
@@ -3065,36 +3094,56 @@ class CalendarGUI:
         self.progress_bar.pack(side=tk.RIGHT, padx=5, pady=2)
         
     def _create_menu_bar(self):
-        """Create menu bar"""
+        """Create menu bar with role-based access"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Export Calendar...", command=self._show_export)
-        file_menu.add_command(label="Import Calendar...", command=self._import_calendar)
-        file_menu.add_separator()
-        file_menu.add_command(label="Backup Database...", command=self._backup_database)
-        file_menu.add_command(label="Restore Database...", command=self._restore_database)
-        file_menu.add_separator()
+
+        # Admin and Staff can export/import
+        if is_admin or is_staff:
+            file_menu.add_command(label="Export Calendar...", command=self._show_export)
+            file_menu.add_command(label="Import Calendar...", command=self._import_calendar)
+            file_menu.add_separator()
+
+        # Admin only - Database backup/restore
+        if is_admin:
+            file_menu.add_command(label="Backup Database...", command=self._backup_database)
+            file_menu.add_command(label="Restore Database...", command=self._restore_database)
+            file_menu.add_separator()
+
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
-        # Events menu (new)
+
+        # Events menu
         events_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Events", menu=events_menu)
-        events_menu.add_command(label="Add Event", command=self._show_add_event)
-        events_menu.add_command(label="Recurring Event", command=self._show_create_recurring_event)
+
+        # Admin and Staff can add/manage events
+        if is_admin or is_staff:
+            events_menu.add_command(label="Add Event", command=self._show_add_event)
+            events_menu.add_command(label="Recurring Event", command=self._show_create_recurring_event)
+
+        # Everyone can search
         events_menu.add_command(label="Advanced Search", command=self._show_advanced_search)
-        events_menu.add_separator()
-        events_menu.add_command(label="Categories & Tags", command=self._show_event_categories)
-        
-        # Resources menu (new)
-        resources_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Resources", menu=resources_menu)
-        resources_menu.add_command(label="Manage Resources", command=self._show_resource_management)
-        resources_menu.add_command(label="Manage Courses", command=self._show_course_management)
-        resources_menu.add_command(label="Project Milestones", command=self._show_project_milestones)
+
+        # Admin and Staff can manage categories
+        if is_admin or is_staff:
+            events_menu.add_separator()
+            events_menu.add_command(label="Categories & Tags", command=self._show_event_categories)
+
+        # Resources menu - Admin and Staff only
+        if is_admin or is_staff:
+            resources_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Resources", menu=resources_menu)
+            resources_menu.add_command(label="Manage Resources", command=self._show_resource_management)
+            resources_menu.add_command(label="Manage Courses", command=self._show_course_management)
+            resources_menu.add_command(label="Project Milestones", command=self._show_project_milestones)
         
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
@@ -3103,30 +3152,46 @@ class CalendarGUI:
         view_menu.add_command(label="Calendar", command=self._show_calendar_view)
         view_menu.add_command(label="Events List", command=self._show_manage_events)
         view_menu.add_separator()
-        view_menu.add_command(label="Data Visualization", command=self._show_data_visualization)
-        view_menu.add_command(label="Reports", command=self._show_reports)
-        view_menu.add_separator()
+
+        # Admin and Staff can view analytics
+        if is_admin or is_staff:
+            view_menu.add_command(label="Data Visualization", command=self._show_data_visualization)
+            view_menu.add_command(label="Reports", command=self._show_reports)
+            view_menu.add_separator()
+
         view_menu.add_command(label="Refresh", command=self._refresh_current_view)
-        
+
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Calendar Sync...", command=self._calendar_sync)
-        tools_menu.add_command(label="Import Holidays...", command=self._import_holidays)
-        tools_menu.add_command(label="Bulk Operations...", command=self._bulk_operations)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="System Maintenance", command=self._show_system_backup)
-        tools_menu.add_command(label="Audit Logs", command=self._show_audit_logs)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="CLI Mode", command=self._launch_cli_mode)
-        
-        # Settings menu (new)
-        settings_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Settings", menu=settings_menu)
-        settings_menu.add_command(label="Notification Settings", command=self._show_notification_settings)
-        settings_menu.add_command(label="Timezone Settings", command=self._show_timezone_settings)
-        settings_menu.add_command(label="General Settings", command=self._show_settings)
-        
+
+        # Admin and Staff only
+        if is_admin or is_staff:
+            tools_menu.add_command(label="Calendar Sync...", command=self._calendar_sync)
+            tools_menu.add_command(label="Import Holidays...", command=self._import_holidays)
+
+        # Admin only - Bulk operations
+        if is_admin:
+            tools_menu.add_command(label="Bulk Operations...", command=self._bulk_operations)
+
+        # Admin only - System maintenance
+        if is_admin:
+            tools_menu.add_separator()
+            tools_menu.add_command(label="System Maintenance", command=self._show_system_backup)
+            tools_menu.add_command(label="Audit Logs", command=self._show_audit_logs)
+
+        if is_admin or is_staff:
+            tools_menu.add_separator()
+            tools_menu.add_command(label="CLI Mode", command=self._launch_cli_mode)
+
+        # Settings menu - Admin and Staff only
+        if is_admin or is_staff:
+            settings_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Settings", menu=settings_menu)
+            settings_menu.add_command(label="Notification Settings", command=self._show_notification_settings)
+            settings_menu.add_command(label="Timezone Settings", command=self._show_timezone_settings)
+            settings_menu.add_command(label="General Settings", command=self._show_settings)
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)

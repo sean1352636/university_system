@@ -34,12 +34,42 @@ class ModuleSchedulingGUI:
     def set_auth(self, auth):
         """Optional; accept auth context from main app."""
         self._auth = auth
+
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if hasattr(self, '_auth') and self._auth:
+                if hasattr(self._auth, 'current_user') and self._auth.current_user:
+                    role = self._auth.current_user.get('role', '').lower()
+                    return role
+                elif hasattr(self._auth, 'user_role'):
+                    return self._auth.user_role.lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/instructor"""
+        role = self.get_user_role()
+        return role in ['staff', 'instructor', 'faculty']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def __init__(self, root):
         self.root = root
         self.root.title("Enhanced Module Scheduling System - GUI")
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
-        
+
         # Initialize the backend scheduler
         self.scheduler = ModuleScheduler()
 
@@ -48,16 +78,16 @@ class ModuleSchedulingGUI:
 
         # Configure styles
         self.setup_styles()
-        
+
         # Create the main interface
         self.create_main_interface()
-        
+
         # Status bar
         self.create_status_bar()
-        
+
         # Load initial data
         self.refresh_all_data()
-        
+
         # Bind close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     
@@ -123,40 +153,58 @@ class ModuleSchedulingGUI:
         self.create_menu_bar()
     
     def create_menu_bar(self):
-        """Create the application menu bar"""
+        """Create the application menu bar with role-based access"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Import CSV", command=self.import_csv)
-        file_menu.add_command(label="Export All", command=self.export_all_data)
-        file_menu.add_separator()
-        file_menu.add_command(label="Backup", command=self.create_backup)
-        file_menu.add_command(label="Restore", command=self.restore_backup)
-        file_menu.add_separator()
+
+        # Admin and Staff can import/export
+        if is_admin or is_staff:
+            file_menu.add_command(label="Import CSV", command=self.import_csv)
+            file_menu.add_command(label="Export All", command=self.export_all_data)
+            file_menu.add_separator()
+
+        # Admin only - Backup/Restore
+        if is_admin:
+            file_menu.add_command(label="Backup", command=self.create_backup)
+            file_menu.add_command(label="Restore", command=self.restore_backup)
+            file_menu.add_separator()
+
         file_menu.add_command(label="Exit", command=self.on_closing)
-        file_menu.add_separator()
-        file_menu.add_command(label="Manage Modules", command=self.show_modules_tab)
+
+        # Staff and Admin can manage modules
+        if is_admin or is_staff:
+            file_menu.add_separator()
+            file_menu.add_command(label="Manage Modules", command=self.show_modules_tab)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Refresh All", command=self.refresh_all_data)
         view_menu.add_command(label="Grid View", command=self.show_grid_view)
-        view_menu.add_separator()
-        view_menu.add_command(label="CLI Mode", command=self.launch_cli_mode)
-        
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Interactive Scheduling Wizard", command=self.schedule_module_interactively)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="Detect Conflicts", command=self.detect_all_conflicts)
-        tools_menu.add_command(label="Data Validation", command=self.validate_data)
-        tools_menu.add_command(label="Generate Reports", command=self.generate_reports)
-        
+
+        # Admin and Staff get CLI mode
+        if is_admin or is_staff:
+            view_menu.add_separator()
+            view_menu.add_command(label="CLI Mode", command=self.launch_cli_mode)
+
+        # Tools menu - Admin and Staff only
+        if is_admin or is_staff:
+            tools_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Tools", menu=tools_menu)
+            tools_menu.add_command(label="Interactive Scheduling Wizard", command=self.schedule_module_interactively)
+            tools_menu.add_separator()
+            tools_menu.add_command(label="Detect Conflicts", command=self.detect_all_conflicts)
+            tools_menu.add_command(label="Data Validation", command=self.validate_data)
+            tools_menu.add_command(label="Generate Reports", command=self.generate_reports)
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)

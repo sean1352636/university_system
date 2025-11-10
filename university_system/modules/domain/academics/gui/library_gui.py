@@ -113,6 +113,35 @@ class LibraryGUI:
         # Check for late fees and display notification
         self.check_and_display_late_fees()
 
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth:
+                if hasattr(self.auth, 'current_user') and self.auth.current_user:
+                    role = self.auth.current_user.get('role', '').lower()
+                    return role
+                elif hasattr(self.auth, 'user_role'):
+                    return self.auth.user_role.lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/instructor"""
+        role = self.get_user_role()
+        return role in ['staff', 'instructor', 'faculty']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def __getattr__(self, name):
         """Fallback for undefined attributes or commands.
 
@@ -212,47 +241,77 @@ class LibraryGUI:
         self.initialize_main_content()
         
     def create_menu_bar(self):
-        """Create the application menu bar"""
+        """Create the application menu bar with role-based access"""
         menubar = tk.Menu(self.master)
         self.master.config(menu=menubar)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="📥 Bulk Import Books", command=self.bulk_import_books_gui)
-        file_menu.add_command(label="📤 Bulk Export Books", command=self.bulk_export_books_gui)
-        file_menu.add_separator()
-        file_menu.add_command(label="Backup System", command=self.backup_system_gui)
-        file_menu.add_command(label="Restore System", command=self.restore_system_gui)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.exit_application)
-        file_menu.add_separator()
-        file_menu.add_command(label="Export Statistics", command=self.generate_library_statistics_export)
 
-        # Edit menu
-        edit_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Edit", menu=edit_menu)
-        edit_menu.add_command(label="Settings", command=self.show_settings)
-        edit_menu.add_command(label="⚙️ Enhanced Settings Management", command=self.enhanced_settings_management_gui)
-        edit_menu.add_command(label="User Preferences", command=self.show_user_preferences)
-        edit_menu.add_separator()
-        edit_menu.add_command(label="📤 Export Settings", command=self.export_settings_gui)
-        edit_menu.add_command(label="📥 Import Settings", command=self.import_settings_gui)
-        edit_menu.add_command(label="🔄 Reset to Defaults", command=self.reset_settings_to_default_gui)
-        edit_menu.add_command(label="💾 Backup Settings", command=self.backup_settings_only_gui)
+        # Admin and Staff can import/export
+        if is_admin or is_staff:
+            file_menu.add_command(label="📥 Bulk Import Books", command=self.bulk_import_books_gui)
+            file_menu.add_command(label="📤 Bulk Export Books", command=self.bulk_export_books_gui)
+            file_menu.add_separator()
+
+        # Admin only - System backup/restore
+        if is_admin:
+            file_menu.add_command(label="Backup System", command=self.backup_system_gui)
+            file_menu.add_command(label="Restore System", command=self.restore_system_gui)
+            file_menu.add_separator()
+
+        file_menu.add_command(label="Exit", command=self.exit_application)
+
+        # Admin and Staff can export statistics
+        if is_admin or is_staff:
+            file_menu.add_separator()
+            file_menu.add_command(label="Export Statistics", command=self.generate_library_statistics_export)
+
+        # Edit menu - Admin and Staff only
+        if is_admin or is_staff:
+            edit_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Edit", menu=edit_menu)
+
+            if is_admin:
+                edit_menu.add_command(label="Settings", command=self.show_settings)
+                edit_menu.add_command(label="⚙️ Enhanced Settings Management", command=self.enhanced_settings_management_gui)
+
+            edit_menu.add_command(label="User Preferences", command=self.show_user_preferences)
+
+            if is_admin:
+                edit_menu.add_separator()
+                edit_menu.add_command(label="📤 Export Settings", command=self.export_settings_gui)
+                edit_menu.add_command(label="📥 Import Settings", command=self.import_settings_gui)
+                edit_menu.add_command(label="🔄 Reset to Defaults", command=self.reset_settings_to_default_gui)
+                edit_menu.add_command(label="💾 Backup Settings", command=self.backup_settings_only_gui)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Dashboard", command=self.show_dashboard)
         view_menu.add_command(label="All Books", command=self.show_all_books)
-        view_menu.add_command(label="Overdue Items", command=self.show_overdue_books)
+
+        # Staff and Admin can see overdue items
+        if is_admin or is_staff:
+            view_menu.add_command(label="Overdue Items", command=self.show_overdue_books)
+
         view_menu.add_command(label="📅 Book Return Calendar", command=self.open_calendar_with_due_dates)
-        view_menu.add_command(label="Reports", command=self.show_reports)
-        view_menu.add_separator()
-        view_menu.add_command(label="📊 Advanced Analytics Dashboard", command=self.show_advanced_analytics_gui)
-        view_menu.add_separator()
-        view_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
+
+        # Reports - Admin and Staff only
+        if is_admin or is_staff:
+            view_menu.add_command(label="Reports", command=self.show_reports)
+            view_menu.add_separator()
+            view_menu.add_command(label="📊 Advanced Analytics Dashboard", command=self.show_advanced_analytics_gui)
+
+        # System Maintenance - Admin only
+        if is_admin:
+            view_menu.add_separator()
+            view_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
 
         # Circulation menu
         circulation_menu = tk.Menu(menubar, tearoff=0)
@@ -262,51 +321,70 @@ class LibraryGUI:
         circulation_menu.add_command(label="🔄 Renew Book", command=self.renew_book_gui)
         circulation_menu.add_separator()
         circulation_menu.add_command(label="📌 Reserve Book", command=self.reserve_book_gui)
-        circulation_menu.add_command(label="📋 Manage Reservations", command=self.manage_reservations_gui)
+
+        # Manage Reservations - Staff and Admin only
+        if is_admin or is_staff:
+            circulation_menu.add_command(label="📋 Manage Reservations", command=self.manage_reservations_gui)
 
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="🔍 Advanced Search", command=self.show_advanced_search_gui)
-        tools_menu.add_command(label="Barcode Scanner", command=self.show_barcode_scanner)
+
+        # Barcode Scanner - Staff and Admin only
+        if is_admin or is_staff:
+            tools_menu.add_command(label="Barcode Scanner", command=self.show_barcode_scanner)
+
         tools_menu.add_separator()
         tools_menu.add_command(label="📚 Reading Lists", command=self.manage_reading_lists_gui)
         tools_menu.add_command(label="⭐ Rate & Review Book", command=self.rate_and_review_book_gui)
         tools_menu.add_separator()
         tools_menu.add_command(label="📚 Digital Library", command=self.show_digital_library_gui)
-        tools_menu.add_command(label="🔒 Digital Access Permissions", command=self.manage_digital_access_permissions_gui)
+
+        # Digital Access Permissions - Admin only
+        if is_admin:
+            tools_menu.add_command(label="🔒 Digital Access Permissions", command=self.manage_digital_access_permissions_gui)
+
         tools_menu.add_separator()
         tools_menu.add_command(label="Loan History", command=self.view_loan_history_gui)
-        tools_menu.add_command(label="💳 Process Fine Payment", command=self.process_fine_payment_gui)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="📅 Library Events", command=self.manage_library_events_gui)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="💳 Generate Library Card", command=self.generate_library_card_gui)
-        tools_menu.add_command(label="💳 Bulk Generate Cards", command=self.bulk_generate_library_cards_gui)
-        tools_menu.add_command(label="🖨️ Print Library Card", command=self.print_library_card_gui)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="Barcode Generator", command=self.show_barcode_generator)
 
-        # Reports menu
-        reports_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Reports", menu=reports_menu)
-        reports_menu.add_command(label="📊 Circulation Report", command=self.generate_circulation_report_gui)
-        reports_menu.add_command(label="📈 Advanced Analytics", command=self.show_advanced_analytics_gui)
-        reports_menu.add_command(label="Export Analytics", command=self.export_analytics_report)
+        # Process Fine Payment - Staff and Admin only
+        if is_admin or is_staff:
+            tools_menu.add_command(label="💳 Process Fine Payment", command=self.process_fine_payment_gui)
+            tools_menu.add_separator()
+            tools_menu.add_command(label="📅 Library Events", command=self.manage_library_events_gui)
 
-        # System menu
-        system_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="System", menu=system_menu)
-        system_menu.add_command(label="📧 Automated Notifications", command=self.send_automated_notifications_gui)
-        system_menu.add_separator()
-        system_menu.add_command(label="💾 Backup & Recovery", command=self.system_backup_gui)
-        system_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
-        system_menu.add_separator()
-        system_menu.add_command(label="🏥 System Health Check", command=self.system_health_check_gui)
-        system_menu.add_command(label="⚡ Database Optimization", command=self.database_optimization_gui)
-        system_menu.add_command(label="🧹 Clear Cache", command=self.clear_cache_gui)
-        system_menu.add_separator()
-        system_menu.add_command(label="📋 View Audit Log", command=self.view_audit_log_gui)
+        # Library Card Generation - Staff and Admin only
+        if is_admin or is_staff:
+            tools_menu.add_separator()
+            tools_menu.add_command(label="💳 Generate Library Card", command=self.generate_library_card_gui)
+            tools_menu.add_command(label="💳 Bulk Generate Cards", command=self.bulk_generate_library_cards_gui)
+            tools_menu.add_command(label="🖨️ Print Library Card", command=self.print_library_card_gui)
+            tools_menu.add_separator()
+            tools_menu.add_command(label="Barcode Generator", command=self.show_barcode_generator)
+
+        # Reports menu - Admin and Staff only
+        if is_admin or is_staff:
+            reports_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Reports", menu=reports_menu)
+            reports_menu.add_command(label="📊 Circulation Report", command=self.generate_circulation_report_gui)
+            reports_menu.add_command(label="📈 Advanced Analytics", command=self.show_advanced_analytics_gui)
+            reports_menu.add_command(label="Export Analytics", command=self.export_analytics_report)
+
+        # System menu - Admin only
+        if is_admin:
+            system_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="System", menu=system_menu)
+            system_menu.add_command(label="📧 Automated Notifications", command=self.send_automated_notifications_gui)
+            system_menu.add_separator()
+            system_menu.add_command(label="💾 Backup & Recovery", command=self.system_backup_gui)
+            system_menu.add_command(label="System Maintenance", command=self.library_maintenance_gui)
+            system_menu.add_separator()
+            system_menu.add_command(label="🏥 System Health Check", command=self.system_health_check_gui)
+            system_menu.add_command(label="⚡ Database Optimization", command=self.database_optimization_gui)
+            system_menu.add_command(label="🧹 Clear Cache", command=self.clear_cache_gui)
+            system_menu.add_separator()
+            system_menu.add_command(label="📋 View Audit Log", command=self.view_audit_log_gui)
     
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
