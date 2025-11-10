@@ -8,6 +8,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Grade Tracking GUI** - Implemented comprehensive role-based sidebar navigation
+  - **New Features**:
+    * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`
+    * Integrated with existing UserAuth authentication system
+    * Dynamic sidebar navigation based on logged-in user's role
+    * Role-specific default view on launch
+  - **Admin Users** - Full access to all features (16 navigation items):
+    * Student management (view, add, edit, delete students)
+    * Module management (view, add, edit modules)
+    * Assessment management (create, edit, delete assessments)
+    * Grade entry and management
+    * View all grades
+    * Statistics & Analysis
+    * Transcript generation
+    * Grade Curve Analysis
+    * Learning Outcomes tracking
+    * Competency assessment
+    * Predictive Analytics
+    * Performance Analysis
+    * Advanced Analytics dashboard
+    * Comprehensive Reports
+  - **Staff/Instructor Users** - Teaching and grading access (11 navigation items):
+    * Student management
+    * Module management
+    * Assessment management
+    * Grade entry and management
+    * View grades
+    * Statistics & Analysis
+    * Transcript generation
+    * Analytics dashboard
+    * Reports
+    * No access to: Grade Curve Analysis, Learning Outcomes, Competencies, Predictive Analytics, Performance Analysis
+  - **Student Users** - Read-only personal data access (3 navigation items):
+    * View Grades (personal grades only)
+    * Transcripts (personal transcript)
+    * Return to Main Menu
+    * No access to: Student/Module/Assessment management, grading features, analytics, reports
+  - **UI Changes**:
+    * Sidebar navigation dynamically shows only relevant buttons based on role
+    * Students see minimal interface (2 options + menu)
+    * Staff see teaching/grading interface (10 options + menu)
+    * Admin sees full interface (15 options + menu)
+    * Default view changes by role: Students → View Grades, Staff/Admin → Student Management
+  - **Files Modified**:
+    * `university_system/modules/domain/academics/gui/grade_tracking/grade_tracking_app.py:364-413`
+    * `university_system/modules/domain/academics/gui/grade_tracking/layout_manager.py:422-504`
+  - **Impact**: Dramatically simplified interface for students, improved security by hiding administrative functions
+
 - **Role-Based UI Access Control in Assignment System GUI** - Implemented comprehensive role-based interface filtering
   - **New Features**:
     * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`

@@ -421,36 +421,87 @@ class LayoutManager:
         
         # Current view tracking
         self.current_view = None
-        
-        # Define buttons and their corresponding methods
-        self.view_buttons = [
-            ("Students", self.show_student_view),
-            ("Modules", self.show_module_view),
-            ("Assessments", self.show_assessment_view),
-            ("Grades", self.show_grades_view),
-            ("Grade Management", self.show_grade_management_view),
-            ("View Grades", self.show_view_grades_view),
-            ("Statistics & Analysis", self.show_statistics_view),
-            ("Transcripts", self.show_transcript_view),
-            ("Grade Curve Analysis", self.show_curve_analysis_view),
-            ("Learning Outcomes", self.show_learning_outcomes_view),
-            ("Competencies", self.show_competency_view),
-            ("Predictive Analytics", self.show_predictive_analytics_view),
-            ("Performance Analysis", self.show_performance_analysis_view),
-            ("Analytics", self.show_analytics_view),
-            ("Reports", self.show_reports_view),
-            ("🏠 Return to Main Menu", self.return_to_main_menu)
-        ]
-        
+
+        # Get user role
+        is_admin = self.app.is_admin()
+        is_staff = self.app.is_staff()
+        is_student = self.app.is_student()
+
+        # Define buttons based on role - Role-based access control
+        self.view_buttons = []
+
+        # Admin gets all features
+        if is_admin:
+            self.view_buttons = [
+                ("Students", self.show_student_view),
+                ("Modules", self.show_module_view),
+                ("Assessments", self.show_assessment_view),
+                ("Grades", self.show_grades_view),
+                ("Grade Management", self.show_grade_management_view),
+                ("View Grades", self.show_view_grades_view),
+                ("Statistics & Analysis", self.show_statistics_view),
+                ("Transcripts", self.show_transcript_view),
+                ("Grade Curve Analysis", self.show_curve_analysis_view),
+                ("Learning Outcomes", self.show_learning_outcomes_view),
+                ("Competencies", self.show_competency_view),
+                ("Predictive Analytics", self.show_predictive_analytics_view),
+                ("Performance Analysis", self.show_performance_analysis_view),
+                ("Analytics", self.show_analytics_view),
+                ("Reports", self.show_reports_view),
+                ("🏠 Return to Main Menu", self.return_to_main_menu)
+            ]
+        # Staff/Instructor gets grading and analytics features
+        elif is_staff:
+            self.view_buttons = [
+                ("Students", self.show_student_view),
+                ("Modules", self.show_module_view),
+                ("Assessments", self.show_assessment_view),
+                ("Grades", self.show_grades_view),
+                ("Grade Management", self.show_grade_management_view),
+                ("View Grades", self.show_view_grades_view),
+                ("Statistics & Analysis", self.show_statistics_view),
+                ("Transcripts", self.show_transcript_view),
+                ("Analytics", self.show_analytics_view),
+                ("Reports", self.show_reports_view),
+                ("🏠 Return to Main Menu", self.return_to_main_menu)
+            ]
+        # Students get limited read-only features
+        elif is_student:
+            self.view_buttons = [
+                ("View Grades", self.show_view_grades_view),
+                ("Transcripts", self.show_transcript_view),
+                ("🏠 Return to Main Menu", self.return_to_main_menu)
+            ]
+        # Default (no auth or unknown role) - show basic features
+        else:
+            self.view_buttons = [
+                ("Students", self.show_student_view),
+                ("Modules", self.show_module_view),
+                ("Assessments", self.show_assessment_view),
+                ("Grades", self.show_grades_view),
+                ("Grade Management", self.show_grade_management_view),
+                ("View Grades", self.show_view_grades_view),
+                ("Statistics & Analysis", self.show_statistics_view),
+                ("Transcripts", self.show_transcript_view),
+                ("Analytics", self.show_analytics_view),
+                ("Reports", self.show_reports_view),
+                ("🏠 Return to Main Menu", self.return_to_main_menu)
+            ]
+
         # Create buttons
         self.buttons = {}
         for text, command in self.view_buttons:
             btn = ttk.Button(scrollable_frame, text=text, command=command, width=20)
             btn.pack(fill=tk.X, pady=2, padx=5)
             self.buttons[text] = btn
-        
-        # Initialize with student view
-        self.show_student_view()
+
+        # Initialize with appropriate default view based on role
+        if is_student:
+            # Students start with their grades view
+            self.show_view_grades_view()
+        else:
+            # Admin and Staff start with student management view
+            self.show_student_view()
         
         # Status bar
         self.status_var = tk.StringVar()
