@@ -134,11 +134,11 @@ class ScholarshipManagerGUI:
                 activities = conn.execute("""
                     SELECT 'application' as type, sa.application_id as id,
                            s.scholarship_name as name, u.username as student,
-                           sa.submitted_date as date, sa.status
+                           sa.application_date as date, sa.status
                     FROM scholarship_applications sa
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     JOIN users u ON sa.student_id = u.user_id
-                    ORDER BY sa.submitted_date DESC
+                    ORDER BY sa.application_date DESC
                     LIMIT 15
                 """).fetchall()
 
@@ -544,7 +544,7 @@ class ScholarshipManagerGUI:
                     FROM scholarship_applications sa
                     JOIN users u ON sa.student_id = u.user_id
                     WHERE sa.scholarship_id = ?
-                    ORDER BY sa.submitted_date DESC
+                    ORDER BY sa.application_date DESC
                 """, (scholarship_id,)).fetchall()
 
                 for app in applications:
@@ -604,7 +604,7 @@ class ScholarshipManagerGUI:
                     JOIN users u ON sa.student_id = u.user_id
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.status = 'pending'
-                    ORDER BY sa.submitted_date ASC
+                    ORDER BY sa.application_date ASC
                 """).fetchall()
 
                 for app in applications:

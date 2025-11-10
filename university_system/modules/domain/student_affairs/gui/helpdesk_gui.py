@@ -9200,7 +9200,7 @@ University Support Team
 def run_gui_helpdesk(auth_system=None):
     """Run the GUI helpdesk system"""
     root = tk.Tk()
-    app = HelpdeskGUI(root, auth_system)
+    app = HelpdeskGUI(root, auth=auth_system)
     
     # Handle window closing
     def on_closing():

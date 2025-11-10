@@ -6807,7 +6807,7 @@ University Administration"""
 
             # Instantiate GUI
             try:
-                helpdesk_gui = HelpdeskGUI(win, auth_system=self.auth)
+                helpdesk_gui = HelpdeskGUI(win, auth=self.auth)
                 print("✅ Helpdesk GUI opened successfully")
             except Exception as inst_err:
                 win.destroy()

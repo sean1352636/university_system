@@ -63,7 +63,7 @@ class MobileAppPWAGUI:
         # Check authentication status - require login through main system
         from university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
-        if not auth.is_logged_in():
+        if not auth.current_user:
             messagebox.showerror("Authentication Required",
                 "Please log in through the main University System GUI.\n\n"
                 "Run: python run.py --gui")

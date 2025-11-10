@@ -135,22 +135,30 @@ class AdminPortal:
                 stats['active_packages'] = result['count'] if result else 0
 
                 # Total disbursed this year
-                current_year = get_current_academic_year()
-                result = conn.execute("""
-                    SELECT COALESCE(SUM(amount), 0) as total
-                    FROM disbursements
-                    WHERE status = 'disbursed'
-                    AND strftime('%Y', disbursement_date) = ?
-                """, (current_year.split('-')[0],)).fetchone()
-                stats['total_disbursed'] = float(result['total']) if result else 0.0
+                try:
+                    current_year = get_current_academic_year()
+                    result = conn.execute("""
+                        SELECT COALESCE(SUM(amount), 0) as total
+                        FROM disbursements
+                        WHERE status = 'disbursed'
+                        AND strftime('%Y', disbursement_date) = ?
+                    """, (current_year.split('-')[0],)).fetchone()
+                    stats['total_disbursed'] = float(result['total']) if result else 0.0
+                except Exception:
+                    # Disbursements table may not exist yet
+                    stats['total_disbursed'] = 0.0
 
                 # Pending disbursements
-                result = conn.execute("""
-                    SELECT COALESCE(SUM(amount), 0) as total
-                    FROM disbursements
-                    WHERE status = 'pending'
-                """).fetchone()
-                stats['pending_disbursements'] = float(result['total']) if result else 0.0
+                try:
+                    result = conn.execute("""
+                        SELECT COALESCE(SUM(amount), 0) as total
+                        FROM disbursements
+                        WHERE status = 'pending'
+                    """).fetchone()
+                    stats['pending_disbursements'] = float(result['total']) if result else 0.0
+                except Exception:
+                    # Disbursements table may not exist yet
+                    stats['pending_disbursements'] = 0.0
 
         except Exception as e:
             logger.error(f"Error fetching admin stats: {e}")
@@ -575,6 +583,17 @@ class AdminPortal:
 
         try:
             with get_connection() as conn:
+                # Check if disbursements table exists
+                check_result = conn.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='disbursements'
+                """).fetchone()
+
+                if not check_result:
+                    ttk.Label(table_frame, text="Disbursements feature not yet configured",
+                             foreground='gray').pack(pady=20)
+                    return
+
                 disbursements = conn.execute("""
                     SELECT d.*, u.username, sfa.student_id
                     FROM disbursements d

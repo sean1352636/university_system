@@ -117,13 +117,17 @@ class StudentPortal:
                 stats['available_scholarships'] = result['count'] if result else 0
 
                 # Total disbursed
-                result = conn.execute("""
-                    SELECT COALESCE(SUM(d.amount), 0) as total
-                    FROM disbursements d
-                    JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                    WHERE sfa.student_id = ? AND d.status = 'disbursed'
-                """, (self.student_id,)).fetchone()
-                stats['total_disbursed'] = float(result['total']) if result else 0.0
+                try:
+                    result = conn.execute("""
+                        SELECT COALESCE(SUM(d.amount), 0) as total
+                        FROM disbursements d
+                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
+                        WHERE sfa.student_id = ? AND d.status = 'disbursed'
+                    """, (self.student_id,)).fetchone()
+                    stats['total_disbursed'] = float(result['total']) if result else 0.0
+                except Exception:
+                    # Disbursements table may not exist yet
+                    stats['total_disbursed'] = 0.0
 
         except Exception as e:
             logger.error(f"Error fetching stats: {e}")
@@ -140,7 +144,7 @@ class StudentPortal:
                 # Get recent applications and awards
                 activities = conn.execute("""
                     SELECT 'application' as type, sa.application_id as id,
-                           s.scholarship_name as name, sa.submitted_date as date, sa.status
+                           s.scholarship_name as name, sa.application_date as date, sa.status
                     FROM scholarship_applications sa
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.student_id = ?
@@ -672,7 +676,7 @@ class StudentPortal:
                     FROM scholarship_applications sa
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.student_id = ?
-                    ORDER BY sa.submitted_date DESC
+                    ORDER BY sa.application_date DESC
                 """, (self.student_id,)).fetchall()
 
                 if applications:
@@ -794,13 +798,17 @@ Active Awards: {stats['active_count']}
                 stats['active_count'] = result['count'] if result else 0
 
                 # Disbursements
-                result = conn.execute("""
-                    SELECT COALESCE(SUM(d.amount), 0) as total
-                    FROM disbursements d
-                    JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                    WHERE sfa.student_id = ? AND d.status = 'disbursed'
-                """, (self.student_id,)).fetchone()
-                stats['total_disbursed'] = float(result['total']) if result else 0.0
+                try:
+                    result = conn.execute("""
+                        SELECT COALESCE(SUM(d.amount), 0) as total
+                        FROM disbursements d
+                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
+                        WHERE sfa.student_id = ? AND d.status = 'disbursed'
+                    """, (self.student_id,)).fetchone()
+                    stats['total_disbursed'] = float(result['total']) if result else 0.0
+                except Exception:
+                    # Disbursements table may not exist yet
+                    stats['total_disbursed'] = 0.0
 
                 stats['remaining'] = stats['total_awarded'] - stats['total_disbursed']
 

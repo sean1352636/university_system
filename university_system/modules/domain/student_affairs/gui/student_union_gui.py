@@ -65,7 +65,7 @@ class StudentUnionGUI:
             self.setup_gui()
             # Check if user is authenticated via central system
             auth = UserAuth()
-            if not auth.is_logged_in():
+            if not auth.current_user:
                 messagebox.showerror(
                     "Authentication Required",
                     "Please log in through the main University System GUI.\n\n"

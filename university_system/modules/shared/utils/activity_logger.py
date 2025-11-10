@@ -194,9 +194,24 @@ def get_user() -> str:
     return _activity_logger.get_user()
 
 
-def log_activity(action: str, user: Optional[str] = None):
-    """Log a general activity."""
-    _activity_logger.log(action, user)
+def log_activity(action: str, entity_type: str = None, user: Optional[str] = None, user_id: Optional[int] = None, details: dict = None):
+    """
+    Log a general activity.
+
+    Args:
+        action: The action type (e.g., 'create', 'update', 'delete', 'view')
+        entity_type: The type of entity being acted upon (e.g., 'user', 'student_records')
+        user: Username (optional)
+        user_id: User ID (optional, will be ignored - for backwards compatibility)
+        details: Additional details (optional, will be ignored - for backwards compatibility)
+    """
+    # Build action message
+    if entity_type:
+        action_msg = f"{action.capitalize()} {entity_type}"
+    else:
+        action_msg = action
+
+    _activity_logger.log(action_msg, user)
 
 
 def log_login(username: str, success: bool = True):

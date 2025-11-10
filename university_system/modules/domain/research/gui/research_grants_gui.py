@@ -47,7 +47,7 @@ class ResearchGrantsGUI:
         self._create_widgets()
 
         # Log activity
-        log_activity('access', 'research_grants', user_id=self.auth.current_user.get('username'))
+        log_activity('Accessed research_grants', user=self.auth.current_user.get('username') if self.auth.current_user else None)
         print("✅ Research & Grants Management GUI opened successfully")
 
     def _init_database(self):
@@ -389,7 +389,7 @@ class ResearchGrantsGUI:
                            principal_investigator_id, requested_amount, awarded_amount,
                            decision_status, application_deadline
                     FROM grant_applications
-                    ORDER BY submitted_date DESC
+                    ORDER BY submission_date DESC
                     LIMIT 100
                 ''')
 
@@ -417,9 +417,14 @@ class ResearchGrantsGUI:
             with get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT publication_id, title, authors, publication_type,
-                           journal_name, publication_year, citation_count
+                           journal_name,
+                           CASE
+                               WHEN publication_date IS NOT NULL THEN substr(publication_date, 1, 4)
+                               ELSE 'N/A'
+                           END as publication_year,
+                           citation_count
                     FROM research_publications
-                    ORDER BY publication_year DESC
+                    ORDER BY publication_date DESC
                     LIMIT 100
                 ''')
 
@@ -430,7 +435,7 @@ class ResearchGrantsGUI:
                         row['authors'] or 'N/A',
                         row['publication_type'],
                         row['journal_name'] or 'N/A',
-                        row['publication_year'],
+                        row['publication_year'] or 'N/A',
                         row['citation_count'] or 0
                     )
                     self.publications_tree.insert('', tk.END, values=values)
@@ -473,8 +478,8 @@ class ResearchGrantsGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT equipment_id, equipment_name, project_id,
-                           purchase_date, cost, location, status
+                    SELECT equipment_id, equipment_name, assigned_project_id as project_id,
+                           purchase_date, purchase_cost as cost, current_location as location, status
                     FROM research_equipment
                     ORDER BY purchase_date DESC
                     LIMIT 100
@@ -501,6 +506,17 @@ class ResearchGrantsGUI:
             self.irb_tree.delete(*self.irb_tree.get_children())
 
             with get_connection() as conn:
+                # Check if table exists first
+                cursor = conn.execute('''
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='irb_applications'
+                ''')
+
+                if not cursor.fetchone():
+                    # Table doesn't exist - show message
+                    print("ℹ️  IRB applications table not yet created")
+                    return
+
                 cursor = conn.execute('''
                     SELECT application_id, project_id, protocol_number,
                            submission_date, review_type, decision, status

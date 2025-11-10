@@ -23,7 +23,7 @@ class ChatbotGUI:
         self.auth_system = get_auth()
 
         # Check authentication BEFORE creating GUI
-        if not self.auth_system.is_logged_in():
+        if not self.auth_system.current_user:
             messagebox.showerror(
                 "Authentication Required",
                 "Please log in through the main University System GUI first.\n\n"

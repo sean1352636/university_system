@@ -307,8 +307,8 @@ class GUIStudentAnalytics:
                         try:
                             from university_system.infrastructure.shared_context import get_auth
                             auth = get_auth()
-                            if auth.is_logged_in():
-                                user = auth.get_current_user()
+                            if auth.current_user:
+                                user = auth.current_user
                                 final_recipient = user.get('email', '')
                                 if not final_recipient:
                                     messagebox.showerror("Error", "Current user has no email address")

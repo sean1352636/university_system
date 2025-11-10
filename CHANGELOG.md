@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Authentication Errors** - Fixed multiple GUIs using non-existent `is_logged_in()` method
+  - Health Portal GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Student Support Portal: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Student Union GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Chatbot GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Mobile App/PWA GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Blockchain Credentials GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Student Analytics GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+  - Restaurant Management GUI (5 locations): Changed `auth.is_logged_in()` to `auth.current_user` checks
+
+- **Helpdesk GUI Initialization** - Fixed incorrect parameter name
+  - `main_gui.py`: Changed `auth_system=` to `auth=` when calling HelpdeskGUI
+  - `helpdesk_gui.py`: Fixed function signature in `run_gui_helpdesk()` to use `auth=` parameter
+
+- **Activity Logger API** - Extended `log_activity()` to support backwards compatibility
+  - Added optional `entity_type`, `user_id`, and `details` parameters
+  - Maintains backwards compatibility while supporting both old and new calling patterns
+  - Research & Grants GUI: Fixed `log_activity()` call to use correct parameters
+
+- **Database Schema Issues** - Fixed column name mismatches in multiple tables
+  - Research Grants GUI:
+    - Fixed `submitted_date` → `submission_date` in grant_applications query
+    - Fixed `publication_year` → extracted year from `publication_date` in research_publications
+    - Fixed `project_id` → `assigned_project_id` in research_equipment query
+    - Added graceful handling for non-existent `irb_applications` table
+  - Financial Aid System:
+    - Fixed `sa.submitted_date` → `sa.application_date` in scholarship_applications queries (5 locations)
+    - Added graceful handling for non-existent `disbursements` table (6 locations)
+    - Wrapped disbursement queries in try-catch blocks to prevent crashes
+
+### Changed
+- **Activity Logger** - Enhanced signature for better compatibility across codebase
+  ```python
+  # Old signature
+  log_activity(action: str, user: Optional[str] = None)
+
+  # New signature
+  log_activity(action: str, entity_type: str = None, user: Optional[str] = None,
+               user_id: Optional[int] = None, details: dict = None)
+  ```
+
 ### Security
 
 ---
