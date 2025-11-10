@@ -36,12 +36,145 @@ def _ensure_db_ready():
     global _DB_READY
     try:
         if not _DB_READY:
+            logger.info("Initializing email database...")
             initialize_email_db()
+            logger.info("Database initialized, running inbox sync...")
+            _sync_inbox_messages()  # Auto-fix missing inbox messages on startup
             _DB_READY = True
-    except Exception:
+            logger.info("Email system initialization complete")
+    except Exception as e:
+        logger.error(f"Failed to initialize email system: {e}")
         # Do not hide init errors; re-raise so caller can log properly.
         raise
 
+
+def _sync_inbox_messages():
+    """
+    Silently check for and fix missing inbox messages on startup.
+    This ensures emails in 'stored_emails' are delivered to user inboxes in 'messages' table.
+    """
+    logger.info("Email sync: Starting automatic inbox sync check...")
+
+    try:
+        def _fix_missing_messages(cursor):
+            import re
+            from datetime import datetime
+
+            # Find stored emails missing from inboxes
+            cursor.execute('''
+            SELECT se.id, se.recipient_email, se.subject, se.body,
+                   se.sender_email, se.sender_name, se.created_date,
+                   se.attachment_paths
+            FROM stored_emails se
+            LEFT JOIN users u ON se.recipient_email = u.email
+            LEFT JOIN messages m ON (m.recipient_id = u.id AND m.subject = se.subject AND m.sent_at = se.created_date)
+            WHERE u.id IS NOT NULL AND m.id IS NULL
+            ORDER BY se.created_date DESC
+            ''')
+
+            missing_messages = cursor.fetchall()
+            fixed_count = 0
+
+            if not missing_messages:
+                logger.info("Email sync: No missing inbox messages found (system is healthy)")
+                return 0  # Nothing to fix, return silently
+
+            logger.info(f"Email sync: Found {len(missing_messages)} stored emails missing from inboxes, syncing...")
+
+            for email_data in missing_messages:
+                se_id, recipient_email, subject, body, sender_email, sender_name, created_date, attachments = email_data
+
+                try:
+                    # Get recipient ID
+                    cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
+                    recipient_result = cursor.fetchone()
+
+                    if not recipient_result:
+                        logger.debug(f"Email sync: Skipping - no user found for {recipient_email}")
+                        continue
+
+                    recipient_id = recipient_result[0]
+
+                    # Get or create sender ID
+                    sender_id = _get_or_create_sender_id(cursor, sender_email, sender_name, created_date)
+
+                    # Create the inbox message
+                    cursor.execute('''
+                    INSERT INTO messages (
+                        sender_id, recipient_id, subject, message, content,
+                        attachment_path, is_read, sent_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+                    ''', (sender_id, recipient_id, subject, body, body, attachments, created_date))
+
+                    fixed_count += 1
+                    logger.debug(f"Email sync: Added '{subject[:40]}...' to inbox for {recipient_email}")
+
+                except Exception as e:
+                    logger.warning(f"Email sync: Failed to sync message for {recipient_email}: {e}")
+
+            if fixed_count > 0:
+                logger.info(f"Email sync: ✅ Successfully synced {fixed_count} messages to user inboxes")
+
+            return fixed_count
+
+        result = execute_db_operation(_fix_missing_messages)
+        logger.info(f"Email sync: Completed - {result} messages synced")
+        return result
+
+    except Exception as e:
+        # Don't crash startup if sync fails, just log it
+        logger.warning(f"Email sync: Failed to sync inbox messages on startup: {e}")
+        import traceback
+        logger.debug(f"Email sync error traceback: {traceback.format_exc()}")
+        return 0
+
+
+def _get_or_create_sender_id(cursor, sender_email, sender_name, current_time):
+    """
+    Get the appropriate sender ID for an email.
+    Helper function for _sync_inbox_messages to avoid circular imports.
+    """
+    import re
+
+    # Method 1: Look for a real user with the sender email
+    cursor.execute("SELECT id FROM users WHERE email = ?", (sender_email,))
+    real_user = cursor.fetchone()
+
+    if real_user:
+        return real_user[0]
+
+    # Method 2: Create or get a system user
+    # Generate system username from sender name
+    clean_name = re.sub(r'[^\w]', '', sender_name.lower())
+
+    generic_names = ['system', 'university', 'noreply', 'admin']
+    if clean_name in generic_names or len(clean_name) < 3:
+        email_local = sender_email.split('@')[0]
+        clean_name = re.sub(r'[^\w]', '', email_local.lower())
+
+    if len(clean_name) > 20:
+        clean_name = clean_name[:20]
+
+    system_username = f"system_{clean_name}"
+
+    cursor.execute("SELECT id FROM users WHERE username = ? AND role = 'admin'", (system_username,))
+    system_user = cursor.fetchone()
+
+    if system_user:
+        return system_user[0]
+
+    # Create new system user
+    name_parts = sender_name.split(' ', 1)
+    first_name = name_parts[0] if name_parts else sender_name
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+    cursor.execute('''
+    INSERT INTO users (username, first_name, last_name, email, role, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (system_username, first_name, last_name, sender_email, 'admin', current_time, current_time))
+
+    return cursor.lastrowid
 
 
 def ensure_db_directory():
@@ -97,18 +230,29 @@ class SimpleDBManager:
         try:
             if not self._lock.acquire(timeout=timeout):
                 raise sqlite3.OperationalError("Could not acquire database lock")
-            
+
             # Use unified connection
             conn = get_unified_connection()
-            
+
             # Safe PRAGMA settings
             conn.execute("PRAGMA journal_mode = WAL")
-            conn.execute("PRAGMA synchronous = NORMAL") 
+            conn.execute("PRAGMA synchronous = NORMAL")
             conn.execute("PRAGMA busy_timeout = 30000")
-            
+
             cursor = conn.cursor()
             yield cursor
-            
+
+            # CRITICAL: Commit transaction before closing
+            conn.commit()
+
+        except Exception:
+            # Rollback on error
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+            raise
         finally:
             if conn:
                 try:

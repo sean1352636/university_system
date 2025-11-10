@@ -8,13 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Email System Inbox Sync** - Fixed missing inbox messages for users
-  - Ran `fix_inbox_display_issue()` to sync 22 emails from `stored_emails` table to user inboxes
-  - Emails are properly stored in database and delivered to the `messages` (inbox) table
-  - Users can access their inbox via the Email Manager GUI ("Check Messages" button)
-  - System operates in `database_only_mode` - emails stored in database, not sent via SMTP
-  - Verified: 192 messages in inbox across all users, with proper sender/recipient relationships
-  - Location: `/home/seancatchpole989/university_system/infrastructure/email/email_service.py:264`
+- **Email System Inbox Sync** - Fixed missing inbox messages and transaction commit issue
+  - **Root Cause**: Database context manager wasn't committing transactions before closing connections
+  - **Impact**: Emails were stored in `stored_emails` table but never persisted to user inboxes in `messages` table
+  - **Fix 1**: Added automatic inbox sync on email system startup (`_sync_inbox_messages()`)
+    - Runs every time email system initializes via `_ensure_db_ready()`
+    - Silently checks for stored emails missing from inboxes
+    - Automatically syncs missing messages with proper sender/recipient relationships
+    - Logs sync activity for monitoring (INFO level)
+  - **Fix 2**: Fixed database transaction commit issue in `SimpleDBManager.get_connection()`
+    - Added `conn.commit()` before closing connection (line 246)
+    - Added rollback on exception to prevent partial commits (lines 248-254)
+    - Ensures all INSERTs/UPDATEs are properly persisted
+  - **Result**: Successfully synced 22 previously missing messages to user inboxes
+    - Before: 192 messages, 22 missing
+    - After: 214 messages, 0 missing
+    - All users (student@example.com, C7796276, C7149430, etc.) now have their emails
+  - **Location**: `university_system/infrastructure/email/email_db_utilities.py:47-126, 227-265`
 - **Authentication Warning** - Fixed "No auth instance configured, using dummy auth" warning
   - Enhanced `set_auth()` in main_gui.py to always register auth with shared_context
   - Added early auth initialization check at module level
