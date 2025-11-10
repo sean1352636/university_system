@@ -3366,13 +3366,13 @@ class AdvancedSearchGUI:
                     
                     # Get matching names, emails, and student IDs
                     cursor.execute("""
-                        SELECT DISTINCT 
+                        SELECT DISTINCT
                             first_name || ' ' || last_name as full_name,
-                            email,
+                            email_address,
                             student_id
-                        FROM students 
-                        WHERE LOWER(first_name || ' ' || last_name) LIKE ? 
-                           OR LOWER(email) LIKE ?
+                        FROM students
+                        WHERE LOWER(first_name || ' ' || last_name) LIKE ?
+                           OR LOWER(email_address) LIKE ?
                            OR LOWER(student_id) LIKE ?
                         LIMIT 20
                     """, (f'%{term}%', f'%{term}%', f'%{term}%'))
@@ -5014,22 +5014,30 @@ class AdvancedSearchGUI:
         # Clear existing items
         for item in self.profiles_tree.get_children():
             self.profiles_tree.delete(item)
-        
+
         try:
             conn = get_connection()
             if conn is None:
                 raise RuntimeError("Database connection unavailable.")
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
+            # Use column aliases for backward compatibility
             cursor.execute("""
-                SELECT id, search_name, search_criteria, is_shared, created_date, last_used
+                SELECT
+                    search_id as id,
+                    COALESCE(search_name, name) as search_name,
+                    search_criteria,
+                    COALESCE(is_shared, 0) as is_shared,
+                    COALESCE(created_date, created_at) as created_date,
+                    last_used
                 FROM saved_searches
-                ORDER BY datetime(created_date) DESC
+                ORDER BY datetime(COALESCE(created_date, created_at)) DESC
             """)
             rows = cursor.fetchall()
             conn.close()
         except Exception as exc:
-            messagebox.showerror("Load Error", f"Unable to load saved profiles: {exc}")
+            print(f"Failed to load saved profiles: {exc}")
+            messagebox.showerror("Load Error", f"Failed to load saved profiles: {exc}")
             return
         
         for row in rows:
@@ -5913,12 +5921,14 @@ class AdvancedSearchGUI:
         result += f"COURSE BREAKDOWN:\n"
         for course, count in course_breakdown:
             percentage = (count / total_students) * 100
-            result += f"  {course}: {count} students ({percentage:.1f}%)\n"
+            course_display = course if course else "Not Specified"
+            result += f"  {course_display}: {count} students ({percentage:.1f}%)\n"
         
         result += f"\nGENDER DISTRIBUTION:\n"
         for gender, count in gender_breakdown:
             percentage = (count / total_students) * 100
-            result += f"  {gender.title()}: {count} students ({percentage:.1f}%)\n"
+            gender_display = gender.title() if gender else "Not Specified"
+            result += f"  {gender_display}: {count} students ({percentage:.1f}%)\n"
         
         if age_stats and age_stats[0]:
             result += f"\nAGE STATISTICS:\n"
@@ -8316,10 +8326,14 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
                         current_user = user.get('username', 'default_user')
 
                 cursor.execute('''
-                    SELECT id, search_name, created_date, is_shared
+                    SELECT
+                        search_id as id,
+                        COALESCE(search_name, name) as search_name,
+                        COALESCE(created_date, created_at) as created_date,
+                        COALESCE(is_shared, 0) as is_shared
                     FROM saved_searches
                     WHERE user_id = ? OR is_shared = 1
-                    ORDER BY created_date DESC
+                    ORDER BY COALESCE(created_date, created_at) DESC
                 ''', (current_user,))
 
                 searches = cursor.fetchall()
@@ -9524,28 +9538,10 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
                   command=lambda: load_template("welcome")).pack(side=tk.LEFT, padx=(10, 5))
         ttk.Button(template_frame, text="Reminder", 
                   command=lambda: load_template("reminder")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(template_frame, text="Announcement", 
+        ttk.Button(template_frame, text="Announcement",
                   command=lambda: load_template("announcement")).pack(side=tk.LEFT)
 
-    def refresh_data(self):
-        """Refresh data when notified by main GUI"""
-        try:
-            # Clear current search results
-            self.search_results = []
-            
-            # Update results display
-            self.update_results_display()
-            
-            # Log the refresh
-            self.log_output("Data refreshed from main GUI")
-            
-            # Update status
-            if hasattr(self, 'results_label'):
-                self.results_label.config(text="Data refreshed - perform new search")
-                
-        except Exception as e:
-            self.log_output(f"Error refreshing data: {e}")
-        
+        # Send mass email function
         def send_mass_email():
             subject = subject_var.get().strip()
             message = message_text.get(1.0, tk.END).strip()
@@ -9582,9 +9578,28 @@ Proceed with simulation?
         button_frame.pack(fill=tk.X)
         
         ttk.Button(button_frame, text="📧 Send Email", command=send_mass_email).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text="💾 Save Draft", 
+        ttk.Button(button_frame, text="💾 Save Draft",
                   command=lambda: messagebox.showinfo("Draft", "Email draft saved")).pack(side=tk.LEFT, padx=(10, 0))
         ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
+
+    def refresh_data(self):
+        """Refresh data when notified by main GUI"""
+        try:
+            # Clear current search results
+            self.search_results = []
+
+            # Update results display
+            self.update_results_display()
+
+            # Log the refresh
+            self.log_output("Data refreshed from main GUI")
+
+            # Update status
+            if hasattr(self, 'results_label'):
+                self.results_label.config(text="Data refreshed - perform new search")
+
+        except Exception as e:
+            self.log_output(f"Error refreshing data: {e}")
 
     def show_fuzzy_search(self):
         """Complete fuzzy search implementation"""

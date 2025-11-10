@@ -8,6 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Advanced Search GUI: Multiple Database Schema Errors** - Fixed critical database column mismatches
+  - **Problem 1**: "Failed to load saved profiles: no such column: id"
+    * Code expected `id` column, database had `search_id`
+    * Code expected `search_name`, database had `name`
+    * Code expected `created_date`, database had `created_at`
+    * Missing columns: `is_shared`, `last_used`
+  - **Problem 2**: "Error loading suggestions: no such column: email"
+    * Code queried `email` from students table
+    * Actual column name is `email_address`
+  - **Problem 3**: "NoneType object has no attribute title" in report generation
+    * Gender and course fields could be NULL, causing crash when calling `.title()`
+  - **Fixes Applied**:
+    1. **Database Schema Migration**:
+       * Added missing columns to saved_searches: `search_name`, `created_date`, `is_shared`, `last_used`
+       * Migrated existing data from `name` → `search_name` and `created_at` → `created_date`
+    2. **Query Updates with Backward Compatibility**:
+       * Updated queries to use `search_id as id` alias
+       * Used COALESCE for dual-column support: `COALESCE(search_name, name)`
+       * Fixed email query: `email` → `email_address`
+    3. **Null Safety in Reports**:
+       * Added null checks: `gender.title() if gender else "Not Specified"`
+       * Fixed course display to handle NULL values
+  - **Impact**: Advanced Search GUI now loads profiles, searches, and generates reports without errors
+  - **Files Modified**: `advanced_search_gui.py:5012-5041, 8326-8335, 3368-3378, 5921-5930`
+
+- **Advanced Search GUI: Mass Email Function Scope Error** - Fixed send button functionality
+  - **Problem**: `send_mass_email` function incorrectly nested inside `refresh_data` function
+  - **Impact**: Send button would fail due to function not being in proper scope
+  - **Fix**: Moved `send_mass_email` definition to correct parent function `show_mass_email`
+  - **Result**: Mass email send button now functions correctly
+  - **File Modified**: `advanced_search_gui.py:9544-9602`
+
 - **CRITICAL: Student Login Failure - Missing Authentication Columns** - Fixed complete inability for student accounts to log in
   - **Problem**: ALL student accounts (194 users) could not log in - authentication system returned "Invalid username or password"
   - **Root Cause**: Database schema missing critical authentication columns in users table
