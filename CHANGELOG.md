@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Role-Based UI Customization in Main GUI** - Implemented role-specific navigation panel that shows only relevant features
+  - **Feature**: Navigation panel now dynamically displays only buttons accessible to the current user's role
+  - **Implementation Details**:
+    * **Admin Users**: See all features including system administration, user management, security dashboard, and data backup
+    * **Staff Users**: See administrative features like student management, finance, health services, and activity logging
+    * **Student Users**: See student-focused features like grades, assignments, academic calendar, and student services
+    * **Not Logged In**: Only see login button
+  - **Technical Changes**:
+    1. Added `get_visible_buttons_for_role()` method to determine which buttons should be visible based on user role
+    2. Modified `create_navigation_panel()` to conditionally create buttons using `create_button_if_visible()` helper
+    3. Added `rebuild_navigation_panel()` method to dynamically rebuild navigation when user logs in/out
+    4. Updated `update_status()` to trigger navigation rebuild instead of button state changes
+    5. Removed old `update_button_states()` method (replaced with visibility-based approach)
+  - **User Experience Improvements**:
+    * Cleaner interface - unused buttons are completely removed, not just disabled
+    * Role-appropriate sections - entire category sections hidden if no buttons are visible
+    * Better UX - users only see features they can actually use
+    * Clear role distinction - admin, staff, and student interfaces are visually distinct
+  - **Permission Integration**: Respects existing permission system with additional role-based filtering
+  - **File Modified**: `university_system/modules/shared/gui/main_gui.py:1368-1689`
+  - **Lines Changed**: ~200 lines added/modified
+
 ### Fixed
 - **Email System: Scheduled Emails Export Error** - Fixed SQL column name mismatch in scheduled emails
   - **Problem**: "Error exporting scheduled emails: no such column: recipient" when trying to export scheduled emails

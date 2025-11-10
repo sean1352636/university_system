@@ -1365,11 +1365,96 @@ class UnifiedManagementGUI:
 
         header_frame.columnconfigure(1, weight=1)
     
+    def get_visible_buttons_for_role(self, role=None):
+        """
+        Return a set of button names that should be visible for the given role.
+        If role is None (not logged in), only login button is visible.
+        """
+        if role is None:
+            return {'login'}
+
+        # Get user object for detailed permission checking
+        user = self.auth.current_user if self.auth else None
+        permissions = user.get('permissions', []) if user else []
+
+        # Helper flags
+        is_admin = role == 'admin'
+        is_staff = role in ('admin', 'staff')
+        is_instructor = role in ('admin', 'staff', 'instructor')
+        is_student = role == 'student'
+
+        # Base buttons for all logged-in users
+        visible = {
+            'change_password', 'logout', 'exit',
+            # Student services available to all
+            'assignments', 'academic_calendar', 'health_portal', 'student_union_portal',
+            'campus_events', 'university_shop', 'student_support', 'internship_portal',
+            'career_services', 'helpdesk', 'financial_aid', 'integrated_dashboard',
+            'ai_features', 'mobile_app_pwa', 'parent_portal'
+        }
+
+        # Student-specific additions
+        if is_student:
+            visible.update({
+                'student_records', 'grade_tracking_gui', 'library',
+                'scheduling', 'trip_management'
+            })
+
+        # Instructor additions (includes students' features)
+        if is_instructor:
+            visible.update({
+                'student_records', 'course_management', 'module_management',
+                'grade_tracking_gui', 'library', 'virtual_classroom',
+                'scheduling', 'attendance', 'analytics',
+                'enhanced_reporting_dashboard', 'predictive_analytics',
+                'export', 'early_warning_system'
+            })
+
+        # Staff additions (includes instructors' features)
+        if is_staff:
+            visible.update({
+                'create_student', 'search_students', 'advanced_search_gui',
+                'batch_operations', 'medical_accommodations', 'housing_accommodations',
+                'restaurant_management', 'parking_management', 'facilities_management',
+                'alumni_management', 'communication_hub', 'business_intelligence',
+                'activity_logger', 'admissions_crm', 'blockchain_credentials',
+                'document_manager'
+            })
+
+        # Admin-only additions (full access)
+        if is_admin:
+            visible.update({
+                'delete_student', 'finance_management', 'finance_reporting',
+                'user_management', 'system_admin_gui', 'security_dashboard',
+                'activity_log', 'integration_marketplace', 'backup_gui'
+            })
+
+        # Additional permission-based checks for edge cases
+        if 'view_any_student' in permissions or 'view_own_record' in permissions:
+            visible.add('student_records')
+        if 'manage_courses' in permissions or 'view_courses' in permissions:
+            visible.add('course_management')
+        if any(p in permissions for p in ['view_books', 'manage_books', 'manage_loans', 'checkout_books']):
+            visible.add('library')
+        if 'view_trips' in permissions or 'register_for_trips' in permissions or 'manage_trips' in permissions:
+            visible.add('trip_management')
+
+        return visible
+
     def create_navigation_panel(self, parent):
         """Create navigation panel with categorized buttons and scrollbar"""
+        # Destroy old navigation frame if it exists
+        if hasattr(self, 'nav_frame') and self.nav_frame:
+            try:
+                self.nav_frame.destroy()
+            except:
+                pass
+
         # Main navigation frame
         nav_frame = ttk.LabelFrame(parent, text="Navigation", padding="5")
         nav_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+        self.nav_frame = nav_frame
+        self.nav_parent = parent
 
         # Canvas + scrollbar for long menus
         canvas = tk.Canvas(nav_frame, highlightthickness=0)
@@ -1399,6 +1484,12 @@ class UnifiedManagementGUI:
 
         self.nav_buttons = {}
 
+        # Get current user role and determine visible buttons
+        current_role = None
+        if self.auth and self.auth.current_user:
+            current_role = self.auth.current_user.get('role')
+        visible_buttons = self.get_visible_buttons_for_role(current_role)
+
         # Helper for logout
         def do_logout():
             try:
@@ -1408,185 +1499,170 @@ class UnifiedManagementGUI:
                 self.update_status()
                 self.show_login_screen()
 
+        # Helper to conditionally create button
+        def create_button_if_visible(parent_frame, button_name, text, command):
+            if button_name in visible_buttons:
+                self.nav_buttons[button_name] = ttk.Button(parent_frame, text=text, command=command)
+                self.nav_buttons[button_name].pack(fill=tk.X, pady=2)
+                return True
+            return False
+
         # ---------- Authentication ----------
         auth_frame = ttk.LabelFrame(scrollable_frame, text="Authentication", padding="5")
-        auth_frame.pack(fill=tk.X, pady=(5, 10), padx=5)
-        self.nav_buttons['login'] = ttk.Button(auth_frame, text="Login", command=self.show_login)
-        self.nav_buttons['login'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['change_password'] = ttk.Button(auth_frame, text="Change Password", command=self.show_change_password)
-        self.nav_buttons['change_password'].pack(fill=tk.X, pady=2)
+        auth_buttons_created = 0
+        auth_buttons_created += create_button_if_visible(auth_frame, 'login', "Login", self.show_login)
+        auth_buttons_created += create_button_if_visible(auth_frame, 'change_password', "Change Password", self.show_change_password)
+        if auth_buttons_created > 0:
+            auth_frame.pack(fill=tk.X, pady=(5, 10), padx=5)
 
         # ---------- Student Management ----------
         student_mgmt_frame = ttk.LabelFrame(scrollable_frame, text="Student Management", padding="5")
-        student_mgmt_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['student_records'] = ttk.Button(student_mgmt_frame, text="Student Records", command=self.show_student_records)
-        self.nav_buttons['student_records'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['create_student'] = ttk.Button(student_mgmt_frame, text="Create Student", command=self.create_student_dialog)
-        self.nav_buttons['create_student'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['search_students'] = ttk.Button(student_mgmt_frame, text="Search Students", command=self.search_students_dialog)
-        self.nav_buttons['search_students'].pack(fill=tk.X, pady=2)
+        student_mgmt_buttons = 0
+        student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'student_records', "Student Records", self.show_student_records)
+        student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'create_student', "Create Student", self.create_student_dialog)
+        student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'search_students', "Search Students", self.search_students_dialog)
         if ADVANCED_SEARCH_GUI_AVAILABLE:
-            self.nav_buttons['advanced_search_gui'] = ttk.Button(student_mgmt_frame, text="Advanced Search", command=self.show_advanced_search_gui)
-            self.nav_buttons['advanced_search_gui'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['delete_student'] = ttk.Button(student_mgmt_frame, text="Delete Student", command=self.delete_student_dialog)
-        self.nav_buttons['delete_student'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['batch_operations'] = ttk.Button(student_mgmt_frame, text="Batch Operations", command=self.show_batch_operations_gui)
-        self.nav_buttons['batch_operations'].pack(fill=tk.X, pady=2)
+            student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'advanced_search_gui', "Advanced Search", self.show_advanced_search_gui)
+        student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'delete_student', "Delete Student", self.delete_student_dialog)
+        student_mgmt_buttons += create_button_if_visible(student_mgmt_frame, 'batch_operations', "Batch Operations", self.show_batch_operations_gui)
+        if student_mgmt_buttons > 0:
+            student_mgmt_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Academic Management ----------
         academic_frame = ttk.LabelFrame(scrollable_frame, text="Academic Management", padding="5")
-        academic_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['course_management'] = ttk.Button(academic_frame, text="Course Management", command=self.show_course_management)
-        self.nav_buttons['course_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['module_management'] = ttk.Button(academic_frame, text="Module Management", command=self.show_module_management)
-        self.nav_buttons['module_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['assignments'] = ttk.Button(academic_frame, text="Assignments", command=self.show_assignments)
-        self.nav_buttons['assignments'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['grade_tracking_gui'] = ttk.Button(academic_frame, text="Grade Tracking", command=self.show_grade_tracking_gui)
-        self.nav_buttons['grade_tracking_gui'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['library'] = ttk.Button(academic_frame, text="Library Management", command=self.show_library_management)
-        self.nav_buttons['library'].pack(fill=tk.X, pady=2)
+        academic_buttons = 0
+        academic_buttons += create_button_if_visible(academic_frame, 'course_management', "Course Management", self.show_course_management)
+        academic_buttons += create_button_if_visible(academic_frame, 'module_management', "Module Management", self.show_module_management)
+        academic_buttons += create_button_if_visible(academic_frame, 'assignments', "Assignments", self.show_assignments)
+        academic_buttons += create_button_if_visible(academic_frame, 'grade_tracking_gui', "Grade Tracking", self.show_grade_tracking_gui)
+        academic_buttons += create_button_if_visible(academic_frame, 'library', "Library Management", self.show_library_management)
         if VIRTUAL_CLASSROOM_AVAILABLE:
-            self.nav_buttons['virtual_classroom'] = ttk.Button(academic_frame, text="Virtual Classroom", command=self.show_virtual_classroom_gui)
-            self.nav_buttons['virtual_classroom'].pack(fill=tk.X, pady=2)
+            academic_buttons += create_button_if_visible(academic_frame, 'virtual_classroom', "Virtual Classroom", self.show_virtual_classroom_gui)
+        if academic_buttons > 0:
+            academic_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Scheduling & Attendance ----------
         sched_frame = ttk.LabelFrame(scrollable_frame, text="Scheduling & Attendance", padding="5")
-        sched_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['academic_calendar'] = ttk.Button(sched_frame, text="Academic Calendar", command=self.show_academic_calendar)
-        self.nav_buttons['academic_calendar'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['scheduling'] = ttk.Button(sched_frame, text="Module Scheduling", command=self.show_module_scheduling)
-        self.nav_buttons['scheduling'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['attendance'] = ttk.Button(sched_frame, text="Attendance Tracking", command=self.open_attendance_gui)
-        self.nav_buttons['attendance'].pack(fill=tk.X, pady=2)
+        sched_buttons = 0
+        sched_buttons += create_button_if_visible(sched_frame, 'academic_calendar', "Academic Calendar", self.show_academic_calendar)
+        sched_buttons += create_button_if_visible(sched_frame, 'scheduling', "Module Scheduling", self.show_module_scheduling)
+        sched_buttons += create_button_if_visible(sched_frame, 'attendance', "Attendance Tracking", self.open_attendance_gui)
+        if sched_buttons > 0:
+            sched_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Finance ----------
         finance_frame = ttk.LabelFrame(scrollable_frame, text="Finance", padding="5")
-        finance_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['finance_management'] = ttk.Button(finance_frame, text="Finance Management", command=self.show_finance_management)
-        self.nav_buttons['finance_management'].pack(fill=tk.X, pady=2)
-        # Finance Reporting and Financial Aid are now integrated into Finance Management GUI
-        # self.nav_buttons['finance_reporting'] = ttk.Button(finance_frame, text="Finance Reporting", command=self.show_finance_reporting_dashboard)
-        # self.nav_buttons['finance_reporting'].pack(fill=tk.X, pady=2)
-        # self.nav_buttons['financial_aid'] = ttk.Button(finance_frame, text="Financial Aid & Scholarships", command=self.show_financial_aid)
-        # self.nav_buttons['financial_aid'].pack(fill=tk.X, pady=2)
+        finance_buttons = 0
+        finance_buttons += create_button_if_visible(finance_frame, 'finance_management', "Finance Management", self.show_finance_management)
+        finance_buttons += create_button_if_visible(finance_frame, 'financial_aid', "Financial Aid & Scholarships", self.show_financial_aid)
+        if finance_buttons > 0:
+            finance_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Health & Accommodations ----------
         health_frame = ttk.LabelFrame(scrollable_frame, text="Health & Accommodations", padding="5")
-        health_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['health_portal'] = ttk.Button(health_frame, text="Health Portal", command=self.open_health_portal_gui)
-        self.nav_buttons['health_portal'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['medical_accommodations'] = ttk.Button(health_frame, text="Medical Accommodation", command=self.show_medical_accommodations)
-        self.nav_buttons['medical_accommodations'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['housing_accommodations'] = ttk.Button(health_frame, text="Housing Accommodation", command=self.show_housing_accommodations)
-        self.nav_buttons['housing_accommodations'].pack(fill=tk.X, pady=2)
+        health_buttons = 0
+        health_buttons += create_button_if_visible(health_frame, 'health_portal', "Health Portal", self.open_health_portal_gui)
+        health_buttons += create_button_if_visible(health_frame, 'medical_accommodations', "Medical Accommodation", self.show_medical_accommodations)
+        health_buttons += create_button_if_visible(health_frame, 'housing_accommodations', "Housing Accommodation", self.show_housing_accommodations)
+        if health_buttons > 0:
+            health_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Campus Life ----------
         campus_frame = ttk.LabelFrame(scrollable_frame, text="Campus Life", padding="5")
-        campus_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['student_union_portal'] = ttk.Button(campus_frame, text="Student Union", command=self.open_student_union_portal_gui)
-        self.nav_buttons['student_union_portal'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['campus_events'] = ttk.Button(campus_frame, text="Campus Events", command=self.show_campus_events_gui)
-        self.nav_buttons['campus_events'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['restaurant_management'] = ttk.Button(campus_frame, text="Dining Services", command=self.show_restaurant_management)
-        self.nav_buttons['restaurant_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['university_shop'] = ttk.Button(campus_frame, text="University Shop", command=self.show_university_shop)
-        self.nav_buttons['university_shop'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['parking_management'] = ttk.Button(campus_frame, text="Parking & Transportation", command=self.show_parking_management)
-        self.nav_buttons['parking_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['trip_management'] = ttk.Button(campus_frame, text="Trip Management", command=self.show_trip_management_gui)
-        self.nav_buttons['trip_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['facilities_management'] = ttk.Button(campus_frame, text="Facilities Management", command=self.show_facilities_management_gui)
-        self.nav_buttons['facilities_management'].pack(fill=tk.X, pady=2)
+        campus_buttons = 0
+        campus_buttons += create_button_if_visible(campus_frame, 'student_union_portal', "Student Union", self.open_student_union_portal_gui)
+        campus_buttons += create_button_if_visible(campus_frame, 'campus_events', "Campus Events", self.show_campus_events_gui)
+        campus_buttons += create_button_if_visible(campus_frame, 'restaurant_management', "Dining Services", self.show_restaurant_management)
+        campus_buttons += create_button_if_visible(campus_frame, 'university_shop', "University Shop", self.show_university_shop)
+        campus_buttons += create_button_if_visible(campus_frame, 'parking_management', "Parking & Transportation", self.show_parking_management)
+        campus_buttons += create_button_if_visible(campus_frame, 'trip_management', "Trip Management", self.show_trip_management_gui)
+        campus_buttons += create_button_if_visible(campus_frame, 'facilities_management', "Facilities Management", self.show_facilities_management_gui)
+        if campus_buttons > 0:
+            campus_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Student Services ----------
         services_frame = ttk.LabelFrame(scrollable_frame, text="Student Services", padding="5")
-        services_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['student_support'] = ttk.Button(services_frame, text="Student Support", command=self.open_student_support_portal_gui)
-        self.nav_buttons['student_support'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['parent_portal'] = ttk.Button(services_frame, text="Parent Portal", command=self.open_parent_portal_gui)
-        self.nav_buttons['parent_portal'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['internship_portal'] = ttk.Button(services_frame, text="Internship Portal", command=self.open_internship_portal_gui)
-        self.nav_buttons['internship_portal'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['career_services'] = ttk.Button(services_frame, text="Career Services", command=self.show_career_services_gui)
-        self.nav_buttons['career_services'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['alumni_management'] = ttk.Button(services_frame, text="Alumni Relations", command=self.open_alumni_portal_gui)
-        self.nav_buttons['alumni_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['early_warning_system'] = ttk.Button(services_frame, text="Early Warning System", command=self.show_early_warning_gui)
-        self.nav_buttons['early_warning_system'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['helpdesk'] = ttk.Button(services_frame, text="Helpdesk & Support", command=self.open_helpdesk_gui)
-        self.nav_buttons['helpdesk'].pack(fill=tk.X, pady=2)
+        services_buttons = 0
+        services_buttons += create_button_if_visible(services_frame, 'student_support', "Student Support", self.open_student_support_portal_gui)
+        services_buttons += create_button_if_visible(services_frame, 'parent_portal', "Parent Portal", self.open_parent_portal_gui)
+        services_buttons += create_button_if_visible(services_frame, 'internship_portal', "Internship Portal", self.open_internship_portal_gui)
+        services_buttons += create_button_if_visible(services_frame, 'career_services', "Career Services", self.show_career_services_gui)
+        services_buttons += create_button_if_visible(services_frame, 'alumni_management', "Alumni Relations", self.open_alumni_portal_gui)
+        services_buttons += create_button_if_visible(services_frame, 'early_warning_system', "Early Warning System", self.show_early_warning_gui)
+        services_buttons += create_button_if_visible(services_frame, 'helpdesk', "Helpdesk & Support", self.open_helpdesk_gui)
+        if services_buttons > 0:
+            services_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Communication ----------
         comm_frame = ttk.LabelFrame(scrollable_frame, text="Communication", padding="5")
-        comm_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['communication_hub'] = ttk.Button(comm_frame, text="Communication Hub", command=self.show_email_sms_gui)
-        self.nav_buttons['communication_hub'].pack(fill=tk.X, pady=2)
+        comm_buttons = 0
+        comm_buttons += create_button_if_visible(comm_frame, 'communication_hub', "Communication Hub", self.show_email_sms_gui)
+        if comm_buttons > 0:
+            comm_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Analytics & Reporting ----------
         analytics_frame = ttk.LabelFrame(scrollable_frame, text="Analytics & Reporting", padding="5")
-        analytics_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['integrated_dashboard'] = ttk.Button(analytics_frame, text="Integrated Dashboard", command=self.show_integrated_dashboard)
-        self.nav_buttons['integrated_dashboard'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['analytics'] = ttk.Button(analytics_frame, text="Student Analytics", command=self.show_analytics)
-        self.nav_buttons['analytics'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['enhanced_reporting_dashboard'] = ttk.Button(analytics_frame, text="Enhanced Reporting", command=self.show_enhanced_reporting_dashboard)
-        self.nav_buttons['enhanced_reporting_dashboard'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['predictive_analytics'] = ttk.Button(analytics_frame, text="Predictive Analytics", command=self.show_predictive_analytics_gui)
-        self.nav_buttons['predictive_analytics'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['business_intelligence'] = ttk.Button(analytics_frame, text="Business Intelligence", command=self.show_business_intelligence_gui)
-        self.nav_buttons['business_intelligence'].pack(fill=tk.X, pady=2)
+        analytics_buttons = 0
+        analytics_buttons += create_button_if_visible(analytics_frame, 'integrated_dashboard', "Integrated Dashboard", self.show_integrated_dashboard)
+        analytics_buttons += create_button_if_visible(analytics_frame, 'analytics', "Student Analytics", self.show_analytics)
+        analytics_buttons += create_button_if_visible(analytics_frame, 'enhanced_reporting_dashboard', "Enhanced Reporting", self.show_enhanced_reporting_dashboard)
+        analytics_buttons += create_button_if_visible(analytics_frame, 'predictive_analytics', "Predictive Analytics", self.show_predictive_analytics_gui)
+        analytics_buttons += create_button_if_visible(analytics_frame, 'business_intelligence', "Business Intelligence", self.show_business_intelligence_gui)
+        if analytics_buttons > 0:
+            analytics_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Documents & Export ----------
         export_frame = ttk.LabelFrame(scrollable_frame, text="Documents & Export", padding="5")
-        export_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['document_manager'] = ttk.Button(export_frame, text="Document Manager", command=self.show_document_manager)
-        self.nav_buttons['document_manager'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['export'] = ttk.Button(export_frame, text="Export Options", command=self.export_data_dialog)
-        self.nav_buttons['export'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['backup_gui'] = ttk.Button(export_frame, text="Data Backup", command=self.show_data_backup_gui)
-        self.nav_buttons['backup_gui'].pack(fill=tk.X, pady=2)
+        export_buttons = 0
+        export_buttons += create_button_if_visible(export_frame, 'document_manager', "Document Manager", self.show_document_manager)
+        export_buttons += create_button_if_visible(export_frame, 'export', "Export Options", self.export_data_dialog)
+        export_buttons += create_button_if_visible(export_frame, 'backup_gui', "Data Backup", self.show_data_backup_gui)
+        if export_buttons > 0:
+            export_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- AI & Advanced Tools ----------
         tools_frame = ttk.LabelFrame(scrollable_frame, text="AI & Advanced Tools", padding="5")
-        tools_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['ai_features'] = ttk.Button(tools_frame, text="AI-Powered Features", command=self.show_ai_features_gui)
-        self.nav_buttons['ai_features'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['mobile_app_pwa'] = ttk.Button(tools_frame, text="Mobile App (PWA)", command=self.show_mobile_app_pwa_gui)
-        self.nav_buttons['mobile_app_pwa'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['blockchain_credentials'] = ttk.Button(tools_frame, text="Blockchain Credentials", command=self.show_blockchain_credentials_gui)
-        self.nav_buttons['blockchain_credentials'].pack(fill=tk.X, pady=2)
+        tools_buttons = 0
+        tools_buttons += create_button_if_visible(tools_frame, 'ai_features', "AI-Powered Features", self.show_ai_features_gui)
+        tools_buttons += create_button_if_visible(tools_frame, 'mobile_app_pwa', "Mobile App (PWA)", self.show_mobile_app_pwa_gui)
+        tools_buttons += create_button_if_visible(tools_frame, 'blockchain_credentials', "Blockchain Credentials", self.show_blockchain_credentials_gui)
+        if tools_buttons > 0:
+            tools_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Administration ----------
         admin_frame = ttk.LabelFrame(scrollable_frame, text="Administration", padding="5")
-        admin_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['user_management'] = ttk.Button(admin_frame, text="User Management", command=self.show_user_management)
-        self.nav_buttons['user_management'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['system_admin_gui'] = ttk.Button(admin_frame, text="System Administration", command=self.show_system_administration_gui)
-        self.nav_buttons['system_admin_gui'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['security_dashboard'] = ttk.Button(admin_frame, text="Security & Compliance", command=self.show_security_dashboard)
-        self.nav_buttons['security_dashboard'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['activity_logger'] = ttk.Button(admin_frame, text="Activity Logger", command=self.show_activity_logger)
-        self.nav_buttons['activity_logger'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['activity_log'] = ttk.Button(admin_frame, text="Log Management", command=self.show_activity_log)
-        self.nav_buttons['activity_log'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['integration_marketplace'] = ttk.Button(admin_frame, text="Integration Marketplace", command=self.show_integration_marketplace_gui)
-        self.nav_buttons['integration_marketplace'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['admissions_crm'] = ttk.Button(admin_frame, text="Admissions CRM", command=self.show_admissions_crm_gui)
-        self.nav_buttons['admissions_crm'].pack(fill=tk.X, pady=2)
+        admin_buttons = 0
+        admin_buttons += create_button_if_visible(admin_frame, 'user_management', "User Management", self.show_user_management)
+        admin_buttons += create_button_if_visible(admin_frame, 'system_admin_gui', "System Administration", self.show_system_administration_gui)
+        admin_buttons += create_button_if_visible(admin_frame, 'security_dashboard', "Security & Compliance", self.show_security_dashboard)
+        admin_buttons += create_button_if_visible(admin_frame, 'activity_logger', "Activity Logger", self.show_activity_logger)
+        admin_buttons += create_button_if_visible(admin_frame, 'activity_log', "Log Management", self.show_activity_log)
+        admin_buttons += create_button_if_visible(admin_frame, 'integration_marketplace', "Integration Marketplace", self.show_integration_marketplace_gui)
+        admin_buttons += create_button_if_visible(admin_frame, 'admissions_crm', "Admissions CRM", self.show_admissions_crm_gui)
+        if admin_buttons > 0:
+            admin_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # ---------- Session ----------
         session_frame = ttk.LabelFrame(scrollable_frame, text="Session", padding="5")
-        session_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
-        self.nav_buttons['logout'] = ttk.Button(session_frame, text="Logout", command=do_logout)
-        self.nav_buttons['logout'].pack(fill=tk.X, pady=2)
-        self.nav_buttons['exit'] = ttk.Button(session_frame, text="Exit", command=self.root.quit)
-        self.nav_buttons['exit'].pack(fill=tk.X, pady=2)
+        session_buttons = 0
+        session_buttons += create_button_if_visible(session_frame, 'logout', "Logout", do_logout)
+        session_buttons += create_button_if_visible(session_frame, 'exit', "Exit", self.root.quit)
+        if session_buttons > 0:
+            session_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 
         # Finalize scroll region
         scrollable_frame.update_idletasks()
         canvas.configure(scrollregion=canvas.bbox("all"))
-    
+
+    def rebuild_navigation_panel(self):
+        """Rebuild the navigation panel based on current user role"""
+        if hasattr(self, 'nav_parent') and self.nav_parent:
+            try:
+                self.create_navigation_panel(self.nav_parent)
+                print(f"✅ Navigation panel rebuilt for role: {self.auth.current_user.get('role') if self.auth and self.auth.current_user else 'Not logged in'}")
+            except Exception as e:
+                print(f"⚠️ Warning: Failed to rebuild navigation panel: {e}")
+
     def create_content_area(self, parent):
         """Create the main content area"""
         self.content_frame = ttk.LabelFrame(parent, text="Content", padding="10")
@@ -1595,7 +1671,7 @@ class UnifiedManagementGUI:
         self.content_frame.rowconfigure(0, weight=1)
     
     def update_status(self):
-        """Update the status display and button states"""
+        """Update the status display and rebuild navigation for role-based UI"""
         if self.auth.current_user:
             user = self.auth.current_user
             self.current_user_var.set(f"{user['username']} ({user['role']})")
@@ -1604,210 +1680,13 @@ class UnifiedManagementGUI:
             self.current_user_var.set("None")
             self.status_var.set("Not logged in")
 
-        self.update_button_states()
+        # Rebuild navigation panel to show role-specific buttons
+        self.rebuild_navigation_panel()
         self.update_login_logout_button()
     
-    def update_button_states(self):
-        """Update button states based on user permissions"""
-        if not self.auth.current_user:
-            # Not logged in - disable ALL buttons except login
-            states = {
-                # Authentication
-                'login': tk.NORMAL,
-                'change_password': tk.DISABLED,
-
-                # Student Management
-                'student_records': tk.DISABLED,
-                'create_student': tk.DISABLED,
-                'search_students': tk.DISABLED,
-                'advanced_search_gui': tk.DISABLED,
-                'delete_student': tk.DISABLED,
-                'batch_operations': tk.DISABLED,
-
-                # Academic Management
-                'course_management': tk.DISABLED,
-                'module_management': tk.DISABLED,
-                'assignments': tk.DISABLED,
-                'grade_tracking_gui': tk.DISABLED,
-                'library': tk.DISABLED,
-                'virtual_classroom': tk.DISABLED,
-
-                # Scheduling & Attendance
-                'academic_calendar': tk.DISABLED,
-                'scheduling': tk.DISABLED,
-                'attendance': tk.DISABLED,
-
-                # Finance & Financial Aid
-                'finance_management': tk.DISABLED,
-                'finance_reporting': tk.DISABLED,
-                'financial_aid': tk.DISABLED,
-
-                # Health & Accommodations
-                'health_portal': tk.DISABLED,
-                'medical_accommodations': tk.DISABLED,
-                'housing_accommodations': tk.DISABLED,
-
-                # Campus Life
-                'student_union_portal': tk.DISABLED,
-                'campus_events': tk.DISABLED,
-                'restaurant_management': tk.DISABLED,
-                'university_shop': tk.DISABLED,
-                'parking_management': tk.DISABLED,
-                'trip_management': tk.DISABLED,
-                'facilities_management': tk.DISABLED,
-
-                # Student Services
-                'student_support': tk.DISABLED,
-                'parent_portal': tk.DISABLED,
-                'internship_portal': tk.DISABLED,
-                'career_services': tk.DISABLED,
-                'alumni_management': tk.DISABLED,
-                'early_warning_system': tk.DISABLED,
-                'helpdesk': tk.DISABLED,
-
-                # Communication
-                'communication_hub': tk.DISABLED,
-                'communication_dashboard': tk.DISABLED,
-
-                # Analytics & Reporting
-                'integrated_dashboard': tk.DISABLED,
-                'analytics': tk.DISABLED,
-                'enhanced_reporting_dashboard': tk.DISABLED,
-                'predictive_analytics': tk.DISABLED,
-                'business_intelligence': tk.DISABLED,
-
-                # Documents & Export
-                'document_manager': tk.DISABLED,
-                'export': tk.DISABLED,
-                'backup_gui': tk.DISABLED,
-
-                # AI & Advanced Tools
-                'ai_features': tk.DISABLED,
-                'mobile_app_pwa': tk.DISABLED,
-                'blockchain_credentials': tk.DISABLED,
-
-                # Administration
-                'user_management': tk.DISABLED,
-                'system_admin_gui': tk.DISABLED,
-                'security_dashboard': tk.DISABLED,
-                'activity_logger': tk.DISABLED,
-                'activity_log': tk.DISABLED,
-                'integration_marketplace': tk.DISABLED,
-                'admissions_crm': tk.DISABLED,
-
-                # Legacy/Alternative names
-                'grades': tk.DISABLED,
-                'trips': tk.DISABLED,
-                'system_admin': tk.DISABLED,
-            }
-        else:
-            # Logged in - check permissions
-            user = self.auth.current_user
-            permissions = user.get('permissions', [])
-            role = user.get('role', '')
-
-            # Base permission check helpers
-            is_admin = role == 'admin'
-            is_staff = role in ('admin', 'staff')
-            is_instructor = role in ('admin', 'staff', 'instructor')
-
-            states = {
-                # Authentication
-                'login': tk.DISABLED,
-                'change_password': tk.NORMAL,
-
-                # Student Management
-                'student_records': tk.NORMAL if any(p in permissions for p in ['view_any_student', 'view_own_record']) else tk.DISABLED,
-                'create_student': tk.NORMAL if 'create_student' in permissions else tk.DISABLED,
-                'search_students': tk.NORMAL if 'view_any_student' in permissions else tk.DISABLED,
-                'advanced_search_gui': tk.NORMAL if 'view_any_student' in permissions else tk.DISABLED,
-                'delete_student': tk.NORMAL if 'delete_any_student' in permissions else tk.DISABLED,
-                'batch_operations': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Academic Management
-                'course_management': tk.NORMAL if any(p in permissions for p in ['manage_courses', 'view_courses']) else tk.DISABLED,
-                'module_management': tk.NORMAL if any(p in permissions for p in ['manage_modules', 'view_assigned_modules']) else tk.DISABLED,
-                'assignments': tk.NORMAL,  # Available to all logged-in users
-                'grade_tracking_gui': tk.NORMAL if any(p in permissions for p in ['manage_grades', 'view_own_grades']) else tk.DISABLED,
-                'library': tk.NORMAL if any(p in permissions for p in ['view_books', 'manage_books', 'manage_loans', 'checkout_books']) else tk.DISABLED,
-                'virtual_classroom': tk.NORMAL if is_instructor else tk.DISABLED,
-
-                # Scheduling & Attendance
-                'academic_calendar': tk.NORMAL,  # Available to all logged-in users
-                'scheduling': tk.NORMAL if any(p in permissions for p in ['manage_schedules', 'view_own_timetable']) else tk.DISABLED,
-                'attendance': tk.NORMAL if is_instructor else tk.DISABLED,
-
-                # Finance & Financial Aid
-                'finance_management': tk.NORMAL if any(p in permissions for p in ['manage_finances', 'view_financial_reports']) or is_admin else tk.DISABLED,
-                'finance_reporting': tk.NORMAL if any(p in permissions for p in ['view_financial_reports', 'manage_finances']) or is_admin else tk.DISABLED,
-                'financial_aid': tk.NORMAL,  # Available to all logged-in users (students can view/apply, admins can manage)
-
-                # Health & Accommodations
-                'health_portal': tk.NORMAL,  # Available to all logged-in users
-                'medical_accommodations': tk.NORMAL if is_staff else tk.DISABLED,
-                'housing_accommodations': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Campus Life
-                'student_union_portal': tk.NORMAL,  # Available to all logged-in users
-                'campus_events': tk.NORMAL,  # Available to all logged-in users
-                'restaurant_management': tk.NORMAL if is_staff else tk.DISABLED,
-                'university_shop': tk.NORMAL,  # Available to all logged-in users
-                'parking_management': tk.NORMAL if is_staff else tk.DISABLED,
-                'trip_management': tk.NORMAL if any(p in permissions for p in ['view_trips', 'register_for_trips', 'manage_trips']) else tk.DISABLED,
-                'facilities_management': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Student Services
-                'student_support': tk.NORMAL,  # Available to all logged-in users
-                'parent_portal': tk.NORMAL,  # Available to all logged-in users
-                'internship_portal': tk.NORMAL,  # Available to all logged-in users
-                'career_services': tk.NORMAL,  # Available to all logged-in users
-                'alumni_management': tk.NORMAL if is_staff else tk.DISABLED,
-                'early_warning_system': tk.NORMAL if is_instructor else tk.DISABLED,
-                'helpdesk': tk.NORMAL,  # Available to all logged-in users
-
-                # Communication
-                'communication_hub': tk.NORMAL if any(p in permissions for p in ['send_emails', 'send_sms']) or is_staff else tk.DISABLED,
-                'communication_dashboard': tk.NORMAL if any(p in permissions for p in ['send_emails']) else tk.DISABLED,
-
-                # Analytics & Reporting
-                'integrated_dashboard': tk.NORMAL,  # Available to all logged-in users
-                'analytics': tk.NORMAL if 'view_analytics' in permissions or is_instructor else tk.DISABLED,
-                'enhanced_reporting_dashboard': tk.NORMAL if is_instructor else tk.DISABLED,
-                'predictive_analytics': tk.NORMAL if is_instructor else tk.DISABLED,
-                'business_intelligence': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Documents & Export
-                'document_manager': tk.NORMAL if (is_staff or any(p in permissions for p in ['manage_documents', 'system_config', 'view_documents'])) else tk.DISABLED,
-                'export': tk.NORMAL if 'export_data' in permissions or is_instructor else tk.DISABLED,
-                'backup_gui': tk.NORMAL if is_admin else tk.DISABLED,
-
-                # AI & Advanced Tools
-                'ai_features': tk.NORMAL,  # Available to all logged-in users
-                'mobile_app_pwa': tk.NORMAL,  # Available to all logged-in users
-                'blockchain_credentials': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Administration
-                'user_management': tk.NORMAL if 'manage_users' in permissions or is_admin else tk.DISABLED,
-                'system_admin_gui': tk.NORMAL if is_admin else tk.DISABLED,
-                'security_dashboard': tk.NORMAL if is_admin else tk.DISABLED,
-                'activity_logger': tk.NORMAL if is_staff else tk.DISABLED,
-                'activity_log': tk.NORMAL if 'view_logs' in permissions or is_admin else tk.DISABLED,
-                'integration_marketplace': tk.NORMAL if is_admin else tk.DISABLED,
-                'admissions_crm': tk.NORMAL if is_staff else tk.DISABLED,
-
-                # Legacy/Alternative names
-                'grades': tk.NORMAL if any(p in permissions for p in ['manage_grades', 'view_own_grades']) else tk.DISABLED,
-                'trips': tk.NORMAL if any(p in permissions for p in ['view_trips', 'register_for_trips', 'manage_trips']) else tk.DISABLED,
-                'system_admin': tk.NORMAL if is_admin else tk.DISABLED,
-            }
-        # Apply states to buttons
-        for button_name, state in states.items():
-            if button_name in self.nav_buttons:
-                try:
-                    self.nav_buttons[button_name].configure(state=state)
-                except Exception as e:
-                    # Silently handle button configuration errors
-                    pass
+    # Note: update_button_states() has been replaced with role-based visibility
+    # Buttons are now conditionally created based on user role (see get_visible_buttons_for_role)
+    # instead of being created and then disabled. This provides a cleaner, role-specific UI.
 
     def refresh_advanced_search(self):
         """Refresh the Advanced Search GUI if it's open"""
