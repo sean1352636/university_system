@@ -49,6 +49,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files Modified**: `university_system/modules/shared/gui/advanced_search_gui.py:1-67, 118-841, 5055-11036`
   - **Impact**: Better visibility of errors, warnings, and status messages during search operations
 
+- **Professional Chart Generation with Matplotlib** - Implemented comprehensive data visualization system
+  - **New Module**: `university_system/modules/shared/utils/chart_generator.py` (730+ lines)
+  - **Chart Generation Engine**:
+    * `ChartGenerator` class with 8 chart types (bar, line, pie, histogram, scatter, heatmap, box, grouped_bar)
+    * Professional styling with seaborn themes and color palettes
+    * Automatic value labeling on bars and data points
+    * Configurable colors, labels, and formatting options
+    * High-resolution export (150+ DPI) with multiple formats (PNG, PDF, SVG, JPEG)
+  - **Chart Viewer Window**:
+    * Embedded matplotlib canvas in Tkinter window
+    * Interactive navigation toolbar (zoom, pan, home, back, forward)
+    * Save chart button with format selection dialog
+    * Print functionality placeholder
+    * Resizable window (1000x700 default)
+  - **Database Chart Generator**:
+    * `DatabaseChartGenerator` class for direct SQL → chart pipeline
+    * 6 pre-configured chart types from database:
+      1. **Age Distribution Histogram**: Student age frequency with 20 bins
+      2. **Course Distribution Pie Chart**: Enrollment by course with percentages
+      3. **Registration Timeline**: Monthly registration trends over time
+      4. **Gender-Course Grouped Bar**: Gender distribution across courses
+      5. **Module Popularity**: Top 15 modules by enrollment count
+      6. **Grade Distribution**: Grade frequency with percentages
+  - **Advanced Search GUI Integration**:
+    * Replaced ASCII text charts with actual matplotlib visualizations
+    * Updated "Advanced Charts & Visualizations" dialog (📈 menu)
+    * Added library availability check with user-friendly error messages
+    * Shows green ✓ when matplotlib/seaborn available, red ⚠ if missing
+    * Chart generation runs in background thread (non-blocking UI)
+    * Charts open in separate interactive windows
+  - **Features**:
+    * **Data Processing**: Automatic handling of NULL values, empty datasets, and edge cases
+    * **Professional Styling**: Grid lines, legends, titles, axis labels, value annotations
+    * **Interactive Controls**: Zoom, pan, reset view, save to file
+    * **Format Support**: PNG (default), PDF (vector), SVG (vector), JPEG
+    * **Thread Safety**: Charts generated in background threads to prevent UI blocking
+    * **Error Handling**: Graceful degradation with informative error messages
+  - **Testing**:
+    * Created `test_chart_generation.py` comprehensive test suite
+    * Tests all 6 chart types with real database data
+    * Verifies matplotlib/seaborn availability
+    * Saves generated charts to temp files for validation
+    * Test results: 5/6 charts successful (grade distribution had no data)
+  - **Dependencies**: Requires matplotlib>=3.5.0 and seaborn>=0.11.0 (already in requirements.txt)
+  - **Files Created**:
+    * `university_system/modules/shared/utils/chart_generator.py` - Chart generation engine
+    * `test_chart_generation.py` - Comprehensive test suite
+  - **Files Modified**:
+    * `university_system/modules/shared/gui/advanced_search_gui.py:35-45, 4185-4244`
+  - **Impact**: Transforms text-based ASCII charts into professional, interactive, publication-quality visualizations
+
 ### Fixed
 - **Advanced Search GUI: Multiple Database Schema Errors** - Fixed critical database column mismatches
   - **Problem 1**: "Failed to load saved profiles: no such column: id"

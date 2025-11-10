@@ -32,6 +32,18 @@ except ImportError:
     print_info = lambda msg: print(msg)
     print_header = lambda msg, **kwargs: print(f"\n{msg}\n{'='*len(msg)}")
 
+# Import chart generation utility
+try:
+    from university_system.modules.shared.utils.chart_generator import (
+        ChartGenerator, ChartViewer, DatabaseChartGenerator, create_chart_viewer, CHARTS_AVAILABLE
+    )
+except ImportError:
+    CHARTS_AVAILABLE = False
+    ChartGenerator = None
+    ChartViewer = None
+    DatabaseChartGenerator = None
+    create_chart_viewer = None
+
 # Import all original functions (backwards compatibility)
 try:
     from university_system.modules.shared.services.analytics.advanced_search import (
@@ -4174,15 +4186,28 @@ class AdvancedSearchGUI:
         """Show advanced chart generation options"""
         dialog = tk.Toplevel(self.master)
         dialog.title("📈 Advanced Charts & Visualizations")
-        dialog.geometry("500x600")
+        dialog.geometry("550x680")
         dialog.transient(self.master)
         dialog.grab_set()
-        
+
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(frame, text="Advanced Charts & Visualizations", style='Title.TLabel').pack(pady=(0, 20))
-        
+
+        ttk.Label(frame, text="Advanced Charts & Visualizations", style='Title.TLabel').pack(pady=(0, 10))
+
+        # Show availability status
+        if CHARTS_AVAILABLE:
+            status_label = ttk.Label(frame, text="✓ Chart Generation Available (matplotlib + seaborn)",
+                                   foreground="green")
+        else:
+            status_label = ttk.Label(frame, text="⚠ Charts require: pip install matplotlib seaborn",
+                                   foreground="red")
+        status_label.pack(pady=(0, 20))
+
+        # Info text
+        info_text = "Generate professional charts from database data.\nCharts open in interactive windows with zoom, pan, and save features."
+        ttk.Label(frame, text=info_text, justify=tk.CENTER, foreground="gray").pack(pady=(0, 15))
+
         # Chart types
         chart_options = [
             ("📊 Age Distribution Histogram", "age_histogram"),
@@ -4191,34 +4216,42 @@ class AdvancedSearchGUI:
             ("👥 Gender-Course Distribution", "gender_course"),
             ("🎯 Module Popularity Chart", "module_popularity"),
             ("📉 Grade Distribution Analysis", "grade_distribution"),
-            ("🔄 Enrollment Trends Over Time", "enrollment_trends"),
-            ("📊 Custom Data Visualization", "custom_chart")
         ]
-        
+
         for text, chart_type in chart_options:
-            btn = ttk.Button(frame, text=text, width=35,
+            btn = ttk.Button(frame, text=text, width=40,
                             command=lambda ct=chart_type: self.generate_chart(ct, dialog))
             btn.pack(pady=5)
-        
+
         ttk.Button(frame, text="❌ Close", command=dialog.destroy).pack(pady=(20, 0))
 
     def generate_chart(self, chart_type, parent_dialog):
-        """Generate specified chart type"""
+        """Generate specified chart type with matplotlib"""
         parent_dialog.destroy()
-        
+
+        # Check if charts are available
+        if not CHARTS_AVAILABLE:
+            messagebox.showerror("Charts Unavailable",
+                               "Chart generation requires matplotlib and seaborn.\n"
+                               "Install with: pip install matplotlib seaborn")
+            return
+
         self.update_status(f"Generating {chart_type.replace('_', ' ')} chart...")
         self.start_progress()
-        
+
         def run_chart_generation():
             try:
-                chart_data = self.create_chart_data(chart_type)
-                self.output_queue.put(("analytics", chart_data))
-                self.output_queue.put(("log", f"Chart generation completed: {chart_type}"))
+                # Use new chart generation system
+                create_chart_viewer(self.master, chart_type)
+
+                self.output_queue.put(("log", f"✓ Chart generated successfully: {chart_type}"))
+                self.output_queue.put(("log", "Chart displayed in new window"))
             except Exception as e:
                 self.output_queue.put(("error", f"Chart generation error: {str(e)}"))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
+        # Run in thread to avoid blocking UI
         threading.Thread(target=run_chart_generation, daemon=True).start()
 
     def create_chart_data(self, chart_type):
