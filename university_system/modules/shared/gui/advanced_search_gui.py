@@ -12,6 +12,26 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+# Import enhanced console output utility
+try:
+    from university_system.modules.shared.utils.console_output import (
+        console, print_success, print_error, print_warning, print_info, print_header
+    )
+except ImportError:
+    # Fallback to basic print if console_output is not available
+    class _FallbackConsole:
+        def success(self, msg, **kwargs): print(msg)
+        def error(self, msg, **kwargs): print(msg)
+        def warning(self, msg, **kwargs): print(msg)
+        def info(self, msg, **kwargs): print(msg)
+        def header(self, msg, **kwargs): print(f"\n{msg}\n{'='*len(msg)}")
+    console = _FallbackConsole()
+    print_success = lambda msg: print(msg)
+    print_error = lambda msg: print(msg)
+    print_warning = lambda msg: print(msg)
+    print_info = lambda msg: print(msg)
+    print_header = lambda msg, **kwargs: print(f"\n{msg}\n{'='*len(msg)}")
+
 # Import all original functions (backwards compatibility)
 try:
     from university_system.modules.shared.services.analytics.advanced_search import (
@@ -36,15 +56,15 @@ try:
     )
 except ImportError:
     # If running as standalone, define minimal required functions
-    print("Warning: Could not import advanced_search module. Running in standalone mode.")
+    print_warning("Could not import advanced_search module. Running in standalone mode.")
 
 # Import essential functions from email infrastructure
 try:
     from university_system.infrastructure.email.email_db_utilities import execute_db_operation
     from university_system.infrastructure.email.admin import search_users, list_all_users
-    print("✓ Imported email infrastructure functions")
+    print_success("Imported email infrastructure functions")
 except ImportError as e:
-    print(f"Warning: Could not import email infrastructure functions: {e}")
+    print_warning(f"Could not import email infrastructure functions: {e}")
     # Create fallback functions
     def execute_db_operation(operation_func):
         conn = get_connection()
@@ -95,7 +115,7 @@ except ImportError as e:
         try:
             conn = get_connection()
             if conn is None:
-                print("Error: could not obtain database connection for analytics fallback")
+                print_error("Could not obtain database connection for analytics fallback")
                 return False
             cursor = conn.cursor()
 
@@ -201,10 +221,10 @@ except ImportError as e:
 
             conn.commit()
             conn.close()
-            print("Fallback analytics tables created successfully")
+            print_success("Fallback analytics tables created successfully")
             return True
         except Exception as e:
-            print(f"Error initializing fallback analytics tables: {e}")
+            print_error(f"Error initializing fallback analytics tables: {e}")
             try:
                 conn.close()
             except:
@@ -465,9 +485,9 @@ def init_enhanced_database():
             columns = [column[1] for column in cursor.fetchall()]
             if 'search_criteria' not in columns:
                 cursor.execute('ALTER TABLE search_analytics ADD COLUMN search_criteria TEXT')
-                print("Added search_criteria column to search_analytics table")
+                print_success("Added search_criteria column to search_analytics table")
         except Exception as e:
-            print(f"Note: {e}")
+            print_info(f"Note: {e}")
 
         # Ensure schema compatibility and insert sample analytics if empty
         ensure_search_analytics_schema(cursor)
@@ -490,14 +510,14 @@ def init_enhanced_database():
                         timestamp=ts
                     )
         except Exception as e:
-            print(f"Note: Could not insert analytics data: {e}")
+            print_info(f"Note: Could not insert analytics data: {e}")
 
         conn.commit()
         conn.close()
-        print("Enhanced database initialized successfully")
+        print_success("Enhanced database initialized successfully")
         return True
     except Exception as e:
-        print(f"Error initializing enhanced database: {e}")
+        print_error(f"Error initializing enhanced database: {e}")
         return False
 
 def ensure_tables_exist():
@@ -523,7 +543,7 @@ def ensure_tables_exist():
 
         if not cursor.fetchone():
             conn.close()
-            print("🔧 Required tables missing. Initializing database...")
+            console.info("Required tables missing. Initializing database...", prefix="🔧")
             init_enhanced_database()
             return True
 
@@ -818,7 +838,7 @@ def get_connection():
             from university_system.modules.shared.constants import paths
             return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
         except Exception as e:
-            print(f"Database connection error: {e}")
+            print_error(f"Database connection error: {e}")
             return None
 
 class AdvancedSearchGUI:
@@ -5036,7 +5056,7 @@ class AdvancedSearchGUI:
             rows = cursor.fetchall()
             conn.close()
         except Exception as exc:
-            print(f"Failed to load saved profiles: {exc}")
+            print_error(f"Failed to load saved profiles: {exc}")
             messagebox.showerror("Load Error", f"Failed to load saved profiles: {exc}")
             return
         
@@ -7129,7 +7149,7 @@ class AdvancedSearchGUI:
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
-            print(f"Error returning to main menu: {e}")
+            print_error(f"Error returning to main menu: {e}")
             import traceback
             traceback.print_exc()
 
@@ -7825,7 +7845,7 @@ class AdvancedSearchGUI:
             for code, name in available_modules:
                 combined_module_listbox.insert(tk.END, f"{code} - {name}")
         except Exception as e:
-            print(f"Could not load modules: {e}")
+            print_error(f"Could not load modules: {e}")
             available_modules = []
 
         # Module match type
@@ -8476,7 +8496,7 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
                 self.perform_search()
 
         except Exception as e:
-            print(f"Warning: Could not apply all search parameters: {e}")
+            print_warning(f"Could not apply all search parameters: {e}")
     
     def delete_selected_search(self):
         """Delete selected saved search"""
@@ -10389,7 +10409,7 @@ Proceed with update?
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
-            print(f"Error returning to main menu: {e}")
+            print_error(f"Error returning to main menu: {e}")
             import traceback
             traceback.print_exc()
 
@@ -10974,7 +10994,7 @@ Proceed with update?
 
         except Exception as e:
             # Fail silently for analytics - don't disrupt user experience
-            print(f"Search logging failed (non-critical): {e}")
+            print_info(f"Search logging failed (non-critical): {e}")
 
 
 # Backwards Compatibility Functions
@@ -10989,28 +11009,28 @@ def run_cli():
     try:
         display_enhanced_menu()
     except NameError:
-        print("CLI functions not available. Please ensure advanced_search.py is properly imported.")
+        print_error("CLI functions not available. Please ensure advanced_search.py is properly imported.")
 
 if __name__ == "__main__":
     import sys
-    
+
     # Check command line arguments for interface selection
     if len(sys.argv) > 1 and sys.argv[1] == "--cli":
-        print("🖥️  Starting CLI mode...")
+        console.info("Starting CLI mode...", prefix="🖥️")
         run_cli()
     else:
-        print("🖼️  Starting GUI mode...")
-        print("💡 Use --cli flag to run in CLI mode")
-        
+        console.info("Starting GUI mode...", prefix="🖼️")
+        console.info("Use --cli flag to run in CLI mode", prefix="💡")
+
         # Import tkinter and check if it's available
         try:
             import tkinter as tk
             import tkinter.simpledialog
             run_gui()
         except ImportError:
-            print("⚠️  tkinter not available. Falling back to CLI mode...")
+            console.warning("tkinter not available. Falling back to CLI mode...")
             run_cli()
         except Exception as e:
-            print(f"⚠️  GUI startup failed: {e}")
-            print("Falling back to CLI mode...")
+            console.warning(f"GUI startup failed: {e}")
+            console.info("Falling back to CLI mode...")
             run_cli()

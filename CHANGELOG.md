@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Enhanced Console Output Utility** - Created professional terminal formatting system for improved user experience
+  - **New Module**: `university_system/modules/shared/utils/console_output.py` (650+ lines)
+  - **Features**:
+    * **Colored Output**: ANSI color support for success (green), error (red), warning (yellow), info (cyan), debug (dim)
+    * **Formatted Messages**: Success (✓), error (✗), warning (⚠), info (ℹ), debug (🔧) with prefixes
+    * **Professional Tables**: Bordered and simple table formats with auto-sizing columns
+    * **Progress Bars**: Dynamic progress indicators with color-coded completion (red/yellow/green)
+    * **Box Messages**: Bordered notification boxes for important information
+    * **Headers & Sections**: Styled dividers and section headers with multiple border styles
+    * **Key-Value Lists**: Formatted data display with alignment
+    * **Menus**: Numbered menu options with professional formatting
+    * **Banners**: Decorative banners with single/double/bold border styles
+    * **Summary Boxes**: Statistics display in bordered containers
+    * **Interactive Prompts**: Colored input prompts and confirmation dialogs
+  - **Smart Features**:
+    * Auto-detects terminal color support (falls back to plain text if unsupported)
+    * Automatic column width calculation for tables
+    * Responsive progress bars with percentage display
+    * Fallback console class for graceful degradation
+  - **Usage**: Simple API with both class methods (`console.success()`) and convenience functions (`print_success()`)
+  - **Files Created**:
+    * `university_system/modules/shared/utils/console_output.py` - Main utility module
+    * `test_console_output.py` - Comprehensive demo script
+  - **Impact**: Replaces plain print statements throughout codebase with professional, colored output
+
+- **Advanced Search GUI: Improved Console Output** - Upgraded all console messages to use enhanced formatting
+  - **Changes**:
+    * Replaced 25+ basic print statements with colored output functions
+    * Success messages now show green ✓ checkmarks
+    * Errors display in red with ✗ symbols
+    * Warnings appear in yellow with ⚠ symbols
+    * Info messages use cyan with ℹ icons
+    * Debug messages shown dimmed with 🔧 icons
+  - **Examples**:
+    * Before: `print("Warning: Could not import module")`
+    * After: `print_warning("Could not import module")` (displays in yellow with ⚠)
+  - **Graceful Fallback**: If console_output module unavailable, falls back to basic print statements
+  - **Files Modified**: `university_system/modules/shared/gui/advanced_search_gui.py:1-67, 118-841, 5055-11036`
+  - **Impact**: Better visibility of errors, warnings, and status messages during search operations
+
 ### Fixed
 - **Advanced Search GUI: Multiple Database Schema Errors** - Fixed critical database column mismatches
   - **Problem 1**: "Failed to load saved profiles: no such column: id"
