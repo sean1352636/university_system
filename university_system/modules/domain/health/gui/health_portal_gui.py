@@ -51,11 +51,18 @@ class HealthPortalGUI:
         # Setup current user from existing authentication system
         self.setup_current_user()
 
-        # Show appropriate interface based on authentication status
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            self.create_main_interface()
-        else:
-            self.show_login_screen()
+        # Check authentication status - require login through main system
+        from university_system.infrastructure.shared_context import get_auth
+        auth = get_auth()
+        if not auth.is_logged_in():
+            messagebox.showerror("Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui")
+            self.root.destroy()
+            return
+
+        # Show main interface
+        self.create_main_interface()
 
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
@@ -565,49 +572,6 @@ class HealthPortalGUI:
         style.configure('Success.TLabel', foreground='green', font=('Arial', 10, 'bold'))
         style.configure('Error.TLabel', foreground='red', font=('Arial', 10, 'bold'))
         style.configure('Warning.TLabel', foreground='orange', font=('Arial', 10, 'bold'))
-    
-    def show_login_screen(self):
-        """Show login screen"""
-        # Clear any existing widgets
-        for widget in self.root.winfo_children():
-            widget.destroy()
-        
-        # Create login frame
-        login_frame = ttk.Frame(self.root, padding="50")
-        login_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-        
-        # Title
-        ttk.Label(login_frame, text="Enhanced University Health Portal", 
-                 style='Title.TLabel').grid(row=0, column=0, columnspan=2, pady=20)
-        
-        # Username
-        ttk.Label(login_frame, text="Username:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.username_var = tk.StringVar()
-        username_entry = ttk.Entry(login_frame, textvariable=self.username_var, width=20)
-        username_entry.grid(row=1, column=1, pady=5, padx=(10, 0))
-        
-        # Password
-        ttk.Label(login_frame, text="Password:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.password_var = tk.StringVar()
-        password_entry = ttk.Entry(login_frame, textvariable=self.password_var, width=20, show="*")
-        password_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
-        
-        # Login button
-        def attempt_login():
-            if self.auth.login(self.username_var.get(), self.password_var.get()):
-                self.log_audit_event('login', 'session', self.auth.current_user['id'])
-                self.create_main_interface()
-            else:
-                messagebox.showerror("Login Failed", "Invalid username or password")
-        
-        ttk.Button(login_frame, text="Login", command=attempt_login).grid(row=3, column=0, columnspan=2, pady=20)
-        
-        # Demo info
-        info_text = "Demo Accounts:\nAdmin: admin/admin123\nDoctor: doctor/doctor123\nStudent: student/student123"
-        ttk.Label(login_frame, text=info_text, font=('Arial', 8)).grid(row=4, column=0, columnspan=2, pady=10)
-        
-        # Bind Enter key to login
-        password_entry.bind('<Return>', lambda e: attempt_login())
     
     def create_main_interface(self):
         """Create the main interface after successful login"""

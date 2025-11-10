@@ -60,11 +60,18 @@ class BlockchainCredentialsGUI:
         # Setup current user
         self.setup_current_user()
 
-        # Show appropriate interface
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            self.create_main_interface()
-        else:
-            self.show_login_screen()
+        # Check authentication status - require login through main system
+        from university_system.infrastructure.shared_context import get_auth
+        auth = get_auth()
+        if not auth.is_logged_in():
+            messagebox.showerror("Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui")
+            self.root.destroy()
+            return
+
+        # Show main interface
+        self.create_main_interface()
 
     def setup_current_user(self):
         """Setup current user from authentication system"""
@@ -114,20 +121,6 @@ class BlockchainCredentialsGUI:
 
         style.configure('Treeview.Heading',
                        font=('Arial', 10, 'bold'))
-
-    def show_login_screen(self):
-        """Display login screen"""
-        login_frame = ttk.Frame(self.root, padding=20)
-        login_frame.pack(expand=True, fill='both')
-
-        ttk.Label(login_frame, text="Blockchain Credentials Management",
-                 style='Header.TLabel').pack(pady=20)
-
-        ttk.Label(login_frame, text="Please log in to continue",
-                 font=('Arial', 12)).pack(pady=10)
-
-        ttk.Button(login_frame, text="Close",
-                  command=self.root.destroy).pack(pady=10)
 
     def create_main_interface(self):
         """Create the main GUI interface"""

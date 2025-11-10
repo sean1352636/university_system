@@ -9,13 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-**REMOVE STANDALONE LOGIN/LOGOUT FROM REMAINING GUI FILES** (2025-11-10)
-- **PURPOSE**: Complete removal of standalone authentication implementations from all GUI modules
-- **IMPACT**: All GUI modules now require authentication through central main_gui.py only
-- **SCOPE**: 4 files modified (final cleanup of authentication centralization)
-- **SECURITY**: Eliminates last remaining standalone login screens that bypassed central auth system
+**SECURITY: REMOVE STANDALONE LOGIN SCREENS FROM FINAL 4 DISCOVERED GUIs** (2025-11-10)
+- **PURPOSE**: Eliminate last remaining standalone login implementations from newly discovered GUI modules
+- **IMPACT**: All GUI modules now enforce central authentication exclusively
+- **SCOPE**: 4 files modified (completing authentication centralization effort)
+- **SECURITY**: Removes dangerous standalone login screens that allowed authentication bypass
 
 **FILES MODIFIED (4 files)**:
+
+1. **health_portal_gui.py** - CRITICAL: Health services portal
+   - Removed: show_login_screen() method (43 lines) - FULL LOGIN FORM
+   - Removed: Username/password input fields with plaintext authentication
+   - Removed: attempt_login() nested function with direct auth.login() calls
+   - Removed: Demo account credentials display (security information leak)
+   - Changed: Replaced with central auth check requiring main GUI login
+   - Impact: Health portal now enforces central authentication before access
+
+2. **blockchain_credentials_gui.py** - Digital credentials & blockchain management
+   - Removed: show_login_screen() method (13 lines) - stub login screen
+   - Changed: Replaced stub screen with central auth requirement
+   - Impact: Blockchain credential system requires main GUI authentication
+
+3. **mobile_app_pwa_gui.py** - Mobile app infrastructure management
+   - Removed: show_login_screen() method (13 lines) - stub login screen
+   - Changed: Replaced stub screen with central auth requirement
+   - Impact: Mobile app management requires main GUI authentication
+
+4. **student_support_gui.py** - Student support portal & helpdesk
+   - Removed: show_login_required() method (16 lines)
+   - Removed: Login required screen with "Return to Homescreen" redirect
+   - Changed: __init__ now performs central auth check before widget creation
+   - Changed: Removed redundant auth check in show_dashboard_tab()
+   - Impact: Support portal requires main GUI authentication
+
+**PREVIOUS CLEANUP (Earlier today)** - 4 files:
 
 1. **parking_management_gui.py** - Parking management system
    - Removed: LoginDialog class (68 lines with username/password fields)

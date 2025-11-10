@@ -178,15 +178,22 @@ class StudentSupportGUI:
         # Setup current user from existing authentication system
         self.setup_current_user()
 
+        # Check authentication status - require login through main system
+        from university_system.infrastructure.shared_context import get_auth
+        auth = get_auth()
+        if not auth.is_logged_in():
+            messagebox.showerror("Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui")
+            self.root.destroy()
+            return
+
         # Create main interface
         self.create_widgets()
         self.create_menu()
 
-        # Show appropriate interface based on authentication status
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            self.load_dashboard()
-        else:
-            self.show_login_required()
+        # Load dashboard
+        self.load_dashboard()
 
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
@@ -512,22 +519,6 @@ class StudentSupportGUI:
         for tab in self.notebook.tabs():
             self.notebook.forget(tab)
     
-    def show_login_required(self):
-        """Show login required message"""
-        self.clear_content()
-        
-        login_frame = ttk.Frame(self.notebook, padding="20")
-        self.notebook.add(login_frame, text="Login Required")
-        
-        ttk.Label(login_frame, text="🔐 Authentication Required", 
-                 style='Title.TLabel').pack(pady=20)
-        
-        ttk.Label(login_frame, 
-                 text="Please log in through the main application to access the support portal.",
-                 font=('Segoe UI', 12)).pack(pady=10)
-        
-        ttk.Button(login_frame, text="Return to Homescreen", 
-                  command=self.return_to_main_menu).pack(pady=20)
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -600,9 +591,8 @@ class StudentSupportGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Dashboard content
+        # Dashboard content - authentication already checked in __init__
         if not self.auth or not self.auth.current_user:
-            self.show_login_required()
             return
         
         # Load fresh data
