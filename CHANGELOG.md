@@ -8,6 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: Student Login Failure - Missing Authentication Columns** - Fixed complete inability for student accounts to log in
+  - **Problem**: ALL student accounts (194 users) could not log in - authentication system returned "Invalid username or password"
+  - **Root Cause**: Database schema missing critical authentication columns in users table
+    * Missing: `password_hash` column (stores PBKDF2 password hash)
+    * Missing: `salt` column (stores unique salt for each user)
+    * Missing: `active` column (user account status flag)
+    * Authentication system expected these columns but they didn't exist in schema
+  - **Impact**: Complete authentication failure for all student accounts since system deployment
+  - **Discovery**: Error logs showed InvalidCredentialsError for user 7149430 and others
+  - **Resolution Steps**:
+    1. **Schema Migration**: Added missing columns to users table
+       ```sql
+       ALTER TABLE users ADD COLUMN password_hash TEXT;
+       ALTER TABLE users ADD COLUMN salt TEXT;
+       ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1;
+       ```
+    2. **Password Initialization**: Created migration script to hash and store passwords
+       * Used PBKDF2-SHA256 with 1,000,000 iterations (OWASP recommended)
+       * Generated unique 64-character hex salt for each user
+       * Set default password `student123` for 194 student accounts
+       * Also fixed 3 admin/staff accounts (admin: admin123, staff: staff123)
+    3. **Verification**: Confirmed all users now have valid password hashes and salts
+  - **Security Notes**:
+    * All passwords properly hashed with industry-standard algorithm
+    * Unique salts prevent rainbow table attacks
+    * Users can change passwords after first login
+    * Password history table already exists for tracking changes
+  - **Files Modified**:
+    * Database: `data/db_files/student_records.db` (schema updated)
+    * Migration script: `fix_student_passwords.py` (temporary, executed and removed)
+  - **Result**: All 194 student accounts + 3 staff accounts can now log in successfully
+
 - **Student Search Dialog Error** - Fixed "invalid command" error in student search functionality
   - **Problem**: Clicking "Show All" button in search dialog caused "invalid command" error
   - **Root Cause**: Lambda function using list syntax `lambda: [func1(), func2()]` which is invalid Tkinter command syntax
