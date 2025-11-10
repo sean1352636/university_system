@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Student Creation Error: 'course_modules is not defined'** - Fixed NameError preventing student creation in GUI
+  - **Problem**: Creating a new student in `main_gui.py` raised `NameError: name 'course_modules' is not defined`
+  - **Root Cause**: Line 5512 referenced undefined variable `course_modules` in success message generation
+  - **Context**: Variable `course_modules` was leftover from older code; current implementation uses `selected_modules` variable (properly defined at line 5417)
+  - **Fix**: Changed condition from `if course_modules and selected_modules:` to `if selected_modules:` (line 5512)
+  - **Impact**: Student creation now works correctly and displays assigned modules in success message
+  - **File Modified**: `modules/shared/gui/main_gui.py:5512`
+
 - **Staff Account Role and Email Sender Issues** - Fixed two critical staff account bugs
   - **Issue 1: Staff Account Had Admin Role**
     - **Problem**: Default staff account (username='staff') had role='admin' instead of role='staff'

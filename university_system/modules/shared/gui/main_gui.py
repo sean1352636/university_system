@@ -5509,7 +5509,7 @@ University Administration"""
                 
                 # Success message with details
                 modules_text = ""
-                if course_modules and selected_modules:
+                if selected_modules:
                     modules_text = "\n\n    Modules assigned:\n"
                     for mod_code in selected_modules:
                         modules_text += f"    - {mod_code}\n"
