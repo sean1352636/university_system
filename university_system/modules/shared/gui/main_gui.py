@@ -1997,7 +1997,22 @@ Your available features depend on your user role and permissions.
     # Content display methods
     def show_student_records(self):
         """Show student records interface in a new window"""
-        # Create new window
+        # Check if current user is a student - if so, show only their own record
+        if self.auth and self.auth.current_user:
+            user_role = self.auth.current_user.get('role', '')
+
+            # If student, directly show their own record
+            if user_role == 'student':
+                student_id = self.auth.current_user.get('student_id') or self.auth.current_user.get('username')
+                if student_id:
+                    print(f"✅ Student user '{student_id}' viewing their own record")
+                    self.show_student_details(student_id)
+                    return
+                else:
+                    messagebox.showerror("Error", "Unable to retrieve your student ID. Please contact an administrator.")
+                    return
+
+        # For staff/admin: Create new window with full student list
         records_window = tk.Toplevel(self.root)
         records_window.title("Student Records Management")
         records_window.geometry("1400x800")

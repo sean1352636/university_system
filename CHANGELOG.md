@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Student Self-Service Record Access** - Students now automatically see their own record when clicking "Student Records"
+  - **Feature**: When a student clicks "Student Records", the system automatically displays their personal record instead of a list
+  - **User Experience**:
+    * Students see their own information immediately without extra clicks
+    * No access to other students' records (enforced at UI level)
+    * Shows personal information, enrolled modules, grades, and attendance in tabbed interface
+    * Read-only view appropriate for student role
+  - **Technical Implementation**:
+    * Modified `show_student_records()` to detect student role
+    * Automatically retrieves student_id from current user's auth session
+    * Directly calls `show_student_details()` for student users
+    * Staff/admin users still see full student list with management features
+  - **Security**: Students cannot access or view other students' information
+  - **File Modified**: `university_system/modules/shared/gui/main_gui.py:1998-2013`
+
 - **Role-Based UI Customization in Main GUI** - Implemented role-specific navigation panel that shows only relevant features
   - **Feature**: Navigation panel now dynamically displays only buttons accessible to the current user's role
   - **Implementation Details**:
