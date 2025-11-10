@@ -3163,8 +3163,8 @@ Loyalty Points: {cust[3]}
                 try:
                     from university_system.infrastructure.shared_context import get_auth
                     auth = get_auth()
-                    if auth.is_logged_in():
-                        current_user = auth.get_current_user().username
+                    if auth.current_user:
+                        current_user = auth.current_user.get('username', 'Unknown')
                 except:
                     pass
 
@@ -3424,8 +3424,8 @@ Loyalty Points: {cust[3]}
                 try:
                     from university_system.infrastructure.shared_context import get_auth
                     auth = get_auth()
-                    if auth.is_logged_in():
-                        current_user = auth.get_current_user().username
+                    if auth.current_user:
+                        current_user = auth.current_user.get('username', 'Unknown')
                 except:
                     pass
 
@@ -6610,8 +6610,8 @@ Ordered By: {po_data[11] or 'N/A'}
                 try:
                     from university_system.infrastructure.shared_context import get_auth
                     auth = get_auth()
-                    if auth.is_logged_in():
-                        current_user = auth.get_current_user().username
+                    if auth.current_user:
+                        current_user = auth.current_user.get('username', 'Unknown')
                 except:
                     pass
             received_by.insert(0, current_user)

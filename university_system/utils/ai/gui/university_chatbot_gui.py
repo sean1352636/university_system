@@ -59,7 +59,7 @@ class ChatbotGUI:
         """Setup current user from central authentication system"""
         try:
             # Get current user from central auth system
-            auth_user = self.auth_system.get_current_user()
+            auth_user = self.auth_system.current_user
 
             if auth_user:
                 # auth_user is already a dictionary from UserAuth system

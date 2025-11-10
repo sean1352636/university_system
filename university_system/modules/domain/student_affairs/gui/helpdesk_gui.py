@@ -7604,7 +7604,7 @@ University Support Team
             cursor = conn.cursor()
 
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            user_id = self.auth.get_current_user()['id']
+            user_id = self.auth.current_user['id']
 
             cursor.execute('''
                 INSERT INTO saved_searches (user_id, name, search_criteria, created_at)
@@ -7625,7 +7625,7 @@ University Support Team
             conn = get_connection()
             cursor = conn.cursor()
 
-            user_id = self.auth.get_current_user()['id']
+            user_id = self.auth.current_user['id']
 
             cursor.execute('''
                 SELECT search_id, name, search_criteria
@@ -7696,7 +7696,7 @@ University Support Team
             # Check permissions
             if not self.auth.has_permission('view_all_tickets'):
                 where_conditions.append("t.user_id = ?")
-                params.append(self.auth.get_current_user()['id'])
+                params.append(self.auth.current_user['id'])
 
             # Text search
             if 'text' in criteria:
@@ -8138,7 +8138,7 @@ University Support Team
                 cursor = conn.cursor()
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                author_id = self.auth.get_current_user()['id']
+                author_id = self.auth.current_user['id']
 
                 cursor.execute('''
                     INSERT INTO knowledge_base
@@ -8186,7 +8186,7 @@ University Support Team
                 return
 
             # Check permissions
-            if article[5] != self.auth.get_current_user()['id'] and not self.auth.has_permission('manage_tickets'):
+            if article[5] != self.auth.current_user['id'] and not self.auth.has_permission('manage_tickets'):
                 messagebox.showerror("Permission Denied", "You don't have permission to edit this article.")
                 conn.close()
                 return
@@ -8559,7 +8559,7 @@ University Support Team
             action_frame = ttk.Frame(scrollable_frame)
             action_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            if self.auth.has_permission('reply_to_any_ticket') or ticket['user_id'] == self.auth.get_current_user()['id']:
+            if self.auth.has_permission('reply_to_any_ticket') or ticket['user_id'] == self.auth.current_user['id']:
                 ttk.Button(action_frame, text="Reply", command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, False)).pack(side=tk.LEFT, padx=5)
 
             if self.auth.has_permission('manage_tickets'):
@@ -8655,7 +8655,7 @@ University Support Team
                     where_conditions.append("t.assigned_to IS NULL")
                 elif filter_val == "my_assigned":
                     where_conditions.append("t.assigned_to = ?")
-                    params.append(self.auth.get_current_user()['id'])
+                    params.append(self.auth.current_user['id'])
                 elif filter_val == "overdue":
                     where_conditions.append("t.due_date IS NOT NULL AND t.due_date < ? AND t.status NOT IN ('resolved', 'closed')")
                     params.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -8949,7 +8949,7 @@ University Support Team
                 result = cursor.fetchone()
                 conn.close()
 
-                if not result or result[0] != self.auth.get_current_user()['id']:
+                if not result or result[0] != self.auth.current_user['id']:
                     messagebox.showerror("Permission Denied", "You don't have permission to reply to this ticket.")
                     return
             except sqlite3.Error as e:
@@ -8997,7 +8997,7 @@ University Support Team
                 cursor = conn.cursor()
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                user_id = self.auth.get_current_user()['id']
+                user_id = self.auth.current_user['id']
 
                 cursor.execute('''
                     INSERT INTO ticket_replies
@@ -9090,7 +9090,7 @@ University Support Team
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 start_time = (datetime.now() - timedelta(hours=duration)).strftime('%Y-%m-%d %H:%M:%S')
                 duration_minutes = int(duration * 60)
-                user_id = self.auth.get_current_user()['id']
+                user_id = self.auth.current_user['id']
 
                 cursor.execute('''
                     INSERT INTO ticket_time_tracking

@@ -8310,8 +8310,8 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
                 # Table exists, load real data
                 # Get current user if available
                 current_user = 'default_user'  # Default if no auth
-                if hasattr(self, 'auth') and self.auth and hasattr(self.auth, 'get_current_user'):
-                    user = self.auth.get_current_user()
+                if hasattr(self, 'auth') and self.auth and hasattr(self.auth, 'current_user'):
+                    user = self.auth.current_user
                     if user:
                         current_user = user.get('username', 'default_user')
 

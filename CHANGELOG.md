@@ -8,15 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Authentication Errors** - Fixed multiple GUIs using non-existent `is_logged_in()` method
-  - Health Portal GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Student Support Portal: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Student Union GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Chatbot GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Mobile App/PWA GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Blockchain Credentials GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Student Analytics GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
-  - Restaurant Management GUI (5 locations): Changed `auth.is_logged_in()` to `auth.current_user` checks
+- **Authentication Errors** - Fixed multiple GUIs using non-existent authentication methods
+  - **is_logged_in() method (9 GUIs):**
+    - Health Portal GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Student Support Portal: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Student Union GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Chatbot GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Mobile App/PWA GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Blockchain Credentials GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Student Analytics GUI: Changed `auth.is_logged_in()` to `auth.current_user` check
+    - Restaurant Management GUI (3 locations): Changed `auth.is_logged_in()` to `auth.current_user` checks
+
+  - **get_current_user() method (4 files, 16 locations):**
+    - Chatbot GUI: Changed `auth_system.get_current_user()` to `auth_system.current_user`
+    - Helpdesk GUI (10 locations): Changed `self.auth.get_current_user()['id']` to `self.auth.current_user['id']`
+    - Restaurant Management GUI (3 locations): Changed `auth.get_current_user().username` to `auth.current_user.get('username')`
+    - Advanced Search GUI (2 locations): Changed `hasattr(auth, 'get_current_user')` checks to `hasattr(auth, 'current_user')`
 
 - **Helpdesk GUI Initialization** - Fixed incorrect parameter name
   - `main_gui.py`: Changed `auth_system=` to `auth=` when calling HelpdeskGUI
