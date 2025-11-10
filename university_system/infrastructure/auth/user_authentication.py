@@ -612,7 +612,28 @@ PERMISSIONS = {
         'manage_trips', 'create_trips', 'view_trips', 'register_for_trips',
         'view_own_trip_registrations', 'cancel_trip_registration',
         'manage_trip_participants', 'view_trip_reports', 'manage_trip_expenses',
-        'approve_trip_registrations'
+        'approve_trip_registrations',
+        # Course Management permissions (admin - full access)
+        'create_course', 'edit_course', 'delete_course', 'view_courses', 'search_courses',
+        'manage_prerequisites', 'manage_course_status', 'manage_instructors',
+        'assign_instructors', 'import_export_courses', 'database_backup',
+        'bulk_course_update', 'system_maintenance', 'data_validation',
+        'course_analytics', 'enrollment_reports', 'department_statistics',
+        'view_course_schedules', 'manage_course_schedules', 'manage_waitlists',
+        # Assignment System permissions (admin - full access)
+        'view_assignments', 'create_assignment', 'manage_assignments', 'delete_assignment',
+        'grade_submissions', 'view_all_submissions', 'manage_rubrics', 'create_rubric',
+        'manage_templates', 'review_extensions', 'manage_peer_reviews',
+        'assignment_analytics', 'advanced_analytics', 'custom_reports',
+        'system_backup', 'data_cleanup', 'file_preview',
+        # Grade Tracking permissions (admin - full access)
+        'manage_students', 'add_student', 'edit_student', 'delete_student',
+        'manage_modules', 'add_module', 'edit_module',
+        'manage_assessments', 'create_assessment', 'edit_assessment', 'delete_assessment',
+        'enter_grades', 'edit_grades', 'view_all_grades',
+        'generate_transcripts', 'grade_curve_analysis', 'learning_outcomes',
+        'competency_assessment', 'predictive_analytics', 'performance_analysis',
+        'grade_statistics', 'grade_reports'
     ],
     'staff': [
         'create_student', 'view_any_student', 'update_any_student',
@@ -640,6 +661,21 @@ PERMISSIONS = {
         'check_plagiarism', 'submit_document', 'access_plagiarism_menu',
         'create_trips', 'view_trips', 'manage_trip_participants',
         'view_trip_reports', 'manage_trip_expenses', 'approve_trip_registrations',
+        # Course Management permissions (staff - teaching/administrative access)
+        'create_course', 'edit_course', 'view_courses', 'search_courses',
+        'manage_prerequisites', 'manage_course_status', 'import_export_courses',
+        'course_analytics', 'enrollment_reports', 'department_statistics',
+        'view_course_schedules', 'manage_course_schedules',
+        # Assignment System permissions (staff - teaching and grading)
+        'view_assignments', 'create_assignment', 'manage_assignments',
+        'grade_submissions', 'view_all_submissions', 'grade_with_rubrics',
+        'manage_groups', 'manage_peer_reviews', 'send_messages_to_students',
+        'assignment_analytics', 'advanced_analytics', 'custom_reports', 'file_preview',
+        # Grade Tracking permissions (staff - teaching and grading)
+        'manage_students', 'manage_modules', 'manage_assessments',
+        'create_assessment', 'edit_assessment',
+        'enter_grades', 'edit_grades', 'view_all_grades',
+        'generate_transcripts', 'grade_statistics', 'grade_reports'
     ],
     'student': [
         'view_own_record', 'update_own_profile',
@@ -658,7 +694,16 @@ PERMISSIONS = {
         'access_ai_detector', 'analyze_submissions', 'view_own_ai_results',
         'submit_document', 'access_plagiarism_menu',
         'view_trips', 'register_for_trips', 'view_own_trip_registrations',
-        'cancel_trip_registration'
+        'cancel_trip_registration',
+        # Course Management permissions (student - read-only)
+        'view_courses', 'search_courses', 'find_alternative_courses',
+        'view_course_schedules', 'view_waitlists',
+        # Assignment System permissions (student - submit and view own work)
+        'view_assignments', 'submit_assignment', 'view_own_submissions',
+        'request_extension', 'peer_review_dashboard', 'complete_peer_reviews',
+        'view_messages', 'manage_notifications',
+        # Grade Tracking permissions (student - view own data only)
+        'view_own_grades', 'view_own_transcript'
     ],
     'instructor': [
         'view_assigned_modules', 'manage_module_grades', 'view_module_students',
@@ -672,7 +717,22 @@ PERMISSIONS = {
         'view_any_ai_results', 'view_ai_statistics',
         'check_plagiarism', 'submit_document', 'access_plagiarism_menu',
         'view_trips', 'register_for_trips', 'view_own_trip_registrations',
-        'cancel_trip_registration'
+        'cancel_trip_registration',
+        # Course Management permissions (instructor - same as staff)
+        'create_course', 'edit_course', 'view_courses', 'search_courses',
+        'manage_prerequisites', 'manage_course_status', 'import_export_courses',
+        'course_analytics', 'enrollment_reports', 'department_statistics',
+        'view_course_schedules', 'manage_course_schedules',
+        # Assignment System permissions (instructor - same as staff)
+        'view_assignments', 'create_assignment', 'manage_assignments',
+        'grade_submissions', 'view_all_submissions', 'grade_with_rubrics',
+        'manage_groups', 'manage_peer_reviews', 'send_messages_to_students',
+        'assignment_analytics', 'advanced_analytics', 'custom_reports', 'file_preview',
+        # Grade Tracking permissions (instructor - same as staff)
+        'manage_students', 'manage_modules', 'manage_assessments',
+        'create_assessment', 'edit_assessment',
+        'enter_grades', 'edit_grades', 'view_all_grades',
+        'generate_transcripts', 'grade_statistics', 'grade_reports'
     ],
     'parent': [
         'view_child_records', 'view_academic_calendar', 'view_child_grades', 

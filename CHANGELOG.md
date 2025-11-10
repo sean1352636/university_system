@@ -8,6 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Updated Permissions System for Role-Based Access Control** - Added comprehensive permissions for academic modules
+  - **New Permission Categories**:
+    * Course Management permissions (35 new permissions)
+    * Assignment System permissions (22 new permissions)
+    * Grade Tracking permissions (24 new permissions)
+  - **Admin Permissions** - Full access (81 new permissions):
+    * Course Management: All features (create, edit, delete, manage instructors, analytics, system maintenance)
+    * Assignment System: All features (create, grade, manage rubrics, templates, analytics, system backup)
+    * Grade Tracking: All features (manage students/modules/assessments, all analytics, curve analysis, predictions)
+  - **Staff/Instructor Permissions** - Teaching and grading (52 new permissions):
+    * Course Management: Create/edit courses, manage prerequisites, analytics, reports (no delete, no system maintenance)
+    * Assignment System: Create assignments, grade, manage groups, peer reviews, analytics (no rubrics, no templates)
+    * Grade Tracking: Manage students/modules/assessments, enter grades, analytics, reports (no advanced analytics)
+  - **Student Permissions** - Read-only and submission (12 new permissions):
+    * Course Management: View courses, search, find alternatives, view schedules/waitlists
+    * Assignment System: View assignments, submit work, request extensions, peer reviews, notifications
+    * Grade Tracking: View own grades and transcript only
+  - **Permission Structure**:
+    ```python
+    # Admin (81 new permissions)
+    - create_course, edit_course, delete_course, manage_instructors, system_maintenance
+    - create_assignment, manage_rubrics, manage_templates, system_backup
+    - manage_students, grade_curve_analysis, predictive_analytics, etc.
+
+    # Staff/Instructor (52 new permissions)
+    - create_course, edit_course, course_analytics, enrollment_reports
+    - create_assignment, grade_submissions, manage_groups, assignment_analytics
+    - manage_students, enter_grades, generate_transcripts
+
+    # Student (12 new permissions)
+    - view_courses, search_courses, view_course_schedules
+    - view_assignments, submit_assignment, request_extension
+    - view_own_grades, view_own_transcript
+    ```
+  - **Files Modified**:
+    * `university_system/infrastructure/auth/user_authentication.py:612-736`
+  - **Impact**: Comprehensive permission-based access control aligned with role-based UI implementation
+
 - **Role-Based UI Access Control in Grade Tracking GUI** - Implemented comprehensive role-based sidebar navigation
   - **New Features**:
     * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`
