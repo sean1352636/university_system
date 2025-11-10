@@ -97,13 +97,6 @@ class AssignmentGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
 
-    def logout(self):
-        """Logout and return to main menu"""
-        if self.is_standalone:
-            self.root.destroy()
-        else:
-            self.root.destroy()
-
     def run(self):
         """Start the GUI mainloop"""
         if self.is_standalone:

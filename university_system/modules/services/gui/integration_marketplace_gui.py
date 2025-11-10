@@ -75,11 +75,15 @@ class IntegrationMarketplaceGUI:
         # Setup current user
         self.setup_current_user()
 
-        # Show appropriate interface
+        # Check authentication - user must log in through main GUI
         if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
             self.create_main_interface()
         else:
-            self.show_login_screen()
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI before accessing Integration Marketplace."
+            )
+            self.root.destroy()
 
     def setup_current_user(self):
         """Setup current user from authentication system"""
@@ -133,20 +137,6 @@ class IntegrationMarketplaceGUI:
 
         style.configure('Treeview.Heading',
                        font=('Arial', 10, 'bold'))
-
-    def show_login_screen(self):
-        """Display login screen"""
-        login_frame = ttk.Frame(self.root, padding=20)
-        login_frame.pack(expand=True, fill='both')
-
-        ttk.Label(login_frame, text="Integration Marketplace",
-                 style='Header.TLabel').pack(pady=20)
-
-        ttk.Label(login_frame, text="Please log in to continue",
-                 font=('Arial', 12)).pack(pady=10)
-
-        ttk.Button(login_frame, text="Close",
-                  command=self.root.destroy).pack(pady=10)
 
     def create_main_interface(self):
         """Create the main GUI interface"""

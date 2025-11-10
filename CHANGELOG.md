@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+**REMOVE STANDALONE LOGIN/LOGOUT FROM REMAINING GUI FILES** (2025-11-10)
+- **PURPOSE**: Complete removal of standalone authentication implementations from all GUI modules
+- **IMPACT**: All GUI modules now require authentication through central main_gui.py only
+- **SCOPE**: 4 files modified (final cleanup of authentication centralization)
+- **SECURITY**: Eliminates last remaining standalone login screens that bypassed central auth system
+
+**FILES MODIFIED (4 files)**:
+
+1. **parking_management_gui.py** - Parking management system
+   - Removed: LoginDialog class (68 lines with username/password fields)
+   - Removed: show_login() method that invoked standalone login dialog
+   - Removed: login() method performing direct authentication
+   - Changed: Replaced with central auth check and error message
+   - Impact: Users must authenticate through main GUI before accessing parking management
+
+2. **trip_management_gui.py** - Trip/shuttle management
+   - Removed: show_login_required() method (14 lines)
+   - Changed: Replaced stub login screen with central auth requirement
+   - Impact: Users must authenticate through main GUI before accessing trip management
+
+3. **assignment_gui.py** - Assignment & assessment system
+   - Removed: logout() method (4 lines)
+   - Impact: Assignment system now uses only central authentication
+
+4. **integration_marketplace_gui.py** - Integration marketplace
+   - Removed: show_login_screen() method (13 lines)
+   - Changed: Replaced with central auth check and error message
+   - Impact: Users must authenticate through main GUI before accessing integrations
+
+**AUTHENTICATION ARCHITECTURE**:
+- Central login: `modules/shared/gui/main_gui.py` (GUI) and `modules/shared/cli/cli_main.py` (CLI)
+- Core auth system: `infrastructure/auth/user_authentication.py`
+- All 4 files now check `auth.is_logged_in()` and `auth.get_current_user()` without performing login
+
+**TOTAL CLEANUP STATS** (across all security commits):
+- Files modified: 27+ files
+- Login/logout functions removed: 30+ functions
+- Direct SQL authentication removed: 15+ instances
+- Plaintext password handling removed: 10+ instances
+- Lines of insecure code removed: 800+ lines
+
 ### Changed
 
 **CENTRALIZE STUDENT MANAGEMENT: Remove Student CRUD from Non-Core Modules** (2025-11-09)

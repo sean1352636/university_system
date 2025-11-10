@@ -139,11 +139,15 @@ class TripManagementGUI:
         self.status_bar = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
-        # Show login screen or main interface
+        # Check authentication - user must log in through main GUI
         if self.auth and self.auth.current_user:
             self.show_main_interface()
         else:
-            self.show_login_required()
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI before accessing Trip Management."
+            )
+            self.root.destroy()
     
     def create_menu(self):
         """Create the application menu bar - enhanced"""
@@ -212,20 +216,6 @@ class TripManagementGUI:
         )
         self.main_menu_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
 
-    def show_login_required(self):
-        """Show login required message"""
-        self.clear_main_frame()
-        
-        login_frame = ttk.Frame(self.main_frame)
-        login_frame.pack(expand=True)
-        
-        ttk.Label(login_frame, text="Trip Management System", 
-                 font=('Arial', 16, 'bold')).pack(pady=20)
-        ttk.Label(login_frame, text="Please log in to access the trip management system.").pack(pady=10)
-        
-        ttk.Button(login_frame, text="Login Required", 
-                  state='disabled').pack(pady=10)
-    
     def show_main_interface(self):
         """Show the main trip management interface"""
         self.clear_main_frame()

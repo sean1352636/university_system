@@ -84,7 +84,12 @@ class ParkingManagementGUI:
             self.update_status("Using authenticated user session")
             self.update_tab_access()
         else:
-            self.show_login()
+            # User must log in through main University System GUI
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI before accessing Parking Management."
+            )
+            self.root.destroy()
 
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
@@ -443,20 +448,6 @@ class ParkingManagementGUI:
         
         # Refresh dashboard
         self.refresh_dashboard()
-    
-    def show_login(self):
-        """Show login dialog"""
-        login_dialog = LoginDialog(self.root, self.auth)
-        self.root.wait_window(login_dialog.dialog)
-        
-        if login_dialog.success:
-            self.current_user = self.auth.current_user
-            self.update_user_status()
-            self.update_status("Logged in successfully")
-            # Enable tabs based on permissions
-            self.update_tab_access()
-        else:
-            self.root.quit()
     
     def update_user_status(self):
         """Update the user status in the status bar"""
@@ -1658,76 +1649,6 @@ Features:
 
 
 # Dialog classes
-class LoginDialog:
-    def __init__(self, parent, auth):
-        self.auth = auth
-        self.success = False
-        
-        self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Login")
-        self.dialog.geometry("300x200")
-        self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
-        # Center the dialog
-        self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 50, parent.winfo_rooty() + 50))
-        
-        self.setup_ui()
-    
-    def setup_ui(self):
-        main_frame = ttk.Frame(self.dialog)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        ttk.Label(main_frame, text="Username:").grid(row=0, column=0, sticky="w", pady=5)
-        self.username_var = tk.StringVar()
-        username_entry = ttk.Entry(main_frame, textvariable=self.username_var)
-        username_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(10, 0))
-        
-        ttk.Label(main_frame, text="Password:").grid(row=1, column=0, sticky="w", pady=5)
-        self.password_var = tk.StringVar()
-        password_entry = ttk.Entry(main_frame, textvariable=self.password_var, show="*")
-        password_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(10, 0))
-        
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
-        
-        ttk.Button(button_frame, text="Login", command=self.login).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
-        
-        main_frame.columnconfigure(1, weight=1)
-        
-        # Bind Enter key
-        self.dialog.bind('<Return>', lambda e: self.login())
-        
-        # Focus on username entry
-        username_entry.focus()
-    
-    def login(self):
-        username = self.username_var.get()
-        password = self.password_var.get()
-        
-        if not username or not password:
-            messagebox.showerror("Error", "Please enter both username and password")
-            return
-        
-        # Fix: Use the correct login method from UserAuth
-        result = self.auth.login(username, password)
-        if result is True or isinstance(result, dict):
-            # Handle successful login
-            self.success = True
-            self.dialog.destroy()
-        elif result == 'password_reset_required':
-            # Handle password reset case
-            messagebox.showinfo("Password Reset", "Password reset required. Please change your password after login.")
-            self.success = True
-            self.dialog.destroy()
-        else:
-            messagebox.showerror("Error", "Invalid username or password")
-    
-    def cancel(self):
-        self.dialog.destroy()
-
-
 class PermitDialog:
     def __init__(self, parent, title, permit_data=None):
         self.result = None

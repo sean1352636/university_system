@@ -978,10 +978,7 @@ class AuthenticationManager:
         self.session_expires = None
         # Don't try to create our own user system - use the existing one
 
-    def authenticate_user(self, username: str, password: str) -> bool:
-        """This method should not be used - use the main UserAuth system instead"""
-        logger.warning("authenticate_user called on calendar AuthenticationManager - use main UserAuth system")
-        return False
+    # authenticate_user() removed - use infrastructure.auth.user_authentication.UserAuth instead
 
     def check_permission(self, permission: str) -> bool:
         """Check if current user has specific permission using main auth system"""
@@ -1026,14 +1023,7 @@ class AuthenticationManager:
             return wrapper
         return decorator
 
-    def logout(self):
-        """Logout current user"""
-        if self.current_user:
-            logger.info(f"User {self.current_user['username']} logged out")
-        self.current_user = None
-        self.permissions_cache.clear()
-        self.session_token = None
-        self.session_expires = None
+    # logout() removed - use infrastructure.auth.user_authentication.UserAuth.logout() instead
 
     def create_user(self, username: str, password: str, email: str, role: str = 'student') -> bool:
         """Create new user with secure password hashing"""

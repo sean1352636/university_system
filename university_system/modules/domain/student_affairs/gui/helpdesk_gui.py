@@ -392,7 +392,14 @@ class HelpdeskGUI:
         if self.current_user:
             self.show_main_dashboard()
         else:
-            self.show_login()
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui\n\n"
+                "Helpdesk can only be accessed after logging in through the main system."
+            )
+            root.destroy()
+            return
 
     def ensure_subject_column(self):
         """Ensure the support_tickets table has a subject column"""
@@ -557,195 +564,7 @@ class HelpdeskGUI:
         for widget in self.main_container.winfo_children():
             widget.destroy()
 
-    def show_login(self):
-        """Show login dialog"""
-        self.clear_main_container()
-        
-        # Create login frame
-        login_frame = ttk.Frame(self.main_container)
-        login_frame.pack(expand=True)
-        
-        # Title
-        title_label = ttk.Label(login_frame, text="Helpdesk System Login", style='Title.TLabel')
-        title_label.pack(pady=20)
-        
-        # Login form
-        form_frame = ttk.Frame(login_frame)
-        form_frame.pack(pady=20)
-        
-        ttk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
-        self.username_entry = ttk.Entry(form_frame, width=20)
-        self.username_entry.grid(row=0, column=1, padx=5, pady=5)
-        
-        ttk.Label(form_frame, text="Password:").grid(row=1, column=0, sticky='e', padx=5, pady=5)
-        self.password_entry = ttk.Entry(form_frame, width=20, show='*')
-        self.password_entry.grid(row=1, column=1, padx=5, pady=5)
-        
-        # Buttons
-        button_frame = ttk.Frame(login_frame)
-        button_frame.pack(pady=20)
-        
-        ttk.Button(button_frame, text="Login", command=self.login).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Register", command=self.show_register).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="CLI Mode", command=self.switch_to_cli).pack(side='left', padx=5)
-        
-        # Bind Enter key to login
-        self.root.bind('<Return>', lambda e: self.login())
-        
-        # Focus on username entry
-        self.username_entry.focus()
-
-    def login(self):
-        """Handle login using centralized authentication"""
-        username = self.username_entry.get().strip()
-        password = self.password_entry.get().strip()
-
-        if not username or not password:
-            messagebox.showerror("Error", "Please enter both username and password")
-            return
-
-        try:
-            # Use centralized authentication system
-            result = self.auth.login(username, password)
-            if result is True or isinstance(result, dict):
-                self.current_user = self.auth.current_user
-                self.show_main_dashboard()
-            else:
-                messagebox.showerror("Error", "Invalid username or password")
-        except Exception as e:
-            messagebox.showerror("Error", f"Login failed: {str(e)}")
-
-    # Note: authenticate_user method removed - now using centralized UserAuth system
-
-    def show_register(self):
-        """Show registration dialog"""
-        register_window = tk.Toplevel(self.root)
-        register_window.title("Register New User")
-        register_window.geometry("400x300")
-        register_window.transient(self.root)
-        register_window.grab_set()
-        
-        # Registration form
-        form_frame = ttk.Frame(register_window)
-        form_frame.pack(pady=20, padx=20, fill='both', expand=True)
-        
-        ttk.Label(form_frame, text="Register New User", style='Heading.TLabel').pack(pady=10)
-        
-        # Create a separate frame for the grid layout
-        fields_frame = ttk.Frame(form_frame)
-        fields_frame.pack(fill='x', pady=10)
-        
-        # Form fields
-        fields = [
-            ("Username:", "username"),
-            ("Email:", "email"),
-            ("Password:", "password"),
-            ("Confirm Password:", "confirm_password"),
-            ("Full Name:", "full_name")
-        ]
-        
-        self.register_entries = {}
-        for i, (label, field) in enumerate(fields):
-            ttk.Label(fields_frame, text=label).grid(row=i, column=0, sticky='e', padx=5, pady=5)
-            entry = ttk.Entry(fields_frame, width=25)
-            if 'password' in field:
-                entry.config(show='*')
-            entry.grid(row=i, column=1, padx=5, pady=5)
-            self.register_entries[field] = entry
-        
-        # Role selection
-        ttk.Label(fields_frame, text="Role:").grid(row=len(fields), column=0, sticky='e', padx=5, pady=5)
-        self.role_var = tk.StringVar(value="student")
-        role_combo = ttk.Combobox(fields_frame, textvariable=self.role_var, 
-                                 values=["student", "staff", "admin"], state="readonly")
-        role_combo.grid(row=len(fields), column=1, padx=5, pady=5)
-        
-        # Buttons - use pack for this frame
-        button_frame = ttk.Frame(form_frame)
-        button_frame.pack(pady=20)
-        
-        ttk.Button(button_frame, text="Register", 
-                  command=lambda: self.register_user(register_window)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", 
-                  command=register_window.destroy).pack(side='left', padx=5)
-    
-    def register_user(self, window):
-        """Handle user registration"""
-        try:
-            # Get form data
-            data = {}
-            for field, entry in self.register_entries.items():
-                data[field] = entry.get().strip()
-            
-            # Validate
-            if not all(data.values()):
-                messagebox.showerror("Error", "Please fill in all fields")
-                return
-            
-            if data['password'] != data['confirm_password']:
-                messagebox.showerror("Error", "Passwords do not match")
-                return
-            
-            # Register user (implement actual registration logic)
-            if self.create_user_account(data):
-                messagebox.showinfo("Success", "User registered successfully!")
-                window.destroy()
-            else:
-                messagebox.showerror("Error", "Registration failed")
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"Registration failed: {str(e)}")
-
-    def create_user_account(self, data):
-        """Create user account - integrate with central auth system"""
-        try:
-            if not self.auth:
-                messagebox.showerror("Error", "Authentication system not available")
-                return False
-
-            # Extract user data
-            username = data.get('username', '')
-            password = data.get('password', '')
-            email = data.get('email', '')
-            first_name = data.get('first_name', '')
-            last_name = data.get('last_name', '')
-            role = data.get('role', 'student')  # Default to student role
-
-            # Validate required fields
-            if not username or not password or not email:
-                messagebox.showerror("Error", "Username, password, and email are required")
-                return False
-
-            # Create user via central auth system
-            user_id = self.auth.create_user(
-                username=username,
-                password=password,
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                role=role,
-                password_reset_required=False
-            )
-
-            if not user_id:
-                messagebox.showerror("Error", "Failed to create user account")
-                return False
-
-            # Log activity
-            if ACTIVITY_LOGGER_AVAILABLE:
-                log_activity('create', 'user', user_id=user_id, details={
-                    'username': username,
-                    'email': email,
-                    'role': role,
-                    'source': 'helpdesk_registration'
-                })
-
-            return True
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create user account: {str(e)}")
-            return False
-
+    # Login/logout/registration removed - use main GUI for authentication
     def switch_to_cli(self):
         """Switch to CLI mode"""
         self.root.withdraw()  # Hide GUI

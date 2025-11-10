@@ -63,7 +63,25 @@ class StudentUnionGUI:
         if not parent:
             self.setup_database()
             self.setup_gui()
-            self.show_login_screen()
+            # Check if user is authenticated via central system
+            auth = UserAuth()
+            if not auth.is_logged_in():
+                messagebox.showerror(
+                    "Authentication Required",
+                    "Please log in through the main University System GUI.\n\n"
+                    "Run: python run.py --gui\n\n"
+                    "Student Union can only be accessed after logging in through the main system."
+                )
+                self.root.destroy()
+                return
+            # User is authenticated, get their info
+            self.current_user = {
+                'id': auth.current_user['id'],
+                'username': auth.current_user['username'],
+                'email': auth.current_user.get('email', ''),
+                'role': auth.current_user['role']
+            }
+            self.show_main_dashboard()
     
     # ------------------------------------------------------------------ helpers
     def _safe_db_call(self, operation_func, *args, **kwargs):
@@ -300,203 +318,6 @@ class StudentUnionGUI:
         elif hasattr(self, 'status_bar'):
             self.status_bar.config(text=status_text)
         
-    def show_login_screen(self):
-        """Display the login screen"""
-        self.clear_content()
-        
-        # Center the login form
-        login_frame = ttk.Frame(self.content_frame)
-        login_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-        
-        # Title
-        title_label = ttk.Label(login_frame, text="Student Union Management System", 
-                               font=('Arial', 16, 'bold'))
-        title_label.pack(pady=20)
-        
-        # Login form
-        form_frame = ttk.Frame(login_frame)
-        form_frame.pack(pady=20)
-        
-        ttk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.username_entry = ttk.Entry(form_frame, width=25)
-        self.username_entry.grid(row=0, column=1, padx=10, pady=5)
-        
-        ttk.Label(form_frame, text="Password:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.password_entry = ttk.Entry(form_frame, width=25, show="*")
-        self.password_entry.grid(row=1, column=1, padx=10, pady=5)
-        
-        # Buttons
-        button_frame = ttk.Frame(login_frame)
-        button_frame.pack(pady=20)
-        
-        ttk.Button(button_frame, text="Login", command=self.login).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Register", command=self.show_register_screen).pack(side=tk.LEFT, padx=5)
-        
-        if CLI_AVAILABLE:
-            ttk.Button(button_frame, text="CLI Mode", command=self.switch_to_cli).pack(side=tk.LEFT, padx=5)
-        
-        # Bind Enter key to login
-        self.root.bind('<Return>', lambda e: self.login())
-        
-        self.username_entry.focus()
-    
-    def login(self):
-        """Handle user login"""
-        username = self.username_entry.get().strip()
-        password = self.password_entry.get().strip()
-
-        if not username or not password:
-            messagebox.showerror("Error", "Please enter both username and password")
-            return
-
-        try:
-            # Use centralized authentication system
-            auth_system = UserAuth()
-            result = auth_system.login(username, password)
-
-            # Handle different return types from login
-            if isinstance(result, dict) and result.get('success') and result.get('requires_2fa'):
-                # 2FA is required - for now, show error message
-                # TODO: Implement 2FA input dialog in future
-                messagebox.showerror("2FA Required", "Two-factor authentication is enabled for this account. Please use the CLI interface for 2FA login.")
-                return
-            elif result is True:
-                # Login successful, get user data from auth_system.current_user
-                if auth_system.current_user:
-                    self.current_user = {
-                        'id': auth_system.current_user['id'],
-                        'username': auth_system.current_user['username'],
-                        'email': auth_system.current_user.get('email', ''),
-                        'role': auth_system.current_user['role']
-                    }
-
-                    self.update_status(f"Logged in as {username}")
-                    self.show_main_dashboard()
-                else:
-                    messagebox.showerror("Login Failed", "Authentication succeeded but user data is unavailable")
-            elif result == 'password_reset_required':
-                # Password reset is required
-                messagebox.showwarning("Password Reset Required", "You must change your password. Please use the CLI interface or contact an administrator.")
-            else:
-                # Login failed
-                messagebox.showerror("Login Failed", "Invalid username or password")
-
-        except Exception as e:
-            messagebox.showerror("Authentication Error", f"Login failed: {e}")
-    
-    def show_register_screen(self):
-        """Display the registration screen"""
-        register_window = tk.Toplevel(self.root)
-        register_window.title("Register New User")
-        register_window.geometry("400x600")  # Increased height to accommodate all fields
-        register_window.transient(self.root)
-        register_window.grab_set()
-        
-        # Center the window
-        register_window.geometry("+%d+%d" % (
-            self.root.winfo_rootx() + 50,
-            self.root.winfo_rooty() + 50
-        ))
-        
-        # Registration form
-        form_frame = ttk.Frame(register_window)
-        form_frame.pack(padx=20, pady=20, fill=tk.BOTH, expand=True)
-        
-        ttk.Label(form_frame, text="Register New User", font=('Arial', 14, 'bold')).pack(pady=10)
-        
-        # Form fields
-        fields = {}
-        
-        # Username
-        ttk.Label(form_frame, text="Username:").pack(anchor=tk.W, pady=(10,0))
-        fields['username'] = ttk.Entry(form_frame, width=30)
-        fields['username'].pack(fill=tk.X, pady=(0,10))
-        
-        # Password
-        ttk.Label(form_frame, text="Password:").pack(anchor=tk.W)
-        fields['password'] = ttk.Entry(form_frame, width=30, show="*")
-        fields['password'].pack(fill=tk.X, pady=(0,10))
-        
-        # Confirm Password
-        ttk.Label(form_frame, text="Confirm Password:").pack(anchor=tk.W)
-        fields['confirm_password'] = ttk.Entry(form_frame, width=30, show="*")
-        fields['confirm_password'].pack(fill=tk.X, pady=(0,10))
-        
-        # Email
-        ttk.Label(form_frame, text="Email:").pack(anchor=tk.W)
-        fields['email'] = ttk.Entry(form_frame, width=30)
-        fields['email'].pack(fill=tk.X, pady=(0,10))
-        
-        # Student ID
-        ttk.Label(form_frame, text="Student ID:").pack(anchor=tk.W)
-        fields['student_id'] = ttk.Entry(form_frame, width=30)
-        fields['student_id'].pack(fill=tk.X, pady=(0,10))
-        
-        # First Name
-        ttk.Label(form_frame, text="First Name:").pack(anchor=tk.W)
-        fields['first_name'] = ttk.Entry(form_frame, width=30)
-        fields['first_name'].pack(fill=tk.X, pady=(0,10))
-        
-        # Last Name
-        ttk.Label(form_frame, text="Last Name:").pack(anchor=tk.W)
-        fields['last_name'] = ttk.Entry(form_frame, width=30)
-        fields['last_name'].pack(fill=tk.X, pady=(0,10))
-        
-        # Course
-        ttk.Label(form_frame, text="Course:").pack(anchor=tk.W)
-        fields['course'] = ttk.Combobox(form_frame, values=['CS', 'DS', 'Other'], width=27)
-        fields['course'].pack(fill=tk.X, pady=(0,10))
-        
-        # Year of Study
-        ttk.Label(form_frame, text="Year of Study:").pack(anchor=tk.W)
-        fields['year'] = ttk.Combobox(form_frame, values=['1', '2', '3', '4'], width=27)
-        fields['year'].pack(fill=tk.X, pady=(0,10))
-        
-        # Buttons
-        button_frame = ttk.Frame(form_frame)
-        button_frame.pack(pady=20)
-        
-        def register_user():
-            # Validate fields
-            username = fields['username'].get().strip()
-            password = fields['password'].get()
-            confirm_password = fields['confirm_password'].get()
-            email = fields['email'].get().strip()
-            student_id = fields['student_id'].get().strip()
-            first_name = fields['first_name'].get().strip()
-            last_name = fields['last_name'].get().strip()
-            course = fields['course'].get().strip()
-            year = fields['year'].get()
-
-            # Validation
-            if not all([username, password, email, student_id, first_name, last_name]):
-                messagebox.showerror("Error", "Please fill in all required fields")
-                return
-
-            if password != confirm_password:
-                messagebox.showerror("Error", "Passwords do not match")
-                return
-
-            if len(password) < 6:
-                messagebox.showerror("Error", "Password must be at least 6 characters")
-                return
-
-            # Student creation has been centralized to main GUI and CLI
-            messagebox.showinfo(
-                "Student Registration",
-                "Student registration has been centralized for data consistency.\n\n"
-                "Please use one of the following methods to register:\n\n"
-                "1. Main GUI: Student Management > Create Student\n"
-                "2. CLI: Student Management menu\n\n"
-                "After registration, you can log in to the Student Union portal.\n\n"
-                "This ensures consistent student data across all university systems."
-            )
-            register_window.destroy()
-        
-        ttk.Button(button_frame, text="Register", command=register_user).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=register_window.destroy).pack(side=tk.LEFT, padx=5)
-        
-        fields['username'].focus()
             
     def switch_to_cli(self):
         """Switch to CLI mode"""
@@ -553,7 +374,6 @@ class StudentUnionGUI:
         self.menu_bar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Profile", command=self.show_profile)
         file_menu.add_separator()
-        file_menu.add_command(label="Logout", command=self.logout)
         file_menu.add_command(label="Exit", command=self.root.quit)
         
         # Tools menu
@@ -2510,14 +2330,6 @@ This GUI version maintains backward compatibility with the CLI system.
 © 2024 Student Union Management System"""
         
         messagebox.showinfo("About", about_text)
-    
-    def logout(self):
-        """Logout current user"""
-        response = messagebox.askyesno("Logout", "Are you sure you want to logout?")
-        if response:
-            self.current_user = None
-            self.update_status("Logged out")
-            self.show_login_screen()
     
     def run(self):
         """Run the GUI application"""
