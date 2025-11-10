@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Authentication Warning** - Fixed "No auth instance configured, using dummy auth" warning
+  - Enhanced `set_auth()` in main_gui.py to always register auth with shared_context
+  - Added early auth initialization check at module level
+  - Ensures auth is properly registered before any GUI modules are imported
+  - Prevents fallback to dummy auth during normal operation
+
+
 - **Authentication Errors** - Fixed multiple GUIs using non-existent authentication methods
   - **is_logged_in() method (9 GUIs):**
     - Health Portal GUI: Changed `auth.is_logged_in()` to `auth.current_user` check

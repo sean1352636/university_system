@@ -115,12 +115,31 @@ except ImportError:
 
 auth = None
 
+# Initialize shared_context auth early to prevent warnings during imports
+try:
+    from university_system.infrastructure.shared_context import set_auth as set_shared_auth, get_auth
+    # Try to get existing auth or set a placeholder
+    try:
+        existing_auth = get_auth()
+        if existing_auth is not None:
+            auth = existing_auth
+    except:
+        pass  # No existing auth, will be set later
+except ImportError:
+    set_shared_auth = lambda x: None
+    get_auth = lambda: None
+
 def set_auth(auth_instance):
     global auth
     auth = auth_instance
     # Also set it in the global auth instance if available
     if HAS_AUTH:
         set_auth_instance(auth_instance)
+    # Set in shared_context as well
+    try:
+        set_shared_auth(auth_instance)
+    except:
+        pass
 
 
 def _safe_entry_insert(entry_widget, value, index=0) -> None:
@@ -705,12 +724,8 @@ def init_gui(session_user=None):
             auth = UserAuth()
             safe_auth_check(auth)
 
-        # Register auth instance with shared_context to prevent "No auth instance" warnings
-        try:
-            from university_system.infrastructure.shared_context import set_auth
-            set_auth(auth)
-        except ImportError:
-            pass  # shared_context not available, that's ok
+        # Register auth instance with shared_context and local auth
+        set_auth(auth)
 
     # If session_user is provided, set it as the current user
     if session_user is not None:
