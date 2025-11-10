@@ -8,6 +8,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Course Management GUI** - Implemented comprehensive role-based interface filtering
+  - **New Features**:
+    * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`
+    * Integrated with existing UserAuth authentication system
+    * Dynamic UI adaptation based on logged-in user's role
+  - **Admin Users** - Full access to all features:
+    * All menu items (File, Courses, Scheduling, Enrollment, Analytics, Tools)
+    * All buttons (Create, Edit, Delete courses)
+    * Database backup, bulk operations, system maintenance
+    * Full instructor management (Add, View, Assign)
+    * Data validation and import/export capabilities
+  - **Staff/Instructor Users** - Limited administrative access:
+    * Can create and edit courses (cannot delete)
+    * Can import/export course data
+    * Can manage prerequisites and course status
+    * Can view instructor list (cannot add or assign)
+    * Can access scheduling and course analytics
+    * Can view enrollment reports and department statistics
+    * No access to: Bulk updates, system maintenance, data validation
+  - **Student Users** - Read-only access:
+    * Can view all courses and search courses
+    * Can find alternative courses
+    * Can view course schedules and waitlists
+    * Can view limited analytics (course analytics and history)
+    * No access to: Course creation/editing/deletion, instructor management, enrollment processing, reporting tools
+  - **UI Changes**:
+    * Menu bar dynamically shows/hides items based on role
+    * Buttons in tabs conditionally rendered based on permissions
+    * Course List tab: Role-based button visibility
+    * Analytics tab: Admin/Staff-only controls
+    * Instructors tab: Admin-only for add/assign, Staff can view
+  - **Files Modified**:
+    * `university_system/modules/domain/academics/gui/course_management_gui.py:96-651, 747-845`
+  - **Impact**: Improved security and user experience by showing only relevant features to each user role
+
+### Added
 - **Enhanced Console Output Utility** - Created professional terminal formatting system for improved user experience
   - **New Module**: `university_system/modules/shared/utils/console_output.py` (650+ lines)
   - **Features**:

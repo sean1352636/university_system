@@ -106,8 +106,35 @@ class CourseManagementGUI:
         except Exception:
             pass
         self.root.update_idletasks()
-            
-    
+
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth.is_logged_in():
+                user = self.auth.get_current_user()
+                if user and hasattr(user, 'role'):
+                    return user.role.lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/instructor"""
+        role = self.get_user_role()
+        return role in ['staff', 'instructor']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
+
     def init_database(self):
         """Initialize the database schema - FIXED: Better error handling"""
         try:
@@ -507,66 +534,117 @@ class CourseManagementGUI:
         return wrapper
     
     def create_menu(self):
-        """Create the main menu bar"""
+        """Create the main menu bar with role-based access"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Import CSV", command=self.show_import_csv)
-        file_menu.add_command(label="Export CSV", command=self.show_export_csv)
-        file_menu.add_separator()
-        file_menu.add_command(label="Database Backup", command=self.backup_database)
-        file_menu.add_separator()
+
+        # Admin and Staff can import/export
+        if is_admin or is_staff:
+            file_menu.add_command(label="Import CSV", command=self.show_import_csv)
+            file_menu.add_command(label="Export CSV", command=self.show_export_csv)
+            file_menu.add_separator()
+
+        # Admin only - Database backup
+        if is_admin:
+            file_menu.add_command(label="Database Backup", command=self.backup_database)
+            file_menu.add_separator()
+
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
+
         # Course menu
         course_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Courses", menu=course_menu)
-        course_menu.add_command(label="Create Course", command=self.show_create_course)
+
+        # Admin and Staff can create courses
+        if is_admin or is_staff:
+            course_menu.add_command(label="Create Course", command=self.show_create_course)
+
+        # Everyone can view and search
         course_menu.add_command(label="View All Courses", command=self.refresh_course_list)
         course_menu.add_command(label="Search Courses", command=self.show_search_dialog)
-        course_menu.add_separator()
-        course_menu.add_command(label="Manage Prerequisites", command=self.show_prerequisites_window)
-        course_menu.add_command(label="Remove prerequisite", command=self.show_remove_prerequisite)
-        course_menu.add_command(label="Find Alternatives", command=self.find_alternative_courses)
-        course_menu.add_command(label="Manage Status", command=self.show_manage_status)
 
-        # Scheduling menu (NEW)
-        schedule_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Scheduling", menu=schedule_menu)
-        schedule_menu.add_command(label="Create Schedule", command=self.show_create_schedule)
-        schedule_menu.add_command(label="Update Schedule", command=self.show_update_schedule)
-        schedule_menu.add_command(label="View Schedules", command=self.show_view_schedules)
-        
-        # Enrollment menu (NEW)
-        enrollment_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Enrollment", menu=enrollment_menu)
-        enrollment_menu.add_command(label="Manage Waitlists", command=self.show_add_waitlist)
-        enrollment_menu.add_command(label="Process Waitlists", command=self.show_process_waitlist)
-        enrollment_menu.add_command(label="View Waitlists", command=self.show_view_waitlists)
-        
+        # Admin and Staff can manage prerequisites
+        if is_admin or is_staff:
+            course_menu.add_separator()
+            course_menu.add_command(label="Manage Prerequisites", command=self.show_prerequisites_window)
+            course_menu.add_command(label="Remove prerequisite", command=self.show_remove_prerequisite)
+
+        # Everyone can find alternatives
+        course_menu.add_command(label="Find Alternatives", command=self.find_alternative_courses)
+
+        # Admin and Staff can manage status
+        if is_admin or is_staff:
+            course_menu.add_command(label="Manage Status", command=self.show_manage_status)
+
+        # Scheduling menu - Admin and Staff only
+        if is_admin or is_staff:
+            schedule_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Scheduling", menu=schedule_menu)
+            schedule_menu.add_command(label="Create Schedule", command=self.show_create_schedule)
+            schedule_menu.add_command(label="Update Schedule", command=self.show_update_schedule)
+            schedule_menu.add_command(label="View Schedules", command=self.show_view_schedules)
+        elif is_student:
+            # Students can only view schedules
+            schedule_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Scheduling", menu=schedule_menu)
+            schedule_menu.add_command(label="View Schedules", command=self.show_view_schedules)
+
+        # Enrollment menu - Admin and Staff only
+        if is_admin or is_staff:
+            enrollment_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Enrollment", menu=enrollment_menu)
+            enrollment_menu.add_command(label="Manage Waitlists", command=self.show_add_waitlist)
+            enrollment_menu.add_command(label="Process Waitlists", command=self.show_process_waitlist)
+            enrollment_menu.add_command(label="View Waitlists", command=self.show_view_waitlists)
+        elif is_student:
+            # Students can only view waitlists
+            enrollment_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Enrollment", menu=enrollment_menu)
+            enrollment_menu.add_command(label="View Waitlists", command=self.show_view_waitlists)
+
         # Analytics menu
         analytics_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Analytics", menu=analytics_menu)
-        analytics_menu.add_command(label="Course Analytics", command=self.show_analytics)
-        analytics_menu.add_command(label="Enrollment Report", command=self.show_enrollment_report)
-        analytics_menu.add_command(label="Department Statistics", command=self.show_department_stats)
-        analytics_menu.add_command(label="Course History", command=self.show_course_history)  # NEW
-        analytics_menu.add_command(label="Detailed Analytics", command=self.show_course_analytics_detailed)
-   
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Bulk Update", command=self.show_bulk_update)
-        tools_menu.add_command(label="System Maintenance", command=self.show_system_maintenance)  # Updated
-        tools_menu.add_command(label="Course Recommendations", command=self.show_recommend_courses)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="Advanced Search", command=self.show_advanced_search)
-        tools_menu.add_command(label="Data Validation", command=self.show_data_validation)
 
-        # Help menu
+        # Admin and Staff get full analytics
+        if is_admin or is_staff:
+            analytics_menu.add_command(label="Course Analytics", command=self.show_analytics)
+            analytics_menu.add_command(label="Enrollment Report", command=self.show_enrollment_report)
+            analytics_menu.add_command(label="Department Statistics", command=self.show_department_stats)
+            analytics_menu.add_command(label="Course History", command=self.show_course_history)
+            analytics_menu.add_command(label="Detailed Analytics", command=self.show_course_analytics_detailed)
+        elif is_student:
+            # Students get limited analytics
+            analytics_menu.add_command(label="Course Analytics", command=self.show_analytics)
+            analytics_menu.add_command(label="Course History", command=self.show_course_history)
+
+        # Tools menu - Admin and Staff only
+        if is_admin or is_staff:
+            tools_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Tools", menu=tools_menu)
+
+            # Admin only - bulk operations
+            if is_admin:
+                tools_menu.add_command(label="Bulk Update", command=self.show_bulk_update)
+                tools_menu.add_command(label="System Maintenance", command=self.show_system_maintenance)
+
+            tools_menu.add_command(label="Course Recommendations", command=self.show_recommend_courses)
+            tools_menu.add_separator()
+            tools_menu.add_command(label="Advanced Search", command=self.show_advanced_search)
+
+            # Admin only - data validation
+            if is_admin:
+                tools_menu.add_command(label="Data Validation", command=self.show_data_validation)
+
+        # Help menu - available to everyone
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=self.show_about)
@@ -666,13 +744,26 @@ class CourseManagementGUI:
         # Bind double-click event
         self.course_tree.bind("<Double-1>", self.on_course_double_click)
         
-        # Buttons frame
+        # Buttons frame - Role-based access
         buttons_frame = ttk.Frame(course_frame)
         buttons_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        ttk.Button(buttons_frame, text="Create Course", command=self.show_create_course).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Edit Course", command=self.edit_selected_course).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Delete Course", command=self.delete_selected_course).pack(side=tk.LEFT, padx=5)
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+
+        # Admin and Staff can create courses
+        if is_admin or is_staff:
+            ttk.Button(buttons_frame, text="Create Course", command=self.show_create_course).pack(side=tk.LEFT, padx=5)
+
+        # Admin and Staff can edit courses
+        if is_admin or is_staff:
+            ttk.Button(buttons_frame, text="Edit Course", command=self.edit_selected_course).pack(side=tk.LEFT, padx=5)
+
+        # Only Admin can delete courses
+        if is_admin:
+            ttk.Button(buttons_frame, text="Delete Course", command=self.delete_selected_course).pack(side=tk.LEFT, padx=5)
+
+        # Everyone can refresh
         ttk.Button(buttons_frame, text="Refresh", command=self.refresh_course_list).pack(side=tk.LEFT, padx=5)
         
         # Load initial data
@@ -705,35 +796,50 @@ class CourseManagementGUI:
         self.load_course_selector_options()
     
     def create_analytics_tab(self):
-        """Create the analytics tab"""
+        """Create the analytics tab with role-based access"""
         analytics_frame = ttk.Frame(self.notebook)
         self.notebook.add(analytics_frame, text="Analytics")
-        
-        # Analytics controls
-        controls_frame = ttk.LabelFrame(analytics_frame, text="Analytics Controls", padding=10)
-        controls_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        ttk.Button(controls_frame, text="Generate Course Analytics", command=self.generate_analytics).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Enrollment Report", command=self.show_enrollment_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Department Stats", command=self.show_department_stats).pack(side=tk.LEFT, padx=5)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+
+        # Analytics controls - Admin and Staff only
+        if is_admin or is_staff:
+            controls_frame = ttk.LabelFrame(analytics_frame, text="Analytics Controls", padding=10)
+            controls_frame.pack(fill=tk.X, padx=5, pady=5)
+
+            ttk.Button(controls_frame, text="Generate Course Analytics", command=self.generate_analytics).pack(side=tk.LEFT, padx=5)
+            ttk.Button(controls_frame, text="Enrollment Report", command=self.show_enrollment_report).pack(side=tk.LEFT, padx=5)
+            ttk.Button(controls_frame, text="Department Stats", command=self.show_department_stats).pack(side=tk.LEFT, padx=5)
+
         # Analytics display
         self.analytics_text = ScrolledText(analytics_frame, wrap=tk.WORD, height=25)
         self.analytics_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     
     def create_instructors_tab(self):
-        """Create the instructors tab"""
+        """Create the instructors tab with role-based access"""
         instructors_frame = ttk.Frame(self.notebook)
         self.notebook.add(instructors_frame, text="Instructors")
-        
-        # Instructor controls
-        controls_frame = ttk.LabelFrame(instructors_frame, text="Instructor Management", padding=10)
-        controls_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        ttk.Button(controls_frame, text="Add Instructor", command=self.show_add_instructor).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="View Instructors", command=self.refresh_instructor_list).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Assign to Course", command=self.show_assign_instructor).pack(side=tk.LEFT, padx=5)
-        
+
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+
+        # Instructor controls - Admin and Staff only
+        if is_admin or is_staff:
+            controls_frame = ttk.LabelFrame(instructors_frame, text="Instructor Management", padding=10)
+            controls_frame.pack(fill=tk.X, padx=5, pady=5)
+
+            # Admin only - Add instructor
+            if is_admin:
+                ttk.Button(controls_frame, text="Add Instructor", command=self.show_add_instructor).pack(side=tk.LEFT, padx=5)
+
+            # Admin and Staff can view instructors
+            ttk.Button(controls_frame, text="View Instructors", command=self.refresh_instructor_list).pack(side=tk.LEFT, padx=5)
+
+            # Admin only - Assign to course
+            if is_admin:
+                ttk.Button(controls_frame, text="Assign to Course", command=self.show_assign_instructor).pack(side=tk.LEFT, padx=5)
+
         # Instructor list
         self.instructor_text = ScrolledText(instructors_frame, wrap=tk.WORD, height=25)
         self.instructor_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
