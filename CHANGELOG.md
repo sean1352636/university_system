@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fixed `submitted_date` → `submission_date` in grant_applications query
     - Fixed `publication_year` → extracted year from `publication_date` in research_publications
     - Fixed `project_id` → `assigned_project_id` in research_equipment query
+    - Fixed milestones query: Changed from `project_milestones` table to `research_milestones` table
+    - Fixed column names: `due_date` → `target_date` in milestones query
     - Added graceful handling for non-existent `irb_applications` table
   - Financial Aid System:
     - Fixed `sa.submitted_date` → `sa.application_date` in scholarship_applications queries (5 locations)

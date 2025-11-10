@@ -451,9 +451,9 @@ class ResearchGrantsGUI:
             with get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT milestone_id, project_id, milestone_description,
-                           due_date, completion_date, status
-                    FROM project_milestones
-                    ORDER BY due_date
+                           target_date as due_date, completion_date, status
+                    FROM research_milestones
+                    ORDER BY target_date
                     LIMIT 100
                 ''')
 
@@ -461,7 +461,7 @@ class ResearchGrantsGUI:
                     values = (
                         row['milestone_id'],
                         row['project_id'],
-                        row['milestone_description'],
+                        row['milestone_description'] or 'N/A',
                         row['due_date'],
                         row['completion_date'] or 'Not completed',
                         row['status']
