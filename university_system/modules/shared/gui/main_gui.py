@@ -5489,11 +5489,15 @@ University Administration"""
             if not term:
                 messagebox.showerror("Error", "Please enter a search term")
                 return
-            
+
             try:
                 # Check if student_tree exists
                 if not hasattr(self, 'student_tree') or not self.student_tree:
-                    messagebox.showerror("Error", "Student list not initialized. Please go to Student Records first.")
+                    # Offer to open Student Records window
+                    if messagebox.askyesno("Open Student Records",
+                                          "The Student Records window needs to be open to search.\n\nWould you like to open it now?"):
+                        dialog.destroy()
+                        self.show_student_records()
                     return
 
                 # Clear existing data
@@ -5548,11 +5552,21 @@ University Administration"""
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
-        
+
+        def show_all_and_close():
+            """Show all students and close search dialog"""
+            try:
+                if hasattr(self, 'student_tree') and self.student_tree:
+                    self.view_students()
+                dialog.destroy()
+            except Exception as e:
+                print(f"Error showing all students: {e}")
+                dialog.destroy()
+
         ttk.Button(button_frame, text="Search", command=perform_search).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Show All", command=lambda: [self.view_students(), dialog.destroy()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Show All", command=show_all_and_close).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
+
         search_term.focus()
 
     def export_data_dialog(self):

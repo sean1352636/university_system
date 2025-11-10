@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Student Search Dialog Error** - Fixed "invalid command" error in student search functionality
+  - **Problem**: Clicking "Show All" button in search dialog caused "invalid command" error
+  - **Root Cause**: Lambda function using list syntax `lambda: [func1(), func2()]` which is invalid Tkinter command syntax
+  - **Additional Issue**: Search dialog could be opened without Student Records window, causing undefined student_tree reference
+  - **Fixes Applied**:
+    1. Replaced invalid lambda list syntax with proper function `show_all_and_close()`
+    2. Added safety check for student_tree existence before calling view_students()
+    3. Improved error message when search opened without Student Records window
+    4. Added prompt to open Student Records window if not already open
+  - **Impact**: Student search now works reliably for staff/admin users
+  - **File Modified**: `university_system/modules/shared/gui/main_gui.py:5548-5566, 5486-5501`
+
 ### Added
 - **Student Self-Service Record Access** - Students now automatically see their own record when clicking "Student Records"
   - **Feature**: When a student clicks "Student Records", the system automatically displays their personal record instead of a list
