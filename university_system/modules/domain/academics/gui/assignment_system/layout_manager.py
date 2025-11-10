@@ -218,17 +218,21 @@ class LayoutManager:
             
 
     def get_navigation_sections(self):
-        """Get navigation sections based on user permissions - FINAL VERSION"""
+        """Get navigation sections based on user role"""
         sections = []
-        
-        # Dashboard (always available)
+
+        is_admin = self.gui.is_admin()
+        is_staff = self.gui.is_staff()
+        is_student = self.gui.is_student()
+
+        # Dashboard (always available to everyone)
         sections.append(("DASHBOARD", [
             ("📊 Dashboard", self.gui.show_dashboard),
             ("📅 Calendar", self.gui.show_calendar)
         ]))
 
-        # Student features
-        if self.auth.check_permission('view_assignments'):
+        # Student features - Available to all users (students, staff, admin)
+        if is_student or is_staff or is_admin:
             student_buttons = [
                 ("📄 My Assignments", self.gui.show_my_assignments),
                 ("📤 Submit Assignment", self.gui.show_submit_assignment),
@@ -241,8 +245,8 @@ class LayoutManager:
             ]
             sections.append(("STUDENT", student_buttons))
 
-        # Instructor features
-        if self.auth.check_permission('manage_assignments'):
+        # Instructor features - Staff and Admin only
+        if is_staff or is_admin:
             instructor_buttons = [
                 ("➕ Create Assignment", self.gui.show_create_assignment),
                 ("📝 Create Assessment", self.gui.show_create_assessment),
@@ -258,8 +262,8 @@ class LayoutManager:
             ]
             sections.append(("INSTRUCTOR", instructor_buttons))
 
-        # Analytics
-        if self.auth.check_permission('view_all_submissions'):
+        # Analytics - Staff and Admin only
+        if is_staff or is_admin:
             analytics_buttons = [
                 ("📈 Analytics Dashboard", self.gui.show_analytics),
                 ("🔍 Advanced Analytics", self.gui.generate_advanced_analytics),
@@ -268,8 +272,8 @@ class LayoutManager:
             ]
             sections.append(("ANALYTICS", analytics_buttons))
 
-        # Administration
-        if self.auth.check_permission('manage_assignments'):
+        # Administration - Admin only
+        if is_admin:
             admin_buttons = [
                 ("📋 View All Assignments (Admin)", self.gui.show_admin_all_assignments),
                 ("📝 Create Rubric", self.gui.show_create_rubric),
@@ -281,7 +285,7 @@ class LayoutManager:
                 ("🧹 Data Cleanup", self.gui.cleanup_old_data)
             ]
             sections.append(("ADMIN", admin_buttons))
-            
+
         return sections
     
 

@@ -90,6 +90,34 @@ class AssignmentGUI:
         except:
             return self.auth.user_role in ['Admin', 'Faculty']
 
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if hasattr(self.auth, 'current_user') and self.auth.current_user:
+                role = self.auth.current_user.get('role', '').lower()
+                return role
+            elif hasattr(self.auth, 'user_role'):
+                return self.auth.user_role.lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/instructor/faculty"""
+        role = self.get_user_role()
+        return role in ['staff', 'instructor', 'faculty']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def _launch_gui_feature(self, callback, feature_name):
         """Launch a GUI feature with error handling"""
         try:

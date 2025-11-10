@@ -8,6 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Assignment System GUI** - Implemented comprehensive role-based interface filtering
+  - **New Features**:
+    * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`
+    * Integrated with existing UserAuth authentication system
+    * Dynamic sidebar navigation based on logged-in user's role
+  - **Admin Users** - Full access to all features:
+    * All sections: Dashboard, Student, Instructor, Analytics, Admin
+    * Can view all assignments (admin view)
+    * Can create and manage rubrics
+    * Can manage assignment templates
+    * Can review extension requests
+    * System maintenance, backup, and data cleanup tools
+  - **Staff/Instructor Users** - Teaching and grading access:
+    * Dashboard and Calendar
+    * Student features (can also submit as student if needed)
+    * Full instructor section: Create assignments, assessments, group assignments
+    * Manage assignments and grade submissions
+    * Grade with rubrics, view all submissions
+    * Manage groups and peer reviews
+    * Send messages to students
+    * Analytics dashboard, advanced analytics, custom reports
+    * File preview capabilities
+    * No access to: Admin-only functions (system maintenance, backup, templates, rubrics)
+  - **Student Users** - Student-focused interface:
+    * Dashboard and Calendar
+    * View and submit assignments
+    * View submissions and request extensions
+    * Peer review dashboard and complete peer reviews
+    * View messages and manage notifications
+    * No access to: Instructor features, grading, analytics, admin functions
+  - **UI Changes**:
+    * Sidebar navigation dynamically shows/hides sections based on role
+    * Students see: Dashboard + Student section only
+    * Staff see: Dashboard + Student + Instructor + Analytics sections
+    * Admin sees: All sections including Admin-only features
+  - **Files Modified**:
+    * `university_system/modules/domain/academics/gui/assignment_system/assignment_gui.py:86-119`
+    * `university_system/modules/domain/academics/gui/assignment_system/layout_manager.py:220-289`
+  - **Impact**: Cleaner interface showing only relevant features to each user role, improved security
+
 - **Role-Based UI Access Control in Course Management GUI** - Implemented comprehensive role-based interface filtering
   - **New Features**:
     * Added role detection methods: `get_user_role()`, `is_admin()`, `is_staff()`, `is_student()`
