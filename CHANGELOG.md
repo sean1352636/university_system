@@ -30,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Usage**: Simple API with both class methods (`console.success()`) and convenience functions (`print_success()`)
   - **Files Created**:
     * `university_system/modules/shared/utils/console_output.py` - Main utility module
-    * `test_console_output.py` - Comprehensive demo script
+    * `university_system/tests/test_console_output.py` - Comprehensive demo script (runnable via `python3 -m university_system.tests.test_console_output`)
+  - **Documentation**: Added comprehensive usage guide to README.md with code examples
   - **Impact**: Replaces plain print statements throughout codebase with professional, colored output
 
 - **Advanced Search GUI: Improved Console Output** - Upgraded all console messages to use enhanced formatting
