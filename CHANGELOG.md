@@ -9,6 +9,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+**SECURITY: REMOVE STANDALONE AUTHENTICATION FROM CHATBOT SYSTEM (GUI + API ROUTES)** (2025-11-10)
+- **PURPOSE**: Eliminate chatbot's standalone authentication system (GUI login screens + Flask API routes)
+- **IMPACT**: Chatbot now requires users to authenticate through main application first
+- **SCOPE**: 2 files modified (chatbot GUI and Flask backend)
+- **SECURITY**: Removes dangerous standalone login implementation with direct password handling
+
+**FILES MODIFIED (2 files)**:
+
+1. **university_chatbot_gui.py** - Chatbot GUI interface
+   - Removed: create_login_screen() method (59 lines) - FULL LOGIN FORM
+   - Removed: show_login_screen() method (8 lines)
+   - Removed: handle_login() method (44 lines) - Direct auth.login() calls
+   - Removed: handle_guest_login() method (9 lines) - Guest authentication bypass
+   - Removed: handle_logout() method (34 lines) - Chatbot session logout
+   - Removed: _authenticate_user() helper method (18 lines) - Threading wrapper
+   - Removed: _handle_auth_fallback() helper method (15 lines) - Guest fallback
+   - Removed: _handle_auth_result() helper method (33 lines) - Login result handler
+   - Changed: __init__ now checks get_auth().is_logged_in() BEFORE creating GUI
+   - Changed: Raises RuntimeError with error dialog if not authenticated
+   - Changed: setup_current_user() simplified to use get_auth().get_current_user()
+   - Changed: Removed login_frame from create_widgets() and hide_all_screens()
+   - Impact: Chatbot GUI requires main GUI authentication before launching
+
+2. **university_chatbot.py** - Chatbot Flask backend
+   - Removed: authenticate_user_for_chatbot() method (82 lines) - Standalone auth
+   - Removed: logout_user() method (24 lines) - Session logout handler
+   - Removed: handle_failed_login() method (19 lines) - Failed login tracking
+   - Removed: authenticate_user() function (3 lines) - Wrapper function
+   - Changed: POST /api/auth/login returns 401 with "authenticate through main app" message
+   - Changed: POST /api/auth/logout returns 401 with "logout through main app" message
+   - Changed: POST /api/login returns 401 with "authenticate through main app" message
+   - Impact: All API authentication endpoints now reject login attempts with 401 Unauthorized
+   - Note: API routes cannot be removed (Flask service) so replaced with rejection responses
+
+**AUTHENTICATION FLOW (CORRECTED)**:
+- OLD: Chatbot GUI showed login screen → authenticate_user_for_chatbot() → created session
+- OLD: Chatbot API accepted /api/auth/login → authenticate_user_for_chatbot() → returned session token
+- NEW: User must authenticate via main GUI → get_auth().is_logged_in() → Chatbot GUI launches
+- NEW: API routes return 401 Unauthorized directing users to main application authentication
+
+**SECURITY IMPROVEMENTS**:
+- Eliminates password handling in chatbot GUI (no more username/password fields)
+- Removes guest authentication bypass vulnerability
+- Prevents API-based authentication bypass attempts
+- Enforces central authentication policy across all chatbot interfaces
+- Removes standalone session management in chatbot (224+ lines total)
+
+---
+
 **SECURITY: REMOVE STANDALONE LOGIN SCREENS FROM FINAL 4 DISCOVERED GUIs** (2025-11-10)
 - **PURPOSE**: Eliminate last remaining standalone login implementations from newly discovered GUI modules
 - **IMPACT**: All GUI modules now enforce central authentication exclusively

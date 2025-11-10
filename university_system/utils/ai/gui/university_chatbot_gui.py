@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 from university_system.utils.ai.university_chatbot import LIBRARIES_AVAILABLE
-from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 class ChatbotGUI:
     """Modern GUI interface for the University Chatbot"""
@@ -19,8 +19,17 @@ class ChatbotGUI:
         self.session_id = None
         self.conversation_active = False
 
-        # Use provided auth system or create new one
-        self.auth_system = auth_system if auth_system is not None else UserAuth()
+        # Use central authentication system
+        self.auth_system = get_auth()
+
+        # Check authentication BEFORE creating GUI
+        if not self.auth_system.is_logged_in():
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI first.\n\n"
+                "Run: python run.py --gui"
+            )
+            raise RuntimeError("Authentication required - not logged in")
 
         # Initialize main window
         if parent_window:
@@ -43,42 +52,30 @@ class ChatbotGUI:
         # Check if user is already authenticated and use current user
         self.setup_current_user()
 
-        # Show appropriate screen based on authentication status
-        if self.current_user:
-            self.show_chat_screen()
-        else:
-            self.show_login_screen()
+        # Show chat screen (user is already authenticated)
+        self.show_chat_screen()
 
     def setup_current_user(self):
-        """Setup current user from existing authentication system"""
+        """Setup current user from central authentication system"""
         try:
-            # Check if auth system has a current authenticated user
-            if self.auth_system and hasattr(self.auth_system, 'current_user') and self.auth_system.current_user:
-                auth_user = self.auth_system.current_user
+            # Get current user from central auth system
+            auth_user = self.auth_system.get_current_user()
 
+            if auth_user:
                 # auth_user is already a dictionary from UserAuth system
-                if isinstance(auth_user, dict):
-                    self.current_user = {
-                        "username": auth_user.get('username', 'Unknown'),
-                        "role": auth_user.get('role', 'user'),
-                        "permissions": auth_user.get('permissions', [])
-                    }
-                else:
-                    # Handle case where it might be an object
-                    self.current_user = {
-                        "username": getattr(auth_user, 'username', 'Unknown'),
-                        "role": getattr(auth_user, 'role', 'user'),
-                        "permissions": getattr(auth_user, 'permissions', [])
-                    }
-
+                self.current_user = {
+                    "username": auth_user.get('username', 'Unknown'),
+                    "role": auth_user.get('role', 'user'),
+                    "permissions": auth_user.get('permissions', [])
+                }
                 self.session_id = f"gui_{self.current_user['username']}_{int(time.time())}"
                 print(f"✓ Chatbot GUI: Using authenticated user {self.current_user['username']} ({self.current_user['role']})")
             else:
-                self.current_user = None
-                print("ℹ Chatbot GUI: No authenticated user - showing login screen")
+                # Should not reach here since we check auth in __init__
+                raise RuntimeError("No authenticated user found")
         except Exception as e:
             print(f"✗ Error setting up current user: {e}")
-            self.current_user = None
+            raise
 
     def setup_styles(self):
         """Setup modern styling for the GUI"""
@@ -273,12 +270,11 @@ class ChatbotGUI:
         # Main container
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Create different screens
-        self.create_login_screen()
+
+        # Create different screens (no login screen - use central auth)
         self.create_chat_screen()
         self.create_settings_screen()
-        
+
         # Create status bar
         self.create_status_bar()
 
@@ -1250,66 +1246,7 @@ class ChatbotGUI:
             return summary
         
         return update_session_stats, get_session_summary
-    
-    def create_login_screen(self):
-        """Create login/authentication screen"""
-        self.login_frame = ttk.Frame(self.main_frame)
-        
-        # Center the login form
-        login_container = ttk.Frame(self.login_frame)
-        login_container.place(relx=0.5, rely=0.5, anchor='center')
-        
-        # Title
-        title_label = ttk.Label(login_container, 
-                               text="University Chatbot", 
-                               style='Title.TLabel')
-        title_label.pack(pady=(0, 5))
-        
-        subtitle_label = ttk.Label(login_container, 
-                                  text="Student Support System", 
-                                  style='Subtitle.TLabel')
-        subtitle_label.pack(pady=(0, 30))
-        
-        # Login form
-        login_form = ttk.LabelFrame(login_container, text="Login", padding=20)
-        login_form.pack(fill=tk.X, padx=20)
-        
-        # Username
-        ttk.Label(login_form, text="Username:").pack(anchor=tk.W, pady=(0, 5))
-        self.username_entry = ttk.Entry(login_form, font=self.fonts['body'], width=30)
-        self.username_entry.pack(fill=tk.X, pady=(0, 10))
-        
-        # Password
-        ttk.Label(login_form, text="Password:").pack(anchor=tk.W, pady=(0, 5))
-        self.password_entry = ttk.Entry(login_form, show="*", font=self.fonts['body'], width=30)
-        self.password_entry.pack(fill=tk.X, pady=(0, 10))
-        
-        # 2FA Code (initially hidden)
-        self.mfa_frame = ttk.Frame(login_form)
-        ttk.Label(self.mfa_frame, text="2FA Code:").pack(anchor=tk.W, pady=(0, 5))
-        self.mfa_entry = ttk.Entry(self.mfa_frame, font=self.fonts['body'], width=30)
-        self.mfa_entry.pack(fill=tk.X, pady=(0, 10))
-        
-        # Login buttons
-        button_frame = ttk.Frame(login_form)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        self.login_button = ttk.Button(button_frame, 
-                                      text="Login", 
-                                      style='Primary.TButton',
-                                      command=self.handle_login)
-        self.login_button.pack(side=tk.LEFT, padx=(0, 10))
-        
-        guest_button = ttk.Button(button_frame, 
-                                 text="Continue as Guest", 
-                                 style='Secondary.TButton',
-                                 command=self.handle_guest_login)
-        guest_button.pack(side=tk.LEFT)
-        
-        # Status label for login feedback
-        self.login_status = ttk.Label(login_container, text="", foreground='red')
-        self.login_status.pack(pady=(10, 0))
-        
+
     def create_settings_screen(self):
         """Create settings/preferences screen"""
         self.settings_frame = ttk.Frame(self.main_frame)
@@ -1476,14 +1413,7 @@ For technical support, contact IT Services."""
         
         # Window close handler
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-    
-    def show_login_screen(self):
-        """Show the login screen"""
-        self.hide_all_screens()
-        self.login_frame.pack(fill=tk.BOTH, expand=True)
-        self.conversation_active = False
-        self.username_entry.focus()
-    
+
     def show_chat_screen(self):
         """Show the main chat screen"""
         self.hide_all_screens()
@@ -1508,62 +1438,9 @@ For technical support, contact IT Services."""
     
     def hide_all_screens(self):
         """Hide all screen frames"""
-        for frame in [self.login_frame, self.chat_frame, self.settings_frame]:
+        for frame in [self.chat_frame, self.settings_frame]:
             frame.pack_forget()
-    
-    def handle_login(self):
-        """Handle login button click"""
-        username = self.username_entry.get().strip()
-        password = self.password_entry.get().strip()
-        mfa_code = self.mfa_entry.get().strip() if self.mfa_frame.winfo_viewable() else None
 
-        if not username or not password:
-            self.login_status.config(text="Please enter username and password", foreground='red')
-            return
-
-        # Update status
-        self.login_status.config(text="Authenticating...", foreground='blue')
-        self.login_button.config(state='disabled')
-
-        # Use main authentication system directly
-        try:
-            if self.auth_system.login(username, password):
-                # Successful login
-                self.current_user = {
-                    "username": username,
-                    "role": getattr(self.auth_system.current_user, 'role', 'user'),
-                    "permissions": getattr(self.auth_system.current_user, 'permissions', [])
-                }
-                self.session_id = f"gui_{username}_{int(time.time())}"
-                self.login_status.config(text="Login successful!", foreground='green')
-
-                # Clear login form
-                self.username_entry.delete(0, tk.END)
-                self.password_entry.delete(0, tk.END)
-                self.mfa_entry.delete(0, tk.END)
-
-                # Show chat screen after brief delay
-                self.root.after(1000, self.show_chat_screen)
-            else:
-                # Login failed
-                self.login_status.config(text="Invalid username or password", foreground='red')
-                self.password_entry.delete(0, tk.END)
-
-        except Exception as e:
-            self.login_status.config(text=f"Authentication error: {e}", foreground='red')
-
-        self.login_button.config(state='normal')
-    
-    def handle_guest_login(self):
-        """Handle guest login"""
-        self.current_user = {
-            "username": "Guest",
-            "role": "guest", 
-            "permissions": []
-        }
-        self.session_id = f"gui_guest_{int(time.time())}"
-        self.show_chat_screen()
-    
     def handle_exit(self):
         """Handle exit to main GUI"""
         try:
@@ -1771,71 +1648,6 @@ For technical support, contact IT Services."""
             print(f"GUI error: {e}")
             messagebox.showerror("Application Error", f"An error occurred: {e}")
 
-    def _authenticate_user(self, username, password, mfa_code):
-        """Authenticate user (runs in separate thread)"""
-        try:
-            if self.chatbot.auth_system:
-                # Use chatbot's authentication
-                result = self.chatbot.authenticate_user_for_chatbot(username, password, mfa_code)
-                
-                # Update UI in main thread
-                self.root.after(0, self._handle_auth_result, result)
-            else:
-                # Fallback for no auth system
-                self.root.after(0, self._handle_auth_fallback, username)
-                
-        except Exception as e:
-            error_result = {"success": False, "error": f"Authentication error: {e}"}
-            self.root.after(0, self._handle_auth_result, error_result)
-
-    def _handle_auth_fallback(self, username):
-        """Handle authentication fallback when no auth system"""
-        self.current_user = {
-            "username": username,
-            "role": "guest",
-            "permissions": []
-        }
-        self.session_id = f"gui_{username}_{int(time.time())}"
-        self.login_status.config(text="Connected as guest", foreground='green')
-
-        # Clear form and show chat
-        self.username_entry.delete(0, tk.END)
-        self.password_entry.delete(0, tk.END)
-        self.root.after(1000, self.show_chat_screen)
-
-    def _handle_auth_result(self, result):
-        """Handle authentication result (runs in main thread)"""
-        self.login_button.config(state='normal')
-
-        if result.get("success"):
-            # Successful login
-            self.current_user = result["user"]
-            self.session_id = result.get("session_token", f"gui_{int(time.time())}")
-            self.login_status.config(text="Login successful!", foreground='green')
-
-            # Clear login form
-            self.username_entry.delete(0, tk.END)
-            self.password_entry.delete(0, tk.END)
-            self.mfa_entry.delete(0, tk.END)
-
-            # Show chat screen after brief delay
-            self.root.after(1000, self.show_chat_screen)
-
-        elif result.get("requires_2fa"):
-            # Show 2FA input
-            self.mfa_frame.pack(fill=tk.X, pady=(0, 10))
-            self.login_status.config(text="Please enter your 2FA code", foreground='blue')
-            self.mfa_entry.focus()
-
-        else:
-            # Login failed
-            error_msg = result.get("error", "Authentication failed")
-            self.login_status.config(text=error_msg, foreground='red')
-
-            # Clear password
-            self.password_entry.delete(0, tk.END)
-            self.mfa_entry.delete(0, tk.END)
-
     def _handle_bot_response(self, response):
         """Handle bot response (runs in main thread)"""
         # Add bot response to chat
@@ -1960,40 +1772,6 @@ class ChatbotManager:
             print("GUI not available - tkinter library missing")
             return
 
-    def handle_logout(self):
-        """Handle logout"""
-        if self.current_user and self.session_id and self.chatbot.auth_system:
-            # Attempt to logout from chatbot system
-            try:
-                self.chatbot.logout_user(self.session_id)
-            except:
-                pass  # Ignore logout errors
-        
-        # Clear user data
-        self.current_user = None
-        self.session_id = None
-        self._welcome_shown = False
-        
-        # Clear chat
-        self.chat_display.config(state=tk.NORMAL)
-        self.chat_display.delete(1.0, tk.END)
-        self.chat_display.config(state=tk.DISABLED)
-        
-        # Reset login form
-        self.login_status.config(text="")
-        self.mfa_frame.pack_forget()
-        
-        # Show login screen
-        self.show_login_screen()
-        
-        try:
-            gui = ChatbotGUI(self.chatbot)
-            gui.run()
-        except Exception as e:
-            print(f"GUI startup failed: {e}")
-            print("Falling back to console interface...")
-            self.chatbot.run_console_interface()
-    
     def run_web_interface(self):
         """Run web interface"""
         if not LIBRARIES_AVAILABLE.get('flask', False):

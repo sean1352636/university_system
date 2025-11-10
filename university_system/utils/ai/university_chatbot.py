@@ -1315,88 +1315,9 @@ class UniversityChatbot:
         for directory in [self.log_dir, self.upload_dir, self.models_dir]:
             os.makedirs(directory, exist_ok=True)
 
-    # Authentication and Security
-    def authenticate_user_for_chatbot(
-        self,
-        username: str,
-        password: str,
-        mfa_code: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Authenticate user specifically for chatbot access"""
-        if not self.auth_system:
-            return {"success": False, "error": "Authentication system not available"}
-            
-        try:
-            # Attempt login
-            result = self.auth_system.login(username, password)
-                
-            if result is True:
-                # Login successful
-                current_user = self.auth_system.current_user
-                    
-                # Create chatbot session
-                session_token = secrets.token_hex(32)
-                session = AuthenticatedSession(
-                    user_id=str(current_user['id']),
-                    username=current_user['username'],
-                    role=current_user['role'],
-                    permissions=current_user['permissions'],
-                    auth_token=session_token,
-                    login_time=datetime.now(),
-                    last_activity=datetime.now()
-                )
-                    
-                self.authenticated_sessions[session_token] = session
-                
-                # Log authentication
-                self.log_enhanced_conversation(
-                    current_user['username'],
-                    "User authenticated for chatbot access",
-                    f"Login successful for {current_user['role']} user",
-                    {"authenticated": True, "role": current_user['role']}
-                )
-                
-                return {
-                    "success": True,
-                    "session_token": session_token,
-                    "user": {
-                        "username": current_user['username'],
-                        "role": current_user['role'],
-                        "permissions": current_user['permissions']
-                    },
-                    "message": f"Welcome {current_user['username']}! You are logged in as {current_user['role']}."
-                }
-                
-            elif isinstance(result, dict) and result.get('requires_2fa'):
-                # 2FA required
-                if mfa_code:
-                    # Attempt 2FA completion
-                    if self.auth_system.complete_two_fa_login(result['user_id'], result['username'], mfa_code):
-                        # Repeat successful login process
-                        return self.authenticate_user_for_chatbot(username, password)
-                    else:
-                        return {"success": False, "error": "Invalid 2FA code"}
-                else:
-                    return {
-                        "success": False,
-                        "requires_2fa": True,
-                        "user_id": result['user_id'],
-                        "username": result['username'],
-                        "message": "2FA code required"
-                    }
-                    
-            elif result == 'password_reset_required':
-                return {
-                    "success": False,
-                    "password_reset_required": True,
-                    "message": "Password reset required before chatbot access"
-                }
-            else:
-                return {"success": False, "error": "Invalid credentials"}
-                
-        except Exception as e:
-            print(f"Authentication error: {e}")
-            return {"success": False, "error": "Authentication system error"}
+    # Authentication and Security (Removed - Use Central Auth)
+    # Chatbot now relies on central authentication system via get_auth()
+    # Users must authenticate through main application before accessing chatbot
 
     def init_nlp_components(self):
         """Initialize NLP components with proper error handling"""
@@ -1626,30 +1547,22 @@ class UniversityChatbot:
                 "timestamp": datetime.now().isoformat()
             })
         
-        # Add new authenticated routes
+        # Authentication routes - redirect to main application
         @self.app.route('/api/auth/login', methods=['POST'])
         def api_auth_login():
-            data = request.json
-            username = data.get('username', '')
-            password = data.get('password', '')
-            mfa_code = data.get('mfa_code', '')
-            
-            result = self.authenticate_user_for_chatbot(username, password, mfa_code if mfa_code else None)
-            
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return jsonify(result), 401
+            return jsonify({
+                'success': False,
+                'error': 'Authentication must be performed through the main application',
+                'message': 'Please log in via the main GUI (python run.py --gui) first'
+            }), 401
         
         @self.app.route('/api/auth/logout', methods=['POST'])
         def api_auth_logout():
-            data = request.json
-            session_token = data.get('session_token', '')
-            
-            if self.logout_user(session_token):
-                return jsonify({"success": True, "message": "Logged out successfully"})
-            else:
-                return jsonify({"success": False, "error": "Invalid session"}), 400
+            return jsonify({
+                'success': False,
+                'error': 'Logout must be performed through the main application',
+                'message': 'Please log out via the main GUI'
+            }), 401
         
         @self.app.route('/api/auth/status', methods=['GET'])
         def api_auth_status():
@@ -1739,21 +1652,11 @@ class UniversityChatbot:
         
         @self.app.route('/api/login', methods=['POST'])
         def api_login():
-            data = request.json
-            user_id = data.get('user_id', '')
-            password = data.get('password', '')
-            mfa_code = data.get('mfa_code', '')
-            
-            session = self.authenticate_user(user_id, password, mfa_code)
-            if session:
-                return jsonify({
-                    "session_token": session.session_token,
-                    "user_role": session.role.value,
-                    "expires_at": (session.login_time + timedelta(seconds=self.config["security"]["session_timeout"])).isoformat(),
-                    "voice_available": self.voice_interface.enabled
-                })
-            else:
-                return jsonify({"error": "Authentication failed"}), 401
+            return jsonify({
+                'success': False,
+                'error': 'Authentication must be performed through the main application',
+                'message': 'Please log in via the main GUI (python run.py --gui) first'
+            }), 401
         
         @self.app.route('/api/recommendations/<student_id>', methods=['GET'])
         def api_recommendations(student_id):
@@ -2025,30 +1928,6 @@ class UniversityChatbot:
             print(f"Error getting student ID for user {username}: {e}")
             return None
 
-    def logout_user(self, session_token: str) -> bool:
-        """Logout user from chatbot"""
-        if session_token in self.authenticated_sessions:
-            session = self.authenticated_sessions[session_token]
-            
-            # Log logout
-            self.log_enhanced_conversation(
-                session.username,
-                "User logged out from chatbot",
-                "Session ended",
-                {"authenticated": False, "logout_time": datetime.now().isoformat()}
-            )
-            
-            # Remove session
-            del self.authenticated_sessions[session_token]
-            
-            # Logout from auth system if needed
-            if self.auth_system and self.auth_system.current_user:
-                if self.auth_system.current_user['username'] == session.username:
-                    self.auth_system.logout()
-            
-            return True
-        
-        return False
 
     def run_authenticated_console_interface(self):
         """Run console interface with existing authentication - NO DOUBLE LOGIN"""
@@ -2220,30 +2099,6 @@ class UniversityChatbot:
             print("pyotp not available for MFA verification")
             return True  # Skip MFA if library not available
 
-    def handle_failed_login(self, user_id: str):
-        """Handle failed login attempts"""
-        conn = self.connect_to_db()
-        if not conn:
-            return
-        
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE user_credentials 
-                SET failed_attempts = failed_attempts + 1,
-                    locked_until = CASE 
-                        WHEN failed_attempts >= ? THEN ?
-                        ELSE locked_until 
-                    END
-                WHERE user_id = ?
-            """, (
-                self.config["security"]["max_login_attempts"],
-                (datetime.now() + timedelta(minutes=30)).isoformat(),
-                user_id
-            ))
-            conn.commit()
-        finally:
-            conn.close()
 
     def validate_session(self, session_token: str) -> Optional[UserSession]:
         """Validate user session"""
@@ -3206,9 +3061,7 @@ def setup_enhanced_api_routes(self):
     """Enhanced API routes setup"""
     self.setup_api_routes()
 
-def authenticate_user(self, user_id, password, mfa_code):
-    """Basic user authentication"""
-    return self.authenticate_user_for_chatbot(user_id, password, mfa_code)
+# authenticate_user removed - use central authentication via get_auth()
 
 
 # Main execution enhancement
