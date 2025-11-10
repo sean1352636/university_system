@@ -3450,23 +3450,31 @@ class ScheduleEmailDialog:
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # Create scheduled_emails table if it doesn't exist
+            # Create scheduled_emails table if it doesn't exist (matches actual schema)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS scheduled_emails (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    recipient TEXT NOT NULL,
-                    subject TEXT,
-                    body TEXT,
-                    scheduled_for TIMESTAMP NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'pending'
+                    template_name TEXT,
+                    recipient_email TEXT NOT NULL,
+                    template_vars TEXT,
+                    scheduled_date TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    created_at TEXT NOT NULL
                 )
             ''')
 
+            # Store email content as template variables (JSON format)
+            import json
+            template_vars = json.dumps({
+                'subject': subject,
+                'body': body
+            })
+
             cursor.execute('''
-                INSERT INTO scheduled_emails (recipient, subject, body, scheduled_for)
-                VALUES (?, ?, ?, ?)
-            ''', (recipient, subject, body, scheduled_time.strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO scheduled_emails (template_name, recipient_email, template_vars, scheduled_date, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('custom_email', recipient, template_vars, scheduled_time.strftime('%Y-%m-%d %H:%M:%S'),
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
             conn.commit()
             conn.close()
@@ -5258,19 +5266,19 @@ class ExportDataDialog:
                     cursor.execute('''
                         SELECT
                             id,
-                            recipient,
-                            subject,
-                            body,
-                            scheduled_for,
+                            template_name,
+                            recipient_email,
+                            template_vars,
+                            scheduled_date,
                             status,
                             created_at
                         FROM scheduled_emails
-                        ORDER BY scheduled_for
+                        ORDER BY scheduled_date
                     ''')
                     export_data['scheduled_emails'] = cursor.fetchall()
                     export_headers['scheduled_emails'] = [
-                        'Schedule ID', 'Recipient', 'Subject', 'Body',
-                        'Scheduled For', 'Status', 'Created At'
+                        'Schedule ID', 'Template Name', 'Recipient Email', 'Template Variables',
+                        'Scheduled Date', 'Status', 'Created At'
                     ]
                 except Exception as e:
                     print(f"Error exporting scheduled emails: {e}")

@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Email System: Scheduled Emails Export Error** - Fixed SQL column name mismatch in scheduled emails
+  - **Problem**: "Error exporting scheduled emails: no such column: recipient" when trying to export scheduled emails
+  - **Root Cause**: SQL queries using outdated column names that don't match actual database schema
+    * Query used: `recipient`, `subject`, `body`, `scheduled_for`
+    * Actual schema: `recipient_email`, `template_name`, `template_vars`, `scheduled_date`
+  - **Context**: scheduled_emails table uses template-based schema but code was trying to use direct subject/body columns
+  - **Fixes Applied**:
+    1. **Export Query (line 5261-5268)**: Updated SELECT to use correct columns
+       * Changed `recipient` → `recipient_email`
+       * Changed `scheduled_for` → `scheduled_date`
+       * Changed `subject`, `body` → `template_name`, `template_vars`
+       * Updated export headers to match new columns
+    2. **Schedule Email Function (line 3455-3477)**: Fixed INSERT statement and table creation
+       * Updated CREATE TABLE schema to match actual database structure
+       * Fixed INSERT to use `recipient_email`, `template_vars`, `scheduled_date`
+       * Store subject/body as JSON in template_vars field
+       * Added created_at timestamp (required field)
+  - **Impact**: Scheduled emails export now works correctly; new scheduled emails save with proper schema
+  - **File Modified**: `infrastructure/email/gui/email_manager_gui.py:3455-3477, 5258-5274`
+
 - **Password Change Verification Failure** - Fixed inconsistent database connection handling in password change
   - **Problem**: Users unable to change passwords - system incorrectly reported current password as incorrect
   - **Root Cause**: `change_password()` used direct `sqlite3.connect()` while `login()` used `db_manager.get_connection()` context manager
