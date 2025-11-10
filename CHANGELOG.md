@@ -100,6 +100,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * `university_system/modules/shared/gui/advanced_search_gui.py:35-45, 4185-4244`
   - **Impact**: Transforms text-based ASCII charts into professional, interactive, publication-quality visualizations
 
+- **Chart Email Integration** - Added email functionality to send charts to administrators
+  - **Email Service Integration**:
+    * Integrated with existing email infrastructure (`email_service.py`)
+    * Uses `send_email_as_system()` for automatic chart delivery
+    * Supports email attachments with high-resolution PNG charts (200 DPI)
+    * Automatic cleanup of temporary files
+  - **ChartGenerator.email_chart() Method**:
+    * Saves chart to temporary file with timestamp
+    * Sends email with professional formatting
+    * Custom subject: "Chart: [Chart Title]"
+    * Auto-generated email body with chart details (title, generation time, format, filename)
+    * Support for custom message override
+    * Returns bool success/failure status
+  - **Enhanced ChartViewer Window**:
+    * Added "📧 Email Chart" button to chart viewer toolbar
+    * Professional email dialog (500x350 window):
+      - Recipient email input with validation (regex pattern matching)
+      - Pre-filled default: admin@university.edu
+      - Custom message text area (6 lines) with default template
+      - Status indicator showing "Sending email..." during operation
+      - Success confirmation with timestamp
+      - Error handling with retry capability
+    * Email dialog features:
+      - Email format validation
+      - Send button disables during sending
+      - Success: Shows confirmation and closes dialog
+      - Failure: Shows error and allows retry
+  - **Helper Functions**:
+    * `get_admin_emails()`: Retrieves admin email addresses from database
+    * Returns list of admin emails (role='admin')
+    * Fallback to default if database query fails
+  - **Email Content Format**:
+    ```
+    Subject: Chart: [Chart Title]
+
+    Dear Administrator,
+
+    Please find attached the requested chart: [Chart Title]
+
+    Chart Details:
+    - Generated: YYYY-MM-DD HH:MM:SS
+    - Format: PNG (High Resolution - 200 DPI)
+    - File: chart_[Title]_[Timestamp].png
+
+    This chart was automatically generated from the University Management System.
+
+    Best regards,
+    University System
+    ```
+  - **Testing**:
+    * Created `test_chart_email.py` test suite
+    * Verifies email service availability
+    * Tests method existence and integration
+    * Confirms chart saving and attachment functionality
+    * All tests passed: ✓ Email service available, ✓ Method exists
+  - **Usage Instructions**:
+    1. Generate any chart from Advanced Search GUI
+    2. Click "📧 Email Chart" button in chart viewer
+    3. Enter or confirm recipient email address
+    4. Optionally customize message
+    5. Click "📧 Send Email"
+    6. Receive confirmation when sent successfully
+  - **Error Handling**:
+    * Checks EMAIL_AVAILABLE flag before attempting to send
+    * Validates email format with regex pattern
+    * Graceful degradation if email service unavailable
+    * User-friendly error messages with troubleshooting hints
+    * Automatic retry capability on failure
+  - **Files Modified**:
+    * `university_system/modules/shared/utils/chart_generator.py:33-42, 295-363, 369-534, 792-849`
+      - Added email service imports
+      - Added email_chart() method to ChartGenerator
+      - Updated ChartViewer with email button and dialog
+      - Added chart_title parameter support
+      - Added get_admin_emails() helper function
+  - **Files Created**:
+    * `test_chart_email.py` - Email integration test suite (100 lines)
+  - **Dependencies**: Uses existing email infrastructure (no new dependencies)
+  - **Impact**: Administrators can now receive charts directly via email for reporting and analysis purposes
+
 ### Fixed
 - **Advanced Search GUI: Multiple Database Schema Errors** - Fixed critical database column mismatches
   - **Problem 1**: "Failed to load saved profiles: no such column: id"

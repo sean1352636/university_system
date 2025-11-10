@@ -30,6 +30,17 @@ except ImportError:
 
 from university_system.infrastructure.database.db import get_connection
 
+# Import email service for sending charts
+try:
+    from university_system.infrastructure.email.email_service import send_email, send_email_as_system
+    from university_system.infrastructure.shared_context import get_auth
+    EMAIL_AVAILABLE = True
+except ImportError:
+    EMAIL_AVAILABLE = False
+    send_email = None
+    send_email_as_system = None
+    get_auth = None
+
 
 class ChartGenerator:
     """Professional chart generation from database data"""
@@ -281,11 +292,81 @@ class ChartGenerator:
         fig.savefig(filename, dpi=150, bbox_inches='tight', facecolor='white')
         return filename
 
+    def email_chart(self, fig: Figure, recipient_email: str, chart_title: str = "Chart",
+                   message: str = None) -> bool:
+        """
+        Email chart as attachment to specified recipient
+
+        Args:
+            fig: matplotlib Figure object
+            recipient_email: Email address of recipient
+            chart_title: Title for the chart (used in email subject and filename)
+            message: Optional custom message body
+
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        if not EMAIL_AVAILABLE:
+            print("Email service not available. Cannot send chart.")
+            return False
+
+        try:
+            # Save chart to temporary file
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"chart_{chart_title.replace(' ', '_')}_{timestamp}.png"
+            temp_path = os.path.join(tempfile.gettempdir(), filename)
+
+            fig.savefig(temp_path, dpi=200, bbox_inches='tight', facecolor='white')
+
+            # Prepare email content
+            subject = f"Chart: {chart_title}"
+
+            if message is None:
+                body = f"""Dear Administrator,
+
+Please find attached the requested chart: {chart_title}
+
+Chart Details:
+- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- Format: PNG (High Resolution - 200 DPI)
+- File: {filename}
+
+This chart was automatically generated from the University Management System.
+
+Best regards,
+University System
+"""
+            else:
+                body = message
+
+            # Send email with attachment
+            result = send_email_as_system(
+                recipient_email=recipient_email,
+                subject=subject,
+                body=body,
+                system_name="University Chart System",
+                attachments=[temp_path]
+            )
+
+            if result:
+                print(f"✓ Chart emailed successfully to {recipient_email}")
+                return True
+            else:
+                print(f"✗ Failed to email chart to {recipient_email}")
+                return False
+
+        except Exception as e:
+            print(f"Error emailing chart: {str(e)}")
+            return False
+        finally:
+            # Clean up temp file (keep it for a bit in case of retry)
+            pass
+
 
 class ChartViewer:
     """Window for viewing charts with matplotlib integration"""
 
-    def __init__(self, parent, fig: Figure, title: str = "Chart Viewer"):
+    def __init__(self, parent, fig: Figure, title: str = "Chart Viewer", chart_title: str = None):
         """
         Initialize chart viewer window
 
@@ -293,11 +374,15 @@ class ChartViewer:
             parent: Parent tkinter window
             fig: matplotlib Figure to display
             title: Window title
+            chart_title: Chart title for email subject (defaults to window title)
         """
         self.window = tk.Toplevel(parent)
         self.window.title(title)
         self.window.geometry("1000x700")
         self.window.transient(parent)
+
+        # Store chart title for email
+        self.chart_title = chart_title or title
 
         # Create main container
         container = ttk.Frame(self.window)
@@ -320,6 +405,8 @@ class ChartViewer:
 
         ttk.Button(button_frame, text="💾 Save Chart",
                   command=lambda: self._save_chart(fig)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="📧 Email Chart",
+                  command=lambda: self._email_chart(fig)).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="🖨️ Print",
                   command=lambda: self._print_chart()).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="❌ Close",
@@ -348,6 +435,102 @@ class ChartViewer:
                 messagebox.showinfo("Success", f"Chart saved to:\n{filename}")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save chart:\n{str(e)}")
+
+    def _email_chart(self, fig: Figure):
+        """Email chart to administrator"""
+        from tkinter import messagebox, simpledialog
+
+        if not EMAIL_AVAILABLE:
+            messagebox.showerror("Email Unavailable",
+                               "Email service is not available.\n"
+                               "Please ensure the email infrastructure is configured.")
+            return
+
+        # Create email dialog
+        email_dialog = tk.Toplevel(self.window)
+        email_dialog.title("📧 Email Chart to Administrator")
+        email_dialog.geometry("500x350")
+        email_dialog.transient(self.window)
+        email_dialog.grab_set()
+
+        frame = ttk.Frame(email_dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        ttk.Label(frame, text="Email Chart to Administrator",
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+
+        # Recipient email
+        ttk.Label(frame, text="Recipient Email Address:").pack(anchor=tk.W, pady=(0, 5))
+        email_var = tk.StringVar(value="admin@university.edu")
+        email_entry = ttk.Entry(frame, textvariable=email_var, width=50)
+        email_entry.pack(fill=tk.X, pady=(0, 15))
+        email_entry.focus()
+
+        # Custom message (optional)
+        ttk.Label(frame, text="Custom Message (optional):").pack(anchor=tk.W, pady=(0, 5))
+        message_text = tk.Text(frame, height=6, width=50, wrap=tk.WORD)
+        message_text.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        message_text.insert('1.0', f"Please find attached the chart: {self.chart_title}\n\nGenerated from Advanced Search GUI.")
+
+        # Status label
+        status_var = tk.StringVar(value="")
+        status_label = ttk.Label(frame, textvariable=status_var, foreground="blue")
+        status_label.pack(pady=(0, 10))
+
+        def send_chart():
+            """Send the chart via email"""
+            recipient = email_var.get().strip()
+            custom_message = message_text.get('1.0', tk.END).strip()
+
+            if not recipient:
+                messagebox.showerror("Error", "Please enter a recipient email address.")
+                return
+
+            # Validate email format
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, recipient):
+                messagebox.showerror("Error", f"Invalid email format: {recipient}")
+                return
+
+            # Disable send button and show status
+            send_btn.config(state='disabled')
+            status_var.set("Sending email...")
+            email_dialog.update()
+
+            # Use ChartGenerator to send email
+            chart_gen = ChartGenerator()
+            result = chart_gen.email_chart(
+                fig=fig,
+                recipient_email=recipient,
+                chart_title=self.chart_title,
+                message=custom_message if custom_message else None
+            )
+
+            if result:
+                status_var.set("✓ Email sent successfully!")
+                messagebox.showinfo("Success",
+                                   f"Chart emailed successfully to:\n{recipient}\n\n"
+                                   f"Chart: {self.chart_title}\n"
+                                   f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                email_dialog.destroy()
+            else:
+                status_var.set("✗ Failed to send email")
+                send_btn.config(state='normal')
+                messagebox.showerror("Error",
+                                   f"Failed to send email to {recipient}.\n"
+                                   "Please check the email service configuration.")
+
+        # Buttons
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+
+        send_btn = ttk.Button(button_frame, text="📧 Send Email", command=send_chart)
+        send_btn.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(button_frame, text="❌ Cancel",
+                  command=email_dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _print_chart(self):
         """Print chart (placeholder)"""
@@ -606,30 +789,61 @@ def create_chart_viewer(parent, chart_type: str, db_generator: DatabaseChartGene
     # Generate appropriate chart
     fig = None
     title = ""
+    chart_title = ""
 
     if chart_type == "age_histogram":
         fig = db_generator.generate_age_distribution()
         title = "Age Distribution"
+        chart_title = "Student_Age_Distribution"
     elif chart_type == "course_pie":
         fig = db_generator.generate_course_distribution()
         title = "Course Distribution"
+        chart_title = "Course_Enrollment_Distribution"
     elif chart_type == "registration_timeline":
         fig = db_generator.generate_registration_timeline()
         title = "Registration Timeline"
+        chart_title = "Registration_Timeline"
     elif chart_type == "gender_course":
         fig = db_generator.generate_gender_course_distribution()
         title = "Gender-Course Distribution"
+        chart_title = "Gender_Course_Distribution"
     elif chart_type == "module_popularity":
         fig = db_generator.generate_module_popularity()
         title = "Module Popularity"
+        chart_title = "Module_Popularity"
     elif chart_type == "grade_distribution":
         fig = db_generator.generate_grade_distribution()
         title = "Grade Distribution"
+        chart_title = "Grade_Distribution"
 
     if fig:
-        ChartViewer(parent, fig, f"📊 {title}")
+        ChartViewer(parent, fig, f"📊 {title}", chart_title=chart_title)
     else:
         from tkinter import messagebox
         messagebox.showwarning("No Data",
                              f"No data available to generate {title} chart.\n"
                              "Please ensure the database contains relevant data.")
+
+
+def get_admin_emails() -> List[str]:
+    """
+    Get list of administrator email addresses from database
+
+    Returns:
+        List of admin email addresses
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT email FROM users
+            WHERE role = 'admin' AND email IS NOT NULL
+            ORDER BY email
+        """)
+        results = cursor.fetchall()
+        conn.close()
+
+        return [row[0] for row in results if row[0]]
+    except Exception as e:
+        print(f"Error getting admin emails: {e}")
+        return ["admin@university.edu"]  # Default fallback
