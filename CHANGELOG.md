@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Email System Inbox Sync** - Fixed missing inbox messages for users
+  - Ran `fix_inbox_display_issue()` to sync 22 emails from `stored_emails` table to user inboxes
+  - Emails are properly stored in database and delivered to the `messages` (inbox) table
+  - Users can access their inbox via the Email Manager GUI ("Check Messages" button)
+  - System operates in `database_only_mode` - emails stored in database, not sent via SMTP
+  - Verified: 192 messages in inbox across all users, with proper sender/recipient relationships
+  - Location: `/home/seancatchpole989/university_system/infrastructure/email/email_service.py:264`
 - **Authentication Warning** - Fixed "No auth instance configured, using dummy auth" warning
   - Enhanced `set_auth()` in main_gui.py to always register auth with shared_context
   - Added early auth initialization check at module level
