@@ -120,7 +120,8 @@ class BatchOperationManager:
         if db_path is None:
             db_path = str(DEFAULT_DB_PATH)
         self.db_path = db_path
-        self.backup_dir = 'backups'
+        from university_system.modules.shared.constants import paths
+        self.backup_dir = str(paths.BACKUP_DIR)
         self.import_history = []
         self.api_app = None
         self.ensure_backup_directory()

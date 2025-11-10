@@ -2390,15 +2390,15 @@ Click the button above to access the full Financial Reporting & Analytics system
         try:
             import shutil
             from pathlib import Path
+            from university_system.modules.shared.constants import paths
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_dir = Path.home() / "finance_backups"
-            backup_dir.mkdir(exist_ok=True)
+            backup_dir = paths.BACKUP_DIR
+            backup_dir.mkdir(parents=True, exist_ok=True)
 
-            db_path = "/home/seancatchpole989/university_system/data/db_files/student_records.db"
             backup_path = backup_dir / f"student_records_backup_{timestamp}.db"
 
-            shutil.copy2(db_path, backup_path)
+            shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
             messagebox.showinfo("Success", f"Database backed up to:\n{backup_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to backup database: {e}")

@@ -8845,8 +8845,8 @@ Total Documents: {doc_count}
                 try:
                     # Create backup if requested
                     if create_backup.get():
-                        backup_path = f"backups/pre_archive_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-                        os.makedirs('backups', exist_ok=True)
+                        paths.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+                        backup_path = paths.BACKUP_DIR / f"pre_archive_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
                         import shutil
                         shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
 
@@ -10792,7 +10792,7 @@ Total Documents: {doc_count}
             location_frame = ttk.LabelFrame(main_frame, text="Backup Location", padding=15)
             location_frame.pack(fill='x', pady=(0, 15))
 
-            location_var = tk.StringVar(value="backups/")
+            location_var = tk.StringVar(value=str(paths.BACKUP_DIR) + "/")
             ttk.Label(location_frame, text="Directory:").pack(anchor='w', pady=5)
             location_entry = ttk.Entry(location_frame, textvariable=location_var, width=50)
             location_entry.pack(fill='x', pady=5)
@@ -10906,8 +10906,8 @@ Total Documents: {doc_count}
                 return
 
             # Create safety backup of current database
-            safety_backup = f"backups/pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-            os.makedirs('backups', exist_ok=True)
+            paths.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+            safety_backup = paths.BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
 
             # Show progress dialog
             progress_dialog = tk.Toplevel(self.root)

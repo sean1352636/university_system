@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Backup Folder Organization** - Fixed backup folders being created in project root instead of centralized location
+  - **Problem**: `backups/` and `finance_backups/` were being created in project root
+  - **Root Cause**: Multiple files using relative paths (`'backups'`) instead of centralized `paths.BACKUP_DIR`
+  - **Solution**: Updated 5 files to use `paths.BACKUP_DIR` from centralized paths module
+  - **Files Modified**:
+    1. `finance/layout_manager.py:2395` - Changed `Path.home() / "finance_backups"` to `paths.BACKUP_DIR`
+    2. `document_manager_gui.py:8849, 10910` - Changed `'backups/'` to `paths.BACKUP_DIR`
+    3. `batch_operations.py:123` - Changed `self.backup_dir = 'backups'` to `str(paths.BACKUP_DIR)`
+    4. `batch_operations_gui.py:132` - Changed `self.backup_dir = 'backups'` to `str(paths.BACKUP_DIR)`
+    5. `module_scheduling.py:1766` - Changed `f"backups/{backup_name}.db"` to `paths.BACKUP_DIR / f"{backup_name}.db"`
+  - **Cleanup**: Moved 1 existing backup file to centralized location, removed empty project root backup folders
+  - **Result**: All backups now stored in `university_system/backups/` instead of project root
+  - **Location**: Centralized backup directory defined at `modules/shared/constants/paths.py:46`
+
 - **Email System Inbox Sync** - Fixed missing inbox messages and transaction commit issue
   - **Root Cause**: Database context manager wasn't committing transactions before closing connections
   - **Impact**: Emails were stored in `stored_emails` table but never persisted to user inboxes in `messages` table

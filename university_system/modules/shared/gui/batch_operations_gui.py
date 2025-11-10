@@ -129,7 +129,8 @@ except ImportError:
         
         def __init__(self, db_path: str = DEFAULT_BATCH_DB):
             self.db_path = db_path
-            self.backup_dir = 'backups'
+            from university_system.modules.shared.constants import paths
+            self.backup_dir = str(paths.BACKUP_DIR)
             self.import_history = []
             self.api_app = None
             self.ensure_backup_directory()

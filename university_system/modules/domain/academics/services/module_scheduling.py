@@ -1763,9 +1763,10 @@ class ModuleScheduler:
     
     def restore_backup(self, backup_name):
         """Restore from a backup"""
-        backup_path = f"backups/{backup_name}.db"
-        
-        if not os.path.exists(backup_path):
+        from university_system.modules.shared.constants import paths
+        backup_path = paths.BACKUP_DIR / f"{backup_name}.db"
+
+        if not backup_path.exists():
             print(f"Backup file not found: {backup_path}")
             return False
         
