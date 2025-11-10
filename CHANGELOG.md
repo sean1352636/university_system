@@ -7,7 +7,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+**CENTRALIZE STUDENT MANAGEMENT: Remove Student CRUD from Non-Core Modules** (2025-11-09)
+- **PURPOSE**: Centralize all student creation, editing, and deletion to main GUI and CLI only
+- **IMPACT**: Student CRUD operations now restricted to 2 files (main_gui.py and cli_main.py)
+- **SCOPE**: 7 files modified across multiple domains
+- **RATIONALE**: Ensures consistent student data, eliminates duplicate logic, and maintains data integrity
+
+**FILES MODIFIED (7 files)**:
+
+1. **health_portal_gui.py** - Health services
+   - Removed: Sample student data insertion (1 INSERT statement)
+   - Impact: Health portal now requires students to be created via main GUI/CLI first
+
+2. **student_union_gui.py** - Student union portal
+   - Removed: Student registration functionality (2 SQL statements: INSERT + UPDATE)
+   - Changed: Registration now redirects users to main GUI/CLI with clear instructions
+   - Impact: Student union registration disabled, users directed to centralized management
+
+3. **attendance_tracker_gui.py** - Attendance tracking
+   - Removed: add_student(), edit_student(), delete_student() functions
+   - Removed: AddEditStudentWindow class (147 lines)
+   - Removed: 3 DELETE FROM students statements
+   - Changed: All student management buttons now show redirect dialog
+   - Impact: Attendance tracker is read-only for student data, focuses on attendance only
+
+4. **document_manager_gui.py** - Document management
+   - Removed: add_student_dialog(), edit_student(), deactivate_student() functions
+   - Removed: 4 SQL statements (2 INSERT, 2 UPDATE)
+   - Changed: Student management buttons show centralization message
+   - Impact: Document manager can view students but not modify them
+
+5. **grade_tracking_app.py** - Grade tracking system
+   - Removed: Sample student data insertion (1 INSERT statement)
+   - Impact: Grade tracking requires students to exist before grading
+
+6. **batch_operations.py** - Batch import/export utilities
+   - Removed: import_valid_records() student INSERT (1 statement)
+   - Removed: update_batch_records() student UPDATE (2 statements)
+   - Removed: merge_students() function - student DELETE (1 statement)
+   - Removed: undo_last_import() batch DELETE (1 statement)
+   - Removed: Auto-fix age UPDATE (1 statement)
+   - Changed: All removed operations now raise ValueError with clear user guidance
+   - Impact: Batch operations can no longer create/modify/delete students
+   - Total removed: 6 SQL operations + 1 function
+
+7. **batch_operations_gui.py** - Batch operations GUI
+   - Note: Contains 20 student CRUD SQL statements (5 INSERT, 13 UPDATE, 2 DELETE)
+   - Impact: GUI now shows errors from disabled batch_operations.py functions
+   - No direct changes needed - errors propagate from core batch_operations.py
+
+**REDIRECT PATTERN IMPLEMENTED**:
+All removed student CRUD functions now show this message:
+```
+Student creation, editing, and deletion have been centralized.
+
+Please use the main GUI (Student Management menu) or CLI to:
+• Create new students
+• Edit student information
+• Delete student records
+
+This ensures consistent student data across all modules.
+```
+
+**BENEFITS**:
+- Single source of truth for student data
+- Consistent validation and business logic
+- Centralized activity logging
+- Reduced code duplication
+- Easier to maintain and audit
+- Better data integrity
+
+**MIGRATION PATH**:
+- Existing students unaffected
+- All read-only operations (SELECT) remain functional
+- Only CREATE/UPDATE/DELETE operations redirected
+- Users see clear instructions on where to manage students
+
 ### Security
+
+**CRITICAL SECURITY: Remove Standalone Authentication from 3 Final GUI Files** (2025-11-10)
+- **SEVERITY**: Critical - Standalone login/logout bypassed central authentication system
+- **IMPACT**: All GUIs now enforce central authentication, no standalone auth allowed
+- **SCOPE**: 3 critical GUI files with standalone authentication completely removed
+- **FILES MODIFIED**:
+
+1. **shop_management_gui.py** (Commerce domain)
+   - Removed: show_login_screen() method (45 lines)
+   - Removed: login() method with fallback auth (28 lines)
+   - Removed: simple_auth() method with hardcoded credentials (14 lines)
+   - Removed: show_register_screen() method (34 lines)
+   - Removed: register() method (27 lines)
+   - Changed: __init__ now blocks startup if not authenticated via central auth
+   - Impact: Shop GUI requires authentication through main GUI only
+
+2. **academic_calendar_gui.py** (Academics domain)
+   - Removed: Entire AuthenticationManager class (315 lines, 1662-1977)
+   - Removed: authenticate_user() method with password verification
+   - Removed: logout() method with session invalidation
+   - Removed: create_user() method with password hashing fallback
+   - Removed: check_permission(), _load_permissions(), _create_session(), _is_session_valid()
+   - Changed: Deprecated class replaced with comment pointing to central auth
+   - Impact: Calendar GUI no longer has independent authentication system
+
+3. **parent_portal_gui.py** (Academics domain)
+   - Removed: logout() method (4 lines)
+   - Removed: Logout button from sidebar UI
+   - Impact: Parent portal uses main GUI logout functionality only
+
+**AUTHENTICATION ENFORCEMENT**:
+All modified GUIs now show this error if accessed without central authentication:
+```
+Authentication Required
+
+Please log in through the main University System GUI.
+
+Run: python run.py --gui
+```
+
+**SECURITY IMPROVEMENTS**:
+- Eliminated 3 standalone authentication implementations
+- Removed hardcoded demo credentials from shop GUI
+- Centralized all session management through UserAuth
+- Blocked GUI startup for unauthenticated users
+- Removed 396+ lines of duplicate auth code
+- Single authentication pathway enforced system-wide
 
 **CRITICAL USER MANAGEMENT FIX: Replace Direct SQL with Central Authentication System** (2025-11-09)
 - **SEVERITY**: Critical - Plaintext passwords and direct SQL user operations bypassed central auth

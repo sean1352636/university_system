@@ -1364,55 +1364,30 @@ class AttendanceGUI:
                            self.module_var.get().split(' - ')[0], self.date_var.get(),
                            self.refresh_attendance_data)
     
-    # Student management methods
+    # Student management methods - Redirected to centralized management
     def add_student(self):
-        """Add new student"""
-        AddEditStudentWindow(self.root, None, self.refresh_students_data)
-    
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
+
     def edit_student(self, event=None):
-        """Edit selected student"""
-        selection = self.students_tree.selection()
-        if not selection:
-            messagebox.showwarning("Warning", "Please select a student to edit")
-            return
-        
-        item = self.students_tree.item(selection[0])
-        student_data = item['values']
-        
-        AddEditStudentWindow(self.root, student_data, self.refresh_students_data)
-    
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
+
     def delete_student(self):
-        """Delete selected student"""
-        selection = self.students_tree.selection()
-        if not selection:
-            messagebox.showwarning("Warning", "Please select a student to delete")
-            return
-        
-        item = self.students_tree.item(selection[0])
-        student_id = item['values'][0]
-        
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete student {student_id}?"):
-            try:
-                if MAIN_DB_AVAILABLE:
-                    # Use main database connection
-                    conn = get_db_connection()
-                    if conn:
-                        cursor = conn.cursor()
-                        cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
-                        conn.commit()
-                        conn.close()
-                elif ORIGINAL_FUNCTIONS_AVAILABLE:
-                    conn = get_db_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
-                    conn.commit()
-                    conn.close()
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
 
-                self.refresh_students_data()
-                messagebox.showinfo("Success", "Student deleted successfully")
-
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete student: {e}")
+    def show_student_management_redirect(self):
+        """Redirect to centralized student management"""
+        messagebox.showinfo(
+            "Student Management",
+            "Student creation, editing, and deletion have been centralized.\n\n"
+            "Please use the main GUI (Student Management menu) or CLI to:\n"
+            "• Create new students\n"
+            "• Edit student information\n"
+            "• Delete student records\n\n"
+            "This ensures consistent student data across all modules."
+        )
     
     def filter_students(self, event=None):
         """Filter students based on search text"""
@@ -5094,153 +5069,7 @@ class AddEditStudentWindow:
         
         # Form frame
         form_frame = ttk.LabelFrame(self.window, text="Student Information", padding=20)
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
-        # Helper function to safely get student data
-        def get_student_value(index, default=""):
-            return self.student_data[index] if self.is_edit and len(self.student_data) > index else default
-
-        # Student ID
-        ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.student_id_var = tk.StringVar(value=get_student_value(0))
-        student_id_entry = ttk.Entry(form_frame, textvariable=self.student_id_var, width=30)
-        student_id_entry.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        if self.is_edit:
-            student_id_entry.config(state='readonly')
-
-        # First Name
-        ttk.Label(form_frame, text="First Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.first_name_var = tk.StringVar(value=get_student_value(1))
-        ttk.Entry(form_frame, textvariable=self.first_name_var, width=30).grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-
-        # Last Name
-        ttk.Label(form_frame, text="Last Name:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.last_name_var = tk.StringVar(value=get_student_value(2))
-        ttk.Entry(form_frame, textvariable=self.last_name_var, width=30).grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-
-        # Email
-        ttk.Label(form_frame, text="Email:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.email_var = tk.StringVar(value=get_student_value(3))
-        ttk.Entry(form_frame, textvariable=self.email_var, width=30).grid(row=3, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-
-        # Course
-        ttk.Label(form_frame, text="Course:").grid(row=4, column=0, sticky=tk.W, pady=5)
-        self.course_var = tk.StringVar(value=get_student_value(4))
-        ttk.Entry(form_frame, textvariable=self.course_var, width=30).grid(row=4, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-
-        # Enrollment Date
-        ttk.Label(form_frame, text="Enrollment Date:").grid(row=5, column=0, sticky=tk.W, pady=5)
-        default_date = datetime.date.today().isoformat() if not self.is_edit else ""
-        self.enrollment_var = tk.StringVar(value=get_student_value(5, default_date))
-        ttk.Entry(form_frame, textvariable=self.enrollment_var, width=30).grid(row=5, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
-        # Buttons
-        buttons_frame = ttk.Frame(self.window)
-        buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        save_text = "Update Student" if self.is_edit else "Add Student"
-        ttk.Button(buttons_frame, text=save_text,
-                  command=self.save_student, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Cancel",
-                  command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
-    def save_student(self):
-        """Save student information"""
-        try:
-            # Validate required fields
-            if not all([self.student_id_var.get(), self.first_name_var.get(), self.last_name_var.get()]):
-                messagebox.showerror("Error", "Student ID, First Name, and Last Name are required")
-                return
-            
-            if MAIN_DB_AVAILABLE:
-                # Use main database connection with proper schema
-                conn = get_db_connection()
-                if conn:
-                    cursor = conn.cursor()
-
-                    if self.is_edit:
-                        # Update existing student - only update fields we have
-                        cursor.execute('''
-                        UPDATE students
-                        SET first_name=?, last_name=?, email_address=?, course=?, enrollment_date=?
-                        WHERE student_id=?
-                        ''', (self.first_name_var.get(), self.last_name_var.get(), self.email_var.get(),
-                              self.course_var.get(), self.enrollment_var.get(),
-                              self.student_id_var.get()))
-                    else:
-                        # Insert new student with minimal required fields
-                        # Use INSERT OR REPLACE to handle conflicts gracefully
-                        cursor.execute('''
-                        INSERT OR REPLACE INTO students
-                        (student_id, email_address, title, first_name, middle_name, last_name,
-                         gender, dob, age, course, year, registration_datetime, status, enrollment_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            self.student_id_var.get(),
-                            self.email_var.get(),
-                            '',  # title
-                            self.first_name_var.get(),
-                            '',  # middle_name
-                            self.last_name_var.get(),
-                            '',  # gender
-                            '',  # dob
-                            None,  # age
-                            self.course_var.get(),
-                            'Year 1',  # year
-                            self.enrollment_var.get(),
-                            'Active',  # status
-                            self.enrollment_var.get()  # enrollment_date
-                        ))
-
-                    conn.commit()
-                    conn.close()
-
-                    action = "updated" if self.is_edit else "added"
-                    messagebox.showinfo("Success", f"Student {action} successfully!")
-            elif ORIGINAL_FUNCTIONS_AVAILABLE:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-
-                if self.is_edit:
-                    cursor.execute('''
-                    UPDATE students
-                    SET first_name=?, last_name=?, email_address=?, course=?, registration_datetime=?
-                    WHERE student_id=?
-                    ''', (self.first_name_var.get(), self.last_name_var.get(), self.email_var.get(),
-                          self.course_var.get(), self.enrollment_var.get(),
-                          self.student_id_var.get()))
-                else:
-                    cursor.execute('''
-                    INSERT INTO students
-                    (student_id, first_name, last_name, email_address, course, registration_datetime)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (self.student_id_var.get(), self.first_name_var.get(), self.last_name_var.get(),
-                          self.email_var.get(), self.course_var.get(),
-                          self.enrollment_var.get()))
-
-                conn.commit()
-                conn.close()
-
-                action = "updated" if self.is_edit else "added"
-                messagebox.showinfo("Success", f"Student {action} successfully!")
-            else:
-                action = "updated" if self.is_edit else "added"
-                messagebox.showinfo("Demo", f"Student would be {action} here")
-            
-            self.callback()  # Refresh parent data
-            self.window.destroy()
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to save student: {e}")
-
-    def _safe_grab_set(self):
-        """Safely set window grab with error handling"""
-        try:
-            if self.window.winfo_exists():
-                self.window.grab_set()
-        except Exception as e:
-            print(f"Warning: Could not set window grab: {e}")
-
+# AddEditStudentWindow class removed - student CRUD centralized to main GUI and CLI
 
 class QRAttendanceWindow:
     def __init__(self, parent, qr_system, module_code, date, callback):

@@ -1,35 +1,35 @@
 {
-  "numStartups": 187,
+  "numStartups": 213,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
     "new-user-warmup": 10,
-    "plan-mode-for-complex-tasks": 187,
-    "terminal-setup": 178,
+    "plan-mode-for-complex-tasks": 201,
+    "terminal-setup": 211,
     "memory-command": 168,
-    "theme-command": 183,
-    "status-line": 168,
+    "theme-command": 209,
+    "status-line": 194,
     "prompt-queue": 58,
-    "enter-to-steer-in-relatime": 183,
-    "todo-list": 183,
-    "# for memory": 178,
+    "enter-to-steer-in-relatime": 209,
+    "todo-list": 209,
+    "# for memory": 209,
     "install-github-app": 167,
-    "drag-and-drop-images": 178,
-    "double-esc-code-restore": 178,
-    "continue": 178,
-    "shift-tab": 179,
-    "image-paste": 183,
-    "tab-toggle-thinking": 179,
-    "ultrathink-keyword": 180,
-    "custom-agents": 184,
-    "permissions": 178,
-    "custom-commands": 176,
-    "git-worktrees": 178,
+    "drag-and-drop-images": 209,
+    "double-esc-code-restore": 209,
+    "continue": 209,
+    "shift-tab": 209,
+    "image-paste": 209,
+    "tab-toggle-thinking": 209,
+    "ultrathink-keyword": 209,
+    "custom-agents": 201,
+    "permissions": 209,
+    "custom-commands": 212,
+    "git-worktrees": 211,
     "ide-upsell-external-terminal": 56,
-    "stickers-command": 175
+    "stickers-command": 197
   },
   "memoryUsageCount": 2,
-  "promptQueueUseCount": 13,
+  "promptQueueUseCount": 17,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,
@@ -88,7 +88,7 @@
     "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1762595917623
+      "timestamp": 1762708931440
     }
   },
   "feedbackSurveyState": {
@@ -99,5 +99,6 @@
     "emailAddress": "seancatchpole989@gmail.com",
     "organizationUuid": "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0"
   },
-  "githubActionSetupCount": 1
+  "githubActionSetupCount": 1,
+  "lastPlanModeUse": 1762682355177
 }

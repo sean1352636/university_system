@@ -1057,27 +1057,10 @@ class BatchOperationManager:
                     now = datetime.datetime.now()
                     age = now.year - dob.year - ((now.month, now.day) < (dob.month, dob.day))
                     
-                    # Get current datetime
-                    registration_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    
-                    # Insert student
-                    cursor.execute('''
-                    INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        student_id,
-                        email_address,
-                        title,
-                        record['first_name'],
-                        record.get('middle_name', ''),
-                        record['last_name'],
-                        gender,
-                        str(record['dob']),
-                        age,
-                        record['course'].upper(),
-                        registration_datetime,
-                        'Active',  # status
-                        registration_datetime  # enrollment_date
-                    ))
+                    # Student creation has been centralized - raise error
+                    raise ValueError("Student creation via batch operations has been disabled. "
+                                   "Please use main GUI (Student Management menu) or CLI to create students. "
+                                   "This ensures consistent student data across all modules.")
                     
                     # Insert modules
                     course = record['course'].upper()
@@ -1326,16 +1309,10 @@ class BatchOperationManager:
                         update_values.append(age)
                     
                     if update_fields:
-                        # Execute update
-                        update_query = f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?"
-                        update_values.append(student_id)
-                        cursor.execute(update_query, update_values)
-                        
-                        # Handle course change
-                        if 'course' in record and record['course']:
-                            self.update_student_modules(cursor, student_id, record['course'].upper())
-                        
-                        result.successful_imports += 1
+                        # Student updates have been centralized - raise error
+                        raise ValueError("Student updates via batch operations have been disabled. "
+                                       "Please use main GUI (Student Management menu) or CLI to update students. "
+                                       "This ensures consistent student data across all modules.")
                     
                 except Exception as e:
                     result.errors.append({
@@ -2130,10 +2107,8 @@ class BatchOperationManager:
                     if abs(calculated_age - age) > 1:
                         student_issues.append("Age inconsistent with DOB")
                         
-                        # Auto-fix age
-                        cursor.execute("UPDATE students SET age = ? WHERE student_id = ?", 
-                                     (calculated_age, student[0]))
-                        fixed_count += 1
+                        # Auto-fix age disabled - student updates centralized
+                        student_issues.append("Age update skipped - use main GUI to update student data")
                         
                 except ValueError:
                     student_issues.append("Invalid DOB format")
@@ -2287,41 +2262,13 @@ class BatchOperationManager:
             # Choice 4 (skip) does nothing
 
     def merge_students(self, keep_id: str, delete_id: str, keep_first: bool = True):
-        """Merge two student records"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Transfer modules from deleted student to kept student
-            cursor.execute('''
-            UPDATE student_modules SET student_id = ? 
-            WHERE student_id = ? AND module_code NOT IN (
-                SELECT module_code FROM student_modules WHERE student_id = ?
-            )
-            ''', (keep_id, delete_id, keep_id))
-            
-            # Transfer grades if table exists
-            cursor.execute('''
-            SELECT name FROM sqlite_master WHERE type='table' AND name='student_grades'
-            ''')
-            if cursor.fetchone():
-                cursor.execute('''
-                UPDATE student_grades SET student_id = ? 
-                WHERE student_id = ?
-                ''', (keep_id, delete_id))
-            
-            # Delete the duplicate student
-            cursor.execute('DELETE FROM students WHERE student_id = ?', (delete_id,))
-            cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (delete_id,))
-            
-            conn.commit()
-            print(f"✅ Merged students - kept {keep_id}, deleted {delete_id}")
-            
-        except sqlite3.Error as e:
-            conn.rollback()
-            print(f"❌ Error merging students: {e}")
-        finally:
-            conn.close()
+        """Merge student records - DISABLED: Use main GUI for student management"""
+        print(f"\n❌ Student merge operation has been disabled.")
+        print("Student deletion and modification have been centralized.")
+        print("\nPlease use the main GUI (Student Management menu) or CLI to:")
+        print("• Delete duplicate students")
+        print("• Manage student records")
+        print("\nThis ensures consistent student data across all modules.")
 
     def data_quality_dashboard(self):
         """Display comprehensive data quality dashboard"""
@@ -2687,24 +2634,13 @@ class BatchOperationManager:
             
             final_confirm = input("Proceed with deletion? (y/n): ")
             if final_confirm.lower() == 'y':
-                # Delete student modules first
-                cursor.executemany('DELETE FROM student_modules WHERE student_id = ?', 
-                                 [(sid,) for sid in student_ids_to_delete])
-                
-                # Delete students
-                cursor.executemany('DELETE FROM students WHERE student_id = ?', 
-                                 [(sid,) for sid in student_ids_to_delete])
-                
-                # Delete grades if table exists
-                cursor.execute('''
-                SELECT name FROM sqlite_master WHERE type='table' AND name='student_grades'
-                ''')
-                if cursor.fetchone():
-                    cursor.executemany('DELETE FROM student_grades WHERE student_id = ?', 
-                                     [(sid,) for sid in student_ids_to_delete])
-                
-                conn.commit()
-                print(f"✅ Successfully deleted {len(student_ids_to_delete)} records")
+                # Student deletion has been centralized - show error
+                print("\n❌ Undo import operation has been disabled.")
+                print("Student deletion has been centralized.")
+                print("\nPlease use the main GUI (Student Management menu) or CLI to:")
+                print("• Delete individual students as needed")
+                print("\nThis ensures consistent student data across all modules.")
+                return
                 
                 # Update import history
                 last_import['undone'] = True
@@ -2905,10 +2841,9 @@ class BatchOperationManager:
                     update_values.append(new_data[file_field])
             
             if update_fields:
-                update_query = f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?"
-                update_values.append(student_id)
-                
-                cursor.execute(update_query, update_values)
+                # Student updates have been centralized - raise error
+                raise ValueError("Student updates have been disabled. "
+                               "Please use main GUI or CLI for student management.")
                 conn.commit()
                 
                 logger.info(f"Updated student {student_id}")

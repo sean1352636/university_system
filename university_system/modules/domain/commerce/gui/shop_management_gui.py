@@ -104,17 +104,21 @@ class UniversityShopGUI:
         # Create GUI components
         self.create_widgets()
 
-        # Check if user is already authenticated
+        # Check if user is already authenticated via central auth system
         self.setup_current_user()
 
-        # Show appropriate interface based on authentication status
-        if self.current_user:
-            # Update auth system to match current user
-            if self.auth:
-                self.auth.current_user = self.current_user
-            self.show_main_interface()
-        else:
-            self.show_login_screen()
+        # SECURITY: Require central authentication - no standalone login
+        if not self.current_user:
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui"
+            )
+            root.destroy()
+            return
+
+        # Show main interface for authenticated users
+        self.show_main_interface()
 
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
@@ -336,157 +340,6 @@ class UniversityShopGUI:
         self.progress_bar.grid(row=0, column=1, sticky=tk.E, padx=(10, 0))
         self.progress_bar.grid_remove()
         
-    def show_login_screen(self):
-        """Display login interface"""
-        self.clear_content()
-        
-        login_frame = ttk.LabelFrame(self.content_frame, text="Login", padding="20")
-        login_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), pady=20)
-        
-        # Login form
-        ttk.Label(login_frame, text="Username:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.username_entry = ttk.Entry(login_frame, width=30)
-        self.username_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
-        
-        ttk.Label(login_frame, text="Password:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.password_entry = ttk.Entry(login_frame, width=30, show="*")
-        self.password_entry.grid(row=1, column=1, pady=5, padx=(10, 0))
-        
-        # Buttons
-        button_frame = ttk.Frame(login_frame)
-        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
-        
-        ttk.Button(button_frame, text="Login", command=self.login, 
-                  style='Primary.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Register", command=self.show_register_screen).grid(row=0, column=1, padx=5)
-        ttk.Button(button_frame, text="CLI Mode", command=self.launch_cli_mode).grid(row=0, column=2, padx=5)
-        
-        # Demo credentials info
-        # WARNING: These are default demo credentials - change them in production!
-        # Set DEMO_STUDENT_PASSWORD, DEMO_STAFF_PASSWORD, DEMO_ADMIN_PASSWORD environment variables
-        info_frame = ttk.LabelFrame(self.content_frame, text="Demo Credentials", padding="10")
-        info_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
-
-        demo_student_pwd = os.getenv('DEMO_STUDENT_PASSWORD', 'password')
-        demo_staff_pwd = os.getenv('DEMO_STAFF_PASSWORD', 'password')
-        demo_admin_pwd = os.getenv('DEMO_ADMIN_PASSWORD', 'admin')
-
-        ttk.Label(info_frame, text=f"Student: username='student1', password='{demo_student_pwd}'").grid(row=0, column=0, sticky=tk.W)
-        ttk.Label(info_frame, text=f"Staff: username='staff1', password='{demo_staff_pwd}'").grid(row=1, column=0, sticky=tk.W)
-        ttk.Label(info_frame, text=f"Admin: username='admin', password='{demo_admin_pwd}'").grid(row=2, column=0, sticky=tk.W)
-        
-        # Focus on username entry
-        self.username_entry.focus()
-        
-        # Bind Enter key to login
-        self.root.bind('<Return>', lambda e: self.login())
-        
-    def show_register_screen(self):
-        """Display registration interface"""
-        self.clear_content()
-        
-        register_frame = ttk.LabelFrame(self.content_frame, text="Register New User", padding="20")
-        register_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), pady=20)
-        
-        # Registration form
-        ttk.Label(register_frame, text="Username:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.reg_username_entry = ttk.Entry(register_frame, width=30)
-        self.reg_username_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
-        
-        ttk.Label(register_frame, text="Password:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.reg_password_entry = ttk.Entry(register_frame, width=30, show="*")
-        self.reg_password_entry.grid(row=1, column=1, pady=5, padx=(10, 0))
-        
-        ttk.Label(register_frame, text="Email:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.reg_email_entry = ttk.Entry(register_frame, width=30)
-        self.reg_email_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
-        
-        ttk.Label(register_frame, text="Role:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.reg_role_var = tk.StringVar(value="student")
-        role_combo = ttk.Combobox(register_frame, textvariable=self.reg_role_var, width=27,
-                                 values=["student", "staff", "admin"], state="readonly")
-        role_combo.grid(row=3, column=1, pady=5, padx=(10, 0))
-        
-        # Buttons
-        button_frame = ttk.Frame(register_frame)
-        button_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        
-        ttk.Button(button_frame, text="Register", command=self.register, 
-                  style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Back to Login", command=self.show_login_screen).grid(row=0, column=1, padx=5)
-        
-    def login(self):
-        """Handle user login"""
-        username = self.username_entry.get().strip()
-        password = self.password_entry.get().strip()
-        
-        if not username or not password:
-            messagebox.showerror("Error", "Please enter both username and password")
-            return
-        
-        try:
-            # Use the original authentication system if available
-            if self.auth and hasattr(self.auth, 'login'):
-                success = self.auth.login(username, password)
-                if success:
-                    self.current_user = self.auth.current_user
-                    self.show_main_interface()
-                else:
-                    messagebox.showerror("Error", "Invalid username or password")
-            else:
-                # Fallback authentication
-                if self.simple_auth(username, password):
-                    self.current_user = {'username': username, 'role': 'student'}
-                    self.show_main_interface()
-                else:
-                    messagebox.showerror("Error", "Invalid username or password")
-                    
-        except Exception as e:
-            messagebox.showerror("Login Error", f"Login failed: {e}")
-            
-    def simple_auth(self, username, password):
-        """Simple fallback authentication"""
-        # WARNING: These are demo credentials - never use in production!
-        # Load from environment variables for better security
-        demo_users = {
-            'admin': {'password': os.getenv('DEMO_ADMIN_PASSWORD', 'admin'), 'role': 'admin'},
-            'staff1': {'password': os.getenv('DEMO_STAFF_PASSWORD', 'password'), 'role': 'staff'},
-            'student1': {'password': os.getenv('DEMO_STUDENT_PASSWORD', 'password'), 'role': 'student'}
-        }
-        
-        if username in demo_users and demo_users[username]['password'] == password:
-            self.current_user = {'username': username, 'role': demo_users[username]['role']}
-            return True
-        return False
-        
-    def register(self):
-        """Handle user registration"""
-        username = self.reg_username_entry.get().strip()
-        password = self.reg_password_entry.get().strip()
-        email = self.reg_email_entry.get().strip()
-        role = self.reg_role_var.get()
-        
-        if not all([username, password, email]):
-            messagebox.showerror("Error", "Please fill in all fields")
-            return
-        
-        try:
-            # Use original registration system if available
-            if self.auth and hasattr(self.auth, 'register'):
-                success = self.auth.register(username, password, email, role)
-                if success:
-                    messagebox.showinfo("Success", "Registration successful! Please log in.")
-                    self.show_login_screen()
-                else:
-                    messagebox.showerror("Error", "Registration failed")
-            else:
-                # Fallback - just show success message
-                messagebox.showinfo("Success", "Registration successful! Please log in.")
-                self.show_login_screen()
-                
-        except Exception as e:
-            messagebox.showerror("Registration Error", f"Registration failed: {e}")
-            
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:

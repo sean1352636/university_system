@@ -2147,126 +2147,12 @@ Total Documents: {doc_count}
             messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
 
     def edit_student(self):
-        """Edit selected student information"""
-        selection = self.students_tree.selection()
-        if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to edit.")
-            return
-        
-        item = self.students_tree.item(selection[0])
-        student_id = item['values'][0]
-        
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM students WHERE student_id = ?', (student_id,))
-            student_data = cursor.fetchone()
-            conn.close()
-            
-            if not student_data:
-                messagebox.showerror("Error", "Student not found")
-                return
-            
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Edit Student")
-            dialog.geometry("600x700")
-            dialog.transient(self.root)
-            dialog.grab_set()
-            
-            main_frame = ttk.Frame(dialog, padding=20)
-            main_frame.pack(fill='both', expand=True)
-            
-            ttk.Label(main_frame, text="Edit Student Information", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
-            
-            # Create form fields
-            fields = {}
-            
-            ttk.Label(main_frame, text="Student ID:").pack(anchor='w')
-            fields['student_id'] = tk.Entry(main_frame, width=40)
-            fields['student_id'].insert(0, student_data[0])
-            fields['student_id'].config(state='disabled')  # ID should not be editable
-            fields['student_id'].pack(fill='x', pady=5)
-            
-            ttk.Label(main_frame, text="First Name:").pack(anchor='w')
-            fields['first_name'] = tk.Entry(main_frame, width=40)
-            fields['first_name'].insert(0, student_data[1] or "")
-            fields['first_name'].pack(fill='x', pady=5)
-            
-            ttk.Label(main_frame, text="Last Name:").pack(anchor='w')
-            fields['last_name'] = tk.Entry(main_frame, width=40)
-            fields['last_name'].insert(0, student_data[2] or "")
-            fields['last_name'].pack(fill='x', pady=5)
-            
-            ttk.Label(main_frame, text="Email:").pack(anchor='w')
-            fields['email'] = tk.Entry(main_frame, width=40)
-            fields['email'].insert(0, student_data[3] or "")
-            fields['email'].pack(fill='x', pady=5)
-            
-            ttk.Label(main_frame, text="Course:").pack(anchor='w')
-            fields['course'] = tk.Entry(main_frame, width=40)
-            fields['course'].insert(0, student_data[4] or "")
-            fields['course'].pack(fill='x', pady=5)
-            
-            ttk.Label(main_frame, text="Year:").pack(anchor='w')
-            fields['year'] = tk.Entry(main_frame, width=40)
-            fields['year'].insert(0, str(student_data[5] or ""))
-            fields['year'].pack(fill='x', pady=5)
-            
-            def save_student():
-                try:
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    
-                    cursor.execute('''
-                    UPDATE students SET first_name = ?, last_name = ?, email = ?, course = ?, year = ?
-                    WHERE student_id = ?
-                    ''', (fields['first_name'].get(), fields['last_name'].get(), fields['email'].get(),
-                          fields['course'].get(), int(fields['year'].get() or 0), student_id))
-                    
-                    conn.commit()
-                    conn.close()
-                    
-                    messagebox.showinfo("Success", "Student information updated successfully!")
-                    dialog.destroy()
-                    self.refresh_students()
-                    
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update student: {str(e)}")
-            
-            button_frame = ttk.Frame(main_frame)
-            button_frame.pack(fill='x', pady=(15, 0))
-            
-            ttk.Button(button_frame, text="Save", command=save_student).pack(side='right', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load student data: {str(e)}")
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
 
     def deactivate_student(self):
-        """Deactivate selected student"""
-        selection = self.students_tree.selection()
-        if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to deactivate.")
-            return
-        
-        item = self.students_tree.item(selection[0])
-        student_id = item['values'][0]
-        
-        if messagebox.askyesno("Confirm", f"Are you sure you want to deactivate student {student_id}?"):
-            try:
-                conn = get_connection()
-                cursor = conn.cursor()
-                
-                cursor.execute('UPDATE students SET status = "inactive" WHERE student_id = ?', (student_id,))
-                
-                conn.commit()
-                conn.close()
-                
-                messagebox.showinfo("Success", "Student deactivated successfully!")
-                self.refresh_students()
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to deactivate student: {str(e)}")
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
 
     def workflow_management(self):
         """Workflow management with GUI interface"""
@@ -3681,76 +3567,20 @@ Total Documents: {doc_count}
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
 
     def add_student_dialog(self):
-        """Add new student dialog"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Add New Student")
-        dialog.geometry("400x500")
-        dialog.transient(self.root)
-        dialog.grab_set()
-        
-        main_frame = ttk.Frame(dialog, padding=20)
-        main_frame.pack(fill='both', expand=True)
-        
-        ttk.Label(main_frame, text="Add New Student", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
-        
-        fields = {}
-        
-        ttk.Label(main_frame, text="Student ID:").pack(anchor='w')
-        fields['student_id'] = tk.Entry(main_frame, width=40)
-        fields['student_id'].pack(fill='x', pady=5)
-        
-        ttk.Label(main_frame, text="First Name:").pack(anchor='w')
-        fields['first_name'] = tk.Entry(main_frame, width=40)
-        fields['first_name'].pack(fill='x', pady=5)
-        
-        ttk.Label(main_frame, text="Last Name:").pack(anchor='w')
-        fields['last_name'] = tk.Entry(main_frame, width=40)
-        fields['last_name'].pack(fill='x', pady=5)
-        
-        ttk.Label(main_frame, text="Email:").pack(anchor='w')
-        fields['email'] = tk.Entry(main_frame, width=40)
-        fields['email'].pack(fill='x', pady=5)
-        
-        ttk.Label(main_frame, text="Course:").pack(anchor='w')
-        fields['course'] = tk.Entry(main_frame, width=40)
-        fields['course'].pack(fill='x', pady=5)
-        
-        ttk.Label(main_frame, text="Year:").pack(anchor='w')
-        fields['year'] = tk.Entry(main_frame, width=40)
-        fields['year'].pack(fill='x', pady=5)
-        
-        def save_student():
-            # Validate required fields
-            if not all([fields['student_id'].get(), fields['first_name'].get(), fields['last_name'].get()]):
-                messagebox.showerror("Error", "Student ID, First Name, and Last Name are required")
-                return
-            
-            try:
-                conn = get_connection()
-                cursor = conn.cursor()
-                
-                cursor.execute('''
-                INSERT INTO students (student_id, first_name, last_name, email, course, year, enrollment_date, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (fields['student_id'].get(), fields['first_name'].get(), fields['last_name'].get(),
-                      fields['email'].get(), fields['course'].get(), int(fields['year'].get() or 1),
-                      datetime.now().strftime('%Y-%m-%d'), 'active'))
-                
-                conn.commit()
-                conn.close()
-                
-                messagebox.showinfo("Success", "Student added successfully!")
-                dialog.destroy()
-                self.refresh_students()
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to add student: {str(e)}")
-        
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill='x', pady=(15, 0))
-        
-        ttk.Button(button_frame, text="Add Student", command=save_student).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        """Redirect to centralized student management"""
+        self.show_student_management_redirect()
+
+    def show_student_management_redirect(self):
+        """Redirect to centralized student management"""
+        messagebox.showinfo(
+            "Student Management",
+            "Student creation, editing, and deletion have been centralized.\n\n"
+            "Please use the main GUI (Student Management menu) or CLI to:\n"
+            "• Create new students\n"
+            "• Edit student information\n"
+            "• Delete student records\n\n"
+            "This ensures consistent student data across all modules."
+        )
 
     def student_report_dialog(self):
         """Student report generation dialog"""

@@ -165,19 +165,7 @@ class ParentPortalGUI:
             btn.pack(fill=tk.X, pady=2, padx=10)
             self.nav_buttons.append(btn)
         
-        # Logout button at bottom
-        logout_btn = tk.Button(
-            self.sidebar_frame,
-            text="🚪 Logout",
-            command=self.logout,
-            bg='#e74c3c',
-            fg='white',
-            font=('Arial', 10),
-            relief=tk.FLAT,
-            padx=20,
-            pady=10
-        )
-        logout_btn.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
+        # Logout button removed - use main GUI logout functionality
     
     def clear_content(self):
         """Clear the content frame"""
@@ -6934,10 +6922,6 @@ class ParentPortalGUI:
         
         ttk.Label(self.content_frame, text=f"{title} interface coming soon!").pack(pady=50)
     
-    def logout(self):
-        """Logout and close application"""
-        if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
-            self.root.quit()
 
     def return_to_main_menu(self):
         """Return to the main menu"""

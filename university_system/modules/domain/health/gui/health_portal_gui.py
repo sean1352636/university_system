@@ -545,20 +545,8 @@ class HealthPortalGUI:
                 )
             ''')
             
-            # Insert sample data if tables are empty
-            cursor.execute("SELECT COUNT(*) FROM students")
-            if cursor.fetchone()[0] == 0:
-                sample_students = [
-                    ('STU001', 'John', 'Doe', 20, 'Male', 'john.doe@university.edu', '555-0101'),
-                    ('STU002', 'Jane', 'Smith', 19, 'Female', 'jane.smith@university.edu', '555-0102'),
-                    ('STU003', 'Mike', 'Johnson', 21, 'Male', 'mike.johnson@university.edu', '555-0103'),
-                ]
-                
-                for student in sample_students:
-                    cursor.execute(
-                        'INSERT INTO students (student_id, first_name, last_name, age, gender, email, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                        student
-                    )
+            # Note: Sample student data insertion has been removed.
+            # Students must be created via main GUI or CLI for centralized management.
             
             conn.commit()
             conn.close()

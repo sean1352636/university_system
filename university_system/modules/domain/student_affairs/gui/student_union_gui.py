@@ -481,71 +481,17 @@ class StudentUnionGUI:
                 messagebox.showerror("Error", "Password must be at least 6 characters")
                 return
 
-            try:
-                # First check if student_id already exists in students table
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-
-                cursor.execute('SELECT COUNT(*) FROM students WHERE student_id = ?', (student_id,))
-                if cursor.fetchone()[0] > 0:
-                    messagebox.showerror("Error", "Student ID already exists")
-                    conn.close()
-                    return
-
-                conn.close()
-
-                # Use centralized authentication system to create user
-                auth_system = UserAuth()
-                success = auth_system.create_user(
-                    username=username,
-                    password=password,
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name,
-                    role='student',
-                    student_id=student_id
-                )
-
-                if success:
-                    # User created successfully, now create student record
-                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor = conn.cursor()
-
-                    # Insert student record
-                    cursor.execute('''
-                        INSERT INTO students (student_id, first_name, last_name, email_address, course, year_of_study, enrollment_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (student_id, first_name, last_name, email, course, int(year) if year else 1, datetime.now().strftime('%Y-%m-%d')))
-
-                    # Get the user_id from the users table
-                    cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
-                    user_result = cursor.fetchone()
-                    if user_result:
-                        user_id = user_result[0]
-                        # Link student record to user (if your students table has a user_id column)
-                        try:
-                            cursor.execute('UPDATE students SET user_id = ? WHERE student_id = ?', (user_id, student_id))
-                        except sqlite3.OperationalError:
-                            # user_id column doesn't exist, which is fine for this implementation
-                            pass
-
-                    conn.commit()
-                    conn.close()
-
-                    messagebox.showinfo("Success", "Registration successful! You can now log in.")
-                    register_window.destroy()
-                else:
-                    # User creation failed - auth_system already printed the error
-                    messagebox.showerror("Registration Failed", "User account creation failed. Username or email may already exist.")
-
-            except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Registration failed: {e}")
-                if 'conn' in locals():
-                    conn.close()
-            except Exception as e:
-                messagebox.showerror("Error", f"Registration failed: {e}")
-                if 'conn' in locals() and conn:
-                    conn.close()
+            # Student creation has been centralized to main GUI and CLI
+            messagebox.showinfo(
+                "Student Registration",
+                "Student registration has been centralized for data consistency.\n\n"
+                "Please use one of the following methods to register:\n\n"
+                "1. Main GUI: Student Management > Create Student\n"
+                "2. CLI: Student Management menu\n\n"
+                "After registration, you can log in to the Student Union portal.\n\n"
+                "This ensures consistent student data across all university systems."
+            )
+            register_window.destroy()
         
         ttk.Button(button_frame, text="Register", command=register_user).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=register_window.destroy).pack(side=tk.LEFT, padx=5)

@@ -637,19 +637,8 @@ class GradeTrackingApp:
             return
         
         # Sample students
-        sample_students = [
-            ('STU001', 'John', 'Michael', 'Smith', 'Computer Science', 'john.smith@email.com', '+1234567890', '123 Main St', '2024-09-01', 'Active', '2000-05-15', 'Male', 'USA'),
-            ('STU002', 'Sarah', '', 'Johnson', 'Engineering', 'sarah.johnson@email.com', '+1234567891', '456 Oak Ave', '2024-09-01', 'Active', '1999-12-22', 'Female', 'Canada'),
-            ('STU003', 'Michael', 'James', 'Brown', 'Mathematics', 'michael.brown@email.com', '+1234567892', '789 Pine Rd', '2024-09-01', 'Active', '2001-03-10', 'Male', 'UK'),
-            ('STU004', 'Emily', 'Rose', 'Davis', 'Physics', 'emily.davis@email.com', '+1234567893', '321 Elm St', '2024-09-01', 'Active', '2000-08-18', 'Female', 'Australia'),
-            ('STU005', 'David', '', 'Wilson', 'Computer Science', 'david.wilson@email.com', '+1234567894', '654 Maple Dr', '2024-09-01', 'Active', '1999-11-05', 'Male', 'USA')
-        ]
-        
-        cursor.executemany('''
-        INSERT INTO students (student_id, first_name, middle_name, last_name, course, email_address, 
-                             phone_number, address, enrollment_date, status, date_of_birth, gender, nationality)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', sample_students)
+        # Note: Sample student data insertion removed - students must be created via main GUI or CLI
+        # for centralized management
         
         # Sample modules
         sample_modules = [
