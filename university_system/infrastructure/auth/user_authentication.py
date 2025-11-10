@@ -4376,61 +4376,59 @@ class UserAuth:
         if not self._validate_password(new_password):
             print("Invalid new password. Password must be at least 8 characters long and contain a mix of letters, numbers, and special characters.")
             return False
-        
+
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Get user account data
-            cursor.execute(
-                'SELECT id, user_id, password_hash, salt FROM user_accounts WHERE username = ?',
-                (username,)
-            )
-            
-            user_data = cursor.fetchone()
-            
-            if not user_data:
-                print("User not found.")
-                conn.close()
-                return False
-            
-            account_id, user_id, password_hash, salt = user_data
-            
-            # Verify the current password
-            _, hashed_current = self._hash_password(current_password, salt)
-            
-            if hashed_current != password_hash:
-                print("Current password is incorrect.")
-                conn.close()
-                return False
-            
-            # Hash the new password
-            salt, new_hash = self._hash_password(new_password)
-            
-            # Update the password
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute(
-                'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ?, password_reset_required = 0 WHERE id = ?',
-                (new_hash, salt, timestamp, account_id)
-            )
-            
-            conn.commit()
-            
-            # Log the activity
-            self._log_activity(username, 'Password changed', None, user_id)
-            
-            # Update current user if this is the logged-in user
-            if self.current_user and self.current_user['id'] == user_id:
-                self.current_user['password_reset_required'] = 0
-            
-            print("Password changed successfully.")
-            return True
-            
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get user account data
+                cursor.execute(
+                    'SELECT id, user_id, password_hash, salt FROM user_accounts WHERE username = ?',
+                    (username,)
+                )
+
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    print("User not found.")
+                    return False
+
+                account_id, user_id, password_hash, salt = user_data
+
+                # Verify the current password
+                _, hashed_current = self._hash_password(current_password, salt)
+
+                if hashed_current != password_hash:
+                    print("Current password is incorrect.")
+                    print(f"Debug: Username={username}, Salt length={len(salt)}, Hash length={len(password_hash)}")
+                    print(f"Debug: Provided hash={hashed_current[:20]}..., Stored hash={password_hash[:20]}...")
+                    return False
+
+                # Hash the new password
+                salt, new_hash = self._hash_password(new_password)
+
+                # Update the password
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute(
+                    'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ?, password_reset_required = 0 WHERE id = ?',
+                    (new_hash, salt, timestamp, account_id)
+                )
+
+                conn.commit()
+
+                # Log the activity
+                self._log_activity(username, 'Password changed', None, user_id)
+
+                # Update current user if this is the logged-in user
+                if self.current_user and self.current_user['id'] == user_id:
+                    self.current_user['password_reset_required'] = 0
+
+                print("Password changed successfully.")
+                return True
+
         except sqlite3.Error as e:
             logger.error(f"Database error: {e}")
             return False
-        finally:
-            conn.close()
     
     def reset_password(self, username, admin_user_id=None):
         """Reset a user's password to a temporary one (admin function)"""

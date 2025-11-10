@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Password Change Verification Failure** - Fixed inconsistent database connection handling in password change
+  - **Problem**: Users unable to change passwords - system incorrectly reported current password as incorrect
+  - **Root Cause**: `change_password()` used direct `sqlite3.connect()` while `login()` used `db_manager.get_connection()` context manager
+  - **Context**: Inconsistent database connection methods could cause transaction isolation issues or stale data reads
+  - **Fix**: Updated `change_password()` to use `self.db_manager.get_connection()` context manager (line 4381)
+    * Ensures consistent database access patterns across authentication system
+    * Properly handles transaction management and connection pooling
+    * Added debug logging to help diagnose password verification failures
+  - **Impact**: Password changes now use same database connection method as login verification
+  - **File Modified**: `infrastructure/auth/user_authentication.py:4374-4431`
+  - **Changes Made**:
+    * Replaced direct SQLite connection with db_manager context manager
+    * Removed manual connection close in finally block (handled by context manager)
+    * Added debug print statements showing username, salt/hash lengths, and hash comparison on failure
+
 - **Student Creation Error: 'course_modules is not defined'** - Fixed NameError preventing student creation in GUI
   - **Problem**: Creating a new student in `main_gui.py` raised `NameError: name 'course_modules' is not defined`
   - **Root Cause**: Line 5512 referenced undefined variable `course_modules` in success message generation
