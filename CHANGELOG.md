@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Finance, Health Portal, and Student Union GUIs** - Implemented comprehensive role-based navigation filtering
+  - **Finance GUI**:
+    * Admin: Full access (14 tabs including Budget, Forecasting, Admin, Settings)
+    * Staff: Core operations (11 tabs including Core Finance, Students, Reports, Revenue, Collections, Research)
+    * Student: Self-service only (4 tabs: Dashboard, Payments, Fees, Aid)
+    * Navigation filtering: Tabs filtered based on access level ("all", "admin_staff", "admin")
+  - **Health Portal GUI**:
+    * Admin: Full access (all sections including Security Audit, Data Management)
+    * Staff/Health Staff: Patient care (Health Records, Appointments, Vaccinations, Reports, Email Manager)
+    * Student: Personal access only (View own records, Schedule appointments, Emergency contacts, Accessibility)
+    * Navigation sections: Health Records, Appointments, Vaccinations, Emergency Contacts, Reports (admin/staff), Integration Services (admin/staff), Accessibility, Administration (admin)
+  - **Student Union GUI (Campus Events)**:
+    * Admin: Full access (all features including Setup Election, Approve Bookings, Equipment Hub, Campaign Compliance)
+    * Staff: Operational access (Advanced Analytics, Live Streaming, Event Financial Tracking, Community Trends)
+    * Student: Participation access (Elections, Events, Clubs, Equipment checkout, Peer Support)
+    * Menu filtering: New Features, Advanced Elections, Community, Events, Facilities, Equipment Management
+  - **Files Modified**:
+    * Finance: `finance_gui.py:274-301`, `layout_manager.py:373-424`
+    * Health Portal: `health_portal_gui.py:135-159, 692-785`
+    * Student Union: `student_union_gui.py:321-344, 391-554`
+  - **Impact**: Enhanced security and cleaner interfaces across all three major service GUIs
+
 - **Role-Based UI Access Control in Library Management, Academic Calendar, and Module Scheduling GUIs** - Implemented comprehensive role-based menu filtering
   - **Library Management GUI**:
     * Admin: Full access (all menus), Staff: Most features (no system admin), Student: Basic access (view/borrow books)

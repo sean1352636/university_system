@@ -131,7 +131,33 @@ class HealthPortalGUI:
             return self.cipher_suite.decrypt(encrypted_data.encode()).decode()
         except:
             return encrypted_data
-    
+
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                role = self.auth.current_user.get('role', '').lower()
+                return role
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff/health staff"""
+        role = self.get_user_role()
+        return role in ['staff', 'health_staff', 'instructor']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def get_connection(self):
         """Get database connection using the centralized student_records.db path"""
         try:
@@ -664,10 +690,15 @@ class HealthPortalGUI:
             self.nav_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def populate_navigation(self):
-        """Populate navigation buttons based on user permissions"""
+        """Populate navigation buttons based on user permissions and role"""
         # Clear existing buttons
         for widget in self.nav_buttons_frame.winfo_children():
             widget.destroy()
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
 
         button_row = 0
 
@@ -730,16 +761,17 @@ class HealthPortalGUI:
         create_section_header("Emergency Contacts")
         create_nav_button("Manage Emergency Contacts", 'manage_emergency_contacts')
 
-        # Reports and Analytics
-        if self.auth.check_permission('view_any_health_record'):
+        # Reports and Analytics (Admin/Staff only)
+        if (is_admin or is_staff) and self.auth.check_permission('view_any_health_record'):
             create_section_header("Reports & Analytics")
             create_nav_button("Health Reports", 'health_reports')
 
-        # Integration Services
-        create_section_header("Integration Services")
-        create_nav_button("Email Manager", 'email_manager')
-        create_nav_button("Send Health Report Email", 'send_health_report_email')
-        create_nav_button("Send Health Record Email", 'send_health_record_email')
+        # Integration Services (Admin/Staff only)
+        if is_admin or is_staff:
+            create_section_header("Integration Services")
+            create_nav_button("Email Manager", 'email_manager')
+            create_nav_button("Send Health Report Email", 'send_health_report_email')
+            create_nav_button("Send Health Record Email", 'send_health_record_email')
 
         # Accessibility & Accommodations
         create_section_header("Accessibility & Accommodations")
@@ -747,7 +779,7 @@ class HealthPortalGUI:
         create_nav_button("Medical Accommodations", 'medical_accommodations')
 
         # Administration (Admin only)
-        if self.auth.current_user['role'] == 'admin':
+        if is_admin:
             create_section_header("Administration")
             create_nav_button("Security Audit", 'security_audit')
             create_nav_button("Data Management", 'data_management')

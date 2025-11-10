@@ -312,13 +312,37 @@ class StudentUnionGUI:
         """Update status bar message"""
         timestamp = datetime.now().strftime('%H:%M:%S')
         status_text = f"{timestamp} - {message}"
-        
+
         if hasattr(self, 'status_label'):
             self.status_label.config(text=status_text)
         elif hasattr(self, 'status_bar'):
             self.status_bar.config(text=status_text)
-        
-            
+
+    def get_user_role(self):
+        """Get the current user's role"""
+        try:
+            if self.current_user and isinstance(self.current_user, dict):
+                return self.current_user.get('role', '').lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff"""
+        role = self.get_user_role()
+        return role == 'staff'
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def switch_to_cli(self):
         """Switch to CLI mode"""
         if not CLI_AVAILABLE:
@@ -365,23 +389,29 @@ class StudentUnionGUI:
             self.show_admin_tab()
     
     def setup_main_menu(self):
-        """Setup the main menu bar"""
+        """Setup the main menu bar with role-based filtering"""
         # Clear existing menu
         self.menu_bar.delete(0, 'end')
-        
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Profile", command=self.show_profile)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
+
         # Tools menu
         tools_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Tools", menu=tools_menu)
         if CLI_AVAILABLE:
             tools_menu.add_command(label="Switch to CLI", command=self.switch_to_cli)
-        tools_menu.add_command(label="Database Info", command=self.show_database_info)
+        if is_admin or is_staff:
+            tools_menu.add_command(label="Database Info", command=self.show_database_info)
 
         # Integrations menu
         integrations_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -426,28 +456,39 @@ class StudentUnionGUI:
         features_menu.add_command(label="🌱 Green Initiatives", command=self.open_green_initiatives_dialog)
         features_menu.add_command(label="🤝 Volunteer Opportunities", command=self.open_volunteer_opportunities_dialog)
         features_menu.add_command(label="📋 Community Service Hours", command=self.open_community_service_hours_dialog)
-        features_menu.add_separator()
-        features_menu.add_command(label="📊 Advanced Analytics", command=self.open_advanced_analytics_dialog)
-        features_menu.add_command(label="📡 Live Streaming", command=self.open_live_streaming_dialog)
-        features_menu.add_command(label="🎓 Academic Conferences", command=self.open_academic_conferences_dialog)
-        features_menu.add_separator()
-        features_menu.add_command(label="⚙️ Setup Election (Admin)", command=self.open_setup_election_dialog)
+
+        # Admin/Staff only features
+        if is_admin or is_staff:
+            features_menu.add_separator()
+            features_menu.add_command(label="📊 Advanced Analytics", command=self.open_advanced_analytics_dialog)
+            features_menu.add_command(label="📡 Live Streaming", command=self.open_live_streaming_dialog)
+            features_menu.add_command(label="🎓 Academic Conferences", command=self.open_academic_conferences_dialog)
+
+        # Admin only features
+        if is_admin:
+            features_menu.add_separator()
+            features_menu.add_command(label="⚙️ Setup Election (Admin)", command=self.open_setup_election_dialog)
 
         # Advanced Elections submenu
         advanced_elections_submenu = tk.Menu(features_menu, tearoff=0)
         features_menu.add_cascade(label="🗳️ Advanced Elections", menu=advanced_elections_submenu)
-        advanced_elections_submenu.add_command(label="💰 Track Campaign Expenses", command=self.open_campaign_expenses_dialog)
         advanced_elections_submenu.add_command(label="👤 View Candidate Profiles", command=self.open_candidate_profiles_dialog)
         advanced_elections_submenu.add_command(label="♿ Election Accessibility", command=self.open_election_accessibility_dialog)
-        advanced_elections_submenu.add_separator()
-        advanced_elections_submenu.add_command(label="⚖️ Monitor Campaign Compliance", command=self.open_campaign_compliance_dialog)
-        advanced_elections_submenu.add_command(label="🔒 Election Security Audit", command=self.open_election_security_dialog)
-        advanced_elections_submenu.add_command(label="✅ Vote Integrity Check", command=self.open_vote_integrity_dialog)
-        advanced_elections_submenu.add_separator()
-        # Enhanced Voting Systems (Part 3C)
-        advanced_elections_submenu.add_command(label="🔧 Manage Enhanced Voting", command=self.open_manage_enhanced_voting_dialog)
         advanced_elections_submenu.add_command(label="🥇 Ranked Choice Voting", command=self.open_ranked_choice_voting_dialog)
-        advanced_elections_submenu.add_command(label="⚙️ Configure Voting Methods", command=self.open_configure_voting_methods_dialog)
+
+        # Admin/Staff only election features
+        if is_admin or is_staff:
+            advanced_elections_submenu.add_separator()
+            advanced_elections_submenu.add_command(label="💰 Track Campaign Expenses", command=self.open_campaign_expenses_dialog)
+            advanced_elections_submenu.add_command(label="⚖️ Monitor Campaign Compliance", command=self.open_campaign_compliance_dialog)
+            advanced_elections_submenu.add_command(label="🔒 Election Security Audit", command=self.open_election_security_dialog)
+            advanced_elections_submenu.add_command(label="✅ Vote Integrity Check", command=self.open_vote_integrity_dialog)
+
+        # Admin only voting configuration
+        if is_admin:
+            advanced_elections_submenu.add_separator()
+            advanced_elections_submenu.add_command(label="🔧 Manage Enhanced Voting", command=self.open_manage_enhanced_voting_dialog)
+            advanced_elections_submenu.add_command(label="⚙️ Configure Voting Methods", command=self.open_configure_voting_methods_dialog)
 
         # Additional Features menu
         additional_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -462,13 +503,15 @@ class StudentUnionGUI:
         community_submenu = tk.Menu(additional_menu, tearoff=0)
         additional_menu.add_cascade(label="🤝 Community", menu=community_submenu)
         community_submenu.add_command(label="Community Engagement", command=self.open_community_engagement_dialog)
-        community_submenu.add_command(label="Engagement Trends", command=self.open_engagement_trends_dialog)
-        community_submenu.add_command(label="Retention Insights", command=self.open_retention_insights_dialog)
+
+        # Admin/Staff only community analytics
+        if is_admin or is_staff:
+            community_submenu.add_command(label="Engagement Trends", command=self.open_engagement_trends_dialog)
+            community_submenu.add_command(label="Retention Insights", command=self.open_retention_insights_dialog)
 
         # Events submenu
         events_submenu = tk.Menu(additional_menu, tearoff=0)
         additional_menu.add_cascade(label="📅 Advanced Events", menu=events_submenu)
-        events_submenu.add_command(label="Event Financial Tracking", command=self.open_event_financial_tracking_dialog)
         events_submenu.add_command(label="Event Ticketing System", command=self.open_event_ticketing_dialog)
         events_submenu.add_command(label="Recurring Events", command=self.open_recurring_events_dialog)
         events_submenu.add_command(label="Event Attendance", command=self.open_event_attendance_dialog)
@@ -476,30 +519,39 @@ class StudentUnionGUI:
         events_submenu.add_command(label="💻 Virtual Events", command=self.open_virtual_events_dialog)
         events_submenu.add_command(label="🎓 Knowledge Sharing Sessions", command=self.open_knowledge_sharing_dialog)
 
+        # Admin/Staff only event features
+        if is_admin or is_staff:
+            events_submenu.add_separator()
+            events_submenu.add_command(label="Event Financial Tracking", command=self.open_event_financial_tracking_dialog)
+
         # Facilities submenu (Part 3C)
         facilities_submenu = tk.Menu(additional_menu, tearoff=0)
         additional_menu.add_cascade(label="🏢 Facilities", menu=facilities_submenu)
-        facilities_submenu.add_command(label="✅ Approve Bookings (Admin)", command=self.open_approve_facility_bookings_dialog)
+
+        # Admin only facility approvals
+        if is_admin:
+            facilities_submenu.add_command(label="✅ Approve Bookings (Admin)", command=self.open_approve_facility_bookings_dialog)
 
         # Equipment Management submenu (Part 3C)
         equipment_submenu = tk.Menu(additional_menu, tearoff=0)
         additional_menu.add_cascade(label="📦 Equipment Management", menu=equipment_submenu)
-        # Main hub
-        equipment_submenu.add_command(label="🏠 Equipment System Hub", command=self.open_manage_equipment_system_dialog)
-        equipment_submenu.add_separator()
-        # Student functions
+
+        # Student functions - available to all
         equipment_submenu.add_command(label="📋 Browse Available Equipment", command=self.open_browse_available_equipment_dialog)
         equipment_submenu.add_command(label="🔍 Search Equipment", command=self.open_search_equipment_dialog)
         equipment_submenu.add_command(label="ℹ️ View Equipment Details", command=self.open_view_equipment_details_dialog)
         equipment_submenu.add_command(label="📤 Check Out Equipment", command=self.open_checkout_equipment_dialog)
         equipment_submenu.add_command(label="📥 Return Equipment", command=self.open_return_equipment_dialog)
         equipment_submenu.add_command(label="📜 My Equipment Checkouts", command=self.open_my_equipment_checkouts_dialog)
-        equipment_submenu.add_separator()
-        # Admin functions
-        equipment_submenu.add_command(label="➕ Add New Equipment (Admin)", command=self.open_add_new_equipment_dialog)
-        equipment_submenu.add_command(label="🔧 Update Equipment Status (Admin)", command=self.open_update_equipment_status_dialog)
-        equipment_submenu.add_command(label="🛠️ Maintenance Tracking (Admin)", command=self.open_equipment_maintenance_tracking_dialog)
-        equipment_submenu.add_command(label="📊 Generate Reports (Admin)", command=self.open_generate_equipment_reports_dialog)
+
+        # Admin only equipment management
+        if is_admin:
+            equipment_submenu.add_separator()
+            equipment_submenu.add_command(label="🏠 Equipment System Hub", command=self.open_manage_equipment_system_dialog)
+            equipment_submenu.add_command(label="➕ Add New Equipment (Admin)", command=self.open_add_new_equipment_dialog)
+            equipment_submenu.add_command(label="🔧 Update Equipment Status (Admin)", command=self.open_update_equipment_status_dialog)
+            equipment_submenu.add_command(label="🛠️ Maintenance Tracking (Admin)", command=self.open_equipment_maintenance_tracking_dialog)
+            equipment_submenu.add_command(label="📊 Generate Reports (Admin)", command=self.open_generate_equipment_reports_dialog)
 
         # Peer Support & Wellness submenu
         peer_support_submenu = tk.Menu(additional_menu, tearoff=0)

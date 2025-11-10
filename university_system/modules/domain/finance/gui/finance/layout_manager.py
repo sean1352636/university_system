@@ -371,25 +371,40 @@ class LayoutManager:
         
 
     def setup_navigation(self):
-        """Setup navigation buttons for different sections"""
-        nav_buttons = [
-            ("📊 Dashboard", "dashboard"),
-            ("💰 Core Finance", "core_finance"),
-            ("💳 Payments", "payments"),
-            ("📋 Fees", "fees"),
-            ("👤 Students", "students"),
-            ("📈 Reports", "reports"),
-            ("💵 Revenue by Source", "revenue_source"),
-            ("📞 Collections", "collections"),
-            ("🎓 Aid", "aid"),
-            ("💼 Budget", "budget"),
-            ("🔮 Forecasting", "forecasting"),
-            # ("🎓 Scholarships", "scholarships"),  # Removed - integrated into Aid tab
-            ("🔬 Research & Grants", "research_grants"),
-            ("⚙️ Admin", "admin"),
-            ("⚙️ Settings", "settings")
+        """Setup navigation buttons for different sections with role-based access"""
+        is_admin = self.gui.is_admin()
+        is_staff = self.gui.is_staff()
+        is_student = self.gui.is_student()
+
+        # Define all navigation buttons
+        all_nav_buttons = [
+            ("📊 Dashboard", "dashboard", "all"),  # Available to all
+            ("💰 Core Finance", "core_finance", "admin_staff"),  # Admin and Staff only
+            ("💳 Payments", "payments", "all"),  # All can view payments
+            ("📋 Fees", "fees", "all"),  # All can view fees
+            ("👤 Students", "students", "admin_staff"),  # Admin and Staff only
+            ("📈 Reports", "reports", "admin_staff"),  # Admin and Staff only
+            ("💵 Revenue by Source", "revenue_source", "admin_staff"),  # Admin and Staff only
+            ("📞 Collections", "collections", "admin_staff"),  # Admin and Staff only
+            ("🎓 Aid", "aid", "all"),  # All can view aid (students view their own)
+            ("💼 Budget", "budget", "admin"),  # Admin only
+            ("🔮 Forecasting", "forecasting", "admin"),  # Admin only
+            ("🔬 Research & Grants", "research_grants", "admin_staff"),  # Admin and Staff only
+            ("⚙️ Admin", "admin", "admin"),  # Admin only
+            ("⚙️ Settings", "settings", "admin_staff")  # Admin and Staff only
         ]
-    
+
+        # Filter buttons based on role
+        nav_buttons = []
+        for text, tab_id, access_level in all_nav_buttons:
+            if access_level == "all":
+                nav_buttons.append((text, tab_id))
+            elif access_level == "admin" and is_admin:
+                nav_buttons.append((text, tab_id))
+            elif access_level == "admin_staff" and (is_admin or is_staff):
+                nav_buttons.append((text, tab_id))
+
+        # Create buttons
         for text, tab_id in nav_buttons:
             btn = tk.Button(
                 self.nav_frame,
