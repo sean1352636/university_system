@@ -70,6 +70,16 @@ except ImportError:
     EMAIL_AVAILABLE = False
     send_email = None
 
+# Import module scheduling constants for timetable integration
+try:
+    from university_system.modules.domain.academics.services.module_scheduling import (
+        DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
+    )
+except ImportError:
+    DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+    SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
+
 # Import the original course management functions
 try:
     from university_system.modules.domain.academics.services.course_management import (
@@ -7820,80 +7830,76 @@ class RecommendationsDialog:
 
     def create_course_schedule_gui(self):
         """
-        Create a schedule for a course.
-        Opens a dialog to input schedule details.
+        Create a schedule for a course - Integrated with Module Scheduling System.
+        Opens a dialog to input schedule details using the module_schedule table.
         """
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Course Schedule")
-        dialog.geometry("600x600")
+        dialog.geometry("700x750")
         dialog.transient(self.root)
 
-        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame = ttk.Frame(dialog, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text="Create Course Schedule",
-                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Course selection
         course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
         course_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(course_frame, text="Course/Module:").grid(row=0, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
-        course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=45)
+        course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=50)
         course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
-        # Semester and year
-        semester_frame = ttk.LabelFrame(main_frame, text="Semester and Year", padding="10")
-        semester_frame.pack(fill=tk.X, pady=5)
+        # Schedule details
+        schedule_frame = ttk.LabelFrame(main_frame, text="Schedule Details", padding="10")
+        schedule_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(semester_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        semester_var = tk.StringVar()
-        semester_combo = ttk.Combobox(semester_frame, textvariable=semester_var,
-                                     values=["Fall", "Spring", "Summer", "Winter"],
-                                     state='readonly', width=20)
-        semester_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
-        semester_combo.current(0)
+        # Day of week dropdown
+        ttk.Label(schedule_frame, text="Day of Week:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        day_var = tk.StringVar()
+        day_combo = ttk.Combobox(schedule_frame, textvariable=day_var,
+                                values=DAYS_OF_WEEK, state='readonly', width=28)
+        day_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Label(semester_frame, text="Year:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        year_var = tk.StringVar(value=str(datetime.now().year))
-        year_entry = ttk.Entry(semester_frame, textvariable=year_var, width=22)
-        year_entry.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
-
-        # Time and days
-        time_frame = ttk.LabelFrame(main_frame, text="Time and Days", padding="10")
-        time_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Label(time_frame, text="Start Time (HH:MM):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        # Start time dropdown
+        ttk.Label(schedule_frame, text="Start Time:").grid(row=1, column=0, sticky=tk.W, pady=5)
         start_time_var = tk.StringVar()
-        start_time_entry = ttk.Entry(time_frame, textvariable=start_time_var, width=22)
-        start_time_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
+        start_time_combo = ttk.Combobox(schedule_frame, textvariable=start_time_var,
+                                       values=TIME_SLOTS, state='readonly', width=28)
+        start_time_combo.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Label(time_frame, text="End Time (HH:MM):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        # End time dropdown
+        ttk.Label(schedule_frame, text="End Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
         end_time_var = tk.StringVar()
-        end_time_entry = ttk.Entry(time_frame, textvariable=end_time_var, width=22)
-        end_time_entry.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
+        end_time_combo = ttk.Combobox(schedule_frame, textvariable=end_time_var,
+                                     values=TIME_SLOTS, state='readonly', width=28)
+        end_time_combo.grid(row=2, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Label(time_frame, text="Days of Week:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        days_var = tk.StringVar()
-        days_entry = ttk.Entry(time_frame, textvariable=days_var, width=22)
-        days_entry.grid(row=2, column=1, sticky=tk.W, pady=5, padx=5)
-        ttk.Label(time_frame, text="(e.g., Monday,Wednesday,Friday)",
-                 font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+        # Session type dropdown
+        ttk.Label(schedule_frame, text="Session Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        session_type_var = tk.StringVar()
+        session_type_combo = ttk.Combobox(schedule_frame, textvariable=session_type_var,
+                                         values=SESSION_TYPES, state='readonly', width=28)
+        session_type_combo.grid(row=3, column=1, sticky=tk.W, pady=5, padx=5)
+        session_type_combo.current(0)  # Default to Lecture
 
-        ttk.Label(time_frame, text="Classroom:").grid(row=4, column=0, sticky=tk.W, pady=5)
-        classroom_var = tk.StringVar()
-        classroom_entry = ttk.Entry(time_frame, textvariable=classroom_var, width=22)
-        classroom_entry.grid(row=4, column=1, sticky=tk.W, pady=5, padx=5)
+        # Room selection - DROPDOWN with database
+        ttk.Label(schedule_frame, text="Room:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        room_var = tk.StringVar()
+        room_combo = ttk.Combobox(schedule_frame, textvariable=room_var, state='readonly', width=28)
+        room_combo.grid(row=4, column=1, sticky=tk.W, pady=5, padx=5)
 
         # Instructor selection
-        instructor_frame = ttk.LabelFrame(main_frame, text="Instructor (Optional)", padding="10")
+        instructor_frame = ttk.LabelFrame(main_frame, text="Instructor", padding="10")
         instructor_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(instructor_frame, text="Instructor:").grid(row=0, column=0, sticky=tk.W, pady=5)
         instructor_var = tk.StringVar()
         instructor_combo = ttk.Combobox(instructor_frame, textvariable=instructor_var,
-                                       state='readonly', width=45)
+                                       state='readonly', width=50)
         instructor_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
         def load_data():
@@ -7901,7 +7907,7 @@ class RecommendationsDialog:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
 
-                # Load active courses
+                # Load active courses/modules
                 cursor.execute("""
                     SELECT id, course_code, course_name
                     FROM courses
@@ -7909,21 +7915,31 @@ class RecommendationsDialog:
                     ORDER BY course_code
                 """)
                 courses = cursor.fetchall()
-                course_list = [f"{code} - {name} (ID: {id})" for id, code, name in courses]
+                course_list = [f"{code} - {name}" for id, code, name in courses]
                 course_combo['values'] = course_list
+
+                # Load active rooms from rooms table
+                cursor.execute("""
+                    SELECT id, building, room_number, capacity, room_type
+                    FROM rooms
+                    WHERE is_active = 1
+                    ORDER BY building, room_number
+                """)
+                rooms = cursor.fetchall()
+                room_list = [f"{room[0]} - {room[1]}-{room[2]} (Cap: {room[3]}, Type: {room[4]})"
+                            for room in rooms]
+                room_combo['values'] = room_list
 
                 # Load active instructors
                 cursor.execute("""
                     SELECT id, first_name, last_name
                     FROM instructors
-                    WHERE status = 'Active'
-                    ORDER BY last_name
+                    WHERE CASE WHEN status = 'Active' THEN 1 ELSE COALESCE(is_active, 1) END = 1
+                    ORDER BY last_name, first_name
                 """)
                 instructors = cursor.fetchall()
-                instructor_list = ["-- No Instructor --"] + \
-                                [f"{last} {first} (ID: {id})" for id, first, last in instructors]
+                instructor_list = [f"{inst[0]} - {inst[1]} {inst[2]}" for inst in instructors]
                 instructor_combo['values'] = instructor_list
-                instructor_combo.current(0)
 
                 conn.close()
 
@@ -7932,79 +7948,104 @@ class RecommendationsDialog:
                 dialog.destroy()
 
         def save_schedule():
+            # Validation
             if not course_var.get():
-                messagebox.showwarning("Incomplete", "Please select a course")
+                messagebox.showwarning("Incomplete", "Please select a course/module")
                 return
 
-            if not semester_var.get() or not year_var.get():
-                messagebox.showwarning("Incomplete", "Please select semester and year")
+            if not day_var.get():
+                messagebox.showwarning("Incomplete", "Please select a day of week")
                 return
 
-            # Validate time format if provided
-            if start_time_var.get() and not self.validate_time_format(start_time_var.get()):
-                messagebox.showerror("Invalid Format", "Start time must be in HH:MM format")
+            if not start_time_var.get() or not end_time_var.get():
+                messagebox.showwarning("Incomplete", "Please select start and end times")
                 return
 
-            if end_time_var.get() and not self.validate_time_format(end_time_var.get()):
-                messagebox.showerror("Invalid Format", "End time must be in HH:MM format")
+            if not room_var.get():
+                messagebox.showwarning("Incomplete", "Please select a room")
                 return
 
-            # Validate days format if provided
-            if days_var.get() and not self.validate_days_of_week(days_var.get()):
-                messagebox.showerror("Invalid Format",
-                                   "Days must be full day names separated by commas")
+            if not instructor_var.get():
+                messagebox.showwarning("Incomplete", "Please select an instructor")
                 return
 
-            # Validate year
-            try:
-                year = int(year_var.get())
-                if year < datetime.now().year:
-                    messagebox.showerror("Invalid Year", "Year must be current year or later")
-                    return
-            except ValueError:
-                messagebox.showerror("Invalid Year", "Please enter a valid year")
+            if not session_type_var.get():
+                messagebox.showwarning("Incomplete", "Please select a session type")
                 return
 
             try:
-                course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+                # Extract course code
+                module_code = course_var.get().split(" - ")[0]
+
+                # Extract room ID
+                room_id = int(room_var.get().split(" - ")[0])
+
+                # Extract instructor ID
+                instructor_id = int(instructor_var.get().split(" - ")[0])
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
 
-                # Check if schedule already exists
+                # Ensure course_schedule table exists with proper schema
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_code TEXT NOT NULL,
+                    day_of_week TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    room_id INTEGER,
+                    instructor_id INTEGER,
+                    session_type TEXT,
+                    semester TEXT,
+                    year INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    FOREIGN KEY (room_id) REFERENCES rooms(id),
+                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                )
+                ''')
+
+                # Get current semester and year
+                current_semester = "Fall"  # You can make this dynamic
+                current_year = datetime.now().year
+
+                # Check for schedule conflicts
                 cursor.execute("""
                     SELECT id FROM course_schedule
-                    WHERE course_id = ? AND semester = ? AND year = ?
-                """, (course_id, semester_var.get(), year))
+                    WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
+                    AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
+                """, (module_code, day_var.get(), current_semester, current_year,
+                     start_time_var.get(), start_time_var.get(),
+                     end_time_var.get(), end_time_var.get()))
 
                 if cursor.fetchone():
-                    messagebox.showerror("Duplicate",
-                                       f"Schedule already exists for this course in {semester_var.get()} {year}")
+                    messagebox.showerror("Schedule Conflict",
+                                       f"Schedule conflict detected for {module_code} on {day_var.get()}")
                     conn.close()
                     return
 
-                # Extract instructor ID if selected
-                instructor_id = None
-                if instructor_var.get() and instructor_var.get() != "-- No Instructor --":
-                    instructor_id = int(instructor_var.get().split("ID: ")[1].rstrip(")"))
-
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+                # Insert into course_schedule table
                 cursor.execute('''
-                    INSERT INTO course_schedule (course_id, semester, year, start_time, end_time,
-                                               days_of_week, classroom, instructor_id, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (course_id, semester_var.get(), year,
-                      start_time_var.get() or None, end_time_var.get() or None,
-                      days_var.get() or None, classroom_var.get() or None,
-                      instructor_id, timestamp))
+                    INSERT INTO course_schedule (course_code, day_of_week, start_time, end_time,
+                                               room_id, instructor_id, session_type, semester, year, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (module_code, day_var.get(), start_time_var.get(), end_time_var.get(),
+                      room_id, instructor_id, session_type_var.get(), current_semester, current_year, timestamp))
 
                 conn.commit()
                 conn.close()
 
                 messagebox.showinfo("Success",
-                                  f"Schedule created successfully for {semester_var.get()} {year}!")
-                self.update_status("Course schedule created")
+                                  f"Schedule created successfully!\n\n"
+                                  f"Course: {module_code}\n"
+                                  f"Day: {day_var.get()}\n"
+                                  f"Time: {start_time_var.get()} - {end_time_var.get()}\n"
+                                  f"Session: {session_type_var.get()}\n"
+                                  f"Semester: {current_semester} {current_year}")
+                self.update_status("Course schedule created in course_schedule table")
                 dialog.destroy()
 
             except Exception as e:
@@ -8022,62 +8063,144 @@ class RecommendationsDialog:
 
     def view_course_schedules_gui(self):
         """
-        View course schedules for all courses or a specific course.
-        Opens a dialog with schedule information.
+        View course schedules using course_schedule table.
+        Displays timetable in grid format matching Module Scheduling GUI.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("View Course Schedules")
-        dialog.geometry("800x600")
+        dialog.title("View Course Schedules - Timetable View")
+        dialog.geometry("1400x900")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Course Schedules",
-                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text="Course Schedules - Timetable View",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Create notebook for list and grid views
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # ==========================
+        # TAB 1: LIST VIEW
+        # ==========================
+        list_tab = ttk.Frame(notebook)
+        notebook.add(list_tab, text="📋 List View")
 
         # Filter frame
-        filter_frame = ttk.Frame(main_frame)
-        filter_frame.pack(fill=tk.X, pady=5)
+        filter_frame = ttk.Frame(list_tab)
+        filter_frame.pack(fill=tk.X, pady=5, padx=10)
 
         ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
-        course_var = tk.StringVar()
-        course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
-        course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        course_filter_var = tk.StringVar()
+        course_filter_combo = ttk.Combobox(filter_frame, textvariable=course_filter_var,
+                                          state='readonly', width=40)
+        course_filter_combo.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(filter_frame, text="🔄 Refresh",
+                  command=lambda: load_list_view()).pack(side=tk.LEFT, padx=5)
 
         # Treeview for schedules
-        tree_frame = ttk.Frame(main_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        tree_frame = ttk.Frame(list_tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
-        columns = ('Course', 'Semester', 'Year', 'Time', 'Days', 'Classroom', 'Instructor')
-        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+        columns = ('ID', 'Course', 'Day', 'Time', 'Room', 'Instructor', 'Type', 'Semester')
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)
 
-        for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=100)
+        tree.heading('ID', text='ID')
+        tree.heading('Course', text='Course Code')
+        tree.heading('Day', text='Day')
+        tree.heading('Time', text='Time')
+        tree.heading('Room', text='Room')
+        tree.heading('Instructor', text='Instructor')
+        tree.heading('Type', text='Session Type')
+        tree.heading('Semester', text='Semester')
+
+        tree.column('ID', width=50)
+        tree.column('Course', width=120)
+        tree.column('Day', width=100)
+        tree.column('Time', width=120)
+        tree.column('Room', width=150)
+        tree.column('Instructor', width=150)
+        tree.column('Type', width=100)
+        tree.column('Semester', width=120)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         tree.configure(yscrollcommand=scrollbar.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Buttons for list view
+        list_button_frame = ttk.Frame(list_tab)
+        list_button_frame.pack(fill=tk.X, pady=5, padx=10)
+
+        ttk.Button(list_button_frame, text="❌ Delete Selected",
+                  command=lambda: delete_selected_schedule()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(list_button_frame, text="✏️ Edit Selected",
+                  command=lambda: edit_selected_schedule()).pack(side=tk.LEFT, padx=5)
+
+        # ==========================
+        # TAB 2: TIMETABLE GRID VIEW
+        # ==========================
+        grid_tab = ttk.Frame(notebook)
+        notebook.add(grid_tab, text="📅 Timetable Grid")
+
+        # Filter for grid view
+        grid_filter_frame = ttk.Frame(grid_tab)
+        grid_filter_frame.pack(fill=tk.X, pady=5, padx=10)
+
+        ttk.Label(grid_filter_frame, text="Show schedule for:").pack(side=tk.LEFT, padx=5)
+        grid_filter_var = tk.StringVar(value="All Courses")
+        grid_filter_combo = ttk.Combobox(grid_filter_frame, textvariable=grid_filter_var,
+                                        state='readonly', width=40)
+        grid_filter_combo.pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(grid_filter_frame, text="🔄 Refresh Grid",
+                  command=lambda: load_timetable_grid()).pack(side=tk.LEFT, padx=5)
+
+        # Scrollable grid container
+        grid_canvas_frame = ttk.Frame(grid_tab)
+        grid_canvas_frame.pack(fill=tk.BOTH, expand=True, pady=5, padx=10)
+
+        grid_canvas = tk.Canvas(grid_canvas_frame, bg='white')
+        grid_scrollbar_v = ttk.Scrollbar(grid_canvas_frame, orient="vertical", command=grid_canvas.yview)
+        grid_scrollbar_h = ttk.Scrollbar(grid_canvas_frame, orient="horizontal", command=grid_canvas.xview)
+
+        grid_frame = tk.Frame(grid_canvas, bg='white')
+        grid_frame.bind("<Configure>", lambda e: grid_canvas.configure(scrollregion=grid_canvas.bbox("all")))
+
+        grid_canvas.create_window((0, 0), window=grid_frame, anchor="nw")
+        grid_canvas.configure(yscrollcommand=grid_scrollbar_v.set, xscrollcommand=grid_scrollbar_h.set)
+
+        grid_canvas.pack(side="left", fill="both", expand=True)
+        grid_scrollbar_v.pack(side="right", fill="y")
+        grid_scrollbar_h.pack(side="bottom", fill="x")
+
+        # ==========================
+        # FUNCTIONS
+        # ==========================
+
         def load_courses():
+            """Load course filter options"""
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
-                cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
-                courses = cursor.fetchall()
+                cursor.execute("SELECT DISTINCT course_code FROM courses WHERE status = 'Active' ORDER BY course_code")
+                courses = [row[0] for row in cursor.fetchall()]
                 conn.close()
 
-                course_list = ["-- All Courses --"] + [f"{code} - {name} (ID: {id})" for id, code, name in courses]
-                course_combo['values'] = course_list
-                course_combo.current(0)
+                course_list = ["-- All Courses --"] + courses
+                course_filter_combo['values'] = course_list
+                course_filter_combo.current(0)
+
+                grid_filter_combo['values'] = course_list
+                grid_filter_combo.current(0)
 
             except sqlite3.Error as e:
                 messagebox.showerror("Database Error", f"Failed to load courses: {e}")
 
-        def load_schedules(*args):
-            # Clear existing items
+        def load_list_view(*args):
+            """Load schedules in list view"""
             for item in tree.get_children():
                 tree.delete(item)
 
@@ -8085,68 +8208,309 @@ class RecommendationsDialog:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
 
-                selected = course_var.get()
+                # Ensure table exists
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_code TEXT NOT NULL,
+                    day_of_week TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    room_id INTEGER,
+                    instructor_id INTEGER,
+                    session_type TEXT,
+                    semester TEXT,
+                    year INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    FOREIGN KEY (room_id) REFERENCES rooms(id),
+                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                )
+                ''')
 
-                if selected == "-- All Courses --" or not selected:
-                    cursor.execute("""
-                        SELECT c.course_code, c.course_name, s.semester, s.year,
-                               s.start_time, s.end_time, s.days_of_week, s.classroom,
-                               i.first_name, i.last_name
-                        FROM course_schedule s
-                        JOIN courses c ON s.course_id = c.id
-                        LEFT JOIN instructors i ON s.instructor_id = i.id
-                        ORDER BY s.year DESC, s.semester, c.course_code
-                    """)
+                filter_course = course_filter_var.get()
+
+                if filter_course == "-- All Courses --" or not filter_course:
+                    query = """
+                        SELECT cs.id, cs.course_code, cs.day_of_week,
+                               cs.start_time, cs.end_time,
+                               r.building, r.room_number,
+                               i.first_name, i.last_name,
+                               cs.session_type, cs.semester, cs.year
+                        FROM course_schedule cs
+                        LEFT JOIN rooms r ON cs.room_id = r.id
+                        LEFT JOIN instructors i ON cs.instructor_id = i.id
+                        ORDER BY cs.course_code, cs.day_of_week, cs.start_time
+                    """
+                    cursor.execute(query)
                 else:
-                    course_id = int(selected.split("ID: ")[1].rstrip(")"))
-                    cursor.execute("""
-                        SELECT c.course_code, c.course_name, s.semester, s.year,
-                               s.start_time, s.end_time, s.days_of_week, s.classroom,
-                               i.first_name, i.last_name
-                        FROM course_schedule s
-                        JOIN courses c ON s.course_id = c.id
-                        LEFT JOIN instructors i ON s.instructor_id = i.id
-                        WHERE s.course_id = ?
-                        ORDER BY s.year DESC, s.semester
-                    """, (course_id,))
+                    query = """
+                        SELECT cs.id, cs.course_code, cs.day_of_week,
+                               cs.start_time, cs.end_time,
+                               r.building, r.room_number,
+                               i.first_name, i.last_name,
+                               cs.session_type, cs.semester, cs.year
+                        FROM course_schedule cs
+                        LEFT JOIN rooms r ON cs.room_id = r.id
+                        LEFT JOIN instructors i ON cs.instructor_id = i.id
+                        WHERE cs.course_code = ?
+                        ORDER BY cs.day_of_week, cs.start_time
+                    """
+                    cursor.execute(query, (filter_course,))
 
                 schedules = cursor.fetchall()
                 conn.close()
 
                 for sched in schedules:
-                    code, name, semester, year, start, end, days, classroom, first, last = sched
-                    course = f"{code} - {name[:20]}"
-                    time_str = ""
-                    if start and end:
-                        time_str = f"{start}-{end}"
-                    elif start:
-                        time_str = start
-
+                    sched_id, course_code, day, start, end, building, room_num, first, last, session_type, semester, year = sched
+                    time_str = f"{start}-{end}"
+                    room_str = f"{building}-{room_num}" if building and room_num else "TBA"
                     instructor = f"{first} {last}" if first and last else "TBA"
+                    semester_str = f"{semester} {year}" if semester and year else "N/A"
 
                     tree.insert('', tk.END, values=(
-                        course, semester, year, time_str, days or '',
-                        classroom or '', instructor
+                        sched_id, course_code, day, time_str, room_str,
+                        instructor, session_type or '', semester_str
                     ))
 
                 if not schedules:
-                    messagebox.showinfo("No Results", "No schedules found")
+                    messagebox.showinfo("No Results", "No course schedules found")
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load schedules: {e}")
+                print(f"Schedule load error: {e}")
 
-        course_combo.bind('<<ComboboxSelected>>', load_schedules)
+        def delete_selected_schedule():
+            """Delete selected schedule from list"""
+            selection = tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a schedule to delete")
+                return
 
-        # Buttons
+            item = tree.item(selection[0])
+            schedule_id = item['values'][0]
+            course_code = item['values'][1]
+
+            if not messagebox.askyesno("Confirm Delete",
+                                      f"Delete schedule for {course_code}?\n\nThis action cannot be undone."):
+                return
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute("DELETE FROM course_schedule WHERE id = ?", (schedule_id,))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Schedule deleted successfully!")
+                self.update_status(f"Deleted schedule {schedule_id}")
+                load_list_view()
+                load_timetable_grid()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete schedule: {e}")
+
+        def edit_selected_schedule():
+            """Edit selected schedule"""
+            selection = tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a schedule to edit")
+                return
+
+            item = tree.item(selection[0])
+            schedule_id = item['values'][0]
+
+            # Call update schedule function with this ID
+            self.show_update_schedule_by_id(schedule_id)
+            dialog.destroy()
+
+        def load_timetable_grid():
+            """Load timetable in grid format matching Module Scheduling GUI"""
+            # Clear existing grid
+            for widget in grid_frame.winfo_children():
+                widget.destroy()
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Ensure table exists
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_code TEXT NOT NULL,
+                    day_of_week TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    room_id INTEGER,
+                    instructor_id INTEGER,
+                    session_type TEXT,
+                    semester TEXT,
+                    year INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    FOREIGN KEY (room_id) REFERENCES rooms(id),
+                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                )
+                ''')
+
+                filter_course = grid_filter_var.get()
+
+                if filter_course == "-- All Courses --" or not filter_course:
+                    query = """
+                        SELECT cs.course_code, cs.day_of_week, cs.start_time, cs.end_time,
+                               r.building, r.room_number, cs.session_type
+                        FROM course_schedule cs
+                        LEFT JOIN rooms r ON cs.room_id = r.id
+                        ORDER BY cs.day_of_week, cs.start_time
+                    """
+                    cursor.execute(query)
+                else:
+                    query = """
+                        SELECT cs.course_code, cs.day_of_week, cs.start_time, cs.end_time,
+                               r.building, r.room_number, cs.session_type
+                        FROM course_schedule cs
+                        LEFT JOIN rooms r ON cs.room_id = r.id
+                        WHERE cs.course_code = ?
+                        ORDER BY cs.day_of_week, cs.start_time
+                    """
+                    cursor.execute(query, (filter_course,))
+
+                schedule_data = cursor.fetchall()
+                conn.close()
+
+                # Create grid data structure
+                grid_data = {}
+                for day in DAYS_OF_WEEK:
+                    grid_data[day] = {}
+                    for time_slot in TIME_SLOTS:
+                        grid_data[day][time_slot] = []
+
+                # Populate grid with schedule data
+                for entry in schedule_data:
+                    course_code, day, start_time, end_time, building, room_num, session_type = entry
+
+                    if not day or not start_time:
+                        continue
+
+                    # Find the closest time slot
+                    try:
+                        closest_slot = min(TIME_SLOTS, key=lambda x: abs(int(x[:2]) - int(start_time[:2])))
+                    except:
+                        continue
+
+                    session_info = {
+                        'course': course_code,
+                        'type': session_type or 'Session',
+                        'room': f"{building}-{room_num}" if building and room_num else "TBA",
+                        'time': f"{start_time}-{end_time}"
+                    }
+
+                    if day in grid_data and closest_slot in grid_data[day]:
+                        grid_data[day][closest_slot].append(session_info)
+
+                # Create grid header - Time column
+                time_header = tk.Label(grid_frame, text="Time", font=('Arial', 10, 'bold'),
+                                      relief=tk.SOLID, borderwidth=2, bg='#4a90e2', fg='white',
+                                      width=10, height=2)
+                time_header.grid(row=0, column=0, padx=1, pady=1, sticky="nsew")
+
+                # Day headers
+                for col, day in enumerate(DAYS_OF_WEEK, 1):
+                    day_header = tk.Label(grid_frame, text=day, font=('Arial', 10, 'bold'),
+                                         relief=tk.SOLID, borderwidth=2, bg='#4a90e2', fg='white',
+                                         width=18, height=2)
+                    day_header.grid(row=0, column=col, padx=1, pady=1, sticky="nsew")
+
+                # Create time slots and schedule cells
+                for row, time_slot in enumerate(TIME_SLOTS, 1):
+                    # Time label
+                    time_label = tk.Label(grid_frame, text=time_slot, font=('Arial', 9, 'bold'),
+                                         relief=tk.SOLID, borderwidth=2, bg='#e8f4f8',
+                                         width=10, height=4)
+                    time_label.grid(row=row, column=0, padx=1, pady=1, sticky="nsew")
+
+                    # Schedule cells for each day
+                    for col, day in enumerate(DAYS_OF_WEEK, 1):
+                        entries = grid_data[day][time_slot]
+
+                        # Create cell frame
+                        cell_frame = tk.Frame(grid_frame, relief=tk.SOLID, borderwidth=2,
+                                             bg='#d4edda' if entries else 'white',
+                                             width=160, height=80)
+                        cell_frame.grid(row=row, column=col, padx=1, pady=1, sticky="nsew")
+                        cell_frame.grid_propagate(False)
+
+                        if entries:
+                            # Inner container
+                            inner_frame = tk.Frame(cell_frame, bg='#d4edda')
+                            inner_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+
+                            # Display entries
+                            for i, entry in enumerate(entries):
+                                if i < 2:  # Limit to 2 entries per cell
+                                    session_box = tk.Frame(inner_frame, relief=tk.RAISED, borderwidth=1,
+                                                          bg='#c3e6cb', padx=2, pady=2)
+                                    session_box.pack(fill=tk.X, pady=1)
+
+                                    # Course code
+                                    course_label = tk.Label(session_box, text=entry['course'],
+                                                           font=('Arial', 8, 'bold'),
+                                                           bg='#c3e6cb', fg='#155724')
+                                    course_label.pack(anchor='w')
+
+                                    # Session type
+                                    type_label = tk.Label(session_box, text=entry['type'],
+                                                         font=('Arial', 7),
+                                                         bg='#c3e6cb', fg='#155724')
+                                    type_label.pack(anchor='w')
+
+                                    # Room
+                                    room_label = tk.Label(session_box, text=f"Room: {entry['room']}",
+                                                         font=('Arial', 6),
+                                                         bg='#c3e6cb', fg='#155724')
+                                    room_label.pack(anchor='w')
+
+                            if len(entries) > 2:
+                                more_label = tk.Label(inner_frame, text=f"+ {len(entries)-2} more...",
+                                                     font=('Arial', 7, 'italic'),
+                                                     bg='#d4edda', fg='#155724')
+                                more_label.pack(anchor='w', pady=2)
+
+                if not schedule_data:
+                    no_data_label = tk.Label(grid_frame, text="No course schedules found",
+                                            font=('Arial', 12), fg='gray')
+                    no_data_label.grid(row=1, column=1, columnspan=5, pady=50)
+
+            except Exception as e:
+                error_label = tk.Label(grid_frame, text=f"Error loading timetable: {e}",
+                                      font=('Arial', 12), fg='red')
+                error_label.grid(row=1, column=1, columnspan=5, pady=50)
+                print(f"Timetable grid error: {e}")
+
+        # Bind filter changes
+        course_filter_combo.bind('<<ComboboxSelected>>', load_list_view)
+        grid_filter_combo.bind('<<ComboboxSelected>>', lambda e: load_timetable_grid())
+
+        # Main buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=load_schedules).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Initial load
         load_courses()
-        load_schedules()
+        load_list_view()
+        load_timetable_grid()
+
+    def show_update_schedule_by_id(self, schedule_id):
+        """Helper method to show update dialog for a specific schedule ID"""
+        # For now, open the general update dialog
+        # Can be enhanced later to pre-populate with schedule data
+        self.show_update_schedule()
+        messagebox.showinfo("Edit Schedule", f"Please select schedule ID: {schedule_id} from the list")
 
     def update_schedule_gui(self):
         """

@@ -8,6 +8,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Course Management GUI - Course Scheduling System with Timetable Grid** - Full integration with timetabling
+  - **New course_schedule Table**:
+    * Dedicated table for course schedules (separate from module_schedule)
+    * Schema: id, course_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type, semester, year, timestamps
+    * Foreign keys to rooms and instructors tables
+    * Schedule conflict detection
+  - **Create Schedule Function**:
+    * Integrated with Module Scheduling system constants (DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES)
+    * Dropdown menus for day of week (Monday-Friday)
+    * Dropdown menus for time slots (09:00-17:00)
+    * Dropdown menus for session types (Lecture, Lab, Tutorial, Seminar, Workshop)
+    * **Room Selection Dropdown**: Queries rooms table with proper schema
+      - Shows: "ID - Building-RoomNumber (Capacity, RoomType)"
+      - Uses room_id foreign key (not text field)
+      - Only shows active rooms (is_active = 1)
+    * **Instructor Selection Dropdown**: Queries instructors table
+      - Shows: "ID - FirstName LastName"
+      - Uses instructor_id foreign key
+      - Only shows active instructors
+    * Conflict detection prevents overlapping schedules
+    * Semester and year tracking
+    * Lines 7831-8055: Complete create functionality
+  - **View Schedules - Dual View System**:
+    * **Tab 1: List View**:
+      - Treeview with columns: ID, Course, Day, Time, Room, Instructor, Type, Semester
+      - Filter by course dropdown
+      - ❌ Delete Selected button with confirmation
+      - ✏️ Edit Selected button
+      - Refresh functionality
+    * **Tab 2: Timetable Grid** (Matching Module Scheduling GUI Layout):
+      - **Exact same grid format** as Module Scheduling GUI
+      - Days of week as columns (Monday-Friday)
+      - Time slots as rows (09:00-17:00)
+      - Color-coded cells:
+        * White = Empty
+        * Light green (#d4edda) = Has sessions
+        * Darker green (#c3e6cb) = Session boxes
+      - Each cell shows:
+        * Course code (bold)
+        * Session type
+        * Room information
+        * Time range
+      - Multiple sessions per cell support
+      - "+ X more..." indicator for overflow
+      - Scrollable canvas for large timetables
+      - Filter by course dropdown
+      - Lines 8064-8506: Complete view implementation with 514 lines
+  - **Delete Schedule Function**:
+    * Integrated into List View
+    * Confirmation dialog before deletion
+    * Updates both list and grid views automatically
+    * Success/error messaging
+  - **Technical Integration**:
+    * Imports DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES from module_scheduling
+    * Proper database schema with foreign keys
+    * JOIN queries with rooms and instructors tables
+    * Conflict detection using time overlap logic
+    * Grid rendering algorithm from Module Scheduling GUI
+    * Fallback values if imports fail
+  - **Files Modified**: `course_management_gui.py` (+600 lines)
+  - **Impact**: Professional course scheduling with visual timetable, proper database design, and Module Scheduling integration
+
 - **Course Management GUI - Professional Report Visualizations & Email** - Complete reporting system overhaul
   - **Interactive Chart Visualizations**:
     * Added matplotlib + seaborn support for professional charts
