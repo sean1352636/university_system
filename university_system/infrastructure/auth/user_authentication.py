@@ -5259,17 +5259,24 @@ class UserAuth:
                 ''', (role_id,))
                 
                 role_permissions = [row[0] for row in cursor.fetchall()]
-                
-                # Get custom user permissions
+
+                # Get custom user permissions from JSON field
                 cursor.execute('''
-                    SELECT p.permission_name, up.granted
-                    FROM permissions p
-                    JOIN user_permissions up ON p.id = up.permission_id
-                    WHERE up.user_id = ?
+                    SELECT permissions
+                    FROM user_permissions
+                    WHERE user_id = ?
                 ''', (user_id,))
-                
-                custom_permissions = {row[0]: row[1] for row in cursor.fetchall()}
-                
+
+                user_perm_row = cursor.fetchone()
+                custom_permissions = {}
+
+                if user_perm_row and user_perm_row[0]:
+                    try:
+                        import json
+                        custom_permissions = json.loads(user_perm_row[0])
+                    except (json.JSONDecodeError, TypeError):
+                        custom_permissions = {}
+
                 # Combine permissions (custom permissions override role permissions)
                 permissions = []
                 for perm in role_permissions:
@@ -5278,8 +5285,8 @@ class UserAuth:
                             permissions.append(perm)
                     else:
                         permissions.append(perm)
-                
-                # Add custom permissions that are granted but not in role
+
+                # Add any custom permissions not in role permissions
                 for perm, granted in custom_permissions.items():
                     if granted and perm not in permissions:
                         permissions.append(perm)

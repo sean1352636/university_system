@@ -40,6 +40,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
 
 ### Fixed
+- **User Authentication - User Permissions Query Schema Mismatch** - Fixed "no such column: up.granted" error
+  - **Errors Reported**:
+    * "Operational error for connection #3: no such column: up.granted"
+    * "Database error: no such column: up.granted"
+  - **Root Cause**: user_authentication.py used old many-to-many schema query
+    * Query tried to access: `up.granted` and `up.permission_id`
+    * Actual schema: user_id (PK), role, permissions (JSON), created_date, updated_date
+  - **Fix Implemented** (Lines 5263-5292):
+    * Replaced JOIN query with simple SELECT from user_permissions table
+    * Query now: `SELECT permissions FROM user_permissions WHERE user_id = ?`
+    * Parses JSON permissions field instead of joining tables
+    * Handles JSON decode errors gracefully
+    * Merges custom permissions with role permissions correctly
+  - **Schema Context**:
+    * OLD (many-to-many): id, user_id, permission_id, granted
+    * NEW (simple): user_id (PK), role, permissions (JSON text), timestamps
+    * Advanced Search GUI already uses new schema (fixed earlier)
+    * This fixes user_authentication.py to match
+  - **Impact**: User permission loading works correctly, no database errors
+
 - **Advanced Search GUI - Email Chart Admin Email Lookup** - Fixed hardcoded admin email to use database
   - **Issue**: Log showed "Email stored for admin@university.edu, but no matching user account found"
   - **Root Cause**: Email chart feature used hardcoded "admin@university.edu" instead of querying database
