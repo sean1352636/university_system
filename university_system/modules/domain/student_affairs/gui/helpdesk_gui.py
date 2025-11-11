@@ -503,41 +503,58 @@ class HelpdeskGUI:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
 
     def create_menu_bar(self):
-        """Create the application menu bar"""
+        """Create the application menu bar with role-based filtering"""
         self.menubar = tk.Menu(self.root)
         self.root.config(menu=self.menubar)
-        
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="New Ticket", command=self.show_create_ticket)
-        file_menu.add_separator()
-        file_menu.add_command(label="Export Data", command=self.show_export_dialog)
-        file_menu.add_command(label="Import Data", command=self.show_import_dialog)
+
+        # Admin/Staff can export/import data
+        if is_admin or is_staff:
+            file_menu.add_separator()
+            file_menu.add_command(label="Export Data", command=self.show_export_dialog)
+            file_menu.add_command(label="Import Data", command=self.show_import_dialog)
+
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
+
         # Tickets menu
         tickets_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Tickets", menu=tickets_menu)
         tickets_menu.add_command(label="My Tickets", command=self.show_my_tickets)
-        tickets_menu.add_command(label="All Tickets", command=self.show_all_tickets)
+
+        # Admin/Staff can view all tickets
+        if is_admin or is_staff:
+            tickets_menu.add_command(label="All Tickets", command=self.show_all_tickets)
+
         tickets_menu.add_command(label="Search Tickets", command=self.show_search_tickets)
-        
+
         # Knowledge Base menu
         kb_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Knowledge Base", menu=kb_menu)
         kb_menu.add_command(label="Browse Articles", command=self.show_knowledge_base)
-        kb_menu.add_command(label="Create Article", command=self.show_create_article)
-        
-        # Reports menu
-        reports_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Reports", menu=reports_menu)
-        reports_menu.add_command(label="Analytics Dashboard", command=self.show_analytics)
-        reports_menu.add_command(label="Generate Reports", command=self.show_reports)
-        
-        # Admin menu (only for admins)
-        if self.current_user and self.has_permission('manage_tickets'):
+
+        # Admin/Staff can create articles
+        if is_admin or is_staff:
+            kb_menu.add_command(label="Create Article", command=self.show_create_article)
+
+        # Reports menu (Admin/Staff only)
+        if is_admin or is_staff:
+            reports_menu = tk.Menu(self.menubar, tearoff=0)
+            self.menubar.add_cascade(label="Reports", menu=reports_menu)
+            reports_menu.add_command(label="Analytics Dashboard", command=self.show_analytics)
+            reports_menu.add_command(label="Generate Reports", command=self.show_reports)
+
+        # Admin menu (Admin only)
+        if is_admin and self.current_user and self.has_permission('manage_tickets'):
             admin_menu = tk.Menu(self.menubar, tearoff=0)
             self.menubar.add_cascade(label="Admin", menu=admin_menu)
             admin_menu.add_command(label="System Management", command=self.show_system_management)
@@ -558,6 +575,31 @@ class HelpdeskGUI:
             return self.auth.check_permission(permission)
         except:
             return False
+
+    def get_user_role(self):
+        """Get the current user's role"""
+        try:
+            if self.current_user and isinstance(self.current_user, dict):
+                return self.current_user.get('role', '').lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff or helpdesk staff"""
+        role = self.get_user_role()
+        return role in ['staff', 'helpdesk_staff', 'support_staff']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
 
     def clear_main_container(self):
         """Clear the main container"""

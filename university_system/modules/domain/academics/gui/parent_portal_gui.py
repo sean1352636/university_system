@@ -119,10 +119,9 @@ class ParentPortalGUI:
         self.create_nav_menu()
     
     def create_nav_menu(self):
-        """Create the navigation menu"""
-        # Check if user is admin
-        current_user = self.get_current_user()
-        is_admin = current_user and current_user.get('role') == 'admin'
+        """Create the navigation menu with role-based filtering"""
+        # Check if user is admin using standard method
+        is_admin = self.is_admin()
 
         # Menu sections
         menus = [
@@ -177,6 +176,37 @@ class ParentPortalGUI:
         if self.auth:
             return self.auth.current_user
         return None
+
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            current_user = self.get_current_user()
+            if current_user:
+                return current_user.get('role', '').lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff"""
+        role = self.get_user_role()
+        return role == 'staff'
+
+    def is_parent(self):
+        """Check if current user is parent"""
+        role = self.get_user_role()
+        return role == 'parent'
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
 
     def load_user_data(self):
         """Load user data in background"""

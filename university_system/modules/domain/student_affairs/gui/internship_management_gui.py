@@ -130,12 +130,38 @@ class InternshipGUI:
         # Show welcome message by default
         self.show_welcome()
         
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                role = self.auth.current_user.get('role', '').lower()
+                return role
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff or career advisor"""
+        role = self.get_user_role()
+        return role in ['staff', 'career_advisor', 'internship_coordinator']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def create_navigation_buttons(self, parent):
         """Create navigation buttons based on user permissions"""
         if not self.auth or not self.auth.current_user:
             messagebox.showerror("Error", "You must be logged in to access the internship portal.")
             return
-            
+
         buttons = []
         
         # Student buttons

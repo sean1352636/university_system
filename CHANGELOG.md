@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Student Support, Parent Portal, Helpdesk, Internship, and Career Services GUIs** - Implemented comprehensive role-based navigation filtering
+  - **Student Support GUI**:
+    * Admin/Staff: Full access (Export data, View all tickets, full dashboard)
+    * Student: Support access (Create tickets, View own tickets, Search, Dashboard)
+    * Menu filtering: File (Export: admin/staff only), View (All Tickets: admin/staff only)
+  - **Parent Portal GUI**:
+    * Admin: Full access including Admin Panel for system management
+    * Parent: Full parent access (Children, Academic Records, Health, Communication, Financial, Settings)
+    * Student: Limited access (not typical use case)
+    * Navigation filtering: Admin Panel menu item only shown to admins
+  - **Helpdesk GUI**:
+    * Admin: Full access (Export/Import, All tickets, Create articles, Reports, Admin menu)
+    * Staff/Helpdesk Staff: Support operations (Export/Import, All tickets, Create articles, Reports)
+    * Student: Ticket management (Create tickets, My tickets, Search, Browse knowledge base)
+    * Menu filtering: File (Export/Import: admin/staff), Tickets (All Tickets: admin/staff), Knowledge Base (Create: admin/staff), Reports menu (admin/staff only), Admin menu (admin only)
+  - **Internship Portal GUI**:
+    * Admin/Staff/Career Advisor: Management access (Create internships, View all applications, Manage placements, Reports)
+    * Student: Application access (View internships, Apply, My applications)
+    * Navigation: Permission-based filtering with standard role detection methods added for consistency
+  - **Career Services GUI**:
+    * Admin/Staff/Career Advisor: Full career services management
+    * Student: Career development access (Job postings, Resume management, Interviews, Events, Mentorship, Skills)
+    * Standard role detection methods added for future menu/navigation filtering
+  - **Files Modified**:
+    * Student Support: `student_support_gui.py:218-242, 511-553`
+    * Parent Portal: `parent_portal_gui.py:181-210, 121-134`
+    * Helpdesk: `helpdesk_gui.py:562-585, 505-562`
+    * Internship: `internship_management_gui.py:133-157`
+    * Career Services: `career_services_gui.py:55-76`
+  - **Impact**: Enhanced security, cleaner interfaces, and consistent role-based access patterns across all student affairs and career services
+
 - **Role-Based UI Access Control in Trip Management and Shop Management GUIs** - Implemented comprehensive role-based navigation filtering
   - **Trip Management GUI**:
     * Admin: Full access (Create trips, Export data, Reports, Admin functions including Manage Participants, Assign Staff, Manage Expenses)

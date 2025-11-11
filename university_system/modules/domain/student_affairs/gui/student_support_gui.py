@@ -215,6 +215,32 @@ class StudentSupportGUI:
         username = current.get('username')
         return user_id, username
 
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                role = self.auth.current_user.get('role', '').lower()
+                return role
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff or support staff"""
+        role = self.get_user_role()
+        return role in ['staff', 'support_staff', 'instructor']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def _safe_db_call(self, operation, *args, **kwargs):
         """Run a database operation with automatic commit/rollback handling."""
         conn = None
@@ -483,31 +509,43 @@ class StudentSupportGUI:
         self.system_status.pack(side="right")
 
     def create_menu(self):
-        """Create application menu"""
+        """Create application menu with role-based filtering"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="New Ticket", command=self.show_create_ticket)
-        file_menu.add_separator()
-        file_menu.add_command(label="Export Data", command=self.show_export_dialog)
-        file_menu.add_separator()
-        
+
+        # Admin/Staff can export data
+        if is_admin or is_staff:
+            file_menu.add_separator()
+            file_menu.add_command(label="Export Data", command=self.show_export_dialog)
+            file_menu.add_separator()
+
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Dashboard", command=self.show_dashboard)
-        view_menu.add_command(label="All Tickets", command=self.show_all_tickets)
+
+        # Admin/Staff can view all tickets
+        if is_admin or is_staff:
+            view_menu.add_command(label="All Tickets", command=self.show_all_tickets)
+
         view_menu.add_command(label="Search", command=self.show_search)
-        
+
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="Preferences", command=self.show_preferences)
         tools_menu.add_command(label="Refresh Data", command=self.refresh_data)
-        
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)

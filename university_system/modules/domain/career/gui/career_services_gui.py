@@ -52,6 +52,29 @@ class CareerServicesGUI:
         log_activity('Accessed Career Services Platform', user=self.current_user.get('username'))
         print("✅ Career Services Platform GUI opened successfully")
 
+    def get_user_role(self):
+        """Get the current user's role"""
+        try:
+            return self.user_role.lower() if self.user_role else None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff or career advisor"""
+        role = self.get_user_role()
+        return role in ['staff', 'career_advisor', 'career_services']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def _init_database(self):
         """Initialize database tables for career services"""
         try:
