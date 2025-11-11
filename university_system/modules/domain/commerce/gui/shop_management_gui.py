@@ -157,7 +157,32 @@ class UniversityShopGUI:
             self.current_user = auth_system.current_user
             # Update user display and show main interface
             self.show_main_interface()
-         
+
+    def get_user_role(self):
+        """Get the current user's role"""
+        try:
+            if self.current_user and isinstance(self.current_user, dict):
+                return self.current_user.get('role', '').lower()
+            return None
+        except Exception as e:
+            print(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff or shop manager"""
+        role = self.get_user_role()
+        return role in ['staff', 'shop_manager']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
+
     def setup_styles(self):
         """Configure GUI styles and themes"""
         style = ttk.Style()
@@ -375,77 +400,79 @@ class UniversityShopGUI:
         self.root.unbind('<Return>')
         
     def create_navigation_menu(self):
-        """Create navigation sidebar"""
+        """Create navigation sidebar with role-based filtering"""
         # Clear existing navigation
         for widget in self.sidebar_frame.winfo_children():
             widget.destroy()
-        
-        user_role = self.current_user.get('role', 'student')
-        
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # Customer options (available to all)
         ttk.Label(self.sidebar_frame, text="Shopping", style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
-        
-        ttk.Button(self.sidebar_frame, text="🏠 Dashboard", 
+
+        ttk.Button(self.sidebar_frame, text="🏠 Dashboard",
                   command=self.show_dashboard, width=20).grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Button(self.sidebar_frame, text="🛍️ Browse Products", 
+        ttk.Button(self.sidebar_frame, text="🛍️ Browse Products",
                   command=self.show_browse_products, width=20).grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Button(self.sidebar_frame, text="🛒 Shopping Cart", 
+        ttk.Button(self.sidebar_frame, text="🛒 Shopping Cart",
                   command=self.show_shopping_cart, width=20).grid(row=3, column=0, sticky=tk.W, pady=2)
-        ttk.Button(self.sidebar_frame, text="📋 Order History", 
+        ttk.Button(self.sidebar_frame, text="📋 Order History",
                   command=self.show_order_history, width=20).grid(row=4, column=0, sticky=tk.W, pady=2)
-        
+
         row_counter = 5
-        
-        # Admin/Staff options
-        if user_role in ['admin', 'staff', 'shop_manager']:
+
+        # Admin/Staff management options
+        if is_admin or is_staff:
             ttk.Separator(self.sidebar_frame, orient='horizontal').grid(row=row_counter, column=0, sticky=(tk.W, tk.E), pady=10)
             row_counter += 1
-            
+
             ttk.Label(self.sidebar_frame, text="Management", style='Heading.TLabel').grid(row=row_counter, column=0, sticky=tk.W, pady=(0, 5))
             row_counter += 1
-            
-            ttk.Button(self.sidebar_frame, text="📦 Manage Products", 
+
+            ttk.Button(self.sidebar_frame, text="📦 Manage Products",
                       command=self.show_manage_products, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-            
-            ttk.Button(self.sidebar_frame, text="📊 Inventory", 
+
+            ttk.Button(self.sidebar_frame, text="📊 Inventory",
                       command=self.show_manage_inventory, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-            
-            ttk.Button(self.sidebar_frame, text="💰 Transactions", 
+
+            ttk.Button(self.sidebar_frame, text="💰 Transactions",
                       command=self.show_all_transactions, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-            
-            ttk.Button(self.sidebar_frame, text="🎯 Discounts", 
+
+            ttk.Button(self.sidebar_frame, text="🎯 Discounts",
                       command=self.show_manage_discounts, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-            
-            ttk.Button(self.sidebar_frame, text="📈 Reports", 
+
+            ttk.Button(self.sidebar_frame, text="📈 Reports",
                       command=self.show_reports, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-        
-        # Utility options
-        ttk.Separator(self.sidebar_frame, orient='horizontal').grid(row=row_counter, column=0, sticky=(tk.W, tk.E), pady=10)
-        row_counter += 1
-        
-        ttk.Label(self.sidebar_frame, text="Utilities", style='Heading.TLabel').grid(row=row_counter, column=0, sticky=tk.W, pady=(0, 5))
-        row_counter += 1
-        
-        ttk.Button(self.sidebar_frame, text="🖥️ CLI Mode", 
-                  command=self.launch_cli_mode, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
-        row_counter += 1
-        
-        ttk.Button(self.sidebar_frame, text="ℹ️ About", 
-                  command=self.show_about, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
 
-        if user_role in ['admin', 'staff', 'shop_manager']:
-            ttk.Button(self.sidebar_frame, text="📊 Analytics", 
+            ttk.Button(self.sidebar_frame, text="📊 Analytics",
                       command=self.show_analytics_dashboard, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
-            
+
             ttk.Button(self.sidebar_frame, text="🏷️ Print Labels",
                       command=self.show_print_labels_dialog, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
+
+        # Utility options
+        ttk.Separator(self.sidebar_frame, orient='horizontal').grid(row=row_counter, column=0, sticky=(tk.W, tk.E), pady=10)
+        row_counter += 1
+
+        ttk.Label(self.sidebar_frame, text="Utilities", style='Heading.TLabel').grid(row=row_counter, column=0, sticky=tk.W, pady=(0, 5))
+        row_counter += 1
+
+        ttk.Button(self.sidebar_frame, text="🖥️ CLI Mode",
+                  command=self.launch_cli_mode, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
+        row_counter += 1
+
+        ttk.Button(self.sidebar_frame, text="ℹ️ About",
+                  command=self.show_about, width=20).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
 
         # Force scroll region update after all content is added
         self.sidebar_frame.update_idletasks()

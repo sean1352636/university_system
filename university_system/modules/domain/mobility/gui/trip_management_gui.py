@@ -150,52 +150,69 @@ class TripManagementGUI:
             self.root.destroy()
     
     def create_menu(self):
-        """Create the application menu bar - enhanced"""
+        """Create the application menu bar with role-based filtering"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-        
+
+        # Get user role for filtering
+        is_admin = self.is_admin()
+        is_staff = self.is_staff()
+        is_student = self.is_student()
+
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Export Data", command=self.export_data)
-        file_menu.add_separator()
+
+        # Admin/Staff can export data
+        if is_admin or is_staff:
+            file_menu.add_command(label="Export Data", command=self.export_data)
+            file_menu.add_separator()
+
         file_menu.add_command(label="Exit", command=self.root.quit)
-        
-        # Trip menu - ENHANCED
+
+        # Trip menu
         trip_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Trips", menu=trip_menu)
         trip_menu.add_command(label="View All Trips", command=self.show_trips_view)
-        trip_menu.add_command(label="Create New Trip", command=self.show_create_trip)
+
+        # Admin/Staff can create trips
+        if is_admin or is_staff:
+            trip_menu.add_command(label="Create New Trip", command=self.show_create_trip)
+
         trip_menu.add_separator()
         trip_menu.add_command(label="My Registrations", command=self.show_my_registrations)
+
         if self.auth.check_permission('cancel_trip_registration'):
             trip_menu.add_command(label="Cancel Registration", command=self.cancel_selected_registration)
-        
-        # Itinerary submenu - NEW
+
+        # Itinerary submenu
         if self.auth.check_permission('view_trips'):
             itinerary_menu = tk.Menu(trip_menu, tearoff=0)
             trip_menu.add_cascade(label="Itinerary", menu=itinerary_menu)
             itinerary_menu.add_command(label="View Trip Itinerary", command=self.view_trip_itinerary)
-            if self.auth.check_permission('manage_trips') or self.auth.check_permission('create_trips'):
+
+            # Admin/Staff can manage itinerary
+            if (is_admin or is_staff) and (self.auth.check_permission('manage_trips') or self.auth.check_permission('create_trips')):
                 itinerary_menu.add_command(label="Manage Itinerary", command=self.add_trip_itinerary)
-        
-        # Reports menu
-        reports_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Reports", menu=reports_menu)
-        reports_menu.add_command(label="Trip Summary", command=self.generate_trip_summary_report)
-        reports_menu.add_command(label="Participant List", command=self.generate_participant_report)
-        reports_menu.add_command(label="Financial Report", command=self.generate_financial_report)
-        
-        # Admin menu (if user has permissions)
-        if self.auth and self.auth.current_user and self.auth.check_permission('manage_trips'):
+
+        # Reports menu (Admin/Staff only)
+        if is_admin or is_staff:
+            reports_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="Reports", menu=reports_menu)
+            reports_menu.add_command(label="Trip Summary", command=self.generate_trip_summary_report)
+            reports_menu.add_command(label="Participant List", command=self.generate_participant_report)
+            reports_menu.add_command(label="Financial Report", command=self.generate_financial_report)
+
+        # Admin menu (Admin only)
+        if is_admin and self.auth and self.auth.current_user and self.auth.check_permission('manage_trips'):
             admin_menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label="Admin", menu=admin_menu)
             admin_menu.add_command(label="Manage Participants", command=self.show_manage_participants)
             admin_menu.add_command(label="Assign Staff", command=self.show_assign_staff)
             admin_menu.add_command(label="Manage Expenses", command=self.show_manage_expenses)
             admin_menu.add_separator()
-            admin_menu.add_command(label="Assign Trip Staff", command=self.assign_trip_staff)  # NEW
-        
+            admin_menu.add_command(label="Assign Trip Staff", command=self.assign_trip_staff)
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
@@ -463,6 +480,32 @@ class TripManagementGUI:
         """Update the status bar"""
         self.status_bar.config(text=message)
         self.root.update_idletasks()
+
+    def get_user_role(self):
+        """Get the current user's role from authentication system"""
+        try:
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                role = self.auth.current_user.get('role', '').lower()
+                return role
+            return None
+        except Exception as e:
+            logging.error(f"Error getting user role: {e}")
+            return None
+
+    def is_admin(self):
+        """Check if current user is admin"""
+        role = self.get_user_role()
+        return role == 'admin'
+
+    def is_staff(self):
+        """Check if current user is staff"""
+        role = self.get_user_role()
+        return role in ['staff', 'trip_coordinator', 'instructor']
+
+    def is_student(self):
+        """Check if current user is student"""
+        role = self.get_user_role()
+        return role == 'student'
 
     def _show_admin_subtab(self, subtab_label):
         self._ensure_main_ui()

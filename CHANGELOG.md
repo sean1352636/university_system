@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role-Based UI Access Control in Trip Management and Shop Management GUIs** - Implemented comprehensive role-based navigation filtering
+  - **Trip Management GUI**:
+    * Admin: Full access (Create trips, Export data, Reports, Admin functions including Manage Participants, Assign Staff, Manage Expenses)
+    * Staff/Trip Coordinator: Operational access (Create trips, View reports, Manage itineraries)
+    * Student: Participation access (View trips, Register, My registrations, Cancel registrations, View itineraries)
+    * Menu filtering: File (Export: admin/staff only), Trips (Create: admin/staff only), Reports menu (admin/staff only), Admin menu (admin only)
+  - **Shop Management GUI**:
+    * Admin/Staff/Shop Manager: Full management access (8 additional buttons: Manage Products, Inventory, Transactions, Discounts, Reports, Analytics, Print Labels)
+    * Student: Shopping only (4 buttons: Dashboard, Browse Products, Shopping Cart, Order History)
+    * Navigation sections: Shopping (all users), Management (admin/staff), Utilities (all users)
+  - **Files Modified**:
+    * Trip Management: `trip_management_gui.py:467-491, 152-219`
+    * Shop Management: `shop_management_gui.py:161-184, 402-482`
+  - **Impact**: Enhanced security and cleaner interfaces for mobility and commerce services
+
 - **Role-Based UI Access Control in Finance, Health Portal, and Student Union GUIs** - Implemented comprehensive role-based navigation filtering
   - **Finance GUI**:
     * Admin: Full access (14 tabs including Budget, Forecasting, Admin, Settings)
