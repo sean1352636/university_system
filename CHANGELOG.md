@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-11 HOTFIX: Path Module AttributeError
+
+#### Critical Path Fix
+- **Fixed AttributeError: module 'paths' has no attribute 'UPLOAD_DIR'**
+  * Replaced all `paths.UPLOAD_DIR` references with correct `paths.SUBMISSIONS_DIR`
+  * Fixed in 4 files: maintenance.py (2), submission_manager.py (1), assignment_gui.py (2), group_manager.py (1)
+  * The paths module defines `SUBMISSIONS_DIR`, not `UPLOAD_DIR`
+  * All file operations now use the correct centralized path constant
+
 ### Fixed - 2025-11-11: Assignment GUI Comprehensive Bug Fixes
 
 #### 1. Notifications Database Schema Compatibility
