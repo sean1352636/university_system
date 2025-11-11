@@ -1643,7 +1643,7 @@ class AdvancedSearchGUI:
         """Show regex search dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🔍 Regular Expression Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -1743,7 +1743,7 @@ class AdvancedSearchGUI:
         """Show wildcard search dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🃏 Wildcard Search")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -1874,7 +1874,7 @@ class AdvancedSearchGUI:
         """Show phonetic search dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🔊 Phonetic Search")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -1940,7 +1940,7 @@ class AdvancedSearchGUI:
         """Show cache management dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("💾 Cache Management")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -2045,7 +2045,7 @@ class AdvancedSearchGUI:
         """Show enhanced import/export menu with all options"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Enhanced Import/Export")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -2306,7 +2306,7 @@ class AdvancedSearchGUI:
         
         dialog = tk.Toplevel(self.master)
         dialog.title("Cache Statistics")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -2548,13 +2548,13 @@ class AdvancedSearchGUI:
         """Mark single student for follow-up"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Mark for Follow-up")
-        dialog.geometry("400x300")
+        dialog.geometry("800x600")
         dialog.transient(self.master)
         dialog.grab_set()
-        
+
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
-        
+
         student_name = f"{student_data[3]} {student_data[5]}"
         ttk.Label(frame, text=f"Mark {student_name} for Follow-up", style='Title.TLabel').pack(pady=(0, 20))
         
@@ -2706,7 +2706,7 @@ class AdvancedSearchGUI:
         """Show favorites management interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Favorites Manager")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -2804,7 +2804,7 @@ class AdvancedSearchGUI:
         """Show system optimization and maintenance tools"""
         dialog = tk.Toplevel(self.master)
         dialog.title("System Optimization Tools")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -3192,7 +3192,7 @@ class AdvancedSearchGUI:
             # Validation dialog
             validation_dialog = tk.Toplevel(self.master)
             validation_dialog.title("🔍 Import Validation")
-            validation_dialog.geometry("400x300")
+            validation_dialog.geometry("900x700")
             validation_dialog.transient(self.master)
             validation_dialog.grab_set()
             
@@ -3253,7 +3253,7 @@ class AdvancedSearchGUI:
         """Generate comprehensive system reports"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Comprehensive Reports Generator")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -3375,7 +3375,7 @@ class AdvancedSearchGUI:
         """Show auto-complete search interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🔍 Auto-Complete Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -3505,7 +3505,7 @@ class AdvancedSearchGUI:
         """Show smart suggestions interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🧠 Smart Suggestions")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -3651,7 +3651,7 @@ class AdvancedSearchGUI:
         """Show predictive analytics interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("📊 Predictive Analytics")
-        dialog.geometry("700x600")
+        dialog.geometry("1200x850")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -4019,7 +4019,7 @@ class AdvancedSearchGUI:
         """Show graduation timeline forecasting"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🎓 Graduation Timeline Forecast")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -4242,6 +4242,14 @@ class AdvancedSearchGUI:
                             command=lambda ct=chart_type: self.generate_chart(ct, dialog))
             btn.pack(pady=5)
 
+        # Separator
+        ttk.Separator(frame, orient='horizontal').pack(fill='x', pady=15)
+
+        # Email chart option
+        ttk.Label(frame, text="Send charts via email:", font=('Arial', 10, 'bold')).pack(pady=(0, 10))
+        ttk.Button(frame, text="📧 Email Chart to Admin", width=40,
+                  command=lambda: self.email_chart_to_admin(dialog)).pack(pady=5)
+
         ttk.Button(frame, text="❌ Close", command=dialog.destroy).pack(pady=(20, 0))
 
     def generate_chart(self, chart_type, parent_dialog):
@@ -4272,6 +4280,108 @@ class AdvancedSearchGUI:
 
         # Run in thread to avoid blocking UI
         threading.Thread(target=run_chart_generation, daemon=True).start()
+
+    def email_chart_to_admin(self, parent_dialog):
+        """Email chart to admin user"""
+        parent_dialog.destroy()
+
+        # Chart selection dialog
+        dialog = tk.Toplevel(self.master)
+        dialog.title("📧 Email Chart to Admin")
+        dialog.geometry("1000x750")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Select Chart to Email", style='Title.TLabel').pack(pady=(0, 20))
+
+        # Chart type selection
+        ttk.Label(frame, text="Chart Type:").pack(anchor='w', pady=(0, 5))
+        chart_var = tk.StringVar(value="age_histogram")
+        chart_options = [
+            ("Age Distribution Histogram", "age_histogram"),
+            ("Course Distribution Pie Chart", "course_pie"),
+            ("Registration Timeline", "registration_timeline"),
+            ("Gender-Course Distribution", "gender_course"),
+            ("Module Popularity Chart", "module_popularity"),
+            ("Grade Distribution Analysis", "grade_distribution"),
+        ]
+
+        for text, value in chart_options:
+            ttk.Radiobutton(frame, text=text, variable=chart_var, value=value).pack(anchor='w', padx=20)
+
+        ttk.Label(frame, text="\nAdmin Email Address:").pack(anchor='w', pady=(20, 5))
+        email_var = tk.StringVar(value="admin@university.edu")
+        ttk.Entry(frame, textvariable=email_var, width=40).pack(fill='x', pady=(0, 10))
+
+        ttk.Label(frame, text="Message (optional):").pack(anchor='w', pady=(10, 5))
+        message_text = scrolledtext.ScrolledText(frame, height=6, wrap=tk.WORD)
+        message_text.pack(fill='x', pady=(0, 20))
+        message_text.insert('1.0', "Please find attached the requested analytics chart.")
+
+        def send_chart_email():
+            try:
+                # Import email service
+                try:
+                    from university_system.infrastructure.email.email_service import send_email
+                    EMAIL_AVAILABLE = True
+                except ImportError:
+                    EMAIL_AVAILABLE = False
+
+                if not EMAIL_AVAILABLE:
+                    messagebox.showerror("Email Service Unavailable",
+                                       "Email service is not configured. Please set up email settings.")
+                    return
+
+                chart_type = chart_var.get()
+                admin_email = email_var.get().strip()
+                message = message_text.get('1.0', tk.END).strip()
+
+                if not admin_email or '@' not in admin_email:
+                    messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.")
+                    return
+
+                # Generate chart data
+                chart_data = self.create_chart_data(chart_type)
+
+                # Create email subject and body
+                subject = f"Analytics Chart: {chart_type.replace('_', ' ').title()}"
+                body = f"""
+{message}
+
+Chart Type: {chart_type.replace('_', ' ').title()}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Chart Data:
+{chart_data}
+
+This email was sent from the Advanced Search GUI - Analytics Dashboard.
+"""
+
+                # Send email
+                send_email(
+                    recipient_email=admin_email,
+                    subject=subject,
+                    body=body
+                )
+
+                messagebox.showinfo("Email Sent",
+                                  f"✅ Chart sent successfully to {admin_email}\n\n"
+                                  f"Chart Type: {chart_type.replace('_', ' ').title()}")
+                dialog.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Email Error",
+                                   f"Failed to send chart email: {str(e)}\n\n"
+                                   f"Please check email configuration.")
+                print(f"Chart email error: {str(e)}")
+
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+        ttk.Button(button_frame, text="📧 Send Email", command=send_chart_email).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="❌ Cancel", command=dialog.destroy).pack(side='right')
 
     def create_chart_data(self, chart_type):
         """Create chart data for different visualization types"""
@@ -4451,7 +4561,7 @@ class AdvancedSearchGUI:
         """Show custom format export dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🛠️ Custom Format Export")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -4793,7 +4903,7 @@ class AdvancedSearchGUI:
         """Show advanced condition builder interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Condition Builder")
-        dialog.geometry("700x600")
+        dialog.geometry("1200x850")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -5210,7 +5320,7 @@ class AdvancedSearchGUI:
         # Share dialog
         share_dialog = tk.Toplevel(self.master)
         share_dialog.title("Share Profile")
-        share_dialog.geometry("400x300")
+        share_dialog.geometry("900x700")
         share_dialog.transient(self.master)
         share_dialog.grab_set()
         
@@ -5857,7 +5967,7 @@ class AdvancedSearchGUI:
         """Generate comprehensive system reports"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Comprehensive Reports Generator")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -6596,7 +6706,7 @@ class AdvancedSearchGUI:
         """Show system maintenance interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("System Maintenance")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -7289,7 +7399,7 @@ class AdvancedSearchGUI:
         """Show fuzzy search dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🔍 Fuzzy Name Search")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -7402,7 +7512,7 @@ class AdvancedSearchGUI:
         """Show module enrollment search"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🎓 Module Enrollment Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -8014,7 +8124,7 @@ class AdvancedSearchGUI:
         """Show advanced text search dialog with all options"""
         dialog = tk.Toplevel(self.master)
         dialog.title("📝 Advanced Text Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -8201,7 +8311,7 @@ class AdvancedSearchGUI:
         """Show conditional logic search dialog"""
         dialog = tk.Toplevel(self.master)
         dialog.title("🧠 Conditional Logic Search")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -8745,7 +8855,7 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         
         dialog = tk.Toplevel(self.master)
         dialog.title("🔧 Bulk Operations")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -8777,7 +8887,7 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         
         dialog = tk.Toplevel(self.master)
         dialog.title("💾 Bulk Export")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -8939,16 +9049,16 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         if not self.search_results:
             messagebox.showwarning("No Results", "No search results available.")
             return
-        
+
         emails = [student[1] for student in self.search_results if student[1]]
-        
+
         if not emails:
             messagebox.showwarning("No Emails", "No email addresses found in search results.")
             return
-        
+
         dialog = tk.Toplevel(self.master)
         dialog.title("📧 Email List Generator")
-        dialog.geometry("500x400")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -9116,7 +9226,7 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         """Show the created groups result"""
         dialog = tk.Toplevel(self.master)
         dialog.title("👥 Created Groups")
-        dialog.geometry("600x500")
+        dialog.geometry("1100x800")
         dialog.transient(self.master)
         
         frame = ttk.Frame(dialog, padding="20")
@@ -9160,14 +9270,14 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         
         dialog = tk.Toplevel(self.master)
         dialog.title("📌 Mark for Follow-up")
-        dialog.geometry("400x300")
+        dialog.geometry("900x700")
         dialog.transient(self.master)
         dialog.grab_set()
-        
+
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(frame, text=f"Mark {len(self.search_results)} Students for Follow-up", 
+
+        ttk.Label(frame, text=f"Mark {len(self.search_results)} Students for Follow-up",
                  style='Title.TLabel').pack(pady=(0, 20))
         
         ttk.Label(frame, text="Follow-up Reason:").pack(anchor='w')
@@ -9228,10 +9338,10 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         if not self.search_results:
             messagebox.showwarning("No Results", "No search results available.")
             return
-        
+
         dialog = tk.Toplevel(self.master)
         dialog.title("🎓 Bulk Enrollment Management")
-        dialog.geometry("400x300")
+        dialog.geometry("1000x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -9314,7 +9424,7 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
 
         dialog = tk.Toplevel(self.master)
         dialog.title("📧 Mass Email to Students")
-        dialog.geometry("700x600")
+        dialog.geometry("1200x850")
         dialog.transient(self.master)
         dialog.grab_set()
 
@@ -9562,10 +9672,10 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         if not self.search_results:
             messagebox.showwarning("No Results", "Please perform a search first.")
             return
-        
+
         dialog = tk.Toplevel(self.master)
         dialog.title("📧 Mass Email Students")
-        dialog.geometry("600x500")
+        dialog.geometry("1000x800")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -9617,34 +9727,80 @@ Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)
         def send_mass_email():
             subject = subject_var.get().strip()
             message = message_text.get(1.0, tk.END).strip()
-            
+
             if not subject or not message:
                 messagebox.showwarning("Incomplete", "Please enter both subject and message.")
                 return
-            
-            # Email simulation
-            recipients = [s[1] for s in self.search_results if s[1]]
-            
+
+            # Get valid email recipients
+            recipients = [s[1] for s in self.search_results if s[1] and '@' in s[1]]
+
+            if not recipients:
+                messagebox.showwarning("No Recipients", "No valid email addresses found in search results.")
+                return
+
             # Show confirmation
             confirmation = f"""
-📧 EMAIL SIMULATION
+📧 SEND MASS EMAIL
 
 Subject: {subject}
 Recipients: {len(recipients)} students
 Message Length: {len(message)} characters
 
-This would send emails to:
+This will send REAL emails to:
 {', '.join(recipients[:5])}{'...' if len(recipients) > 5 else ''}
 
-Proceed with simulation?
+Proceed with sending emails?
             """
-            
+
             if messagebox.askyesno("Confirm Send", confirmation):
-                messagebox.showinfo("Email Sent", 
-                                  f"✅ Mass email simulation completed!\n"
-                                  f"Subject: {subject}\n"
-                                  f"Recipients: {len(recipients)} students")
-                dialog.destroy()
+                try:
+                    # Import email service
+                    try:
+                        from university_system.infrastructure.email.email_service import send_email
+                        EMAIL_AVAILABLE = True
+                    except ImportError:
+                        EMAIL_AVAILABLE = False
+
+                    if not EMAIL_AVAILABLE:
+                        messagebox.showerror("Email Service Unavailable",
+                                           "Email service is not available. Please configure email settings.")
+                        return
+
+                    # Send emails to all recipients
+                    success_count = 0
+                    failed_count = 0
+                    failed_addresses = []
+
+                    for recipient_email in recipients:
+                        try:
+                            send_email(
+                                recipient_email=recipient_email,
+                                subject=subject,
+                                body=message
+                            )
+                            success_count += 1
+                        except Exception as e:
+                            failed_count += 1
+                            failed_addresses.append(recipient_email)
+                            print(f"Failed to send to {recipient_email}: {str(e)}")
+
+                    # Show results
+                    result_message = f"✅ Mass Email Results\n\n"
+                    result_message += f"Successfully sent: {success_count}\n"
+                    if failed_count > 0:
+                        result_message += f"Failed: {failed_count}\n"
+                        result_message += f"\nFailed addresses:\n{chr(10).join(failed_addresses[:10])}"
+                        if len(failed_addresses) > 10:
+                            result_message += f"\n...and {len(failed_addresses)-10} more"
+
+                    messagebox.showinfo("Email Sent", result_message)
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Email Error",
+                                       f"Error sending mass emails: {str(e)}\n\nPlease check email configuration.")
+                    print(f"Mass email error: {str(e)}")
         
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill=tk.X)
@@ -9677,7 +9833,7 @@ Proceed with simulation?
         """Complete fuzzy search implementation"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Fuzzy Name Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -9788,7 +9944,7 @@ Proceed with simulation?
         """Complete module enrollment search implementation"""
         dialog = tk.Toplevel(self.master)
         dialog.title("Module Enrollment Search")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -9925,7 +10081,7 @@ Proceed with simulation?
         
         dialog = tk.Toplevel(self.master)
         dialog.title("📝 Batch Data Updates")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -10033,7 +10189,7 @@ Proceed with update?
         """Show import/export interface"""
         dialog = tk.Toplevel(self.master)
         dialog.title("📁 Import/Export Data")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -10472,7 +10628,7 @@ Proceed with update?
         """Simulate sending email to student"""
         dialog = tk.Toplevel(self.master)
         dialog.title("📧 Send Email")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
         
@@ -10533,7 +10689,7 @@ Proceed with update?
         """
         dialog = tk.Toplevel(self.master)
         dialog.title("🎯 Module Success Probability")
-        dialog.geometry("500x400")
+        dialog.geometry("1000x750")
         dialog.transient(self.master)
         dialog.grab_set()
 

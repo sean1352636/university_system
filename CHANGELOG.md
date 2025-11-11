@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Advanced Search GUI Major UX Improvements** - Comprehensive usability enhancements
+  - **Expanded All Dialog Windows**: Batch increased window sizes for better visibility
+    * Small dialogs (400x300) → Large (900x700)
+    * Medium dialogs (500x400) → Extra Large (1000x750)
+    * Large dialogs (600x500) → Jumbo (1100x800)
+    * Applied to 20+ dialogs: Export, Email List, Student Groups, Bulk Enrollment, Follow-up, Batch Updates, Mass Email, Scheduled Reports, System Optimization, Search History, Date Range, Text Search, Conditional Logic, etc.
+    * Impact: All content now visible without scrolling, better readability
+  - **Real Email Integration for Mass Email**:
+    * Replaced simulation with actual email sending via university email service
+    * Validates email addresses (checks for '@' symbol)
+    * Sends to all selected students individually
+    * Success/failure tracking with detailed results
+    * Shows failed addresses for troubleshooting
+    * Proper error handling and user feedback
+    * Lines 9616-9693: Complete email service integration
+  - **Email Charts to Admin Feature**:
+    * New "📧 Email Chart to Admin" button in Interactive Charts
+    * Select from 6 chart types (Age Distribution, Course Distribution, Registration Timeline, etc.)
+    * Configurable admin email address
+    * Optional custom message
+    * Generates chart data and emails to admin
+    * Includes timestamp and chart type in email
+    * Lines 4245-4384: Full email chart implementation
+  - **Improved User Experience**:
+    * Mass email window: 600x500 → 1000x800
+    * Email list generator: 500x400 → 900x700
+    * All data and controls now visible
+    * Better form layouts with more space
+  - **Files Modified**: `advanced_search_gui.py` (+150 lines, 20+ dialogs resized)
+  - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
+
 ### Fixed
 - **Advanced Search GUI Multiple Critical Errors** - Fixed 8 critical errors preventing proper operation
   - **Missing csv Import**: Added `import csv` at module level (line 7)
