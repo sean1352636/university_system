@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Create Review Feature in Admissions CRM GUI** - Added dedicated review creation functionality
+  - **New "Create Review" Button**: Added to Reviews tab for direct review creation
+  - **CreateReviewDialog Class**: New dialog allowing users to create reviews with:
+    * Application ID input with validation
+    * Review stage selection (initial, committee, final)
+    * Score input (1-100 with validation)
+    * Recommendation selection (accept, reject, waitlist, interview)
+    * Comments field for detailed feedback
+    * Database validation to ensure application exists
+  - **Enhanced Workflow**: Streamlined review creation process separate from reviewer assignment
+  - **Activity Logging**: All review creation actions logged for audit trail
+  - **Files Modified**: `admissions_crm_gui.py:194, 491-493, 914-1008`
+  - **Impact**: Improved usability and clearer separation of review creation vs. reviewer assignment workflows
+
 - **Role-Based UI Access Control in Student Support, Parent Portal, Helpdesk, Internship, and Career Services GUIs** - Implemented comprehensive role-based navigation filtering
   - **Student Support GUI**:
     * Admin/Staff: Full access (Export data, View all tickets, full dashboard)

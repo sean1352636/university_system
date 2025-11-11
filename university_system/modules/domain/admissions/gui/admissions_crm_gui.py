@@ -191,6 +191,7 @@ class AdmissionsCRMGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, pady=(0, 10))
 
+        ttk.Button(btn_frame, text="Create Review", command=self._create_review).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Assign Reviewer", command=self._assign_reviewer).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Submit Review", command=self._submit_review).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refresh", command=self._load_reviews).pack(side=tk.LEFT, padx=5)
@@ -486,6 +487,10 @@ class AdmissionsCRMGUI:
         item = self.applications_tree.item(selection[0])
         application_id = item['values'][0]
         UpdateApplicationStatusDialog(self.window, self.auth, application_id, self._load_applications)
+
+    def _create_review(self):
+        """Create a new review for an application"""
+        CreateReviewDialog(self.window, self.auth, self._load_reviews)
 
     def _assign_reviewer(self):
         """Assign reviewer to application"""
@@ -904,6 +909,103 @@ class UpdateApplicationStatusDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update status: {e}")
+
+
+class CreateReviewDialog:
+    """Dialog for creating a new review"""
+
+    def __init__(self, parent, auth, callback):
+        self.auth = auth
+        self.callback = callback
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Review")
+        self.dialog.geometry("500x550")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self._create_widgets()
+
+    def _create_widgets(self):
+        main_frame = ttk.Frame(self.dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Create Application Review",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(form_frame, text="Application ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.app_id_entry = ttk.Entry(form_frame, width=35)
+        self.app_id_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Review Stage:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.stage_combo = ttk.Combobox(form_frame, width=32, values=['initial', 'committee', 'final'])
+        self.stage_combo.set('initial')
+        self.stage_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Score (1-100):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.score_entry = ttk.Entry(form_frame, width=35)
+        self.score_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Recommendation:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.rec_combo = ttk.Combobox(form_frame, width=32, values=['accept', 'reject', 'waitlist', 'interview'])
+        self.rec_combo.set('accept')
+        self.rec_combo.grid(row=3, column=1, pady=5, padx=(10, 0))
+
+        ttk.Label(form_frame, text="Comments:").grid(row=4, column=0, sticky=tk.NW, pady=5)
+        self.comments_text = scrolledtext.ScrolledText(form_frame, width=33, height=10)
+        self.comments_text.grid(row=4, column=1, pady=5, padx=(10, 0))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=(20, 0))
+
+        ttk.Button(btn_frame, text="Create", command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _create(self):
+        try:
+            application_id = int(self.app_id_entry.get().strip())
+            score = int(self.score_entry.get())
+
+            if score < 1 or score > 100:
+                messagebox.showerror("Error", "Score must be between 1 and 100")
+                return
+
+            # Verify application exists
+            with get_connection() as conn:
+                app_exists = conn.execute(
+                    'SELECT application_id FROM admission_applications WHERE application_id = ?',
+                    (application_id,)
+                ).fetchone()
+
+                if not app_exists:
+                    messagebox.showerror("Error", f"Application ID {application_id} not found")
+                    return
+
+            reviewer_id = self.auth.current_user.get('username', 'unknown')
+
+            review_id = ReviewWorkflowManager.create_review(
+                application_id=application_id,
+                reviewer_id=reviewer_id,
+                review_stage=self.stage_combo.get(),
+                score=score,
+                recommendation=self.rec_combo.get(),
+                comments=self.comments_text.get('1.0', tk.END).strip()
+            )
+
+            log_activity(f'Created review (ID: {review_id}) for application {application_id}',
+                        user=reviewer_id)
+
+            messagebox.showinfo("Success", f"Review created (ID: {review_id})")
+            self.callback()
+            self.dialog.destroy()
+
+        except ValueError:
+            messagebox.showerror("Error", "Invalid Application ID or Score")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create review: {e}")
 
 
 class AssignReviewerDialog:
