@@ -40,7 +40,9 @@ class ModuleScheduler:
     
     def _init_db(self):
         """Initialize database tables needed for scheduling"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            # Enable WAL mode for better concurrency
+            conn.execute('PRAGMA journal_mode=WAL')
             cursor = conn.cursor()
 
             # Existing tables (keeping your original structure)
@@ -196,8 +198,9 @@ class ModuleScheduler:
 
         for attempt in range(max_retries):
             try:
-                with sqlite3.connect(self.db_path) as conn:
-                    conn.execute("PRAGMA busy_timeout = 5000")  # 5 second timeout
+                with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+                    conn.execute("PRAGMA journal_mode=WAL")  # Enable WAL mode
+                    conn.execute("PRAGMA busy_timeout = 30000")  # 30 second timeout
                     cursor = conn.cursor()
 
                     # Check and add missing columns to instructors table
@@ -261,7 +264,8 @@ class ModuleScheduler:
 
     def _get_known_modules(self):
         """Get all known modules from various sources"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
 
             # First try to get from modules table
@@ -310,7 +314,8 @@ class ModuleScheduler:
     def get_all_modules(self):
         """Get all modules from the database - public interface"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Primary: get from modules table (correct source for module data)
@@ -363,7 +368,8 @@ class ModuleScheduler:
     def delete_module_schedule(self, schedule_id):
         """Delete a module schedule entry"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Check if schedule exists
@@ -405,7 +411,8 @@ class ModuleScheduler:
     
     def generate_room_utilization_report(self, output_format='display'):
         """Generate comprehensive room utilization analytics"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
         
         # Get room utilization data
@@ -481,7 +488,8 @@ class ModuleScheduler:
     
     def generate_instructor_workload_report(self, output_format='display'):
         """Generate instructor workload analysis"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
         
         cursor.execute('''
@@ -581,7 +589,8 @@ class ModuleScheduler:
     
     def _analyze_peak_usage(self):
         """Analyze peak usage times"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
         
         cursor.execute('''
@@ -607,7 +616,8 @@ class ModuleScheduler:
     
     def _analyze_module_distribution(self):
         """Analyze module scheduling distribution"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
         
         cursor.execute('SELECT COUNT(DISTINCT module_code) FROM module_schedule')
@@ -707,7 +717,8 @@ class ModuleScheduler:
     
     def export_all_schedules_to_csv(self):
         """Export all schedules to CSV"""
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             query = '''
         SELECT ms.module_code, ms.day_of_week, ms.start_time, ms.end_time,
                ms.room_id, ms.instructor_id, ms.session_type,
@@ -736,7 +747,8 @@ class ModuleScheduler:
     def save_schedule_template(self, template_name, description=""):
         """Save current schedule as a template"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
         
                 # Get all current schedules
@@ -782,7 +794,8 @@ class ModuleScheduler:
     def load_schedule_template(self, template_name, clear_existing=False):
         """Load schedules from a template"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 cursor.execute('''

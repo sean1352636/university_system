@@ -2443,7 +2443,7 @@ This email was sent from the Course Management GUI.
             
             query += " ORDER BY course_code"
             
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             cursor.execute(query, params)
             courses = cursor.fetchall()
@@ -2506,7 +2506,7 @@ This email was sent from the Course Management GUI.
                     messagebox.showerror("Import Error", f"CSV must contain these required columns: {', '.join(required_fields)}")
                     return
                 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
@@ -2582,7 +2582,7 @@ This email was sent from the Course Management GUI.
             return
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT * FROM courses ORDER BY course_code")
@@ -2617,7 +2617,7 @@ This email was sent from the Course Management GUI.
             return
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             
             if file_path.endswith('.sql'):
                 # SQL dump backup
@@ -2626,7 +2626,7 @@ This email was sent from the Course Management GUI.
                         f.write('%s\n' % line)
             else:
                 # Binary database copy
-                backup_conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                backup_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 conn.backup(backup_conn)
                 backup_conn.close()
             
@@ -3029,7 +3029,7 @@ class AdvancedCourseSearchDialog:
     
     def load_departments(self, parent):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             cursor.execute("SELECT DISTINCT department FROM courses WHERE department IS NOT NULL ORDER BY department")
             departments = [row[0] for row in cursor.fetchall()]
@@ -3044,7 +3044,7 @@ class AdvancedCourseSearchDialog:
     
     def perform_search(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Build search query
@@ -3226,7 +3226,7 @@ class AdvancedCourseSearchDialog:
             
             # Find course ID and show details
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT id FROM courses WHERE course_code = ?", (course_code,))
                 result = cursor.fetchone()
@@ -3342,7 +3342,7 @@ class CourseAnalyticsDialog:
     
     def load_overview_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Get key metrics
@@ -3388,7 +3388,7 @@ class CourseAnalyticsDialog:
     
     def load_department_selector(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT DISTINCT COALESCE(department, 'Unknown') as dept FROM courses ORDER BY dept")
@@ -3409,7 +3409,7 @@ class CourseAnalyticsDialog:
             return
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             self.dept_details.delete(1.0, tk.END)
@@ -3481,7 +3481,7 @@ class CourseAnalyticsDialog:
 
     def load_trends_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
 
             self.trends_text.delete(1.0, tk.END)
@@ -3632,7 +3632,7 @@ class CourseValidationDialog:
         self.results_text.insert(tk.END, f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             total_issues = 0
@@ -3780,7 +3780,7 @@ class CourseValidationDialog:
             return
             
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             self.dept_details.delete(1.0, tk.END)
@@ -3832,7 +3832,7 @@ class CourseValidationDialog:
             return
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             fixed_count = 0
@@ -4081,7 +4081,7 @@ class RemovePrerequisiteDialog:
     
     def load_courses(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Get courses that have prerequisites
@@ -4110,7 +4110,7 @@ class RemovePrerequisiteDialog:
         course_id = self.course_id_map[selected_text]
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -4147,7 +4147,7 @@ class RemovePrerequisiteDialog:
         
         if messagebox.askyesno("Confirm Removal", f"Remove prerequisite '{prereq_code} - {prereq_name}'?"):
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 
                 cursor.execute("DELETE FROM course_prerequisites WHERE id = ?", (prereq_id,))
@@ -4230,7 +4230,7 @@ class ManageCourseStatusDialog:
     
     def load_courses(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -4273,7 +4273,7 @@ class ManageCourseStatusDialog:
         
         if messagebox.askyesno("Confirm Change", f"Change status from '{current_status}' to '{new_status}'?"):
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -4366,7 +4366,7 @@ class BulkUpdateDialog:
             return
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
@@ -4401,7 +4401,7 @@ class BulkUpdateDialog:
                 f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
                 return
             
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -4570,7 +4570,7 @@ class ImportExportDialog:
                     self.progress_text.insert(tk.END, f"ERROR: CSV must contain these required columns: {', '.join(required_fields)}\n")
                     return
                 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
@@ -4644,7 +4644,7 @@ class ImportExportDialog:
             self.progress_text.delete(1.0, tk.END)
             self.progress_text.insert(tk.END, f"Starting export to {file_path}...\n")
             
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Build query with filters
@@ -4758,7 +4758,7 @@ class RecommendCoursesDialog:
     
     def load_courses(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
@@ -4781,7 +4781,7 @@ class RecommendCoursesDialog:
     
     def generate_recommendations(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             rec_type = self.rec_type.get()
@@ -5159,7 +5159,7 @@ class AlternativeCourseDialog:
     
     def load_course_options(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT id, course_code, course_name FROM courses WHERE status = 'Active' ORDER BY course_code")
@@ -5183,7 +5183,7 @@ class AlternativeCourseDialog:
         course_id = self.course_id_map[selected_text]
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Get reference course details
@@ -5285,7 +5285,7 @@ class UpdateScheduleDialog:
     
     def load_schedules(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -5339,7 +5339,7 @@ class UpdateScheduleFormDialog:
     
     def load_current_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT * FROM course_schedule WHERE id = ?", (self.schedule_id,))
@@ -5380,7 +5380,7 @@ class UpdateScheduleFormDialog:
     
     def update_schedule(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -5453,7 +5453,7 @@ class ProcessWaitlistDialog:
     
     def load_waitlist_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -5506,7 +5506,7 @@ class ProcessWaitlistDialog:
     
     def process_course_waitlist(self, course_id, show_messages=True):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Get course info and available spots
@@ -5632,7 +5632,7 @@ class CourseHistoryDialog:
     
     def load_course_options(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
@@ -5655,7 +5655,7 @@ class CourseHistoryDialog:
         course_id = self.course_id_map[selected_text]
         
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -5679,7 +5679,7 @@ class CourseHistoryDialog:
     
     def show_recent_changes(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -5821,7 +5821,7 @@ class CourseCreateDialog:
             online_available = self.online_available.get()
             
             # Insert into database
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Check for duplicate code
@@ -5880,7 +5880,7 @@ class CourseEditDialog:
     
     def load_course_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM courses WHERE id = ?", (self.course_id,))
             self.course_data = cursor.fetchone()
@@ -5938,7 +5938,7 @@ class CourseEditDialog:
                 return
             
             # Update database
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -6311,7 +6311,7 @@ class BulkUpdateDialog:
                 messagebox.showwarning("Input Required", "Please enter a value for the selection criteria.")
                 return
             
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
@@ -6346,7 +6346,7 @@ class BulkUpdateDialog:
             if not messagebox.askyesno("Confirm Update", f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
                 return
             
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -6410,7 +6410,7 @@ class PrerequisitesWindow:
     
     def load_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Check if prerequisites table exists
@@ -6516,7 +6516,7 @@ class AddPrerequisiteDialog:
     
     def load_courses(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
@@ -6555,7 +6555,7 @@ class AddPrerequisiteDialog:
                 return
             
             # Create prerequisites table if it doesn't exist
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute('''
@@ -6643,7 +6643,7 @@ class RemovePrerequisiteDialog:
 
     def load_prerequisites(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
 
             # Get all prerequisites
@@ -6686,7 +6686,7 @@ class RemovePrerequisiteDialog:
         try:
             prereq_id = self.prereq_tree.item(selected[0])['tags'][0]
 
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
 
             cursor.execute('DELETE FROM course_prerequisites WHERE id = ?', (prereq_id,))
@@ -6764,7 +6764,7 @@ class AssignInstructorDialog:
     
     def load_data(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             # Load courses
@@ -6816,7 +6816,7 @@ class AssignInstructorDialog:
                 return
             
             # Create schedule table if it doesn't exist and assign instructor
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             cursor.execute('''
@@ -6912,7 +6912,7 @@ class MaintenanceDialog:
     
     def integrity_check(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             results = "DATABASE INTEGRITY CHECK\n"
@@ -6964,7 +6964,7 @@ class MaintenanceDialog:
     
     def clean_orphaned(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             results = "CLEANING ORPHANED RECORDS\n"
@@ -7011,7 +7011,7 @@ class MaintenanceDialog:
     
     def recalculate_enrollment(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             results = "RECALCULATING ENROLLMENT NUMBERS\n"
@@ -7059,7 +7059,7 @@ class MaintenanceDialog:
     
     def show_db_stats(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             results = "DATABASE STATISTICS\n"
@@ -7104,7 +7104,7 @@ class MaintenanceDialog:
     
     def optimize_db(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             results = "DATABASE OPTIMIZATION\n"
@@ -7178,7 +7178,7 @@ class RecommendationsDialog:
     
     def generate_recommendations(self):
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             
             rec_type = self.rec_type.get()
@@ -7429,7 +7429,7 @@ class RecommendationsDialog:
 
         # Load courses
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
             courses = cursor.fetchall()
@@ -7458,7 +7458,7 @@ class RecommendationsDialog:
                     messagebox.showerror("Error", "A course cannot be its own prerequisite")
                     return
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Check for circular dependency
@@ -7573,7 +7573,7 @@ class RecommendationsDialog:
 
         def load_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
                 courses = cursor.fetchall()
@@ -7590,7 +7590,7 @@ class RecommendationsDialog:
             text_widget.delete('1.0', tk.END)
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 selected = course_var.get()
@@ -7705,7 +7705,7 @@ class RecommendationsDialog:
 
         def load_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
                 courses = cursor.fetchall()
@@ -7727,7 +7727,7 @@ class RecommendationsDialog:
             try:
                 course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT cp.id, c.course_code, c.course_name, cp.is_required
@@ -7768,7 +7768,7 @@ class RecommendationsDialog:
 
             if messagebox.askyesno("Confirm", f"Remove prerequisite:\n{selected_text}?"):
                 try:
-                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM course_prerequisites WHERE id = ?", (prereq_id,))
                     conn.commit()
@@ -7904,7 +7904,7 @@ class RecommendationsDialog:
 
         def load_data():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Load active courses/modules
@@ -7983,7 +7983,8 @@ class RecommendationsDialog:
                 # Extract instructor ID
                 instructor_id = int(instructor_var.get().split(" - ")[0])
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+                conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
                 cursor = conn.cursor()
 
                 # Ensure course_schedule table exists with proper schema
@@ -8183,7 +8184,7 @@ class RecommendationsDialog:
         def load_courses():
             """Load course filter options"""
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT DISTINCT course_code FROM courses WHERE status = 'Active' ORDER BY course_code")
                 courses = [row[0] for row in cursor.fetchall()]
@@ -8205,7 +8206,7 @@ class RecommendationsDialog:
                 tree.delete(item)
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Ensure table exists
@@ -8296,7 +8297,7 @@ class RecommendationsDialog:
                 return
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 cursor.execute("DELETE FROM course_schedule WHERE id = ?", (schedule_id,))
@@ -8333,7 +8334,7 @@ class RecommendationsDialog:
                 widget.destroy()
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Ensure table exists
@@ -8544,7 +8545,7 @@ class RecommendationsDialog:
 
         def load_schedules():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT s.id, c.course_code, c.course_name, s.semester, s.year
@@ -8607,7 +8608,7 @@ class RecommendationsDialog:
 
         # Load current schedule data
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT course_id, semester, year, start_time, end_time,
@@ -8698,7 +8699,7 @@ class RecommendationsDialog:
                 return
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -8772,7 +8773,7 @@ class RecommendationsDialog:
 
         def load_full_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -8810,7 +8811,7 @@ class RecommendationsDialog:
                 course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
                 student_id = student_id_var.get().strip()
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Validate student exists in database
@@ -8919,7 +8920,7 @@ class RecommendationsDialog:
 
         def load_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
                 courses = cursor.fetchall()
@@ -8938,7 +8939,7 @@ class RecommendationsDialog:
                 tree.delete(item)
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 selected = course_var.get()
@@ -9051,7 +9052,7 @@ class RecommendationsDialog:
 
         def load_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT id, course_code, course_name, status
@@ -9103,7 +9104,7 @@ class RecommendationsDialog:
                 try:
                     course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
 
-                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                     cursor = conn.cursor()
 
                     cursor.execute("""
@@ -9173,7 +9174,7 @@ class RecommendationsDialog:
 
         def load_courses():
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
                 courses = cursor.fetchall()
@@ -9192,7 +9193,7 @@ class RecommendationsDialog:
                 tree.delete(item)
 
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 # Check if course_history table exists

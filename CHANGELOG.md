@@ -143,6 +143,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
 
 ### Fixed
+- **Database Lock Issue - Fixed SQLite Concurrency** - Resolved "database is locked" errors
+  - **Root Cause**: Multiple connections accessing SQLite without proper timeout and WAL mode
+  - **Error**: "sqlite3.OperationalError: database is locked" when opening Module Scheduling GUI
+  - **Fixes Implemented**:
+    * Added 30-second timeout to ALL database connections (was default 5 seconds)
+    * Enabled WAL (Write-Ahead Logging) mode for better concurrency
+    * `PRAGMA journal_mode=WAL` - Allows concurrent reads and single writer
+    * `PRAGMA busy_timeout = 30000` - 30-second wait before failing
+    * Applied to course_management_gui.py (6 connections)
+    * Applied to module_scheduling.py (_init_db, _migrate_database, all methods)
+  - **Connection Pattern** (Before):
+    ```python
+    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    ```
+  - **Connection Pattern** (After):
+    ```python
+    conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+    conn.execute('PRAGMA journal_mode=WAL')
+    ```
+  - **Benefits**:
+    * Multiple GUIs can be open simultaneously
+    * Course Management and Module Scheduling can run concurrently
+    * Eliminates race conditions during table creation
+    * Better handling of concurrent INSERT/UPDATE operations
+  - **Files Modified**:
+    * `course_management_gui.py` (6 connection fixes)
+    * `module_scheduling.py` (multiple connection fixes)
+  - **Impact**: System now supports concurrent database access without locks
+
 - **Course Management GUI - Multiple Critical Fixes** - Comprehensive bug fixes and improvements
   - **Description Column Error**:
     * Fixed "courses has no column named description" error
