@@ -5970,14 +5970,8 @@ University Administration"""
                     pass  # Continue if transient fails
                 
                 # Initialize the Course Management GUI in the new window
-                # Replace the root parameter with our new window
-                course_gui = CourseManagementGUI(course_window)
-                
-                # Pass the auth context if the CourseManagementGUI supports it
-                if hasattr(course_gui, 'auth'):
-                    course_gui.auth = self.auth
-                elif hasattr(course_gui, 'set_auth'):
-                    course_gui.set_auth(self.auth)
+                # Pass auth_system during construction for proper initialization
+                course_gui = CourseManagementGUI(course_window, auth_system=self.auth)
                 
                 print("✅ Course Management GUI opened successfully")
                 

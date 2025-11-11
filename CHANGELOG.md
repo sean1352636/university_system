@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Course Management GUI Authentication Errors** - Fixed repeated "UserAuth object has no attribute 'is_logged_in'" errors
+  - **Root Cause**: GUI was creating new UserAuth() instance without logged-in user and calling non-existent `is_logged_in()` method
+  - **Constructor Update**: Added `auth_system` parameter to `CourseManagementGUI.__init__()`
+    * Accepts passed authentication system from main GUI
+    * Falls back to creating new UserAuth() for standalone mode
+    * Properly initializes with authenticated user context
+  - **get_user_role() Method Refactor**:
+    * Replaced `self.auth.is_logged_in()` with proper `current_user` attribute check
+    * Added support for both dict and object user formats
+    * Enhanced error handling to prevent repeated error messages
+    * Properly checks `hasattr(self.auth, 'current_user')` and null checks
+  - **Main GUI Integration**: Updated course management launcher to pass auth during construction
+    * Changed from post-construction auth assignment to constructor parameter
+    * Cleaner initialization flow with proper authentication context
+  - **Files Modified**:
+    * `course_management_gui.py:76-86` (constructor with auth_system parameter)
+    * `course_management_gui.py:114-130` (get_user_role() refactor)
+    * `main_gui.py:5972-5974` (pass auth_system to constructor)
+  - **Impact**: Eliminates authentication errors, enables proper role-based access control, user sees correct permissions
+
 - **Integration Marketplace GUI Window Management and Validation Issues** - Fixed critical GUI issues
   - **Window Creation Fix**: Changed from creating new `tk.Tk()` root to `tk.Toplevel()` child window
     * Prevents interference with main GUI layout

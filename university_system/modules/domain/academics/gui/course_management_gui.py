@@ -73,13 +73,17 @@ except ImportError as e:
 # =====================================================================
 
 class CourseManagementGUI:
-    def __init__(self, parent):
+    def __init__(self, parent, auth_system=None):
         self.root = parent
         self.root.title("Enhanced Course Management System")
         self.root.geometry("1200x800")
         self.root.configure(bg='#f0f0f0')
 
-        self.auth = UserAuth()
+        # Initialize authentication - accept passed auth or create new instance
+        if auth_system:
+            self.auth = auth_system
+        else:
+            self.auth = UserAuth()
 
         # Create status bar FIRST so update_status() is safe during init
         self.status_var = tk.StringVar(value="Initializing…")
@@ -110,9 +114,15 @@ class CourseManagementGUI:
     def get_user_role(self):
         """Get the current user's role from authentication system"""
         try:
-            if self.auth.is_logged_in():
-                user = self.auth.get_current_user()
-                if user and hasattr(user, 'role'):
+            # Check if auth has current_user attribute and it's not None
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                user = self.auth.current_user
+                # Handle both dict and object formats
+                if isinstance(user, dict):
+                    role = user.get('role', None)
+                    if role:
+                        return role.lower()
+                elif hasattr(user, 'role'):
                     return user.role.lower()
             return None
         except Exception as e:
