@@ -2967,7 +2967,7 @@ class AdvancedSearchGUI:
             cursor.execute("SELECT COUNT(*) FROM students WHERE student_id IS NULL OR student_id = ''")
             null_ids = cursor.fetchone()[0]
             
-            cursor.execute("SELECT COUNT(*) FROM students WHERE email IS NULL OR email = ''")
+            cursor.execute("SELECT COUNT(*) FROM students WHERE email_address IS NULL OR email_address = ''")
             null_emails = cursor.fetchone()[0]
             
             result += f"\nDATA CONSISTENCY:\n"
@@ -3487,7 +3487,7 @@ class AdvancedSearchGUI:
             query = """
             SELECT * FROM students 
             WHERE LOWER(first_name || ' ' || last_name) LIKE ?
-               OR LOWER(email) LIKE ?
+               OR LOWER(email_address) LIKE ?
                OR LOWER(student_id) LIKE ?
             """
             params = [f'%{term.lower()}%'] * 3
@@ -3635,7 +3635,7 @@ class AdvancedSearchGUI:
                     query += " AND registration_datetime >= ?"
                     params.append(value + " 00:00:00")
                 elif key == "search_term":
-                    query += " AND (LOWER(first_name || ' ' || last_name) LIKE ? OR LOWER(email) LIKE ?)"
+                    query += " AND (LOWER(first_name || ' ' || last_name) LIKE ? OR LOWER(email_address) LIKE ?)"
                     params.extend([f'%{value.lower()}%', f'%{value.lower()}%'])
             
             cursor.execute(query, params)
@@ -4829,7 +4829,7 @@ This email was sent from the Advanced Search GUI - Analytics Dashboard.
             query = """
             SELECT * FROM students WHERE
             LOWER(student_id) LIKE ? OR
-            LOWER(email) LIKE ? OR
+            LOWER(email_address) LIKE ? OR
             LOWER(title) LIKE ? OR
             LOWER(first_name) LIKE ? OR
             LOWER(middle_name) LIKE ? OR
@@ -6621,7 +6621,7 @@ This email was sent from the Advanced Search GUI - Analytics Dashboard.
             
             # Check for students without emails
             try:
-                cursor.execute("SELECT COUNT(*) FROM students WHERE email IS NULL OR email = ''")
+                cursor.execute("SELECT COUNT(*) FROM students WHERE email_address IS NULL OR email_address = ''")
                 no_email_count = cursor.fetchone()[0]
                 status_report += f"  Students without email: {no_email_count}\n"
             except:
@@ -8263,7 +8263,7 @@ This email was sent from the Advanced Search GUI - Analytics Dashboard.
                 query = '''
                 SELECT * FROM students WHERE
                 student_id LIKE ? OR
-                email LIKE ? OR
+                email_address LIKE ? OR
                 first_name LIKE ? OR
                 middle_name LIKE ? OR
                 last_name LIKE ?

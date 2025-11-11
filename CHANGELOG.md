@@ -40,6 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
 
 ### Fixed
+- **Advanced Search GUI - Suggested Search Email Column Error** - Fixed "no such column: email" error
+  - **Root Cause**: Multiple queries used `email` instead of `email_address` column name
+  - **Locations Fixed**:
+    * Line 2970: Data quality check query
+    * Line 3426: Auto-complete search query
+    * Line 3490: Smart suggestions query
+    * Line 3638: Suggested search term query
+    * Line 4832: Advanced search query
+    * Line 6624: Data quality check query
+    * Line 8266: Search query
+  - **Fix Applied**: Batch replaced all `email` references with `email_address` in students table queries
+  - **Impact**: Suggested search, smart suggestions, auto-complete, and data quality checks now work correctly
+
 - **Advanced Search GUI Multiple Critical Errors** - Fixed 8 critical errors preventing proper operation
   - **Missing csv Import**: Added `import csv` at module level (line 7)
     * Fixed "Could not export history: name 'csv' is not defined" error
