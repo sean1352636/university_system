@@ -395,7 +395,7 @@ class SubmissionManager:
             # Use proper path from shared constants with fallback
             assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)
             if assignment_submission_dir is None:
-                base_dir = paths.UPLOAD_DIR / 'submissions'
+                base_dir = paths.SUBMISSIONS_DIR
             else:
                 base_dir = Path(assignment_submission_dir)
 

@@ -317,8 +317,8 @@ class AssignmentGUI:
 
             # Create main directories
             directories = [
-                paths.UPLOAD_DIR / 'assignments',
-                paths.UPLOAD_DIR / 'submissions',
+                paths.DATA_DIR / 'assignments',
+                paths.SUBMISSIONS_DIR,
                 paths.DATA_DIR / 'backups' / 'assignments',
                 paths.DATA_DIR / 'temp' / 'assignments',
             ]

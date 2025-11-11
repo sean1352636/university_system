@@ -2563,7 +2563,7 @@ class GroupManager:
 
                 try:
                     # Copy file to submissions directory
-                    submissions_dir = paths.UPLOAD_DIR / 'assignments' / str(assignment_id)
+                    submissions_dir = paths.SUBMISSIONS_DIR / 'assignments' / str(assignment_id)
                     submissions_dir.mkdir(parents=True, exist_ok=True)
 
                     file_name = os.path.basename(file_path)

@@ -218,7 +218,7 @@ class MaintenanceManager:
             # Use proper path from shared constants with fallback
             submission_dir = getattr(self.assignment_system, 'submission_dir', None)
             if submission_dir is None:
-                base_dir = paths.UPLOAD_DIR / 'submissions'
+                base_dir = paths.SUBMISSIONS_DIR
             else:
                 base_dir = Path(submission_dir).resolve()
 
@@ -413,7 +413,7 @@ class MaintenanceManager:
                 health_items.append("\n✓ File System: OK")
 
                 # Check submission directories
-                submission_dir = paths.UPLOAD_DIR / 'submissions'
+                submission_dir = paths.SUBMISSIONS_DIR
                 if submission_dir.exists():
                     health_details.append(f"  - Submission Directory: {submission_dir}")
                     try:
