@@ -825,15 +825,20 @@ class IntegrationMarketplaceGUI:
             dialog = tk.Toplevel(self.root)
             dialog.title("Add Integration to Catalog")
             dialog.geometry("500x500")
+            dialog.transient(self.root)  # Make dialog transient to parent
+            dialog.grab_set()  # Make dialog modal
 
             # Form fields
             ttk.Label(dialog, text="Integration Name:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
             name_var = tk.StringVar()
-            ttk.Entry(dialog, textvariable=name_var, width=35).grid(row=0, column=1, padx=10, pady=5)
+            name_entry = ttk.Entry(dialog, textvariable=name_var, width=35)
+            name_entry.grid(row=0, column=1, padx=10, pady=5)
+            name_entry.focus_set()  # Set initial focus
 
             ttk.Label(dialog, text="Provider Name:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
             provider_var = tk.StringVar()
-            ttk.Entry(dialog, textvariable=provider_var, width=35).grid(row=1, column=1, padx=10, pady=5)
+            provider_entry = ttk.Entry(dialog, textvariable=provider_var, width=35)
+            provider_entry.grid(row=1, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text="Integration Type:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
             type_var = tk.StringVar(value='API')
@@ -869,9 +874,19 @@ class IntegrationMarketplaceGUI:
                     description = description_text.get('1.0', 'end-1c').strip()
                     is_official = int(is_official_var.get())
 
-                    if not integration_name or not provider_name:
-                        messagebox.showerror("Error", "Integration name and provider name are required")
+                    # Enhanced validation with specific error messages
+                    if not integration_name:
+                        messagebox.showerror("Validation Error", "Integration Name is required.\n\nPlease enter a name for the integration.")
+                        name_entry.focus_set()
                         return
+
+                    if not provider_name:
+                        messagebox.showerror("Validation Error", "Provider Name is required.\n\nPlease enter the name of the integration provider.")
+                        provider_entry.focus_set()
+                        return
+
+                    # Log for debugging
+                    logger.info(f"Adding integration: name='{integration_name}', provider='{provider_name}', type='{integration_type}'")
 
                     if MANAGERS_AVAILABLE:
                         integration_id = IntegrationCatalogManager.add_integration(
@@ -1777,12 +1792,19 @@ class IntegrationMarketplaceGUI:
                 self.root.destroy()
 
 
-def launch_integration_marketplace_gui(auth=None):
-    """Launch the Integration Marketplace GUI"""
+def launch_integration_marketplace_gui(auth=None, parent=None):
+    """Launch the Integration Marketplace GUI as a child window"""
     try:
-        root = tk.Tk()
+        if parent:
+            # Create as Toplevel (child window) if parent exists
+            root = tk.Toplevel(parent)
+        else:
+            # Create as standalone root window if no parent (for testing)
+            root = tk.Tk()
         app = IntegrationMarketplaceGUI(root, auth_system=auth)
-        root.mainloop()
+        # Don't call mainloop() for Toplevel windows - parent handles it
+        if not parent:
+            root.mainloop()
     except Exception as e:
         logger.error(f"Error launching Integration Marketplace GUI: {e}\n{traceback.format_exc()}")
         raise

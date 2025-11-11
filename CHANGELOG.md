@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Integration Marketplace GUI Window Management and Validation Issues** - Fixed critical GUI issues
+  - **Window Creation Fix**: Changed from creating new `tk.Tk()` root to `tk.Toplevel()` child window
+    * Prevents interference with main GUI layout
+    * Properly integrates as modal child window
+    * Added `parent` parameter to `launch_integration_marketplace_gui()` function
+    * Updated `main_gui.py` to pass parent window reference
+  - **Add Integration Dialog Validation Enhancement**:
+    * Made dialog properly modal with `grab_set()` and `transient()`
+    * Added focus management - initial focus on Integration Name field
+    * Enhanced validation with specific error messages for each required field
+    * Separate validation for Integration Name and Provider Name
+    * Added focus return on validation failure
+    * Added logging for debugging integration creation
+  - **Files Modified**:
+    * `integration_marketplace_gui.py:822-889, 1780-1795` (dialog improvements, window creation)
+    * `main_gui.py:8302` (parent parameter added)
+  - **Impact**: Integration Marketplace now opens as proper child window without disrupting main GUI, and validation provides clear feedback
+
 ### Added
 - **Create Review Feature in Admissions CRM GUI** - Added dedicated review creation functionality
   - **New "Create Review" Button**: Added to Reviews tab for direct review creation

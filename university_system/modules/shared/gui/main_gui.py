@@ -8299,7 +8299,7 @@ For security issues, contact system administrator.
 
     def show_integration_marketplace_gui(self):
         """Launch the Integration Marketplace GUI"""
-        launch_integration_marketplace_gui(auth=self.auth)
+        launch_integration_marketplace_gui(auth=self.auth, parent=self.root)
 
     def show_mobile_app_pwa_gui(self):
         """Launch the Mobile App (PWA) Infrastructure GUI"""
