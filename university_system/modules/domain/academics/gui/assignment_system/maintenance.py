@@ -187,6 +187,11 @@ class MaintenanceManager:
             corrupted_files = 0
             
             for file_path, stored_hash in files:
+                # Skip if file_path is None or empty
+                if not file_path or not isinstance(file_path, str) or not file_path.strip():
+                    missing_files += 1
+                    continue
+
                 if not os.path.exists(file_path):
                     missing_files += 1
                 else:
@@ -235,6 +240,10 @@ class MaintenanceManager:
     
             archived_count = 0
             for submission_id, file_path in rows:
+                # Skip if file_path is None or empty
+                if not file_path or not isinstance(file_path, str) or not file_path.strip():
+                    continue
+
                 src = Path(file_path)
                 if not src.exists():
                     continue
@@ -357,36 +366,124 @@ class MaintenanceManager:
     
 
     def generate_health_report(self):
-        """Generate system health report"""
+        """Generate comprehensive system health report and email to admin"""
         try:
             # Collect various system metrics
             health_items = []
-            
-            # Check database
+            health_details = []
+            report_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            health_items.append(f"=== ASSIGNMENT SYSTEM HEALTH REPORT ===")
+            health_items.append(f"Generated: {report_timestamp}\n")
+
+            # Check database connectivity and stats
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
                 conn.execute('SELECT 1')
-                conn.close()
                 health_items.append("✓ Database: OK")
-            except:
-                health_items.append("✗ Database: ERROR")
-            
+
+                # Get database statistics
+                cursor.execute('SELECT COUNT(*) FROM assignments WHERE is_active = 1')
+                active_assignments = cursor.fetchone()[0]
+                cursor.execute('SELECT COUNT(*) FROM assignment_submissions')
+                total_submissions = cursor.fetchone()[0]
+                cursor.execute('SELECT COUNT(DISTINCT student_id) FROM assignment_submissions')
+                active_students = cursor.fetchone()[0]
+
+                health_details.append(f"  - Active Assignments: {active_assignments}")
+                health_details.append(f"  - Total Submissions: {total_submissions}")
+                health_details.append(f"  - Active Students: {active_students}")
+
+                # Database size
+                db_size_mb = os.path.getsize(str(DEFAULT_DB_PATH)) / (1024 * 1024)
+                health_details.append(f"  - Database Size: {db_size_mb:.2f} MB")
+
+                conn.close()
+            except Exception as e:
+                health_items.append(f"✗ Database: ERROR - {str(e)}")
+
+            if health_details:
+                health_items.extend(health_details)
+                health_details = []
+
             # Check file system
             data_dir = os.path.dirname(DEFAULT_DB_PATH)
             if os.path.exists(data_dir):
-                health_items.append("✓ File System: OK")
+                health_items.append("\n✓ File System: OK")
+
+                # Check submission directories
+                submission_dir = paths.UPLOAD_DIR / 'submissions'
+                if submission_dir.exists():
+                    health_details.append(f"  - Submission Directory: {submission_dir}")
+                    try:
+                        # Count files
+                        file_count = sum(1 for _ in submission_dir.rglob('*') if _.is_file())
+                        health_details.append(f"  - Total Files: {file_count}")
+                    except:
+                        pass
             else:
-                health_items.append("✗ File System: ERROR")
-    
+                health_items.append("\n✗ File System: ERROR - Data directory not found")
+
+            if health_details:
+                health_items.extend(health_details)
+                health_details = []
+
             # Check permissions
             if os.access(str(DEFAULT_DB_PATH), os.R_OK | os.W_OK):
-                health_items.append("✓ Permissions: OK")
+                health_items.append("\n✓ Permissions: OK")
             else:
-                health_items.append("✗ Permissions: ERROR")
-            
-            health_report = "System Health Report:\n" + "\n".join(health_items)
+                health_items.append("\n✗ Permissions: ERROR - Insufficient database permissions")
+
+            # Check disk usage
+            try:
+                import shutil
+                total, used, free = shutil.disk_usage(data_dir)
+                used_percent = (used / total) * 100
+                free_gb = free / (1024**3)
+
+                if used_percent > 90:
+                    health_items.append(f"\n⚠ Disk Usage: WARNING - {used_percent:.1f}% used ({free_gb:.2f} GB free)")
+                else:
+                    health_items.append(f"\n✓ Disk Usage: OK - {used_percent:.1f}% used ({free_gb:.2f} GB free)")
+            except:
+                health_items.append("\n⚠ Disk Usage: Unable to check")
+
+            health_report = "\n".join(health_items)
+
+            # Display report
             self.show_maintenance_status(health_report, "info")
-            
+
+            # Send email to admin
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Get admin email
+                cursor.execute('''
+                    SELECT email FROM users WHERE role = 'admin' LIMIT 1
+                ''')
+                admin_result = cursor.fetchone()
+                conn.close()
+
+                if admin_result:
+                    admin_email = admin_result[0]
+                    from university_system.infrastructure.email.email_service import send_email
+
+                    email_body = health_report.replace("✓", "[OK]").replace("✗", "[ERROR]").replace("⚠", "[WARNING]")
+
+                    send_email(
+                        to_email=admin_email,
+                        subject=f"Assignment System Health Report - {datetime.now().strftime('%Y-%m-%d')}",
+                        body=email_body
+                    )
+
+                    messagebox.showinfo("Success", f"Health report generated and emailed to admin ({admin_email})")
+                else:
+                    messagebox.showwarning("Warning", "Health report generated but no admin email found")
+            except Exception as email_error:
+                messagebox.showwarning("Warning", f"Health report generated but email failed: {email_error}")
+
         except Exception as e:
             self.show_maintenance_status(f"Failed to generate health report: {e}", "error")
     

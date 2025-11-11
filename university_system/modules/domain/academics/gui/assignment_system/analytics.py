@@ -245,29 +245,41 @@ class AnalyticsManager:
             ''')
             
             submission_data = cursor.fetchall()
-            
-            if submission_data:
+
+            if submission_data and len(submission_data) > 0:
                 # Create line chart
                 fig, ax = plt.subplots(figsize=(12, 6))
                 fig.patch.set_facecolor('#f0f0f0')
-                
+
                 dates, counts = zip(*submission_data)
                 dates = [datetime.strptime(date, '%Y-%m-%d') for date in dates]
-                
-                ax.plot(dates, counts, marker='o', linewidth=2, markersize=6)
-                ax.set_title('Submission Trends (Last 30 Days)')
-                ax.set_xlabel('Date')
-                ax.set_ylabel('Number of Submissions')
+
+                ax.plot(dates, counts, marker='o', linewidth=2, markersize=6, color='#3498db')
+                ax.set_title('Submission Trends (Last 30 Days)', fontsize=14, fontweight='bold')
+                ax.set_xlabel('Date', fontsize=11)
+                ax.set_ylabel('Number of Submissions', fontsize=11)
                 ax.grid(True, alpha=0.3)
-                
+
                 # Format x-axis
                 plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
-                
+                plt.tight_layout()
+
                 # Embed plot
                 canvas = FigureCanvasTkAgg(fig, parent)
                 canvas.draw()
                 canvas.get_tk_widget().pack(fill='both', expand=True, padx=10, pady=10)
-            
+            else:
+                # Show message when no data available
+                no_data_frame = ttk.Frame(parent)
+                no_data_frame.pack(fill='both', expand=True, padx=10, pady=50)
+
+                ttk.Label(no_data_frame, text="No Submission Data Available",
+                         font=('Arial', 14, 'bold')).pack(pady=10)
+                ttk.Label(no_data_frame, text="No submissions have been made in the last 30 days.",
+                         font=('Arial', 11)).pack(pady=5)
+                ttk.Label(no_data_frame, text="Submit some assignments to see trends appear here.",
+                         font=('Arial', 10), foreground='gray').pack(pady=5)
+
             # Late submission statistics
             cursor.execute('''
             SELECT 
@@ -569,9 +581,16 @@ class AnalyticsManager:
         ttk.Radiobutton(format_frame, text="PDF (.pdf)", variable=self.output_format_var, 
                        value="pdf").pack(side='left')
         
-        # Generate button
-        ttk.Button(options_frame, text="Generate Report", 
-                  command=self.create_custom_report).pack(pady=20)
+        # Action buttons
+        button_frame = ttk.Frame(options_frame)
+        button_frame.pack(pady=20)
+
+        ttk.Button(button_frame, text="📊 View Report",
+                  command=self.view_custom_report).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="💾 Save Report",
+                  command=self.create_custom_report).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="📧 Email to Admin",
+                  command=self.email_custom_report).pack(side='left', padx=5)
     
 
     def create_custom_report(self):
@@ -617,7 +636,218 @@ class AnalyticsManager:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
-    
+
+
+    def view_custom_report(self):
+        """View custom report on screen before saving"""
+        report_type = self.report_type_var.get()
+
+        try:
+            # Generate report data
+            report_data, report_title = self._get_report_data(report_type)
+
+            if not report_data:
+                messagebox.showinfo("No Data", "No data available for this report")
+                return
+
+            # Create view window
+            view_window = tk.Toplevel(self.root)
+            view_window.title(f"{report_title} - Preview")
+            view_window.geometry("1000x700")
+
+            # Title
+            ttk.Label(view_window, text=report_title, font=('Arial', 16, 'bold')).pack(pady=10)
+
+            # Create treeview for data
+            tree_frame = ttk.Frame(view_window)
+            tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+            # Scrollbars
+            yscrollbar = ttk.Scrollbar(tree_frame)
+            yscrollbar.pack(side='right', fill='y')
+            xscrollbar = ttk.Scrollbar(tree_frame, orient='horizontal')
+            xscrollbar.pack(side='bottom', fill='x')
+
+            # Treeview
+            columns = report_data['columns']
+            tree = ttk.Treeview(tree_frame, columns=columns, show='headings',
+                               yscrollcommand=yscrollbar.set, xscrollcommand=xscrollbar.set)
+
+            yscrollbar.config(command=tree.yview)
+            xscrollbar.config(command=tree.xview)
+
+            # Configure columns
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=120)
+
+            # Insert data
+            for row in report_data['rows']:
+                tree.insert('', 'end', values=row)
+
+            tree.pack(fill='both', expand=True)
+
+            # Buttons
+            button_frame = ttk.Frame(view_window)
+            button_frame.pack(fill='x', padx=10, pady=10)
+
+            ttk.Button(button_frame, text="Close", command=view_window.destroy).pack(side='right')
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to view report: {e}")
+
+
+    def email_custom_report(self):
+        """Email custom report to admin"""
+        report_type = self.report_type_var.get()
+
+        try:
+            # Generate report data
+            report_data, report_title = self._get_report_data(report_type)
+
+            if not report_data:
+                messagebox.showinfo("No Data", "No data available for this report")
+                return
+
+            # Get admin email
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+            admin_result = cursor.fetchone()
+            conn.close()
+
+            if not admin_result:
+                messagebox.showerror("Error", "No admin email found in system")
+                return
+
+            admin_email = admin_result[0]
+
+            # Format report as text
+            email_body = f"=== {report_title} ===\n"
+            email_body += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+            # Add column headers
+            email_body += " | ".join(report_data['columns']) + "\n"
+            email_body += "-" * (len(" | ".join(report_data['columns']))) + "\n"
+
+            # Add data rows (limit to first 100 for email)
+            for i, row in enumerate(report_data['rows'][:100]):
+                email_body += " | ".join(str(val) for val in row) + "\n"
+
+            if len(report_data['rows']) > 100:
+                email_body += f"\n... and {len(report_data['rows']) - 100} more rows\n"
+
+            email_body += f"\n\nTotal Records: {len(report_data['rows'])}\n"
+
+            # Send email
+            from university_system.infrastructure.email.email_service import send_email
+            send_email(
+                to_email=admin_email,
+                subject=f"[Assignment System] {report_title}",
+                body=email_body
+            )
+
+            messagebox.showinfo("Success", f"Report emailed to admin ({admin_email})")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to email report: {e}")
+
+
+    def _get_report_data(self, report_type):
+        """Get report data for viewing or emailing"""
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        cursor = conn.cursor()
+
+        if report_type == "student_performance":
+            cursor.execute('''
+            SELECT s.student_id, s.first_name, s.last_name,
+                   COUNT(sub.id) as total_submissions,
+                   ROUND(AVG(sub.grade), 2) as avg_grade,
+                   COUNT(CASE WHEN sub.late_submission = 1 THEN 1 END) as late_submissions
+            FROM students s
+            LEFT JOIN assignment_submissions sub ON s.student_id = sub.student_id
+            WHERE sub.grade IS NOT NULL
+            GROUP BY s.student_id, s.first_name, s.last_name
+            ORDER BY s.last_name, s.first_name
+            ''')
+            columns = ['Student ID', 'First Name', 'Last Name', 'Total Submissions', 'Avg Grade', 'Late Submissions']
+            title = "Student Performance Report"
+
+        elif report_type == "assignment_stats":
+            cursor.execute('''
+            SELECT a.title, a.module_code, a.max_marks,
+                   COUNT(s.id) as total_submissions,
+                   ROUND(AVG(s.grade), 2) as avg_grade,
+                   MIN(s.grade) as min_grade,
+                   MAX(s.grade) as max_grade
+            FROM assignments a
+            LEFT JOIN assignment_submissions s ON a.id = s.assignment_id
+            WHERE a.is_active = 1
+            GROUP BY a.id, a.title, a.module_code, a.max_marks
+            ORDER BY a.title
+            ''')
+            columns = ['Assignment', 'Module', 'Max Marks', 'Submissions', 'Avg Grade', 'Min Grade', 'Max Grade']
+            title = "Assignment Statistics Report"
+
+        elif report_type == "module_summary":
+            cursor.execute('''
+            SELECT m.module_code, m.module_name,
+                   COUNT(DISTINCT a.id) as total_assignments,
+                   COUNT(DISTINCT s.student_id) as active_students,
+                   ROUND(AVG(sub.grade), 2) as avg_grade
+            FROM modules m
+            LEFT JOIN assignments a ON m.module_code = a.module_code
+            LEFT JOIN student_modules s ON m.module_code = s.module_code
+            LEFT JOIN assignment_submissions sub ON a.id = sub.assignment_id
+            GROUP BY m.module_code, m.module_name
+            ORDER BY m.module_code
+            ''')
+            columns = ['Module Code', 'Module Name', 'Assignments', 'Students', 'Avg Grade']
+            title = "Module Summary Report"
+
+        elif report_type == "submission_timeline":
+            cursor.execute('''
+            SELECT DATE(submission_date) as date,
+                   COUNT(*) as submissions,
+                   COUNT(CASE WHEN late_submission = 1 THEN 1 END) as late,
+                   COUNT(CASE WHEN grade IS NOT NULL THEN 1 END) as graded
+            FROM assignment_submissions
+            WHERE submission_date >= date('now', '-30 days')
+            GROUP BY DATE(submission_date)
+            ORDER BY date DESC
+            ''')
+            columns = ['Date', 'Total Submissions', 'Late', 'Graded']
+            title = "Submission Timeline Report (Last 30 Days)"
+
+        elif report_type == "grade_analysis":
+            cursor.execute('''
+            SELECT
+                CASE
+                    WHEN grade >= 90 THEN 'A (90-100%)'
+                    WHEN grade >= 80 THEN 'B (80-89%)'
+                    WHEN grade >= 70 THEN 'C (70-79%)'
+                    WHEN grade >= 60 THEN 'D (60-69%)'
+                    ELSE 'F (Below 60%)'
+                END as grade_band,
+                COUNT(*) as count,
+                ROUND(AVG(grade), 2) as avg_grade
+            FROM assignment_submissions
+            WHERE grade IS NOT NULL
+            GROUP BY grade_band
+            ORDER BY grade_band
+            ''')
+            columns = ['Grade Band', 'Count', 'Avg Grade']
+            title = "Grade Analysis Report"
+
+        else:
+            conn.close()
+            return None, None
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        return {'columns': columns, 'rows': rows}, title
+
 
     def create_student_performance_report(self, save_path, output_format):
         """Create student performance report with directory creation"""

@@ -69,11 +69,17 @@ class NotificationManager:
             cursor = conn.cursor()
             
             user_id = self.auth.current_user['id']
-            cursor.execute('''
-            SELECT title, message, created_datetime, is_read
+            # Use notification_id if id column doesn't exist (legacy schema compatibility)
+            cursor.execute("PRAGMA table_info(notifications)")
+            columns = {col[1] for col in cursor.fetchall()}
+            id_col = 'notification_id' if 'notification_id' in columns else 'id'
+            date_col = 'created_datetime' if 'created_datetime' in columns else 'created_at'
+
+            cursor.execute(f'''
+            SELECT title, message, {date_col}, is_read
             FROM notifications
             WHERE user_id = ?
-            ORDER BY created_datetime DESC
+            ORDER BY {date_col} DESC
             LIMIT 50
             ''', (user_id,))
             
@@ -174,14 +180,20 @@ class NotificationManager:
         # Clear existing items
         for item in tree.get_children():
             tree.delete(item)
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
+            # Check column names for compatibility
+            cursor.execute("PRAGMA table_info(notifications)")
+            columns = {col[1] for col in cursor.fetchall()}
+            id_col = 'notification_id' if 'notification_id' in columns else 'id'
+            date_col = 'created_datetime' if 'created_datetime' in columns else 'created_at'
+
             # Build query
-            query = '''
-                SELECT id, title, message, type, is_read, created_datetime
+            query = f'''
+                SELECT {id_col}, title, message, type, is_read, {date_col}
                 FROM notifications
                 WHERE user_id = ?
             '''
@@ -203,7 +215,7 @@ class NotificationManager:
                 query += " AND (title LIKE ? OR message LIKE ?)"
                 params.extend([f"%{search_text}%", f"%{search_text}%"])
 
-            query += " ORDER BY created_datetime DESC"
+            query += f" ORDER BY {date_col} DESC"
 
             cursor.execute(query, params)
             notifications = cursor.fetchall()
@@ -257,31 +269,40 @@ class NotificationManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a notification to view")
             return
-    
+
         notif_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
-            cursor.execute('''
-                SELECT * FROM notifications WHERE id = ?
+
+            # Check column names for compatibility
+            cursor.execute("PRAGMA table_info(notifications)")
+            columns = {col[1] for col in cursor.fetchall()}
+            id_col = 'notification_id' if 'notification_id' in columns else 'id'
+
+            cursor.execute(f'''
+                SELECT * FROM notifications WHERE {id_col} = ?
             ''', (notif_id,))
-    
+
             notification = cursor.fetchone()
-    
+
             if not notification:
                 messagebox.showerror("Error", "Notification not found")
                 conn.close()
                 return
-    
-            # Mark as read
-            if not notification[5]:  # is_read
-                cursor.execute('''
-                    UPDATE notifications SET is_read = 1 WHERE id = ?
+
+            # Mark as read - is_read is at index 6 in the legacy schema
+            cursor.execute("PRAGMA table_info(notifications)")
+            col_info = cursor.fetchall()
+            is_read_idx = next((i for i, col in enumerate(col_info) if col[1] == 'is_read'), None)
+
+            if is_read_idx is not None and not notification[is_read_idx]:
+                cursor.execute(f'''
+                    UPDATE notifications SET is_read = 1 WHERE {id_col} = ?
                 ''', (notif_id,))
                 conn.commit()
-    
+
             conn.close()
     
             # Create detail window
@@ -348,26 +369,31 @@ class NotificationManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a notification")
             return
-    
+
         notif_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
-            cursor.execute('''
-                UPDATE notifications SET is_read = ? WHERE id = ? AND user_id = ?
+
+            # Check column names for compatibility
+            cursor.execute("PRAGMA table_info(notifications)")
+            columns = {col[1] for col in cursor.fetchall()}
+            id_col = 'notification_id' if 'notification_id' in columns else 'id'
+
+            cursor.execute(f'''
+                UPDATE notifications SET is_read = ? WHERE {id_col} = ? AND user_id = ?
             ''', (1 if is_read else 0, notif_id, user_id))
-    
+
             conn.commit()
             conn.close()
-    
+
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
-    
+
             status = "read" if is_read else "unread"
             messagebox.showinfo("Success", f"Notification marked as {status}")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update notification: {str(e)}")
             print(f"Error marking notification: {e}")
@@ -379,28 +405,33 @@ class NotificationManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a notification to delete")
             return
-    
+
         if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this notification?"):
             return
-    
+
         notif_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
-            cursor.execute('''
-                DELETE FROM notifications WHERE id = ? AND user_id = ?
+
+            # Check column names for compatibility
+            cursor.execute("PRAGMA table_info(notifications)")
+            columns = {col[1] for col in cursor.fetchall()}
+            id_col = 'notification_id' if 'notification_id' in columns else 'id'
+
+            cursor.execute(f'''
+                DELETE FROM notifications WHERE {id_col} = ? AND user_id = ?
             ''', (notif_id, user_id))
-    
+
             conn.commit()
             conn.close()
-    
+
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
-    
+
             messagebox.showinfo("Success", "Notification deleted")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete notification: {str(e)}")
             print(f"Error deleting notification: {e}")

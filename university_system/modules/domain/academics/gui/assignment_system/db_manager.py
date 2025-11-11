@@ -507,31 +507,63 @@ class DatabaseManager:
     
 
     def _ensure_notifications_table(self):
-        """Ensure notifications table exists in the database"""
+        """Ensure notifications table exists and has required columns"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                title TEXT,
-                message TEXT NOT NULL,
-                type TEXT DEFAULT 'info',
-                is_read BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                assignment_id INTEGER,
-                recipient_type TEXT,
-                recipient_id TEXT,
-                notification_type TEXT DEFAULT 'info',
-                sent BOOLEAN DEFAULT 0,
-                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (assignment_id) REFERENCES assignments (id)
-            )
-            ''')
-    
+
+            # Check if table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
+            table_exists = cursor.fetchone() is not None
+
+            if not table_exists:
+                # Create new table with standard schema
+                cursor.execute('''
+                CREATE TABLE notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    title TEXT,
+                    message TEXT NOT NULL,
+                    type TEXT DEFAULT 'info',
+                    is_read BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    assignment_id INTEGER,
+                    recipient_type TEXT,
+                    recipient_id TEXT,
+                    notification_type TEXT DEFAULT 'info',
+                    sent BOOLEAN DEFAULT 0,
+                    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    FOREIGN KEY (assignment_id) REFERENCES assignments (id)
+                )
+                ''')
+            else:
+                # Ensure all required columns exist (for legacy tables)
+                cursor.execute("PRAGMA table_info(notifications)")
+                columns = {col[1] for col in cursor.fetchall()}
+
+                # Map old column names to new ones with aliases or add missing columns
+                if 'notification_id' in columns and 'id' not in columns:
+                    # Legacy schema - add id column as alias or just note to use notification_id
+                    print("Note: notifications table uses notification_id instead of id")
+
+                required_columns = {
+                    'type': 'TEXT DEFAULT "info"',
+                    'is_read': 'BOOLEAN DEFAULT 0',
+                    'assignment_id': 'INTEGER',
+                    'recipient_type': 'TEXT',
+                    'recipient_id': 'TEXT',
+                    'notification_type': 'TEXT DEFAULT "info"',
+                    'sent': 'BOOLEAN DEFAULT 0'
+                }
+
+                for col_name, col_def in required_columns.items():
+                    if col_name not in columns:
+                        try:
+                            cursor.execute(f'ALTER TABLE notifications ADD COLUMN {col_name} {col_def}')
+                        except Exception as e:
+                            print(f"Could not add column {col_name}: {e}")
+
             conn.commit()
             conn.close()
         except Exception as e:

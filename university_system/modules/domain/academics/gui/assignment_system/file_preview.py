@@ -650,10 +650,10 @@ class FilePreviewManager:
         try:
             file_ext = os.path.splitext(file_path)[1].lower()
 
-            # Create preview dialog
+            # Create preview dialog with larger size
             dialog = tk.Toplevel(self.root)
             dialog.title(f"File Preview - {file_name}")
-            dialog.geometry("800x600")
+            dialog.geometry("1200x800")  # Increased from 800x600 for better visibility
             dialog.transient(self.root)
 
             # Title frame
@@ -696,7 +696,8 @@ class FilePreviewManager:
     def show_text_preview_in_dialog(self, file_path, parent):
         """Show text file preview in dialog"""
         try:
-            text_widget = scrolledtext.ScrolledText(parent, wrap=tk.WORD, height=30, width=100)
+            # Increased height and width for better visibility
+            text_widget = scrolledtext.ScrolledText(parent, wrap=tk.WORD, height=40, width=140)
             text_widget.pack(fill='both', expand=True)
 
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:

@@ -239,18 +239,66 @@ class MessagingManager:
             # Send messages
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             sender_id = self.auth.current_user['id']
-            
+
+            # Get sender name for email
+            cursor.execute('SELECT first_name, last_name FROM users WHERE id = ?', (sender_id,))
+            sender_result = cursor.fetchone()
+            sender_name = f"{sender_result[0]} {sender_result[1]}" if sender_result else "Instructor"
+
+            emails_sent = 0
+            emails_failed = 0
+
             for recipient_id in recipients:
+                # Save message to database
                 cursor.execute('''
                 INSERT INTO messages (sender_id, recipient_id, subject, message, assignment_id, sent_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ''', (sender_id, recipient_id, subject, message, assignment_id, timestamp))
-            
+
+                # Send actual email
+                try:
+                    # Get recipient email
+                    cursor.execute('SELECT email, first_name FROM users WHERE id = ?', (recipient_id,))
+                    recipient_result = cursor.fetchone()
+
+                    if recipient_result and recipient_result[0]:
+                        recipient_email = recipient_result[0]
+                        recipient_fname = recipient_result[1]
+
+                        # Compose email body
+                        email_body = f"Hello {recipient_fname},\n\n"
+                        email_body += f"You have received a new message from {sender_name}:\n\n"
+                        email_body += f"Subject: {subject}\n\n"
+                        email_body += f"{message}\n\n"
+                        if assignment_id:
+                            email_body += f"This message is related to an assignment.\n\n"
+                        email_body += f"Please log in to the Assignment System to view and respond to this message.\n\n"
+                        email_body += f"Sent: {timestamp}\n"
+
+                        # Send email
+                        from university_system.infrastructure.email.email_service import send_email
+                        send_email(
+                            to_email=recipient_email,
+                            subject=f"[Assignment System] {subject}",
+                            body=email_body
+                        )
+                        emails_sent += 1
+                except Exception as email_error:
+                    print(f"Failed to send email to recipient {recipient_id}: {email_error}")
+                    emails_failed += 1
+
             conn.commit()
             conn.close()
-            
-            messagebox.showinfo("Success", f"Message sent to {len(recipients)} recipients!")
-            
+
+            # Show success message with email status
+            success_msg = f"Message saved for {len(recipients)} recipients!"
+            if emails_sent > 0:
+                success_msg += f"\n✓ {emails_sent} email(s) sent successfully"
+            if emails_failed > 0:
+                success_msg += f"\n⚠ {emails_failed} email(s) failed to send"
+
+            messagebox.showinfo("Success", success_msg)
+
             # Clear form
             self.message_subject_var.set('')
             self.message_body_text.delete(1.0, tk.END)

@@ -7,6 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-11: Assignment GUI Comprehensive Bug Fixes
+
+#### 1. Notifications Database Schema Compatibility
+- **Fixed notifications table column name compatibility** (notifications.py)
+  * Added dynamic column detection for legacy schema support
+  * Handles both `notification_id`/`id` and `created_datetime`/`created_at` column names
+  * Updated all notification queries to use detected column names
+  * Fixed "no such column: id" and "missing created_at column" errors
+  * Methods affected: `show_notifications()`, `_refresh_notifications()`, `_view_notification_details()`,
+    `_mark_notification_read()`, `_delete_notification()`
+
+#### 2. File Path NoneType Errors - Complete Resolution
+- **Fixed archive_old_files()** (maintenance.py:237-240)
+  * Added file_path validation before Path() creation
+  * Skips None, empty, or non-string file paths
+  * Prevents "expected str, bytes or os.PathLike object, not NoneType" error
+- **Fixed verify_file_integrity()** (maintenance.py:190-193)
+  * Added file_path validation before os.path.exists() check
+  * Counts missing files for None paths
+  * Prevents NoneType errors in file verification
+
+#### 3. Health Report Generation with Email Integration
+- **Enhanced generate_health_report()** (maintenance.py:368-488)
+  * Comprehensive system health metrics (database, file system, permissions, disk usage)
+  * Database statistics (active assignments, submissions, students, DB size)
+  * File system validation with submission directory checks
+  * Disk usage warnings (>90% triggers warning status)
+  * **Email to admin**: Automatically sends report to admin email from database
+  * Formatted email body with ASCII-compatible symbols
+  * Success confirmation with admin email address shown
+  * Graceful fallback if admin email not found
+
+#### 4. File Preview Window Enlargement
+- **Increased preview window size** (file_preview.py:656)
+  * Window size: 800x600 → 1200x800 (50% increase)
+  * Text widget: height 30→40, width 100→140
+  * Better visibility for code files, documents, and images
+  * More comfortable viewing experience
+
+#### 5. Analytics Dashboard - Submission Trends Fixed
+- **Fixed blank submission trends chart** (analytics.py:249-281)
+  * Added "No Data Available" message when no submissions in last 30 days
+  * Improved chart styling (colors, fonts, layout)
+  * Added plt.tight_layout() for better spacing
+  * User-friendly guidance message for empty data state
+  * Prevents blank screen issue
+
+#### 6. Send Messages - Email Integration
+- **Implemented actual email sending** (messaging.py:239-305)
+  * Messages now sent via email service, not just saved to database
+  * Gets recipient emails from users table
+  * Personalizes email body with sender and recipient names
+  * Email format: "[Assignment System] {subject}"
+  * Tracks email success/failure counts
+  * Shows detailed status: "{X} email(s) sent successfully, {Y} failed"
+  * Professional email template with message details
+
+#### 7. Custom Reports - View and Email Functionality
+- **Added view_custom_report()** (analytics.py:641-697)
+  * Displays report in 1000x700 preview window before saving
+  * Treeview with horizontal/vertical scrollbars
+  * Formatted columns with headers
+  * Close button for easy dismissal
+- **Added email_custom_report()** (analytics.py:700-753)
+  * Emails report to admin with formatted table layout
+  * Limits to first 100 rows in email (with count of remaining)
+  * ASCII table format in email body
+  * Shows total record count
+  * Confirms successful email with admin address
+- **Added _get_report_data() helper** (analytics.py:756-849)
+  * Unified data retrieval for all report types
+  * Supports: Student Performance, Assignment Stats, Module Summary,
+    Submission Timeline, Grade Analysis
+  * Returns structured data with columns and rows
+  * Used by both view and email functions
+- **Updated UI with 3 action buttons** (analytics.py:585-593)
+  * 📊 View Report - Preview on screen
+  * 💾 Save Report - Export to file
+  * 📧 Email to Admin - Send via email
+
+### Fixed - Previous
+- **Assignment GUI - File Path Errors (NoneType)**
+  - Fixed maintenance.py archive_old_files() function (Line 213-222)
+    * Now uses proper fallback to paths.UPLOAD_DIR when submission_dir is None
+    * Prevents "expected str, bytes or os.PathLike object, not NoneType" error in archiving
+  - Fixed maintenance.py cleanup_old_data() function (Line 496-501)
+    * Added proper path fallback for temporary files cleanup
+    * Uses paths.DATA_DIR when assignment_system.submission_dir is None
+  - Fixed submission_manager.py submit_assignment_gui() function (Line 395-406)
+    * Added fallback to paths.UPLOAD_DIR / 'submissions' when submission_dir is None
+    * Prevents submission failures due to NoneType path errors
+    * All file operations now use proper Path objects with validated directories
+
 ### Added
 - **Module Scheduling GUI - Enhanced Analytics with Email Integration**
   - **Helper Methods for Email and Reporting**:
