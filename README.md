@@ -965,10 +965,76 @@ with transaction() as conn:
 ```
 
 ### Access Control
-- **Role-Based Access Control (RBAC)**: Admin, Instructor, Student, Staff roles
-- **Fine-grained permissions**: Over 50 distinct permissions
+- **Role-Based Access Control (RBAC)**: Admin, Instructor, Student, Staff, Parent roles
+- **Fine-grained permissions**: Over 200 distinct permissions across all modules
 - **Permission decorators**: `@require_permission('permission_name')`
 - **Global auth context**: Shared authentication state across modules
+- **UI-Level Access Control**: Dynamic interface filtering based on user roles
+
+#### Role-Based UI Access Control (2025 Update)
+
+All GUI modules implement comprehensive role-based navigation and menu filtering, ensuring users only see features appropriate for their role:
+
+**Admin Users** - Full system access:
+- All GUI features unlocked across all modules
+- System management and configuration tools
+- Export/import data capabilities
+- View all records system-wide
+- Analytics, reports, and admin panels
+- User management and permissions control
+
+**Staff Users** - Operational access:
+- Domain-specific management features (teaching, support, health services, etc.)
+- Create and edit content within their domain
+- View records relevant to their role
+- Generate reports and analytics
+- Limited to operational tasks (no system-wide administration)
+
+**Student Users** - Self-service access:
+- View own records and information
+- Submit applications and requests
+- Browse available services and opportunities
+- Participate in student activities
+- No access to administrative or management functions
+
+**Parent Users** (Parent Portal):
+- View children's academic records and progress
+- Communication with teachers and staff
+- Financial management for student accounts
+- Health and safety information access
+- Admin users can access additional parent management tools
+
+**Implemented Across 15+ GUI Modules**:
+- Finance GUI (14 tabs: Admin full, Staff 11, Student 4)
+- Health Portal (Admin full, Staff operations, Student personal)
+- Student Union/Campus Events (Admin full, Staff operations, Student participation)
+- Trip Management (Admin/Staff create, Student register)
+- Shop Management (Admin/Staff management, Student shopping)
+- Student Support (Admin/Staff all tickets, Student own tickets)
+- Parent Portal (Admin with Admin Panel, Parent full features)
+- Helpdesk (Admin/Staff management, Student tickets only)
+- Internship Portal (Admin/Staff create, Student apply)
+- Career Services (Admin/Staff management, Student career development)
+- Library Management (Admin full, Staff operations, Student borrow)
+- Academic Calendar (Admin full, Staff teaching, Student view)
+- Grade Tracking (Admin 16 features, Staff 11, Student 3)
+- Assignment System (Admin 5 sections, Staff 4, Student 2)
+- Course Management (Admin/Staff manage, Student enroll)
+
+Each module includes standardized role detection methods:
+```python
+def get_user_role(self):
+    """Get current user's role from auth system"""
+
+def is_admin(self):
+    """Check if current user is admin"""
+
+def is_staff(self):
+    """Check if current user is staff/instructor"""
+
+def is_student(self):
+    """Check if current user is student"""
+```
 
 ### Audit Logging
 - **Comprehensive activity logs** for all data modifications

@@ -633,7 +633,33 @@ PERMISSIONS = {
         'enter_grades', 'edit_grades', 'view_all_grades',
         'generate_transcripts', 'grade_curve_analysis', 'learning_outcomes',
         'competency_assessment', 'predictive_analytics', 'performance_analysis',
-        'grade_statistics', 'grade_reports'
+        'grade_statistics', 'grade_reports',
+        # Finance GUI permissions (admin - full access to all 14 tabs)
+        'manage_finances', 'view_core_finance', 'manage_payments', 'manage_fees',
+        'manage_students_finance', 'view_financial_reports', 'manage_revenue_sources',
+        'manage_collections', 'manage_financial_aid', 'manage_budget', 'financial_forecasting',
+        'manage_research_grants', 'finance_admin_panel', 'finance_settings',
+        # Health Portal permissions (admin - full system access)
+        'view_any_health_record', 'manage_health_records', 'manage_health_appointments',
+        'manage_vaccinations', 'view_health_reports', 'health_email_manager',
+        'health_security_audit', 'health_data_management',
+        # Shop Management permissions (admin - full management)
+        'manage_shop_products', 'manage_shop_inventory', 'view_all_transactions',
+        'manage_shop_discounts', 'view_shop_reports', 'shop_analytics', 'print_product_labels',
+        # Student Support permissions (admin - full support system)
+        'export_support_data', 'view_all_support_tickets', 'manage_support_system',
+        # Helpdesk permissions (admin - full system management)
+        'export_helpdesk_data', 'import_helpdesk_data', 'view_all_tickets',
+        'create_knowledge_articles', 'helpdesk_analytics', 'generate_helpdesk_reports',
+        'helpdesk_system_management', 'helpdesk_user_management', 'helpdesk_settings',
+        # Internship Portal permissions (admin - full management)
+        'view_all_applications', 'create_internship', 'edit_internship',
+        'manage_placements', 'view_internship_reports',
+        # Career Services permissions (admin - full career services)
+        'manage_job_postings', 'manage_career_events', 'career_analytics',
+        # Parent Portal permissions (admin - system management)
+        'parent_admin_panel', 'manage_parent_accounts', 'link_students_to_parents',
+        'view_any_parent_dashboard', 'parent_account_reports'
     ],
     'staff': [
         'create_student', 'view_any_student', 'update_any_student',
@@ -675,7 +701,27 @@ PERMISSIONS = {
         'manage_students', 'manage_modules', 'manage_assessments',
         'create_assessment', 'edit_assessment',
         'enter_grades', 'edit_grades', 'view_all_grades',
-        'generate_transcripts', 'grade_statistics', 'grade_reports'
+        'generate_transcripts', 'grade_statistics', 'grade_reports',
+        # Finance GUI permissions (staff - core operations, 11 tabs)
+        'view_core_finance', 'manage_payments', 'manage_fees', 'manage_students_finance',
+        'view_financial_reports', 'manage_revenue_sources', 'manage_collections',
+        'manage_research_grants', 'finance_settings',
+        # Health Portal permissions (staff - patient care operations)
+        'view_any_health_record', 'manage_health_appointments', 'manage_vaccinations',
+        'view_health_reports', 'health_email_manager',
+        # Shop Management permissions (staff - full management)
+        'manage_shop_products', 'manage_shop_inventory', 'view_all_transactions',
+        'manage_shop_discounts', 'view_shop_reports', 'shop_analytics', 'print_product_labels',
+        # Student Support permissions (staff - support operations)
+        'export_support_data', 'view_all_support_tickets',
+        # Helpdesk permissions (staff - support operations)
+        'export_helpdesk_data', 'import_helpdesk_data', 'view_all_tickets',
+        'create_knowledge_articles', 'helpdesk_analytics', 'generate_helpdesk_reports',
+        # Internship Portal permissions (staff - create and manage)
+        'view_all_applications', 'create_internship', 'edit_internship',
+        'manage_placements', 'view_internship_reports',
+        # Career Services permissions (staff - career management)
+        'manage_job_postings', 'manage_career_events', 'career_analytics'
     ],
     'student': [
         'view_own_record', 'update_own_profile',
@@ -703,7 +749,23 @@ PERMISSIONS = {
         'request_extension', 'peer_review_dashboard', 'complete_peer_reviews',
         'view_messages', 'manage_notifications',
         # Grade Tracking permissions (student - view own data only)
-        'view_own_grades', 'view_own_transcript'
+        'view_own_grades', 'view_own_transcript',
+        # Finance GUI permissions (student - self-service, 4 tabs)
+        'view_own_finances', 'make_payments', 'view_fees', 'view_financial_aid',
+        # Health Portal permissions (student - personal health access)
+        'view_own_health_record', 'schedule_health_appointment', 'view_own_appointments',
+        'view_own_vaccinations', 'manage_emergency_contacts', 'view_accessibility_tools',
+        # Shop Management permissions (student - shopping only)
+        'browse_shop_products', 'view_shopping_cart', 'place_shop_order', 'view_order_history',
+        # Student Support permissions (student - self-service support)
+        'create_support_ticket', 'view_own_support_tickets', 'search_support_tickets',
+        # Helpdesk permissions (student - ticket management)
+        'create_ticket', 'view_own_tickets', 'search_tickets', 'browse_knowledge_base',
+        # Internship Portal permissions (student - application features)
+        'view_internships', 'apply_for_internship', 'view_own_applications',
+        # Career Services permissions (student - career development)
+        'view_job_postings', 'apply_for_jobs', 'manage_resume', 'schedule_career_interviews',
+        'attend_career_events', 'access_mentorship', 'develop_skills'
     ],
     'instructor': [
         'view_assigned_modules', 'manage_module_grades', 'view_module_students',
@@ -732,13 +794,29 @@ PERMISSIONS = {
         'manage_students', 'manage_modules', 'manage_assessments',
         'create_assessment', 'edit_assessment',
         'enter_grades', 'edit_grades', 'view_all_grades',
-        'generate_transcripts', 'grade_statistics', 'grade_reports'
+        'generate_transcripts', 'grade_statistics', 'grade_reports',
+        # Finance GUI permissions (instructor - similar to staff, limited access)
+        'view_core_finance', 'manage_payments', 'view_financial_reports',
+        # Health Portal permissions (instructor - basic access)
+        'view_health_resources',
+        # Internship Portal permissions (instructor - create opportunities)
+        'view_all_applications', 'create_internship', 'edit_internship',
+        'view_internship_reports',
+        # Career Services permissions (instructor - career guidance)
+        'manage_job_postings', 'manage_career_events'
     ],
     'parent': [
-        'view_child_records', 'view_academic_calendar', 'view_child_grades', 
+        'view_child_records', 'view_academic_calendar', 'view_child_grades',
         'view_child_attendance', 'view_teacher_reports', 'message_teachers',
         'view_child_timetable', 'view_child_assignments', 'set_notification_preferences',
-        'update_contact_info', 'view_school_calendar', 'report_absence', 'access_parent_dashboard'
+        'update_contact_info', 'view_school_calendar', 'report_absence', 'access_parent_dashboard',
+        # Parent Portal permissions (parent - full parent features)
+        'view_children', 'view_academic_records', 'view_attendance_behavior',
+        'view_health_safety', 'parent_communication', 'view_financial_info',
+        'access_academic_support', 'manage_parent_settings', 'view_notifications',
+        'update_emergency_contacts', 'manage_transportation', 'set_pickup_permissions',
+        'manage_medical_info', 'report_student_absence', 'request_parent_teacher_meeting',
+        'view_documents', 'upload_documents', 'manage_meal_plans'
     ]
 }
 
