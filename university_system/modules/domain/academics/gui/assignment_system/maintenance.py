@@ -209,8 +209,14 @@ class MaintenanceManager:
         try:
             cutoff_date = datetime.now() - timedelta(days=365)
             cutoff_str = cutoff_date.strftime('%Y-%m-%d %H:%M:%S')
-    
-            base_dir = Path(getattr(self.assignment_system, 'submission_dir', 'submissions')).resolve()
+
+            # Use proper path from shared constants with fallback
+            submission_dir = getattr(self.assignment_system, 'submission_dir', None)
+            if submission_dir is None:
+                base_dir = paths.UPLOAD_DIR / 'submissions'
+            else:
+                base_dir = Path(submission_dir).resolve()
+
             submitted_dir = base_dir / 'submitted'
             archive_dir = base_dir / 'archive'
             archive_dir.mkdir(parents=True, exist_ok=True)
@@ -485,9 +491,15 @@ class MaintenanceManager:
                 progress_var.set(80)
                 status_label.config(text="Cleaning temporary files...")
                 cleanup_window.update()
-                
+
                 temp_count = 0
-                temp_dir = os.path.join(self.assignment_system.submission_dir, 'temp')
+                # Use proper path from shared constants with fallback
+                submission_dir = getattr(self.assignment_system, 'submission_dir', None)
+                if submission_dir is None:
+                    temp_dir = str(paths.DATA_DIR / 'temp' / 'assignments')
+                else:
+                    temp_dir = os.path.join(submission_dir, 'temp')
+
                 if os.path.exists(temp_dir):
                     for file in os.listdir(temp_dir):
                         try:
@@ -495,7 +507,7 @@ class MaintenanceManager:
                             temp_count += 1
                         except:
                             pass
-                
+
                 results_text.insert(tk.END, f"Deleted {temp_count} temporary files\n")
                 
                 # Optimize database

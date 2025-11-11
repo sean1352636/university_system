@@ -390,8 +390,17 @@ class SubmissionManager:
             
             # Create submission directory
             import shutil
+            from university_system.modules.shared.constants import paths
+
+            # Use proper path from shared constants with fallback
+            assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)
+            if assignment_submission_dir is None:
+                base_dir = paths.UPLOAD_DIR / 'submissions'
+            else:
+                base_dir = Path(assignment_submission_dir)
+
             submission_dir = os.path.join(
-                self.assignment_system.submission_dir, 
+                str(base_dir),
                 'submitted', student_id, f"assignment_{assignment_id}"
             )
             os.makedirs(submission_dir, exist_ok=True)
