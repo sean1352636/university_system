@@ -295,6 +295,152 @@ class ModuleSchedulingGUI:
         self.activity_text = scrolledtext.ScrolledText(activity_frame, height=10, state=tk.DISABLED)
         self.activity_text.pack(fill=tk.BOTH, expand=True)
 
+    # Helper methods for email and reporting
+    def _get_admin_email(self):
+        """Get admin email from database"""
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT email FROM users WHERE LOWER(role) = 'admin' LIMIT 1")
+                admin_row = cursor.fetchone()
+                return admin_row[0] if admin_row else "admin@university.edu"
+        except Exception as e:
+            print(f"Warning: Could not fetch admin email from database: {e}")
+            return "admin@university.edu"
+
+    def _show_report_with_email_option(self, report_title, report_text, report_type="Report"):
+        """Show report in a window with email send option"""
+        # Create dialog window
+        report_dialog = tk.Toplevel(self.root)
+        report_dialog.title(report_title)
+        report_dialog.geometry("1000x700")
+        report_dialog.transient(self.root)
+
+        # Main frame
+        main_frame = ttk.Frame(report_dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Report display
+        ttk.Label(main_frame, text=report_title, font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        report_display = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        report_display.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        report_display.insert('1.0', report_text)
+        report_display.config(state='disabled')
+
+        # Email section
+        email_frame = ttk.LabelFrame(main_frame, text="Email Report to Admin", padding=10)
+        email_frame.pack(fill=tk.X, pady=(10, 0))
+
+        # Get admin email
+        admin_email = self._get_admin_email()
+
+        # Email input
+        email_input_frame = ttk.Frame(email_frame)
+        email_input_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(email_input_frame, text="Admin Email:").pack(side=tk.LEFT, padx=(0, 5))
+        email_var = tk.StringVar(value=admin_email)
+        email_entry = ttk.Entry(email_input_frame, textvariable=email_var, width=40)
+        email_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        def refresh_admin_email():
+            """Refresh admin email from database"""
+            try:
+                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT username, email FROM users WHERE LOWER(role) = 'admin' ORDER BY username")
+                    admins = cursor.fetchall()
+
+                if admins:
+                    if len(admins) > 1:
+                        # Show selection dialog
+                        admin_select_dialog = tk.Toplevel(report_dialog)
+                        admin_select_dialog.title("Select Admin")
+                        admin_select_dialog.geometry("400x300")
+                        admin_select_dialog.transient(report_dialog)
+                        admin_select_dialog.grab_set()
+
+                        ttk.Label(admin_select_dialog, text="Select Admin User:",
+                                 font=('Arial', 12, 'bold')).pack(pady=10)
+
+                        admin_listbox = tk.Listbox(admin_select_dialog, height=10)
+                        admin_listbox.pack(fill='both', expand=True, padx=20, pady=10)
+
+                        for username, email in admins:
+                            admin_listbox.insert(tk.END, f"{username} ({email})")
+
+                        def select_admin():
+                            selection = admin_listbox.curselection()
+                            if selection:
+                                selected_email = admins[selection[0]][1]
+                                email_var.set(selected_email)
+                            admin_select_dialog.destroy()
+
+                        ttk.Button(admin_select_dialog, text="Select",
+                                  command=select_admin).pack(pady=10)
+                    else:
+                        email_var.set(admins[0][1])
+                        messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}")
+                else:
+                    messagebox.showwarning("No Admins", "No admin users found in database.")
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Could not fetch admin emails: {str(e)}")
+
+        ttk.Button(email_input_frame, text="🔄", command=refresh_admin_email, width=3).pack(side=tk.LEFT)
+
+        # Send email function
+        def send_report_email():
+            try:
+                recipient_email = email_var.get().strip()
+
+                if not recipient_email or '@' not in recipient_email:
+                    messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.")
+                    return
+
+                # Import email service
+                from university_system.infrastructure.email.email_service import send_email
+
+                # Create email body
+                email_body = f"""{report_title}
+
+{'=' * 80}
+{report_text}
+{'=' * 80}
+
+Report Type: {report_type}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+This email was sent from the Module Scheduling GUI.
+"""
+
+                # Send email
+                send_email(
+                    recipient_email=recipient_email,
+                    subject=f"Module Scheduling Report - {report_title}",
+                    body=email_body
+                )
+
+                messagebox.showinfo("Email Sent",
+                                  f"✅ Report sent successfully to {recipient_email}\n\n"
+                                  f"Report: {report_title}")
+                self.update_activity_log(f"Emailed {report_type} report to {recipient_email}")
+
+            except Exception as e:
+                messagebox.showerror("Email Error",
+                                   f"Failed to send email: {str(e)}\n\n"
+                                   f"Please check email configuration.")
+                print(f"Email error: {str(e)}")
+
+        # Buttons
+        button_frame = ttk.Frame(email_frame)
+        button_frame.pack(fill=tk.X)
+
+        ttk.Button(button_frame, text="📧 Send Email",
+                  command=send_report_email).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="❌ Close",
+                  command=report_dialog.destroy).pack(side=tk.LEFT)
+
     def _analyze_peak_usage(self):
         """Analyze peak usage times"""
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
@@ -1838,40 +1984,51 @@ class ModuleSchedulingGUI:
             self.analytics_text.delete(1.0, tk.END)
             self.analytics_text.insert(tk.END, "Generating room utilization report...\n")
             self.root.update()
-            
+
             # Get room utilization data
             room_data = self.scheduler.generate_room_utilization_report('data')
-            
+
             if not room_data:
                 self.analytics_text.insert(tk.END, "No room data available.")
                 return
-            
-            self.analytics_text.delete(1.0, tk.END)
-            self.analytics_text.insert(tk.END, "Room Utilization Analytics\n")
-            self.analytics_text.insert(tk.END, "=" * 100 + "\n")
-            self.analytics_text.insert(tk.END, f"{'Room':<15} {'Type':<15} {'Capacity':<10} {'Sessions':<10} {'Utilization':<12} {'Avg Duration':<12}\n")
-            self.analytics_text.insert(tk.END, "-" * 100 + "\n")
-            
+
+            # Build report text
+            report_text = "Room Utilization Analytics\n"
+            report_text += "=" * 100 + "\n"
+            report_text += f"{'Room':<15} {'Type':<15} {'Capacity':<10} {'Sessions':<10} {'Utilization':<12} {'Avg Duration':<12}\n"
+            report_text += "-" * 100 + "\n"
+
             for room in room_data:
                 line = f"{room['Room']:<15} {room['Type']:<15} {room['Capacity']:<10} {room['Sessions']:<10} {room['Utilization Rate (%)']:<12} {room['Avg Duration (min)']:<12}\n"
-                self.analytics_text.insert(tk.END, line)
-            
-            self.analytics_text.insert(tk.END, "=" * 100 + "\n")
-            
+                report_text += line
+
+            report_text += "=" * 100 + "\n"
+
             # Summary statistics
             if room_data:
                 avg_utilization = sum(room['Utilization Rate (%)'] for room in room_data) / len(room_data)
-                self.analytics_text.insert(tk.END, f"\nSummary:\n")
-                self.analytics_text.insert(tk.END, f"Total Rooms: {len(room_data)}\n")
-                self.analytics_text.insert(tk.END, f"Average Utilization: {avg_utilization:.2f}%\n")
-                
+                report_text += f"\nSummary:\n"
+                report_text += f"Total Rooms: {len(room_data)}\n"
+                report_text += f"Average Utilization: {avg_utilization:.2f}%\n"
+
                 most_utilized = max(room_data, key=lambda x: x['Utilization Rate (%)'])
                 least_utilized = min(room_data, key=lambda x: x['Utilization Rate (%)'])
-                self.analytics_text.insert(tk.END, f"Most Utilized: {most_utilized['Room']} ({most_utilized['Utilization Rate (%)']}%)\n")
-                self.analytics_text.insert(tk.END, f"Least Utilized: {least_utilized['Room']} ({least_utilized['Utilization Rate (%)']}%)\n")
-            
+                report_text += f"Most Utilized: {most_utilized['Room']} ({most_utilized['Utilization Rate (%)']}%)\n"
+                report_text += f"Least Utilized: {least_utilized['Room']} ({least_utilized['Utilization Rate (%)']}%)\n"
+
+            # Update analytics text area
+            self.analytics_text.delete(1.0, tk.END)
+            self.analytics_text.insert(tk.END, report_text)
+
+            # Show report in window with email option
+            self._show_report_with_email_option(
+                "Room Utilization Report",
+                report_text,
+                "Room Utilization Analytics"
+            )
+
             self.update_activity_log("Generated room utilization report")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate room utilization report: {str(e)}")
     
@@ -1881,35 +2038,46 @@ class ModuleSchedulingGUI:
             self.analytics_text.delete(1.0, tk.END)
             self.analytics_text.insert(tk.END, "Generating instructor workload report...\n")
             self.root.update()
-            
+
             # Get workload data
             workload_data = self.scheduler.generate_instructor_workload_report('data')
-            
+
             if not workload_data:
                 self.analytics_text.insert(tk.END, "No instructor data available.")
                 return
-            
-            self.analytics_text.delete(1.0, tk.END)
-            self.analytics_text.insert(tk.END, "Instructor Workload Analytics\n")
-            self.analytics_text.insert(tk.END, "=" * 120 + "\n")
-            self.analytics_text.insert(tk.END, f"{'Instructor':<25} {'Department':<15} {'Sessions':<10} {'Hours':<8} {'Max':<8} {'Load %':<8} {'Status':<12}\n")
-            self.analytics_text.insert(tk.END, "-" * 120 + "\n")
-            
+
+            # Build report text
+            report_text = "Instructor Workload Analytics\n"
+            report_text += "=" * 120 + "\n"
+            report_text += f"{'Instructor':<25} {'Department':<15} {'Sessions':<10} {'Hours':<8} {'Max':<8} {'Load %':<8} {'Status':<12}\n"
+            report_text += "-" * 120 + "\n"
+
             for instructor in workload_data:
                 line = f"{instructor['Instructor']:<25} {instructor['Department']:<15} {instructor['Sessions']:<10} {instructor['Total Hours']:<8} {instructor['Max Hours']:<8} {instructor['Workload (%)']:<8} {instructor['Status']:<12}\n"
-                self.analytics_text.insert(tk.END, line)
-            
-            self.analytics_text.insert(tk.END, "=" * 120 + "\n")
-            
+                report_text += line
+
+            report_text += "=" * 120 + "\n"
+
             # Highlight overloaded instructors
             overloaded = [i for i in workload_data if i['Status'] == 'Overloaded']
             if overloaded:
-                self.analytics_text.insert(tk.END, f"\nWARNING: {len(overloaded)} instructor(s) are overloaded!\n")
+                report_text += f"\nWARNING: {len(overloaded)} instructor(s) are overloaded!\n"
                 for instructor in overloaded:
-                    self.analytics_text.insert(tk.END, f"  - {instructor['Instructor']}: {instructor['Workload (%)']}% workload\n")
-            
+                    report_text += f"  - {instructor['Instructor']}: {instructor['Workload (%)']}% workload\n"
+
+            # Update analytics text area
+            self.analytics_text.delete(1.0, tk.END)
+            self.analytics_text.insert(tk.END, report_text)
+
+            # Show report in window with email option
+            self._show_report_with_email_option(
+                "Instructor Workload Report",
+                report_text,
+                "Instructor Workload Analytics"
+            )
+
             self.update_activity_log("Generated instructor workload report")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate instructor workload report: {str(e)}")
     
@@ -1921,24 +2089,35 @@ class ModuleSchedulingGUI:
     def show_peak_usage(self):
         """Show peak usage analysis"""
         try:
-            self.analytics_text.delete(1.0, tk.END)
-            self.analytics_text.insert(tk.END, "Peak Usage Analysis\n")
-            self.analytics_text.insert(tk.END, "=" * 60 + "\n")
-            
+            # Build report text
+            report_text = "Peak Usage Analysis\n"
+            report_text += "=" * 60 + "\n"
+
             peak_times = self.scheduler._analyze_peak_usage()
-            
+
             for day, times in peak_times.items():
-                self.analytics_text.insert(tk.END, f"{day}: {', '.join(times) if times else 'No data'}\n")
-            
+                report_text += f"{day}: {', '.join(times) if times else 'No data'}\n"
+
             # Module distribution
             module_stats = self.scheduler._analyze_module_distribution()
-            self.analytics_text.insert(tk.END, f"\nModule Distribution:\n")
-            self.analytics_text.insert(tk.END, f"Total Modules: {module_stats['total']}\n")
-            self.analytics_text.insert(tk.END, f"Most Common Session Type: {module_stats['most_common_type']}\n")
-            self.analytics_text.insert(tk.END, f"Average Sessions per Module: {module_stats['avg_sessions']:.2f}\n")
-            
+            report_text += f"\nModule Distribution:\n"
+            report_text += f"Total Modules: {module_stats['total']}\n"
+            report_text += f"Most Common Session Type: {module_stats['most_common_type']}\n"
+            report_text += f"Average Sessions per Module: {module_stats['avg_sessions']:.2f}\n"
+
+            # Update analytics text area
+            self.analytics_text.delete(1.0, tk.END)
+            self.analytics_text.insert(tk.END, report_text)
+
+            # Show report in window with email option
+            self._show_report_with_email_option(
+                "Peak Usage Analysis",
+                report_text,
+                "Peak Usage Analytics"
+            )
+
             self.update_activity_log("Generated peak usage analysis")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate peak usage analysis: {str(e)}")
     
@@ -1947,17 +2126,35 @@ class ModuleSchedulingGUI:
         try:
             self.update_status("Generating charts...")
             chart_path = self.scheduler.generate_utilization_charts()
-            
+
             if chart_path and os.path.exists(chart_path):
-                if messagebox.askyesno("Charts Generated", f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?"):
+                # Build report text
+                report_text = "Visual Charts Generated Successfully\n"
+                report_text += "=" * 60 + "\n\n"
+                report_text += f"Chart Location: {chart_path}\n\n"
+                report_text += "The following charts have been generated:\n"
+                report_text += "  - Room Utilization Chart\n"
+                report_text += "  - Instructor Workload Chart\n"
+                report_text += "  - Peak Usage Analysis Chart\n\n"
+                report_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+
+                # Show report in window with email option
+                self._show_report_with_email_option(
+                    "Chart Generation Report",
+                    report_text,
+                    "Visual Charts"
+                )
+
+                # Ask if user wants to open charts
+                if messagebox.askyesno("Open Charts", f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?"):
                     webbrowser.open(f"file://{os.path.abspath(chart_path)}")
-                
+
                 self.update_activity_log("Generated utilization charts")
             else:
                 messagebox.showinfo("Info", "Charts generated. Check the analytics folder.")
-            
+
             self.update_status("Ready")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate charts: {str(e)}")
             self.update_status("Ready")
@@ -2231,32 +2428,109 @@ class ModuleSchedulingGUI:
             self.update_status("Ready")
     
     def generate_reports(self):
-        """Generate comprehensive reports"""
+        """Generate comprehensive reports and automatically email to admin"""
         try:
             self.update_status("Generating reports...")
-            
-            # Generate PDF reports
-            room_report = self.scheduler.generate_room_utilization_report('pdf')
-            workload_report = self.scheduler.generate_instructor_workload_report('pdf')
-            
-            reports = []
-            if room_report:
-                reports.append(f"Room Utilization: {room_report}")
-            if workload_report:
-                reports.append(f"Instructor Workload: {workload_report}")
-            
-            if reports:
-                report_list = "\n".join(reports)
-                if messagebox.askyesno("Reports Generated", f"Reports generated successfully!\n\n{report_list}\n\nWould you like to open the reports folder?"):
-                    folder_path = os.path.dirname(os.path.abspath(room_report))
-                    webbrowser.open(f"file://{folder_path}")
-                
+
+            # Generate data reports for display
+            room_data = self.scheduler.generate_room_utilization_report('data')
+            workload_data = self.scheduler.generate_instructor_workload_report('data')
+
+            # Build comprehensive report text
+            report_text = "COMPREHENSIVE MODULE SCHEDULING REPORTS\n"
+            report_text += "=" * 100 + "\n\n"
+
+            # Room Utilization Report
+            if room_data:
+                report_text += "ROOM UTILIZATION REPORT\n"
+                report_text += "-" * 100 + "\n"
+                report_text += f"{'Room':<15} {'Type':<15} {'Capacity':<10} {'Sessions':<10} {'Utilization':<12} {'Avg Duration':<12}\n"
+                report_text += "-" * 100 + "\n"
+
+                for room in room_data:
+                    line = f"{room['Room']:<15} {room['Type']:<15} {room['Capacity']:<10} {room['Sessions']:<10} {room['Utilization Rate (%)']:<12} {room['Avg Duration (min)']:<12}\n"
+                    report_text += line
+
+                # Summary statistics
+                avg_utilization = sum(room['Utilization Rate (%)'] for room in room_data) / len(room_data)
+                report_text += "\nRoom Utilization Summary:\n"
+                report_text += f"  Total Rooms: {len(room_data)}\n"
+                report_text += f"  Average Utilization: {avg_utilization:.2f}%\n"
+
+                most_utilized = max(room_data, key=lambda x: x['Utilization Rate (%)'])
+                least_utilized = min(room_data, key=lambda x: x['Utilization Rate (%)'])
+                report_text += f"  Most Utilized: {most_utilized['Room']} ({most_utilized['Utilization Rate (%)']}%)\n"
+                report_text += f"  Least Utilized: {least_utilized['Room']} ({least_utilized['Utilization Rate (%)']}%)\n"
+                report_text += "\n"
+
+            # Instructor Workload Report
+            if workload_data:
+                report_text += "\nINSTRUCTOR WORKLOAD REPORT\n"
+                report_text += "-" * 100 + "\n"
+                report_text += f"{'Instructor':<25} {'Department':<15} {'Sessions':<10} {'Hours':<8} {'Max':<8} {'Load %':<8} {'Status':<12}\n"
+                report_text += "-" * 100 + "\n"
+
+                for instructor in workload_data:
+                    line = f"{instructor['Instructor']:<25} {instructor['Department']:<15} {instructor['Sessions']:<10} {instructor['Total Hours']:<8} {instructor['Max Hours']:<8} {instructor['Workload (%)']:<8} {instructor['Status']:<12}\n"
+                    report_text += line
+
+                # Overloaded instructors warning
+                overloaded = [i for i in workload_data if i['Status'] == 'Overloaded']
+                if overloaded:
+                    report_text += f"\n⚠️ WARNING: {len(overloaded)} instructor(s) are overloaded!\n"
+                    for instructor in overloaded:
+                        report_text += f"  - {instructor['Instructor']}: {instructor['Workload (%)']}% workload\n"
+                report_text += "\n"
+
+            report_text += "=" * 100 + "\n"
+            report_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+
+            # Show report in window with email option
+            self._show_report_with_email_option(
+                "Comprehensive Module Scheduling Reports",
+                report_text,
+                "Management Reports"
+            )
+
+            # Automatically send email to admin
+            try:
+                admin_email = self._get_admin_email()
+
+                # Import email service
+                from university_system.infrastructure.email.email_service import send_email
+
+                # Create email body
+                email_body = f"""Comprehensive Module Scheduling Reports
+
+{'=' * 80}
+{report_text}
+{'=' * 80}
+
+This email was automatically sent from the Module Scheduling GUI Management tab.
+"""
+
+                # Send email
+                send_email(
+                    recipient_email=admin_email,
+                    subject="Module Scheduling - Comprehensive Reports",
+                    body=email_body
+                )
+
+                messagebox.showinfo("Reports Generated & Emailed",
+                                  f"✅ Reports generated and automatically emailed to {admin_email}\n\n"
+                                  f"A detailed report window has also been opened for your review.")
+
+                self.update_activity_log(f"Generated comprehensive reports and emailed to {admin_email}")
+
+            except Exception as email_error:
+                print(f"Note: Could not auto-send email: {email_error}")
+                messagebox.showinfo("Reports Generated",
+                                  "Reports generated successfully!\n\n"
+                                  "Note: Automatic email failed. You can send manually from the report window.")
                 self.update_activity_log("Generated comprehensive reports")
-            else:
-                messagebox.showerror("Error", "Failed to generate reports.")
-            
+
             self.update_status("Ready")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate reports: {str(e)}")
             self.update_status("Ready")
@@ -2385,11 +2659,6 @@ class ModuleSchedulingGUI:
     def _sync_holiday_to_academic_calendar(self):
         """Sync holidays with the academic calendar GUI"""
         try:
-            # Import academic calendar manager
-            from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager
-
-            calendar_manager = AcademicCalendarManager()
-
             # Get the most recently added holiday
             from university_system.infrastructure.database.db import get_connection
             with get_connection() as conn:

@@ -8,6 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module Scheduling GUI - Enhanced Analytics with Email Integration**
+  - **Helper Methods for Email and Reporting**:
+    * `_get_admin_email()`: Automatically fetches admin email from database
+    * `_show_report_with_email_option()`: Universal method for displaying reports with email functionality
+    * Admin email refresh with multi-admin selection support
+  - **Room Utilization Report Improvements** (Analytics Tab):
+    * Opens report in dedicated window with full report display
+    * Email button to send report to admin
+    * Admin email auto-populated from database
+    * Refresh button to select different admin if multiple exist
+    * Report includes full utilization statistics and summary
+  - **Instructor Workload Report Improvements** (Analytics Tab):
+    * Opens report in dedicated window with complete workload analysis
+    * Email functionality with admin email integration
+    * Highlights overloaded instructors in report
+    * Professional formatting with clear metrics
+  - **Peak Usage Analysis Improvements** (Analytics Tab):
+    * Dedicated window display for peak usage data
+    * Email reporting capability
+    * Module distribution statistics included
+    * Easy sharing with administrators
+  - **Generate Charts Improvements** (Analytics Tab):
+    * Report window showing chart generation status
+    * Email notification about generated charts with location
+    * Chart path information in email body
+    * Option to open charts after generation
+  - **Management Tab - Generate Reports Enhancement**:
+    * **Automatic email to admin**: Reports automatically sent to admin on generation
+    * Comprehensive report combining room utilization and instructor workload
+    * Detailed summary statistics in email
+    * Fallback to manual email if auto-send fails
+    * Professional report window with all data
+    * Success notification showing email was sent to admin
+
+### Fixed
+- **Module Scheduling GUI - Calendar Manager Error**
+  - Removed unused `AcademicCalendarManager` instance that was causing import issues
+  - Calendar synchronization now works directly with database
+  - Eliminated "Calendar manager not available" error
+  - Lines 2385-2424: Cleaned up `_sync_holiday_to_academic_calendar()` method
 - **Course Management GUI - Course Scheduling System with Timetable Grid** - Full integration with timetabling
   - **New course_schedule Table**:
     * Dedicated table for course schedules (separate from module_schedule)
