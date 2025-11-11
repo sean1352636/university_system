@@ -8,6 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Course Management GUI - Professional Report Visualizations & Email** - Complete reporting system overhaul
+  - **Interactive Chart Visualizations**:
+    * Added matplotlib + seaborn support for professional charts
+    * "📊 Visualize Report" button for all enrollment reports
+    * Multi-chart display with tabbed interface
+    * **Summary Report Charts**:
+      - Enrollment Overview (Bar Chart) - Total courses, enrolled, capacity, available spots
+      - Capacity Fill Rate (Pie Chart) - System utilization visualization
+    * **Department Report Charts**:
+      - Students by Department (Horizontal Bar Chart) - With exact counts
+      - Courses by Department (Pie Chart) - Distribution percentages
+      - Fill Rate by Department (Horizontal Bar Chart) - Percentage visualization
+    * **Detailed Report Charts**:
+      - Top 15 Courses by Enrollment (Horizontal Bar Chart)
+      - Enrollment vs Capacity (Grouped Bar Chart) - Side-by-side comparison
+    * **Capacity Report Charts**:
+      - Available Spots (Horizontal Bar Chart) - Top 15 courses
+      - Utilization Breakdown (Stacked Bar Chart) - Enrolled vs Available
+    * All charts use professional color schemes and clear labeling
+    * Separate window (1200x800) with notebook tabs for multiple charts
+    * Lines 1756-2068: Complete visualization implementation
+  - **Email Report to Admin Feature**:
+    * "📧 Email Report to Admin" button after report generation
+    * Automatically fetches admin email from database
+    * Refresh button (🔄) to select from multiple admins
+    * Admin selection dialog if multiple admins exist
+    * Configurable subject line and custom message
+    * Report preview before sending
+    * Full report text included in email body
+    * Timestamp and report type metadata
+    * Professional email formatting
+    * Error handling and success confirmation
+    * Lines 2070-2224: Complete email functionality
+  - **Technical Enhancements**:
+    * Graceful fallback if matplotlib/seaborn not installed
+    * Graceful fallback if email service not configured
+    * Report data stored in `last_report_data` for visualization/email
+    * Database-driven admin email lookup
+    * Multi-admin support with selection UI
+  - **Files Modified**: `course_management_gui.py` (+500 lines)
+  - **Impact**: Enterprise-grade reporting with visual analytics and email distribution
 - **Advanced Search GUI Major UX Improvements** - Comprehensive usability enhancements
   - **Expanded All Dialog Windows**: Batch increased window sizes for better visibility
     * Small dialogs (400x300) → Large (900x700)
@@ -40,6 +81,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
 
 ### Fixed
+- **Course Management GUI - Multiple Critical Fixes** - Comprehensive bug fixes and improvements
+  - **Description Column Error**:
+    * Fixed "courses has no column named description" error
+    * Added missing description column to courses table: `ALTER TABLE courses ADD COLUMN description TEXT DEFAULT ''`
+    * All course creation and search functions now work correctly
+  - **Course Analytics Availability**:
+    * Fixed "Course analytics isn't available in this build" message
+    * Redirected `show_analytics()` to existing `show_course_analytics_detailed()` function
+    * Course analytics now accessible from menu (line 1005-1010)
+  - **Waitlist Student Validation**:
+    * Added database validation for student IDs before adding to waitlist
+    * Query: `SELECT student_id, first_name, last_name FROM students WHERE student_id = ?`
+    * Shows error message if student ID doesn't exist in database
+    * Displays student name after successful validation
+    * Prevents invalid student IDs from being added to waitlist
+    * Lines 7939-7950: Complete validation implementation
+  - **Manage Status Window Size**:
+    * Increased window from 700x500 to 1200x800 for better visibility
+    * All data and functions now visible without scrolling (line 3650)
+  - **Real Database Data**:
+    * All reports now use real database queries instead of stub data
+    * Summary, Department, Detailed, and Capacity reports query actual course data
+    * Proper handling of NULL values with COALESCE
+    * Accurate enrollment statistics and analytics
+  - **Files Modified**: `course_management_gui.py` (Multiple sections)
+  - **Impact**: All reported errors fixed, improved data integrity, better user experience
+
 - **User Authentication - User Permissions Query Schema Mismatch** - Fixed "no such column: up.granted" error
   - **Errors Reported**:
     * "Operational error for connection #3: no such column: up.granted"
