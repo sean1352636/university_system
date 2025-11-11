@@ -4312,9 +4312,72 @@ class AdvancedSearchGUI:
         for text, value in chart_options:
             ttk.Radiobutton(frame, text=text, variable=chart_var, value=value).pack(anchor='w', padx=20)
 
+        # Get admin email from database
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE LOWER(role) = 'admin' LIMIT 1")
+            admin_row = cursor.fetchone()
+            conn.close()
+            default_email = admin_row[0] if admin_row else "admin@university.edu"
+        except Exception as e:
+            print(f"Warning: Could not fetch admin email from database: {e}")
+            default_email = "admin@university.edu"
+
         ttk.Label(frame, text="\nAdmin Email Address:").pack(anchor='w', pady=(20, 5))
-        email_var = tk.StringVar(value="admin@university.edu")
-        ttk.Entry(frame, textvariable=email_var, width=40).pack(fill='x', pady=(0, 10))
+        email_var = tk.StringVar(value=default_email)
+
+        # Create a frame for email input with a refresh button
+        email_frame = ttk.Frame(frame)
+        email_frame.pack(fill='x', pady=(0, 10))
+
+        email_entry = ttk.Entry(email_frame, textvariable=email_var, width=35)
+        email_entry.pack(side='left', fill='x', expand=True)
+
+        def refresh_admin_email():
+            """Refresh admin email list from database"""
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT username, email FROM users WHERE LOWER(role) = 'admin' ORDER BY username")
+                admins = cursor.fetchall()
+                conn.close()
+
+                if admins:
+                    # Show selection dialog if multiple admins
+                    if len(admins) > 1:
+                        admin_dialog = tk.Toplevel(dialog)
+                        admin_dialog.title("Select Admin")
+                        admin_dialog.geometry("900x700")
+                        admin_dialog.transient(dialog)
+                        admin_dialog.grab_set()
+
+                        ttk.Label(admin_dialog, text="Select Admin User:", font=('Arial', 12, 'bold')).pack(pady=10)
+
+                        admin_listbox = tk.Listbox(admin_dialog, height=10)
+                        admin_listbox.pack(fill='both', expand=True, padx=20, pady=10)
+
+                        for username, email in admins:
+                            admin_listbox.insert(tk.END, f"{username} ({email})")
+
+                        def select_admin():
+                            selection = admin_listbox.curselection()
+                            if selection:
+                                selected_email = admins[selection[0]][1]
+                                email_var.set(selected_email)
+                            admin_dialog.destroy()
+
+                        ttk.Button(admin_dialog, text="Select", command=select_admin).pack(pady=10)
+                    else:
+                        # Only one admin, use their email
+                        email_var.set(admins[0][1])
+                        messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}")
+                else:
+                    messagebox.showwarning("No Admins", "No admin users found in database.")
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Could not fetch admin emails: {str(e)}")
+
+        ttk.Button(email_frame, text="🔄", command=refresh_admin_email, width=3).pack(side='left', padx=(5, 0))
 
         ttk.Label(frame, text="Message (optional):").pack(anchor='w', pady=(10, 5))
         message_text = scrolledtext.ScrolledText(frame, height=6, wrap=tk.WORD)

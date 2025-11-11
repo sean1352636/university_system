@@ -40,6 +40,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact**: Dramatically improved usability, real email functionality, admin can receive charts via email
 
 ### Fixed
+- **Advanced Search GUI - Email Chart Admin Email Lookup** - Fixed hardcoded admin email to use database
+  - **Issue**: Log showed "Email stored for admin@university.edu, but no matching user account found"
+  - **Root Cause**: Email chart feature used hardcoded "admin@university.edu" instead of querying database
+  - **Fix Implemented** (Lines 4315-4380):
+    * Queries users table for admin email: `SELECT email FROM users WHERE LOWER(role) = 'admin' LIMIT 1`
+    * Uses first admin email as default value
+    * Added 🔄 refresh button to reload admin list from database
+    * Supports multiple admins with selection dialog (900x700)
+    * Shows admin selection listbox if multiple admins exist
+    * Graceful fallback to "admin@university.edu" only if query fails
+  - **Features Added**:
+    * Auto-populates with real admin email from database
+    * Refresh button to update admin list
+    * Multi-admin support with selection dialog
+    * Better error handling with user-friendly messages
+  - **Impact**: Email charts now send to actual admin users in database, emails properly tracked
+
 - **Advanced Search GUI - Suggested Search Email Column Error** - Fixed "no such column: email" error
   - **Root Cause**: Multiple queries used `email` instead of `email_address` column name
   - **Locations Fixed**:
