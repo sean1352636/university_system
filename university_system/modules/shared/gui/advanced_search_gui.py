@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
 import queue
 import json
+import csv
 from datetime import datetime, timedelta
 import os
 import sys
@@ -703,10 +704,10 @@ def duplicate_detection():
 
         # Find potential duplicates by email
         cursor.execute("""
-            SELECT email, COUNT(*) as count
+            SELECT email_address, COUNT(*) as count
             FROM students
-            WHERE email IS NOT NULL AND email != ''
-            GROUP BY email
+            WHERE email_address IS NOT NULL AND email_address != ''
+            GROUP BY email_address
             HAVING count > 1
         """)
         email_dupes = cursor.fetchall()
@@ -915,15 +916,33 @@ class AdvancedSearchGUI:
                 last_used DATETIME
             )
         ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_permissions (
-                user_id TEXT PRIMARY KEY,
-                role TEXT,
-                permissions TEXT,
-                created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_date DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+        # Check if user_permissions table has the correct schema
+        cursor.execute("PRAGMA table_info(user_permissions)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        if 'role' not in columns or 'permissions' not in columns:
+            # Drop old table and recreate with correct schema
+            cursor.execute('DROP TABLE IF EXISTS user_permissions')
+            cursor.execute('''
+                CREATE TABLE user_permissions (
+                    user_id TEXT PRIMARY KEY,
+                    role TEXT,
+                    permissions TEXT,
+                    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        else:
+            # Table exists with correct schema
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_permissions (
+                    user_id TEXT PRIMARY KEY,
+                    role TEXT,
+                    permissions TEXT,
+                    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS search_result_archives (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1591,7 +1610,7 @@ class AdvancedSearchGUI:
 
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id FROM saved_searches WHERE user_id = ? AND search_name = ?",
+            "SELECT search_id FROM saved_searches WHERE user_id = ? AND search_name = ?",
             (self._current_user_id(), name)
         )
         row = cursor.fetchone()
@@ -1601,7 +1620,7 @@ class AdvancedSearchGUI:
                 """
                 UPDATE saved_searches
                 SET search_criteria = ?, is_shared = ?, created_date = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE search_id = ?
                 """,
                 (json.dumps(payload), 1 if is_shared else 0, row[0])
             )
@@ -3049,16 +3068,16 @@ class AdvancedSearchGUI:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-            SELECT search_type, search_criteria, results_count, execution_time, timestamp
+            SELECT search_type, search_criteria, results_count, execution_time, search_datetime
             FROM search_analytics
-            ORDER BY timestamp DESC
+            ORDER BY search_datetime DESC
             LIMIT 100
             """)
             history_data = cursor.fetchall()
             conn.close()
-            
-            for search_type, criteria, results, duration, timestamp in history_data:
-                time_display = timestamp[:16] if timestamp else 'N/A'
+
+            for search_type, criteria, results, duration, search_datetime in history_data:
+                time_display = search_datetime[:16] if search_datetime else 'N/A'
                 duration_display = f"{duration:.2f}s" if duration else 'N/A'
                 criteria_display = criteria[:30] + "..." if len(criteria) > 30 else criteria
                 
@@ -9945,16 +9964,19 @@ Proceed with simulation?
             operation = operation_var.get()
             new_value = new_value_var.get().strip()
             reason = reason_text.get(1.0, tk.END).strip()
-            
+
             if not new_value:
                 messagebox.showwarning("Missing Value", "Please enter a new value.")
                 return
-            
+
+            # Get operation text from operations list
+            operation_text = next((text for text, value in operations if value == operation), operation)
+
             # Confirmation dialog
             confirmation = f"""
 Batch Update Confirmation:
 
-Operation: {dict(operations)[operation]}
+Operation: {operation_text}
 New Value: {new_value}
 Students Affected: {len(self.search_results)}
 Reason: {reason if reason else 'Not specified'}
