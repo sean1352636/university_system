@@ -630,6 +630,7 @@ University Library System
             cursor = conn.cursor()
 
             # Get all fines with student information
+            # Filter for fines >= £0.01 to exclude negligible amounts from rounding errors
             cursor.execute('''
                 SELECT
                     bl.loan_id,
@@ -643,7 +644,7 @@ University Library System
                 FROM book_loans bl
                 JOIN books b ON bl.book_id = b.book_id
                 LEFT JOIN students s ON bl.user_id = s.student_id
-                WHERE bl.fine_amount > 0
+                WHERE bl.fine_amount >= 0.01
                 ORDER BY bl.fine_amount DESC
             ''')
 
@@ -693,7 +694,7 @@ University Library System
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Search by user ID or name
+            # Search by user ID or name (exclude negligible amounts from rounding errors)
             cursor.execute('''
                 SELECT
                     bl.loan_id,
@@ -707,7 +708,7 @@ University Library System
                 FROM book_loans bl
                 JOIN books b ON bl.book_id = b.book_id
                 LEFT JOIN students s ON bl.user_id = s.student_id
-                WHERE bl.fine_amount > 0
+                WHERE bl.fine_amount >= 0.01
                   AND (bl.user_id LIKE ? OR s.first_name || ' ' || s.last_name LIKE ?)
                 ORDER BY bl.fine_amount DESC
             ''', (f'%{search_term}%', f'%{search_term}%'))
@@ -1041,8 +1042,12 @@ University Library System
                 cursor = conn.cursor()
                 current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                # Reduce fine amount
-                new_fine = fine_amount - payment_amount
+                # Reduce fine amount and round to 2 decimal places to avoid floating point errors
+                new_fine = round(fine_amount - payment_amount, 2)
+
+                # If the remaining fine is less than 1 penny, set it to 0
+                if new_fine < 0.01:
+                    new_fine = 0.0
 
                 cursor.execute('''
                     UPDATE book_loans
@@ -1616,8 +1621,8 @@ SUMMARY:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Outstanding fines
-            cursor.execute('SELECT SUM(fine_amount) FROM book_loans WHERE fine_amount > 0')
+            # Outstanding fines (exclude negligible amounts from rounding errors)
+            cursor.execute('SELECT SUM(fine_amount) FROM book_loans WHERE fine_amount >= 0.01')
             outstanding = cursor.fetchone()[0] or 0.0
 
             # Collected this month

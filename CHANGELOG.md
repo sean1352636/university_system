@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Paid Library Fines Still Showing as Outstanding
+
+**Resolved floating-point precision issue causing fully paid fines to remain visible**
+
+**Problem:**
+- Fines that were paid in full were still appearing in the "Outstanding Fines" list
+- Root cause: Floating-point precision errors during payment calculations
+- Example: £10.00 fine - £10.00 payment = £0.0000000001 (instead of £0.00)
+- Any amount > £0.00 would display as "outstanding" even if effectively paid
+
+**Root Cause:**
+- Python float arithmetic can introduce tiny rounding errors
+- Fine calculation: `new_fine = fine_amount - payment_amount`
+- Result could be 0.0000001 instead of exactly 0.0
+- Query used `WHERE fine_amount > 0` which includes microscopic amounts
+- Microscopic amounts displayed as outstanding fines
+
+**Solution:**
+
+1. **Payment Processing Fix:**
+   - Round new fine amount to 2 decimal places: `round(fine_amount - payment_amount, 2)`
+   - Auto-zero negligible amounts: If `new_fine < 0.01`, set to `0.0`
+   - Ensures clean values stored in database
+
+2. **Query Threshold Update:**
+   - Changed filter from `> 0` to `>= 0.01` (1 penny minimum)
+   - Applied to all fine queries:
+     * `load_all_fines()` - Main fine list
+     * `search_fines()` - Fine search results
+     * `refresh_overview()` - Outstanding fines summary
+   - Excludes amounts less than 1 penny from display
+
+**Technical Changes:**
+
+```python
+# Before (vulnerable to rounding errors)
+new_fine = fine_amount - payment_amount
+WHERE fine_amount > 0
+
+# After (robust against rounding errors)
+new_fine = round(fine_amount - payment_amount, 2)
+if new_fine < 0.01:
+    new_fine = 0.0
+WHERE fine_amount >= 0.01
+```
+
+**Impact:**
+- Fully paid fines now correctly disappear from outstanding list
+- Fine amounts always display as proper currency values (2 decimals)
+- No more "phantom" fines with microscopic balances
+- Consistent behavior across all fine displays (list, search, summary)
+- Prevents user confusion about payment status
+
+**Testing:**
+- Fine of £10.00 paid with £10.00 → Disappears from list ✓
+- Fine of £10.50 paid with £5.00 → Shows £5.50 remaining ✓
+- Fine of £10.00 paid with £9.99 → Shows £0.01 remaining ✓
+- Rounding errors eliminated at source and filtered at display ✓
+
+**Files Changed:**
+- `university_system/modules/domain/finance/gui/finance/library_finance_manager.py`
+  * process_payment_dialog(): Added rounding and threshold logic
+  * load_all_fines(): Updated query to >= 0.01
+  * search_fines(): Updated query to >= 0.01
+  * refresh_overview(): Updated query to >= 0.01
+
 ### Added - 2025-11-12: Email Notifications for Library Fine Management
 
 **Integrated comprehensive email notifications for all library fine operations**
