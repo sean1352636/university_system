@@ -89,11 +89,17 @@
   "feedbackSurveyState": {
     "lastShownTime": 1762360145977
   },
+  "githubActionSetupCount": 1,
+  "lastPlanModeUse": 1762682355177,
   "oauthAccount": {
     "accountUuid": "73a8e532-9474-43ed-aba3-61d6d9da65b8",
     "emailAddress": "seancatchpole989@gmail.com",
-    "organizationUuid": "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0"
+    "organizationUuid": "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0",
+    "displayName": "sean",
+    "organizationBillingType": "stripe_subscription",
+    "organizationRole": "admin",
+    "workspaceRole": null,
+    "organizationName": "sean"
   },
-  "githubActionSetupCount": 1,
-  "lastPlanModeUse": 1762682355177
+  "anonymousId": "claudecode.v1.ec3a7ee5-24aa-4e1c-b213-57f6a821d8cb"
 }

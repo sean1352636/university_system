@@ -327,11 +327,27 @@ class SubmissionManager:
             # Try to get from assignment system
             if hasattr(self.assignment_system, '_get_student_id'):
                 return self.assignment_system._get_student_id()
-    
-            # Fallback to auth system
+
+            # Fallback to auth system - MUST get student_id, not user id
             if self.auth and self.auth.current_user:
-                return self.auth.current_user.get('id') or self.auth.current_user.get('student_id')
-    
+                # First try to get student_id directly
+                student_id = self.auth.current_user.get('student_id')
+
+                # If no student_id in current_user, look it up in database
+                if not student_id:
+                    user_id = self.auth.current_user.get('id')
+                    if user_id:
+                        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                        cursor = conn.cursor()
+                        cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+                        result = cursor.fetchone()
+                        conn.close()
+
+                        if result and result[0]:
+                            student_id = result[0]
+
+                return student_id
+
             return None
         except Exception as e:
             print(f"Error getting student ID: {e}")
@@ -354,6 +370,16 @@ class SubmissionManager:
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
+
+            # Validate that student_id exists in students table (foreign key requirement)
+            cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
+            if not cursor.fetchone():
+                self.root.after(0, lambda: self.show_status_message(
+                    f"Student ID '{student_id}' not found in students table. Please ensure you are registered as a student.",
+                    "error"
+                ))
+                conn.close()
+                return
             
             # Get assignment details
             cursor.execute('''
@@ -362,10 +388,15 @@ class SubmissionManager:
             JOIN modules m ON a.module_code = m.module_code
             WHERE a.id = ? AND a.is_active = 1
             ''', (assignment_id,))
-            
+
             assignment = cursor.fetchone()
             if not assignment:
-                self.root.after(0, lambda: self.show_status_message("Assignment not found", "error"))
+                # Check if assignment exists but is inactive
+                cursor.execute('SELECT id FROM assignments WHERE id = ?', (assignment_id,))
+                if cursor.fetchone():
+                    self.root.after(0, lambda: self.show_status_message("Assignment is no longer active", "error"))
+                else:
+                    self.root.after(0, lambda: self.show_status_message("Assignment not found", "error"))
                 conn.close()
                 return
             
@@ -443,17 +474,34 @@ class SubmissionManager:
                 WHERE assignment_id = ? AND student_id = ?
                 ''', (assignment_id, student_id))
             
-            cursor.execute('''
-            INSERT INTO assignment_submissions 
-            (assignment_id, student_id, submission_date, file_path, 
-             file_name, file_size, file_hash, status, late_submission, late_days,
-             version_number, is_final_submission)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (assignment_id, student_id, submission_date, new_file_path,
-                  file_name, file_size, file_hash, 'submitted', late_submission, late_days,
-                  version_number, 1))
-            
-            conn.commit()
+            try:
+                cursor.execute('''
+                INSERT INTO assignment_submissions
+                (assignment_id, student_id, submission_date, file_path,
+                 file_name, file_size, file_hash, status, late_submission, late_days,
+                 version_number, is_final_submission)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (assignment_id, student_id, submission_date, new_file_path,
+                      file_name, file_size, file_hash, 'submitted', late_submission, late_days,
+                      version_number, 1))
+
+                conn.commit()
+            except sqlite3.IntegrityError as ie:
+                conn.close()
+                error_msg = str(ie)
+                if 'FOREIGN KEY constraint failed' in error_msg:
+                    self.root.after(0, lambda: self.show_status_message(
+                        f"Database constraint error: Student ID '{student_id}' or Assignment ID '{assignment_id}' is invalid. "
+                        "Please ensure you are registered as a student and the assignment exists.",
+                        "error"
+                    ))
+                else:
+                    self.root.after(0, lambda: self.show_status_message(
+                        f"Database error: {error_msg}",
+                        "error"
+                    ))
+                return
+
             conn.close()
             
             # Update GUI on main thread
