@@ -343,7 +343,7 @@ class AssignmentManager:
     
             cursor.execute('''
             SELECT s.id, s.student_id, u.first_name, u.last_name, s.submission_date,
-                   s.status, s.grade, s.feedback, s.is_late, s.late_days
+                   s.status, s.grade, s.feedback, s.late_submission, s.late_days
             FROM assignment_submissions s
             JOIN users u ON s.student_id = u.student_id
             WHERE s.assignment_id = ?
