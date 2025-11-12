@@ -1797,65 +1797,74 @@ Overdue: {overdue_books:,}
         
     def checkout_dialog(self):
         """Create checkout dialog"""
+        # Get current logged-in user
+        try:
+            current_user = get_current_user()
+            if not current_user:
+                messagebox.showerror("Error", "No user logged in. Please log in to checkout books.")
+                return
+
+            current_user_id = current_user.get('username') or current_user.get('user_id') or current_user.get('id')
+            if not current_user_id:
+                messagebox.showerror("Error", "Could not determine current user ID.")
+                return
+
+            # Store current user ID for checkout
+            self.selected_user_id = current_user_id
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to get current user: {str(e)}")
+            return
+
         dialog = tk.Toplevel(self.master)
         dialog.title("Checkout Book")
-        dialog.geometry("500x400")
+        dialog.geometry("500x350")
         dialog.transient(self.master)
         dialog.grab_set()
-        
+
         # Center dialog
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
         y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
         dialog.geometry(f"+{x}+{y}")
-        
+
         main_frame = ttk.Frame(dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
+        # Current user display
+        user_frame = ttk.LabelFrame(main_frame, text="Borrowing As")
+        user_frame.pack(fill=tk.X, pady=(0, 10))
+
+        user_info = f"User ID: {current_user_id}\nRole: {current_user.get('role', 'N/A')}"
+        if current_user.get('first_name'):
+            user_info = f"Name: {current_user.get('first_name', '')} {current_user.get('last_name', '')}\n" + user_info
+
+        ttk.Label(user_frame, text=user_info, justify=tk.LEFT).pack(anchor='w', padx=10, pady=10)
+
         # Book selection
         book_frame = ttk.LabelFrame(main_frame, text="Book Information")
         book_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         ttk.Label(book_frame, text="Book ID or Barcode:").pack(anchor='w', padx=5, pady=5)
         self.checkout_book_var = tk.StringVar()
         book_entry = ttk.Entry(book_frame, textvariable=self.checkout_book_var, width=30)
         book_entry.pack(anchor='w', padx=5, pady=5)
-        
+
         ttk.Button(book_frame, text="Lookup Book", command=self.lookup_checkout_book).pack(anchor='w', padx=5, pady=5)
-        
+
         # Book details display
         self.checkout_book_info = tk.Text(book_frame, height=4, wrap=tk.WORD, state=tk.DISABLED)
         self.checkout_book_info.pack(fill=tk.X, padx=5, pady=5)
-        
-        # User selection
-        user_frame = ttk.LabelFrame(main_frame, text="User Information")
-        user_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(user_frame, text="User Type:").pack(anchor='w', padx=5, pady=5)
-        self.user_type_var = tk.StringVar(value="Student")
-        ttk.Radiobutton(user_frame, text="Student", variable=self.user_type_var, value="Student").pack(anchor='w', padx=20)
-        ttk.Radiobutton(user_frame, text="Staff", variable=self.user_type_var, value="Staff").pack(anchor='w', padx=20)
-        
-        ttk.Label(user_frame, text="User ID:").pack(anchor='w', padx=5, pady=5)
-        self.checkout_user_var = tk.StringVar()
-        user_entry = ttk.Entry(user_frame, textvariable=self.checkout_user_var, width=30)
-        user_entry.pack(anchor='w', padx=5, pady=5)
-        
-        ttk.Button(user_frame, text="Verify User", command=self.verify_checkout_user).pack(anchor='w', padx=5, pady=5)
-        
-        # User details display
-        self.checkout_user_info = tk.Text(user_frame, height=3, wrap=tk.WORD, state=tk.DISABLED)
-        self.checkout_user_info.pack(fill=tk.X, padx=5, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         self.checkout_button = ttk.Button(button_frame, text="Checkout", command=lambda: self.process_checkout(dialog), state=tk.DISABLED)
         self.checkout_button.pack(side=tk.LEFT, padx=5)
-        
+
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
+
         # Focus on book entry
         book_entry.focus()
         
@@ -2195,6 +2204,7 @@ Status: {status.upper()}"""
                     self.selected_loan_id = loan_id
                     self.selected_return_book_id = book_identifier
                     self.return_fine_amount = fine_amount
+                    self.return_borrower_id = user_id  # Store borrower ID for verification
                     self.return_button.config(state=tk.NORMAL)
                     
                 else:
@@ -2218,13 +2228,26 @@ Status: {status.upper()}"""
         """Process book return"""
         try:
             if ORIGINAL_LIBRARY_AVAILABLE:
+                # Verify current user can return this book
+                current_user = get_current_user()
+                current_user_id = current_user.get('username') or current_user.get('user_id') or current_user.get('id')
+                current_user_role = current_user.get('role', '').lower()
+
+                # Only allow the borrower or staff/admin to return
+                if hasattr(self, 'return_borrower_id'):
+                    if current_user_id != self.return_borrower_id and current_user_role not in ['admin', 'staff', 'librarian']:
+                        messagebox.showerror("Access Denied",
+                                           f"Only the borrower ({self.return_borrower_id}) or library staff can return this book.")
+                        return
+
                 success = self.return_book_database()
                 
                 if success:
                     messagebox.showinfo("Success", "Book returned successfully!")
 
                     # Send return confirmation email
-                    self._send_return_confirmation_email(self.selected_return_book_id, self.selected_user_id_return)
+                    if hasattr(self, 'return_borrower_id'):
+                        self._send_return_confirmation_email(self.selected_return_book_id, self.return_borrower_id)
 
                     dialog.destroy()
                     self.refresh_books_table() if hasattr(self, 'books_tree') else None
@@ -2574,9 +2597,18 @@ Status: {status.upper()}"""
         # Report display area
         display_frame = ttk.LabelFrame(reports_frame, text="Report Output")
         display_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         self.report_text = ScrolledText(display_frame, wrap=tk.WORD)
         self.report_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Email report button
+        email_button_frame = ttk.Frame(display_frame)
+        email_button_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        ttk.Button(email_button_frame, text="📧 Email Report to Admin",
+                  command=self.email_report_to_admin).pack(side=tk.LEFT, padx=5)
+        ttk.Button(email_button_frame, text="💾 Save Report to File",
+                  command=self.save_report_to_file).pack(side=tk.LEFT, padx=5)
         
     def generate_collection_report(self):
         """Generate collection overview report"""
@@ -2833,7 +2865,7 @@ Status: {status.upper()}"""
                        SUM(COALESCE(bl.fine_amount, 0)) AS total_fines,
                        COUNT(*) AS fine_items,
                        MAX(bl.due_date) AS latest_due,
-                       s.email{grade_sql}
+                       s.email_address{grade_sql}
                 FROM book_loans bl
                 LEFT JOIN students s ON bl.user_id = s.student_id
                 WHERE bl.fine_amount > 0 AND bl.status != 'returned'
@@ -2881,27 +2913,441 @@ Status: {status.upper()}"""
             self.report_text.insert(tk.END, f"Error generating fine report: {str(e)}")
 
     def generate_card_usage_report(self):
-        """Placeholder for card usage report."""
-        self._show_report_not_available("Library Card Usage Report")
+        """Generate library card usage report showing borrowing patterns."""
+        if not ORIGINAL_LIBRARY_AVAILABLE:
+            self._show_report_message(
+                "Library Card Usage Report",
+                "Demo mode: card usage reporting is available only when the library database is connected."
+            )
+            return
+
+        try:
+            conn = get_db_connection()
+            if not conn:
+                raise RuntimeError("Database connection unavailable")
+
+            cursor = conn.cursor()
+
+            # Get top active borrowers
+            cursor.execute('''
+                SELECT bl.user_id,
+                       COUNT(*) as total_loans,
+                       SUM(CASE WHEN bl.status = 'active' THEN 1 ELSE 0 END) as active_loans,
+                       SUM(CASE WHEN bl.status = 'returned' THEN 1 ELSE 0 END) as returned_loans,
+                       SUM(CASE WHEN bl.status = 'overdue' THEN 1 ELSE 0 END) as overdue_loans,
+                       MAX(bl.checkout_date) as last_checkout
+                FROM book_loans bl
+                GROUP BY bl.user_id
+                ORDER BY total_loans DESC
+                LIMIT 20
+            ''')
+
+            rows = cursor.fetchall()
+            conn.close()
+
+            if not rows:
+                self._show_report_message("Library Card Usage Report", "No card usage data found.")
+                return
+
+            title = "Library Card Usage Report"
+            lines = [title, "=" * len(title), ""]
+            lines.append("Top 20 Active Library Card Holders")
+            lines.append("-" * 60)
+
+            for row in rows:
+                user_id, total, active, returned, overdue, last_checkout = row
+                lines.append(f"\nUser ID: {user_id}")
+                lines.append(f"  Total Loans: {total}")
+                lines.append(f"  Active: {active} | Returned: {returned} | Overdue: {overdue}")
+                lines.append(f"  Last Checkout: {last_checkout[:10] if last_checkout else 'N/A'}")
+
+            lines.append("\n" + "=" * 60)
+            lines.append(f"Total Unique Users: {len(rows)}")
+
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, "\n".join(lines))
+
+        except Exception as e:
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, f"Error generating card usage report: {str(e)}")
 
     def generate_health_report(self):
-        """Placeholder for system health report."""
-        self._show_report_not_available("System Health Report")
+        """Generate library system health report showing overall status."""
+        if not ORIGINAL_LIBRARY_AVAILABLE:
+            self._show_report_message(
+                "System Health Report",
+                "Demo mode: health reporting is available only when the library database is connected."
+            )
+            return
+
+        try:
+            conn = get_db_connection()
+            if not conn:
+                raise RuntimeError("Database connection unavailable")
+
+            cursor = conn.cursor()
+
+            # Get overall statistics
+            cursor.execute('SELECT COUNT(*) FROM books')
+            total_books = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM books WHERE status = 'available'")
+            available_books = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM books WHERE status = 'checked_out'")
+            checked_out = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM books WHERE status = 'damaged'")
+            damaged = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM book_loans WHERE status = 'active'")
+            active_loans = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM book_loans WHERE status = 'overdue'")
+            overdue_loans = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM book_reservations WHERE status = 'active'")
+            active_reservations = cursor.fetchone()[0]
+
+            cursor.execute("SELECT SUM(fine_amount) FROM book_loans WHERE status != 'returned' AND fine_amount > 0")
+            outstanding_fines = cursor.fetchone()[0] or 0.0
+
+            conn.close()
+
+            # Calculate health metrics
+            availability_rate = (available_books / total_books * 100) if total_books > 0 else 0
+            damage_rate = (damaged / total_books * 100) if total_books > 0 else 0
+            overdue_rate = (overdue_loans / active_loans * 100) if active_loans > 0 else 0
+
+            # Determine system health status
+            if availability_rate > 70 and damage_rate < 5 and overdue_rate < 10:
+                health_status = "EXCELLENT"
+                status_symbol = "✓"
+            elif availability_rate > 50 and damage_rate < 10 and overdue_rate < 20:
+                health_status = "GOOD"
+                status_symbol = "○"
+            elif availability_rate > 30:
+                health_status = "FAIR"
+                status_symbol = "△"
+            else:
+                health_status = "NEEDS ATTENTION"
+                status_symbol = "⚠"
+
+            title = "Library System Health Report"
+            lines = [title, "=" * len(title), ""]
+            lines.append(f"System Status: {status_symbol} {health_status}")
+            lines.append("")
+            lines.append("=" * 60)
+            lines.append("COLLECTION HEALTH")
+            lines.append("-" * 60)
+            lines.append(f"Total Books: {total_books}")
+            lines.append(f"Available: {available_books} ({availability_rate:.1f}%)")
+            lines.append(f"Checked Out: {checked_out}")
+            lines.append(f"Damaged: {damaged} ({damage_rate:.1f}%)")
+            lines.append("")
+            lines.append("=" * 60)
+            lines.append("CIRCULATION HEALTH")
+            lines.append("-" * 60)
+            lines.append(f"Active Loans: {active_loans}")
+            lines.append(f"Overdue Loans: {overdue_loans} ({overdue_rate:.1f}%)")
+            lines.append(f"Active Reservations: {active_reservations}")
+            lines.append(f"Outstanding Fines: ${outstanding_fines:.2f}")
+            lines.append("")
+            lines.append("=" * 60)
+            lines.append("RECOMMENDATIONS")
+            lines.append("-" * 60)
+
+            if damage_rate > 5:
+                lines.append("⚠ High damage rate - Review book handling procedures")
+            if overdue_rate > 15:
+                lines.append("⚠ High overdue rate - Consider sending reminder emails")
+            if availability_rate < 50:
+                lines.append("⚠ Low availability - Consider acquiring more copies of popular titles")
+            if outstanding_fines > 500:
+                lines.append("⚠ High outstanding fines - Follow up with borrowers")
+
+            if not any("⚠" in line for line in lines[-4:]):
+                lines.append("✓ All metrics are within healthy ranges")
+
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, "\n".join(lines))
+
+        except Exception as e:
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, f"Error generating health report: {str(e)}")
 
     def generate_maintenance_report(self):
-        """Placeholder for maintenance activity report."""
-        self._show_report_not_available("Maintenance Activity Report")
+        """Generate maintenance report showing books needing attention."""
+        if not ORIGINAL_LIBRARY_AVAILABLE:
+            self._show_report_message(
+                "Maintenance Activity Report",
+                "Demo mode: maintenance reporting is available only when the library database is connected."
+            )
+            return
+
+        try:
+            conn = get_db_connection()
+            if not conn:
+                raise RuntimeError("Database connection unavailable")
+
+            cursor = conn.cursor()
+
+            # Get damaged books
+            cursor.execute('''
+                SELECT book_id, title, author, status, condition_notes
+                FROM books
+                WHERE status = 'damaged' OR condition_notes IS NOT NULL
+                ORDER BY last_updated DESC
+            ''')
+            damaged_books = cursor.fetchall()
+
+            # Get frequently loaned books (high wear candidates)
+            cursor.execute('''
+                SELECT b.book_id, b.title, b.author, COUNT(*) as loan_count
+                FROM books b
+                JOIN book_loans bl ON b.book_id = bl.book_id
+                GROUP BY b.book_id
+                HAVING loan_count > 10
+                ORDER BY loan_count DESC
+                LIMIT 15
+            ''')
+            high_usage_books = cursor.fetchall()
+
+            # Get books with missing information
+            cursor.execute('''
+                SELECT book_id, title, author,
+                       CASE
+                           WHEN isbn IS NULL OR isbn = '' THEN 'Missing ISBN; '
+                           ELSE ''
+                       END ||
+                       CASE
+                           WHEN location IS NULL OR location = '' THEN 'Missing Location; '
+                           ELSE ''
+                       END ||
+                       CASE
+                           WHEN category IS NULL OR category = '' THEN 'Missing Category; '
+                           ELSE ''
+                       END as issues
+                FROM books
+                WHERE (isbn IS NULL OR isbn = '')
+                   OR (location IS NULL OR location = '')
+                   OR (category IS NULL OR category = '')
+                LIMIT 20
+            ''')
+            incomplete_records = cursor.fetchall()
+
+            conn.close()
+
+            title = "Library Maintenance Report"
+            lines = [title, "=" * len(title), ""]
+
+            # Damaged Books Section
+            lines.append("=" * 60)
+            lines.append("DAMAGED BOOKS REQUIRING ATTENTION")
+            lines.append("-" * 60)
+
+            if damaged_books:
+                for book_id, title_text, author, status, notes in damaged_books:
+                    lines.append(f"\n⚠ Book ID: {book_id}")
+                    lines.append(f"  Title: {title_text}")
+                    lines.append(f"  Author: {author}")
+                    lines.append(f"  Status: {status}")
+                    if notes:
+                        lines.append(f"  Notes: {notes}")
+            else:
+                lines.append("✓ No damaged books found")
+
+            # High Usage Books Section
+            lines.append("\n" + "=" * 60)
+            lines.append("HIGH USAGE BOOKS (Inspection Recommended)")
+            lines.append("-" * 60)
+
+            if high_usage_books:
+                for book_id, title_text, author, loan_count in high_usage_books:
+                    lines.append(f"\n○ Book ID: {book_id}")
+                    lines.append(f"  Title: {title_text}")
+                    lines.append(f"  Author: {author}")
+                    lines.append(f"  Total Loans: {loan_count}")
+            else:
+                lines.append("✓ No high usage books to report")
+
+            # Incomplete Records Section
+            lines.append("\n" + "=" * 60)
+            lines.append("INCOMPLETE BOOK RECORDS")
+            lines.append("-" * 60)
+
+            if incomplete_records:
+                for book_id, title_text, author, issues in incomplete_records:
+                    lines.append(f"\n△ Book ID: {book_id}")
+                    lines.append(f"  Title: {title_text}")
+                    lines.append(f"  Author: {author}")
+                    lines.append(f"  Issues: {issues.strip()}")
+            else:
+                lines.append("✓ All book records are complete")
+
+            # Summary
+            lines.append("\n" + "=" * 60)
+            lines.append("MAINTENANCE SUMMARY")
+            lines.append("-" * 60)
+            lines.append(f"Damaged Books: {len(damaged_books)}")
+            lines.append(f"High Usage Books: {len(high_usage_books)}")
+            lines.append(f"Incomplete Records: {len(incomplete_records)}")
+            lines.append(f"Total Items Requiring Attention: {len(damaged_books) + len(incomplete_records)}")
+
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, "\n".join(lines))
+
+        except Exception as e:
+            self.report_text.delete("1.0", tk.END)
+            self.report_text.insert(tk.END, f"Error generating maintenance report: {str(e)}")
         
     def show_statistics_dashboard(self):
         """Show statistics dashboard"""
         self.report_text.delete("1.0", tk.END)
-        
+
         try:
             stats_data = self.get_library_statistics()
             self.report_text.insert(tk.END, stats_data)
         except Exception as e:
             self.report_text.insert(tk.END, f"Error loading statistics: {str(e)}")
-            
+
+    def email_report_to_admin(self):
+        """Email current report to administrator."""
+        report_content = self.report_text.get("1.0", tk.END).strip()
+
+        if not report_content or report_content == "":
+            messagebox.showwarning("No Report", "Please generate a report first before emailing.")
+            return
+
+        try:
+            # Get admin email from database
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror("Error", "Database connection unavailable")
+                return
+
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+            admin = cursor.fetchone()
+            conn.close()
+
+            if not admin or not admin[0]:
+                messagebox.showerror("Error", "No admin email address found in database")
+                return
+
+            admin_email = admin[0]
+
+            # Create email dialog
+            dialog = tk.Toplevel(self.master)
+            dialog.title("Email Report")
+            dialog.geometry("500x350")
+            dialog.transient(self.master)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding=10)
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text="Email Library Report", font=('Arial', 12, 'bold')).pack(pady=10)
+
+            # Recipient
+            recipient_frame = ttk.Frame(main_frame)
+            recipient_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(recipient_frame, text="To:").pack(side=tk.LEFT, padx=5)
+            recipient_entry = ttk.Entry(recipient_frame, width=40)
+            recipient_entry.insert(0, admin_email)
+            recipient_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+            # Subject
+            subject_frame = ttk.Frame(main_frame)
+            subject_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(subject_frame, text="Subject:").pack(side=tk.LEFT, padx=5)
+            subject_entry = ttk.Entry(subject_frame, width=40)
+            subject_entry.insert(0, "Library Report - " + datetime.now().strftime('%Y-%m-%d'))
+            subject_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+            # Message
+            ttk.Label(main_frame, text="Additional Message:").pack(anchor='w', padx=5, pady=(10, 0))
+            message_text = ScrolledText(main_frame, height=8, wrap=tk.WORD)
+            message_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+            message_text.insert(tk.END, "Please find the library report below:\n\n")
+
+            # Buttons
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill=tk.X, pady=10)
+
+            def send_email():
+                try:
+                    recipient = recipient_entry.get().strip()
+                    subject = subject_entry.get().strip()
+                    message = message_text.get("1.0", tk.END).strip()
+
+                    if not recipient or not subject:
+                        messagebox.showwarning("Missing Information", "Please provide recipient and subject")
+                        return
+
+                    # Compose full email body
+                    full_message = f"{message}\n\n{'='*60}\n{report_content}\n{'='*60}"
+
+                    # Import and use email service
+                    from university_system.infrastructure.email.email_service import send_email as send_email_service
+
+                    send_email_service(
+                        to_email=recipient,
+                        subject=subject,
+                        body=full_message
+                    )
+
+                    messagebox.showinfo("Success", f"Report emailed successfully to {recipient}")
+                    dialog.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Email Error", f"Failed to send email: {str(e)}")
+
+            ttk.Button(button_frame, text="Send Email", command=send_email).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to prepare email: {str(e)}")
+
+    def save_report_to_file(self):
+        """Save current report to a file."""
+        report_content = self.report_text.get("1.0", tk.END).strip()
+
+        if not report_content or report_content == "":
+            messagebox.showwarning("No Report", "Please generate a report first before saving.")
+            return
+
+        try:
+            from tkinter import filedialog
+            from university_system.modules.shared.constants import paths
+
+            # Create reports directory if it doesn't exist
+            reports_dir = paths.REPORTS_DIR
+            reports_dir.mkdir(parents=True, exist_ok=True)
+
+            # Default filename with timestamp
+            default_filename = f"library_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+            # Ask user where to save
+            file_path = filedialog.asksaveasfilename(
+                initialdir=reports_dir,
+                initialfile=default_filename,
+                defaultextension=".txt",
+                filetypes=[
+                    ("Text files", "*.txt"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if file_path:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(report_content)
+
+                messagebox.showinfo("Success", f"Report saved to:\n{file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
     def show_settings(self):
         """Show settings interface"""
         if not self.check_permission('system_config'):
@@ -3270,7 +3716,7 @@ Status: {status.upper()}"""
         table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
         columns = ('ID', 'Name', 'Description', 'Items', 'Type', 'Created')
-        self.reading_lists_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+        self.reading_lists_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=25)
         
         for col in columns:
             self.reading_lists_tree.heading(col, text=col)
@@ -6420,7 +6866,7 @@ Status: {status.upper()}"""
 
                 # Try to find user
                 cursor.execute('''
-                    SELECT student_id, first_name, last_name, email, department
+                    SELECT student_id, first_name, last_name, email_address, course
                     FROM students WHERE student_id = ? OR email_address LIKE ?
                 ''', (user_id, f"%{user_id}%"))
 
@@ -11068,7 +11514,7 @@ DATABASE CONNECTION:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                SELECT student_id, first_name, last_name, email, program_name
+                SELECT student_id, first_name, last_name, email_address, course
                 FROM students
                 WHERE student_id = ?
                 ''', (student_id,))

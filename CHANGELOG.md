@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed & Enhanced - 2025-11-12: Library GUI Improvements
+
+**Fixed database column references and implemented missing features**
+
+#### Bug Fixes
+1. **Fixed fine report "no such column: s.email" error**
+   - Changed s.email to s.email_address in fine report query
+   - Students table uses email_address, not email column
+   - File: library_gui.py (line 2845)
+
+2. **Fixed card generation "no such column email" errors**
+   - Updated two card generation queries to use email_address and course
+   - Changed SELECT columns from email, department/program_name to email_address, course
+   - Files: library_gui.py (lines 6432, 11080)
+
+3. **Fixed return book borrower verification**
+   - Added verification: only borrower or staff/admin can return books
+   - Store borrower_id during book lookup for later verification
+   - Check current user against borrower before allowing return
+   - Files: library_gui.py (lines 2207, 2231-2241, 2249-2250)
+
+4. **Fixed checkout function already using current user**
+   - Confirmed checkout already uses logged-in user ID (no changes needed)
+   - User displayed in "Borrowing As" section of checkout dialog
+   - File: library_gui.py (lines 1800-1813)
+
+#### Enhancements
+1. **Increased reading list window height**
+   - Changed from height=15 to height=25 for better visibility
+   - File: library_gui.py (line 3296)
+
+2. **Implemented Library Card Usage Report**
+   - Shows top 20 active library card holders
+   - Displays total loans, active, returned, and overdue counts per user
+   - Shows last checkout date for each user
+   - File: library_gui.py (lines 2906-2963)
+
+3. **Implemented System Health Report**
+   - Collection health: total books, availability rate, damage rate
+   - Circulation health: active loans, overdue rate, outstanding fines
+   - Overall health status: EXCELLENT/GOOD/FAIR/NEEDS ATTENTION
+   - Automatic recommendations based on metrics
+   - File: library_gui.py (lines 2965-3068)
+
+4. **Implemented Maintenance Report**
+   - Damaged books requiring attention with condition notes
+   - High usage books (>10 loans) needing inspection
+   - Incomplete records (missing ISBN, location, or category)
+   - Summary statistics for maintenance planning
+   - File: library_gui.py (lines 3070-3193)
+
+5. **Added email report functionality**
+   - New "📧 Email Report to Admin" button in reports interface
+   - Opens email dialog with admin email pre-filled from database
+   - Customizable recipient, subject, and message
+   - Sends report content via email service
+   - File: library_gui.py (lines 2608-2609, 3214-3310)
+
+6. **Added save report to file functionality**
+   - New "💾 Save Report to File" button in reports interface
+   - Saves current report to text file with timestamp
+   - File browser dialog for location selection
+   - Default save location: reports directory
+   - File: library_gui.py (lines 2610-2611, 3312-3349)
+
+**Database Schema Notes:**
+- Students table has `email_address` column (not `email`)
+- Students table has `course` column (not `department` or `program_name`)
+- Admin email retrieved from users table WHERE role = 'admin'
+- Admin email in database: admin@university.local
+
+**User Experience:**
+- All placeholder reports now fully functional with real data
+- Reports can be emailed directly to administrators
+- Reports can be saved for record-keeping and auditing
+- Return book security prevents unauthorized returns
+- Larger reading list window improves usability
+
 ### Fixed - 2025-11-12 HOTFIX: Admin Email Lookup Case Sensitivity
 
 **Fixed admin email lookup failing due to case-sensitive role comparison**
