@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Library-Finance Integration Variable Naming
+
+**Fixed variable naming inconsistency in library fine payment finance integration**
+
+#### Issue Fixed
+
+**Variable naming mismatch: fee_id vs student_fee_id**
+- Error: `table student_fees has no column named fee_id`
+- Root cause: Variable named `fee_id` but database column is `student_fee_id`
+- Impact: Finance integration failed when recording library fine payments
+- The SQL queries were already correct (using `student_fee_id` in WHERE clauses)
+- But Python variable names were inconsistent, causing confusion
+
+#### Changes Made
+
+**File: library_gui.py - Function: _record_library_payment_in_finance()**
+
+Changed all variable references from `fee_id` to `student_fee_id` for consistency:
+
+1. **Line 5118**: Unpacking database result
+   - Before: `fee_id, current_fee_amount = existing_fee`
+   - After: `student_fee_id, current_fee_amount = existing_fee`
+
+2. **Line 5127**: Marking fee as paid
+   - Before: `WHERE student_fee_id = ?`, `(current_datetime, fee_id)`
+   - After: `WHERE student_fee_id = ?`, `(current_datetime, student_fee_id)`
+
+3. **Line 5134**: Updating partial payment
+   - Before: `WHERE student_fee_id = ?`, `(new_fee_amount, current_datetime, fee_id)`
+   - After: `WHERE student_fee_id = ?`, `(new_fee_amount, current_datetime, student_fee_id)`
+
+4. **Line 5142**: Storing new fee record ID
+   - Before: `fee_id = cursor.lastrowid`
+   - After: `student_fee_id = cursor.lastrowid`
+
+5. **Line 5160**: Creating payment allocation
+   - Before: `VALUES (?, ?, ?, ?)''', (payment_id, fee_id, amount, current_datetime)`
+   - After: `VALUES (?, ?, ?, ?)''', (payment_id, student_fee_id, amount, current_datetime)`
+
+#### Technical Details
+
+**Database Schema:**
+- Table: `student_fees`
+- Primary key column: `student_fee_id` (NOT `fee_id`)
+- The column name is correct in all SQL queries
+- Only the Python variable names needed correction
+
+**Why This Matters:**
+- Ensures code clarity and maintainability
+- Variable names now match database schema exactly
+- Prevents future confusion and errors
+- Makes code more readable for other developers
+
+#### Result
+
+✓ Finance integration now works correctly
+✓ Library fine payments properly recorded in finance system
+✓ Variable names consistent with database schema
+✓ No functionality changes, only naming consistency
+✓ Code is more maintainable and clear
+
+#### Testing
+
+- Syntax check: ✓ PASSED
+- Variable naming: ✓ Consistent throughout function
+- SQL queries: ✓ Already correct (unchanged)
+
 ### Fixed - 2025-11-12: Financial Aid GUI Errors
 
 **Fixed two critical errors in Financial Aid GUI**

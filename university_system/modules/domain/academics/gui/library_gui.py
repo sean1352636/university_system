@@ -5115,7 +5115,7 @@ Status: {status.upper()}"""
 
             if existing_fee:
                 # Update existing fee (reduce amount or mark as paid)
-                fee_id, current_fee_amount = existing_fee
+                student_fee_id, current_fee_amount = existing_fee
                 new_fee_amount = max(0, current_fee_amount - amount)
 
                 if new_fee_amount == 0:
@@ -5124,14 +5124,14 @@ Status: {status.upper()}"""
                         UPDATE student_fees
                         SET status = 'paid', amount = 0, updated_at = ?
                         WHERE student_fee_id = ?
-                    ''', (current_datetime, fee_id))
+                    ''', (current_datetime, student_fee_id))
                 else:
                     # Partial payment
                     cursor.execute('''
                         UPDATE student_fees
                         SET amount = ?, updated_at = ?
                         WHERE student_fee_id = ?
-                    ''', (new_fee_amount, current_datetime, fee_id))
+                    ''', (new_fee_amount, current_datetime, student_fee_id))
             else:
                 # Create a new fee record marked as paid (for historical tracking)
                 cursor.execute('''
@@ -5139,7 +5139,7 @@ Status: {status.upper()}"""
                     (student_id, fee_type_id, amount, currency, status, due_date, created_at, updated_at)
                     VALUES (?, 3, 0, 'GBP', 'paid', ?, ?, ?)
                 ''', (user_id, current_date, current_datetime, current_datetime))
-                fee_id = cursor.lastrowid
+                student_fee_id = cursor.lastrowid
 
             # Create payment record
             cursor.execute('''
@@ -5157,7 +5157,7 @@ Status: {status.upper()}"""
                 INSERT INTO payment_allocations
                 (payment_id, student_fee_id, amount, created_at)
                 VALUES (?, ?, ?, ?)
-            ''', (payment_id, fee_id, amount, current_datetime))
+            ''', (payment_id, student_fee_id, amount, current_datetime))
 
             conn.commit()
             conn.close()
