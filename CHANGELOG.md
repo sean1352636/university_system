@@ -7,6 +7,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-11-12: Email Notifications for Library Fine Management
+
+**Integrated comprehensive email notifications for all library fine operations**
+
+**New Email Functionality:**
+
+1. **Fine Creation Notification**
+   - Automatic email sent to user when fine is created
+   - Includes complete fine details:
+     * Book title and loan information
+     * Due date and days overdue
+     * Fine amount
+     * Payment instructions and options
+   - Sent from "Library System" sender
+   - User-friendly formatting with clear payment instructions
+
+2. **Payment Receipt Email**
+   - Automatic receipt sent after successful payment
+   - Professional receipt format includes:
+     * Unique receipt number (LIB-{payment_id})
+     * Payment date and time
+     * Payment method (Cash, Card, Bank Transfer, Online)
+     * Book title and fine details
+     * Original fine amount vs amount paid
+   - Receipt number provided for reference
+   - Confirmation of account standing
+
+3. **Fine Waiver/Deletion Notification**
+   - Email sent when fine is waived by administration
+   - Good news format to inform user of:
+     * Waived fine amount
+     * Book title
+     * Reason for waiver
+     * Confirmation no payment required
+   - Updates user on account status
+
+**Technical Implementation:**
+
+- **Email Service Integration:**
+  * Uses `send_email_as_system()` from email service
+  * Sent as "Library System" for professional appearance
+  * Handles email failures gracefully with user notification
+
+- **User Email Lookup:**
+  * New `get_user_email()` helper method
+  * Retrieves email, first name, last name from users table
+  * Returns formatted user info dictionary
+
+- **Database Integration:**
+  * Queries join book_loans with users and books tables
+  * Retrieves all necessary information (book title, user details, dates)
+  * Calculates days overdue automatically
+
+- **Error Handling:**
+  * Graceful fallback if email cannot be sent
+  * User notified of email status in success messages
+  * Operations complete successfully even if email fails
+  * No blocking or failures due to email issues
+
+**User Experience:**
+
+- **Clear Feedback:**
+  * Success messages indicate if email was sent
+  * Shows recipient email address for confirmation
+  * Notifies user if email could not be sent
+
+- **Email Format:**
+  * Professional formatting with box separators (═══)
+  * Clear sections for different information
+  * Contact information included for follow-up
+  * Personalized with user's name
+
+**Impact:**
+
+- Users receive immediate notification of all fine-related activities
+- Automatic receipts for record-keeping
+- Reduces support inquiries with proactive communication
+- Professional communication enhances library service quality
+- Improves transparency in fine management
+- Helps users track their library account status
+
+**Files Changed:**
+- `university_system/modules/domain/finance/gui/finance/library_finance_manager.py` (+175 lines)
+  * Added email service import
+  * 4 new email-related methods
+  * Updated create_fine_dialog() with email notification
+  * Updated process_payment_dialog() with receipt email
+  * Updated delete_fine() with waiver notification
+
+**Email Templates:**
+- Fine Notice: Professional notice with payment instructions
+- Payment Receipt: Detailed receipt with transaction ID
+- Fine Waived: Positive notification of fine removal
+
 ### Fixed - 2025-11-12: Default Account Roles Incorrect
 
 **Fixed all default accounts showing as 'student' role**

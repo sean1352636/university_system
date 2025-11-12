@@ -11,6 +11,7 @@ import csv
 from typing import Optional
 
 from university_system.infrastructure.database.db import get_connection
+from university_system.infrastructure.email.email_service import send_email_as_system
 
 
 class LibraryFinanceManager:
@@ -39,6 +40,184 @@ class LibraryFinanceManager:
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
         self.search_var = tk.StringVar()
+
+    # ==================== EMAIL NOTIFICATION HELPERS ====================
+
+    def get_user_email(self, user_id):
+        """Get user email address from database"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT email, first_name, last_name FROM users WHERE id = ?', (user_id,))
+            result = cursor.fetchone()
+            conn.close()
+
+            if result:
+                return {
+                    'email': result[0],
+                    'first_name': result[1],
+                    'last_name': result[2],
+                    'full_name': f"{result[1]} {result[2]}"
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting user email: {e}")
+            return None
+
+    def send_fine_notification_email(self, user_info, fine_amount, book_title, due_date, days_overdue):
+        """Send email notification when a fine is created"""
+        try:
+            if not user_info or not user_info.get('email'):
+                return False
+
+            subject = "Library Fine Notice - Overdue Book"
+
+            body = f"""Dear {user_info['full_name']},
+
+This is to notify you that a library fine has been assessed on your account.
+
+FINE DETAILS:
+═══════════════════════════════════════════════
+Book Title:      {book_title}
+Due Date:        {due_date}
+Days Overdue:    {days_overdue}
+Fine Amount:     £{fine_amount:.2f}
+═══════════════════════════════════════════════
+
+Please return the book and pay the fine at your earliest convenience. You can:
+• Visit the library circulation desk
+• Pay online through your student portal
+• Contact the library for payment arrangements
+
+If you have already returned this book, please contact the library immediately.
+
+For questions or assistance, please contact:
+University Library - Circulation Desk
+Email: library@university.edu
+Phone: (555) 123-4567
+
+Thank you,
+University Library System
+"""
+
+            # Send email as "Library System"
+            send_email_as_system(
+                recipient_email=user_info['email'],
+                subject=subject,
+                body=body,
+                system_name="Library System"
+            )
+            return True
+
+        except Exception as e:
+            print(f"Error sending fine notification email: {e}")
+            return False
+
+    def send_payment_receipt_email(self, user_info, fine_amount, payment_amount, payment_method,
+                                   book_title, transaction_id, payment_date):
+        """Send email receipt when a fine is paid"""
+        try:
+            if not user_info or not user_info.get('email'):
+                return False
+
+            subject = "Library Fine Payment Receipt"
+
+            body = f"""Dear {user_info['full_name']},
+
+Thank you for your payment. This email confirms your library fine payment.
+
+PAYMENT RECEIPT
+═══════════════════════════════════════════════
+Receipt Number:  {transaction_id}
+Payment Date:    {payment_date}
+Payment Method:  {payment_method}
+═══════════════════════════════════════════════
+
+FINE DETAILS:
+Book Title:      {book_title}
+Original Fine:   £{fine_amount:.2f}
+Amount Paid:     £{payment_amount:.2f}
+═══════════════════════════════════════════════
+
+Your payment has been processed successfully. Your library account is now in good standing.
+
+Please keep this receipt for your records. If you have any questions about this payment,
+please contact us with your receipt number.
+
+For questions or assistance, please contact:
+University Library - Circulation Desk
+Email: library@university.edu
+Phone: (555) 123-4567
+
+Thank you for using our library services.
+
+Best regards,
+University Library System
+"""
+
+            # Send email as "Library System"
+            send_email_as_system(
+                recipient_email=user_info['email'],
+                subject=subject,
+                body=body,
+                system_name="Library System"
+            )
+            return True
+
+        except Exception as e:
+            print(f"Error sending payment receipt email: {e}")
+            return False
+
+    def send_fine_waived_email(self, user_info, fine_amount, book_title, waiver_reason="Administrative action"):
+        """Send email notification when a fine is deleted/waived"""
+        try:
+            if not user_info or not user_info.get('email'):
+                return False
+
+            subject = "Library Fine Waived - Good News!"
+
+            body = f"""Dear {user_info['full_name']},
+
+Good news! A library fine on your account has been waived.
+
+WAIVED FINE DETAILS:
+═══════════════════════════════════════════════
+Book Title:      {book_title}
+Fine Amount:     £{fine_amount:.2f}
+Reason:          {waiver_reason}
+Status:          WAIVED - No payment required
+═══════════════════════════════════════════════
+
+This fine has been removed from your account and no payment is required.
+Your library account is now in good standing.
+
+If you have any questions about this waiver, please feel free to contact us.
+
+For questions or assistance, please contact:
+University Library - Circulation Desk
+Email: library@university.edu
+Phone: (555) 123-4567
+
+Thank you for using our library services.
+
+Best regards,
+University Library System
+"""
+
+            # Send email as "Library System"
+            send_email_as_system(
+                recipient_email=user_info['email'],
+                subject=subject,
+                body=body,
+                system_name="Library System"
+            )
+            return True
+
+        except Exception as e:
+            print(f"Error sending fine waived email: {e}")
+            return False
+
+    # ==================== TAB CREATION ====================
 
     def create_library_finance_tab(self):
         """Create the Library Finance tab with all library financial operations"""
@@ -607,10 +786,51 @@ class LibraryFinanceManager:
                     conn.close()
                     return
 
+                # Get loan details for email notification
+                cursor.execute('''
+                    SELECT bl.user_id, b.title, bl.due_date,
+                           CAST((julianday('now') - julianday(bl.due_date)) AS INTEGER) as days_overdue
+                    FROM book_loans bl
+                    JOIN books b ON bl.book_id = b.book_id
+                    WHERE bl.loan_id = ?
+                ''', (loan_id,))
+                loan_details = cursor.fetchone()
+
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Fine of £{amount:.2f} created for Loan ID {loan_id}.", parent=dialog)
+                # Send email notification to user
+                if loan_details:
+                    user_id, book_title, due_date, days_overdue = loan_details
+                    user_info = self.get_user_email(user_id)
+
+                    if user_info:
+                        email_sent = self.send_fine_notification_email(
+                            user_info=user_info,
+                            fine_amount=amount,
+                            book_title=book_title,
+                            due_date=due_date,
+                            days_overdue=days_overdue if days_overdue > 0 else 0
+                        )
+
+                        if email_sent:
+                            messagebox.showinfo("Success",
+                                f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
+                                f"Email notification sent to {user_info['email']}",
+                                parent=dialog)
+                        else:
+                            messagebox.showinfo("Success",
+                                f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
+                                f"Note: Email notification could not be sent.",
+                                parent=dialog)
+                    else:
+                        messagebox.showinfo("Success",
+                            f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
+                            f"Note: User email not found.",
+                            parent=dialog)
+                else:
+                    messagebox.showinfo("Success", f"Fine of £{amount:.2f} created for Loan ID {loan_id}.", parent=dialog)
+
                 dialog.destroy()
                 self.load_all_fines()
 
@@ -718,6 +938,15 @@ class LibraryFinanceManager:
             conn = get_connection()
             cursor = conn.cursor()
 
+            # Get loan details for email notification
+            cursor.execute('''
+                SELECT bl.user_id, b.title
+                FROM book_loans bl
+                JOIN books b ON bl.book_id = b.book_id
+                WHERE bl.loan_id = ?
+            ''', (loan_id,))
+            loan_details = cursor.fetchone()
+
             cursor.execute('''
                 UPDATE book_loans
                 SET fine_amount = 0
@@ -727,7 +956,35 @@ class LibraryFinanceManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Fine waived successfully.")
+            # Send waived fine notification email
+            if loan_details:
+                user_id, book_title = loan_details
+                user_info = self.get_user_email(user_id)
+
+                # Extract fine amount (remove £ symbol)
+                fine_amount_value = float(fine_amount.replace('£', ''))
+
+                if user_info:
+                    email_sent = self.send_fine_waived_email(
+                        user_info=user_info,
+                        fine_amount=fine_amount_value,
+                        book_title=book_title,
+                        waiver_reason="Fine waived by library administration"
+                    )
+
+                    if email_sent:
+                        messagebox.showinfo("Success",
+                            f"Fine waived successfully.\n\n"
+                            f"Email notification sent to {user_info['email']}")
+                    else:
+                        messagebox.showinfo("Success",
+                            "Fine waived successfully.\n\n"
+                            "Note: Email notification could not be sent.")
+                else:
+                    messagebox.showinfo("Success", "Fine waived successfully.")
+            else:
+                messagebox.showinfo("Success", "Fine waived successfully.")
+
             self.load_all_fines()
 
         except Exception as e:
@@ -817,12 +1074,47 @@ class LibraryFinanceManager:
                         VALUES (?, ?, ?, ?)
                     ''', (payment_id, fee_record[0], payment_amount, current_datetime))
 
+                # Get book details for email receipt
+                cursor.execute('''
+                    SELECT b.title
+                    FROM book_loans bl
+                    JOIN books b ON bl.book_id = b.book_id
+                    WHERE bl.loan_id = ?
+                ''', (loan_id,))
+                book_result = cursor.fetchone()
+                book_title = book_result[0] if book_result else "Unknown Book"
+
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success",
-                    f"Payment of £{payment_amount:.2f} processed successfully.\n"
-                    f"Remaining fine: £{new_fine:.2f}", parent=dialog)
+                # Send payment receipt email
+                user_info = self.get_user_email(user_id)
+                if user_info:
+                    email_sent = self.send_payment_receipt_email(
+                        user_info=user_info,
+                        fine_amount=fine_amount,
+                        payment_amount=payment_amount,
+                        payment_method=method_var.get(),
+                        book_title=book_title,
+                        transaction_id=f"LIB-{payment_id}",
+                        payment_date=current_datetime
+                    )
+
+                    if email_sent:
+                        messagebox.showinfo("Success",
+                            f"Payment of £{payment_amount:.2f} processed successfully.\n"
+                            f"Remaining fine: £{new_fine:.2f}\n\n"
+                            f"Receipt sent to {user_info['email']}", parent=dialog)
+                    else:
+                        messagebox.showinfo("Success",
+                            f"Payment of £{payment_amount:.2f} processed successfully.\n"
+                            f"Remaining fine: £{new_fine:.2f}\n\n"
+                            f"Note: Receipt email could not be sent.", parent=dialog)
+                else:
+                    messagebox.showinfo("Success",
+                        f"Payment of £{payment_amount:.2f} processed successfully.\n"
+                        f"Remaining fine: £{new_fine:.2f}", parent=dialog)
+
                 dialog.destroy()
                 self.load_all_fines()
 
