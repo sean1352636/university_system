@@ -7,14 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed - 2025-11-11 HOTFIX: Path Module AttributeError
+### Fixed - 2025-11-11 HOTFIX: Multiple AttributeErrors
 
-#### Critical Path Fix
+#### Critical Fix 1: Path Module AttributeError
 - **Fixed AttributeError: module 'paths' has no attribute 'UPLOAD_DIR'**
   * Replaced all `paths.UPLOAD_DIR` references with correct `paths.SUBMISSIONS_DIR`
   * Fixed in 4 files: maintenance.py (2), submission_manager.py (1), assignment_gui.py (2), group_manager.py (1)
   * The paths module defines `SUBMISSIONS_DIR`, not `UPLOAD_DIR`
   * All file operations now use the correct centralized path constant
+
+#### Critical Fix 2: Missing File Hash Method
+- **Fixed AttributeError: 'MinimumAssignmentSystem' has no attribute '_calculate_file_hash'**
+  * Added `_calculate_file_hash()` method directly to SubmissionManager class
+  * Added `_calculate_file_hash()` method directly to MaintenanceManager class
+  * Updated calls from `self.assignment_system._calculate_file_hash()` to `self._calculate_file_hash()`
+  * Method calculates MD5 hash for file integrity checking during submissions and verification
+  * Fixed in: submission_manager.py (+14 lines), maintenance.py (+14 lines)
 
 ### Fixed - 2025-11-11: Assignment GUI Comprehensive Bug Fixes
 
