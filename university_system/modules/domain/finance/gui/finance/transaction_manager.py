@@ -277,37 +277,44 @@ class TransactionManager:
                 if not all([student_id_var.get(), amount_var.get(), method_var.get(), date_var.get()]):
                     messagebox.showerror("Error", "Required fields are missing")
                     return
-                
+
                 student_id = student_id_var.get().strip()
                 amount = float(amount_var.get())
                 payment_method = method_var.get()
                 payment_date = date_var.get().strip()
                 transaction_id = trans_id_var.get().strip()
                 notes = notes_text.get("1.0", tk.END).strip()
-                
+
                 if amount <= 0:
                     messagebox.showerror("Error", "Amount must be greater than zero")
                     return
-                
+
+                # Get authentication
+                auth = get_auth()
+                username = 'system'
+                if auth and hasattr(auth, 'is_logged_in') and auth.is_logged_in():
+                    user = auth.get_current_user()
+                    username = user.get('username', 'system') if user else 'system'
+
                 # Call original function logic
                 conn = get_connection()
                 cursor = conn.cursor()
-                
+
                 # Check if student exists
                 cursor.execute('SELECT COUNT(*) FROM students WHERE student_id = ?', (student_id,))
                 if cursor.fetchone()[0] == 0:
                     messagebox.showerror("Error", f"Student {student_id} not found")
                     conn.close()
                     return
-                
+
                 # Record payment
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute('''
-                INSERT INTO payments 
+                INSERT INTO payments
                 (student_id, amount, payment_method, payment_date, transaction_id, notes, created_by, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, amount, payment_method, payment_date, transaction_id, notes, 
-                      auth.current_user['username'], now))
+                ''', (student_id, amount, payment_method, payment_date, transaction_id, notes,
+                      username, now))
                 
                 payment_id = cursor.lastrowid
                 
@@ -359,11 +366,11 @@ class TransactionManager:
                 # Handle overpayment as credit
                 if remaining_payment > 0:
                     cursor.execute('''
-                    INSERT INTO student_credits 
+                    INSERT INTO student_credits
                     (student_id, credit_amount, remaining_amount, credit_source, description, created_by, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (student_id, remaining_payment, remaining_payment, 'overpayment',
-                          f'Overpayment from payment ID {payment_id}', auth.current_user['username'], now, now))
+                          f'Overpayment from payment ID {payment_id}', username, now, now))
                 
                 conn.commit()
                 conn.close()
@@ -607,48 +614,58 @@ class TransactionManager:
                 refund_type = refund_type_var.get()
                 refund_method = refund_method_var.get()
                 reason = reason_text.get("1.0", tk.END).strip()
-                
+
                 if not all([student_id, refund_amount > 0, refund_type, refund_method, reason]):
                     messagebox.showerror("Error", "All fields are required")
                     return
-                
+
+                # Get authentication
+                auth = get_auth()
+                username = 'system'
+                has_approve_permission = False
+
+                if auth and hasattr(auth, 'is_logged_in') and auth.is_logged_in():
+                    user = auth.get_current_user()
+                    username = user.get('username', 'system') if user else 'system'
+                    has_approve_permission = auth.has_permission('approve_refunds') if hasattr(auth, 'has_permission') else False
+
                 # Get selected payment
                 selected_item = payments_tree.selection()
                 original_payment_id = None
-                
+
                 if selected_item:
                     payment_data = payments_tree.item(selected_item[0])['values']
                     original_payment_id = payment_data[0]
                     original_amount = float(payment_data[1].replace('£', ''))
-                    
+
                     if refund_amount > original_amount:
                         messagebox.showerror("Error", f"Refund amount cannot exceed original payment (£{original_amount:.2f})")
                         return
-                
+
                 # Create refund request
                 conn = get_connection()
                 cursor = conn.cursor()
-                
+
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 request_date = datetime.now().strftime('%Y-%m-%d')
-                
+
                 cursor.execute('''
-                INSERT INTO refunds 
-                (student_id, original_payment_id, refund_amount, refund_reason, refund_type, 
+                INSERT INTO refunds
+                (student_id, original_payment_id, refund_amount, refund_reason, refund_type,
                  refund_method, status, requested_by, request_date, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (student_id, original_payment_id, refund_amount, reason, refund_type,
-                      refund_method, 'pending', auth.current_user['username'], request_date, now))
-                
+                      refund_method, 'pending', username, request_date, now))
+
                 refund_id = cursor.lastrowid
-                
+
                 # Auto-approve if user has permissions (simplified)
-                if auth.check_permission('approve_refunds'):
+                if has_approve_permission:
                     cursor.execute('''
-                    UPDATE refunds 
+                    UPDATE refunds
                     SET status = 'approved', approved_by = ?, approval_date = ?
                     WHERE refund_id = ?
-                    ''', (auth.current_user['username'], request_date, refund_id))
+                    ''', (username, request_date, refund_id))
                     status_msg = "Refund approved and ready for processing"
                 else:
                     status_msg = "Refund request created and pending approval"
@@ -1042,8 +1059,8 @@ class TransactionManager:
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Create text widget for results
-            results_text = scrolledtext.ScrolledText(main_frame, width=80, height=30,
-                                                    font=('Courier', 10), wrap=tk.WORD)
+            results_text = ScrolledText(main_frame, width=80, height=30,
+                                       font=('Courier', 10), wrap=tk.WORD)
             results_text.pack(fill=tk.BOTH, expand=True)
 
             # Analyze payment data
@@ -2709,5 +2726,30 @@ class TransactionManager:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate statement: {e}")
-    
+
+    # Helper methods
+    def update_status(self, message):
+        """Update status bar message"""
+        try:
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                self.gui.layout.update_status(message)
+            elif hasattr(self.gui, 'update_status'):
+                self.gui.update_status(message)
+            else:
+                print(f"Status: {message}")
+        except Exception as e:
+            print(f"Status update failed: {message} (Error: {e})")
+
+    def refresh_dashboard(self):
+        """Refresh the dashboard if it exists"""
+        try:
+            if hasattr(self.gui, 'dashboard') and hasattr(self.gui.dashboard, 'update_dashboard'):
+                self.gui.dashboard.update_dashboard()
+            elif hasattr(self.gui, 'refresh_dashboard'):
+                self.gui.refresh_dashboard()
+            else:
+                print("Dashboard refresh not available")
+        except Exception as e:
+            print(f"Dashboard refresh failed: {e}")
+
     # Payment Plans GUI Functions

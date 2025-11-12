@@ -600,19 +600,146 @@ class LayoutManager:
 
     def _process_payment(self):
         """Process a payment"""
-        messagebox.showinfo("Process Payment", "Opening payment processing dialog...")
+        try:
+            # Call transaction manager's payment function if available
+            if hasattr(self.gui, 'transactions') and hasattr(self.gui.transactions, 'gui_record_payment'):
+                self.gui.transactions.gui_record_payment()
+            else:
+                messagebox.showinfo("Process Payment", "Transaction manager not available. Please ensure the transactions module is properly initialized.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open payment processing dialog: {e}")
 
     def _create_invoice(self):
         """Create an invoice"""
-        messagebox.showinfo("Create Invoice", "Opening invoice creation dialog...")
+        try:
+            # Call invoice manager if available
+            if hasattr(self.gui, 'invoice_manager') and hasattr(self.gui.invoice_manager, 'gui_generate_invoice'):
+                self.gui.invoice_manager.gui_generate_invoice()
+            else:
+                messagebox.showinfo("Create Invoice", "Invoice manager not available. Please ensure the invoice module is properly initialized.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open invoice creation dialog: {e}")
 
     def _manage_refunds(self):
         """Manage refunds"""
-        messagebox.showinfo("Manage Refunds", "Opening refunds management dialog...")
+        try:
+            # Call transaction manager's refund function if available
+            if hasattr(self.gui, 'transactions') and hasattr(self.gui.transactions, 'gui_process_refund'):
+                self.gui.transactions.gui_process_refund()
+            else:
+                messagebox.showinfo("Manage Refunds", "Transaction manager not available. Please ensure the transactions module is properly initialized.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open refunds management dialog: {e}")
 
     def _show_financial_summary(self):
         """Show financial summary"""
-        messagebox.showinfo("Financial Summary", "Opening financial summary report...")
+        try:
+            # Call dashboard or report manager if available
+            if hasattr(self.gui, 'dashboard') and hasattr(self.gui.dashboard, 'gui_generate_financial_dashboard'):
+                self.gui.dashboard.gui_generate_financial_dashboard()
+            elif hasattr(self.gui, 'report_manager') and hasattr(self.gui.report_manager, 'gui_revenue_summary_report'):
+                self.gui.report_manager.gui_revenue_summary_report()
+            else:
+                # Generate a simple financial summary
+                self._generate_simple_financial_summary()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open financial summary: {e}")
+
+    def _generate_simple_financial_summary(self):
+        """Generate a simple financial summary when dashboard not available"""
+        try:
+            from tkinter.scrolledtext import ScrolledText
+
+            # Create summary window
+            summary_window = tk.Toplevel(self.root)
+            summary_window.title("Financial Summary")
+            summary_window.geometry("800x600")
+            summary_window.transient(self.root)
+            summary_window.grab_set()
+
+            # Title
+            title_label = tk.Label(summary_window, text="Financial Summary Report",
+                                  font=('Arial', 16, 'bold'), bg=self.colors['primary'], fg='white', pady=10)
+            title_label.pack(fill='x')
+
+            # Summary text area
+            summary_text = ScrolledText(summary_window, font=('Courier', 10), wrap='word')
+            summary_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+            # Generate summary data
+            from university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            summary = "FINANCIAL SUMMARY REPORT\n"
+            summary += "=" * 70 + "\n"
+            summary += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+            # Total revenue
+            try:
+                cursor.execute("SELECT SUM(amount) FROM payments WHERE status = 'completed'")
+                total_revenue = cursor.fetchone()[0] or 0
+                summary += f"Total Revenue (Completed Payments): £{total_revenue:,.2f}\n"
+            except:
+                summary += "Total Revenue: Data not available\n"
+
+            # Outstanding fees
+            try:
+                cursor.execute('''
+                    SELECT SUM(sf.amount - COALESCE(pa.total_paid, 0))
+                    FROM student_fees sf
+                    LEFT JOIN (
+                        SELECT student_fee_id, SUM(amount) as total_paid
+                        FROM payment_allocations
+                        GROUP BY student_fee_id
+                    ) pa ON sf.student_fee_id = pa.student_fee_id
+                    WHERE sf.status != 'paid'
+                ''')
+                outstanding = cursor.fetchone()[0] or 0
+                summary += f"Total Outstanding Fees: £{outstanding:,.2f}\n"
+            except:
+                summary += "Total Outstanding Fees: Data not available\n"
+
+            # Student count
+            try:
+                cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'Active'")
+                active_students = cursor.fetchone()[0]
+                summary += f"Active Students: {active_students}\n"
+            except:
+                summary += "Active Students: Data not available\n"
+
+            # Payment count
+            try:
+                cursor.execute("SELECT COUNT(*) FROM payments WHERE payment_date >= date('now', '-30 days')")
+                recent_payments = cursor.fetchone()[0]
+                summary += f"Payments (Last 30 Days): {recent_payments}\n"
+            except:
+                summary += "Payments (Last 30 Days): Data not available\n"
+
+            # Refund requests
+            try:
+                cursor.execute("SELECT COUNT(*) FROM refunds WHERE status = 'pending'")
+                pending_refunds = cursor.fetchone()[0]
+                summary += f"Pending Refund Requests: {pending_refunds}\n"
+            except:
+                summary += "Pending Refund Requests: Data not available\n"
+
+            summary += "\n" + "=" * 70 + "\n\n"
+            summary += "For detailed financial analysis, please use the Advanced Reporting GUI.\n"
+
+            conn.close()
+
+            # Display summary
+            summary_text.insert('1.0', summary)
+            summary_text.config(state='disabled')
+
+            # Close button
+            close_btn = ttk.Button(summary_window, text="Close", command=summary_window.destroy)
+            close_btn.pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate financial summary: {e}")
 
     def create_payments_tab(self):
         """Create payments tab"""
