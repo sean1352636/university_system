@@ -7,6 +7,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Enhanced - 2025-11-12: Library Fine Payment Integration with Finance System
+
+**Integrated library fine payments with finance GUI for comprehensive student financial tracking**
+
+#### Overview
+Library fine payments now automatically create records in the finance system (student_fees, payments, payment_allocations tables), enabling unified financial tracking across all university systems.
+
+#### Integration Details
+
+**New Helper Function: _record_library_payment_in_finance()**
+- Creates/updates student_fees records (fee_type_id=3 "Library Fee")
+- Creates payments records with full transaction details
+- Links payments to fees via payment_allocations table
+- Supports both full and partial payment tracking
+- ~77 lines of code
+- File: library_gui.py:5095-5171
+
+**Finance System Tables Used:**
+1. **student_fees**
+   - fee_type_id: 3 (Library Fee)
+   - Tracks outstanding/paid fee amounts
+   - Updates: amount reduction or status='paid'
+
+2. **payments**
+   - Records: amount, payment_method, payment_date, status='completed'
+   - Tracks: created_by (staff member), notes ('Library fine payment')
+   - Currency: GBP (configurable)
+
+3. **payment_allocations**
+   - Links: payment_id → student_fee_id
+   - Enables: payment allocation tracking
+   - Supports: multiple payments per fee
+
+**Integration Flow:**
+```
+Library Payment → Update book_loans → Create/Update Finance Records
+                                    ↓
+                            ┌───────────────────┐
+                            │  student_fees     │ ← Update amount/status
+                            └───────────────────┘
+                                    ↓
+                            ┌───────────────────┐
+                            │  payments         │ ← Create new record
+                            └───────────────────┘
+                            ↓
+                            ┌───────────────────┐
+                            │ payment_allocations│ ← Link payment to fee
+                            └───────────────────┘
+```
+
+**Updated Functions:**
+
+1. **process_fine_payment()** - Enhanced with Finance Integration
+   - Calls _record_library_payment_in_finance() after library update
+   - Shows finance recording status in success message
+   - Success: "✓ Payment recorded in Finance System"
+   - Failure: "⚠ Payment processed but finance recording failed"
+   - File: library_gui.py:4978-5003
+
+**Features:**
+- **Unified Financial View:**
+  - All library payments visible in Finance GUI
+  - Student financial statements include library fines
+  - Payment history tracked in central system
+
+- **Partial Payment Support:**
+  - Reduces student_fees amount proportionally
+  - Multiple payments can be made against one fee
+  - Full payment marks fee as 'paid'
+
+- **Automatic Fee Creation:**
+  - Creates student_fees record if none exists
+  - Links to existing unpaid library fees
+  - Historical tracking for paid fines
+
+- **Transaction Details:**
+  - Payment method: "Cash/Card at Library Desk"
+  - Created by: Current logged-in user
+  - Notes: "Library fine payment"
+  - Timestamp: Accurate payment date/time
+
+- **Error Handling:**
+  - Library payment succeeds even if finance recording fails
+  - Clear status message indicates finance recording result
+  - Traceback logging for debugging
+
+**Benefits:**
+- ✓ Centralized financial tracking
+- ✓ Student account balance reflects library fines
+- ✓ Finance reports include library payments
+- ✓ Audit trail in both systems
+- ✓ Payment history for all fees
+- ✓ Supports financial aid calculations
+
+**Database Schema:**
+- fee_type_id: 3 = "Library Fee" (pre-existing in fee_types table)
+- Currency: GBP (matches university finance system)
+- Status: 'unpaid' → 'paid' when fully cleared
+- payment_allocations links multiple payments to single fee
+
+**Testing Notes:**
+- Test with existing student_fees records
+- Test with new students (no existing fees)
+- Test partial payments
+- Test full payments
+- Verify Finance GUI displays library payments
+- Check payment_allocations table for proper linking
+
 ### Fixed - 2025-11-12: Library Fine Payment Functions Missing
 
 **Implemented missing process_fine_payment and waive_all_fines functions**

@@ -4974,6 +4974,13 @@ Status: {status.upper()}"""
                         ''', (new_fine_amount, loan_id))
                         remaining_payment = 0
 
+                # Record payment in finance system
+                finance_success = self._record_library_payment_in_finance(
+                    user_id=user_id,
+                    amount=amount,
+                    payment_method="Cash/Card at Library Desk"
+                )
+
                 conn.commit()
                 conn.close()
 
@@ -4983,11 +4990,19 @@ Status: {status.upper()}"""
                                   f"GUI: Processed manual fine payment ${amount:.2f} for user {user_id}",
                                   "book_loans", user_id)
 
-                messagebox.showinfo("Success",
+                success_msg = (
                     f"Payment of ${amount:.2f} processed successfully!\n\n"
                     f"Payment Method: Manual (Cash/Card at Desk)\n"
                     f"User ID: {user_id}\n"
-                    f"Remaining balance will be shown in the refreshed list.")
+                    f"Remaining balance will be shown in the refreshed list."
+                )
+
+                if finance_success:
+                    success_msg += "\n\n✓ Payment recorded in Finance System"
+                else:
+                    success_msg += "\n\n⚠ Payment processed but finance recording failed"
+
+                messagebox.showinfo("Success", success_msg)
 
                 # Clear payment amount field
                 self.payment_amount_var.set("")
@@ -5076,6 +5091,84 @@ Status: {status.upper()}"""
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to waive fines: {str(e)}")
+
+    def _record_library_payment_in_finance(self, user_id, amount, payment_method):
+        """Record library fine payment in the finance system for tracking."""
+        try:
+            conn = get_db_connection()
+            if not conn:
+                return False
+
+            cursor = conn.cursor()
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Get or create student_fees record for library fines
+            # First, check if there's an existing unpaid library fee
+            cursor.execute('''
+                SELECT student_fee_id, amount FROM student_fees
+                WHERE student_id = ? AND fee_type_id = 3 AND status = 'unpaid'
+                ORDER BY created_at DESC LIMIT 1
+            ''', (user_id,))
+
+            existing_fee = cursor.fetchone()
+
+            if existing_fee:
+                # Update existing fee (reduce amount or mark as paid)
+                fee_id, current_fee_amount = existing_fee
+                new_fee_amount = max(0, current_fee_amount - amount)
+
+                if new_fee_amount == 0:
+                    # Fully paid
+                    cursor.execute('''
+                        UPDATE student_fees
+                        SET status = 'paid', amount = 0, updated_at = ?
+                        WHERE student_fee_id = ?
+                    ''', (current_datetime, fee_id))
+                else:
+                    # Partial payment
+                    cursor.execute('''
+                        UPDATE student_fees
+                        SET amount = ?, updated_at = ?
+                        WHERE student_fee_id = ?
+                    ''', (new_fee_amount, current_datetime, fee_id))
+            else:
+                # Create a new fee record marked as paid (for historical tracking)
+                cursor.execute('''
+                    INSERT INTO student_fees
+                    (student_id, fee_type_id, amount, currency, status, due_date, created_at, updated_at)
+                    VALUES (?, 3, 0, 'GBP', 'paid', ?, ?, ?)
+                ''', (user_id, current_date, current_datetime, current_datetime))
+                fee_id = cursor.lastrowid
+
+            # Create payment record
+            cursor.execute('''
+                INSERT INTO payments
+                (student_id, amount, currency, payment_method, payment_date, status, notes, created_by, created_at)
+                VALUES (?, ?, 'GBP', ?, ?, 'completed', 'Library fine payment', ?, ?)
+            ''', (user_id, amount, payment_method, current_date,
+                  get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'system',
+                  current_datetime))
+
+            payment_id = cursor.lastrowid
+
+            # Link payment to fee via payment_allocations
+            cursor.execute('''
+                INSERT INTO payment_allocations
+                (payment_id, student_fee_id, amount, created_at)
+                VALUES (?, ?, ?, ?)
+            ''', (payment_id, fee_id, amount, current_datetime))
+
+            conn.commit()
+            conn.close()
+
+            return True
+
+        except Exception as e:
+            print(f"Error recording library payment in finance system: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     def load_overdue_books(self):
         """Load overdue books data"""
