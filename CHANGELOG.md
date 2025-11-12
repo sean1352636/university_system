@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12 HOTFIX: Admin Email Lookup for Reports
+
+**Fixed "no such table staff" error when emailing reports to admin**
+- Root cause: Hard-coded query to non-existent "staff" table
+- Solution: Implemented fallback chain to check multiple tables/columns
+- Query order:
+  1. users.email (WHERE role = 'Admin' OR 'Administrator')
+  2. users.email_address (fallback for alternate schema)
+  3. staff.email (fallback for separate staff table)
+- Added helpful error message if no admin email found
+- File: analytics_manager.py:1515-1555
+
 ### Fixed - 2025-11-12: Grade Tracking GUI Bug Fixes & Enhancements
 
 #### Bug Fixes
