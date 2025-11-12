@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12 HOTFIX: PDF Viewer & Template Loading
+
+#### Critical Fix 1: PDF Viewer Mailcap Error
+- **Fixed "Error: no 'view' mailcap rules found for type 'application/pdf'"**
+  * Root cause: Using `os.system('xdg-open')` which relies on mailcap configuration
+  * **Solution**: Replaced with subprocess.Popen() with intelligent PDF viewer detection
+  * **Linux**: Tries common viewers (evince, okular, xpdf, mupdf, firefox, chrome, chromium)
+  * **macOS**: Uses `subprocess.run(['open', file_path])`
+  * **Windows**: Uses `os.startfile(file_path)`
+  * Suppresses stdout/stderr to prevent console spam
+  * Shows helpful error message with suggestions if all methods fail
+  * File: file_preview.py (open_external method, +37 lines)
+
+#### Critical Fix 2: Template Loading from Filesystem
+- **Fixed missing assignment templates (0 showing despite 10 JSON files in templates/assignments)**
+  * Root cause: Template manager only loaded from database, ignored filesystem
+  * **Enhanced load_templates_data()**: Now scans ASSIGNMENT_TEMPLATES_DIR for JSON files
+  * **Enhanced load_template_options()**: Dual-source loading (database + filesystem)
+  * **Updated create_from_template()**: Handles both database and file-based templates
+  * File templates labeled with [FILE] suffix for clarity
+  * Template data structure: ('db', template_id) or ('file', '/path/to/template.json')
+  * File templates skip usage_count updates (not in database)
+  * Shows informative message if no templates found
+  * All 10 template files now visible: Essay, Programming, Group Project, Lab Report, etc.
+  * Files: template_manager.py (+119 lines across 3 methods)
+
 ### Fixed - 2025-11-11 HOTFIX: Multiple Critical Errors
 
 #### Critical Fix 1: SQL Column Name Error
