@@ -1519,29 +1519,29 @@ class AnalyticsManager:
                 cursor = conn.cursor()
 
                 admin_email = None
-                # Try users table first
+                # Try users table with case-insensitive role check
                 try:
-                    cursor.execute("SELECT email FROM users WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                    cursor.execute("""
+                        SELECT email FROM users
+                        WHERE LOWER(role) IN ('admin', 'administrator')
+                        AND email IS NOT NULL AND email != ''
+                        LIMIT 1
+                    """)
                     admin_row = cursor.fetchone()
                     if admin_row and admin_row[0]:
                         admin_email = admin_row[0]
                 except sqlite3.Error:
                     pass
 
-                # Try email_address column if email didn't work
+                # Try email_address column as fallback (some schemas may use this)
                 if not admin_email:
                     try:
-                        cursor.execute("SELECT email_address FROM users WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
-                        admin_row = cursor.fetchone()
-                        if admin_row and admin_row[0]:
-                            admin_email = admin_row[0]
-                    except sqlite3.Error:
-                        pass
-
-                # Try staff table if users didn't work
-                if not admin_email:
-                    try:
-                        cursor.execute("SELECT email FROM staff WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                        cursor.execute("""
+                            SELECT email_address FROM users
+                            WHERE LOWER(role) IN ('admin', 'administrator')
+                            AND email_address IS NOT NULL AND email_address != ''
+                            LIMIT 1
+                        """)
                         admin_row = cursor.fetchone()
                         if admin_row and admin_row[0]:
                             admin_email = admin_row[0]
