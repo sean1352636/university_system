@@ -455,7 +455,7 @@ class LibraryGUI:
             ("📋 Reservations", self.show_reservations),
             ("📖 Reading Lists", self.show_reading_lists),
             ("⭐ Reviews", self.show_reviews),
-            ("💰 Fine Management", self.show_fine_management),
+            ("💰 Library Finance", self.open_library_finance),
             ("📜 Loan History", self.view_loan_history_gui),
             ("💳 Library Cards", self.show_library_cards_generator),
             ("📱 Barcode Tools", self.show_barcode_generator),
@@ -733,7 +733,7 @@ class LibraryGUI:
             ("Search Books", self.show_search_books),
             ("Checkout Book", self.show_checkout),
             ("Return Book", self.show_return),
-            ("Manage Fines", self.show_fine_management),
+            ("Library Finance", self.open_library_finance),
             ("View Loan History", self.view_loan_history_gui),
             ("Generate Barcodes", self.show_barcode_generator),
             ("System Maintenance", self.library_maintenance_gui),
@@ -4736,8 +4736,59 @@ Status: {status.upper()}"""
         except Exception as e:
             messagebox.showerror("Error", f"Error generating barcodes: {str(e)}")
 
+    def open_library_finance(self):
+        """Open the Library Finance page in Finance GUI"""
+        if not self.check_permission('manage_loans'):
+            return
+
+        try:
+            # Import Finance GUI
+            from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+            from university_system.infrastructure.shared_context import get_auth
+
+            # Create new window for Finance GUI
+            finance_window = tk.Toplevel(self.master)
+            finance_window.title("Finance Management - Library Finance")
+            finance_window.geometry("1400x900")
+            finance_window.transient(self.master)
+
+            # Get authentication
+            auth = get_auth()
+
+            # Initialize Finance GUI
+            finance_gui = FinanceGUI(finance_window, auth=auth)
+
+            # Switch to Library Finance tab
+            if hasattr(finance_gui, 'layout') and hasattr(finance_gui.layout, 'show_tab'):
+                finance_window.after(500, lambda: finance_gui.layout.show_tab('library_finance'))
+
+            messagebox.showinfo(
+                "Library Finance",
+                "Opening comprehensive Library Finance management in Finance System.\n\n"
+                "Features:\n"
+                "• Fine Management (Create, Edit, Delete, Process Payments)\n"
+                "• Revenue Analytics & Charts\n"
+                "• Book Cost Tracking\n"
+                "• Financial Overview Dashboard"
+            )
+
+        except ImportError as e:
+            messagebox.showerror(
+                "Module Not Available",
+                f"Finance GUI module not available.\n\nFalling back to basic fine management.\n\nError: {e}"
+            )
+            # Fall back to basic fine management
+            self.show_fine_management()
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Failed to open Library Finance:\n{str(e)}\n\nFalling back to basic fine management."
+            )
+            # Fall back to basic fine management
+            self.show_fine_management()
+
     def show_fine_management(self):
-        """Show fine management interface"""
+        """Show fine management interface (basic - kept for backward compatibility)"""
         if not self.check_permission('manage_loans'):
             return
         

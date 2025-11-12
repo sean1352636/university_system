@@ -355,6 +355,7 @@ class LayoutManager:
         # self.create_scholarships_tab()  # Removed - integrated into Financial Aid tab
         self.create_reports_tab()
         self.create_revenue_source_tab()
+        self.create_library_finance_tab()
         self.create_collections_tab()
         self.create_aid_tab()
         self.create_budget_tab()
@@ -385,6 +386,7 @@ class LayoutManager:
             ("👤 Students", "students", "admin_staff"),  # Admin and Staff only
             ("📈 Reports", "reports", "admin_staff"),  # Admin and Staff only
             ("💵 Revenue by Source", "revenue_source", "admin_staff"),  # Admin and Staff only
+            ("📚 Library Finance", "library_finance", "admin_staff"),  # Admin and Staff only
             ("📞 Collections", "collections", "admin_staff"),  # Admin and Staff only
             ("🎓 Aid", "aid", "all"),  # All can view aid (students view their own)
             ("💼 Budget", "budget", "admin"),  # Admin only
@@ -1723,6 +1725,18 @@ Click the button above to access the full Financial Reporting & Analytics system
         except Exception as e:
             print(f"Error creating revenue source tab: {e}")
             self._create_placeholder_tab('revenue_source', '💵 Revenue by Source')
+
+    def create_library_finance_tab(self):
+        """Create library finance tab"""
+        try:
+            # Delegate to library finance manager if available
+            if hasattr(self.gui, 'library_finance') and hasattr(self.gui.library_finance, 'create_library_finance_tab'):
+                self.gui.library_finance.create_library_finance_tab()
+            else:
+                self._create_placeholder_tab('library_finance', '📚 Library Finance')
+        except Exception as e:
+            print(f"Error creating library finance tab: {e}")
+            self._create_placeholder_tab('library_finance', '📚 Library Finance')
 
     def create_collections_tab(self):
         """Create collections management tab"""

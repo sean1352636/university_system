@@ -7,6 +7,169 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-11-12: Comprehensive Library Finance Integration
+
+**Created dedicated Library Finance page in Finance GUI with complete financial management**
+
+#### New Module Created
+
+**Library Finance Manager** (`library_finance_manager.py`)
+- ~1,200 lines of comprehensive financial management code
+- Full integration with Finance GUI using manager pattern
+- 4 specialized tabs for different aspects of library finance
+
+#### Features Implemented
+
+**1. Fine Management (CRUD Operations)**
+- Create Fine: Manual fine creation for any loan
+- Edit Fine: Modify existing fine amounts with validation
+- Delete Fine: Waive fines with confirmation
+- Process Payment: Record fine payments with multiple payment methods (Cash, Card, Bank Transfer, Online)
+- Search Fines: Search by user ID or name
+- View All Fines: Complete list with loan details, user info, book info, days overdue, amounts
+- Real-time Summary: Total outstanding fines and item counts
+- Payment Integration: Automatic creation of payment records in finance system
+- Payment Allocation: Links payments to student fees and allocations
+
+**2. Revenue Analytics**
+- Date Range Filtering: Analyze revenue for any time period
+- Revenue Statistics Report:
+  * Total payments received
+  * Total revenue collected
+  * Average payment amount
+  * Monthly breakdown with payment counts
+- Revenue Charts:
+  * Monthly bar chart with value labels
+  * Trend line chart for pattern analysis
+- CSV Export: Export all revenue data with payment details
+- Payment Method Tracking: Track how fines were paid
+
+**3. Book Cost Tracking**
+- Add Book Cost: Record purchase price, date, supplier, quantity
+- Edit Book Cost: Update cost information for existing books
+- Book Cost Table: Display all books with:
+  * Book ID, Title, Author, ISBN
+  * Purchase price, purchase date, supplier, quantity
+- Cost Analysis Report:
+  * Total books in collection
+  * Total investment amount
+  * Average book price
+  * Most/least expensive books
+- Database Schema Enhancement: Automatically adds columns to books table if needed:
+  * purchase_price (REAL)
+  * purchase_date (TEXT)
+  * supplier (TEXT)
+  * quantity (INTEGER)
+
+**4. Financial Overview Dashboard**
+- Key Metrics Cards (4 color-coded cards):
+  * Outstanding Fines (red)
+  * Collected This Month (green)
+  * Total Revenue Year-to-Date (blue)
+  * Book Investment (purple)
+- Visual Analytics:
+  * Pie chart: Financial breakdown by category
+  * Bar chart: Side-by-side metric comparison
+  * Auto-updating charts
+- Real-time Refresh: Updates all metrics and charts
+
+#### Library GUI Integration
+
+**Updated Library GUI** (`library_gui.py`)
+- Renamed "Fine Management" → "Library Finance" (2 locations)
+- New method `open_library_finance()`:
+  * Opens Finance GUI in new window
+  * Automatically switches to Library Finance tab
+  * Shows feature overview message
+  * Graceful fallback to basic fine management if Finance GUI unavailable
+- Kept `show_fine_management()` for backward compatibility
+- Permission-based access control maintained
+
+#### Finance GUI Integration
+
+**Updated Finance GUI Files:**
+
+**finance_gui.py**:
+- Imported LibraryFinanceManager
+- Initialized library_finance manager in __init__
+
+**layout_manager.py**:
+- Added "📚 Library Finance" navigation button (Admin/Staff only)
+- Added create_library_finance_tab() method
+- Integrated tab creation in main interface setup
+
+#### Technical Implementation
+
+**Manager Pattern:**
+- Follows Finance GUI's manager-based architecture
+- Clean separation of concerns
+- Reusable components
+
+**Database Operations:**
+- Uses centralized get_connection() from infrastructure
+- Proper transaction handling with commit/rollback
+- JOIN queries for comprehensive data retrieval
+- Automatic schema updates for book cost tracking
+
+**UI Components:**
+- Tkinter-based with ttk widgets
+- Professional color scheme matching Finance GUI
+- Responsive layout with scrollbars
+- Tab-based organization
+- Matplotlib integration for charts
+- CSV export with file dialogs
+
+**Error Handling:**
+- Try-catch blocks for all database operations
+- User-friendly error messages
+- Validation for all inputs (amounts, dates, required fields)
+- Graceful degradation if modules unavailable
+
+#### Business Impact
+
+**Financial Management:**
+- Centralized library finances in main Finance system
+- Complete revenue tracking and analytics
+- Book investment monitoring
+- Fine collection optimization
+
+**Reporting & Analytics:**
+- Revenue trends identification
+- Monthly performance tracking
+- Cost analysis for budgeting
+- Export capabilities for accounting
+
+**Operational Efficiency:**
+- Single interface for all library finances
+- Automated payment processing
+- Integrated with student fees system
+- Audit trail for all transactions
+
+**Compliance:**
+- Complete transaction history
+- Payment allocation tracking
+- Fine adjustment documentation
+- Financial reporting capabilities
+
+#### Files Modified/Created
+
+**Created:**
+- `modules/domain/finance/gui/finance/library_finance_manager.py` (~1,200 lines)
+
+**Modified:**
+- `modules/domain/finance/gui/finance/finance_gui.py`: Added import and initialization
+- `modules/domain/finance/gui/finance/layout_manager.py`: Added navigation and tab creation
+- `modules/domain/academics/gui/library_gui.py`: Renamed menu items and added integration method
+
+#### Summary
+
+**Total Addition:** ~1,250 lines of production code
+**Integration Points:** 3 files modified
+**New Capabilities:** 4 major feature tabs, 15+ functions
+**User Impact:** Unified financial management for library operations
+
+---
+
 ### Added - 2025-11-12: Enhanced Fine Management System
 
 **Added 5 new functions to make fine management more comprehensive and functional**

@@ -215,6 +215,7 @@ from university_system.modules.domain.finance.gui.finance.analytics import Analy
 from university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
 from university_system.modules.domain.finance.gui.finance.settings import SettingsManager
 from university_system.modules.domain.finance.gui.finance.revenue_source_manager import RevenueSourceManager
+from university_system.modules.domain.finance.gui.finance.library_finance_manager import LibraryFinanceManager
 
 
 class FinanceGUI:
@@ -260,6 +261,7 @@ class FinanceGUI:
         self.compliance = ComplianceManager(self)
         self.settings = SettingsManager(self)
         self.revenue_source = RevenueSourceManager(self)
+        self.library_finance = LibraryFinanceManager(self)
 
         # Initialize system
         self.initialize_system()
