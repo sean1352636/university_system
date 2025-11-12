@@ -115,30 +115,86 @@ class TemplateManager:
     
 
     def load_templates_data(self, tree):
-        """Load templates data into treeview"""
+        """Load templates data into treeview from both database and filesystem"""
         for item in tree.get_children():
             tree.delete(item)
-        
+
+        templates_loaded = []
+
+        # Load from database
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             cursor.execute('''
             SELECT id, name, category, usage_count, created_at
             FROM assignment_templates
             WHERE is_active = 1
             ORDER BY created_at DESC
             ''')
-            
-            templates = cursor.fetchall()
-            
-            for template in templates:
-                tree.insert('', 'end', values=template)
-            
+
+            db_templates = cursor.fetchall()
+
+            for template in db_templates:
+                tree.insert('', 'end', values=template, tags=('database',))
+                templates_loaded.append(template[1])  # Track by name
+
             conn.close()
-            
+
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {e}")
+            print(f"Error loading database templates: {e}")
+
+        # Load from filesystem
+        try:
+            from university_system.modules.shared.constants import paths
+            import json
+            from pathlib import Path
+
+            templates_dir = paths.ASSIGNMENT_TEMPLATES_DIR
+
+            if templates_dir.exists():
+                template_files = sorted(templates_dir.glob('*.json'))
+
+                for template_file in template_files:
+                    try:
+                        with open(template_file, 'r', encoding='utf-8') as f:
+                            template_data = json.load(f)
+
+                        # Extract template info
+                        template_name = template_data.get('name', template_file.stem)
+                        category = template_data.get('category', 'Unknown')
+
+                        # Skip if already loaded from database
+                        if template_name in templates_loaded:
+                            continue
+
+                        # Display file-based templates with special formatting
+                        display_values = (
+                            f"FILE: {template_file.name}",
+                            template_name,
+                            category,
+                            0,  # Usage count (N/A for file-based)
+                            template_data.get('created_at', 'N/A')
+                        )
+
+                        tree.insert('', 'end', values=display_values, tags=('file', str(template_file)))
+
+                    except Exception as e:
+                        print(f"Error loading template file {template_file}: {e}")
+
+            else:
+                print(f"Templates directory not found: {templates_dir}")
+
+        except Exception as e:
+            print(f"Error scanning filesystem templates: {e}")
+
+        # Show message if no templates found
+        if len(tree.get_children()) == 0:
+            messagebox.showinfo("No Templates",
+                "No templates found.\n\n"
+                f"You can create templates in the 'Create Template' tab or\n"
+                f"place .json template files in:\n{paths.ASSIGNMENT_TEMPLATES_DIR}"
+            )
     
 
     def create_template_form(self, parent):
@@ -290,29 +346,66 @@ class TemplateManager:
     
 
     def load_template_options(self, combo):
-        """Load template options for selection"""
+        """Load template options for selection from database and filesystem"""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT id, name, category FROM assignment_templates 
-            WHERE is_active = 1 ORDER BY category, name
-            ''')
-            
-            templates = cursor.fetchall()
-            
             template_list = []
             self.template_map = {}
-            
-            for tid, name, category in templates:
-                display_text = f"{name} ({category})"
-                template_list.append(display_text)
-                self.template_map[display_text] = tid
-            
+
+            # Load from database
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT id, name, category FROM assignment_templates
+                WHERE is_active = 1 ORDER BY category, name
+                ''')
+
+                templates = cursor.fetchall()
+
+                for tid, name, category in templates:
+                    display_text = f"{name} ({category})"
+                    template_list.append(display_text)
+                    self.template_map[display_text] = ('db', tid)
+
+                conn.close()
+
+            except Exception as e:
+                print(f"Error loading database templates: {e}")
+
+            # Load from filesystem
+            try:
+                from university_system.modules.shared.constants import paths
+                import json
+
+                templates_dir = paths.ASSIGNMENT_TEMPLATES_DIR
+
+                if templates_dir.exists():
+                    template_files = sorted(templates_dir.glob('*.json'))
+
+                    for template_file in template_files:
+                        try:
+                            with open(template_file, 'r', encoding='utf-8') as f:
+                                template_data = json.load(f)
+
+                            template_name = template_data.get('name', template_file.stem)
+                            category = template_data.get('category', 'Unknown')
+
+                            display_text = f"{template_name} ({category}) [FILE]"
+                            template_list.append(display_text)
+                            self.template_map[display_text] = ('file', str(template_file))
+
+                        except Exception as e:
+                            print(f"Error loading template file {template_file}: {e}")
+
+            except Exception as e:
+                print(f"Error scanning filesystem templates: {e}")
+
             combo['values'] = template_list
-            conn.close()
-            
+
+            if not template_list:
+                messagebox.showinfo("No Templates", "No templates available.\nPlease create a template first.")
+
         except Exception as e:
             print(f"Error loading templates: {e}")
     
@@ -322,29 +415,51 @@ class TemplateManager:
         if not self.use_template_var.get() or not self.use_module_var.get():
             messagebox.showerror("Error", "Please select both template and module")
             return
-        
+
         if not self.use_due_date_var.get():
             messagebox.showerror("Error", "Please enter due date")
             return
-        
+
         try:
-            template_id = self.template_map.get(self.use_template_var.get())
+            template_info = self.template_map.get(self.use_template_var.get())
             module_code = self.module_map.get(self.use_module_var.get())
-            
+
             # Validate due date
             due_date_str = f"{self.use_due_date_var.get()} {self.use_due_time_var.get()}"
             due_date = datetime.strptime(due_date_str, "%Y-%m-%d %H:%M")
-            
+
+            template_type, template_ref = template_info
+
+            # Load template data based on source
+            if template_type == 'db':
+                # Load from database
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT name, template_data FROM assignment_templates WHERE id = ?', (template_ref,))
+                result = cursor.fetchone()
+                if not result:
+                    raise Exception("Template not found in database")
+
+                template_name, template_data_json = result
+                template_data = json.loads(template_data_json)
+                template_id = template_ref
+                conn.close()
+
+            else:  # template_type == 'file'
+                # Load from file
+                import json
+                with open(template_ref, 'r', encoding='utf-8') as f:
+                    template_data = json.load(f)
+
+                template_name = template_data.get('name', 'Template Assignment')
+                template_id = None  # File-based templates don't have DB IDs
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
             # Temporarily disable foreign key checks to avoid module_code issues
             cursor.execute("PRAGMA foreign_keys = OFF")
-    
-            # Get template data
-            cursor.execute('SELECT name, template_data FROM assignment_templates WHERE id = ?', (template_id,))
-            template_name, template_data_json = cursor.fetchone()
-            template_data = json.loads(template_data_json)
             
             # Create assignment from template
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -368,9 +483,10 @@ class TemplateManager:
                 timestamp
             ))
             
-            # Update template usage count
-            cursor.execute('UPDATE assignment_templates SET usage_count = usage_count + 1 WHERE id = ?', (template_id,))
-    
+            # Update template usage count (only for database templates)
+            if template_id is not None:
+                cursor.execute('UPDATE assignment_templates SET usage_count = usage_count + 1 WHERE id = ?', (template_id,))
+
             # Re-enable foreign key checks
             cursor.execute("PRAGMA foreign_keys = ON")
     

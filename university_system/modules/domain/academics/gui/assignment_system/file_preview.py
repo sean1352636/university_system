@@ -547,17 +547,40 @@ class FilePreviewManager:
         """Open file in external application"""
         try:
             import platform
+            import subprocess
             system = platform.system()
-            
+
             if system == "Windows":
                 os.startfile(file_path)
             elif system == "Darwin":  # macOS
-                os.system(f'open "{file_path}"')
+                subprocess.run(['open', file_path], check=True)
             else:  # Linux
-                os.system(f'xdg-open "{file_path}"')
-                
+                # Try common PDF viewers for PDF files
+                if file_path.lower().endswith('.pdf'):
+                    pdf_viewers = ['evince', 'okular', 'xpdf', 'mupdf', 'firefox', 'google-chrome', 'chromium']
+                    opened = False
+
+                    for viewer in pdf_viewers:
+                        try:
+                            # Check if viewer exists
+                            if subprocess.run(['which', viewer], capture_output=True).returncode == 0:
+                                subprocess.Popen([viewer, file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                opened = True
+                                break
+                        except:
+                            continue
+
+                    if not opened:
+                        # Fallback to xdg-open
+                        subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    # For non-PDF files, use xdg-open
+                    subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                messagebox.showinfo("Success", f"Opening file in external application...")
+
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open file: {e}")
+            messagebox.showerror("Error", f"Failed to open file: {e}\n\nPlease install a PDF viewer (evince, okular, etc.) or open the file manually.")
     
     # SYSTEM UTILITIES (missing from GUI)
 
