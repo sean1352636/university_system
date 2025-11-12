@@ -47,6 +47,16 @@ except ImportError:
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
+
+# Import attendance notification service
+try:
+    from university_system.modules.domain.academics.services.attendance.attendance_notifications import (
+        AttendanceNotificationService, check_and_notify_low_attendance
+    )
+    ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
+except ImportError:
+    ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
+
 # Feature flags
 GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
@@ -6803,6 +6813,16 @@ class ParentNotificationWindow:
         ttk.Radiobutton(type_frame, text="Perfect Attendance Praise", variable=self.notification_type_var, value="perfect").pack(anchor=tk.W)
         ttk.Radiobutton(type_frame, text="Custom Message", variable=self.notification_type_var, value="custom").pack(anchor=tk.W)
 
+
+        # Quick action buttons
+        quick_actions_frame = ttk.LabelFrame(parent, text="Quick Actions", padding=15)
+        quick_actions_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        ttk.Button(quick_actions_frame, text="🔍 Check Low Attendance (<90%)",
+                  command=self.check_low_attendance_now, style='Warning.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(quick_actions_frame, text="📊 View Attendance Report",
+                  command=self.view_attendance_report, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
+
         # Recipients frame
         recipients_frame = ttk.LabelFrame(parent, text="Recipients", padding=15)
         recipients_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -7171,6 +7191,123 @@ class ParentNotificationWindow:
                 conn.commit()
         except Exception as e:
             print(f"Error logging notification: {e}")
+
+    def check_low_attendance_now(self):
+        """Check for students with low attendance and send notifications"""
+        if not ATTENDANCE_NOTIFICATIONS_AVAILABLE:
+            messagebox.showerror("Error", "Attendance notification service not available")
+            return
+
+        # Ask for confirmation
+        if not messagebox.askyesno("Confirm",
+                                   "This will check all students' attendance and send notifications "
+                                   "to those below 90%.\n\n"
+                                   "Send notifications to both students and parents?"):
+            return
+
+        try:
+            # Show progress
+            progress_window = tk.Toplevel(self.window)
+            progress_window.title("Checking Attendance")
+            progress_window.geometry("400x150")
+            progress_window.transient(self.window)
+
+            ttk.Label(progress_window, text="Checking student attendance...",
+                     font=('Arial', 12)).pack(pady=20)
+            progress_label = ttk.Label(progress_window, text="Please wait...")
+            progress_label.pack(pady=10)
+
+            progress_window.update()
+
+            # Run notification check
+            service = AttendanceNotificationService(attendance_threshold=90.0)
+            results = service.check_and_notify_low_attendance(
+                module_code=None,
+                send_to_students=True,
+                send_to_parents=True
+            )
+
+            progress_window.destroy()
+
+            # Show results
+            messagebox.showinfo("Notifications Sent",
+                              f"Attendance Check Complete!\n\n"
+                              f"Students Checked: {results['students_checked']}\n"
+                              f"Students Notified: {results['students_notified']}\n"
+                              f"Parents Notified: {results['parents_notified']}\n"
+                              f"Total Emails Sent: {results['emails_sent']}\n"
+                              f"Errors: {results['errors']}")
+
+            # Refresh notification history
+            self.load_notification_history()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to check attendance:\n{e}")
+            import traceback
+            traceback.print_exc()
+
+    def view_attendance_report(self):
+        """Display attendance statistics and at-risk students"""
+        if not ATTENDANCE_NOTIFICATIONS_AVAILABLE:
+            messagebox.showerror("Error", "Attendance notification service not available")
+            return
+
+        try:
+            service = AttendanceNotificationService(attendance_threshold=90.0)
+            low_attendance_students = service.get_low_attendance_students()
+
+            # Create report window
+            report_window = tk.Toplevel(self.window)
+            report_window.title("Attendance Report - At-Risk Students")
+            report_window.geometry("900x600")
+            report_window.transient(self.window)
+
+            # Title
+            ttk.Label(report_window, text="Students with Attendance Below 90%",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Report treeview
+            columns = ("Student ID", "Name", "Module", "Total Sessions",
+                       "Attended", "Attendance %")
+            tree = ttk.Treeview(report_window, columns=columns, show="headings")
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=120)
+
+            scrollbar = ttk.Scrollbar(report_window, orient=tk.VERTICAL, command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Populate data
+            for student in low_attendance_students:
+                tree.insert('', 'end', values=(
+                    student['student_id'],
+                    f"{student['first_name']} {student['last_name']}",
+                    f"{student['module_code']} - {student['module_name']}",
+                    student['total_sessions'],
+                    student['attended_sessions'],
+                    f"{student['attendance_percentage']:.1f}%"
+                ))
+
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=10, padx=(0, 10))
+
+            # Summary
+            summary_frame = ttk.Frame(report_window)
+            summary_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            ttk.Label(summary_frame,
+                     text=f"Total At-Risk Students: {len(low_attendance_students)}",
+                     font=('Arial', 12, 'bold')).pack()
+
+            # Close button
+            ttk.Button(report_window, text="Close",
+                      command=report_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report:\n{e}")
+            import traceback
+            traceback.print_exc()
 
     def load_notification_history(self):
         # Clear existing items

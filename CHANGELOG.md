@@ -84,9 +84,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Threshold: 60% match confidence (configurable)
 - Auto-marks attendance when confidence > 70%
 
+**Automated Low Attendance Monitoring - FULLY IMPLEMENTED** ✅
+- New `AttendanceNotificationService` class added (545 lines)
+- Location: `university_system/modules/domain/academics/services/attendance/attendance_notifications.py`
+- Features:
+  - Automatic detection of students with attendance < 90%
+  - Complex SQL queries across students, modules, attendance_records tables
+  - Email notifications to students using `low_attendance_alert.json` template
+  - Email notifications to parents using `parent_low_attendance_alert.json` template
+  - Configurable attendance threshold (default: 90%)
+  - Notification history tracking in database
+  - Activity logging for compliance
+  - Batch processing across all modules or specific module
+- Methods:
+  - `check_and_notify_low_attendance()` - Main notification dispatcher
+  - `get_low_attendance_students()` - Query students below threshold
+  - `notify_student_low_attendance()` - Send student emails
+  - `notify_parents_low_attendance()` - Send parent emails
+  - `get_notification_history()` - View past notifications
+- Database tables used: attendance_notifications, parent_notifications
+- Returns detailed results: students_checked, students_notified, parents_notified, emails_sent, errors
+
+**Parent Notification System Integration - FULLY IMPLEMENTED** ✅
+- Integrated `AttendanceNotificationService` into `ParentNotificationWindow`
+- Added import with graceful fallback if service unavailable
+- New Quick Actions buttons in Notifications tab:
+  - "🔍 Check Low Attendance (<90%)" - Trigger attendance check and send notifications
+  - "📊 View Attendance Report" - Display at-risk students report
+- New methods in ParentNotificationWindow class:
+  - `check_low_attendance_now()` - User-triggered attendance check with progress dialog
+  - `view_attendance_report()` - Generate report window showing students below 90%
+- Features:
+  - Confirmation dialog before sending mass notifications
+  - Progress window during attendance checking
+  - Results summary showing counts of notifications sent
+  - At-risk students report with sortable table
+  - Real-time data from database
+  - Integration with existing notification history
+- Database integration: parent_accounts, parent_student_relationships, parent_notifications
+
 **Remaining Work** (see ATTENDANCE_GUI_FIX_SUMMARY.md):
-- Automated email notification system for low attendance
-- Parent notification system with database integration
 - API management functionality
 - Audit log integration with actual log files
 - Replace remaining placeholder data with database queries
