@@ -322,8 +322,7 @@ class FinancialAidGUI:
 
             # Import and launch main GUI
             from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
-            main_root = tk.Tk()
-            main_gui = UnifiedManagementGUI(main_root, self.auth)
+            main_gui = UnifiedManagementGUI(self.auth)
             main_gui.run()
 
         except Exception as e:

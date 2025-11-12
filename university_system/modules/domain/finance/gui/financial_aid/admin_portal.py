@@ -119,12 +119,20 @@ class AdminPortal:
         try:
             with get_connection() as conn:
                 # Pending reviews (scholarships + aid)
-                result = conn.execute("""
-                    SELECT
-                        (SELECT COUNT(*) FROM scholarship_applications WHERE status = 'pending') +
-                        (SELECT COUNT(*) FROM financial_aid_applications WHERE status = 'pending') as total
-                """).fetchone()
-                stats['pending_reviews'] = result['total'] if result else 0
+                # Handle missing financial_aid_applications table gracefully
+                try:
+                    result = conn.execute("""
+                        SELECT
+                            (SELECT COUNT(*) FROM scholarship_applications WHERE status = 'pending') +
+                            (SELECT COUNT(*) FROM financial_aid_applications WHERE status = 'pending') as total
+                    """).fetchone()
+                    stats['pending_reviews'] = result['total'] if result else 0
+                except Exception:
+                    # If financial_aid_applications table doesn't exist, just count scholarships
+                    result = conn.execute("""
+                        SELECT COUNT(*) as total FROM scholarship_applications WHERE status = 'pending'
+                    """).fetchone()
+                    stats['pending_reviews'] = result['total'] if result else 0
 
                 # Active aid packages
                 result = conn.execute("""
@@ -217,21 +225,31 @@ class AdminPortal:
                 self.aid_apps_tree.delete(item)
 
             with get_connection() as conn:
-                query = """
-                    SELECT fa.*, u.username
-                    FROM financial_aid_applications fa
-                    JOIN users u ON fa.student_id = u.user_id
-                    WHERE 1=1
-                """
-                params = []
+                # Check if financial_aid_applications table exists
+                try:
+                    query = """
+                        SELECT fa.*, u.username
+                        FROM financial_aid_applications fa
+                        JOIN users u ON fa.student_id = u.user_id
+                        WHERE 1=1
+                    """
+                    params = []
 
-                if status_filter and status_filter != 'All':
-                    query += " AND fa.status = ?"
-                    params.append(status_filter)
+                    if status_filter and status_filter != 'All':
+                        query += " AND fa.status = ?"
+                        params.append(status_filter)
 
-                query += " ORDER BY fa.application_date DESC"
+                    query += " ORDER BY fa.application_date DESC"
 
-                applications = conn.execute(query, params).fetchall()
+                    applications = conn.execute(query, params).fetchall()
+                except Exception as e:
+                    if "no such table" in str(e):
+                        # Table doesn't exist yet - show message
+                        messagebox.showinfo("Table Not Found",
+                                          "The financial_aid_applications table does not exist yet.\n\n"
+                                          "This feature requires database setup.")
+                        return
+                    raise
 
                 for app in applications:
                     app_data = json.loads(app.get('application_data', '{}'))
@@ -260,12 +278,19 @@ class AdminPortal:
 
         try:
             with get_connection() as conn:
-                app = conn.execute("""
-                    SELECT fa.*, u.username, u.email
-                    FROM financial_aid_applications fa
-                    JOIN users u ON fa.student_id = u.user_id
-                    WHERE fa.application_id = ?
-                """, (app_id,)).fetchone()
+                try:
+                    app = conn.execute("""
+                        SELECT fa.*, u.username, u.email
+                        FROM financial_aid_applications fa
+                        JOIN users u ON fa.student_id = u.user_id
+                        WHERE fa.application_id = ?
+                    """, (app_id,)).fetchone()
+                except Exception as e:
+                    if "no such table" in str(e):
+                        messagebox.showerror("Table Not Found",
+                                           "The financial_aid_applications table does not exist yet.")
+                        return
+                    raise
 
                 if app:
                     self._show_aid_application_details_window(dict(app))

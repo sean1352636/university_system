@@ -570,13 +570,19 @@ class StudentPortal:
         """Check for existing aid application"""
         try:
             with get_connection() as conn:
-                app = conn.execute("""
-                    SELECT * FROM financial_aid_applications
-                    WHERE student_id = ? AND academic_year = ?
-                    ORDER BY application_date DESC
-                    LIMIT 1
-                """, (self.student_id, get_current_academic_year())).fetchone()
-                return dict(app) if app else None
+                try:
+                    app = conn.execute("""
+                        SELECT * FROM financial_aid_applications
+                        WHERE student_id = ? AND academic_year = ?
+                        ORDER BY application_date DESC
+                        LIMIT 1
+                    """, (self.student_id, get_current_academic_year())).fetchone()
+                    return dict(app) if app else None
+                except Exception as e:
+                    if "no such table" in str(e):
+                        # Table doesn't exist yet - no existing application
+                        return None
+                    raise
         except Exception as e:
             logger.error(f"Error checking aid application: {e}")
             return None

@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Financial Aid GUI Errors
+
+**Fixed two critical errors in Financial Aid GUI**
+
+#### Issues Fixed
+
+1. **UnifiedManagementGUI initialization error**
+   - Error: `TypeError: UnifiedManagementGUI.__init__() takes 2 positional arguments but 3 were given`
+   - Root cause: Incorrect call with `UnifiedManagementGUI(main_root, self.auth)`
+   - UnifiedManagementGUI signature: `__init__(self, auth_manager)` - takes only 1 parameter
+   - Fix: Removed `main_root` parameter, changed to `UnifiedManagementGUI(self.auth)`
+   - Location: financial_aid_gui.py:325-326 (return_to_homepage method)
+   - Impact: "Return to Homepage" button now works correctly
+
+2. **Missing financial_aid_applications table error**
+   - Error: `no such table: financial_aid_applications`
+   - Occurred in multiple locations when table doesn't exist in database
+   - Fix: Added graceful error handling with try/except blocks
+   - Fallback behaviors:
+     * admin_portal._get_admin_stats(): Count only scholarships if table missing
+     * admin_portal._load_aid_applications(): Show informative message to user
+     * admin_portal._view_aid_application_details(): Show error dialog
+     * student_portal._check_existing_aid_application(): Return None (no application)
+
+**Files Modified:**
+
+1. **financial_aid_gui.py**
+   - Line 325-326: Fixed UnifiedManagementGUI initialization
+   - Removed unnecessary `main_root = tk.Tk()` line
+   - Now correctly passes only `auth` parameter
+
+2. **admin_portal.py**
+   - Lines 122-135: Added try/except in _get_admin_stats()
+     * Falls back to scholarship-only count
+     * Prevents dashboard crash
+
+   - Lines 228-252: Added try/except in _load_aid_applications()
+     * Shows user-friendly message when table missing
+     * Prevents error on viewing applications
+
+   - Lines 281-293: Added try/except in _view_aid_application_details()
+     * Shows error dialog when table missing
+     * Prevents crash on viewing details
+
+3. **student_portal.py**
+   - Lines 573-585: Added try/except in _check_existing_aid_application()
+     * Returns None when table missing
+     * Allows students to continue using other features
+
+**Error Handling Strategy:**
+- Non-blocking: Other features continue to work
+- User-friendly messages for missing table
+- Graceful degradation (scholarships-only stats)
+- Logging maintained for debugging
+
+**User Experience:**
+- Dashboard loads successfully even without table
+- Clear messages when features unavailable
+- No application crashes
+- "Return to Homepage" button functional
+
+**Benefits:**
+✓ Application stable even with missing tables
+✓ Users informed about unavailable features
+✓ No silent failures
+✓ Other financial aid features remain functional
+✓ Easy database migration path
+
+**Testing Recommendations:**
+- Test with and without financial_aid_applications table
+- Verify dashboard loads in both cases
+- Test "Return to Homepage" button
+- Verify error messages are user-friendly
+
 ### Enhanced - 2025-11-12: Library Fine Payment Integration with Finance System
 
 **Integrated library fine payments with finance GUI for comprehensive student financial tracking**
