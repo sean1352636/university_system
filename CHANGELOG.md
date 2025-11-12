@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Grade Tracking GUI Bug Fixes & Enhancements
+
+#### Bug Fixes
+1. **Fixed _widget_exists() method signature error**
+   - Added missing `self` parameter to _widget_exists() method
+   - Fixed "takes 1 positional argument but 2 were given" error
+   - Files: grade_tracking_app.py, layout_manager.py
+
+2. **Fixed module enrollments display showing sqlite3.row object**
+   - Converted sqlite3.Row objects to tuples before tree insertion
+   - Now properly displays: student_id, name, course, enrollment_date, status
+   - File: module_manager.py (lines 1219, 1306)
+
+3. **Fixed module table missing 'course' column**
+   - Added course column to enhanced database modules table
+   - File: grade_tracking_app.py (line 485)
+
+4. **Fixed grade_points column error in student progress report**
+   - Added grade_points column to module_grades table in basic initialization
+   - Added ensure_column_exists() fallback for legacy databases
+   - File: grade_tracking_app.py (lines 237, 245)
+
+5. **Fixed foreign key constraint error when saving grades**
+   - Added validation to check student_id exists in students table
+   - Added validation to check assessment_id exists in assessments table
+   - Provides clear error messages before attempting INSERT
+   - File: grade_manager.py (lines 643-654)
+
+#### Enhancements
+1. **Removed student management buttons from grades GUI**
+   - Removed "Add Student", "Edit Student", "Delete Student" buttons
+   - Streamlined interface to focus on grade management only
+   - File: student_manager.py (lines 417-422)
+
+2. **Differentiated grade view buttons**
+   - "Grades" → Main grade entry and editing interface (create_grades_content)
+   - "Grade Management" → Analytics, bulk operations, management tools (create_analytics_content)
+   - "View Grades" → Read-only statistics and reports (show_grade_statistics)
+   - File: layout_manager.py (lines 562-595)
+
+3. **Student dropdown filter already working**
+   - Confirmed filter only shows students with submissions (JOIN grades table)
+   - File: grade_manager.py (lines 1510-1518)
+
+4. **Reports section scrollbar already implemented**
+   - Canvas with vertical scrollbar + mousewheel support
+   - File: analytics_manager.py (lines 508-537)
+
+5. **Individual transcripts now support multiple export formats**
+   - Added export format selection: Display, TXT, PDF, JSON
+   - TXT export: Formatted text file with sections
+   - PDF export: Professional document with ReportLab
+   - JSON export: Structured data for integration
+   - File: analytics_manager.py (4638-4969)
+
+6. **Reports now open in separate windows with email functionality**
+   - All reports open in new Toplevel window (800x600)
+   - Added "Email to Admin" button for all reports
+   - Retrieves admin email from staff table (role = 'Admin' or 'Administrator')
+   - Integrates with university email service
+   - Reports sent with subject "Grade Tracking Report: [Title]"
+   - File: analytics_manager.py (_display_report method, 1470-1561)
+
+**Impact**: Resolved 5 critical bugs and added 6 major enhancements to the grade tracking system, improving usability, data display, and report distribution capabilities.
+
 ### Fixed - 2025-11-12 HOTFIX: PDF Viewer & Template Loading
 
 #### Critical Fix 1: PDF Viewer Mailcap Error

@@ -413,18 +413,12 @@ class StudentManager:
         # Student management controls
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
-                
-        ttk.Button(control_frame, text="Add Student", 
-                  command=self.add_student_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Edit Student", 
-                  command=self.edit_student_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Delete Student", 
-                  command=self.delete_student).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Import Students", 
+
+        ttk.Button(control_frame, text="Import Students",
                   command=self.import_students).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Export Students", 
+        ttk.Button(control_frame, text="Export Students",
                   command=self.export_students).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Refresh", 
+        ttk.Button(control_frame, text="Refresh",
                   command=self.refresh_students).pack(side='left', padx=5)
             
         # Search frame

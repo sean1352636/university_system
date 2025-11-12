@@ -234,11 +234,15 @@ def init_enhanced_grades_db():
             module_code TEXT,
             final_score REAL,
             final_grade TEXT,
+            grade_points REAL,
             completion_date TEXT,
             FOREIGN KEY (student_id) REFERENCES students (student_id),
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
+
+        # Ensure grade_points column exists for legacy databases
+        ensure_column_exists(cursor, 'module_grades', 'grade_points', 'REAL')
         
         # Enhanced tables for statistics and analytics
         cursor.execute('''
@@ -482,6 +486,7 @@ class GradeTrackingApp:
             module_type TEXT NOT NULL,
             credits INTEGER NOT NULL,
             description TEXT,
+            course TEXT,
             prerequisites TEXT,
             semester TEXT,
             academic_year TEXT
@@ -969,7 +974,7 @@ class GradeTrackingApp:
         return grade_map.get(letter_grade, 0.0)
     
 
-    def _widget_exists(widget):
+    def _widget_exists(self, widget):
         """Return True if widget exists and is not destroyed."""
         if widget is None:
             return False

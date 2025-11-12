@@ -1216,7 +1216,7 @@ class ModuleManager:
                 ''', (module_code,))
 
                 for row in cursor.fetchall():
-                    enrolled_tree.insert('', 'end', values=row)
+                    enrolled_tree.insert('', 'end', values=tuple(row))
 
             except sqlite3.Error as e:
                 messagebox.showerror("Database Error",
@@ -1303,7 +1303,7 @@ class ModuleManager:
                     ''', (module_code,))
 
                 for row in cursor.fetchall():
-                    available_tree.insert('', 'end', values=row)
+                    available_tree.insert('', 'end', values=tuple(row))
 
             except sqlite3.Error as e:
                 messagebox.showerror("Database Error",

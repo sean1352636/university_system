@@ -640,12 +640,24 @@ class GradeManager:
                     messagebox.showerror("Validation Error", f"Score cannot exceed max points ({max_points})")
                     return
 
+                # Validate student exists
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT student_id FROM students WHERE student_id = ?", (student_id,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Validation Error", f"Student ID {student_id} does not exist")
+                    return
+
+                # Validate assessment exists
+                cursor.execute("SELECT assessment_id FROM assessments WHERE assessment_id = ?", (assessment_id,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Validation Error", f"Assessment ID {assessment_id} does not exist")
+                    return
+
                 # Calculate percentage and letter grade
                 percentage = (score_float / max_points) * 100
                 letter_grade = self.percentage_to_letter(percentage)
 
                 # Insert grade
-                cursor = self.conn.cursor()
                 cursor.execute("""
                     INSERT INTO grades (student_id, assessment_id, score, letter_grade, submission_date, comments)
                     VALUES (?, ?, ?, ?, ?, ?)

@@ -1468,61 +1468,97 @@ class AnalyticsManager:
     
 
     def _display_report(self, title, sections, footer=None):
-        """Render report content in the preview panel or analytics results area."""
-        # Try to use report_preview first (Reports tab), then analytics_results (Analytics tab)
-        widget = None
+        """Render report content in a separate window with email option."""
+        # Create separate window for report
+        report_window = tk.Toplevel(self.root)
+        report_window.title(title)
+        report_window.geometry("800x600")
 
-        if hasattr(self, 'report_preview') and self.report_preview:
+        # Create main frame
+        main_frame = ttk.Frame(report_window)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Create scrolled text widget for report
+        report_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        report_text.pack(fill=tk.BOTH, expand=True)
+
+        # Build report content
+        lines = [
+            title,
+            "=" * len(title),
+            f"Generated: {datetime.now():%Y-%m-%d %H:%M}",
+            ""
+        ]
+
+        for heading, content_lines in sections:
+            heading = heading.strip() or "Details"
+            lines.append(heading)
+            lines.append("-" * len(heading))
+            if content_lines:
+                lines.extend(content_lines)
+            else:
+                lines.append("No data available.")
+            lines.append("")
+
+        if footer:
+            lines.append(footer)
+
+        report_content = "\n".join(lines).rstrip() + "\n"
+        report_text.insert('1.0', report_content)
+        report_text.config(state='disabled')
+
+        # Button frame at bottom
+        button_frame = ttk.Frame(report_window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        # Email to Admin button
+        def email_to_admin():
             try:
-                if self.report_preview.winfo_exists():
-                    widget = self.report_preview
-            except tk.TclError:
-                pass
+                # Get admin email from database
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT email_address FROM staff WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                admin_row = cursor.fetchone()
+                conn.close()
 
-        if not widget and hasattr(self, 'analytics_results') and self.analytics_results:
-            try:
-                if self.analytics_results.winfo_exists():
-                    widget = self.analytics_results
-            except tk.TclError:
-                pass
+                if not admin_row:
+                    messagebox.showwarning("No Admin", "No administrator email found in the database.")
+                    return
 
-        if not widget:
-            messagebox.showwarning("Warning", "Report display area is not available. Please open the Analytics or Reports tab.")
-            return
+                admin_email = admin_row[0]
+                if not admin_email:
+                    messagebox.showwarning("No Email", "Administrator has no email address configured.")
+                    return
 
-        try:
-            if not widget.winfo_exists():
-                messagebox.showwarning("Warning", "Report preview area is not available.")
-                return
-    
-            widget.config(state='normal')
-            widget.delete('1.0', tk.END)
-    
-            lines = [
-                title,
-                "=" * len(title),
-                f"Generated: {datetime.now():%Y-%m-%d %H:%M}",
-                ""
-            ]
-    
-            for heading, content_lines in sections:
-                heading = heading.strip() or "Details"
-                lines.append(heading)
-                lines.append("-" * len(heading))
-                if content_lines:
-                    lines.extend(content_lines)
-                else:
-                    lines.append("No data available.")
-                lines.append("")
-    
-            if footer:
-                lines.append(footer)
-    
-            widget.insert('1.0', "\n".join(lines).rstrip() + "\n")
-            widget.config(state='disabled')
-        except tk.TclError:
-            # Widget destroyed; no further action needed
-            return
+                # Try to use email service
+                try:
+                    from university_system.infrastructure.email.email_service import EmailService
+                    email_service = EmailService()
+
+                    # Send email with report content
+                    success = email_service.send_email(
+                        to_email=admin_email,
+                        subject=f"Grade Tracking Report: {title}",
+                        body=f"Please find the attached report:\n\n{report_content}",
+                        priority="normal"
+                    )
+
+                    if success:
+                        messagebox.showinfo("Success", f"Report emailed to administrator at {admin_email}")
+                    else:
+                        messagebox.showerror("Error", "Failed to send email. Please check email service configuration.")
+                except ImportError:
+                    messagebox.showerror("Error", "Email service not available. Please ensure email infrastructure is configured.")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to send email: {e}")
+
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to retrieve admin email: {e}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to email report: {e}")
+
+        ttk.Button(button_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
     
 
     def export_risk_results(self, tree):
@@ -4671,6 +4707,16 @@ class AnalyticsManager:
             for student_id, name in students:
                 listbox.insert(tk.END, f"{student_id} - {name}")
 
+            # Export format selection
+            format_frame = ttk.LabelFrame(dialog, text="Export Format", padding=10)
+            format_frame.pack(fill='x', padx=10, pady=10)
+
+            format_var = tk.StringVar(value="display")
+            ttk.Radiobutton(format_frame, text="Display in Window", variable=format_var, value="display").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text="Save as Text (.txt)", variable=format_var, value="txt").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text="Save as PDF (.pdf)", variable=format_var, value="pdf").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text="Save as JSON (.json)", variable=format_var, value="json").pack(anchor='w')
+
             def generate_transcript():
                 selection = listbox.curselection()
                 if not selection:
@@ -4678,8 +4724,9 @@ class AnalyticsManager:
                     return
 
                 student_id = students[selection[0]][0]
+                export_format = format_var.get()
                 dialog.destroy()
-                self._generate_transcript_for_student(student_id)
+                self._generate_transcript_for_student(student_id, export_format)
 
             ttk.Button(dialog, text="Generate", command=generate_transcript).pack(pady=10)
 
@@ -4689,7 +4736,7 @@ class AnalyticsManager:
             if conn:
                 conn.close()
 
-    def _generate_transcript_for_student(self, student_id):
+    def _generate_transcript_for_student(self, student_id, export_format="display"):
         """Helper to generate transcript"""
         conn = None
         try:
@@ -4703,6 +4750,10 @@ class AnalyticsManager:
                 WHERE student_id = ?
             """, (student_id,))
             student_info = cursor.fetchone()
+
+            if not student_info:
+                messagebox.showerror("Error", f"Student {student_id} not found")
+                return
 
             # Get grades
             cursor.execute("""
@@ -4732,34 +4783,226 @@ class AnalyticsManager:
             }
             gpa = sum(grade_points.get(g[5], 0) for g in grades) / len(grades) if grades else 0
 
-            grade_lines = [
-                f"{module_code} - {module_name}\n"
-                f"  {assessment}: {score}/{max_points} ({letter}) - {date}"
-                for module_code, module_name, assessment, score, max_points, letter, date in grades
-            ]
+            first_name, last_name, course, enrollment_date = student_info
+            full_name = f"{first_name} {last_name}"
 
-            sections = [
-                ("Student Information", [
-                    f"Name: {student_info[0]} {student_info[1]}",
-                    f"Student ID: {student_id}",
-                    f"Course: {student_info[2]}",
-                    f"Enrollment Date: {student_info[3]}"
-                ]),
-                ("Academic Record", grade_lines if grade_lines else ["No grades recorded"]),
-                ("Summary", [
-                    f"Total Assessments: {len(grades)}",
-                    f"Cumulative GPA: {gpa:.2f}"
-                ])
-            ]
+            # Handle different export formats
+            if export_format == "txt":
+                self._export_transcript_txt(student_id, full_name, course, enrollment_date, grades, gpa)
+            elif export_format == "pdf":
+                self._export_transcript_pdf(student_id, full_name, course, enrollment_date, grades, gpa)
+            elif export_format == "json":
+                self._export_transcript_json(student_id, full_name, course, enrollment_date, grades, gpa)
+            else:  # display
+                grade_lines = [
+                    f"{module_code} - {module_name}\n"
+                    f"  {assessment}: {score}/{max_points} ({letter}) - {date}"
+                    for module_code, module_name, assessment, score, max_points, letter, date in grades
+                ]
 
-            self._display_report(f"Official Transcript - {student_info[0]} {student_info[1]}", sections,
-                               "This is an unofficial transcript for internal use only.")
+                sections = [
+                    ("Student Information", [
+                        f"Name: {full_name}",
+                        f"Student ID: {student_id}",
+                        f"Course: {course}",
+                        f"Enrollment Date: {enrollment_date}"
+                    ]),
+                    ("Academic Record", grade_lines if grade_lines else ["No grades recorded"]),
+                    ("Summary", [
+                        f"Total Assessments: {len(grades)}",
+                        f"Cumulative GPA: {gpa:.2f}"
+                    ])
+                ]
+
+                self._display_report(f"Official Transcript - {full_name}", sections,
+                                   "This is an unofficial transcript for internal use only.")
 
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate transcript: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate transcript: {e}")
         finally:
             if conn:
                 conn.close()
+
+    def _export_transcript_txt(self, student_id, full_name, course, enrollment_date, grades, gpa):
+        """Export transcript as text file"""
+        filename = filedialog.asksaveasfilename(
+            title="Save Transcript as Text",
+            defaultextension=".txt",
+            initialfile=f"transcript_{student_id}.txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+        )
+        if not filename:
+            return
+
+        try:
+            with open(filename, 'w') as f:
+                f.write("=" * 70 + "\n")
+                f.write("OFFICIAL TRANSCRIPT\n")
+                f.write("=" * 70 + "\n\n")
+
+                f.write("STUDENT INFORMATION\n")
+                f.write("-" * 70 + "\n")
+                f.write(f"Name: {full_name}\n")
+                f.write(f"Student ID: {student_id}\n")
+                f.write(f"Course: {course}\n")
+                f.write(f"Enrollment Date: {enrollment_date}\n\n")
+
+                f.write("ACADEMIC RECORD\n")
+                f.write("-" * 70 + "\n")
+                if grades:
+                    current_module = None
+                    for module_code, module_name, assessment, score, max_points, letter, date in grades:
+                        if module_code != current_module:
+                            f.write(f"\n{module_code} - {module_name}\n")
+                            current_module = module_code
+                        f.write(f"  {assessment}: {score}/{max_points} ({letter}) - {date}\n")
+                else:
+                    f.write("No grades recorded\n")
+
+                f.write("\n" + "=" * 70 + "\n")
+                f.write("SUMMARY\n")
+                f.write("=" * 70 + "\n")
+                f.write(f"Total Assessments: {len(grades)}\n")
+                f.write(f"Cumulative GPA: {gpa:.2f}\n\n")
+                f.write("This is an unofficial transcript for internal use only.\n")
+                f.write("Generated on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+
+            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save transcript: {e}")
+
+    def _export_transcript_pdf(self, student_id, full_name, course, enrollment_date, grades, gpa):
+        """Export transcript as PDF file"""
+        if SimpleDocTemplate is None:
+            messagebox.showerror("Error", "PDF export requires reportlab library. Please install it with: pip install reportlab")
+            return
+
+        filename = filedialog.asksaveasfilename(
+            title="Save Transcript as PDF",
+            defaultextension=".pdf",
+            initialfile=f"transcript_{student_id}.pdf",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+        )
+        if not filename:
+            return
+
+        try:
+            from reportlab.platypus import Paragraph, Spacer, PageBreak
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib.units import inch
+
+            doc = SimpleDocTemplate(filename, pagesize=letter)
+            styles = getSampleStyleSheet()
+            story = []
+
+            # Title
+            title_style = styles['Title']
+            story.append(Paragraph("OFFICIAL TRANSCRIPT", title_style))
+            story.append(Spacer(1, 0.3 * inch))
+
+            # Student Information
+            heading_style = styles['Heading2']
+            story.append(Paragraph("Student Information", heading_style))
+            story.append(Spacer(1, 0.1 * inch))
+
+            info_text = f"""
+            <b>Name:</b> {full_name}<br/>
+            <b>Student ID:</b> {student_id}<br/>
+            <b>Course:</b> {course}<br/>
+            <b>Enrollment Date:</b> {enrollment_date}
+            """
+            story.append(Paragraph(info_text, styles['Normal']))
+            story.append(Spacer(1, 0.3 * inch))
+
+            # Academic Record
+            story.append(Paragraph("Academic Record", heading_style))
+            story.append(Spacer(1, 0.1 * inch))
+
+            if grades:
+                current_module = None
+                for module_code, module_name, assessment, score, max_points, letter, date in grades:
+                    if module_code != current_module:
+                        module_text = f"<b>{module_code} - {module_name}</b>"
+                        story.append(Paragraph(module_text, styles['Normal']))
+                        story.append(Spacer(1, 0.05 * inch))
+                        current_module = module_code
+
+                    grade_text = f"&nbsp;&nbsp;&nbsp;&nbsp;{assessment}: {score}/{max_points} ({letter}) - {date}"
+                    story.append(Paragraph(grade_text, styles['Normal']))
+            else:
+                story.append(Paragraph("No grades recorded", styles['Normal']))
+
+            story.append(Spacer(1, 0.3 * inch))
+
+            # Summary
+            story.append(Paragraph("Summary", heading_style))
+            story.append(Spacer(1, 0.1 * inch))
+            summary_text = f"""
+            <b>Total Assessments:</b> {len(grades)}<br/>
+            <b>Cumulative GPA:</b> {gpa:.2f}
+            """
+            story.append(Paragraph(summary_text, styles['Normal']))
+            story.append(Spacer(1, 0.3 * inch))
+
+            # Footer
+            footer_text = "This is an unofficial transcript for internal use only.<br/>"
+            footer_text += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            story.append(Paragraph(footer_text, styles['Italic']))
+
+            doc.build(story)
+            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save PDF: {e}")
+
+    def _export_transcript_json(self, student_id, full_name, course, enrollment_date, grades, gpa):
+        """Export transcript as JSON file"""
+        filename = filedialog.asksaveasfilename(
+            title="Save Transcript as JSON",
+            defaultextension=".json",
+            initialfile=f"transcript_{student_id}.json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if not filename:
+            return
+
+        try:
+            transcript_data = {
+                "student_information": {
+                    "student_id": student_id,
+                    "name": full_name,
+                    "course": course,
+                    "enrollment_date": enrollment_date
+                },
+                "academic_record": [
+                    {
+                        "module_code": grade[0],
+                        "module_name": grade[1],
+                        "assessment_name": grade[2],
+                        "score": float(grade[3]) if grade[3] else None,
+                        "max_points": float(grade[4]) if grade[4] else None,
+                        "letter_grade": grade[5],
+                        "submission_date": grade[6]
+                    }
+                    for grade in grades
+                ],
+                "summary": {
+                    "total_assessments": len(grades),
+                    "cumulative_gpa": round(gpa, 2)
+                },
+                "metadata": {
+                    "generated_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "note": "This is an unofficial transcript for internal use only."
+                }
+            }
+
+            with open(filename, 'w') as f:
+                json.dump(transcript_data, f, indent=2)
+
+            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save JSON: {e}")
 
     def generate_student_progress_report(self):
         """Generate comprehensive student progress report with statistics and insights"""

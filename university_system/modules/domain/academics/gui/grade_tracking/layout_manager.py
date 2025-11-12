@@ -560,7 +560,7 @@ class LayoutManager:
                 self.app.assessments.create_assessment_content()
 
     def show_grades_view(self):
-        """Show grades view"""
+        """Show grades view - Main grade entry and editing interface"""
         self._clear_content()
         self.current_view = "Grades"
         if hasattr(self.app, 'grades'):
@@ -568,12 +568,31 @@ class LayoutManager:
                 self.app.grades.create_grades_content()
 
     def show_grade_management_view(self):
-        """Show grade management view"""
-        self.show_grades_view()
+        """Show grade management view - Analytics, bulk operations, and management tools"""
+        self._clear_content()
+        self.current_view = "Grade Management"
+        if hasattr(self.app, 'analytics'):
+            if hasattr(self.app.analytics, 'create_analytics_content'):
+                self.app.analytics.create_analytics_content()
+            else:
+                messagebox.showinfo("Info", "Analytics features are not available")
+        else:
+            messagebox.showinfo("Info", "Grade management features are not available")
 
     def show_view_grades_view(self):
-        """Show view grades view"""
-        self.show_grades_view()
+        """Show view grades view - Read-only grade statistics and reports"""
+        self._clear_content()
+        self.current_view = "View Grades"
+        if hasattr(self.app, 'grades'):
+            if hasattr(self.app.grades, 'show_grade_statistics'):
+                self.app.grades.show_grade_statistics()
+            elif hasattr(self.app.analytics, 'create_reports_content'):
+                # Fallback to reports if statistics not available
+                self.app.analytics.create_reports_content()
+            else:
+                messagebox.showinfo("Info", "Grade viewing features are not available")
+        else:
+            messagebox.showinfo("Info", "Grade viewing features are not available")
 
     def show_statistics_view(self):
         """Show statistics view"""
@@ -636,7 +655,7 @@ class LayoutManager:
             if hasattr(self.app.analytics, 'create_reports_content'):
                 self.app.analytics.create_reports_content()
 
-    def _widget_exists(widget):
+    def _widget_exists(self, widget):
         """Return True if widget exists and is not destroyed."""
         if widget is None:
             return False
