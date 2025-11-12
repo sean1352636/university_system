@@ -1898,9 +1898,10 @@ class TransactionManager:
     """
                 plan_summary_text.delete('1.0', tk.END)
                 plan_summary_text.insert('1.0', summary_text)
-                
-            except ValueError:
-                pass
+
+            except ValueError as e:
+                # Invalid input for calculation, silently ignore
+                print(f"Debug: Plan summary calculation failed: {e}")
         
         template_combo.bind('<<ComboboxSelected>>', lambda e: calculate_plan_summary())
         

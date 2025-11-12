@@ -225,8 +225,9 @@ class DashboardManager:
             # Recurse into children
             for child in widget.winfo_children():
                 self._update_stat_cards_recursive(child, stats)
-        except:
-            pass
+        except Exception as e:
+            # Silently skip widgets that can't be updated
+            print(f"Debug: Could not update widget: {e}")
 
     def create_dashboard_tab(self):
         """Create dashboard tab"""

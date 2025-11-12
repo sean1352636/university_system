@@ -474,8 +474,9 @@ class ReportManager:
             # Switch to forecasting tab if it exists
             try:
                 self.show_tab('forecasting')
-            except:
-                pass
+            except Exception as e:
+                # Forecasting tab may not exist, silently ignore
+                print(f"Debug: Could not switch to forecasting tab: {e}")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate revenue forecast: {e}")

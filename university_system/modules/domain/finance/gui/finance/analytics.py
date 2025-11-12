@@ -349,8 +349,9 @@ class AnalyticsManager:
                     total += amt
                 self.forecast_output.insert(tk.END, f"\nProjected total: £{total:,.2f}\n")
                 self.update_status('Forecast generated')
-            except Exception:
-                pass
+            except Exception as e:
+                # Widget may not be initialized yet
+                print(f"Warning: Could not update forecast output: {e}")
     
 
         def gui_generate_predictive_analytics(self):
@@ -489,15 +490,16 @@ class AnalyticsManager:
                         ("Baseline", "1,050", "£4.8M", "£4.2M", "£0.6M"),
                         ("Optimistic", "1,200", "£5.6M", "£4.8M", "£0.8M")
                     ]
-                    
+
                     for item in self.scenarios_tree.get_children():
                         self.scenarios_tree.delete(item)
-                    
+
                     for scenario in scenarios_data:
                         self.scenarios_tree.insert('', 'end', values=scenario)
-                        
+
                 except AttributeError:
-                    pass
+                    # scenarios_tree widget not available in this view
+                    print("Info: Scenarios tree not available, skipping table update")
                 
                 self.forecast_output.delete('1.0', tk.END)
                 self.forecast_output.insert('1.0', output)

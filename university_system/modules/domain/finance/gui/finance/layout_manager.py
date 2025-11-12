@@ -448,8 +448,9 @@ class LayoutManager:
                                 self.nav_canvas.yview_scroll(-1, "units")
                             elif event.num == 5:
                                 self.nav_canvas.yview_scroll(1, "units")
-                except:
-                    pass
+                except Exception as e:
+                    # Scroll event failed, silently ignore
+                    print(f"Debug: Mousewheel scroll failed: {e}")
     
         def _on_keypress(event):
             if hasattr(self, 'nav_canvas') and self.nav_canvas.winfo_exists():
@@ -468,8 +469,9 @@ class LayoutManager:
                             self.nav_canvas.yview_scroll(-10, "units")
                         elif event.keysym == 'Page_Down':
                             self.nav_canvas.yview_scroll(10, "units")
-                except:
-                    pass
+                except Exception as e:
+                    # Key scroll event failed, silently ignore
+                    print(f"Debug: Keypress scroll failed: {e}")
     
         # Bind to navigation canvas
         try:
@@ -478,8 +480,9 @@ class LayoutManager:
             self.nav_canvas.bind("<Button-5>", _on_mousewheel)    # Linux
             self.nav_canvas.bind("<KeyPress>", _on_keypress)
             self.nav_canvas.focus_set()
-        except:
-            pass
+        except Exception as e:
+            # Event binding failed, navigation canvas may not be ready
+            print(f"Debug: Canvas event binding failed: {e}")
     
 
     # Tab creation methods - stub implementations
@@ -2899,8 +2902,9 @@ Research & Grants Management Features:
             try:
                 self.status_label.config(text=message)
                 self.root.update_idletasks()
-            except Exception:
-                pass
+            except Exception as e:
+                # Status bar unavailable, silently ignore
+                print(f"Debug: Status bar update failed: {e}")
 
     # ==================== ACTION METHODS ====================
 
@@ -2912,8 +2916,9 @@ Research & Grants Management Features:
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.time_var.set(current_time)
                 self.root.after(1000, self.update_time)
-            except Exception:
-                pass
+            except Exception as e:
+                # Time display unavailable, silently ignore
+                print(f"Debug: Time update failed: {e}")
     
 
     def update_system_status(self):

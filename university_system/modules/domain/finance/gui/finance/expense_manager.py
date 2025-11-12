@@ -522,8 +522,9 @@ class ExpenseManager:
                                 f"Amount per student: £{amount_var.get() or '0.00'}\n"
                                 f"Total fees to assign: £{float(amount_var.get() or 0) * count:,.2f}")
                             preview_text.config(state='disabled')
-                    except:
-                        pass
+                    except Exception as e:
+                        # Preview update failed (likely invalid input), silently ignore
+                        print(f"Debug: Preview update failed: {e}")
 
                 course_var.trace('w', update_preview)
                 fee_type_var.trace('w', update_preview)
