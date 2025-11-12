@@ -6083,15 +6083,29 @@ class FaceRecognitionAttendanceWindow:
         """Start camera capture"""
         try:
             import cv2
+            import os
+            import sys
 
-            # Try to open camera
-            self.camera = cv2.VideoCapture(0)
+            # Suppress OpenCV errors temporarily
+            old_stderr = sys.stderr
+            sys.stderr = open(os.devnull, 'w')
+
+            try:
+                # Try to open camera
+                self.camera = cv2.VideoCapture(0)
+            finally:
+                # Restore stderr
+                sys.stderr.close()
+                sys.stderr = old_stderr
 
             if not self.camera.isOpened():
-                messagebox.showerror("Error", "Could not access camera. Please check:\n\n"
-                                              "1. Camera is connected\n"
-                                              "2. Camera permissions are granted\n"
-                                              "3. Camera is not in use by another application")
+                messagebox.showerror("Camera Not Available",
+                    "Could not access camera.\n\n"
+                    "This system does not have a webcam or the camera is not accessible.\n\n"
+                    "Options:\n"
+                    "1. Connect a USB webcam and try again\n"
+                    "2. Use file-based face recognition (upload photos)\n"
+                    "3. Use alternative attendance methods (QR code, manual entry)")
                 return
 
             self.is_running = True
