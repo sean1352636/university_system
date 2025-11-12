@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-11-12: Report Window with Email-to-Admin Feature
+
+**New ReportWindow Class**
+- Reports now open in dedicated modal windows instead of preview pane
+- Professional UI with report title and type display
+- Cleaner, more focused viewing experience
+
+**Email to Admin Functionality**
+- "📧 Send to Admin" button on all reports
+- Queries database for admin email addresses from `users` table (role = 'admin')
+- Falls back to `staff` table if no admins found (position LIKE '%admin%')
+- Shows confirmation dialog with list of recipients before sending
+- Progress dialog during email transmission
+- Results summary showing success/failure counts
+- Email includes report title, type, timestamp, and full content
+- Integrates with email_service for actual sending
+- Activity logging for audit trail
+
+**Additional Report Actions**
+- "💾 Save Report" - Save to file (TXT or PDF)
+- "📋 Copy to Clipboard" - Quick copy for sharing
+- "Close" - Close report window
+
+**Updated Report Generation Functions**
+- `generate_student_report()` - Opens in ReportWindow
+- `generate_module_report()` - Opens in ReportWindow
+- Reports retain all original data and formatting
+- Removed old save dialog prompt (replaced with button)
+
+**Technical Implementation**
+- ReportWindow class (245 lines) at line 8145
+- `get_admin_emails()` - Database query with validation
+- `send_report_email()` - Email composition and sending
+- `send_to_admin()` - Multi-recipient email dispatcher
+- Professional email formatting with separators
+- Error handling and user feedback
+
+**Database Queries**
+- SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL
+- Fallback: SELECT email FROM staff WHERE position LIKE '%admin%'
+- Email validation: Must contain '@' symbol
+
 ### Enhanced - 2025-11-12: Attendance Tracker GUI - Major Improvements
 
 **Removed Duplicate Student Management Buttons**

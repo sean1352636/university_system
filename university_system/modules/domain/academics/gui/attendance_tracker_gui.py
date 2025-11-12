@@ -1405,49 +1405,44 @@ Features when enabled:
         student_id = simpledialog.askstring("Student Report", "Enter Student ID:")
         if not student_id:
             return
-        
+
         try:
             if not ORIGINAL_FUNCTIONS_AVAILABLE:
-                self.report_preview.delete(1.0, tk.END)
-                self.report_preview.insert(tk.END, f"Sample Student Report for {student_id}\n\n")
-                self.report_preview.insert(tk.END, "Module: CS101 - Introduction to Programming\n")
-                self.report_preview.insert(tk.END, "Total Sessions: 20\n")
-                self.report_preview.insert(tk.END, "Attended: 18\n")
-                self.report_preview.insert(tk.END, "Attendance Rate: 90.0%\n\n")
-                self.report_preview.insert(tk.END, "Overall Attendance Rate: 90.0%\n")
+                report_content = f"Sample Student Report for {student_id}\n\n"
+                report_content += "Module: CS101 - Introduction to Programming\n"
+                report_content += "Total Sessions: 20\n"
+                report_content += "Attended: 18\n"
+                report_content += "Attendance Rate: 90.0%\n\n"
+                report_content += "Overall Attendance Rate: 90.0%\n"
+
+                # Open in new window
+                ReportWindow(self.root, f"Student Report - {student_id}",
+                           report_content, "Student Attendance")
                 return
-            
+
             stats = get_student_attendance(student_id)
-            
+
             if not stats:
                 messagebox.showwarning("Warning", f"No attendance data found for student {student_id}")
                 return
-            
-            # Display in preview
-            self.report_preview.delete(1.0, tk.END)
-            self.report_preview.insert(tk.END, f"ATTENDANCE REPORT: {student_id}\n")
-            self.report_preview.insert(tk.END, "=" * 50 + "\n\n")
-            
+
+            # Build report content
+            report_content = f"ATTENDANCE REPORT: {student_id}\n"
+            report_content += "=" * 50 + "\n\n"
+
             for module_code, data in stats.items():
-                self.report_preview.insert(tk.END, f"Module: {module_code}\n")
-                self.report_preview.insert(tk.END, f"Total Sessions: {data['total_sessions']}\n")
-                self.report_preview.insert(tk.END, f"Attended: {data['attended']}\n")
-                self.report_preview.insert(tk.END, f"Attendance Rate: {data['percentage']:.1f}%\n\n")
-            
+                report_content += f"Module: {module_code}\n"
+                report_content += f"Total Sessions: {data['total_sessions']}\n"
+                report_content += f"Attended: {data['attended']}\n"
+                report_content += f"Attendance Rate: {data['percentage']:.1f}%\n\n"
+
             overall_rate = sum(data['percentage'] for data in stats.values()) / len(stats)
-            self.report_preview.insert(tk.END, f"Overall Attendance Rate: {overall_rate:.1f}%\n")
-            
-            # Save report if requested
-            if messagebox.askyesno("Save Report", "Would you like to save this report?"):
-                filename = filedialog.asksaveasfilename(
-                    defaultextension=".txt",
-                    filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-                )
-                if filename:
-                    with open(filename, 'w') as f:
-                        f.write(self.report_preview.get(1.0, tk.END))
-                    messagebox.showinfo("Success", f"Report saved to {filename}")
-            
+            report_content += f"Overall Attendance Rate: {overall_rate:.1f}%\n"
+
+            # Open in new window
+            ReportWindow(self.root, f"Student Report - {student_id}",
+                       report_content, "Student Attendance")
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
     
@@ -1457,53 +1452,47 @@ Features when enabled:
         if not selected:
             messagebox.showwarning("Warning", "Please select a module first")
             return
-        
+
         module_code = selected.split(' - ')[0]
-        
+
         try:
             if not ORIGINAL_FUNCTIONS_AVAILABLE:
-                self.report_preview.delete(1.0, tk.END)
-                self.report_preview.insert(tk.END, f"Sample Module Report for {module_code}\n\n")
-                self.report_preview.insert(tk.END, "Total Students: 25\n")
-                self.report_preview.insert(tk.END, "Total Sessions: 20\n")
-                self.report_preview.insert(tk.END, "Overall Attendance Rate: 87.5%\n\n")
-                self.report_preview.insert(tk.END, "Student Details:\n")
-                self.report_preview.insert(tk.END, "S001 - John Doe: 90.0%\n")
-                self.report_preview.insert(tk.END, "S002 - Jane Smith: 85.0%\n")
+                report_content = f"Sample Module Report for {module_code}\n\n"
+                report_content += "Total Students: 25\n"
+                report_content += "Total Sessions: 20\n"
+                report_content += "Overall Attendance Rate: 87.5%\n\n"
+                report_content += "Student Details:\n"
+                report_content += "S001 - John Doe: 90.0%\n"
+                report_content += "S002 - Jane Smith: 85.0%\n"
+
+                # Open in new window
+                ReportWindow(self.root, f"Module Report - {module_code}",
+                           report_content, "Module Attendance")
                 return
-            
+
             stats = get_module_attendance(module_code)
-            
+
             if not stats['students']:
                 messagebox.showwarning("Warning", f"No attendance data found for module {module_code}")
                 return
-            
-            # Display in preview
-            self.report_preview.delete(1.0, tk.END)
-            self.report_preview.insert(tk.END, f"MODULE ATTENDANCE REPORT: {module_code}\n")
-            self.report_preview.insert(tk.END, "=" * 50 + "\n\n")
-            self.report_preview.insert(tk.END, f"Total Students: {stats['total_students']}\n")
-            self.report_preview.insert(tk.END, f"Total Sessions: {stats['total_sessions']}\n")
-            self.report_preview.insert(tk.END, f"Overall Attendance Rate: {stats['overall_percentage']:.1f}%\n\n")
-            
-            self.report_preview.insert(tk.END, "Student Details:\n")
-            self.report_preview.insert(tk.END, "-" * 50 + "\n")
-            
+
+            # Build report content
+            report_content = f"MODULE ATTENDANCE REPORT: {module_code}\n"
+            report_content += "=" * 50 + "\n\n"
+            report_content += f"Total Students: {stats['total_students']}\n"
+            report_content += f"Total Sessions: {stats['total_sessions']}\n"
+            report_content += f"Overall Attendance Rate: {stats['overall_percentage']:.1f}%\n\n"
+
+            report_content += "Student Details:\n"
+            report_content += "-" * 50 + "\n"
+
             for student in stats['students']:
-                self.report_preview.insert(tk.END, 
-                    f"{student['student_id']} - {student['name']}: {student['percentage']:.1f}%\n")
-            
-            # Save report if requested
-            if messagebox.askyesno("Save Report", "Would you like to save this report?"):
-                filename = filedialog.asksaveasfilename(
-                    defaultextension=".txt",
-                    filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-                )
-                if filename:
-                    with open(filename, 'w') as f:
-                        f.write(self.report_preview.get(1.0, tk.END))
-                    messagebox.showinfo("Success", f"Report saved to {filename}")
-            
+                report_content += f"{student['student_id']} - {student['name']}: {student['percentage']:.1f}%\n"
+
+            # Open in new window
+            ReportWindow(self.root, f"Module Report - {module_code}",
+                       report_content, "Module Attendance")
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
     
@@ -8140,6 +8129,252 @@ class CalendarSyncWindow:
         self.import_results_text.insert(tk.END, "✅ Pull complete!")
 
         messagebox.showinfo("Success", f"Calendar pull from {platform} completed!\n\n8 sessions imported")
+
+
+class ReportWindow:
+    """Window for displaying reports with email functionality"""
+
+    def __init__(self, parent, report_title, report_content, report_type="General"):
+        self.parent = parent
+        self.report_title = report_title
+        self.report_content = report_content
+        self.report_type = report_type
+
+        self.window = tk.Toplevel(parent)
+        self.window.title(f"Report: {report_title}")
+        self.window.geometry("800x600")
+        self.window.transient(parent)
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Title
+        title_frame = ttk.Frame(self.window)
+        title_frame.pack(fill=tk.X, padx=15, pady=15)
+
+        ttk.Label(title_frame, text=f"📊 {self.report_title}",
+                 font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
+
+        ttk.Label(title_frame, text=f"Type: {self.report_type}",
+                 foreground='#666').pack(side=tk.RIGHT)
+
+        # Report content
+        content_frame = ttk.LabelFrame(self.window, text="Report Content", padding=10)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+
+        self.report_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD,
+                                                     font=('Courier', 10))
+        self.report_text.pack(fill=tk.BOTH, expand=True)
+        self.report_text.insert(1.0, self.report_content)
+        self.report_text.config(state='disabled')
+
+        # Action buttons
+        button_frame = ttk.Frame(self.window)
+        button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        ttk.Button(button_frame, text="💾 Save Report",
+                  command=self.save_report, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="📧 Send to Admin",
+                  command=self.send_to_admin, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="📋 Copy to Clipboard",
+                  command=self.copy_to_clipboard, style='Primary.TButton').pack(side=tk.LEFT)
+
+        ttk.Button(button_frame, text="Close",
+                  command=self.window.destroy).pack(side=tk.RIGHT)
+
+    def save_report(self):
+        """Save report to file"""
+        try:
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[
+                    ("Text files", "*.txt"),
+                    ("PDF files", "*.pdf"),
+                    ("All files", "*.*")
+                ],
+                initialfile=f"{self.report_title.replace(' ', '_')}.txt"
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(self.report_content)
+                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save report:\n{e}")
+
+    def copy_to_clipboard(self):
+        """Copy report content to clipboard"""
+        try:
+            self.window.clipboard_clear()
+            self.window.clipboard_append(self.report_content)
+            messagebox.showinfo("Success", "Report copied to clipboard!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to copy to clipboard:\n{e}")
+
+    def send_to_admin(self):
+        """Send report to admin email addresses"""
+        try:
+            # Get admin emails from database
+            admin_emails = self.get_admin_emails()
+
+            if not admin_emails:
+                messagebox.showerror("Error",
+                    "No admin email addresses found in the database.\n\n"
+                    "Please ensure at least one admin account has a valid email address.")
+                return
+
+            # Show confirmation with admin list
+            admin_list = "\n".join([f"  • {email}" for email in admin_emails])
+            if not messagebox.askyesno("Confirm Send",
+                f"Send this report to the following admin(s)?\n\n{admin_list}\n\n"
+                f"Report: {self.report_title}\nType: {self.report_type}"):
+                return
+
+            # Show progress
+            progress_window = tk.Toplevel(self.window)
+            progress_window.title("Sending Report")
+            progress_window.geometry("400x150")
+            progress_window.transient(self.window)
+
+            ttk.Label(progress_window, text="Sending report to administrators...",
+                     font=('Arial', 12)).pack(pady=20)
+            progress_label = ttk.Label(progress_window, text="Please wait...")
+            progress_label.pack(pady=10)
+
+            progress_window.update()
+
+            # Send emails
+            success_count = 0
+            failed_count = 0
+
+            for admin_email in admin_emails:
+                try:
+                    if self.send_report_email(admin_email):
+                        success_count += 1
+                    else:
+                        failed_count += 1
+                except Exception as e:
+                    print(f"Failed to send to {admin_email}: {e}")
+                    failed_count += 1
+
+            progress_window.destroy()
+
+            # Show results
+            if success_count > 0:
+                messagebox.showinfo("Email Sent",
+                    f"Report sent successfully!\n\n"
+                    f"✅ Sent: {success_count}\n"
+                    f"❌ Failed: {failed_count}\n\n"
+                    f"Administrators have been notified.")
+            else:
+                messagebox.showerror("Failed",
+                    "Failed to send report to any administrators.\n"
+                    "Please check email configuration.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send report:\n{e}")
+            import traceback
+            traceback.print_exc()
+
+    def get_admin_emails(self):
+        """Query database for admin email addresses"""
+        admin_emails = []
+
+        try:
+            import sqlite3
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                cursor = conn.cursor()
+
+                # Query for admin users with email addresses
+                cursor.execute("""
+                    SELECT DISTINCT email
+                    FROM users
+                    WHERE role = 'admin'
+                      AND email IS NOT NULL
+                      AND email != ''
+                      AND email LIKE '%@%'
+                    ORDER BY email
+                """)
+
+                results = cursor.fetchall()
+                admin_emails = [row[0] for row in results]
+
+                # If no admins found, try staff table
+                if not admin_emails:
+                    cursor.execute("""
+                        SELECT DISTINCT email
+                        FROM staff
+                        WHERE position LIKE '%admin%'
+                          AND email IS NOT NULL
+                          AND email != ''
+                          AND email LIKE '%@%'
+                        ORDER BY email
+                    """)
+                    results = cursor.fetchall()
+                    admin_emails = [row[0] for row in results]
+
+        except Exception as e:
+            print(f"Error getting admin emails: {e}")
+            import traceback
+            traceback.print_exc()
+
+        return admin_emails
+
+    def send_report_email(self, recipient_email):
+        """Send report via email service"""
+        try:
+            from university_system.infrastructure.email.email_service import send_email
+            from university_system.modules.shared.utils.activity_logger import log_activity
+
+            # Prepare email subject and body
+            subject = f"Attendance Report: {self.report_title}"
+
+            body = f"""Dear Administrator,
+
+Please find the attendance report below:
+
+Report Title: {self.report_title}
+Report Type: {self.report_type}
+Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+{'=' * 70}
+
+{self.report_content}
+
+{'=' * 70}
+
+This is an automated report from the University Attendance Tracking System.
+
+Best regards,
+Attendance Management System
+"""
+
+            # Send email
+            success = send_email(
+                recipient_email=recipient_email,
+                subject=subject,
+                body=body
+            )
+
+            if success:
+                # Log the activity
+                log_activity('email', 'report_sent',
+                           details={
+                               'report_title': self.report_title,
+                               'report_type': self.report_type,
+                               'recipient': recipient_email
+                           })
+
+            return success
+
+        except Exception as e:
+            print(f"Error sending email to {recipient_email}: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
 
 class HelpWindow:
