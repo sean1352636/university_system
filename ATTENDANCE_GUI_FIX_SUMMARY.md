@@ -26,17 +26,27 @@
 
 ## Remaining Tasks ⏳
 
-### 1. Add BatchAttendanceWindow Class
-**Status**: Method added, but window class needs to be implemented
-**Location**: Should be inserted around line 4990, after `ManualAttendanceWindow`
-**Features Needed**:
-- Load all students enrolled in the selected module
-- Checkbox selection for students
-- Bulk status assignment (Present/Late/Absent/Excused)
-- Save attendance records to database
-- Integration with existing `record_attendance()` function
+### 1. Add BatchAttendanceWindow Class ✅ COMPLETED
+**Status**: ✅ Fully implemented and added to attendance_tracker_gui.py
+**Location**: Line 4968, before `EditAttendanceWindow`
+**Features Implemented**:
+- ✅ Load all students enrolled in the selected module
+- ✅ Checkbox selection for students (click to toggle)
+- ✅ Bulk status assignment (Present/Late/Absent/Excused)
+- ✅ "Select All" and "Deselect All" buttons
+- ✅ "Apply to Selected" for batch status changes
+- ✅ Save attendance records to database
+- ✅ Integration with existing `record_attendance()` function
+- ✅ Current attendance status display
+- ✅ Professional UI with scrollable student list
 
-**Implementation File**: `/tmp/batch_attendance_class.py` (already created, needs insertion)
+**Key Methods**:
+- `load_students()` - Queries database for enrolled students
+- `on_tree_click()` - Handles checkbox toggle on click
+- `update_selection_display()` - Updates checkbox UI
+- `select_all()` / `deselect_all()` - Bulk selection
+- `apply_batch_status()` - Apply status to selected students
+- `save_attendance()` - Save all attendance records to database
 
 ### 2. Implement Camera-Based Face Detection
 **Status**: Placeholder function exists
