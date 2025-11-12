@@ -466,11 +466,218 @@ class TransactionManager:
     
 
     def search_payments(self):
-        """Search payments"""
-        search_term = simpledialog.askstring("Search Payments", "Enter search term:")
-        if search_term:
-            self.update_status(f"Searching payments for: {search_term}")
-            # Implement search logic here
+        """Search payments with comprehensive search functionality"""
+        # Create search dialog
+        search_dialog = tk.Toplevel(self.root)
+        search_dialog.title("Search Payments")
+        search_dialog.geometry("900x700")
+        search_dialog.transient(self.root)
+        search_dialog.grab_set()
+
+        # Search criteria frame
+        criteria_frame = ttk.LabelFrame(search_dialog, text="Search Criteria", padding=15)
+        criteria_frame.pack(fill='x', padx=10, pady=10)
+
+        # Student ID
+        ttk.Label(criteria_frame, text="Student ID:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        student_id_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=student_id_var, width=20).grid(row=0, column=1, sticky='w', padx=5, pady=5)
+
+        # Payment method
+        ttk.Label(criteria_frame, text="Payment Method:").grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        method_var = tk.StringVar()
+        method_combo = ttk.Combobox(criteria_frame, textvariable=method_var,
+                                    values=["", "Card", "Cash", "Bank Transfer", "Cheque", "Online"],
+                                    width=18)
+        method_combo.grid(row=0, column=3, sticky='w', padx=5, pady=5)
+
+        # Date range
+        ttk.Label(criteria_frame, text="From Date:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        from_date_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=from_date_var, width=20).grid(row=1, column=1, sticky='w', padx=5, pady=5)
+
+        ttk.Label(criteria_frame, text="To Date:").grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        to_date_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=to_date_var, width=18).grid(row=1, column=3, sticky='w', padx=5, pady=5)
+
+        # Amount range
+        ttk.Label(criteria_frame, text="Min Amount:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        min_amount_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=min_amount_var, width=20).grid(row=2, column=1, sticky='w', padx=5, pady=5)
+
+        ttk.Label(criteria_frame, text="Max Amount:").grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        max_amount_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=max_amount_var, width=18).grid(row=2, column=3, sticky='w', padx=5, pady=5)
+
+        # Transaction ID
+        ttk.Label(criteria_frame, text="Transaction ID:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        transaction_id_var = tk.StringVar()
+        ttk.Entry(criteria_frame, textvariable=transaction_id_var, width=20).grid(row=3, column=1, sticky='w', padx=5, pady=5)
+
+        # Status
+        ttk.Label(criteria_frame, text="Status:").grid(row=3, column=2, sticky='w', padx=5, pady=5)
+        status_var = tk.StringVar()
+        status_combo = ttk.Combobox(criteria_frame, textvariable=status_var,
+                                    values=["", "completed", "pending", "failed", "refunded"],
+                                    width=18)
+        status_combo.grid(row=3, column=3, sticky='w', padx=5, pady=5)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(search_dialog, text="Search Results", padding=15)
+        results_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Results treeview
+        columns = ('Payment ID', 'Student ID', 'Student Name', 'Amount', 'Method', 'Date', 'Transaction ID', 'Status')
+        results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            results_tree.heading(col, text=col)
+            results_tree.column(col, width=100, anchor='center')
+
+        results_tree.pack(side='left', fill='both', expand=True)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=results_tree.yview)
+        scrollbar.pack(side='right', fill='y')
+        results_tree.configure(yscrollcommand=scrollbar.set)
+
+        # Results label
+        results_label = ttk.Label(search_dialog, text="Results: 0 payments found")
+        results_label.pack(pady=5)
+
+        def perform_search():
+            """Execute the search with given criteria"""
+            try:
+                # Clear previous results
+                for item in results_tree.get_children():
+                    results_tree.delete(item)
+
+                # Build SQL query
+                query = '''
+                SELECT p.payment_id, p.student_id,
+                       COALESCE(s.first_name || ' ' || s.last_name, 'Unknown') as student_name,
+                       p.amount, p.payment_method, p.payment_date, p.transaction_id, p.status
+                FROM payments p
+                LEFT JOIN students s ON p.student_id = s.student_id
+                WHERE 1=1
+                '''
+                params = []
+
+                # Add criteria
+                if student_id_var.get().strip():
+                    query += " AND p.student_id LIKE ?"
+                    params.append(f"%{student_id_var.get().strip()}%")
+
+                if method_var.get():
+                    query += " AND p.payment_method = ?"
+                    params.append(method_var.get())
+
+                if from_date_var.get().strip():
+                    query += " AND p.payment_date >= ?"
+                    params.append(from_date_var.get().strip())
+
+                if to_date_var.get().strip():
+                    query += " AND p.payment_date <= ?"
+                    params.append(to_date_var.get().strip())
+
+                if min_amount_var.get().strip():
+                    query += " AND p.amount >= ?"
+                    params.append(float(min_amount_var.get().strip()))
+
+                if max_amount_var.get().strip():
+                    query += " AND p.amount <= ?"
+                    params.append(float(max_amount_var.get().strip()))
+
+                if transaction_id_var.get().strip():
+                    query += " AND p.transaction_id LIKE ?"
+                    params.append(f"%{transaction_id_var.get().strip()}%")
+
+                if status_var.get():
+                    query += " AND p.status = ?"
+                    params.append(status_var.get())
+
+                query += " ORDER BY p.payment_date DESC LIMIT 1000"
+
+                # Execute query
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+                conn.close()
+
+                # Display results
+                for row in results:
+                    payment_id, student_id, student_name, amount, method, date, trans_id, status = row
+                    results_tree.insert('', 'end', values=(
+                        payment_id,
+                        student_id,
+                        student_name,
+                        f"£{amount:.2f}",
+                        method,
+                        date,
+                        trans_id or 'N/A',
+                        status
+                    ))
+
+                results_label.config(text=f"Results: {len(results)} payments found")
+                self.update_status(f"Search completed: {len(results)} payments found")
+
+            except ValueError:
+                messagebox.showerror("Error", "Invalid amount format. Please enter numeric values.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Search failed: {e}")
+
+        def export_results():
+            """Export search results to CSV"""
+            try:
+                if not results_tree.get_children():
+                    messagebox.showwarning("Warning", "No results to export")
+                    return
+
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    title="Export Search Results"
+                )
+
+                if filename:
+                    with open(filename, 'w', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow(['Payment ID', 'Student ID', 'Student Name', 'Amount', 'Method', 'Date', 'Transaction ID', 'Status'])
+
+                        for item in results_tree.get_children():
+                            values = results_tree.item(item)['values']
+                            writer.writerow(values)
+
+                    messagebox.showinfo("Success", f"Results exported to {filename}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Export failed: {e}")
+
+        def clear_filters():
+            """Clear all search filters"""
+            student_id_var.set("")
+            method_var.set("")
+            from_date_var.set("")
+            to_date_var.set("")
+            min_amount_var.set("")
+            max_amount_var.set("")
+            transaction_id_var.set("")
+            status_var.set("")
+
+            # Clear results
+            for item in results_tree.get_children():
+                results_tree.delete(item)
+            results_label.config(text="Results: 0 payments found")
+
+        # Buttons frame
+        button_frame = ttk.Frame(search_dialog)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="🔍 Search", command=perform_search).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="📤 Export Results", command=export_results).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="🔄 Clear Filters", command=clear_filters).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close", command=search_dialog.destroy).pack(side='left', padx=5)
     
 
     def view_payment_details(self):
