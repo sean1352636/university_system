@@ -7,16 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed - 2025-11-11 HOTFIX: Multiple AttributeErrors
+### Fixed - 2025-11-11 HOTFIX: Multiple Critical Errors
 
-#### Critical Fix 1: Path Module AttributeError
+#### Critical Fix 1: Foreign Key Constraint Error
+- **Fixed "submission foreign key constraint failed" error**
+  * Root cause: `_get_student_id_safe()` was returning user.id (INTEGER) instead of student_id (TEXT)
+  * Foreign key `assignment_submissions.student_id → students.student_id` requires TEXT-to-TEXT match
+  * **Enhanced _get_student_id_safe()**: Now prioritizes student_id, looks up in database if needed
+  * **Added student_id validation**: Checks student exists in students table before submission
+  * **Enhanced assignment validation**: Differentiates between missing and inactive assignments
+  * **Added foreign key error handling**: Catches IntegrityError with clear user messages
+  * Error messages now provide actionable guidance (e.g., "Please ensure you are registered as a student")
+  * Files: submission_manager.py (+51 lines, 4 major improvements)
+
+#### Critical Fix 2: Path Module AttributeError
 - **Fixed AttributeError: module 'paths' has no attribute 'UPLOAD_DIR'**
   * Replaced all `paths.UPLOAD_DIR` references with correct `paths.SUBMISSIONS_DIR`
   * Fixed in 4 files: maintenance.py (2), submission_manager.py (1), assignment_gui.py (2), group_manager.py (1)
   * The paths module defines `SUBMISSIONS_DIR`, not `UPLOAD_DIR`
   * All file operations now use the correct centralized path constant
 
-#### Critical Fix 2: Missing File Hash Method
+#### Critical Fix 3: Missing File Hash Method
 - **Fixed AttributeError: 'MinimumAssignmentSystem' has no attribute '_calculate_file_hash'**
   * Added `_calculate_file_hash()` method directly to SubmissionManager class
   * Added `_calculate_file_hash()` method directly to MaintenanceManager class
