@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-11-12: Fully Implemented Missing Stub Functions in Attendance GUI
+
+**NotificationSettingsWindow Class (370 lines)**
+- Complete notification settings management interface
+- Four organized tabs: General, Recipients, Alerts, and Schedule
+- Features:
+  - Configure notification channels (Email, SMS, Push)
+  - Set notification frequency (immediate, hourly, daily, weekly)
+  - Select recipients (Students, Parents, Instructors)
+  - Configure automated reports (Daily/Weekly/Monthly)
+  - Alert triggers for absences and late arrivals
+  - Customizable thresholds for low attendance alerts
+  - Quiet hours configuration to prevent nighttime notifications
+  - Test notification feature for verification
+  - Reset to defaults functionality
+  - Database persistence with `notification_settings` table
+- Professional UI with tabbed interface
+- Settings saved to database with timestamps
+- Activity logging integration
+- Located at line 8394
+
+**AttendancePoliciesWindow Class (465 lines)**
+- Comprehensive attendance policy management system
+- Four organized tabs: Basic Rules, Penalties, Excused Absences, and Advanced
+- Features:
+  - Minimum attendance percentage requirements
+  - Late arrival grace period configuration
+  - Grace period at semester start
+  - Retroactive attendance changes policy
+  - Penalty points system (absence and late penalties)
+  - Auto-fail threshold configuration
+  - Excused absence type management (add/remove/edit)
+  - Documentation requirements for excused absences
+  - Self check-in settings with time windows
+  - Geofencing configuration with radius control
+  - Attendance appeals process settings
+  - Instructor approval requirements
+  - Export policies to JSON
+  - Reset to defaults functionality
+  - Database persistence with `attendance_policies` table
+- Professional UI with tabbed interface
+- Policies saved to database with timestamps
+- Activity logging integration
+- Located at line 8766
+
+**Impact:**
+- Completed all stub function implementations in Attendance GUI
+- Added 835 lines of fully functional code
+- Total file size: 9,501 lines (was 8,666 lines)
+- Enhanced system configurability and flexibility
+- Improved notification management capabilities
+- Professional policy administration tools
+- Database-backed persistent settings
+
+**Technical Implementation:**
+- Both classes follow existing window class patterns
+- Database tables created automatically if not exist
+- Type conversion for settings storage (bool, int, float, list)
+- JSON serialization for complex data types (absence types list)
+- Integration with existing activity logger
+- Proper error handling and user feedback
+- Modal dialogs with grab_set() for focused interaction
+
 ### Added - 2025-11-12: Report Window with Email-to-Admin Feature
 
 **New ReportWindow Class**

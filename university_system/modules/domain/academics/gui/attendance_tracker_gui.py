@@ -8391,6 +8391,841 @@ Attendance Management System
             return False
 
 
+class NotificationSettingsWindow:
+    """Configure notification settings for attendance system"""
+
+    def __init__(self, parent):
+        self.parent = parent
+
+        self.window = tk.Toplevel(parent)
+        self.window.title("Notification Settings")
+        self.window.geometry("800x700")
+        self.window.transient(parent)
+        self.window.grab_set()
+
+        # Load current settings
+        self.settings = self.load_settings()
+        self.create_widgets()
+
+    def load_settings(self):
+        """Load current notification settings from database"""
+        settings = {
+            'email_enabled': True,
+            'sms_enabled': False,
+            'push_enabled': True,
+            'low_attendance_threshold': 75,
+            'notify_parents': True,
+            'notify_instructors': True,
+            'notify_students': True,
+            'daily_summary': True,
+            'weekly_report': True,
+            'monthly_report': False,
+            'alert_on_absence': True,
+            'alert_on_late': False,
+            'alert_threshold_absences': 3,
+            'email_frequency': 'immediate',
+            'quiet_hours_enabled': False,
+            'quiet_hours_start': '22:00',
+            'quiet_hours_end': '08:00'
+        }
+
+        try:
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Try to load settings from database
+                cursor.execute("SELECT setting_key, setting_value FROM notification_settings")
+                rows = cursor.fetchall()
+
+                for key, value in rows:
+                    if key in settings:
+                        # Convert string values to appropriate types
+                        if isinstance(settings[key], bool):
+                            settings[key] = value.lower() == 'true'
+                        elif isinstance(settings[key], int):
+                            settings[key] = int(value)
+                        else:
+                            settings[key] = value
+
+                conn.close()
+        except Exception as e:
+            print(f"Error loading notification settings: {e}")
+
+        return settings
+
+    def create_widgets(self):
+        # Title
+        title_frame = ttk.Frame(self.window)
+        title_frame.pack(fill=tk.X, padx=15, pady=15)
+
+        ttk.Label(title_frame, text="🔔 Notification Settings",
+                 font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+
+        # Create notebook for different settings categories
+        notebook = ttk.Notebook(self.window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+
+        # General tab
+        general_frame = ttk.Frame(notebook)
+        notebook.add(general_frame, text="General")
+        self.create_general_settings_tab(general_frame)
+
+        # Recipients tab
+        recipients_frame = ttk.Frame(notebook)
+        notebook.add(recipients_frame, text="Recipients")
+        self.create_recipients_tab(recipients_frame)
+
+        # Alerts tab
+        alerts_frame = ttk.Frame(notebook)
+        notebook.add(alerts_frame, text="Alerts")
+        self.create_alerts_tab(alerts_frame)
+
+        # Schedule tab
+        schedule_frame = ttk.Frame(notebook)
+        notebook.add(schedule_frame, text="Schedule")
+        self.create_schedule_tab(schedule_frame)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.window)
+        button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        ttk.Button(button_frame, text="💾 Save Settings",
+                  command=self.save_settings, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="🔄 Reset to Defaults",
+                  command=self.reset_to_defaults).pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="📧 Test Notification",
+                  command=self.test_notification).pack(side=tk.LEFT)
+
+        ttk.Button(button_frame, text="Close",
+                  command=self.window.destroy).pack(side=tk.RIGHT)
+
+    def create_general_settings_tab(self, parent):
+        """General notification settings"""
+        frame = ttk.LabelFrame(parent, text="Notification Channels", padding=15)
+        frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.email_enabled_var = tk.BooleanVar(value=self.settings['email_enabled'])
+        self.sms_enabled_var = tk.BooleanVar(value=self.settings['sms_enabled'])
+        self.push_enabled_var = tk.BooleanVar(value=self.settings['push_enabled'])
+
+        ttk.Checkbutton(frame, text="📧 Email Notifications",
+                       variable=self.email_enabled_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(frame, text="📱 SMS Notifications",
+                       variable=self.sms_enabled_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(frame, text="🔔 Push Notifications",
+                       variable=self.push_enabled_var).pack(anchor=tk.W, pady=5)
+
+        # Frequency settings
+        freq_frame = ttk.LabelFrame(parent, text="Notification Frequency", padding=15)
+        freq_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.email_frequency_var = tk.StringVar(value=self.settings['email_frequency'])
+
+        ttk.Label(freq_frame, text="Email Frequency:").pack(anchor=tk.W, pady=(0, 5))
+
+        freq_options = ['immediate', 'hourly', 'daily', 'weekly']
+        for option in freq_options:
+            ttk.Radiobutton(freq_frame, text=option.capitalize(),
+                           variable=self.email_frequency_var,
+                           value=option).pack(anchor=tk.W, padx=20)
+
+    def create_recipients_tab(self, parent):
+        """Configure who receives notifications"""
+        frame = ttk.LabelFrame(parent, text="Notification Recipients", padding=15)
+        frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.notify_students_var = tk.BooleanVar(value=self.settings['notify_students'])
+        self.notify_parents_var = tk.BooleanVar(value=self.settings['notify_parents'])
+        self.notify_instructors_var = tk.BooleanVar(value=self.settings['notify_instructors'])
+
+        ttk.Checkbutton(frame, text="👨‍🎓 Notify Students",
+                       variable=self.notify_students_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(frame, text="👨‍👩‍👧 Notify Parents/Guardians",
+                       variable=self.notify_parents_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(frame, text="👨‍🏫 Notify Instructors",
+                       variable=self.notify_instructors_var).pack(anchor=tk.W, pady=5)
+
+        # Report settings
+        report_frame = ttk.LabelFrame(parent, text="Automated Reports", padding=15)
+        report_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.daily_summary_var = tk.BooleanVar(value=self.settings['daily_summary'])
+        self.weekly_report_var = tk.BooleanVar(value=self.settings['weekly_report'])
+        self.monthly_report_var = tk.BooleanVar(value=self.settings['monthly_report'])
+
+        ttk.Checkbutton(report_frame, text="📊 Daily Summary",
+                       variable=self.daily_summary_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(report_frame, text="📈 Weekly Report",
+                       variable=self.weekly_report_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(report_frame, text="📉 Monthly Report",
+                       variable=self.monthly_report_var).pack(anchor=tk.W, pady=5)
+
+    def create_alerts_tab(self, parent):
+        """Configure alert triggers"""
+        frame = ttk.LabelFrame(parent, text="Alert Triggers", padding=15)
+        frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.alert_on_absence_var = tk.BooleanVar(value=self.settings['alert_on_absence'])
+        self.alert_on_late_var = tk.BooleanVar(value=self.settings['alert_on_late'])
+
+        ttk.Checkbutton(frame, text="⚠️ Alert on Absence",
+                       variable=self.alert_on_absence_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Checkbutton(frame, text="⏰ Alert on Late Arrival",
+                       variable=self.alert_on_late_var).pack(anchor=tk.W, pady=5)
+
+        # Threshold settings
+        threshold_frame = ttk.LabelFrame(parent, text="Alert Thresholds", padding=15)
+        threshold_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        # Low attendance threshold
+        ttk.Label(threshold_frame, text="Low Attendance Alert Threshold (%):").pack(anchor=tk.W, pady=(0, 5))
+        self.low_attendance_threshold_var = tk.IntVar(value=self.settings['low_attendance_threshold'])
+        threshold_scale = ttk.Scale(threshold_frame, from_=0, to=100,
+                                   variable=self.low_attendance_threshold_var,
+                                   orient=tk.HORIZONTAL)
+        threshold_scale.pack(fill=tk.X, pady=(0, 5))
+
+        self.threshold_label = ttk.Label(threshold_frame,
+                                        text=f"{self.settings['low_attendance_threshold']}%")
+        self.threshold_label.pack(anchor=tk.W)
+
+        threshold_scale.configure(command=lambda v: self.threshold_label.config(
+            text=f"{int(float(v))}%"))
+
+        # Consecutive absences
+        ttk.Label(threshold_frame, text="Alert after N consecutive absences:").pack(anchor=tk.W, pady=(10, 5))
+        self.alert_threshold_absences_var = tk.IntVar(value=self.settings['alert_threshold_absences'])
+        ttk.Spinbox(threshold_frame, from_=1, to=10,
+                   textvariable=self.alert_threshold_absences_var,
+                   width=10).pack(anchor=tk.W)
+
+    def create_schedule_tab(self, parent):
+        """Configure notification schedule"""
+        frame = ttk.LabelFrame(parent, text="Quiet Hours", padding=15)
+        frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.quiet_hours_enabled_var = tk.BooleanVar(value=self.settings['quiet_hours_enabled'])
+
+        ttk.Checkbutton(frame, text="🌙 Enable Quiet Hours (No notifications during this time)",
+                       variable=self.quiet_hours_enabled_var).pack(anchor=tk.W, pady=5)
+
+        # Time settings
+        time_frame = ttk.Frame(frame)
+        time_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Label(time_frame, text="Start Time:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        self.quiet_hours_start_var = tk.StringVar(value=self.settings['quiet_hours_start'])
+        ttk.Entry(time_frame, textvariable=self.quiet_hours_start_var,
+                 width=10).grid(row=0, column=1, sticky=tk.W)
+        ttk.Label(time_frame, text="(HH:MM format)").grid(row=0, column=2, sticky=tk.W, padx=(5, 0))
+
+        ttk.Label(time_frame, text="End Time:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+        self.quiet_hours_end_var = tk.StringVar(value=self.settings['quiet_hours_end'])
+        ttk.Entry(time_frame, textvariable=self.quiet_hours_end_var,
+                 width=10).grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
+        ttk.Label(time_frame, text="(HH:MM format)").grid(row=1, column=2, sticky=tk.W, padx=(5, 0), pady=(5, 0))
+
+    def save_settings(self):
+        """Save notification settings to database"""
+        try:
+            # Update settings dictionary
+            self.settings['email_enabled'] = self.email_enabled_var.get()
+            self.settings['sms_enabled'] = self.sms_enabled_var.get()
+            self.settings['push_enabled'] = self.push_enabled_var.get()
+            self.settings['low_attendance_threshold'] = self.low_attendance_threshold_var.get()
+            self.settings['notify_parents'] = self.notify_parents_var.get()
+            self.settings['notify_instructors'] = self.notify_instructors_var.get()
+            self.settings['notify_students'] = self.notify_students_var.get()
+            self.settings['daily_summary'] = self.daily_summary_var.get()
+            self.settings['weekly_report'] = self.weekly_report_var.get()
+            self.settings['monthly_report'] = self.monthly_report_var.get()
+            self.settings['alert_on_absence'] = self.alert_on_absence_var.get()
+            self.settings['alert_on_late'] = self.alert_on_late_var.get()
+            self.settings['alert_threshold_absences'] = self.alert_threshold_absences_var.get()
+            self.settings['email_frequency'] = self.email_frequency_var.get()
+            self.settings['quiet_hours_enabled'] = self.quiet_hours_enabled_var.get()
+            self.settings['quiet_hours_start'] = self.quiet_hours_start_var.get()
+            self.settings['quiet_hours_end'] = self.quiet_hours_end_var.get()
+
+            # Save to database
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Create table if it doesn't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS notification_settings (
+                        setting_key TEXT PRIMARY KEY,
+                        setting_value TEXT,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+
+                # Save each setting
+                for key, value in self.settings.items():
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO notification_settings (setting_key, setting_value, updated_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ''', (key, str(value)))
+
+                conn.commit()
+                conn.close()
+
+            messagebox.showinfo("Success", "Notification settings saved successfully!")
+
+            # Log activity
+            try:
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('update', 'notification_settings',
+                           details={'settings_count': len(self.settings)})
+            except:
+                pass
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save settings:\n{e}")
+            import traceback
+            traceback.print_exc()
+
+    def reset_to_defaults(self):
+        """Reset settings to default values"""
+        if messagebox.askyesno("Confirm Reset",
+                              "Are you sure you want to reset all notification settings to defaults?"):
+            # Reset all variables to defaults
+            self.email_enabled_var.set(True)
+            self.sms_enabled_var.set(False)
+            self.push_enabled_var.set(True)
+            self.low_attendance_threshold_var.set(75)
+            self.notify_parents_var.set(True)
+            self.notify_instructors_var.set(True)
+            self.notify_students_var.set(True)
+            self.daily_summary_var.set(True)
+            self.weekly_report_var.set(True)
+            self.monthly_report_var.set(False)
+            self.alert_on_absence_var.set(True)
+            self.alert_on_late_var.set(False)
+            self.alert_threshold_absences_var.set(3)
+            self.email_frequency_var.set('immediate')
+            self.quiet_hours_enabled_var.set(False)
+            self.quiet_hours_start_var.set('22:00')
+            self.quiet_hours_end_var.set('08:00')
+
+            messagebox.showinfo("Success", "Settings reset to defaults!")
+
+    def test_notification(self):
+        """Send a test notification"""
+        try:
+            from university_system.infrastructure.email.email_service import send_email
+
+            # Get test email
+            test_email = simpledialog.askstring("Test Email",
+                                              "Enter email address for test notification:",
+                                              parent=self.window)
+
+            if not test_email:
+                return
+
+            # Send test email
+            subject = "Test Notification - Attendance System"
+            body = f"""This is a test notification from the Attendance Tracking System.
+
+Test sent at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Your notification settings are configured and working correctly!
+
+Current Settings:
+- Email: {'Enabled' if self.settings['email_enabled'] else 'Disabled'}
+- SMS: {'Enabled' if self.settings['sms_enabled'] else 'Disabled'}
+- Push: {'Enabled' if self.settings['push_enabled'] else 'Disabled'}
+- Alert Threshold: {self.settings['low_attendance_threshold']}%
+
+This is an automated test message from the University Attendance System.
+"""
+
+            success = send_email(test_email, subject, body)
+
+            if success:
+                messagebox.showinfo("Success", f"Test notification sent to {test_email}!")
+            else:
+                messagebox.showwarning("Failed",
+                                     "Failed to send test notification. Please check email configuration.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send test notification:\n{e}")
+
+
+class AttendancePoliciesWindow:
+    """Manage attendance policies and rules"""
+
+    def __init__(self, parent):
+        self.parent = parent
+
+        self.window = tk.Toplevel(parent)
+        self.window.title("Attendance Policies")
+        self.window.geometry("900x750")
+        self.window.transient(parent)
+        self.window.grab_set()
+
+        # Load current policies
+        self.policies = self.load_policies()
+        self.create_widgets()
+
+    def load_policies(self):
+        """Load current attendance policies from database"""
+        policies = {
+            'minimum_attendance_percentage': 75,
+            'late_arrival_minutes': 15,
+            'excused_absence_types': ['Medical', 'Family Emergency', 'University Event', 'Religious Holiday'],
+            'allow_retroactive_changes': True,
+            'retroactive_days_limit': 7,
+            'require_absence_documentation': True,
+            'auto_fail_below_threshold': False,
+            'auto_fail_threshold': 50,
+            'grace_period_weeks': 2,
+            'absence_penalty_points': 1,
+            'late_penalty_points': 0.5,
+            'max_penalty_points': 10,
+            'enable_attendance_appeals': True,
+            'appeal_deadline_days': 14,
+            'require_instructor_approval': True,
+            'enable_self_check_in': True,
+            'check_in_time_window_minutes': 30,
+            'enable_geofencing': True,
+            'geofence_radius_meters': 100
+        }
+
+        try:
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Try to load policies from database
+                cursor.execute("SELECT policy_key, policy_value FROM attendance_policies")
+                rows = cursor.fetchall()
+
+                for key, value in rows:
+                    if key in policies:
+                        # Convert string values to appropriate types
+                        if isinstance(policies[key], bool):
+                            policies[key] = value.lower() == 'true'
+                        elif isinstance(policies[key], int):
+                            policies[key] = int(value)
+                        elif isinstance(policies[key], float):
+                            policies[key] = float(value)
+                        elif isinstance(policies[key], list):
+                            policies[key] = json.loads(value)
+                        else:
+                            policies[key] = value
+
+                conn.close()
+        except Exception as e:
+            print(f"Error loading attendance policies: {e}")
+
+        return policies
+
+    def create_widgets(self):
+        # Title
+        title_frame = ttk.Frame(self.window)
+        title_frame.pack(fill=tk.X, padx=15, pady=15)
+
+        ttk.Label(title_frame, text="📋 Attendance Policies & Rules",
+                 font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+
+        # Create notebook for different policy categories
+        notebook = ttk.Notebook(self.window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+
+        # Basic policies tab
+        basic_frame = ttk.Frame(notebook)
+        notebook.add(basic_frame, text="Basic Rules")
+        self.create_basic_policies_tab(basic_frame)
+
+        # Penalties tab
+        penalties_frame = ttk.Frame(notebook)
+        notebook.add(penalties_frame, text="Penalties")
+        self.create_penalties_tab(penalties_frame)
+
+        # Excused absences tab
+        excused_frame = ttk.Frame(notebook)
+        notebook.add(excused_frame, text="Excused Absences")
+        self.create_excused_absences_tab(excused_frame)
+
+        # Advanced tab
+        advanced_frame = ttk.Frame(notebook)
+        notebook.add(advanced_frame, text="Advanced")
+        self.create_advanced_tab(advanced_frame)
+
+        # Action buttons
+        button_frame = ttk.Frame(self.window)
+        button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        ttk.Button(button_frame, text="💾 Save Policies",
+                  command=self.save_policies, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="🔄 Reset to Defaults",
+                  command=self.reset_to_defaults).pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(button_frame, text="📄 Export Policies",
+                  command=self.export_policies).pack(side=tk.LEFT)
+
+        ttk.Button(button_frame, text="Close",
+                  command=self.window.destroy).pack(side=tk.RIGHT)
+
+    def create_basic_policies_tab(self, parent):
+        """Basic attendance policy settings"""
+
+        # Minimum attendance
+        attendance_frame = ttk.LabelFrame(parent, text="Attendance Requirements", padding=15)
+        attendance_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(attendance_frame, text="Minimum Attendance Percentage:").pack(anchor=tk.W, pady=(0, 5))
+        self.minimum_attendance_var = tk.IntVar(value=self.policies['minimum_attendance_percentage'])
+        min_scale = ttk.Scale(attendance_frame, from_=0, to=100,
+                             variable=self.minimum_attendance_var,
+                             orient=tk.HORIZONTAL)
+        min_scale.pack(fill=tk.X, pady=(0, 5))
+
+        self.min_attendance_label = ttk.Label(attendance_frame,
+                                             text=f"{self.policies['minimum_attendance_percentage']}%")
+        self.min_attendance_label.pack(anchor=tk.W)
+
+        min_scale.configure(command=lambda v: self.min_attendance_label.config(
+            text=f"{int(float(v))}%"))
+
+        # Late arrival
+        ttk.Label(attendance_frame, text="Late Arrival Grace Period (minutes):").pack(anchor=tk.W, pady=(10, 5))
+        self.late_arrival_var = tk.IntVar(value=self.policies['late_arrival_minutes'])
+        ttk.Spinbox(attendance_frame, from_=0, to=60,
+                   textvariable=self.late_arrival_var,
+                   width=10).pack(anchor=tk.W)
+
+        # Grace period
+        ttk.Label(attendance_frame, text="Grace Period at Semester Start (weeks):").pack(anchor=tk.W, pady=(10, 5))
+        self.grace_period_var = tk.IntVar(value=self.policies['grace_period_weeks'])
+        ttk.Spinbox(attendance_frame, from_=0, to=8,
+                   textvariable=self.grace_period_var,
+                   width=10).pack(anchor=tk.W)
+
+        # Retroactive changes
+        retro_frame = ttk.LabelFrame(parent, text="Record Modifications", padding=15)
+        retro_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.allow_retroactive_var = tk.BooleanVar(value=self.policies['allow_retroactive_changes'])
+        ttk.Checkbutton(retro_frame, text="Allow Retroactive Attendance Changes",
+                       variable=self.allow_retroactive_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(retro_frame, text="Retroactive Change Limit (days):").pack(anchor=tk.W, pady=(5, 5))
+        self.retroactive_days_var = tk.IntVar(value=self.policies['retroactive_days_limit'])
+        ttk.Spinbox(retro_frame, from_=1, to=30,
+                   textvariable=self.retroactive_days_var,
+                   width=10).pack(anchor=tk.W)
+
+        self.require_instructor_approval_var = tk.BooleanVar(value=self.policies['require_instructor_approval'])
+        ttk.Checkbutton(retro_frame, text="Require Instructor Approval for Changes",
+                       variable=self.require_instructor_approval_var).pack(anchor=tk.W, pady=(10, 5))
+
+    def create_penalties_tab(self, parent):
+        """Configure penalty system"""
+
+        # Penalty points
+        points_frame = ttk.LabelFrame(parent, text="Penalty Points System", padding=15)
+        points_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(points_frame, text="Points for Absence:").pack(anchor=tk.W, pady=(0, 5))
+        self.absence_penalty_var = tk.DoubleVar(value=self.policies['absence_penalty_points'])
+        ttk.Spinbox(points_frame, from_=0, to=10, increment=0.5,
+                   textvariable=self.absence_penalty_var,
+                   width=10).pack(anchor=tk.W, pady=(0, 10))
+
+        ttk.Label(points_frame, text="Points for Late Arrival:").pack(anchor=tk.W, pady=(0, 5))
+        self.late_penalty_var = tk.DoubleVar(value=self.policies['late_penalty_points'])
+        ttk.Spinbox(points_frame, from_=0, to=10, increment=0.5,
+                   textvariable=self.late_penalty_var,
+                   width=10).pack(anchor=tk.W, pady=(0, 10))
+
+        ttk.Label(points_frame, text="Maximum Penalty Points:").pack(anchor=tk.W, pady=(0, 5))
+        self.max_penalty_var = tk.IntVar(value=self.policies['max_penalty_points'])
+        ttk.Spinbox(points_frame, from_=1, to=50,
+                   textvariable=self.max_penalty_var,
+                   width=10).pack(anchor=tk.W)
+
+        # Auto-fail
+        fail_frame = ttk.LabelFrame(parent, text="Auto-Fail Policy", padding=15)
+        fail_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.auto_fail_var = tk.BooleanVar(value=self.policies['auto_fail_below_threshold'])
+        ttk.Checkbutton(fail_frame, text="Automatically Fail Students Below Threshold",
+                       variable=self.auto_fail_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(fail_frame, text="Auto-Fail Threshold (%):").pack(anchor=tk.W, pady=(5, 5))
+        self.auto_fail_threshold_var = tk.IntVar(value=self.policies['auto_fail_threshold'])
+        ttk.Scale(fail_frame, from_=0, to=100,
+                 variable=self.auto_fail_threshold_var,
+                 orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(0, 5))
+
+        ttk.Label(fail_frame,
+                 textvariable=tk.StringVar(value=f"{self.policies['auto_fail_threshold']}%")).pack(anchor=tk.W)
+
+    def create_excused_absences_tab(self, parent):
+        """Configure excused absence types"""
+
+        frame = ttk.LabelFrame(parent, text="Excused Absence Management", padding=15)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.require_documentation_var = tk.BooleanVar(value=self.policies['require_absence_documentation'])
+        ttk.Checkbutton(frame, text="Require Documentation for Excused Absences",
+                       variable=self.require_documentation_var).pack(anchor=tk.W, pady=(0, 10))
+
+        ttk.Label(frame, text="Accepted Excused Absence Types:").pack(anchor=tk.W, pady=(0, 10))
+
+        # Listbox for absence types
+        list_frame = ttk.Frame(frame)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.absence_types_listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, height=10)
+        self.absence_types_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.absence_types_listbox.yview)
+
+        # Populate listbox
+        for absence_type in self.policies['excused_absence_types']:
+            self.absence_types_listbox.insert(tk.END, absence_type)
+
+        # Buttons for managing absence types
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(button_frame, text="➕ Add Type",
+                  command=self.add_absence_type).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="➖ Remove Type",
+                  command=self.remove_absence_type).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="✏️ Edit Type",
+                  command=self.edit_absence_type).pack(side=tk.LEFT)
+
+    def create_advanced_tab(self, parent):
+        """Advanced policy settings"""
+
+        # Self check-in
+        checkin_frame = ttk.LabelFrame(parent, text="Self Check-In Settings", padding=15)
+        checkin_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.enable_self_checkin_var = tk.BooleanVar(value=self.policies['enable_self_check_in'])
+        ttk.Checkbutton(checkin_frame, text="Enable Student Self Check-In",
+                       variable=self.enable_self_checkin_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(checkin_frame, text="Check-In Time Window (minutes before/after class):").pack(anchor=tk.W, pady=(5, 5))
+        self.checkin_window_var = tk.IntVar(value=self.policies['check_in_time_window_minutes'])
+        ttk.Spinbox(checkin_frame, from_=5, to=120,
+                   textvariable=self.checkin_window_var,
+                   width=10).pack(anchor=tk.W)
+
+        # Geofencing
+        geo_frame = ttk.LabelFrame(parent, text="Geofencing Settings", padding=15)
+        geo_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.enable_geofencing_var = tk.BooleanVar(value=self.policies['enable_geofencing'])
+        ttk.Checkbutton(geo_frame, text="Enable Geofencing for Check-In",
+                       variable=self.enable_geofencing_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(geo_frame, text="Geofence Radius (meters):").pack(anchor=tk.W, pady=(5, 5))
+        self.geofence_radius_var = tk.IntVar(value=self.policies['geofence_radius_meters'])
+        ttk.Spinbox(geo_frame, from_=10, to=500,
+                   textvariable=self.geofence_radius_var,
+                   width=10).pack(anchor=tk.W)
+
+        # Appeals
+        appeals_frame = ttk.LabelFrame(parent, text="Attendance Appeals", padding=15)
+        appeals_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.enable_appeals_var = tk.BooleanVar(value=self.policies['enable_attendance_appeals'])
+        ttk.Checkbutton(appeals_frame, text="Enable Attendance Appeals Process",
+                       variable=self.enable_appeals_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(appeals_frame, text="Appeal Deadline (days after attendance taken):").pack(anchor=tk.W, pady=(5, 5))
+        self.appeal_deadline_var = tk.IntVar(value=self.policies['appeal_deadline_days'])
+        ttk.Spinbox(appeals_frame, from_=1, to=60,
+                   textvariable=self.appeal_deadline_var,
+                   width=10).pack(anchor=tk.W)
+
+    def add_absence_type(self):
+        """Add new excused absence type"""
+        new_type = simpledialog.askstring("Add Absence Type",
+                                         "Enter new excused absence type:",
+                                         parent=self.window)
+        if new_type and new_type.strip():
+            self.absence_types_listbox.insert(tk.END, new_type.strip())
+
+    def remove_absence_type(self):
+        """Remove selected absence type"""
+        selection = self.absence_types_listbox.curselection()
+        if selection:
+            self.absence_types_listbox.delete(selection[0])
+        else:
+            messagebox.showwarning("No Selection", "Please select an absence type to remove.")
+
+    def edit_absence_type(self):
+        """Edit selected absence type"""
+        selection = self.absence_types_listbox.curselection()
+        if selection:
+            current_value = self.absence_types_listbox.get(selection[0])
+            new_value = simpledialog.askstring("Edit Absence Type",
+                                              "Edit absence type:",
+                                              initialvalue=current_value,
+                                              parent=self.window)
+            if new_value and new_value.strip():
+                self.absence_types_listbox.delete(selection[0])
+                self.absence_types_listbox.insert(selection[0], new_value.strip())
+        else:
+            messagebox.showwarning("No Selection", "Please select an absence type to edit.")
+
+    def save_policies(self):
+        """Save attendance policies to database"""
+        try:
+            # Update policies dictionary
+            self.policies['minimum_attendance_percentage'] = self.minimum_attendance_var.get()
+            self.policies['late_arrival_minutes'] = self.late_arrival_var.get()
+            self.policies['allow_retroactive_changes'] = self.allow_retroactive_var.get()
+            self.policies['retroactive_days_limit'] = self.retroactive_days_var.get()
+            self.policies['require_absence_documentation'] = self.require_documentation_var.get()
+            self.policies['auto_fail_below_threshold'] = self.auto_fail_var.get()
+            self.policies['auto_fail_threshold'] = self.auto_fail_threshold_var.get()
+            self.policies['grace_period_weeks'] = self.grace_period_var.get()
+            self.policies['absence_penalty_points'] = self.absence_penalty_var.get()
+            self.policies['late_penalty_points'] = self.late_penalty_var.get()
+            self.policies['max_penalty_points'] = self.max_penalty_var.get()
+            self.policies['enable_attendance_appeals'] = self.enable_appeals_var.get()
+            self.policies['appeal_deadline_days'] = self.appeal_deadline_var.get()
+            self.policies['require_instructor_approval'] = self.require_instructor_approval_var.get()
+            self.policies['enable_self_check_in'] = self.enable_self_checkin_var.get()
+            self.policies['check_in_time_window_minutes'] = self.checkin_window_var.get()
+            self.policies['enable_geofencing'] = self.enable_geofencing_var.get()
+            self.policies['geofence_radius_meters'] = self.geofence_radius_var.get()
+
+            # Get absence types from listbox
+            absence_types = []
+            for i in range(self.absence_types_listbox.size()):
+                absence_types.append(self.absence_types_listbox.get(i))
+            self.policies['excused_absence_types'] = absence_types
+
+            # Save to database
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
+                # Create table if it doesn't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS attendance_policies (
+                        policy_key TEXT PRIMARY KEY,
+                        policy_value TEXT,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+
+                # Save each policy
+                for key, value in self.policies.items():
+                    # Convert lists to JSON
+                    if isinstance(value, list):
+                        value = json.dumps(value)
+
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO attendance_policies (policy_key, policy_value, updated_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ''', (key, str(value)))
+
+                conn.commit()
+                conn.close()
+
+            messagebox.showinfo("Success", "Attendance policies saved successfully!")
+
+            # Log activity
+            try:
+                from university_system.modules.shared.utils.activity_logger import log_activity
+                log_activity('update', 'attendance_policies',
+                           details={'policies_count': len(self.policies)})
+            except:
+                pass
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save policies:\n{e}")
+            import traceback
+            traceback.print_exc()
+
+    def reset_to_defaults(self):
+        """Reset policies to default values"""
+        if messagebox.askyesno("Confirm Reset",
+                              "Are you sure you want to reset all attendance policies to defaults?"):
+            # Reset all variables to defaults
+            self.minimum_attendance_var.set(75)
+            self.late_arrival_var.set(15)
+            self.allow_retroactive_var.set(True)
+            self.retroactive_days_var.set(7)
+            self.require_documentation_var.set(True)
+            self.auto_fail_var.set(False)
+            self.auto_fail_threshold_var.set(50)
+            self.grace_period_var.set(2)
+            self.absence_penalty_var.set(1)
+            self.late_penalty_var.set(0.5)
+            self.max_penalty_var.set(10)
+            self.enable_appeals_var.set(True)
+            self.appeal_deadline_var.set(14)
+            self.require_instructor_approval_var.set(True)
+            self.enable_self_checkin_var.set(True)
+            self.checkin_window_var.set(30)
+            self.enable_geofencing_var.set(True)
+            self.geofence_radius_var.set(100)
+
+            # Reset absence types
+            self.absence_types_listbox.delete(0, tk.END)
+            default_types = ['Medical', 'Family Emergency', 'University Event', 'Religious Holiday']
+            for absence_type in default_types:
+                self.absence_types_listbox.insert(tk.END, absence_type)
+
+            messagebox.showinfo("Success", "Policies reset to defaults!")
+
+    def export_policies(self):
+        """Export policies to JSON file"""
+        try:
+            # Get all current policies
+            self.policies['minimum_attendance_percentage'] = self.minimum_attendance_var.get()
+            self.policies['late_arrival_minutes'] = self.late_arrival_var.get()
+            self.policies['allow_retroactive_changes'] = self.allow_retroactive_var.get()
+            self.policies['retroactive_days_limit'] = self.retroactive_days_var.get()
+
+            # Get absence types
+            absence_types = []
+            for i in range(self.absence_types_listbox.size()):
+                absence_types.append(self.absence_types_listbox.get(i))
+            self.policies['excused_absence_types'] = absence_types
+
+            # Ask for file location
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                initialfile="attendance_policies.json",
+                parent=self.window
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    json.dump(self.policies, f, indent=4)
+
+                messagebox.showinfo("Success", f"Policies exported to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export policies:\n{e}")
+
+
 class HelpWindow:
     def __init__(self, parent):
         self.parent = parent
