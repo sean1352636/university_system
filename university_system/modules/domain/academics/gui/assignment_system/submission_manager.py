@@ -39,6 +39,21 @@ class SubmissionManager:
         except:
             return self.auth.user_role in ['Admin', 'Faculty']
 
+    def _calculate_file_hash(self, file_path):
+        """Calculate file hash for integrity checking"""
+        try:
+            import hashlib
+
+            hash_md5 = hashlib.md5()
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_md5.update(chunk)
+
+            return hash_md5.hexdigest()
+        except Exception as e:
+            print(f"Error calculating file hash: {e}")
+            return None
+
     def load_modules(self, combo):
         """Load available modules"""
         try:
@@ -412,9 +427,9 @@ class SubmissionManager:
             new_file_path = os.path.join(submission_dir, new_file_name)
             
             shutil.copy2(file_path, new_file_path)
-            
+
             # Calculate file hash and size
-            file_hash = self.assignment_system._calculate_file_hash(new_file_path)
+            file_hash = self._calculate_file_hash(new_file_path)
             file_size = os.path.getsize(new_file_path)
             
             # Save submission

@@ -39,6 +39,21 @@ class MaintenanceManager:
         except:
             return self.auth.user_role in ['Admin', 'Faculty']
 
+    def _calculate_file_hash(self, file_path):
+        """Calculate file hash for integrity checking"""
+        try:
+            import hashlib
+
+            hash_md5 = hashlib.md5()
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_md5.update(chunk)
+
+            return hash_md5.hexdigest()
+        except Exception as e:
+            print(f"Error calculating file hash: {e}")
+            return None
+
     def system_maintenance(self):
         """System maintenance interface"""
         if not self._check_permission('manage_assignments'):
@@ -195,7 +210,7 @@ class MaintenanceManager:
                 if not os.path.exists(file_path):
                     missing_files += 1
                 else:
-                    current_hash = self.assignment_system._calculate_file_hash(file_path)
+                    current_hash = self._calculate_file_hash(file_path)
                     if current_hash != stored_hash:
                         corrupted_files += 1
             
