@@ -4920,7 +4920,7 @@ Status: {status.upper()}"""
                 # Get total outstanding fines
                 cursor.execute('''
                     SELECT SUM(fine_amount) FROM book_loans
-                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                    WHERE user_id = ? AND fine_amount > 0
                 ''', (user_id,))
                 total_fines = cursor.fetchone()[0] or 0.0
 
@@ -4944,7 +4944,7 @@ Status: {status.upper()}"""
                 # Apply payment to fines (oldest first)
                 cursor.execute('''
                     SELECT loan_id, fine_amount FROM book_loans
-                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                    WHERE user_id = ? AND fine_amount > 0
                     ORDER BY due_date ASC
                 ''', (user_id,))
 
@@ -4960,7 +4960,8 @@ Status: {status.upper()}"""
                         # Pay full fine for this loan
                         cursor.execute('''
                             UPDATE book_loans
-                            SET fine_paid = 1, fine_paid_date = ?, fine_amount = 0
+                            SET fine_amount = 0,
+                                notes = COALESCE(notes || '; ', '') || 'Fine paid on ' || ?
                             WHERE loan_id = ?
                         ''', (current_date, loan_id))
                         remaining_payment -= fine_amount
@@ -5037,7 +5038,7 @@ Status: {status.upper()}"""
                 # Get total outstanding fines
                 cursor.execute('''
                     SELECT SUM(fine_amount) FROM book_loans
-                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                    WHERE user_id = ? AND fine_amount > 0
                 ''', (user_id,))
                 total_fines = cursor.fetchone()[0] or 0.0
 
@@ -5062,9 +5063,10 @@ Status: {status.upper()}"""
                 current_date = datetime.now().strftime('%Y-%m-%d')
                 cursor.execute('''
                     UPDATE book_loans
-                    SET fine_amount = 0, fine_paid = 1, fine_paid_date = ?, notes = COALESCE(notes || '; ', '') || 'Fine waived on ' || ?
+                    SET fine_amount = 0,
+                        notes = COALESCE(notes || '; ', '') || 'Fine waived on ' || ?
                     WHERE user_id = ? AND fine_amount > 0
-                ''', (current_date, current_date, user_id))
+                ''', (current_date, user_id))
 
                 rows_affected = cursor.rowcount
                 conn.commit()

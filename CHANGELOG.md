@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Library Fine Payment - Non-existent Columns
+
+**Fixed database column error preventing fine payment processing**
+
+#### Issue Fixed
+
+**Error**: `failed to process payment no such column fine_paid`
+
+**Root Cause**:
+- Code attempted to use columns `fine_paid` and `fine_paid_date` that don't exist in book_loans table
+- Database schema only has: loan_id, book_id, user_id, checkout_date, due_date, return_date, status, fine_amount, renewal_count, reading_progress, checkout_method, staff_id, notes
+- NO `fine_paid` or `fine_paid_date` columns exist
+
+#### Changes Made
+
+**File**: `library_gui.py` - Functions: `process_fine_payment()` and `waive_all_fines()`
+
+**1. Fixed process_fine_payment() - Lines 4920-5019**
+
+- **Line 4923**: Removed `AND (fine_paid IS NULL OR fine_paid = 0)` from SELECT query
+  - Before: `WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)`
+  - After: `WHERE user_id = ? AND fine_amount > 0`
+  - Now checks only `fine_amount > 0` to determine outstanding fines
+
+- **Line 4947**: Removed `AND (fine_paid IS NULL OR fine_paid = 0)` from SELECT query
+  - Same fix as above for the loan selection query
+
+- **Lines 4963-4965**: Removed non-existent columns from UPDATE, added notes tracking
+  - Before: `SET fine_paid = 1, fine_paid_date = ?, fine_amount = 0`
+  - After: `SET fine_amount = 0, notes = COALESCE(notes || '; ', '') || 'Fine paid on ' || ?`
+  - Now records payment date in the `notes` field instead
+
+**2. Fixed waive_all_fines() - Lines 5020-5093**
+
+- **Line 5040**: Removed `AND (fine_paid IS NULL OR fine_paid = 0)` from SELECT query
+  - Before: `WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)`
+  - After: `WHERE user_id = ? AND fine_amount > 0`
+
+- **Lines 5066-5067**: Removed non-existent columns from UPDATE
+  - Before: `SET fine_amount = 0, fine_paid = 1, fine_paid_date = ?, notes = COALESCE(notes || '; ', '') || 'Fine waived on ' || ?`
+  - After: `SET fine_amount = 0, notes = COALESCE(notes || '; ', '') || 'Fine waived on ' || ?`
+  - Reduced parameters from 3 to 2: `(current_date, current_date, user_id)` → `(current_date, user_id)`
+
+#### Technical Solution
+
+**Payment Tracking Strategy:**
+- **Paid status**: Determined by `fine_amount = 0` (not a separate column)
+- **Payment date**: Recorded in `notes` field as "Fine paid on YYYY-MM-DD"
+- **Waiver date**: Recorded in `notes` field as "Fine waived on YYYY-MM-DD"
+- **Partial payments**: Reflected by reduced `fine_amount` value
+
+**Database Query Pattern:**
+```sql
+-- Check for unpaid fines (OLD - WRONG)
+WHERE fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+
+-- Check for unpaid fines (NEW - CORRECT)
+WHERE fine_amount > 0
+
+-- Mark fine as paid (OLD - WRONG)
+SET fine_paid = 1, fine_paid_date = ?, fine_amount = 0
+
+-- Mark fine as paid (NEW - CORRECT)
+SET fine_amount = 0, notes = COALESCE(notes || '; ', '') || 'Fine paid on ' || ?
+```
+
+#### Result
+
+✓ Fine payment processing now works correctly
+✓ Fine waiving works correctly
+✓ Payment/waiver dates tracked in notes field
+✓ Queries match actual database schema
+✓ No dependency on non-existent columns
+✓ Finance integration continues to work
+
+#### Testing
+
+- Syntax check: ✓ PASSED
+- Database schema verification: ✓ book_loans columns confirmed
+- Query updates: ✓ All references to fine_paid/fine_paid_date removed
+- Alternative tracking: ✓ Notes field used for audit trail
+
+**Functions Fixed:**
+1. `process_fine_payment()` - Manual cash/card payments at library desk
+2. `waive_all_fines()` - Administrative fine waiver
+
 ### Fixed - 2025-11-12: Library-Finance Integration Variable Naming
 
 **Fixed variable naming inconsistency in library fine payment finance integration**
