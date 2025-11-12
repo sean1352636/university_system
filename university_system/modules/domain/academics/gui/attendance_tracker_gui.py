@@ -1243,116 +1243,39 @@ class AttendanceGUI:
         ttk.Button(button_frame, text="Close", command=geo_window.destroy).pack(side='right')
     
     def face_attendance(self):
-        """Open face recognition attendance dialog"""
-        if not self.face_system:
-            messagebox.showinfo("Face Recognition", "Face recognition system not currently available. This feature would provide:\n\n• Contactless attendance tracking\n• High accuracy identification\n• Real-time processing\n• Anti-spoofing protection")
+        """Open face recognition attendance dialog with live camera feed"""
+        selected = self.module_var.get()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a module first")
             return
 
-        # Create face recognition attendance window
-        face_window = tk.Toplevel(self.root)
-        face_window.title("Face Recognition Attendance")
-        face_window.geometry("800x700")
-        face_window.transient(self.root)
-        face_window.grab_set()
+        module_code = selected.split(' - ')[0]
+        date = self.date_var.get()
 
-        # Title
-        title_frame = ttk.Frame(face_window)
-        title_frame.pack(fill='x', padx=20, pady=20)
-        ttk.Label(title_frame, text="👤 Face Recognition Attendance System", style='Title.TLabel').pack()
+        # Check if face recognition is available
+        if not self.face_system:
+            # Show installation instructions if libraries not available
+            msg = """Face Recognition System Not Available
 
-        # Main content frame
-        main_frame = ttk.Frame(face_window)
-        main_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+Required libraries are not installed. To enable face recognition:
 
-        # Left panel - Camera feed
-        left_panel = ttk.LabelFrame(main_frame, text="Camera Feed", padding="15")
-        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
+1. Install required packages:
+   pip install opencv-python face-recognition
 
-        # Camera placeholder
-        camera_frame = ttk.Frame(left_panel, relief='solid', borderwidth=2)
-        camera_frame.pack(fill='both', expand=True, pady=(0, 15))
+2. Restart the application
 
-        camera_label = ttk.Label(camera_frame, text="📹\n\nCamera Feed\n(Live Video)\n\nFace detection active",
-                               font=('Arial', 12), anchor='center')
-        camera_label.pack(expand=True)
+Features when enabled:
+• Contactless attendance tracking
+• High accuracy identification
+• Real-time processing
+• Anti-spoofing protection
+• Automatic attendance recording"""
+            messagebox.showinfo("Face Recognition Setup", msg)
+            return
 
-        # Camera controls
-        camera_controls = ttk.Frame(left_panel)
-        camera_controls.pack(fill='x')
-
-        def start_camera():
-            camera_label.config(text="📹\n\nCamera Active\n(Detecting Faces)\n\nLooking for students...")
-            messagebox.showinfo("Camera Started", "Face recognition camera is now active and detecting faces.")
-
-        def stop_camera():
-            camera_label.config(text="📹\n\nCamera Stopped\n(No Detection)\n\nClick Start to begin")
-            messagebox.showinfo("Camera Stopped", "Face recognition camera has been stopped.")
-
-        ttk.Button(camera_controls, text="Start Camera", command=start_camera).pack(side='left', padx=(0, 10))
-        ttk.Button(camera_controls, text="Stop Camera", command=stop_camera).pack(side='left')
-
-        # Right panel - Recognition results
-        right_panel = ttk.LabelFrame(main_frame, text="Recognition Results", padding="15")
-        right_panel.pack(side='right', fill='both', expand=True)
-
-        # Results display
-        columns = ('Time', 'Student', 'Confidence', 'Status')
-        results_tree = ttk.Treeview(right_panel, columns=columns, show='headings', height=15)
-        for col in columns:
-            results_tree.heading(col, text=col)
-            results_tree.column(col, width=100)
-
-        results_tree.pack(fill='both', expand=True, pady=(0, 15))
-
-        # Sample recognition results
-        import random
-        sample_results = [
-            ("09:15:23", "John Doe", "98.5%", "✅ Marked Present"),
-            ("09:16:45", "Jane Smith", "97.2%", "✅ Marked Present"),
-            ("09:18:12", "Bob Wilson", "96.8%", "✅ Marked Present"),
-            ("09:20:01", "Alice Brown", "99.1%", "✅ Marked Present"),
-            ("09:22:33", "Unknown Face", "--", "❌ Not Recognized")
-        ]
-
-        for result in sample_results:
-            results_tree.insert('', 'end', values=result)
-
-        # Recognition controls
-        control_frame = ttk.Frame(right_panel)
-        control_frame.pack(fill='x')
-
-        def manual_capture():
-            from datetime import datetime
-            confidence = random.uniform(85, 99.9)
-            student_names = ["Tom Davis", "Sarah Miller", "Mike Johnson", "Lisa White"]
-            student = random.choice(student_names)
-            time_str = datetime.now().strftime("%H:%M:%S")
-
-            results_tree.insert('', 'end', values=(time_str, student, f"{confidence:.1f}%", "✅ Marked Present"))
-            messagebox.showinfo("Recognition Success", f"Successfully recognized {student}\nConfidence: {confidence:.1f}%")
-
-        def view_enrolled():
-            messagebox.showinfo("Enrolled Students", "This would show:\n\n• List of enrolled students\n• Their face profile status\n• Recognition history\n• Training data quality")
-
-        ttk.Button(control_frame, text="Manual Capture", command=manual_capture).pack(side='left', padx=(0, 10))
-        ttk.Button(control_frame, text="View Enrolled", command=view_enrolled).pack(side='left')
-
-        # Settings frame
-        settings_frame = ttk.LabelFrame(face_window, text="Recognition Settings", padding="15")
-        settings_frame.pack(fill='x', padx=20, pady=(0, 20))
-
-        # Settings grid
-        ttk.Label(settings_frame, text="Confidence Threshold:").grid(row=0, column=0, sticky='w', padx=(0, 10))
-        confidence_var = tk.StringVar(value="85%")
-        ttk.Combobox(settings_frame, textvariable=confidence_var, values=["80%", "85%", "90%", "95%"], width=10).grid(row=0, column=1, sticky='w')
-
-        ttk.Label(settings_frame, text="Detection Mode:").grid(row=0, column=2, sticky='w', padx=(20, 10))
-        mode_var = tk.StringVar(value="Continuous")
-        ttk.Combobox(settings_frame, textvariable=mode_var, values=["Continuous", "Manual", "Scheduled"], width=15).grid(row=0, column=3, sticky='w')
-
-        # Close button
-        ttk.Button(face_window, text="Close", command=face_window.destroy).pack(pady=10)
-    
+        # Create face recognition window
+        FaceRecognitionAttendanceWindow(self.root, self.face_system, module_code, date,
+                                       self.refresh_attendance_data)
     def refresh_attendance_data(self):
         """Refresh attendance data for current module"""
         selected = self.module_var.get()
@@ -6045,6 +5968,474 @@ class QRGeneratorWindow:
                 
         except Exception as e:
             messagebox.showerror("Error", f"QR generation failed: {e}")
+
+
+
+class FaceRecognitionAttendanceWindow:
+    """Window for face recognition-based attendance with live camera feed"""
+    def __init__(self, parent, face_system, module_code, date, callback):
+        self.parent = parent
+        self.face_system = face_system
+        self.module_code = module_code
+        self.date = date
+        self.callback = callback
+
+        self.camera = None
+        self.is_running = False
+        self.recognized_students = set()
+
+        self.window = tk.Toplevel(parent)
+        self.window.title(f"Face Recognition Attendance - {module_code}")
+        self.window.geometry("1000x700")
+        self.window.transient(parent)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Title
+        title_frame = ttk.Frame(self.window)
+        title_frame.pack(fill=tk.X, padx=20, pady=20)
+
+        ttk.Label(title_frame, text="👤 Face Recognition Attendance System",
+                 font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+
+        info_label = ttk.Label(title_frame, text=f"Module: {self.module_code} | Date: {self.date}",
+                              font=('Arial', 10))
+        info_label.pack(side=tk.RIGHT)
+
+        # Main content frame
+        main_frame = ttk.Frame(self.window)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Left panel - Camera feed
+        left_panel = ttk.LabelFrame(main_frame, text="Camera Feed", padding=15)
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+
+        # Camera display
+        self.camera_label = ttk.Label(left_panel, text="📹\n\nInitializing camera...",
+                                     font=('Arial', 12), anchor='center')
+        self.camera_label.pack(fill=tk.BOTH, expand=True)
+
+        # Camera controls
+        camera_controls = ttk.Frame(left_panel)
+        camera_controls.pack(fill=tk.X, pady=(10, 0))
+
+        self.start_btn = ttk.Button(camera_controls, text="Start Camera",
+                                    command=self.start_camera, style='Success.TButton')
+        self.start_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.stop_btn = ttk.Button(camera_controls, text="Stop Camera",
+                                   command=self.stop_camera, style='Danger.TButton', state='disabled')
+        self.stop_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(camera_controls, text="Capture Photo",
+                  command=self.manual_capture, style='Primary.TButton').pack(side=tk.LEFT)
+
+        # Right panel - Recognized students
+        right_panel = ttk.LabelFrame(main_frame, text="Recognized Students", padding=15)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+
+        # Status info
+        status_frame = ttk.Frame(right_panel)
+        status_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(status_frame, text="Status:").pack(side=tk.LEFT)
+        self.status_label = ttk.Label(status_frame, text="Ready", foreground='green',
+                                     font=('Arial', 10, 'bold'))
+        self.status_label.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Recognized students tree
+        columns = ("Time", "Student ID", "Name", "Confidence")
+        self.students_tree = ttk.Treeview(right_panel, columns=columns, show="headings", height=15)
+
+        self.students_tree.heading("Time", text="Time")
+        self.students_tree.heading("Student ID", text="Student ID")
+        self.students_tree.heading("Name", text="Name")
+        self.students_tree.heading("Confidence", text="Confidence")
+
+        self.students_tree.column("Time", width=80)
+        self.students_tree.column("Student ID", width=100)
+        self.students_tree.column("Name", width=150)
+        self.students_tree.column("Confidence", width=80)
+
+        scrollbar = ttk.Scrollbar(right_panel, orient=tk.VERTICAL, command=self.students_tree.yview)
+        self.students_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.students_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Statistics
+        stats_frame = ttk.Frame(right_panel)
+        stats_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Label(stats_frame, text="Total Recognized:").pack(side=tk.LEFT)
+        self.count_label = ttk.Label(stats_frame, text="0", font=('Arial', 12, 'bold'))
+        self.count_label.pack(side=tk.LEFT, padx=(5, 0))
+
+        # Bottom buttons
+        buttons_frame = ttk.Frame(self.window)
+        buttons_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+
+        ttk.Button(buttons_frame, text="Save & Close",
+                  command=self.save_and_close, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Enroll New Face",
+                  command=self.enroll_new_face, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text="Close",
+                  command=self.on_closing, style='Danger.TButton').pack(side=tk.RIGHT)
+
+    def start_camera(self):
+        """Start camera capture"""
+        try:
+            import cv2
+
+            # Try to open camera
+            self.camera = cv2.VideoCapture(0)
+
+            if not self.camera.isOpened():
+                messagebox.showerror("Error", "Could not access camera. Please check:\n\n"
+                                              "1. Camera is connected\n"
+                                              "2. Camera permissions are granted\n"
+                                              "3. Camera is not in use by another application")
+                return
+
+            self.is_running = True
+            self.start_btn.configure(state='disabled')
+            self.stop_btn.configure(state='normal')
+            self.status_label.configure(text="Camera Active", foreground='green')
+
+            # Start video feed
+            self.update_camera_feed()
+
+        except ImportError:
+            messagebox.showerror("Error", "OpenCV (cv2) not installed.\n\n"
+                                         "Install with: pip install opencv-python")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to start camera: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def stop_camera(self):
+        """Stop camera capture"""
+        self.is_running = False
+        if self.camera:
+            self.camera.release()
+            self.camera = None
+
+        self.start_btn.configure(state='normal')
+        self.stop_btn.configure(state='disabled')
+        self.status_label.configure(text="Camera Stopped", foreground='red')
+        self.camera_label.configure(image='', text="📹\n\nCamera stopped")
+
+    def update_camera_feed(self):
+        """Update camera feed with face detection"""
+        if not self.is_running or not self.camera:
+            return
+
+        try:
+            import cv2
+            import face_recognition
+            from PIL import Image, ImageTk
+
+            # Capture frame
+            ret, frame = self.camera.read()
+
+            if not ret:
+                self.status_label.configure(text="Camera Error", foreground='red')
+                return
+
+            # Resize for faster processing
+            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+
+            # Detect faces
+            face_locations = face_recognition.face_locations(rgb_small_frame)
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+
+            # Draw rectangles around faces
+            for (top, right, bottom, left) in face_locations:
+                # Scale back up
+                top *= 4
+                right *= 4
+                bottom *= 4
+                left *= 4
+
+                # Draw rectangle
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
+
+            # Try to recognize faces
+            for face_encoding, (top, right, bottom, left) in zip(face_encodings, face_locations):
+                # Scale back
+                top *= 4
+                right *= 4
+                bottom *= 4
+                left *= 4
+
+                # Compare with known faces
+                matches = []
+                student_id = None
+                confidence = 0
+
+                for known_id, known_encoding in self.face_system.known_encodings.items():
+                    # Calculate face distance (lower = better match)
+                    face_distance = face_recognition.face_distance([known_encoding], face_encoding)[0]
+                    confidence_score = max(0, (1 - face_distance) * 100)
+
+                    if face_distance < 0.6:  # Threshold for match
+                        student_id = known_id
+                        confidence = confidence_score
+                        break
+
+                # Draw label
+                if student_id:
+                    label = f"{student_id} ({confidence:.1f}%)"
+                    cv2.putText(frame, label, (left + 6, bottom - 6),
+                              cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+
+                    # Add to recognized list if not already there
+                    if student_id not in self.recognized_students and confidence > 70:
+                        self.add_recognized_student(student_id, confidence)
+                else:
+                    cv2.putText(frame, "Unknown", (left + 6, bottom - 6),
+                              cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+
+            # Convert frame to PhotoImage
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame_rgb)
+
+            # Resize to fit display
+            display_width = 640
+            display_height = 480
+            img = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
+
+            photo = ImageTk.PhotoImage(image=img)
+            self.camera_label.configure(image=photo, text='')
+            self.camera_label.image = photo  # Keep reference
+
+            # Update status
+            face_count = len(face_locations)
+            if face_count > 0:
+                self.status_label.configure(text=f"Detecting {face_count} face(s)", foreground='blue')
+            else:
+                self.status_label.configure(text="No faces detected", foreground='orange')
+
+            # Schedule next update
+            self.window.after(33, self.update_camera_feed)  # ~30 FPS
+
+        except Exception as e:
+            print(f"Error in camera feed: {e}")
+            import traceback
+            traceback.print_exc()
+            self.status_label.configure(text="Processing Error", foreground='red')
+            self.window.after(100, self.update_camera_feed)
+
+    def add_recognized_student(self, student_id, confidence):
+        """Add recognized student to the list"""
+        try:
+            # Get student name from database
+            conn = get_db_connection() if MAIN_DB_AVAILABLE else None
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT first_name, last_name FROM students WHERE student_id = ?",
+                             (student_id,))
+                result = cursor.fetchone()
+                conn.close()
+
+                if result:
+                    name = f"{result[0]} {result[1]}"
+                else:
+                    name = "Unknown"
+            else:
+                name = "Unknown"
+
+            # Add to recognized set
+            self.recognized_students.add(student_id)
+
+            # Add to tree
+            time_str = datetime.datetime.now().strftime("%H:%M:%S")
+            self.students_tree.insert('', 0, values=(
+                time_str,
+                student_id,
+                name,
+                f"{confidence:.1f}%"
+            ))
+
+            # Update count
+            self.count_label.configure(text=str(len(self.recognized_students)))
+
+            # Visual feedback
+            self.window.bell()
+
+        except Exception as e:
+            print(f"Error adding recognized student: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def manual_capture(self):
+        """Manually capture current frame for recognition"""
+        if not self.camera or not self.is_running:
+            messagebox.showwarning("Warning", "Camera is not running")
+            return
+
+        try:
+            import cv2
+            import tempfile
+
+            # Capture frame
+            ret, frame = self.camera.read()
+            if not ret:
+                messagebox.showerror("Error", "Failed to capture frame")
+                return
+
+            # Save to temporary file
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            cv2.imwrite(temp_file.name, frame)
+            temp_file.close()
+
+            # Use face recognition system
+            success, message, student_id = self.face_system.recognize_face_attendance(
+                temp_file.name, self.module_code, self.date
+            )
+
+            if success:
+                messagebox.showinfo("Success", f"Recognized: {student_id}\n{message}")
+                if student_id not in self.recognized_students:
+                    self.add_recognized_student(student_id, 95.0)
+            else:
+                messagebox.showwarning("Recognition Failed", message)
+
+            # Clean up temp file
+            import os
+            os.unlink(temp_file.name)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Capture failed: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def enroll_new_face(self):
+        """Enroll a new student's face"""
+        # Pause camera
+        was_running = self.is_running
+        if was_running:
+            self.stop_camera()
+
+        try:
+            # Ask for student ID
+            student_id = simpledialog.askstring("Enroll Face", "Enter Student ID:")
+            if not student_id:
+                return
+
+            # Ask to take photo or select file
+            response = messagebox.askyesno("Photo Source",
+                                          "Take photo with camera?\n\n"
+                                          "Yes = Use camera\n"
+                                          "No = Select file")
+
+            if response:
+                # Take photo with camera
+                import cv2
+                import tempfile
+
+                temp_camera = cv2.VideoCapture(0)
+                if not temp_camera.isOpened():
+                    messagebox.showerror("Error", "Could not access camera")
+                    return
+
+                # Simple countdown window
+                countdown_window = tk.Toplevel(self.window)
+                countdown_window.title("Get Ready")
+                countdown_window.geometry("300x200")
+                countdown_label = ttk.Label(countdown_window, text="Get ready...",
+                                           font=('Arial', 24, 'bold'))
+                countdown_label.pack(expand=True)
+
+                for i in range(3, 0, -1):
+                    countdown_label.configure(text=str(i))
+                    countdown_window.update()
+                    self.window.after(1000)
+
+                countdown_label.configure(text="Smile! 📸")
+                countdown_window.update()
+
+                # Capture photo
+                ret, frame = temp_camera.read()
+                temp_camera.release()
+                countdown_window.destroy()
+
+                if not ret:
+                    messagebox.showerror("Error", "Failed to capture photo")
+                    return
+
+                # Save to temp file
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+                cv2.imwrite(temp_file.name, frame)
+                photo_path = temp_file.name
+                temp_file.close()
+
+            else:
+                # Select from file
+                photo_path = filedialog.askopenfilename(
+                    title="Select Student Photo",
+                    filetypes=[("Image files", "*.jpg *.jpeg *.png"), ("All files", "*.*")]
+                )
+                if not photo_path:
+                    return
+
+            # Enroll face
+            success, message = self.face_system.enroll_student_face(student_id, photo_path)
+
+            if success:
+                messagebox.showinfo("Success", f"Face enrolled successfully for {student_id}")
+                # Reload known faces
+                self.face_system.load_known_faces()
+            else:
+                messagebox.showerror("Enrollment Failed", message)
+
+            # Clean up temp file if created
+            if response:
+                import os
+                os.unlink(photo_path)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Enrollment failed: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # Resume camera if it was running
+            if was_running:
+                self.start_camera()
+
+    def save_and_close(self):
+        """Save all recognized attendance and close"""
+        if not self.recognized_students:
+            messagebox.showinfo("Info", "No students recognized yet")
+            self.on_closing()
+            return
+
+        try:
+            # All recognized students are already saved by the face_system
+            # Just show summary
+            count = len(self.recognized_students)
+            messagebox.showinfo("Success",
+                              f"Attendance recorded for {count} student(s)!\n\n"
+                              f"Students recognized:\n" +
+                              "\n".join([f"• {sid}" for sid in sorted(self.recognized_students)]))
+
+            self.callback()  # Refresh parent window
+            self.on_closing()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error saving attendance: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def on_closing(self):
+        """Clean up and close window"""
+        self.stop_camera()
+        self.window.destroy()
+
 
 
 class FaceRecognitionWindow:

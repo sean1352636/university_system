@@ -63,8 +63,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Real-time status updates in UI
 - Error handling with detailed error messages
 
+**Camera-Based Face Recognition - FULLY IMPLEMENTED** ✅
+- `FaceRecognitionAttendanceWindow` class added at line 5974 (370 lines)
+- Live camera feed with OpenCV integration
+- Features:
+  - Real-time video capture at ~30 FPS
+  - Automatic face detection and recognition
+  - Visual bounding boxes around detected faces
+  - Confidence score display (percentage match)
+  - Automatic attendance recording for recognized students
+  - Recognized students list with timestamps
+  - Manual capture button for single-frame recognition
+  - Student enrollment with camera or file selection
+  - 3-second countdown timer for photo capture
+  - Professional UI with start/stop controls
+  - Camera resource cleanup on window close
+- Dependencies: opencv-python, face-recognition, PIL
+- Integration with existing FaceRecognitionSystem from attendance_tracker service
+- Database: Uses student_biometrics table for face encodings
+- Threshold: 60% match confidence (configurable)
+- Auto-marks attendance when confidence > 70%
+
 **Remaining Work** (see ATTENDANCE_GUI_FIX_SUMMARY.md):
-- Camera-based face detection functionality
 - Automated email notification system for low attendance
 - Parent notification system with database integration
 - API management functionality
