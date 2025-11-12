@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Library Fine Payment Functions Missing
+
+**Implemented missing process_fine_payment and waive_all_fines functions**
+
+#### Issue
+- "Process Payment" button called non-existent `process_fine_payment()` method
+- "Waive All Fines" button called non-existent `waive_all_fines()` method
+- Both buttons were in Fine Management dialog but functions were not implemented
+- Error occurred when clicking either button
+
+#### Implementations
+
+1. **process_fine_payment() - Manual Fine Payment Processing**
+   - Processes cash/card payments at library desk
+   - Validates user and payment amount
+   - Applies payment to oldest fines first (FIFO)
+   - Supports partial payments with remaining balance tracking
+   - Prevents overpayment with confirmation dialog
+   - Updates book_loans table: sets fine_paid=1, fine_amount=0
+   - Clears payment field and refreshes fine display after success
+   - Audit logging for all transactions
+   - ~115 lines of code
+   - File: library_gui.py:4888-5003
+
+2. **waive_all_fines() - Fine Waiver Function**
+   - Waives all outstanding fines for a user
+   - Requires confirmation with amount display
+   - Updates book_loans: sets fine_amount=0, fine_paid=1
+   - Adds waiver note with timestamp to loan records
+   - Shows number of loans affected
+   - Refreshes fine display after waiving
+   - Audit logging for compliance
+   - ~73 lines of code
+   - File: library_gui.py:5005-5078
+
+#### Features
+- **Payment Processing:**
+  - FIFO (oldest fines first) payment allocation
+  - Partial payment support
+  - Overpayment prevention with user confirmation
+  - Automatic balance calculation
+  - Payment date tracking
+
+- **Fine Waiver:**
+  - Total amount calculation
+  - Confirmation dialog with details
+  - Audit trail in loan notes
+  - Bulk waiver for all user fines
+
+- **Database Updates:**
+  - Sets fine_paid = 1 when paid/waived
+  - Sets fine_paid_date with current date
+  - Reduces fine_amount or sets to 0
+  - Adds notes for waived fines
+
+- **User Experience:**
+  - Clear success/error messages
+  - Automatic refresh of fines display
+  - Input validation
+  - Demo mode support
+
+#### Total Changes
+- ~188 lines of functional code added
+- 2 new methods implemented
+- Fine management dialog now fully functional
+- All buttons in payment frame working
+
+**Database Schema Used:**
+- book_loans table: loan_id, user_id, fine_amount, fine_paid, fine_paid_date, notes
+- Query pattern: WHERE fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+
 ### Fixed - 2025-11-12 HOTFIX: Library Email Report Function Parameter Error
 
 **Fixed incorrect email service parameter causing "unexpected keyword argument 'to_email'" error**

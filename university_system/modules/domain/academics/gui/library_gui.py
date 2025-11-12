@@ -4884,7 +4884,199 @@ Status: {status.upper()}"""
         
         except Exception as e:
             messagebox.showerror("Error", f"Error loading fines: {str(e)}")
-            
+
+    def process_fine_payment(self):
+        """Process a manual fine payment (cash/card at library desk)"""
+        user_id = self.fine_user_var.get().strip()
+        payment_amount = self.payment_amount_var.get().strip()
+
+        if not user_id:
+            messagebox.showwarning("Warning", "Please search for a user first")
+            return
+
+        if not payment_amount:
+            messagebox.showwarning("Warning", "Please enter a payment amount")
+            return
+
+        try:
+            amount = float(payment_amount)
+            if amount <= 0:
+                messagebox.showwarning("Warning", "Payment amount must be greater than 0")
+                return
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid payment amount")
+            return
+
+        # Get user details
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get total outstanding fines
+                cursor.execute('''
+                    SELECT SUM(fine_amount) FROM book_loans
+                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                ''', (user_id,))
+                total_fines = cursor.fetchone()[0] or 0.0
+
+                if total_fines == 0:
+                    messagebox.showinfo("No Fines", "This user has no outstanding fines")
+                    conn.close()
+                    return
+
+                if amount > total_fines:
+                    response = messagebox.askyesno(
+                        "Payment Exceeds Fines",
+                        f"Payment amount (${amount:.2f}) exceeds total fines (${total_fines:.2f}).\n\n"
+                        f"Do you want to process payment of ${total_fines:.2f} (full balance) instead?"
+                    )
+                    if response:
+                        amount = total_fines
+                    else:
+                        conn.close()
+                        return
+
+                # Apply payment to fines (oldest first)
+                cursor.execute('''
+                    SELECT loan_id, fine_amount FROM book_loans
+                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                    ORDER BY due_date ASC
+                ''', (user_id,))
+
+                loans_with_fines = cursor.fetchall()
+                remaining_payment = amount
+                current_date = datetime.now().strftime('%Y-%m-%d')
+
+                for loan_id, fine_amount in loans_with_fines:
+                    if remaining_payment <= 0:
+                        break
+
+                    if remaining_payment >= fine_amount:
+                        # Pay full fine for this loan
+                        cursor.execute('''
+                            UPDATE book_loans
+                            SET fine_paid = 1, fine_paid_date = ?, fine_amount = 0
+                            WHERE loan_id = ?
+                        ''', (current_date, loan_id))
+                        remaining_payment -= fine_amount
+                    else:
+                        # Partial payment
+                        new_fine_amount = fine_amount - remaining_payment
+                        cursor.execute('''
+                            UPDATE book_loans
+                            SET fine_amount = ?
+                            WHERE loan_id = ?
+                        ''', (new_fine_amount, loan_id))
+                        remaining_payment = 0
+
+                conn.commit()
+                conn.close()
+
+                # Log the action
+                if ORIGINAL_LIBRARY_AVAILABLE:
+                    log_audit_event(get_current_user_id(),
+                                  f"GUI: Processed manual fine payment ${amount:.2f} for user {user_id}",
+                                  "book_loans", user_id)
+
+                messagebox.showinfo("Success",
+                    f"Payment of ${amount:.2f} processed successfully!\n\n"
+                    f"Payment Method: Manual (Cash/Card at Desk)\n"
+                    f"User ID: {user_id}\n"
+                    f"Remaining balance will be shown in the refreshed list.")
+
+                # Clear payment amount field
+                self.payment_amount_var.set("")
+
+                # Refresh the fines display
+                self.load_user_fines()
+
+            else:
+                # Demo mode
+                messagebox.showinfo("Demo", f"Demo: Payment of ${amount:.2f} processed for {user_id}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process payment: {str(e)}")
+
+    def waive_all_fines(self):
+        """Waive all outstanding fines for a user"""
+        user_id = self.fine_user_var.get().strip()
+
+        if not user_id:
+            messagebox.showwarning("Warning", "Please search for a user first")
+            return
+
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get total outstanding fines
+                cursor.execute('''
+                    SELECT SUM(fine_amount) FROM book_loans
+                    WHERE user_id = ? AND fine_amount > 0 AND (fine_paid IS NULL OR fine_paid = 0)
+                ''', (user_id,))
+                total_fines = cursor.fetchone()[0] or 0.0
+
+                if total_fines == 0:
+                    messagebox.showinfo("No Fines", "This user has no outstanding fines to waive")
+                    conn.close()
+                    return
+
+                # Confirm waiver
+                response = messagebox.askyesno(
+                    "Confirm Waive Fines",
+                    f"Are you sure you want to waive all fines for user {user_id}?\n\n"
+                    f"Total amount to be waived: ${total_fines:.2f}\n\n"
+                    f"This action cannot be undone."
+                )
+
+                if not response:
+                    conn.close()
+                    return
+
+                # Waive all fines
+                current_date = datetime.now().strftime('%Y-%m-%d')
+                cursor.execute('''
+                    UPDATE book_loans
+                    SET fine_amount = 0, fine_paid = 1, fine_paid_date = ?, notes = COALESCE(notes || '; ', '') || 'Fine waived on ' || ?
+                    WHERE user_id = ? AND fine_amount > 0
+                ''', (current_date, current_date, user_id))
+
+                rows_affected = cursor.rowcount
+                conn.commit()
+                conn.close()
+
+                # Log the action
+                if ORIGINAL_LIBRARY_AVAILABLE:
+                    log_audit_event(get_current_user_id(),
+                                  f"GUI: Waived all fines (${total_fines:.2f}) for user {user_id}",
+                                  "book_loans", user_id)
+
+                messagebox.showinfo("Success",
+                    f"All fines waived successfully!\n\n"
+                    f"User ID: {user_id}\n"
+                    f"Amount waived: ${total_fines:.2f}\n"
+                    f"Loans affected: {rows_affected}")
+
+                # Refresh the fines display
+                self.load_user_fines()
+
+            else:
+                # Demo mode
+                messagebox.showinfo("Demo", f"Demo: All fines waived for {user_id}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to waive fines: {str(e)}")
+
     def load_overdue_books(self):
         """Load overdue books data"""
         # Clear existing data
