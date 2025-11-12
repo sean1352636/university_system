@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Academic Calendar Event-Course Linking Validation Error
+
+**Fixed ValidationError preventing events from being linked to courses**
+
+**Problem:**
+- Academic Calendar GUI threw ValidationError when trying to link events to courses
+- Error: "Invalid event or course ID format"
+- Users unable to associate calendar events with specific courses
+- Function: `link_event_to_course()` in academic_calendar service
+
+**Root Cause:**
+- Validation checked both event_id and course_id as UUIDs
+- Events table uses UUID format IDs: `d62e3077-c729-43fa-bbfb-f970010ab9c7`
+- Courses table uses integer IDs: `1`, `2`, `3`, `4`, `5`
+- UUID validation failed for course IDs, blocking the operation
+
+**Incorrect Validation:**
+```python
+# Before - Both validated as UUID
+if not ValidationUtils.validate_uuid(event_id) or not ValidationUtils.validate_uuid(course_id):
+    raise ValidationError("Invalid event or course ID format")
+```
+
+**Solution:**
+
+1. **Event-Course Linking (link_event_to_course):**
+   - Validate event_id as UUID (correct format for events)
+   - Validate course_id as non-empty string (accepts integer IDs)
+   - Database queries verify actual existence
+
+2. **Advanced Search (search_with_advanced_criteria):**
+   - Removed UUID validation for course_id in search
+   - Now accepts course integer IDs in search filters
+   - Searches will work correctly with course IDs
+
+**Code Changes:**
+
+```python
+# After - Separate validation for each ID type
+# Validate event_id as UUID (events use UUID format)
+if not ValidationUtils.validate_uuid(event_id):
+    raise ValidationError("Invalid event ID format - must be a valid UUID")
+
+# Validate course_id is not empty (courses use integer IDs, not UUIDs)
+if not course_id or not str(course_id).strip():
+    raise ValidationError("Invalid course ID - cannot be empty")
+```
+
+**Impact:**
+- Events can now be successfully linked to courses ✓
+- Validation matches actual database schema ✓
+- Course search by ID now works properly ✓
+- Clear error messages for each ID type ✓
+- No breaking changes to existing functionality ✓
+
+**Database Schema Context:**
+- `events` table: `id TEXT PRIMARY KEY` (UUID format)
+- `courses` table: `id TEXT PRIMARY KEY` (integer values)
+- `course_events` table: Links events to courses
+
+**Files Changed:**
+- `university_system/modules/domain/academics/services/academic_calendar.py`
+  * link_event_to_course() - Lines 2092-2098 (validation logic)
+  * search_with_advanced_criteria() - Lines 3108-3113 (search filter)
+
 ### Fixed - 2025-11-12: Paid Library Fines Still Showing as Outstanding
 
 **Resolved floating-point precision issue causing fully paid fines to remain visible**

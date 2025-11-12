@@ -2089,8 +2089,13 @@ class CourseManager:
             raise PermissionError("Insufficient permissions to link events to courses")
 
         try:
-            if not ValidationUtils.validate_uuid(event_id) or not ValidationUtils.validate_uuid(course_id):
-                raise ValidationError("Invalid event or course ID format")
+            # Validate event_id as UUID (events use UUID format)
+            if not ValidationUtils.validate_uuid(event_id):
+                raise ValidationError("Invalid event ID format - must be a valid UUID")
+
+            # Validate course_id is not empty (courses use integer IDs, not UUIDs)
+            if not course_id or not str(course_id).strip():
+                raise ValidationError("Invalid course ID - cannot be empty")
 
             # Verify both event and course exist
             event_exists = self.db_manager.execute_query(
@@ -3100,11 +3105,12 @@ class AdvancedSearchManager:
                     conditions.append(f"et.name IN ({placeholders})")
                     params.extend(sanitized_tags)
 
-            # Course with validation
+            # Course (courses use integer IDs, not UUIDs)
             if search_criteria.get('course_id'):
-                if ValidationUtils.validate_uuid(search_criteria['course_id']):
+                course_id_value = str(search_criteria['course_id']).strip()
+                if course_id_value:
                     conditions.append("c.id = ?")
-                    params.append(search_criteria['course_id'])
+                    params.append(course_id_value)
 
             # Build final query
             if conditions:
