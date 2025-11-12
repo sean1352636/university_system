@@ -3292,7 +3292,7 @@ Status: {status.upper()}"""
                     from university_system.infrastructure.email.email_service import send_email as send_email_service
 
                     send_email_service(
-                        to_email=recipient,
+                        recipient_email=recipient,
                         subject=subject,
                         body=full_message
                     )

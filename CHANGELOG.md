@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12 HOTFIX: Library Email Report Function Parameter Error
+
+**Fixed incorrect email service parameter causing "unexpected keyword argument 'to_email'" error**
+- Root cause: Called send_email() with `to_email=` instead of `recipient_email=`
+- Email service signature: `send_email(recipient_email, subject, body, ...)`
+- Error occurred when using "📧 Email Report to Admin" button in Library GUI
+- Fixed parameter name from `to_email` → `recipient_email`
+- File: library_gui.py:3295
+- Error log: `send_email() got an unexpected keyword argument 'to_email'`
+
 ### Fixed & Enhanced - 2025-11-12: Library GUI Improvements
 
 **Fixed database column references and implemented missing features**
