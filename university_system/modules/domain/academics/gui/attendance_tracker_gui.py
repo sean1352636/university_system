@@ -411,14 +411,10 @@ class AttendanceGUI:
         # Toolbar
         toolbar = ttk.Frame(students_frame)
         toolbar.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Button(toolbar, text="➕ Add Student", 
-                  command=self.add_student, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="✏️ Edit Student", 
-                  command=self.edit_student, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="🗑️ Delete Student", 
-                  command=self.delete_student, style='Danger.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        
+
+        # Note: Student management (add/edit/delete) should be done through the main Student Management module
+        # These buttons have been removed to avoid duplicate functionality and maintain data consistency
+
         # Search frame
         search_frame = ttk.Frame(toolbar)
         search_frame.pack(side=tk.RIGHT)
