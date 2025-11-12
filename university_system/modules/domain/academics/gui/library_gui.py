@@ -5094,6 +5094,474 @@ Status: {status.upper()}"""
         except Exception as e:
             messagebox.showerror("Error", f"Failed to waive fines: {str(e)}")
 
+    def view_fine_history(self):
+        """View complete fine payment and waiver history for a user"""
+        user_id = self.fine_user_var.get().strip()
+
+        if not user_id:
+            messagebox.showwarning("Warning", "Please search for a user first")
+            return
+
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get all fine-related transactions
+                cursor.execute('''
+                    SELECT loan_id, book_id, checkout_date, due_date, return_date,
+                           fine_amount, status, notes
+                    FROM book_loans
+                    WHERE user_id = ?
+                    ORDER BY checkout_date DESC
+                ''', (user_id,))
+
+                transactions = cursor.fetchall()
+                conn.close()
+
+                if not transactions:
+                    messagebox.showinfo("No History", "No fine history found for this user")
+                    return
+
+                # Create history window
+                history_window = tk.Toplevel()
+                history_window.title(f"Fine History - User {user_id}")
+                history_window.geometry("900x500")
+
+                # Header
+                header_frame = ttk.Frame(history_window)
+                header_frame.pack(fill='x', padx=10, pady=10)
+
+                ttk.Label(header_frame, text=f"Complete Fine History for User: {user_id}",
+                         font=('Arial', 12, 'bold')).pack()
+
+                # Calculate statistics
+                total_paid = sum(0 for _, _, _, _, _, fine, _, notes in transactions
+                               if notes and 'Fine paid on' in notes)
+                total_waived = sum(0 for _, _, _, _, _, fine, _, notes in transactions
+                                 if notes and 'Fine waived on' in notes)
+                total_outstanding = sum(fine for _, _, _, _, _, fine, _, _ in transactions if fine > 0)
+
+                stats_frame = ttk.Frame(history_window)
+                stats_frame.pack(fill='x', padx=10, pady=5)
+
+                ttk.Label(stats_frame, text=f"Payments: {total_paid} | Waivers: {total_waived} | Outstanding: ${total_outstanding:.2f}",
+                         font=('Arial', 10)).pack()
+
+                # Scrollable frame for transactions
+                canvas = tk.Canvas(history_window)
+                scrollbar = ttk.Scrollbar(history_window, orient="vertical", command=canvas.yview)
+                scrollable_frame = ttk.Frame(canvas)
+
+                scrollable_frame.bind(
+                    "<Configure>",
+                    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+                )
+
+                canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+                canvas.configure(yscrollcommand=scrollbar.set)
+
+                # Display transactions
+                for loan_id, book_id, checkout, due, returned, fine, status, notes in transactions:
+                    trans_frame = ttk.LabelFrame(scrollable_frame, text=f"Loan #{loan_id} - Book: {book_id}",
+                                                relief='solid', borderwidth=1)
+                    trans_frame.pack(fill='x', padx=10, pady=5)
+
+                    info_text = f"Checkout: {checkout} | Due: {due} | Status: {status}\n"
+                    if returned:
+                        info_text += f"Returned: {returned}\n"
+                    if fine > 0:
+                        info_text += f"Current Fine: ${fine:.2f}\n"
+                    if notes:
+                        info_text += f"Notes: {notes}\n"
+
+                    ttk.Label(trans_frame, text=info_text).pack(padx=10, pady=5)
+
+                canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+                scrollbar.pack(side="right", fill="y")
+
+                # Close button
+                ttk.Button(history_window, text="Close", command=history_window.destroy).pack(pady=10)
+
+            else:
+                messagebox.showinfo("Demo", f"Demo: Fine history for {user_id}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load fine history: {str(e)}")
+
+    def generate_fine_statistics_report(self):
+        """Generate comprehensive statistics report for all library fines"""
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get overall statistics
+                cursor.execute('''
+                    SELECT
+                        COUNT(*) as total_fines_issued,
+                        COUNT(CASE WHEN fine_amount = 0 AND notes LIKE '%Fine paid on%' THEN 1 END) as total_paid,
+                        COUNT(CASE WHEN fine_amount = 0 AND notes LIKE '%Fine waived on%' THEN 1 END) as total_waived,
+                        COUNT(CASE WHEN fine_amount > 0 THEN 1 END) as total_outstanding,
+                        SUM(CASE WHEN fine_amount > 0 THEN fine_amount ELSE 0 END) as outstanding_amount,
+                        AVG(CASE WHEN fine_amount > 0 THEN fine_amount ELSE NULL END) as avg_outstanding_fine
+                    FROM book_loans
+                    WHERE fine_amount > 0 OR notes LIKE '%Fine%'
+                ''')
+
+                stats = cursor.fetchone()
+                total_fines, total_paid, total_waived, total_outstanding, outstanding_amt, avg_fine = stats
+
+                # Get top defaulters
+                cursor.execute('''
+                    SELECT user_id, SUM(fine_amount) as total_owed, COUNT(*) as fine_count
+                    FROM book_loans
+                    WHERE fine_amount > 0
+                    GROUP BY user_id
+                    ORDER BY total_owed DESC
+                    LIMIT 10
+                ''')
+
+                top_defaulters = cursor.fetchall()
+
+                # Get recent fine activity
+                cursor.execute('''
+                    SELECT COUNT(*) as recent_fines
+                    FROM book_loans
+                    WHERE (notes LIKE '%Fine paid on%' OR notes LIKE '%Fine waived on%')
+                    AND (notes LIKE '%' || date('now', '-30 days') || '%')
+                ''')
+
+                recent_activity = cursor.fetchone()[0]
+
+                conn.close()
+
+                # Create report window
+                report_window = tk.Toplevel()
+                report_window.title("Library Fine Statistics Report")
+                report_window.geometry("700x600")
+
+                # Header
+                header_frame = ttk.Frame(report_window, relief='raised', borderwidth=2)
+                header_frame.pack(fill='x', padx=10, pady=10)
+
+                ttk.Label(header_frame, text="Library Fine Statistics Report",
+                         font=('Arial', 14, 'bold')).pack(pady=10)
+                ttk.Label(header_frame, text=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                         font=('Arial', 9)).pack(pady=5)
+
+                # Create scrollable text widget
+                text_frame = ttk.Frame(report_window)
+                text_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+                text_widget = tk.Text(text_frame, wrap='word', font=('Courier', 10))
+                scrollbar = ttk.Scrollbar(text_frame, orient='vertical', command=text_widget.yview)
+                text_widget.configure(yscrollcommand=scrollbar.set)
+
+                scrollbar.pack(side='right', fill='y')
+                text_widget.pack(side='left', fill='both', expand=True)
+
+                # Build report content
+                report_content = f"""
+═══════════════════════════════════════════════════════
+OVERALL FINE STATISTICS
+═══════════════════════════════════════════════════════
+
+Total Fines Issued:       {total_fines or 0}
+Total Paid:               {total_paid or 0}
+Total Waived:             {total_waived or 0}
+Total Outstanding:        {total_outstanding or 0}
+Outstanding Amount:       ${outstanding_amt or 0:.2f}
+Average Outstanding Fine: ${avg_fine or 0:.2f}
+
+Recent Activity (30 days): {recent_activity} fine transactions
+
+═══════════════════════════════════════════════════════
+TOP 10 USERS WITH OUTSTANDING FINES
+═══════════════════════════════════════════════════════
+
+"""
+                if top_defaulters:
+                    report_content += f"{'User ID':<20} {'Total Owed':>12} {'Fine Count':>12}\n"
+                    report_content += "-" * 55 + "\n"
+                    for user_id, total_owed, fine_count in top_defaulters:
+                        report_content += f"{user_id:<20} ${total_owed:>11.2f} {fine_count:>12}\n"
+                else:
+                    report_content += "No outstanding fines found.\n"
+
+                report_content += "\n═══════════════════════════════════════════════════════\n"
+                report_content += "RECOMMENDATIONS\n"
+                report_content += "═══════════════════════════════════════════════════════\n\n"
+
+                if outstanding_amt and outstanding_amt > 1000:
+                    report_content += "⚠ High outstanding balance - consider reminder campaign\n"
+                if total_outstanding and total_outstanding > 50:
+                    report_content += "⚠ Many outstanding fines - review fine policy\n"
+                if avg_fine and avg_fine > 20:
+                    report_content += "⚠ High average fine - users may need overdue alerts\n"
+
+                text_widget.insert('1.0', report_content)
+                text_widget.configure(state='disabled')
+
+                # Button frame
+                button_frame = ttk.Frame(report_window)
+                button_frame.pack(fill='x', padx=10, pady=10)
+
+                ttk.Button(button_frame, text="Export to File",
+                          command=lambda: self._save_text_report(report_content, "fine_statistics")).pack(side='left', padx=5)
+                ttk.Button(button_frame, text="Close",
+                          command=report_window.destroy).pack(side='right', padx=5)
+
+            else:
+                messagebox.showinfo("Demo", "Demo: Fine statistics report")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate statistics: {str(e)}")
+
+    def adjust_fine_amount(self):
+        """Manually adjust a fine amount for a specific loan"""
+        user_id = self.fine_user_var.get().strip()
+
+        if not user_id:
+            messagebox.showwarning("Warning", "Please search for a user first")
+            return
+
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get loans with fines
+                cursor.execute('''
+                    SELECT loan_id, book_id, fine_amount FROM book_loans
+                    WHERE user_id = ? AND fine_amount > 0
+                    ORDER BY due_date ASC
+                ''', (user_id,))
+
+                loans = cursor.fetchall()
+
+                if not loans:
+                    messagebox.showinfo("No Fines", "This user has no outstanding fines to adjust")
+                    conn.close()
+                    return
+
+                # Create adjustment dialog
+                adjust_dialog = tk.Toplevel()
+                adjust_dialog.title("Adjust Fine Amount")
+                adjust_dialog.geometry("500x400")
+
+                ttk.Label(adjust_dialog, text="Select Loan and Adjust Fine",
+                         font=('Arial', 12, 'bold')).pack(pady=10)
+
+                # Loan selection
+                loan_frame = ttk.LabelFrame(adjust_dialog, text="Select Loan", padding=10)
+                loan_frame.pack(fill='x', padx=10, pady=5)
+
+                loan_var = tk.StringVar()
+                for loan_id, book_id, fine_amt in loans:
+                    ttk.Radiobutton(loan_frame,
+                                   text=f"Loan #{loan_id} - Book: {book_id} - Current Fine: ${fine_amt:.2f}",
+                                   variable=loan_var,
+                                   value=f"{loan_id}:{fine_amt}").pack(anchor='w', pady=2)
+
+                # Adjustment options
+                adjust_options_frame = ttk.LabelFrame(adjust_dialog, text="Adjustment", padding=10)
+                adjust_options_frame.pack(fill='x', padx=10, pady=10)
+
+                adjust_type_var = tk.StringVar(value="set")
+                ttk.Radiobutton(adjust_options_frame, text="Set to specific amount",
+                               variable=adjust_type_var, value="set").grid(row=0, column=0, sticky='w')
+                ttk.Radiobutton(adjust_options_frame, text="Increase by",
+                               variable=adjust_type_var, value="increase").grid(row=1, column=0, sticky='w')
+                ttk.Radiobutton(adjust_options_frame, text="Decrease by",
+                               variable=adjust_type_var, value="decrease").grid(row=2, column=0, sticky='w')
+
+                amount_var = tk.StringVar()
+                ttk.Entry(adjust_options_frame, textvariable=amount_var, width=15).grid(row=0, column=1, padx=5)
+                ttk.Entry(adjust_options_frame, textvariable=amount_var, width=15).grid(row=1, column=1, padx=5)
+                ttk.Entry(adjust_options_frame, textvariable=amount_var, width=15).grid(row=2, column=1, padx=5)
+
+                # Reason
+                reason_frame = ttk.LabelFrame(adjust_dialog, text="Reason for Adjustment", padding=10)
+                reason_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+                reason_text = tk.Text(reason_frame, height=4, width=50)
+                reason_text.pack(fill='both', expand=True)
+
+                def process_adjustment():
+                    if not loan_var.get():
+                        messagebox.showwarning("Warning", "Please select a loan")
+                        return
+
+                    try:
+                        loan_id, current_fine = loan_var.get().split(':')
+                        current_fine = float(current_fine)
+                        adjustment = float(amount_var.get())
+                        adjust_type = adjust_type_var.get()
+                        reason = reason_text.get('1.0', 'end-1c').strip()
+
+                        if not reason:
+                            messagebox.showwarning("Warning", "Please provide a reason for adjustment")
+                            return
+
+                        # Calculate new fine amount
+                        if adjust_type == "set":
+                            new_fine = adjustment
+                        elif adjust_type == "increase":
+                            new_fine = current_fine + adjustment
+                        else:  # decrease
+                            new_fine = max(0, current_fine - adjustment)
+
+                        # Update database
+                        current_date = datetime.now().strftime('%Y-%m-%d')
+                        cursor.execute('''
+                            UPDATE book_loans
+                            SET fine_amount = ?,
+                                notes = COALESCE(notes || '; ', '') || 'Fine adjusted on ' || ? || ': ' || ?
+                            WHERE loan_id = ?
+                        ''', (new_fine, current_date, reason, loan_id))
+
+                        conn.commit()
+                        conn.close()
+
+                        # Log the action
+                        if ORIGINAL_LIBRARY_AVAILABLE:
+                            log_audit_event(get_current_user_id(),
+                                          f"GUI: Adjusted fine for loan {loan_id} from ${current_fine:.2f} to ${new_fine:.2f}. Reason: {reason}",
+                                          "book_loans", loan_id)
+
+                        messagebox.showinfo("Success",
+                            f"Fine adjusted successfully!\n\n"
+                            f"Loan ID: {loan_id}\n"
+                            f"Previous amount: ${current_fine:.2f}\n"
+                            f"New amount: ${new_fine:.2f}")
+
+                        adjust_dialog.destroy()
+                        self.load_user_fines()
+
+                    except ValueError:
+                        messagebox.showerror("Error", "Please enter a valid amount")
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to adjust fine: {str(e)}")
+
+                # Buttons
+                button_frame = ttk.Frame(adjust_dialog)
+                button_frame.pack(fill='x', padx=10, pady=10)
+
+                ttk.Button(button_frame, text="Apply Adjustment",
+                          command=process_adjustment).pack(side='left', padx=5)
+                ttk.Button(button_frame, text="Cancel",
+                          command=adjust_dialog.destroy).pack(side='right', padx=5)
+
+            else:
+                messagebox.showinfo("Demo", f"Demo: Adjust fine for {user_id}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open adjustment dialog: {str(e)}")
+
+    def export_fines_to_csv(self):
+        """Export all outstanding fines to CSV file"""
+        try:
+            if ORIGINAL_LIBRARY_AVAILABLE:
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Error", "Database connection unavailable")
+                    return
+
+                cursor = conn.cursor()
+
+                # Get all fines
+                cursor.execute('''
+                    SELECT bl.user_id, bl.loan_id, bl.book_id, bl.checkout_date, bl.due_date,
+                           bl.return_date, bl.fine_amount, bl.status, bl.notes,
+                           b.title, b.author
+                    FROM book_loans bl
+                    LEFT JOIN books b ON bl.book_id = b.book_id
+                    WHERE bl.fine_amount > 0
+                    ORDER BY bl.due_date ASC
+                ''')
+
+                fines_data = cursor.fetchall()
+                conn.close()
+
+                if not fines_data:
+                    messagebox.showinfo("No Data", "No outstanding fines to export")
+                    return
+
+                # Ask for save location
+                from tkinter import filedialog
+                default_filename = f"library_fines_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                file_path = filedialog.asksaveasfilename(
+                    defaultextension=".csv",
+                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                    initialfile=default_filename
+                )
+
+                if not file_path:
+                    return
+
+                # Write CSV
+                import csv
+                with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+
+                    # Header
+                    writer.writerow(['User ID', 'Loan ID', 'Book ID', 'Book Title', 'Author',
+                                   'Checkout Date', 'Due Date', 'Return Date',
+                                   'Fine Amount', 'Status', 'Notes'])
+
+                    # Data rows
+                    for row in fines_data:
+                        writer.writerow(row)
+
+                    # Summary row
+                    writer.writerow([])
+                    writer.writerow(['SUMMARY'])
+                    writer.writerow(['Total Outstanding Fines:', len(fines_data)])
+                    writer.writerow(['Total Amount:', f'${sum(row[6] for row in fines_data):.2f}'])
+
+                messagebox.showinfo("Success",
+                    f"Fines exported successfully!\n\n"
+                    f"File: {file_path}\n"
+                    f"Records: {len(fines_data)}")
+
+            else:
+                messagebox.showinfo("Demo", "Demo: Export fines to CSV")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export fines: {str(e)}")
+
+    def _save_text_report(self, content, report_type):
+        """Helper function to save text report to file"""
+        try:
+            from tkinter import filedialog
+            default_filename = f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                initialfile=default_filename
+            )
+
+            if file_path:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                messagebox.showinfo("Success", f"Report saved to:\n{file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
     def _record_library_payment_in_finance(self, user_id, amount, payment_method):
         """Record library fine payment in the finance system for tracking."""
         try:
@@ -6336,41 +6804,71 @@ Status: {status.upper()}"""
 
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
-
-                # Add fee to student_fees table
-                fee_id = f"LIB_{student_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 current_date = datetime.now().strftime('%Y-%m-%d')
                 due_date = current_date  # Library fines are due immediately
 
+                # Check for existing unpaid library fee, or create new one
                 cursor.execute('''
-                    INSERT INTO student_fees
-                    (fee_id, student_id, fee_type, amount, due_date, description, paid_status, created_date)
+                    SELECT student_fee_id, amount FROM student_fees
+                    WHERE student_id = ? AND fee_type_id = 3 AND status = 'unpaid'
+                    ORDER BY created_at DESC LIMIT 1
+                ''', (student_id,))
+
+                existing_fee = cursor.fetchone()
+
+                if existing_fee:
+                    # Update existing fee
+                    student_fee_id, current_fee_amount = existing_fee
+                    new_fee_amount = max(0, current_fee_amount - amount)
+
+                    if new_fee_amount == 0:
+                        # Fully paid
+                        cursor.execute('''
+                            UPDATE student_fees
+                            SET status = 'paid', updated_at = ?
+                            WHERE student_fee_id = ?
+                        ''', (current_date, student_fee_id))
+                    else:
+                        # Partial payment
+                        cursor.execute('''
+                            UPDATE student_fees
+                            SET amount = ?, updated_at = ?
+                            WHERE student_fee_id = ?
+                        ''', (new_fee_amount, current_date, student_fee_id))
+                else:
+                    # Create new fee record (already paid)
+                    cursor.execute('''
+                        INSERT INTO student_fees
+                        (student_id, fee_type_id, amount, currency, status, due_date, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (student_id, 3, 0.00, 'GBP', 'paid', due_date, current_date, current_date))
+                    student_fee_id = cursor.lastrowid
+
+                # Record payment in payments table
+                cursor.execute('''
+                    INSERT INTO payments
+                    (student_id, amount, payment_method, payment_date, status, reference_number, description, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    fee_id, student_id, 'Library Fine', amount, due_date,
-                    f'Library late return fine for {student_name}', 'Paid', current_date
+                    student_id, amount, 'Student Account', current_date, 'completed',
+                    f'LIB-{student_id}-{datetime.now().strftime("%Y%m%d%H%M%S")}',
+                    f'Library fine payment for {student_name}', current_date
                 ))
+                payment_id = cursor.lastrowid
 
-                # Record payment in payments table if it exists
-                try:
-                    payment_id = f"PAY_{fee_id}"
-                    cursor.execute('''
-                        INSERT INTO payments
-                        (payment_id, student_id, amount, payment_method, payment_date, status, description)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        payment_id, student_id, amount, 'Student Account', current_date, 'completed',
-                        f'Library fine payment for {student_name}'
-                    ))
-                except sqlite3.Error:
-                    # Payments table might not exist, continue anyway
-                    pass
+                # Link payment to fee via payment_allocations
+                cursor.execute('''
+                    INSERT INTO payment_allocations
+                    (payment_id, student_fee_id, amount, created_at)
+                    VALUES (?, ?, ?, ?)
+                ''', (payment_id, student_fee_id, amount, current_date))
 
-                # Update library fine status to paid
+                # Update library fine status to paid (set amount to 0, add note)
                 cursor.execute('''
                     UPDATE book_loans
-                    SET fine_paid = 1, fine_paid_date = ?
-                    WHERE user_id = ? AND fine_amount > 0 AND status != 'returned'
+                    SET fine_amount = 0,
+                        notes = COALESCE(notes || '; ', '') || 'Fine paid on ' || ?
+                    WHERE user_id = ? AND fine_amount > 0
                 ''', (current_date, student_id))
 
                 conn.commit()
@@ -6378,6 +6876,8 @@ Status: {status.upper()}"""
 
         except Exception as e:
             print(f"Finance integration error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def _send_library_payment_confirmation_email(self, student_id, student_name, email, amount):

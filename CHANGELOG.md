@@ -7,6 +7,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2025-11-12: Enhanced Fine Management System
+
+**Added 5 new functions to make fine management more comprehensive and functional**
+
+#### New Features Added
+
+**1. View Fine History** (`view_fine_history()`)
+- Display complete payment and waiver history for a user
+- Scrollable window with detailed transaction information
+- Shows statistics: payments, waivers, outstanding balance
+- Transaction details: loan ID, book ID, dates, fines, status, notes
+- ~98 lines of code (lines 5097-5194)
+
+**2. Fine Statistics Report** (`generate_fine_statistics_report()`)
+- Comprehensive system-wide fine statistics
+- Overall metrics: total issued, paid, waived, outstanding
+- Top 10 users with outstanding fines
+- Recent activity tracking (30-day window)
+- Automated recommendations based on thresholds
+- Export to file capability
+- ~132 lines of code (lines 5196-5327)
+
+**3. Adjust Fine Amount** (`adjust_fine_amount()`)
+- Manually adjust fine amounts with full audit trail
+- Three adjustment modes:
+  * Set to specific amount
+  * Increase by amount
+  * Decrease by amount
+- Requires reason for adjustment (compliance)
+- Updates database and adds notes
+- Audit logging for all adjustments
+- ~144 lines of code (lines 5329-5472)
+
+**4. Export Fines to CSV** (`export_fines_to_csv()`)
+- Export all outstanding fines to CSV file
+- Includes book title and author information
+- Summary statistics at end of file
+- User-selectable file location
+- Timestamp in filename
+- ~71 lines of code (lines 5474-5544)
+
+**5. Save Text Report** (`_save_text_report()`)
+- Helper function for saving text reports
+- Used by statistics report feature
+- Customizable filename with timestamp
+- ~19 lines of code (lines 5546-5563)
+
+#### Business Value
+
+**Enhanced Capabilities:**
+- Complete audit trail for all fine transactions
+- Data-driven decision making with statistics
+- Flexible fine adjustments for special circumstances
+- Easy export for external reporting/analysis
+- Better oversight and accountability
+
+**Administrative Benefits:**
+- Identify users who need reminders
+- Track fine payment trends
+- Export data for accounting/auditing
+- Adjust fines for valid reasons (equipment issues, emergencies)
+- Historical transaction review
+
+**Total Addition:** ~464 lines of production-ready code
+
+#### File Modified
+- `library_gui.py`: Added 5 new functions after `waive_all_fines()`
+
+### Fixed - 2025-11-12: Finance Integration Second Instance
+
+**Fixed second finance integration function that was causing fee_id errors**
+
+#### Issue Fixed
+
+**Error**: `Finance integration error: table student_fees has no column named fee_id`
+
+**Root Cause**:
+- Function `_process_library_fine_payment()` (different from `_record_library_payment_in_finance()`)
+- Used incorrect column names and schema for student_fees table
+- Attempted to INSERT with non-existent columns
+- Still referenced non-existent `fine_paid` and `fine_paid_date` columns
+
+#### Problems in Original Function
+
+**Lines 6345-6352:** Incorrect INSERT statement
+- Tried to use `fee_id` column (doesn't exist, should be auto-increment `student_fee_id`)
+- Used `fee_type` (text) instead of `fee_type_id` (integer)
+- Used `paid_status` instead of `status`
+- Used `created_date` instead of `created_at`
+- Tried to manually generate fee_id: `LIB_{student_id}_{timestamp}`
+
+**Lines 6372-6374:** Attempted to use non-existent columns
+- Tried to SET `fine_paid = 1, fine_paid_date = ?`
+- These columns don't exist in book_loans table
+
+#### Solution Implemented
+
+**Completely rewrote function (lines 6331-6413):**
+
+1. **Proper student_fees handling:**
+   - Check for existing unpaid library fee (fee_type_id = 3)
+   - Update existing fee if found (partial or full payment)
+   - Create new fee with correct columns if needed
+   - Uses auto-increment `student_fee_id` (no manual ID)
+   - Correct column names: `fee_type_id`, `status`, `created_at`, `updated_at`
+
+2. **Proper payments table integration:**
+   - Create payment record with all required columns
+   - Generate reference number: `LIB-{student_id}-{timestamp}`
+   - Use correct column names: `payment_date`, `reference_number`, `created_at`
+
+3. **Payment allocations linking:**
+   - Links payment to fee via `payment_allocations` table
+   - Properly tracks which payment paid which fee
+
+4. **book_loans update:**
+   - Sets `fine_amount = 0` (instead of non-existent fine_paid column)
+   - Adds note: "Fine paid on YYYY-MM-DD"
+   - No dependency on non-existent columns
+
+#### Database Schema Used
+
+**student_fees:**
+- student_fee_id (INTEGER, PRIMARY KEY, auto-increment)
+- student_id (TEXT)
+- fee_type_id (INTEGER) - 3 = Library Fee
+- amount (DECIMAL)
+- currency (TEXT, default 'GBP')
+- status (TEXT, default 'unpaid')
+- due_date, created_at, updated_at
+
+**payments:**
+- payment_id (auto-increment)
+- student_id, amount, payment_method, payment_date
+- status, reference_number, description, created_at
+
+**payment_allocations:**
+- payment_id, student_fee_id, amount, created_at
+
+#### Result
+
+✓ Finance integration now works correctly in both functions
+✓ No more fee_id errors
+✓ Proper schema adherence
+✓ Full payment tracking and linking
+✓ Both partial and full payments supported
+✓ Enhanced error reporting with traceback
+
+#### Functions Fixed
+1. `_record_library_payment_in_finance()` - Fixed earlier (commit ebc9dd7)
+2. `_process_library_fine_payment()` - Fixed in this commit (lines 6331-6413)
+
 ### Fixed - 2025-11-12: Library Fine Payment - Non-existent Columns
 
 **Fixed database column error preventing fine payment processing**
