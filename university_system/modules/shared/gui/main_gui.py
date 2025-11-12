@@ -6150,7 +6150,7 @@ University Administration"""
                         if user_id:
                             try:
                                 import sqlite3
-                                from university_system.modules.shared.config.database import DEFAULT_DB_PATH
+                                from university_system.infrastructure.database.db import DEFAULT_DB_PATH
 
                                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                                 cursor = conn.cursor()
