@@ -433,8 +433,7 @@ class AttendanceGUI:
         self.students_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         students_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Double-click to edit
-        self.students_tree.bind('<Double-1>', self.edit_student)
+        # Note: Student editing has been disabled - use main Student Management module
     
     def create_reports_tab(self):
         """Create reports tab"""
@@ -1115,6 +1114,19 @@ class AttendanceGUI:
         # Create manual attendance window
         ManualAttendanceWindow(self.root, module_code, date, self.refresh_attendance_data)
     
+
+    def batch_attendance(self):
+        """Open batch attendance entry dialog for marking all students at once"""
+        selected = self.module_var.get()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a module first")
+            return
+
+        module_code = selected.split(' - ')[0]
+        date = self.date_var.get()
+
+        # Create batch attendance window
+        BatchAttendanceWindow(self.root, module_code, date, self.refresh_attendance_data)
     def qr_attendance(self):
         """Open QR code attendance dialog"""
         selected = self.module_var.get()
