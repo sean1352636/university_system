@@ -7,17 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed - 2025-11-12 HOTFIX: Admin Email Lookup for Reports
+### Fixed - 2025-11-12 HOTFIX: Admin Email Lookup Case Sensitivity
 
-**Fixed "no such table staff" error when emailing reports to admin**
-- Root cause: Hard-coded query to non-existent "staff" table
-- Solution: Implemented fallback chain to check multiple tables/columns
-- Query order:
-  1. users.email (WHERE role = 'Admin' OR 'Administrator')
-  2. users.email_address (fallback for alternate schema)
-  3. staff.email (fallback for separate staff table)
-- Added helpful error message if no admin email found
-- File: analytics_manager.py:1515-1555
+**Fixed admin email lookup failing due to case-sensitive role comparison**
+- Root cause: Database stores role as lowercase "admin", query checked for "Admin"/"Administrator"
+- Verified admin exists: ID 192, email: admin@university.local, role: admin
+- Solution: Changed to case-insensitive check using LOWER(role) IN ('admin', 'administrator')
+- Added NULL/empty email validation
+- Removed non-existent staff table fallback
+- Confirmed users table schema: has "email" column (not "email_address")
+- File: analytics_manager.py:1521-1548
 
 ### Fixed - 2025-11-12: Grade Tracking GUI Bug Fixes & Enhancements
 
