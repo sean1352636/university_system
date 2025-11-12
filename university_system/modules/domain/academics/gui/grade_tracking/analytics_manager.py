@@ -1514,20 +1514,44 @@ class AnalyticsManager:
         # Email to Admin button
         def email_to_admin():
             try:
-                # Get admin email from database
+                # Get admin email from database - try multiple tables/columns
                 conn = get_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT email_address FROM staff WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
-                admin_row = cursor.fetchone()
+
+                admin_email = None
+                # Try users table first
+                try:
+                    cursor.execute("SELECT email FROM users WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                    admin_row = cursor.fetchone()
+                    if admin_row and admin_row[0]:
+                        admin_email = admin_row[0]
+                except sqlite3.Error:
+                    pass
+
+                # Try email_address column if email didn't work
+                if not admin_email:
+                    try:
+                        cursor.execute("SELECT email_address FROM users WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                        admin_row = cursor.fetchone()
+                        if admin_row and admin_row[0]:
+                            admin_email = admin_row[0]
+                    except sqlite3.Error:
+                        pass
+
+                # Try staff table if users didn't work
+                if not admin_email:
+                    try:
+                        cursor.execute("SELECT email FROM staff WHERE role = 'Admin' OR role = 'Administrator' LIMIT 1")
+                        admin_row = cursor.fetchone()
+                        if admin_row and admin_row[0]:
+                            admin_email = admin_row[0]
+                    except sqlite3.Error:
+                        pass
+
                 conn.close()
 
-                if not admin_row:
-                    messagebox.showwarning("No Admin", "No administrator email found in the database.")
-                    return
-
-                admin_email = admin_row[0]
                 if not admin_email:
-                    messagebox.showwarning("No Email", "Administrator has no email address configured.")
+                    messagebox.showwarning("No Admin", "No administrator email found in the database.\nPlease ensure an admin user exists with a valid email address.")
                     return
 
                 # Try to use email service
