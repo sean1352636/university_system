@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Library Finance Syntax Error
+
+**Resolved critical syntax error preventing GUI launch**
+- Fixed invalid attribute name `total_revenue_(ytd)_label` → `total_revenue_ytd_label`
+- Parentheses in attribute names are not valid Python syntax
+- Attribute name now matches the convention in `create_metric_card()` method (line 438)
+- GUI now launches successfully without syntax errors
+
 ### Added - 2025-11-12: Comprehensive Library Finance Integration
 
 **Created dedicated Library Finance page in Finance GUI with complete financial management**

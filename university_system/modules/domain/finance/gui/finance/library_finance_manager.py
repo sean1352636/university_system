@@ -434,8 +434,9 @@ class LibraryFinanceManager:
         )
         label.pack(pady=10)
 
-        # Store label for updating
-        setattr(self, f"{title.lower().replace(' ', '_')}_label", label)
+        # Store label for updating (remove parentheses and special chars)
+        attr_name = title.lower().replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        setattr(self, f"{attr_name}_label", label)
 
     # ==================== FINE MANAGEMENT METHODS ====================
 
@@ -1360,8 +1361,8 @@ SUMMARY:
                 self.outstanding_fines_label.config(text=f"£{outstanding:,.2f}")
             if hasattr(self, 'collected_this_month_label'):
                 self.collected_this_month_label.config(text=f"£{this_month:,.2f}")
-            if hasattr(self, 'total_revenue_(ytd)_label'):
-                self.total_revenue_(ytd)_label.config(text=f"£{ytd_revenue:,.2f}")
+            if hasattr(self, 'total_revenue_ytd_label'):
+                self.total_revenue_ytd_label.config(text=f"£{ytd_revenue:,.2f}")
             if hasattr(self, 'book_investment_label'):
                 self.book_investment_label.config(text=f"£{book_investment:,.2f}")
 
