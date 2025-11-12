@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-12: Default Account Roles Incorrect
+
+**Fixed all default accounts showing as 'student' role**
+
+**Problem:**
+- All three default accounts (admin, staff, student) had role set to 'student' in database
+- Users table had incorrect role values:
+  * User ID 192 (admin): role = 'student' ❌
+  * User ID 193 (staff): role = 'student' ❌
+  * User ID 194 (student): role = 'student' ✓
+
+**Root Cause:**
+- Database records in `users` table had incorrect role values
+- Authentication system correctly retrieves role from database via JOIN query
+- `main_gui.py` correctly displays role from `auth.current_user.get('role')`
+- Issue was data corruption, not code logic
+
+**Solution:**
+- Updated database records with correct roles:
+  ```sql
+  UPDATE users SET role = 'admin' WHERE id = 192;
+  UPDATE users SET role = 'staff' WHERE id = 193;
+  ```
+- Verified all three accounts now have correct roles
+
+**Impact:**
+- Admin account now shows "admin (admin)" role
+- Staff account now shows "staff (staff)" role
+- Student account shows "student (student)" role
+- Role-based permissions and UI elements now work correctly
+- Navigation menus show appropriate options for each role
+
 ### Fixed - 2025-11-12: Library Finance Syntax Error
 
 **Resolved critical syntax error preventing GUI launch**
