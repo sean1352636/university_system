@@ -304,27 +304,28 @@ class FinancialAidGUI:
     def return_to_homepage(self):
         """Close the Financial Aid window"""
         try:
-            # Close current window
+            # If we have a standalone root window (Tk), destroy it
             if self.root and isinstance(self.root, tk.Tk):
                 self.root.destroy()
-            elif self.parent:
-                # If we have a parent (embedded mode), destroy this frame
-                if self.main_frame:
-                    self.main_frame.destroy()
-                # Close the parent window (Toplevel)
-                if isinstance(self.parent, tk.Toplevel):
-                    self.parent.destroy()
+            # If we have a parent Toplevel window (launched from Finance GUI), destroy only the Toplevel
+            elif self.parent and isinstance(self.parent, tk.Toplevel):
+                self.parent.destroy()
+            # If embedded in a frame, just destroy the frame
+            elif self.main_frame:
+                self.main_frame.destroy()
 
         except Exception as e:
             logger.error(f"Error closing window: {e}")
             import traceback
             traceback.print_exc()
-            # If failed, try to destroy root or parent
+            # If failed, try to destroy whatever we can
             try:
                 if self.root:
                     self.root.destroy()
                 elif self.parent and isinstance(self.parent, tk.Toplevel):
                     self.parent.destroy()
+                elif self.main_frame:
+                    self.main_frame.destroy()
             except:
                 pass
 
@@ -332,8 +333,17 @@ class FinancialAidGUI:
 def launch_financial_aid_gui(parent=None, auth=None):
     """Launch the Financial Aid & Scholarships GUI"""
     try:
-        app = FinancialAidGUI(auth_instance=auth, parent=parent)
-        app.run()
+        # If parent is provided, create a Toplevel window instead of embedding
+        # This ensures closing Financial Aid doesn't close the parent Finance GUI
+        if parent:
+            aid_window = tk.Toplevel(parent)
+            aid_window.title("Financial Aid & Scholarships")
+            aid_window.geometry("1200x800")
+            app = FinancialAidGUI(auth_instance=auth, parent=aid_window)
+            app.create_embedded_interface()
+        else:
+            app = FinancialAidGUI(auth_instance=auth, parent=None)
+            app.run()
     except Exception as e:
         from tkinter import messagebox
         messagebox.showerror("Error", f"Failed to launch Financial Aid GUI: {e}")
