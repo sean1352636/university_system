@@ -7,6 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed & Integrated - 2025-11-13: Finance Reporting GUI - Linked to Finance Management Tables
+
+**Finance Management Integration + Correct Table Usage**
+
+This commit integrates Finance Reporting GUI with Finance Management GUI tables and ensures both systems use the same data sources for consistency.
+
+**INTEGRATION COMPLETED:**
+
+**Finance Table Mapping (Finance Management → Reporting):**
+1. **fee_types** - Types of fees (managed in Finance Management)
+2. **student_fees** - Individual student fee records
+3. **payments** - Payment transactions
+4. **budget_plans** - Overall budget plans by academic year
+5. **budget_categories** - Revenue/Expense categories
+6. **budget_line_items** - Detailed budget items (budgeted vs actual)
+7. **financial_kpis** - Financial KPI tracking
+8. **financial_alerts** - Financial alerts/notifications
+9. **payment_plan_templates** - Payment plan templates
+10. **student_payment_plans** - Student payment plans
+
+**NAVIGATION INTEGRATION:**
+- Finance Management GUI → Reports tab → "📂 Open Financial Reporting & Analytics" button
+- Button already configured at: layout_manager.py:1976
+- Uses: `launch_financial_gui(self.root)` from finance_reporting_gui.py
+
+**KEY CHANGES:**
+
+**1. Budget Variance Report (lines 8841-8901)**
+- **BEFORE:** Tried to use non-existent 'budget_allocations' table
+- **AFTER:** Uses Finance Management tables:
+  ```sql
+  SELECT bc.category_name, SUM(bli.budgeted_amount), SUM(bli.actual_amount)
+  FROM budget_line_items bli
+  JOIN budget_categories bc ON bli.category_id = bc.category_id
+  JOIN budget_plans bp ON bli.budget_id = bp.budget_id
+  WHERE bp.academic_year = ?
+  ```
+- **Fallback 1:** All budget data (no year filter)
+- **Fallback 2:** Student fees vs payments by course
+- **Fallback 3:** Sample data with clear message
+
+**2. Data Consistency**
+- Reporting GUI now queries same tables as Management GUI
+- Ensures revenue/expense reports match budget management data
+- Budget variance shows actual Finance Management budget categories
+- No more discrepancies between management and reporting views
+
+**TECHNICAL DETAILS:**
+- Verified all finance tables exist in database
+- Updated academic_year format: "2025-2026" (YYYY-YYYY)
+- Graceful 3-tier fallback system for missing data
+- budget_line_items.budgeted_amount = planned budget
+- budget_line_items.actual_amount = actual spending
+- budget_categories.category_type = 'revenue' or 'expense'
+
+**BUSINESS IMPACT:**
+- Single source of truth for financial data
+- Consistent reporting between Management and Reporting GUIs
+- Budget variance reports now show actual budget categories
+- Seamless navigation between management and reporting
+- Real-time data sync (both query same database)
+
+**FILES MODIFIED:**
+- university_system/modules/domain/finance/gui/finance_reporting_gui.py (~60 lines)
+- CHANGELOG.md (comprehensive documentation)
+
+**DATA FLOW:**
+```
+Finance Management GUI (Create/Edit Budgets)
+    ↓
+budget_plans, budget_categories, budget_line_items tables
+    ↓
+Finance Reporting GUI (View/Analyze Budgets)
+```
+
+**VERIFIED:**
+- All table references use Finance Management schema
+- Navigation button already configured and working
+- Python syntax validation passed
+- Three-tier fallback system tested
+
 ### Fixed - 2025-11-13: Finance Reporting GUI - Additional Data Structure & Implementation Fixes
 
 **Four Critical Fixes + Real Database Integration**

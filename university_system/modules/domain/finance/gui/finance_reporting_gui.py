@@ -8838,26 +8838,44 @@ def generate_comprehensive_budget_variance_report():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get budget allocations - using fees vs payments as proxy for budget variance
-        print("[1/4] Analyzing budget variance (fees vs payments)...")
+        # Get budget variance data from Finance Management tables
+        print("[1/4] Analyzing budget variance...")
 
-        # Check if budget_allocations table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='budget_allocations'")
-        has_budget_table = cursor.fetchone() is not None
+        # Use budget_plans, budget_categories, and budget_line_items (Finance Management tables)
+        cursor.execute('''
+            SELECT
+                bc.category_name,
+                SUM(bli.budgeted_amount) as budgeted,
+                SUM(bli.actual_amount) as actual
+            FROM budget_line_items bli
+            JOIN budget_categories bc ON bli.category_id = bc.category_id
+            JOIN budget_plans bp ON bli.budget_id = bp.budget_id
+            WHERE bp.academic_year = ?
+            GROUP BY bc.category_name
+            ORDER BY budgeted DESC
+        ''', (f"{datetime.now().year}-{datetime.now().year + 1}",))
+        budget_data = cursor.fetchall()
 
-        if has_budget_table:
-            cursor.execute('''
-                SELECT department, SUM(allocated_amount), SUM(spent_amount)
-                FROM budget_allocations
-                WHERE fiscal_year = ?
-                GROUP BY department
-            ''', (datetime.now().year,))
-            budget_data = cursor.fetchall()
-        else:
-            # Use student fees (budgeted) vs payments (actual) by course as proxy
+        # Fallback 1: If no budget data, try current year only
+        if not budget_data:
             cursor.execute('''
                 SELECT
-                    s.course as category,
+                    bc.category_name,
+                    SUM(bli.budgeted_amount) as budgeted,
+                    SUM(bli.actual_amount) as actual
+                FROM budget_line_items bli
+                JOIN budget_categories bc ON bli.category_id = bc.category_id
+                GROUP BY bc.category_name
+                ORDER BY budgeted DESC
+            ''')
+            budget_data = cursor.fetchall()
+
+        # Fallback 2: Use student fees (revenue) vs payments (collection) by course
+        if not budget_data:
+            print("  ⚠ No budget plan data found, using student fees/payments as proxy...")
+            cursor.execute('''
+                SELECT
+                    COALESCE(s.course, 'Unknown') as category,
                     SUM(sf.amount) as budgeted_fees,
                     SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END) as actual_payments
                 FROM student_fees sf
@@ -8875,11 +8893,11 @@ def generate_comprehensive_budget_variance_report():
             print(f"  Using sample data for demonstration...")
             # Sample data
             budget_data = [
-                ('Computer Science', 500000, 485000),
-                ('Business Administration', 300000, 312000),
-                ('Engineering', 250000, 248000),
-                ('Medicine', 200000, 195000),
-                ('Law', 150000, 158000)
+                ('Academic Programs', 500000, 485000),
+                ('Student Services', 300000, 312000),
+                ('Facilities', 250000, 248000),
+                ('Administration', 200000, 195000),
+                ('IT Services', 150000, 158000)
             ]
 
         total_allocated = sum(row[1] for row in budget_data)
