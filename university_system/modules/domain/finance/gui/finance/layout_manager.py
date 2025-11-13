@@ -2101,8 +2101,199 @@ Click the button above to access the full Financial Reporting & Analytics system
             messagebox.showwarning("No Selection", "Please select a collection case")
             return
 
-        case_id = self.collections_tree.item(selection[0])['values'][0]
-        messagebox.showinfo("Send Notice", f"Collection notice would be sent for case {case_id}")
+        case_values = self.collections_tree.item(selection[0])['values']
+        case_id = case_values[0]
+        student_id = case_values[1]
+        total_debt = case_values[2]
+
+        # Create notice dialog
+        notice_dialog = tk.Toplevel(self.root)
+        notice_dialog.title(f"Send Collection Notice - Case {case_id}")
+        notice_dialog.geometry("700x650")
+        notice_dialog.transient(self.root)
+        notice_dialog.grab_set()
+
+        # Case info frame
+        info_frame = ttk.LabelFrame(notice_dialog, text="Case Information", padding=15)
+        info_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Label(info_frame, text=f"Case ID: {case_id}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"Student ID: {student_id}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"Total Debt: £{total_debt:.2f}", font=('Arial', 10, 'bold')).pack(anchor='w')
+
+        # Get student info
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT first_name, last_name, email_address FROM students
+                WHERE student_id = ?
+            ''', (student_id,))
+            student = cursor.fetchone()
+
+            if student:
+                student_name = f"{student[0]} {student[1]}"
+                student_email = student[2]
+                ttk.Label(info_frame, text=f"Student: {student_name}", font=('Arial', 10)).pack(anchor='w')
+                ttk.Label(info_frame, text=f"Email: {student_email}", font=('Arial', 10)).pack(anchor='w')
+            else:
+                student_email = None
+                ttk.Label(info_frame, text="Student details not found", font=('Arial', 10), foreground='red').pack(anchor='w')
+
+            conn.close()
+        except Exception as e:
+            student_email = None
+            ttk.Label(info_frame, text=f"Error loading student: {e}", font=('Arial', 9), foreground='red').pack(anchor='w')
+
+        # Notice type frame
+        type_frame = ttk.LabelFrame(notice_dialog, text="Notice Type", padding=15)
+        type_frame.pack(fill='x', padx=10, pady=10)
+
+        notice_type_var = tk.StringVar(value="first_notice")
+        notice_types = [
+            ("first_notice", "First Notice - Initial Payment Reminder"),
+            ("second_notice", "Second Notice - Follow-up Reminder"),
+            ("final_notice", "Final Notice - Last Warning Before Collection"),
+            ("legal_notice", "Legal Notice - Pre-Legal Action Warning"),
+            ("payment_demand", "Payment Demand - Immediate Payment Required")
+        ]
+
+        for value, text in notice_types:
+            ttk.Radiobutton(type_frame, text=text, variable=notice_type_var, value=value).pack(anchor='w', pady=2)
+
+        # Message frame
+        message_frame = ttk.LabelFrame(notice_dialog, text="Message", padding=15)
+        message_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(message_frame, text="Subject:").pack(anchor='w')
+        subject_var = tk.StringVar(value="Payment Overdue Notice")
+        subject_entry = ttk.Entry(message_frame, textvariable=subject_var, font=('Arial', 11))
+        subject_entry.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(message_frame, text="Message Body:").pack(anchor='w')
+        message_text = tk.Text(message_frame, height=10, font=('Arial', 10), wrap='word')
+        message_text.pack(fill='both', expand=True)
+
+        # Default message template
+        default_message = f"""Dear Student,
+
+This is a collection notice regarding your outstanding balance of £{total_debt:.2f}.
+
+We have attempted to contact you regarding this matter. Please make arrangements to settle this debt as soon as possible to avoid further collection action.
+
+You can contact our finance department to discuss payment options or payment plans.
+
+If you have already made payment, please disregard this notice and contact us with proof of payment.
+
+Best regards,
+Finance Department
+"""
+        message_text.insert('1.0', default_message)
+
+        def send_notice():
+            """Send the collection notice"""
+            try:
+                if not student_email:
+                    messagebox.showerror("Error", "Student email address not found. Cannot send notice.")
+                    return
+
+                notice_type = notice_type_var.get()
+                subject = subject_var.get().strip()
+                message = message_text.get('1.0', tk.END).strip()
+
+                if not subject or not message:
+                    messagebox.showwarning("Warning", "Please enter both subject and message")
+                    return
+
+                # Get authentication for audit trail
+                from university_system.infrastructure.shared_context import get_auth
+                auth = get_auth()
+                username = 'system'
+                if auth and hasattr(auth, 'is_logged_in') and auth.is_logged_in():
+                    user = auth.get_current_user()
+                    username = user.get('username', 'system') if user else 'system'
+
+                # Send email using email service
+                from university_system.infrastructure.email.email_service import send_email
+
+                html_message = f"""
+                <html>
+                <body>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #d9534f;">Collection Notice</h2>
+                <p><strong>Case ID:</strong> {case_id}</p>
+                <p><strong>Outstanding Amount:</strong> £{total_debt:.2f}</p>
+                <hr>
+                <div style="white-space: pre-wrap;">{message}</div>
+                <hr>
+                <p style="font-size: 12px; color: #666;">
+                This is an automated notice from the University Finance Department.
+                </p>
+                </div>
+                </body>
+                </html>
+                """
+
+                # Send email
+                success = send_email(
+                    to_email=student_email,
+                    subject=subject,
+                    message=html_message,
+                    html=True
+                )
+
+                if success:
+                    # Log the notice in database
+                    conn = get_connection()
+                    cursor = conn.cursor()
+
+                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    # Check if collection_notices table exists
+                    cursor.execute('''
+                        SELECT name FROM sqlite_master
+                        WHERE type='table' AND name='collection_notices'
+                    ''')
+
+                    if cursor.fetchone():
+                        cursor.execute('''
+                            INSERT INTO collection_notices
+                            (case_id, student_id, notice_type, subject, message, sent_by, sent_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (case_id, student_id, notice_type, subject, message, username, now))
+                        conn.commit()
+
+                    # Update case with last notice date
+                    cursor.execute('''
+                        UPDATE collection_cases
+                        SET last_contact_date = ?, updated_at = ?
+                        WHERE case_id = ?
+                    ''', (now, now, case_id))
+
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success",
+                                      f"Collection notice sent successfully to:\n{student_email}\n\n"
+                                      f"Notice Type: {notice_type.replace('_', ' ').title()}")
+                    notice_dialog.destroy()
+                    self._refresh_collections()
+                else:
+                    messagebox.showwarning("Email Failed",
+                                         f"Failed to send email to {student_email}.\n"
+                                         "Please check email configuration.")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send notice: {e}")
+                import traceback
+                traceback.print_exc()
+
+        # Buttons
+        btn_frame = ttk.Frame(notice_dialog)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="📧 Send Notice", command=send_notice).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=notice_dialog.destroy).pack(side='left', padx=5)
 
     def _resolve_collection_case(self):
         """Resolve selected collection case"""
