@@ -1554,7 +1554,6 @@ class UnifiedManagementGUI:
         finance_frame = ttk.LabelFrame(scrollable_frame, text="Finance", padding="5")
         finance_buttons = 0
         finance_buttons += create_button_if_visible(finance_frame, 'finance_management', "Finance Management", self.show_finance_management)
-        finance_buttons += create_button_if_visible(finance_frame, 'financial_aid', "Financial Aid & Scholarships", self.show_financial_aid)
         if finance_buttons > 0:
             finance_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 

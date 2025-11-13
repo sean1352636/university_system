@@ -117,11 +117,6 @@ class FinancialAidGUI:
         button_frame.pack(pady=(0, 10))
 
         ttk.Button(button_frame,
-                  text="← Return to Finance GUI",
-                  command=self.return_to_finance_gui,
-                  style='Secondary.TButton').pack(side='left', padx=5)
-
-        ttk.Button(button_frame,
                   text="✖ Close Window",
                   command=self.return_to_homepage,
                   style='Primary.TButton').pack(side='left', padx=5)
