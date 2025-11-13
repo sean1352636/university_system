@@ -223,7 +223,8 @@ class StudentPortal:
 
             for scholarship in scholarships:
                 # Apply filters
-                if search_term and search_term.lower() not in scholarship['name'].lower():
+                sch_name = scholarship.get('scholarship_name', scholarship.get('name', ''))
+                if search_term and search_term.lower() not in str(sch_name).lower():
                     continue
                 if filter_type and filter_type != 'All':
                     # Would need criteria field to filter by type
@@ -235,10 +236,10 @@ class StudentPortal:
 
                 self.scholarships_tree.insert('', 'end', values=(
                     scholarship['scholarship_id'],
-                    scholarship['name'],
+                    scholarship.get('scholarship_name', scholarship.get('name', 'Unknown')),
                     format_currency(scholarship['amount']),
-                    format_date(scholarship['deadline']),
-                    scholarship.get('criteria', 'General')[:20],
+                    format_date(scholarship.get('deadline', 'N/A')),
+                    str(scholarship.get('eligibility_criteria', scholarship.get('criteria', 'General')))[:20],
                     status
                 ))
 

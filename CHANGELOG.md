@@ -7,6 +7,181 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed & Enhanced - 2025-11-13: Financial Aid GUI - Multiple Fixes & Complete Disbursement System
+
+**Three Critical Fixes + Full-Featured Disbursement Management**
+
+**FIX 1: Email Report Query Column Error**
+- Fixed "no such column: u.user_id" error when emailing reports
+  - Problem: Query using ORDER BY u.user_id, but users table has 'id' column not 'user_id'
+  - Solution: Changed to ORDER BY id ASC
+  - Also removed table alias for cleaner query
+  - Added fallback for dict vs tuple result handling
+  - Location: admin_portal.py:1213-1225
+
+**FIX 2: Scholarship Loading Key Error**
+- Fixed "'name'" KeyError when loading scholarships in student portal
+  - Problem: Code accessing scholarship['name'] but table column is 'scholarship_name'
+  - Solution: Updated to use .get() with fallback:
+    * scholarship.get('scholarship_name', scholarship.get('name', 'Unknown'))
+  - Also fixed search filter to handle both column names
+  - Added str() wrapper and safe .get() for eligibility_criteria
+  - Locations:
+    * student_portal.py:238 - Display scholarship name
+    * student_portal.py:226 - Search filter
+    * student_portal.py:241 - Criteria display
+
+**FIX 3: Comprehensive Disbursement Processing System**
+Previously: Simple list view with no functionality
+Now: Enterprise-grade disbursement management with 10+ features
+
+NEW FEATURES ADDED (~500 lines of code):
+
+1. **Statistics Dashboard**
+   - Pending disbursements count and amount
+   - Processed today count and amount
+   - Color-coded stat cards (warning/success)
+   - Real-time database queries
+
+2. **Three-Tab Interface**
+   - Tab 1: Pending Disbursements (with checkboxes)
+   - Tab 2: Processed Disbursements (history)
+   - Tab 3: Failed/Cancelled Disbursements
+
+3. **Action Buttons (6 buttons)**
+   - ➕ Create Disbursement - Create new disbursements
+   - ✓ Process Selected - Process checked items
+   - ✓✓ Process All Pending - Batch process all
+   - ❌ Cancel Selected - Cancel checked items
+   - 🔍 View Details - Detailed information popup
+   - 📊 Export Report - Export all to CSV
+
+4. **Checkbox Selection System**
+   - Click checkbox column to select items
+   - Visual feedback: ☐ → ☑
+   - Supports multi-select for batch operations
+   - Event binding for click detection
+
+5. **Process Selected Disbursements**
+   - Process multiple disbursements at once
+   - Auto-generates transaction IDs (TXN-YYYYMMDDHHMMSS-ID)
+   - Records processor user ID
+   - Activity logging for audit trail
+   - Success/error count display
+   - Auto-refresh after processing
+
+6. **Process All Pending (Batch Processing)**
+   - One-click to process all pending disbursements
+   - Confirmation dialog with count
+   - Warning about irreversible action
+   - Progress tracking with success count
+   - Full system refresh after completion
+
+7. **Cancel Disbursements**
+   - Cancel selected disbursements
+   - Sets status to 'cancelled'
+   - Records cancellation reason
+   - Activity logging
+   - Confirmation required
+
+8. **View Disbursement Details**
+   - Popup window with full information
+   - Student details (name, ID, email)
+   - Disbursement details (type, amount, term)
+   - Processing information (when, by whom)
+   - Award/component linkage
+   - Error messages if applicable
+   - 20+ data points displayed
+
+9. **Create New Disbursement Dialog**
+   - Form-based creation interface
+   - Fields:
+     * Student ID (required)
+     * Amount (validated > 0)
+     * Type (dropdown: scholarship/grant/loan/work_study/refund)
+     * Academic Term (dropdown: Fall/Spring/Summer)
+     * Scheduled Date (date picker, defaults to today)
+     * Payment Method (dropdown: 4 options)
+   - Input validation
+   - Auto-generates transaction ID
+   - Activity logging
+   - Success confirmation
+
+10. **Export Disbursement Report**
+    - Exports ALL disbursements to CSV
+    - 13 columns of data
+    - Includes student names, IDs, processing info
+    - Professional CSV formatting
+    - Timestamped filename
+    - Activity logging
+
+11. **Enhanced Data Loading**
+    - Three separate load methods for each tab
+    - JOIN with students table for names
+    - JOIN with users table for processor names
+    - Proper NULL handling with fallbacks
+    - Formatted currency and dates
+    - Status display (PENDING/PROCESSED/FAILED/CANCELLED)
+    - Limits for performance (100 records for processed/failed)
+
+12. **Robust Error Handling**
+    - Try/except blocks on all database operations
+    - User-friendly error messages
+    - Detailed error logging for debugging
+    - Graceful degradation
+
+TECHNICAL IMPLEMENTATION:
+
+Database Queries:
+- Stats: 2 aggregation queries (COUNT + SUM)
+- Pending: JOIN students table, ORDER BY scheduled_date
+- Processed: JOIN students + users, ORDER BY processed_at DESC, LIMIT 100
+- Failed: JOIN students, WHERE status IN ('failed', 'cancelled'), LIMIT 100
+
+User Interface:
+- Ttk.Notebook for tabbed interface
+- Treeview with custom columns for each tab
+- Dual scrollbars (vertical + horizontal)
+- Grid layout for proper resizing
+- Event binding for checkbox interaction
+
+Backend Integration:
+- Uses FinancialAidManager.process_disbursement()
+- Uses FinancialAidManager.create_disbursement()
+- Transaction context managers for data integrity
+- Activity logging via log_activity()
+- User authentication via get_current_user()
+
+FILES MODIFIED:
+- admin_portal.py (+~550 lines): Complete disbursement system
+  * show_disbursements() - Main interface (lines 625-788)
+  * _load_pending_disbursements() - Pending tab loader (lines 790-822)
+  * _load_processed_disbursements() - Processed tab loader (lines 824-858)
+  * _load_failed_disbursements() - Failed tab loader (lines 860-889)
+  * _process_selected_disbursements() - Batch process selected (lines 891-936)
+  * _process_all_pending_disbursements() - Batch process all (lines 938-983)
+  * _cancel_selected_disbursements() - Cancel selected (lines 985-1015)
+  * _view_disbursement_details() - Details popup (lines 1017-1089)
+  * _show_create_disbursement_dialog() - Creation dialog (lines 1091-1190)
+  * _export_disbursement_report() - CSV export (lines 1192-1228)
+  * _toggle_selection() - Checkbox toggle (lines 1230-1241)
+  * _email_report() - Fixed query (lines 1210-1262)
+
+- student_portal.py (+5 lines): Scholarship loading fixes
+  * Line 226: Fixed search filter with safe .get()
+  * Lines 238-242: Fixed display with fallback column names
+
+IMPACT:
+- Disbursement management fully operational ✓
+- Process selected or all disbursements ✓
+- Create new disbursements via GUI ✓
+- View detailed information ✓
+- Export comprehensive reports ✓
+- Cancel disbursements with audit trail ✓
+- No more email report errors ✓
+- No more scholarship loading errors ✓
+- Enterprise-grade financial operations ✓
+
 ### Enhanced - 2025-11-13: Financial Aid GUI - Auto-Reopen Windows on Frame Destruction
 
 **Feature: Automatic Window Recreation Instead of Silent Failures**

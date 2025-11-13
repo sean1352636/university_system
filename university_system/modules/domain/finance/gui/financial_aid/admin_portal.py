@@ -623,7 +623,7 @@ class AdminPortal:
             ttk.Label(table_frame, text="Error loading aid types", foreground='red').pack()
 
     def show_disbursements(self):
-        """Show disbursements management"""
+        """Show comprehensive disbursements management interface"""
         # Ensure we have a valid parent frame/window
         parent = self._ensure_valid_parent()
         self.parent_frame = parent
@@ -633,52 +633,615 @@ class AdminPortal:
         # Title
         title_frame = ttk.Frame(self.parent_frame)
         title_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Label(title_frame, text="Process Disbursements", style='Title.TLabel').pack(side='left')
+        ttk.Label(title_frame, text="Disbursement Management", style='Title.TLabel').pack(side='left')
         ttk.Button(title_frame, text="Back to Dashboard", command=self.show_dashboard).pack(side='right')
 
-        # Pending disbursements
-        table_frame = ttk.Frame(self.parent_frame)
-        table_frame.pack(fill='both', expand=True, padx=10, pady=10)
-
-        columns = ['Disbursement ID', 'Student', 'Amount', 'Scheduled Date', 'Method', 'Status']
-        tree = create_data_table(table_frame, columns, {
-            'Disbursement ID': 120, 'Student': 150, 'Amount': 100, 'Scheduled Date': 120, 'Method': 100, 'Status': 100
-        })
+        # Stats summary
+        stats_frame = ttk.Frame(self.parent_frame)
+        stats_frame.pack(fill='x', padx=10, pady=10)
 
         try:
             with get_connection() as conn:
-                # Check if disbursements table exists
-                check_result = conn.execute("""
-                    SELECT name FROM sqlite_master
-                    WHERE type='table' AND name='disbursements'
+                # Get disbursement statistics
+                pending_result = conn.execute("""
+                    SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+                    FROM disbursements WHERE status = 'pending'
                 """).fetchone()
 
-                if not check_result:
-                    ttk.Label(table_frame, text="Disbursements feature not yet configured",
-                             foreground='gray').pack(pady=20)
-                    return
+                processed_result = conn.execute("""
+                    SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+                    FROM disbursements WHERE status = 'processed'
+                    AND DATE(processed_at) = DATE('now')
+                """).fetchone()
 
+                # Display stats
+                stat_frame1 = create_stat_card(stats_frame, "Pending Disbursements",
+                                               f"{pending_result['count']}", 'warning')
+                stat_frame1.pack(side='left', padx=10, fill='both', expand=True)
+
+                stat_frame2 = create_stat_card(stats_frame, "Pending Amount",
+                                               format_currency(pending_result['total']), 'warning')
+                stat_frame2.pack(side='left', padx=10, fill='both', expand=True)
+
+                stat_frame3 = create_stat_card(stats_frame, "Processed Today",
+                                               f"{processed_result['count']}", 'success')
+                stat_frame3.pack(side='left', padx=10, fill='both', expand=True)
+
+                stat_frame4 = create_stat_card(stats_frame, "Amount Processed Today",
+                                               format_currency(processed_result['total']), 'success')
+                stat_frame4.pack(side='left', padx=10, fill='both', expand=True)
+
+        except Exception as e:
+            logger.error(f"Error loading disbursement stats: {e}")
+
+        # Action buttons
+        action_frame = ttk.Frame(self.parent_frame)
+        action_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(action_frame, text="➕ Create Disbursement",
+                  command=self._show_create_disbursement_dialog,
+                  style='Success.TButton').pack(side='left', padx=5)
+        ttk.Button(action_frame, text="✓ Process Selected",
+                  command=lambda: self._process_selected_disbursements(tree),
+                  style='Primary.TButton').pack(side='left', padx=5)
+        ttk.Button(action_frame, text="✓✓ Process All Pending",
+                  command=self._process_all_pending_disbursements,
+                  style='Success.TButton').pack(side='left', padx=5)
+        ttk.Button(action_frame, text="❌ Cancel Selected",
+                  command=lambda: self._cancel_selected_disbursements(tree),
+                  style='Danger.TButton').pack(side='left', padx=5)
+        ttk.Button(action_frame, text="🔍 View Details",
+                  command=lambda: self._view_disbursement_details(tree)).pack(side='left', padx=5)
+        ttk.Button(action_frame, text="📊 Export Report",
+                  command=self._export_disbursement_report).pack(side='left', padx=5)
+
+        # Tabs for different views
+        notebook = ttk.Notebook(self.parent_frame)
+        notebook.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Pending disbursements tab
+        pending_frame = ttk.Frame(notebook)
+        notebook.add(pending_frame, text='Pending Disbursements')
+
+        columns_pending = ['Select', 'ID', 'Student Name', 'Student ID', 'Type', 'Amount',
+                          'Scheduled Date', 'Term', 'Method', 'Transaction ID']
+        tree = ttk.Treeview(pending_frame, columns=columns_pending, show='tree headings', height=15)
+
+        # Configure columns
+        tree.column('#0', width=0, stretch=False)
+        tree.column('Select', width=50, anchor='center')
+        tree.column('ID', width=60)
+        tree.column('Student Name', width=150)
+        tree.column('Student ID', width=100)
+        tree.column('Type', width=120)
+        tree.column('Amount', width=100, anchor='e')
+        tree.column('Scheduled Date', width=120)
+        tree.column('Term', width=100)
+        tree.column('Method', width=120)
+        tree.column('Transaction ID', width=150)
+
+        for col in columns_pending:
+            tree.heading(col, text=col)
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(pending_frame, orient="vertical", command=tree.yview)
+        hsb = ttk.Scrollbar(pending_frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+
+        pending_frame.grid_rowconfigure(0, weight=1)
+        pending_frame.grid_columnconfigure(0, weight=1)
+
+        # Bind click event for checkbox toggle
+        tree.bind('<Button-1>', lambda e: self._toggle_selection(tree, e))
+
+        # Load pending disbursements
+        self._load_pending_disbursements(tree)
+
+        # Processed disbursements tab
+        processed_frame = ttk.Frame(notebook)
+        notebook.add(processed_frame, text='Processed Disbursements')
+
+        columns_processed = ['ID', 'Student Name', 'Student ID', 'Type', 'Amount',
+                            'Disbursement Date', 'Processed Date', 'Processed By', 'Transaction ID']
+        processed_tree = ttk.Treeview(processed_frame, columns=columns_processed, show='headings', height=15)
+
+        for col in columns_processed:
+            processed_tree.heading(col, text=col)
+            processed_tree.column(col, width=100)
+
+        vsb2 = ttk.Scrollbar(processed_frame, orient="vertical", command=processed_tree.yview)
+        hsb2 = ttk.Scrollbar(processed_frame, orient="horizontal", command=processed_tree.xview)
+        processed_tree.configure(yscrollcommand=vsb2.set, xscrollcommand=hsb2.set)
+
+        processed_tree.grid(row=0, column=0, sticky='nsew')
+        vsb2.grid(row=0, column=1, sticky='ns')
+        hsb2.grid(row=1, column=0, sticky='ew')
+
+        processed_frame.grid_rowconfigure(0, weight=1)
+        processed_frame.grid_columnconfigure(0, weight=1)
+
+        # Load processed disbursements
+        self._load_processed_disbursements(processed_tree)
+
+        # Failed/cancelled disbursements tab
+        failed_frame = ttk.Frame(notebook)
+        notebook.add(failed_frame, text='Failed/Cancelled')
+
+        columns_failed = ['ID', 'Student', 'Amount', 'Scheduled Date', 'Status', 'Error Message']
+        failed_tree = ttk.Treeview(failed_frame, columns=columns_failed, show='headings', height=15)
+
+        for col in columns_failed:
+            failed_tree.heading(col, text=col)
+            failed_tree.column(col, width=120)
+
+        vsb3 = ttk.Scrollbar(failed_frame, orient="vertical", command=failed_tree.yview)
+        failed_tree.configure(yscrollcommand=vsb3.set)
+
+        failed_tree.grid(row=0, column=0, sticky='nsew')
+        vsb3.grid(row=0, column=1, sticky='ns')
+
+        failed_frame.grid_rowconfigure(0, weight=1)
+        failed_frame.grid_columnconfigure(0, weight=1)
+
+        # Load failed/cancelled disbursements
+        self._load_failed_disbursements(failed_tree)
+
+    def _load_pending_disbursements(self, tree):
+        """Load pending disbursements into tree"""
+        try:
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            with get_connection() as conn:
                 disbursements = conn.execute("""
-                    SELECT d.*, u.username
+                    SELECT d.*, s.first_name, s.last_name, s.student_id as sid
                     FROM disbursements d
-                    JOIN users u ON d.student_id = u.student_id
+                    LEFT JOIN students s ON d.student_id = s.student_id
                     WHERE d.status = 'pending'
                     ORDER BY d.scheduled_date ASC
                 """).fetchall()
 
                 for disb in disbursements:
+                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
                     tree.insert('', 'end', values=(
+                        '☐',  # Checkbox
                         disb['disbursement_id'],
-                        disb['username'],
+                        student_name,
+                        disb.get('sid', disb['student_id']),
+                        disb.get('disbursement_type', 'General Aid'),
                         format_currency(disb['amount']),
-                        format_date(disb.get('scheduled_date')),
-                        disb.get('method', 'Direct Deposit'),
-                        disb['status'].title()
+                        format_date(disb.get('scheduled_date', disb.get('disbursement_date'))),
+                        disb.get('academic_term', 'N/A'),
+                        disb.get('payment_method', 'account_credit'),
+                        disb.get('transaction_id', 'Pending')
                     ))
 
         except Exception as e:
-            logger.error(f"Error loading disbursements: {e}")
-            ttk.Label(table_frame, text="Error loading disbursements", foreground='red').pack()
+            logger.error(f"Error loading pending disbursements: {e}")
+
+    def _load_processed_disbursements(self, tree):
+        """Load processed disbursements into tree"""
+        try:
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            with get_connection() as conn:
+                disbursements = conn.execute("""
+                    SELECT d.*, s.first_name, s.last_name, s.student_id as sid,
+                           u.username as processor_name
+                    FROM disbursements d
+                    LEFT JOIN students s ON d.student_id = s.student_id
+                    LEFT JOIN users u ON d.processed_by = u.id
+                    WHERE d.status = 'processed'
+                    ORDER BY d.processed_at DESC
+                    LIMIT 100
+                """).fetchall()
+
+                for disb in disbursements:
+                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
+                    tree.insert('', 'end', values=(
+                        disb['disbursement_id'],
+                        student_name,
+                        disb.get('sid', disb['student_id']),
+                        disb.get('disbursement_type', 'General Aid'),
+                        format_currency(disb['amount']),
+                        format_date(disb.get('disbursement_date')),
+                        format_date(disb.get('processed_at')),
+                        disb.get('processor_name', 'System'),
+                        disb.get('transaction_id', 'N/A')
+                    ))
+
+        except Exception as e:
+            logger.error(f"Error loading processed disbursements: {e}")
+
+    def _load_failed_disbursements(self, tree):
+        """Load failed/cancelled disbursements into tree"""
+        try:
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            with get_connection() as conn:
+                disbursements = conn.execute("""
+                    SELECT d.*, s.first_name, s.last_name
+                    FROM disbursements d
+                    LEFT JOIN students s ON d.student_id = s.student_id
+                    WHERE d.status IN ('failed', 'cancelled')
+                    ORDER BY d.scheduled_date DESC
+                    LIMIT 100
+                """).fetchall()
+
+                for disb in disbursements:
+                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
+                    tree.insert('', 'end', values=(
+                        disb['disbursement_id'],
+                        student_name,
+                        format_currency(disb['amount']),
+                        format_date(disb.get('scheduled_date')),
+                        disb['status'].upper(),
+                        disb.get('error_message', 'No error message')
+                    ))
+
+        except Exception as e:
+            logger.error(f"Error loading failed disbursements: {e}")
+
+    def _process_selected_disbursements(self, tree):
+        """Process selected disbursements"""
+        selected_items = []
+        for item in tree.get_children():
+            values = tree.item(item)['values']
+            if values[0] == '☑':  # Checked
+                selected_items.append(values[1])  # disbursement_id
+
+        if not selected_items:
+            show_warning("No Selection", "Please select disbursements to process by clicking the checkbox column.")
+            return
+
+        if not confirm_action(f"Process {len(selected_items)} selected disbursement(s)?\n\nThis action cannot be undone."):
+            return
+
+        success_count = 0
+        error_count = 0
+
+        try:
+            auth_user = get_current_user()
+            user_id = None
+            if auth_user:
+                user_dict = auth_user.to_dict() if hasattr(auth_user, 'to_dict') else auth_user.__dict__ if hasattr(auth_user, '__dict__') else auth_user
+                user_id = user_dict.get('id', user_dict.get('user_id', 1))
+
+            for disb_id in selected_items:
+                success = self.aid_manager.process_disbursement(
+                    disbursement_id=disb_id,
+                    processed_by=user_id,
+                    transaction_id=f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{disb_id}"
+                )
+                if success:
+                    success_count += 1
+                    log_activity('process', 'disbursement', disb_id, {'processed_by': user_id})
+                else:
+                    error_count += 1
+
+            # Refresh the table
+            self._load_pending_disbursements(tree)
+
+            show_success("Processing Complete",
+                        f"Successfully processed: {success_count}\nFailed: {error_count}")
+
+        except Exception as e:
+            logger.error(f"Error processing disbursements: {e}")
+            show_error("Processing Error", f"An error occurred: {str(e)}")
+
+    def _process_all_pending_disbursements(self):
+        """Process all pending disbursements"""
+        try:
+            with get_connection() as conn:
+                pending_count = conn.execute("""
+                    SELECT COUNT(*) as count FROM disbursements WHERE status = 'pending'
+                """).fetchone()['count']
+
+                if pending_count == 0:
+                    show_warning("No Pending Disbursements", "There are no pending disbursements to process.")
+                    return
+
+                if not confirm_action(f"Process ALL {pending_count} pending disbursement(s)?\n\nThis will process every pending disbursement in the system.\nThis action cannot be undone."):
+                    return
+
+                auth_user = get_current_user()
+                user_id = None
+                if auth_user:
+                    user_dict = auth_user.to_dict() if hasattr(auth_user, 'to_dict') else auth_user.__dict__ if hasattr(auth_user, '__dict__') else auth_user
+                    user_id = user_dict.get('id', user_dict.get('user_id', 1))
+
+                # Get all pending disbursements
+                pending = conn.execute("""
+                    SELECT disbursement_id FROM disbursements WHERE status = 'pending'
+                """).fetchall()
+
+                success_count = 0
+                for row in pending:
+                    success = self.aid_manager.process_disbursement(
+                        disbursement_id=row['disbursement_id'],
+                        processed_by=user_id,
+                        transaction_id=f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{row['disbursement_id']}"
+                    )
+                    if success:
+                        success_count += 1
+                        log_activity('process', 'disbursement', row['disbursement_id'], {'batch': True})
+
+                show_success("Batch Processing Complete",
+                            f"Successfully processed {success_count} out of {pending_count} disbursements.")
+
+                # Refresh the view
+                self.show_disbursements()
+
+        except Exception as e:
+            logger.error(f"Error in batch processing: {e}")
+            show_error("Batch Processing Error", f"An error occurred: {str(e)}")
+
+    def _cancel_selected_disbursements(self, tree):
+        """Cancel selected disbursements"""
+        selected_items = []
+        for item in tree.get_children():
+            values = tree.item(item)['values']
+            if values[0] == '☑':  # Checked
+                selected_items.append(values[1])  # disbursement_id
+
+        if not selected_items:
+            show_warning("No Selection", "Please select disbursements to cancel.")
+            return
+
+        if not confirm_action(f"Cancel {len(selected_items)} selected disbursement(s)?"):
+            return
+
+        try:
+            with transaction() as conn:
+                for disb_id in selected_items:
+                    conn.execute("""
+                        UPDATE disbursements
+                        SET status = 'cancelled', error_message = 'Cancelled by administrator'
+                        WHERE disbursement_id = ?
+                    """, (disb_id,))
+                    log_activity('cancel', 'disbursement', disb_id, {'reason': 'admin_action'})
+
+            show_success("Cancellation Complete", f"Successfully cancelled {len(selected_items)} disbursement(s).")
+            self._load_pending_disbursements(tree)
+
+        except Exception as e:
+            logger.error(f"Error cancelling disbursements: {e}")
+            show_error("Cancellation Error", f"An error occurred: {str(e)}")
+
+    def _view_disbursement_details(self, tree):
+        """View detailed information about selected disbursement"""
+        selection = tree.selection()
+        if not selection:
+            show_warning("No Selection", "Please select a disbursement to view details.")
+            return
+
+        values = tree.item(selection[0])['values']
+        disb_id = values[1]  # disbursement_id
+
+        try:
+            with get_connection() as conn:
+                disb = conn.execute("""
+                    SELECT d.*, s.first_name, s.last_name, s.email, s.student_id as sid,
+                           u.username as processor_name
+                    FROM disbursements d
+                    LEFT JOIN students s ON d.student_id = s.student_id
+                    LEFT JOIN users u ON d.processed_by = u.id
+                    WHERE d.disbursement_id = ?
+                """, (disb_id,)).fetchone()
+
+                if not disb:
+                    show_error("Not Found", "Disbursement not found.")
+                    return
+
+                # Create details window
+                details_window = tk.Toplevel(self.parent_frame)
+                details_window.title(f"Disbursement Details - ID: {disb_id}")
+                details_window.geometry("600x700")
+
+                # Title
+                ttk.Label(details_window, text=f"Disbursement #{disb_id}", font=('Arial', 14, 'bold')).pack(pady=10)
+
+                # Details frame
+                details_frame = ttk.Frame(details_window, padding=20)
+                details_frame.pack(fill='both', expand=True)
+
+                def add_detail(label, value):
+                    row_frame = ttk.Frame(details_frame)
+                    row_frame.pack(fill='x', pady=5)
+                    ttk.Label(row_frame, text=f"{label}:", font=('Arial', 10, 'bold'), width=20).pack(side='left')
+                    ttk.Label(row_frame, text=str(value), font=('Arial', 10)).pack(side='left')
+
+                add_detail("Status", disb['status'].upper())
+                add_detail("Student Name", f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}")
+                add_detail("Student ID", disb.get('sid', disb['student_id']))
+                add_detail("Student Email", disb.get('email', 'N/A'))
+                add_detail("Disbursement Type", disb.get('disbursement_type', 'General Aid'))
+                add_detail("Amount", format_currency(disb['amount']))
+                add_detail("Academic Term", disb.get('academic_term', 'N/A'))
+                add_detail("Payment Method", disb.get('payment_method', 'N/A'))
+                add_detail("Transaction ID", disb.get('transaction_id', 'Pending'))
+                add_detail("Scheduled Date", format_date(disb.get('scheduled_date')))
+                add_detail("Disbursement Date", format_date(disb.get('disbursement_date', 'N/A')))
+
+                if disb.get('processed_at'):
+                    add_detail("Processed Date", format_date(disb['processed_at']))
+                    add_detail("Processed By", disb.get('processor_name', 'System'))
+
+                if disb.get('award_id'):
+                    add_detail("Award ID", disb['award_id'])
+                if disb.get('component_id'):
+                    add_detail("Component ID", disb['component_id'])
+
+                if disb.get('error_message'):
+                    add_detail("Error Message", disb['error_message'])
+
+                # Close button
+                ttk.Button(details_window, text="Close", command=details_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            logger.error(f"Error viewing disbursement details: {e}")
+            show_error("Error", f"An error occurred: {str(e)}")
+
+    def _show_create_disbursement_dialog(self):
+        """Show dialog to create new disbursement"""
+        dialog = tk.Toplevel(self.parent_frame)
+        dialog.title("Create New Disbursement")
+        dialog.geometry("500x600")
+
+        ttk.Label(dialog, text="Create New Disbursement", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Form
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+
+        fields = {}
+
+        # Student ID
+        ttk.Label(form_frame, text="Student ID:").pack(anchor='w', pady=(5, 0))
+        fields['student_id'] = ttk.Entry(form_frame, width=40)
+        fields['student_id'].pack(fill='x', pady=(0, 10))
+
+        # Amount
+        ttk.Label(form_frame, text="Amount ($):").pack(anchor='w', pady=(5, 0))
+        fields['amount'] = ttk.Entry(form_frame, width=40)
+        fields['amount'].pack(fill='x', pady=(0, 10))
+
+        # Type
+        ttk.Label(form_frame, text="Disbursement Type:").pack(anchor='w', pady=(5, 0))
+        fields['type'] = ttk.Combobox(form_frame, values=['scholarship', 'grant', 'loan', 'work_study', 'refund'], width=38)
+        fields['type'].set('grant')
+        fields['type'].pack(fill='x', pady=(0, 10))
+
+        # Academic Term
+        ttk.Label(form_frame, text="Academic Term:").pack(anchor='w', pady=(5, 0))
+        fields['term'] = ttk.Combobox(form_frame, values=['Fall', 'Spring', 'Summer'], width=38)
+        fields['term'].set('Fall')
+        fields['term'].pack(fill='x', pady=(0, 10))
+
+        # Scheduled Date
+        ttk.Label(form_frame, text="Scheduled Date (YYYY-MM-DD):").pack(anchor='w', pady=(5, 0))
+        fields['date'] = ttk.Entry(form_frame, width=40)
+        fields['date'].insert(0, date.today().strftime('%Y-%m-%d'))
+        fields['date'].pack(fill='x', pady=(0, 10))
+
+        # Payment Method
+        ttk.Label(form_frame, text="Payment Method:").pack(anchor='w', pady=(5, 0))
+        fields['method'] = ttk.Combobox(form_frame, values=['account_credit', 'direct_deposit', 'check', 'wire_transfer'], width=38)
+        fields['method'].set('account_credit')
+        fields['method'].pack(fill='x', pady=(0, 10))
+
+        def create_disbursement():
+            try:
+                # Validate
+                if not fields['student_id'].get().strip():
+                    show_error("Validation Error", "Student ID is required")
+                    return
+
+                amount = float(fields['amount'].get())
+                if amount <= 0:
+                    show_error("Validation Error", "Amount must be greater than 0")
+                    return
+
+                # Create disbursement
+                disb_id = self.aid_manager.create_disbursement(
+                    student_id=fields['student_id'].get().strip(),
+                    amount=amount,
+                    disbursement_date=date.fromisoformat(fields['date'].get()),
+                    disbursement_type=fields['type'].get(),
+                    academic_term=fields['term'].get()
+                )
+
+                if disb_id:
+                    # Update payment method
+                    with transaction() as conn:
+                        conn.execute("""
+                            UPDATE disbursements
+                            SET payment_method = ?, scheduled_date = ?
+                            WHERE disbursement_id = ?
+                        """, (fields['method'].get(), fields['date'].get(), disb_id))
+
+                    log_activity('create', 'disbursement', disb_id, {
+                        'student_id': fields['student_id'].get(),
+                        'amount': amount
+                    })
+
+                    show_success("Success", f"Disbursement created successfully!\nDisbursement ID: {disb_id}")
+                    dialog.destroy()
+                    self.show_disbursements()  # Refresh
+                else:
+                    show_error("Error", "Failed to create disbursement")
+
+            except ValueError as e:
+                show_error("Validation Error", f"Invalid input: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error creating disbursement: {e}")
+                show_error("Error", f"An error occurred: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="Create", command=create_disbursement, style='Success.TButton').pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+    def _export_disbursement_report(self):
+        """Export disbursement report to CSV"""
+        try:
+            with get_connection() as conn:
+                # Get all disbursements
+                disbursements = conn.execute("""
+                    SELECT d.*, s.first_name, s.last_name, s.student_id as sid,
+                           u.username as processor
+                    FROM disbursements d
+                    LEFT JOIN students s ON d.student_id = s.student_id
+                    LEFT JOIN users u ON d.processed_by = u.id
+                    ORDER BY d.disbursement_date DESC
+                """).fetchall()
+
+                data = []
+                for disb in disbursements:
+                    data.append({
+                        'Disbursement ID': disb['disbursement_id'],
+                        'Student Name': f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}",
+                        'Student ID': disb.get('sid', disb['student_id']),
+                        'Type': disb.get('disbursement_type', 'N/A'),
+                        'Amount': disb['amount'],
+                        'Status': disb['status'],
+                        'Scheduled Date': disb.get('scheduled_date', 'N/A'),
+                        'Disbursement Date': disb.get('disbursement_date', 'N/A'),
+                        'Processed Date': disb.get('processed_at', 'N/A'),
+                        'Processed By': disb.get('processor', 'N/A'),
+                        'Term': disb.get('academic_term', 'N/A'),
+                        'Payment Method': disb.get('payment_method', 'N/A'),
+                        'Transaction ID': disb.get('transaction_id', 'N/A')
+                    })
+
+                export_to_csv(data, f"disbursement_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+
+        except Exception as e:
+            logger.error(f"Error exporting disbursement report: {e}")
+            show_error("Export Error", f"Failed to export report: {str(e)}")
+
+    # Toggle checkbox function (for Treeview)
+    def _toggle_selection(self, tree, event):
+        """Toggle selection checkbox on click"""
+        region = tree.identify_region(event.x, event.y)
+        if region == "cell":
+            column = tree.identify_column(event.x)
+            if column == '#1':  # First column (Select)
+                item = tree.identify_row(event.y)
+                if item:
+                    values = list(tree.item(item)['values'])
+                    values[0] = '☑' if values[0] == '☐' else '☐'
+                    tree.item(item, values=values)
 
     def show_reports(self):
         """Show reports interface"""
@@ -1214,15 +1777,15 @@ class AdminPortal:
             admin_email = None
             with get_connection() as conn:
                 result = conn.execute("""
-                    SELECT u.email
-                    FROM users u
-                    WHERE u.role = 'admin' AND u.email IS NOT NULL
-                    ORDER BY u.user_id ASC
+                    SELECT email
+                    FROM users
+                    WHERE role = 'admin' AND email IS NOT NULL
+                    ORDER BY id ASC
                     LIMIT 1
                 """).fetchone()
 
                 if result:
-                    admin_email = result['email']
+                    admin_email = result['email'] if isinstance(result, dict) else result[0]
 
             if not admin_email:
                 show_warning("No Admin Email", "No admin email address found in the database.")
