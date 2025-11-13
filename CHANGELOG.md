@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Health Portal GUI - Database Column Name Error (email)
+
+**Fixed "no such column: email" database error**
+
+This commit fixes a critical database error where the Health Portal GUI was trying to query a non-existent `email` column from the students table. The actual column name is `email_address`.
+
+**ERROR MESSAGE:**
+```
+no such column: email
+```
+
+**ROOT CAUSE:**
+- SQL queries used `email` column name throughout the GUI
+- Students table has `email_address` column, not `email`
+- Students table has no `phone` column (also removed from query)
+
+**QUERIES FIXED (8 locations):**
+
+1. **Line 917, 990**: Send health report/record email forms
+   - `SELECT first_name, last_name, email` → `email_address`
+
+2. **Line 1135**: Add health record with email confirmation
+   - `SELECT first_name, last_name, email` → `email_address`
+
+3. **Line 1520**: Delete health record with email notification
+   - `SELECT hr.record_type, hr.student_id, s.first_name, s.last_name, s.email`
+   - Fixed to: `s.email_address`
+
+4. **Line 2061**: Schedule appointment with email confirmation
+   - `SELECT first_name, last_name, email` → `email_address`
+
+5. **Line 2225**: View appointment details
+   - `SELECT apt.student_id, s.first_name, s.last_name, s.email`
+   - Fixed to: `s.email_address`
+   - Also fixed: `JOIN students ON` → `JOIN students s ON` (missing alias)
+
+6. **Line 2374**: Cancel appointment with email notification
+   - `SELECT ha.student_id, ha.appointment_date, ha.appointment_time, ha.provider, ha.appointment_type, s.first_name, s.last_name, s.email`
+   - Fixed to: `s.email_address`
+
+7. **Line 3308**: Export students data
+   - `SELECT student_id, first_name, last_name, age, gender, email, phone`
+   - Fixed to: `email_address` (removed `phone` column - doesn't exist)
+
+**TECHNICAL DETAILS:**
+- Students table schema (confirmed via PRAGMA table_info):
+  - ✓ Has: `email_address` (column 1)
+  - ✗ Doesn't have: `email`
+  - ✗ Doesn't have: `phone`
+
+**RESULT:**
+- All health portal features now work correctly
+- Email confirmations send properly
+- Data export functions correctly
+- No more database column errors
+
+**FILE CHANGED:**
+- `university_system/modules/domain/health/gui/health_portal_gui.py` (8 queries fixed)
+
+---
+
 ### Fixed - 2025-11-13: Health Portal GUI - Layout Display Issue
 
 **Fixed main interface displaying only in bottom half of window**

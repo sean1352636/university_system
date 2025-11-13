@@ -914,7 +914,7 @@ Click the button above to open the full Email Manager interface."""
             try:
                 conn = self.get_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT first_name, last_name, email FROM students WHERE student_id = ?", (student_id,))
+                cursor.execute("SELECT first_name, last_name, email_address FROM students WHERE student_id = ?", (student_id,))
                 patient_info = cursor.fetchone()
                 conn.close()
 
@@ -987,7 +987,7 @@ Click the button above to open the full Email Manager interface."""
             try:
                 conn = self.get_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT first_name, last_name, email FROM students WHERE student_id = ?", (student_id,))
+                cursor.execute("SELECT first_name, last_name, email_address FROM students WHERE student_id = ?", (student_id,))
                 patient_info = cursor.fetchone()
                 conn.close()
 
@@ -1132,7 +1132,7 @@ Click the button above to open the full Email Manager interface."""
             record_id = cursor.lastrowid
 
             # Get patient information for email
-            cursor.execute("SELECT first_name, last_name, email FROM students WHERE student_id = ?",
+            cursor.execute("SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
                           (self.hr_student_id.get().strip(),))
             patient_info = cursor.fetchone()
 
@@ -1517,7 +1517,7 @@ Click the button above to open the full Email Manager interface."""
 
                 # Get record and patient details for email
                 cursor.execute('''
-                    SELECT hr.record_type, hr.student_id, s.first_name, s.last_name, s.email
+                    SELECT hr.record_type, hr.student_id, s.first_name, s.last_name, s.email_address
                     FROM health_records hr
                     JOIN students s ON hr.student_id = s.student_id
                     WHERE hr.id = ?
@@ -2058,7 +2058,7 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
             apt_id = cursor.lastrowid
 
             # Get patient information for email
-            cursor.execute("SELECT first_name, last_name, email FROM students WHERE student_id = ?",
+            cursor.execute("SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
                           (self.apt_student_id.get().strip(),))
             patient_info = cursor.fetchone()
 
@@ -2222,11 +2222,11 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
 
             # Get appointment details
             cursor.execute('''
-                SELECT apt.student_id, s.first_name, s.last_name, s.email,
+                SELECT apt.student_id, s.first_name, s.last_name, s.email_address,
                        apt.appointment_type, apt.appointment_date, apt.appointment_time,
                        apt.provider, apt.reason, apt.status, apt.notes, apt.scheduled_at
                 FROM health_appointments apt
-                JOIN students ON apt.student_id = s.student_id
+                JOIN students s ON apt.student_id = s.student_id
                 WHERE apt.id = ?
             ''', (apt_id,))
             record = cursor.fetchone()
@@ -2371,7 +2371,7 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
                 # Get appointment and patient details for email
                 cursor.execute('''
                     SELECT ha.student_id, ha.appointment_date, ha.appointment_time,
-                           ha.provider, ha.appointment_type, s.first_name, s.last_name, s.email
+                           ha.provider, ha.appointment_type, s.first_name, s.last_name, s.email_address
                     FROM health_appointments ha
                     JOIN students s ON ha.student_id = s.student_id
                     WHERE ha.id = ?
@@ -3305,10 +3305,10 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
                 
             elif data_type == 'students':
                 query = '''
-                    SELECT student_id, first_name, last_name, age, gender, email, phone
+                    SELECT student_id, first_name, last_name, age, gender, email_address
                     FROM students
                 '''
-                headers = ['Student ID', 'First Name', 'Last Name', 'Age', 'Gender', 'Email', 'Phone']
+                headers = ['Student ID', 'First Name', 'Last Name', 'Age', 'Gender', 'Email']
                 date_column = None
                 
             # Add date filters if specified
