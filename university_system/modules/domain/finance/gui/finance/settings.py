@@ -205,10 +205,12 @@ class SettingsManager:
             with settings_path.open('w', encoding='utf-8') as fp:
                 json.dump(settings, fp, indent=2)
     
-            self.update_status("General settings saved")
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                self.gui.layout.update_status("General settings saved")
             messagebox.showinfo("Settings Saved", "Finance general settings updated successfully.")
         except Exception as exc:
-            self.update_status("Failed to save general settings")
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                self.gui.layout.update_status("Failed to save general settings")
             messagebox.showerror("Save Error", f"Could not store finance settings: {exc}")
     
 

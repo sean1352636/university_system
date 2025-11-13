@@ -138,6 +138,8 @@ class BudgetManager:
                  bg=self.gui.layout.colors['success'], fg='white').pack(side='left', padx=5)
         tk.Button(toolbar, text="✏️ Edit Budget", command=self.edit_budget_plan,
                  bg=self.gui.layout.colors['warning'], fg='white').pack(side='left', padx=5)
+        tk.Button(toolbar, text="🗑️ Delete Budget", command=self.delete_budget_plan,
+                 bg=self.gui.layout.colors['danger'], fg='white').pack(side='left', padx=5)
         tk.Button(toolbar, text="📈 Budget Analysis", command=self.budget_analysis,
                  bg=self.gui.layout.colors['secondary'], fg='white').pack(side='left', padx=5)
         tk.Button(toolbar, text="✅ Approve Budget", command=self.approve_budget,
@@ -544,6 +546,46 @@ Status:           {status_var.get().title()}
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror("Error", f"Budget approval failed: {str(e)}")
+
+
+    def delete_budget_plan(self):
+        """Delete selected budget plan"""
+        selection = self.budget_plans_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a budget plan to delete.")
+            return
+
+        # Get budget details
+        values = self.budget_plans_tree.item(selection[0])['values']
+        budget_id = values[0]
+        plan_name = values[1]
+
+        # Confirm deletion
+        if not messagebox.askyesno("Confirm Delete",
+                                   f"Are you sure you want to delete budget plan '{plan_name}'?\n\n"
+                                   f"This will also delete all associated line items.\n"
+                                   f"This action cannot be undone.",
+                                   icon='warning'):
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Delete line items first (foreign key constraint)
+            cursor.execute('DELETE FROM budget_line_items WHERE budget_id = ?', (budget_id,))
+
+            # Delete budget plan
+            cursor.execute('DELETE FROM budget_plans WHERE budget_id = ?', (budget_id,))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Budget plan '{plan_name}' deleted successfully")
+            self.refresh_budget()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete budget plan: {e}")
 
 
     def show_text_window(self, title, content):
@@ -1059,7 +1101,52 @@ Status:           {status_var.get().title()}
                 messagebox.showerror("Error", f"Failed to deactivate budget category: {e}")
         
         ttk.Button(form_frame, text="Deactivate", command=deactivate_category).pack(pady=20)
-    
+
+
+    def gui_activate_budget_category(self):
+        """GUI wrapper for activate_budget_category"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Activate Budget Category")
+        dialog.geometry("400x200")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.LabelFrame(dialog, text="Activate Category", padding=20)
+        form_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        # Category ID
+        ttk.Label(form_frame, text="Category ID to Activate:").pack(anchor='w', pady=5)
+        category_id_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=category_id_var).pack(anchor='w', fill='x', pady=5)
+
+        def activate_category():
+            try:
+                category_id = int(category_id_var.get())
+
+                if messagebox.askyesno("Confirm", f"Activate budget category {category_id}?"):
+                    # Update database to set is_active = 1
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE budget_categories
+                        SET is_active = 1, updated_at = ?
+                        WHERE category_id = ?
+                    ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category_id))
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", "Budget category activated successfully!")
+                    dialog.destroy()
+                    if hasattr(self, 'refresh_budget'):
+                        self.refresh_budget()
+
+            except ValueError:
+                messagebox.showerror("Error", "Invalid Category ID")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to activate budget category: {e}")
+
+        ttk.Button(form_frame, text="Activate", command=activate_category).pack(pady=20)
+
 
     def gui_view_budget_categories(self):
         """GUI wrapper for view_budget_categories"""

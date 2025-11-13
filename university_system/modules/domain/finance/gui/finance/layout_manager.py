@@ -2745,12 +2745,202 @@ Finance Department
             messagebox.showerror("Error", f"Failed to generate forecast: {e}")
 
     def _revenue_projection(self):
-        """Generate revenue projection"""
-        messagebox.showinfo("Revenue Projection", "Detailed revenue projection analysis would be displayed here")
+        """Generate revenue projection with database analysis"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get historical revenue data (last 12 months)
+            cursor.execute('''
+                SELECT strftime('%Y-%m', payment_date) as month,
+                       SUM(amount) as total_revenue
+                FROM payments
+                WHERE status = 'completed'
+                  AND payment_date >= date('now', '-12 months')
+                GROUP BY month
+                ORDER BY month
+            ''')
+            revenue_data = cursor.fetchall()
+
+            # Calculate projection
+            report = "=" * 80 + "\n"
+            report += "REVENUE PROJECTION ANALYSIS\n"
+            report += "=" * 80 + "\n\n"
+            report += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+            if not revenue_data:
+                report += "No historical revenue data available for projection.\n"
+            else:
+                report += "HISTORICAL REVENUE (Last 12 Months):\n"
+                report += "-" * 80 + "\n"
+                report += f"{'Month':<15} {'Revenue':>20}\n"
+                report += "-" * 80 + "\n"
+
+                total_revenue = 0
+                for month, revenue in revenue_data:
+                    revenue = float(revenue or 0)
+                    total_revenue += revenue
+                    report += f"{month:<15} £{revenue:>18,.2f}\n"
+
+                avg_monthly = total_revenue / len(revenue_data) if revenue_data else 0
+
+                report += "-" * 80 + "\n"
+                report += f"{'Total Revenue':<15} £{total_revenue:>18,.2f}\n"
+                report += f"{'Average/Month':<15} £{avg_monthly:>18,.2f}\n\n"
+
+                # Projection (using simple moving average)
+                report += "REVENUE PROJECTIONS:\n"
+                report += "-" * 80 + "\n"
+
+                # Get last 3 months for trend
+                recent_months = revenue_data[-3:] if len(revenue_data) >= 3 else revenue_data
+                recent_total = sum(float(r[1] or 0) for r in recent_months)
+                recent_avg = recent_total / len(recent_months) if recent_months else 0
+
+                # Calculate growth rate
+                if len(revenue_data) >= 6:
+                    first_half = sum(float(r[1] or 0) for r in revenue_data[:3])
+                    second_half = sum(float(r[1] or 0) for r in revenue_data[-3:])
+                    growth_rate = ((second_half - first_half) / first_half * 100) if first_half > 0 else 0
+                    report += f"Growth Trend: {growth_rate:+.2f}%\n\n"
+                else:
+                    growth_rate = 0
+
+                # Project next 3, 6, 12 months
+                proj_3_months = recent_avg * 3
+                proj_6_months = recent_avg * 6
+                proj_12_months = recent_avg * 12
+
+                # Apply growth factor
+                growth_factor = 1 + (growth_rate / 100)
+                if growth_rate != 0:
+                    proj_3_months *= growth_factor
+                    proj_6_months *= growth_factor ** 0.5
+                    proj_12_months *= growth_factor ** 0.25
+
+                report += f"Next 3 Months:  £{proj_3_months:,.2f}\n"
+                report += f"Next 6 Months:  £{proj_6_months:,.2f}\n"
+                report += f"Next 12 Months: £{proj_12_months:,.2f}\n\n"
+
+                report += "Note: Projections based on historical trends and simple moving averages.\n"
+
+            conn.close()
+
+            # Display in window
+            window = tk.Toplevel(self.root)
+            window.title("Revenue Projection Analysis")
+            window.geometry("900x700")
+            window.transient(self.root)
+
+            from tkinter.scrolledtext import ScrolledText
+            text_widget = ScrolledText(window, font=('Courier', 10), wrap=tk.WORD)
+            text_widget.pack(fill='both', expand=True, padx=10, pady=10)
+            text_widget.insert('1.0', report)
+            text_widget.config(state='disabled')
+
+            ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate revenue projection: {e}")
 
     def _expense_projection(self):
-        """Generate expense projection"""
-        messagebox.showinfo("Expense Projection", "Detailed expense projection analysis would be displayed here")
+        """Generate expense projection with database analysis"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get historical expense data (last 12 months)
+            cursor.execute('''
+                SELECT strftime('%Y-%m', order_date) as month,
+                       SUM(total_amount) as total_expense
+                FROM purchase_orders
+                WHERE status IN ('approved', 'completed', 'paid')
+                  AND order_date >= date('now', '-12 months')
+                GROUP BY month
+                ORDER BY month
+            ''')
+            expense_data = cursor.fetchall()
+
+            # Calculate projection
+            report = "=" * 80 + "\n"
+            report += "EXPENSE PROJECTION ANALYSIS\n"
+            report += "=" * 80 + "\n\n"
+            report += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+            if not expense_data:
+                report += "No historical expense data available for projection.\n"
+            else:
+                report += "HISTORICAL EXPENSES (Last 12 Months):\n"
+                report += "-" * 80 + "\n"
+                report += f"{'Month':<15} {'Expenses':>20}\n"
+                report += "-" * 80 + "\n"
+
+                total_expense = 0
+                for month, expense in expense_data:
+                    expense = float(expense or 0)
+                    total_expense += expense
+                    report += f"{month:<15} £{expense:>18,.2f}\n"
+
+                avg_monthly = total_expense / len(expense_data) if expense_data else 0
+
+                report += "-" * 80 + "\n"
+                report += f"{'Total Expenses':<15} £{total_expense:>18,.2f}\n"
+                report += f"{'Average/Month':<15} £{avg_monthly:>18,.2f}\n\n"
+
+                # Projection (using simple moving average)
+                report += "EXPENSE PROJECTIONS:\n"
+                report += "-" * 80 + "\n"
+
+                # Get last 3 months for trend
+                recent_months = expense_data[-3:] if len(expense_data) >= 3 else expense_data
+                recent_total = sum(float(e[1] or 0) for e in recent_months)
+                recent_avg = recent_total / len(recent_months) if recent_months else 0
+
+                # Calculate growth rate
+                if len(expense_data) >= 6:
+                    first_half = sum(float(e[1] or 0) for e in expense_data[:3])
+                    second_half = sum(float(e[1] or 0) for e in expense_data[-3:])
+                    growth_rate = ((second_half - first_half) / first_half * 100) if first_half > 0 else 0
+                    report += f"Growth Trend: {growth_rate:+.2f}%\n\n"
+                else:
+                    growth_rate = 0
+
+                # Project next 3, 6, 12 months
+                proj_3_months = recent_avg * 3
+                proj_6_months = recent_avg * 6
+                proj_12_months = recent_avg * 12
+
+                # Apply growth factor
+                growth_factor = 1 + (growth_rate / 100)
+                if growth_rate != 0:
+                    proj_3_months *= growth_factor
+                    proj_6_months *= growth_factor ** 0.5
+                    proj_12_months *= growth_factor ** 0.25
+
+                report += f"Next 3 Months:  £{proj_3_months:,.2f}\n"
+                report += f"Next 6 Months:  £{proj_6_months:,.2f}\n"
+                report += f"Next 12 Months: £{proj_12_months:,.2f}\n\n"
+
+                report += "Note: Projections based on historical trends and simple moving averages.\n"
+
+            conn.close()
+
+            # Display in window
+            window = tk.Toplevel(self.root)
+            window.title("Expense Projection Analysis")
+            window.geometry("900x700")
+            window.transient(self.root)
+
+            from tkinter.scrolledtext import ScrolledText
+            text_widget = ScrolledText(window, font=('Courier', 10), wrap=tk.WORD)
+            text_widget.pack(fill='both', expand=True, padx=10, pady=10)
+            text_widget.insert('1.0', report)
+            text_widget.config(state='disabled')
+
+            ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate expense projection: {e}")
 
     def _refresh_forecasting(self):
         """Refresh forecasting data"""

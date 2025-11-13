@@ -7,6 +7,7 @@ so they don't need to be repeated in every GUI manager file.
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 import logging
+from datetime import datetime
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -287,16 +288,16 @@ try:
             manage_student_credits(student_id, action='history')
 
 except ImportError:
-    def view_student_credits(*args, **kwargs):
+    def view_student_credits(student_id=None, *args, **kwargs):
         messagebox.showwarning("Not Available", "Student credits functionality not yet implemented")
 
-    def add_student_credit(*args, **kwargs):
+    def add_student_credit(student_id=None, *args, **kwargs):
         messagebox.showwarning("Not Available", "Add credit functionality not yet implemented")
 
-    def apply_credit_to_fees(*args, **kwargs):
+    def apply_credit_to_fees(student_id=None, credit_id=None, amount=None, *args, **kwargs):
         messagebox.showwarning("Not Available", "Apply credit functionality not yet implemented")
 
-    def view_credit_history(*args, **kwargs):
+    def view_credit_history(student_id=None, *args, **kwargs):
         messagebox.showwarning("Not Available", "Credit history functionality not yet implemented")
 
 

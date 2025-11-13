@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Multiple Finance GUI Critical Fixes (7 Issues)
+
+**Issue 1: apply_credit_to_fees Function Signature Error:**
+- Fixed "takes 0 to 1 positional arguments but 3 were given" error
+  - Problem: Fallback function didn't accept required parameters (student_id, credit_id, amount)
+  - Solution: Updated function signature to accept all 3 parameters
+  - Location: common_imports.py:296
+
+**Issue 2: Datetime Not Defined:**
+- Added missing datetime import to common_imports.py
+  - Problem: Functions used datetime without importing it
+  - Solution: Added `from datetime import datetime` to imports
+  - Location: common_imports.py:10
+
+**Issue 3: Activate Category Function:**
+- Added gui_activate_budget_category() method
+  - Allows reactivating deactivated budget categories
+  - Sets is_active = 1 in database
+  - Full dialog interface (400x200)
+  - Refreshes budget display after activation
+  - Location: budget_manager.py:1064-1106
+
+**Issue 4: Delete Budget Function:**
+- Implemented delete_budget_plan() method
+  - Deletes budget plan and associated line items
+  - Confirmation dialog with warning
+  - Cascading delete for foreign key constraints
+  - Added "🗑️ Delete Budget" button to toolbar
+  - Location: budget_manager.py:549-586, toolbar at 141-142
+
+**Issue 5: Revenue Projection - Full Implementation (98 lines):**
+- Replaced placeholder with real database analysis
+  - Queries payments table for last 12 months
+  - Displays historical revenue by month
+  - Calculates total and average monthly revenue
+  - Computes growth trend from first vs last 3 months
+  - Projects 3, 6, 12 month revenue with growth factor
+  - Opens in dedicated window with ScrolledText
+  - Location: layout_manager.py:2747-2844
+
+**Issue 6: Expense Projection - Full Implementation (98 lines):**
+- Replaced placeholder with real database analysis
+  - Queries purchase_orders table for last 12 months
+  - Displays historical expenses by month
+  - Calculates total and average monthly expenses
+  - Computes growth trend from first vs last 3 months
+  - Projects 3, 6, 12 month expenses with growth factor
+  - Opens in dedicated window with ScrolledText
+  - Location: layout_manager.py:2846-2943
+
+**Issue 7: SettingsManager update_status Attribute Error:**
+- Fixed "SettingsManager object has no attribute 'update_status'"
+  - Problem: Called self.update_status() directly
+  - Solution: Changed to self.gui.layout.update_status() with hasattr checks
+  - Safe fallback if update_status not available
+  - Location: settings.py:208-213
+
+**Technical Details:**
+- All projection methods use moving averages and growth rates
+- Historical data analysis over 12-month period
+- Growth factor applied to projections (exponential for longer periods)
+- Full error handling and user feedback
+- Database queries use proper date functions
+
+**Remaining Issues (Next Commit):**
+- budget_approval_workflow import error (need to check import path)
+- Fix database path in maintenance tab
+- Fully implement financial summary
+
 ### Fixed - 2025-11-13: Budget Plans Database Persistence & Analysis Functions (7 Issues)
 
 **Issue 1: Budget Plans Not Saving to Database:**
