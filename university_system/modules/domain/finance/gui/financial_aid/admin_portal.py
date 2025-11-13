@@ -545,16 +545,10 @@ class AdminPortal:
                 show_error("Validation Error", "Package must have at least one aid component")
                 return False
 
-            # Create aid package
+            # Create aid package (note: package_data details are stored separately in aid_package_items table)
             package_id = self.aid_manager.create_aid_package(
                 student_id=student_id,
-                academic_year=fields['academic_year'].get(),
-                package_data={
-                    'name': fields['package_name'].get() or 'Standard Package',
-                    'grant_amount': grant,
-                    'loan_amount': loan,
-                    'work_study_amount': work_study
-                }
+                academic_year=fields['academic_year'].get()
             )
 
             if package_id:
@@ -610,13 +604,15 @@ class AdminPortal:
                 """).fetchall()
 
                 for aid_type in aid_types:
+                    # Convert Row to dict for safe .get() usage
+                    aid_dict = dict(aid_type)
                     tree.insert('', 'end', values=(
-                        aid_type['aid_type_id'],
-                        aid_type['aid_name'],
-                        aid_type.get('aid_category', 'N/A'),
-                        format_currency(aid_type.get('max_amount', 0)),
-                        'Yes' if aid_type.get('is_renewable') else 'No',
-                        'Yes' if aid_type.get('requires_repayment') else 'No'
+                        aid_dict['aid_type_id'],
+                        aid_dict['aid_name'],
+                        aid_dict.get('aid_category', 'N/A'),
+                        format_currency(aid_dict.get('max_amount', 0)),
+                        'Yes' if aid_dict.get('is_renewable') else 'No',
+                        'Yes' if aid_dict.get('requires_repayment') else 'No'
                     ))
 
         except Exception as e:
@@ -729,7 +725,425 @@ class AdminPortal:
 
     def _generate_report(self, report_name: str):
         """Generate selected report"""
-        show_warning("Coming Soon", f"Report generation for '{report_name}' will be implemented in analytics_dashboard.py")
+        if report_name == "Aid Distribution Summary":
+            self._generate_aid_distribution_report()
+        elif report_name == "Scholarship Utilization":
+            self._generate_scholarship_utilization_report()
+        elif report_name == "Disbursement Schedule":
+            self._generate_disbursement_schedule_report()
+        elif report_name == "Compliance Report (FISAP)":
+            self._generate_compliance_report()
+        elif report_name == "Student Aid Index Report":
+            self._generate_sai_report()
+        else:
+            show_warning("Coming Soon", f"Report '{report_name}' not yet implemented")
+
+    def _generate_aid_distribution_report(self):
+        """Generate Aid Distribution Summary report"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title("Aid Distribution Summary Report")
+        report_window.geometry("900x700")
+
+        # Title
+        ttk.Label(report_window, text="Aid Distribution Summary", style='Title.TLabel').pack(pady=10)
+
+        # Create scrolled text for report
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        try:
+            report = []
+            report.append("=" * 80)
+            report.append("FINANCIAL AID DISTRIBUTION SUMMARY")
+            report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append("=" * 80)
+            report.append("")
+
+            with get_connection() as conn:
+                # Aid by type
+                report.append("AID DISTRIBUTION BY TYPE:")
+                report.append("-" * 80)
+
+                try:
+                    aid_by_type = conn.execute("""
+                        SELECT fat.aid_name, fat.aid_category,
+                               COUNT(sfa.aid_id) as count,
+                               SUM(sfa.awarded_amount) as total_awarded,
+                               SUM(sfa.disbursed_amount) as total_disbursed,
+                               SUM(sfa.remaining_amount) as total_remaining
+                        FROM financial_aid_types fat
+                        LEFT JOIN student_financial_aid sfa ON fat.aid_type_id = sfa.aid_type_id
+                        GROUP BY fat.aid_type_id, fat.aid_name, fat.aid_category
+                        ORDER BY total_awarded DESC
+                    """).fetchall()
+
+                    for aid in aid_by_type:
+                        aid_dict = dict(aid)
+                        report.append(f"\nAid Type: {aid_dict['aid_name']} ({aid_dict['aid_category']})")
+                        report.append(f"  Recipients: {aid_dict['count']}")
+                        report.append(f"  Total Awarded: {format_currency(aid_dict['total_awarded'] or 0)}")
+                        report.append(f"  Total Disbursed: {format_currency(aid_dict['total_disbursed'] or 0)}")
+                        report.append(f"  Remaining: {format_currency(aid_dict['total_remaining'] or 0)}")
+                except Exception as e:
+                    report.append(f"Error loading aid types data: {e}")
+
+                report.append("")
+                report.append("=" * 80)
+                report.append("AID DISTRIBUTION BY ACADEMIC YEAR:")
+                report.append("-" * 80)
+
+                # Get unique academic years from student_financial_aid
+                try:
+                    # This query needs the application_date field to extract year
+                    report.append("\nNote: Academic year breakdown requires application_date field")
+                    report.append("in student_financial_aid table for accurate reporting.")
+                except Exception as e:
+                    report.append(f"Error loading year data: {e}")
+
+                report.append("")
+                report.append("=" * 80)
+                report.append("SUMMARY STATISTICS:")
+                report.append("-" * 80)
+
+                try:
+                    summary = conn.execute("""
+                        SELECT
+                            COUNT(DISTINCT student_id) as total_students,
+                            COUNT(aid_id) as total_awards,
+                            SUM(awarded_amount) as total_awarded,
+                            SUM(disbursed_amount) as total_disbursed,
+                            AVG(awarded_amount) as avg_award
+                        FROM student_financial_aid
+                        WHERE status IN ('approved', 'disbursed', 'completed')
+                    """).fetchone()
+
+                    if summary:
+                        s = dict(summary)
+                        report.append(f"\nTotal Students Receiving Aid: {s['total_students'] or 0}")
+                        report.append(f"Total Awards: {s['total_awards'] or 0}")
+                        report.append(f"Total Amount Awarded: {format_currency(s['total_awarded'] or 0)}")
+                        report.append(f"Total Amount Disbursed: {format_currency(s['total_disbursed'] or 0)}")
+                        report.append(f"Average Award Amount: {format_currency(s['avg_award'] or 0)}")
+                except Exception as e:
+                    report.append(f"Error loading summary statistics: {e}")
+
+            report.append("")
+            report.append("=" * 80)
+            report.append("End of Report")
+            report.append("=" * 80)
+
+            report_text.insert('1.0', '\n'.join(report))
+            report_text.config(state='disabled')
+
+        except Exception as e:
+            logger.error(f"Error generating aid distribution report: {e}")
+            report_text.insert('1.0', f"Error generating report:\n{str(e)}")
+            report_text.config(state='disabled')
+
+        # Export button
+        ttk.Button(report_window, text="Export to CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "aid_distribution_report")).pack(pady=10)
+        ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
+
+    def _generate_scholarship_utilization_report(self):
+        """Generate Scholarship Utilization report"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title("Scholarship Utilization Report")
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text="Scholarship Utilization Report", style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        try:
+            report = []
+            report.append("=" * 80)
+            report.append("SCHOLARSHIP UTILIZATION REPORT")
+            report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append("=" * 80)
+            report.append("")
+
+            with get_connection() as conn:
+                # Scholarship awards summary
+                report.append("SCHOLARSHIP AWARDS SUMMARY:")
+                report.append("-" * 80)
+
+                scholarships = conn.execute("""
+                    SELECT s.scholarship_name, s.amount as max_amount, s.is_active,
+                           COUNT(ss.student_scholarship_id) as awards_count,
+                           SUM(ss.amount) as total_awarded,
+                           s.academic_year
+                    FROM scholarships s
+                    LEFT JOIN student_scholarships ss ON s.scholarship_id = ss.scholarship_id
+                    GROUP BY s.scholarship_id
+                    ORDER BY total_awarded DESC
+                """).fetchall()
+
+                for scholarship in scholarships:
+                    sch = dict(scholarship)
+                    report.append(f"\nScholarship: {sch['scholarship_name']}")
+                    report.append(f"  Academic Year: {sch['academic_year'] or 'N/A'}")
+                    report.append(f"  Status: {'Active' if sch['is_active'] else 'Inactive'}")
+                    report.append(f"  Maximum Amount: {format_currency(sch['max_amount'] or 0)}")
+                    report.append(f"  Number of Awards: {sch['awards_count']}")
+                    report.append(f"  Total Awarded: {format_currency(sch['total_awarded'] or 0)}")
+
+                    if sch['max_amount'] and sch['awards_count'] > 0:
+                        utilization = (sch['total_awarded'] or 0) / (sch['max_amount'] * sch['awards_count']) * 100
+                        report.append(f"  Utilization Rate: {utilization:.1f}%")
+
+                report.append("")
+                report.append("=" * 80)
+                report.append("APPLICATION STATISTICS:")
+                report.append("-" * 80)
+
+                app_stats = conn.execute("""
+                    SELECT
+                        COUNT(*) as total_applications,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied
+                    FROM scholarship_applications
+                """).fetchone()
+
+                if app_stats:
+                    stats = dict(app_stats)
+                    report.append(f"\nTotal Applications: {stats['total_applications']}")
+                    report.append(f"Pending Applications: {stats['pending']}")
+                    report.append(f"Approved Applications: {stats['approved']}")
+                    report.append(f"Denied Applications: {stats['denied']}")
+
+                    if stats['total_applications'] > 0:
+                        approval_rate = (stats['approved'] / stats['total_applications']) * 100
+                        report.append(f"Approval Rate: {approval_rate:.1f}%")
+
+            report.append("")
+            report.append("=" * 80)
+            report.append("End of Report")
+            report.append("=" * 80)
+
+            report_text.insert('1.0', '\n'.join(report))
+            report_text.config(state='disabled')
+
+        except Exception as e:
+            logger.error(f"Error generating scholarship utilization report: {e}")
+            report_text.insert('1.0', f"Error generating report:\n{str(e)}")
+            report_text.config(state='disabled')
+
+        ttk.Button(report_window, text="Export to CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "scholarship_utilization_report")).pack(pady=10)
+        ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
+
+    def _generate_disbursement_schedule_report(self):
+        """Generate Disbursement Schedule report"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title("Disbursement Schedule Report")
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text="Disbursement Schedule Report", style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        try:
+            report = []
+            report.append("=" * 80)
+            report.append("DISBURSEMENT SCHEDULE REPORT")
+            report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append("=" * 80)
+            report.append("")
+
+            with get_connection() as conn:
+                # Check if disbursements table exists
+                table_check = conn.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='disbursements'
+                """).fetchone()
+
+                if not table_check:
+                    report.append("DISBURSEMENT TRACKING NOT YET CONFIGURED")
+                    report.append("")
+                    report.append("The disbursements table has not been created yet.")
+                    report.append("This feature will be available once the database schema is updated.")
+                else:
+                    # Pending disbursements
+                    report.append("PENDING DISBURSEMENTS:")
+                    report.append("-" * 80)
+
+                    pending = conn.execute("""
+                        SELECT d.*, sfa.student_id, fat.aid_name
+                        FROM disbursements d
+                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
+                        JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        WHERE d.status = 'pending'
+                        ORDER BY d.scheduled_date ASC
+                    """).fetchall()
+
+                    if pending:
+                        for disb in pending:
+                            d = dict(disb)
+                            report.append(f"\nStudent ID: {d['student_id']}")
+                            report.append(f"  Aid Type: {d['aid_name']}")
+                            report.append(f"  Amount: {format_currency(d['amount'])}")
+                            report.append(f"  Scheduled: {format_date(d.get('scheduled_date'))}")
+                            report.append(f"  Method: {d.get('method', 'Direct Deposit')}")
+                    else:
+                        report.append("\nNo pending disbursements")
+
+                    report.append("")
+                    report.append("=" * 80)
+                    report.append("COMPLETED DISBURSEMENTS (Last 30 days):")
+                    report.append("-" * 80)
+
+                    completed = conn.execute("""
+                        SELECT d.*, sfa.student_id, fat.aid_name
+                        FROM disbursements d
+                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
+                        JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        WHERE d.status = 'disbursed'
+                        AND d.disbursement_date >= date('now', '-30 days')
+                        ORDER BY d.disbursement_date DESC
+                    """).fetchall()
+
+                    if completed:
+                        for disb in completed:
+                            d = dict(disb)
+                            report.append(f"\nStudent ID: {d['student_id']}")
+                            report.append(f"  Aid Type: {d['aid_name']}")
+                            report.append(f"  Amount: {format_currency(d['amount'])}")
+                            report.append(f"  Disbursed: {format_date(d.get('disbursement_date'))}")
+                    else:
+                        report.append("\nNo completed disbursements in last 30 days")
+
+            report.append("")
+            report.append("=" * 80)
+            report.append("End of Report")
+            report.append("=" * 80)
+
+            report_text.insert('1.0', '\n'.join(report))
+            report_text.config(state='disabled')
+
+        except Exception as e:
+            logger.error(f"Error generating disbursement schedule report: {e}")
+            report_text.insert('1.0', f"Error generating report:\n{str(e)}")
+            report_text.config(state='disabled')
+
+        ttk.Button(report_window, text="Export to CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "disbursement_schedule_report")).pack(pady=10)
+        ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
+
+    def _generate_compliance_report(self):
+        """Generate Compliance (FISAP) report"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title("Compliance Report (FISAP)")
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text="Federal Student Aid Report (FISAP)", style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        report = []
+        report.append("=" * 80)
+        report.append("FISAP COMPLIANCE REPORT")
+        report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report.append("Academic Year: {current_ay}".replace("{current_ay}", get_current_academic_year()))
+        report.append("=" * 80)
+        report.append("")
+        report.append("This is a placeholder for FISAP (Fiscal Operations Report and")
+        report.append("Application to Participate) compliance reporting.")
+        report.append("")
+        report.append("FISAP reporting requires:")
+        report.append("- Federal Work-Study (FWS) expenditures")
+        report.append("- Federal Supplemental Educational Opportunity Grant (FSEOG) expenditures")
+        report.append("- Federal Perkins Loan expenditures")
+        report.append("- Institutional matching contributions")
+        report.append("- Student enrollment data")
+        report.append("")
+        report.append("Contact your financial aid administrator to configure FISAP reporting.")
+        report.append("")
+        report.append("=" * 80)
+        report.append("End of Report")
+        report.append("=" * 80)
+
+        report_text.insert('1.0', '\n'.join(report))
+        report_text.config(state='disabled')
+
+        ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=10)
+
+    def _generate_sai_report(self):
+        """Generate Student Aid Index (SAI) report"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title("Student Aid Index (SAI) Report")
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text="Student Aid Index (SAI) Analysis", style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        report = []
+        report.append("=" * 80)
+        report.append("STUDENT AID INDEX (SAI) REPORT")
+        report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report.append("=" * 80)
+        report.append("")
+        report.append("This report analyzes Student Aid Index (SAI) data and Expected Family")
+        report.append("Contribution (EFC) to determine financial need and aid eligibility.")
+        report.append("")
+        report.append("SAI/EFC data requires:")
+        report.append("- FAFSA data import")
+        report.append("- Student household income information")
+        report.append("- Dependency status")
+        report.append("- Number of family members in college")
+        report.append("")
+        report.append("Use the 'Import FAFSA Data' function to populate this report.")
+        report.append("")
+        report.append("=" * 80)
+        report.append("End of Report")
+        report.append("=" * 80)
+
+        report_text.insert('1.0', '\n'.join(report))
+        report_text.config(state='disabled')
+
+        ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=10)
+
+    def _export_report_to_csv(self, report_text: str, filename_base: str):
+        """Export report to CSV file"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                initialfile=f"{filename_base}_{timestamp}.txt"
+            )
+
+            if filepath:
+                with open(filepath, 'w') as f:
+                    f.write(report_text)
+
+                show_success("Export Successful", f"Report exported to:\n{filepath}")
+                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base})
+
+        except Exception as e:
+            logger.error(f"Error exporting report: {e}")
+            show_error("Export Error", f"Failed to export report:\n{str(e)}")
 
     def show_fafsa_import(self):
         """Show FAFSA import interface"""
