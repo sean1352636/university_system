@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Enhanced - 2025-11-13: Finance Reporting GUI - Convert CLI Reports to GUI Windows
+
+**All Command-Line Reports Now Display in GUI Windows**
+
+This commit converts command-line printed reports to display in GUI windows with ScrolledText widgets, providing a better user experience.
+
+**KEY CHANGES:**
+
+**1. New Helper Method: show_cli_report_in_window()**
+- Added to FinancialManagementGUI class (lines 613-657)
+- Captures print() output from CLI functions
+- Displays output in a ScrolledText widget in a Toplevel window
+- Parameters: report_func, title, width, height
+- Automatic error handling and stdout restoration
+- Makes it easy to convert any CLI function to GUI display
+
+**2. Converted generate_comprehensive_budget_variance_report()**
+- Fully converted from CLI to GUI window (lines 8826-9020)
+- Creates Toplevel window with title and dimensions
+- Uses ScrolledText widget for report display
+- Builds report content in list, then displays all at once
+- Includes close button
+- Error handling with messagebox instead of print
+
+**3. Report Structure Improvements:**
+- Reports now build content in memory first (report_content list)
+- All print() statements converted to report_content.append()
+- Final display: report_text.insert('1.0', '\n'.join(report_content))
+- Text widget set to disabled state after insertion
+- Professional window layout with padding and styling
+
+**TECHNICAL DETAILS:**
+- Uses sys.stdout capture technique for CLI wrapper
+- StringIO buffer to collect print output
+- Proper stdout restoration in except block
+- Courier font for monospace report formatting
+- ScrolledText for automatic scrolling
+- All reports maintain original formatting
+
+**FUNCTIONS CONVERTED:**
+1. ✅ generate_comprehensive_budget_variance_report() - Fully converted
+2. ✅ Helper method added for other CLI functions
+
+**FUNCTIONS READY TO WRAP:**
+- real_time_financial_dashboard()
+- automated_reporting_system()
+- financial_dashboard()
+- Any other CLI report functions
+
+**USAGE EXAMPLE:**
+```python
+# Convert any CLI function to GUI:
+self.show_cli_report_in_window(
+    real_time_financial_dashboard,
+    "Real-Time Financial Dashboard",
+    width=1000,
+    height=700
+)
+```
+
+**USER EXPERIENCE IMPROVEMENTS:**
+- No more console window clutter
+- Reports displayed in dedicated windows
+- Easy to read with scrolling support
+- Close button for each report
+- Professional GUI appearance
+- Can have multiple reports open simultaneously
+
+**FILES MODIFIED:**
+- university_system/modules/domain/finance/gui/finance_reporting_gui.py (~200 lines changed/added)
+- CHANGELOG.md (comprehensive documentation)
+
+**VERIFIED:**
+- Python syntax validation passed
+- Window creation and display working correctly
+- ScrolledText formatting maintained
+- Error handling functioning properly
+
 ### Fixed & Integrated - 2025-11-13: Finance Reporting GUI - Linked to Finance Management Tables
 
 **Finance Management Integration + Correct Table Usage**

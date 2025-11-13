@@ -610,6 +610,52 @@ class FinancialManagementGUI:
         self.activity_text.insert(tk.END, activity_message)
         self.activity_text.see(tk.END)
 
+    def show_cli_report_in_window(self, report_func, title, width=1000, height=700):
+        """
+        Wrapper to display CLI report functions in GUI windows.
+        Captures print() output and displays in a ScrolledText widget.
+        """
+        import sys
+        from io import StringIO
+
+        try:
+            # Create report window
+            report_window = tk.Toplevel(self.root)
+            report_window.title(title)
+            report_window.geometry(f"{width}x{height}")
+
+            main_frame = ttk.Frame(report_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text=title,
+                     font=('Arial', 16, 'bold')).pack(pady=(0, 10))
+
+            # Create scrolled text widget for report
+            report_text = ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
+            report_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+            # Capture print output
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+
+            # Run the report function
+            report_func()
+
+            # Get captured output
+            output = sys.stdout.getvalue()
+            sys.stdout = old_stdout
+
+            # Display in window
+            report_text.insert('1.0', output)
+            report_text.config(state='disabled')
+
+            # Add close button
+            ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=10)
+
+        except Exception as e:
+            sys.stdout = old_stdout  # Restore stdout
+            messagebox.showerror("Error", f"Error generating report: {e}")
+
     def return_to_main_menu(self):
         """Return to the main finance GUI by closing this window"""
         try:
@@ -8824,22 +8870,39 @@ def generate_advanced_financial_forecasting():
         return False
 
 def generate_comprehensive_budget_variance_report():
-    """Enhanced budget variance with predictive analytics"""
+    """Enhanced budget variance with predictive analytics - GUI VERSION"""
     try:
         from university_system.infrastructure.database.db import get_connection
         from datetime import datetime
         import random
 
-        print("=" * 80)
-        print(" " * 20 + "COMPREHENSIVE BUDGET VARIANCE REPORT")
-        print("=" * 80)
-        print("")
+        # Create report window
+        report_window = tk.Toplevel()
+        report_window.title("Comprehensive Budget Variance Report")
+        report_window.geometry("1000x700")
+
+        main_frame = ttk.Frame(report_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="📊 Comprehensive Budget Variance Report",
+                 font=('Arial', 16, 'bold')).pack(pady=(0, 10))
+
+        # Create scrolled text widget for report
+        report_text = ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        report_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Build report content
+        report_content = []
+        report_content.append("=" * 80)
+        report_content.append(" " * 20 + "COMPREHENSIVE BUDGET VARIANCE REPORT")
+        report_content.append("=" * 80)
+        report_content.append("")
 
         conn = get_connection()
         cursor = conn.cursor()
 
         # Get budget variance data from Finance Management tables
-        print("[1/4] Analyzing budget variance...")
+        report_content.append("[1/4] Analyzing budget variance...")
 
         # Use budget_plans, budget_categories, and budget_line_items (Finance Management tables)
         cursor.execute('''
@@ -8872,7 +8935,7 @@ def generate_comprehensive_budget_variance_report():
 
         # Fallback 2: Use student fees (revenue) vs payments (collection) by course
         if not budget_data:
-            print("  ⚠ No budget plan data found, using student fees/payments as proxy...")
+            report_content.append("  ⚠ No budget plan data found, using student fees/payments as proxy...")
             cursor.execute('''
                 SELECT
                     COALESCE(s.course, 'Unknown') as category,
@@ -8889,8 +8952,8 @@ def generate_comprehensive_budget_variance_report():
             budget_data = cursor.fetchall()
 
         if not budget_data:
-            print("  ⚠ No budget data available")
-            print(f"  Using sample data for demonstration...")
+            report_content.append("  ⚠ No budget data available")
+            report_content.append(f"  Using sample data for demonstration...")
             # Sample data
             budget_data = [
                 ('Academic Programs', 500000, 485000),
@@ -8904,16 +8967,16 @@ def generate_comprehensive_budget_variance_report():
         total_spent = sum(row[2] for row in budget_data)
         overall_variance = ((total_spent - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
 
-        print(f"  • Total Budget Allocated: £{total_allocated:,.2f}")
-        print(f"  • Total Spent to Date: £{total_spent:,.2f}")
-        print(f"  • Overall Variance: {overall_variance:+.2f}%")
-        print("")
+        report_content.append(f"  • Total Budget Allocated: £{total_allocated:,.2f}")
+        report_content.append(f"  • Total Spent to Date: £{total_spent:,.2f}")
+        report_content.append(f"  • Overall Variance: {overall_variance:+.2f}%")
+        report_content.append("")
 
         # Department-level analysis
-        print("[2/4] Department variance analysis...")
-        print("")
-        print(f"  {'Department':<20} {'Allocated':>15} {'Spent':>15} {'Variance':>12}")
-        print(f"  {'-'*20} {'-'*15} {'-'*15} {'-'*12}")
+        report_content.append("[2/4] Department variance analysis...")
+        report_content.append("")
+        report_content.append(f"  {'Department':<20} {'Allocated':>15} {'Spent':>15} {'Variance':>12}")
+        report_content.append(f"  {'-'*20} {'-'*15} {'-'*15} {'-'*12}")
 
         over_budget_count = 0
         under_budget_count = 0
@@ -8932,17 +8995,17 @@ def generate_comprehensive_budget_variance_report():
             else:
                 status = " "
 
-            print(f"  {dept:<20} £{allocated:>13,.2f} £{spent:>13,.2f} {variance_str:>11} {status}")
+            report_content.append(f"  {dept:<20} £{allocated:>13,.2f} £{spent:>13,.2f} {variance_str:>11} {status}")
             variance_details.append((dept, variance, spent - allocated))
 
-        print("")
-        print(f"  Departments Over Budget: {over_budget_count}")
-        print(f"  Departments Significantly Under Budget: {under_budget_count}")
-        print("")
+        report_content.append("")
+        report_content.append(f"  Departments Over Budget: {over_budget_count}")
+        report_content.append(f"  Departments Significantly Under Budget: {under_budget_count}")
+        report_content.append("")
 
         # Predictive adjustments
-        print("[3/4] Recommended budget adjustments...")
-        print("")
+        report_content.append("[3/4] Recommended budget adjustments...")
+        report_content.append("")
 
         adjustments = []
         for dept, variance, diff in variance_details:
@@ -8953,15 +9016,15 @@ def generate_comprehensive_budget_variance_report():
 
         if adjustments:
             for i, (dept, action, amount) in enumerate(adjustments[:5], 1):
-                print(f"  {i}. {dept}: {action.capitalize()} budget by £{amount:,.2f}")
+                report_content.append(f"  {i}. {dept}: {action.capitalize()} budget by £{amount:,.2f}")
         else:
-            print("  ✓ No significant adjustments needed")
-            print("  All departments within acceptable variance")
+            report_content.append("  ✓ No significant adjustments needed")
+            report_content.append("  All departments within acceptable variance")
 
-        print("")
+        report_content.append("")
 
         # Future projections
-        print("[4/4] End-of-year projections...")
+        report_content.append("[4/4] End-of-year projections...")
         months_passed = datetime.now().month
         months_remaining = 12 - months_passed
 
@@ -8969,34 +9032,41 @@ def generate_comprehensive_budget_variance_report():
             projected_spending = (total_spent / months_passed) * 12
             projected_variance = ((projected_spending - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
 
-            print(f"  • Current Period: {months_passed} months")
-            print(f"  • Projected Annual Spending: £{projected_spending:,.2f}")
-            print(f"  • Projected Year-End Variance: {projected_variance:+.2f}%")
-            print("")
+            report_content.append(f"  • Current Period: {months_passed} months")
+            report_content.append(f"  • Projected Annual Spending: £{projected_spending:,.2f}")
+            report_content.append(f"  • Projected Year-End Variance: {projected_variance:+.2f}%")
+            report_content.append("")
 
             if projected_variance > 5:
-                print("  ⚠ WARNING: Significant overspending projected")
-                print("    Action required to control spending")
+                report_content.append("  ⚠ WARNING: Significant overspending projected")
+                report_content.append("    Action required to control spending")
             elif projected_variance < -5:
-                print("  ⚠ NOTE: Significant underspending projected")
-                print("    Consider reallocating unused funds")
+                report_content.append("  ⚠ NOTE: Significant underspending projected")
+                report_content.append("    Consider reallocating unused funds")
             else:
-                print("  ✓ Spending on track for fiscal year")
+                report_content.append("  ✓ Spending on track for fiscal year")
 
-        print("")
+        report_content.append("")
         conn.close()
 
-        print("=" * 80)
-        print(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 80)
+        report_content.append("=" * 80)
+        report_content.append(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report_content.append("=" * 80)
+
+        # Display report in window
+        report_text.insert('1.0', '\n'.join(report_content))
+        report_text.config(state='disabled')
+
+        # Add close button
+        ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=10)
         return True
 
     except Exception as e:
-        print(f"Error generating budget variance report: {e}")
+        messagebox.showerror("Error", f"Error generating budget variance report: {e}")
         return False
 
 def real_time_financial_dashboard():
-    """Enhanced real-time financial dashboard with live metrics"""
+    """Enhanced real-time financial dashboard with live metrics - CLI VERSION"""
     try:
         from university_system.infrastructure.database.db import get_connection
         from datetime import datetime, timedelta
