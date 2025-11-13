@@ -661,10 +661,9 @@ class AdminPortal:
                     return
 
                 disbursements = conn.execute("""
-                    SELECT d.*, u.username, sfa.student_id
+                    SELECT d.*, u.username
                     FROM disbursements d
-                    JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                    JOIN users u ON sfa.student_id = u.student_id
+                    JOIN users u ON d.student_id = u.student_id
                     WHERE d.status = 'pending'
                     ORDER BY d.scheduled_date ASC
                 """).fetchall()
@@ -1006,10 +1005,15 @@ class AdminPortal:
                     report.append("-" * 80)
 
                     pending = conn.execute("""
-                        SELECT d.*, sfa.student_id, fat.aid_name
+                        SELECT d.*, d.student_id,
+                               COALESCE(fat.aid_name, s.scholarship_name, 'General Aid') as aid_name
                         FROM disbursements d
-                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                        JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        LEFT JOIN aid_components ac ON d.component_id = ac.component_id
+                        LEFT JOIN aid_packages ap ON ac.package_id = ap.package_id
+                        LEFT JOIN student_financial_aid sfa ON d.student_id = sfa.student_id AND ap.academic_year = sfa.notes
+                        LEFT JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        LEFT JOIN scholarship_awards sa ON d.award_id = sa.award_id
+                        LEFT JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                         WHERE d.status = 'pending'
                         ORDER BY d.scheduled_date ASC
                     """).fetchall()
@@ -1031,10 +1035,15 @@ class AdminPortal:
                     report.append("-" * 80)
 
                     completed = conn.execute("""
-                        SELECT d.*, sfa.student_id, fat.aid_name
+                        SELECT d.*, d.student_id,
+                               COALESCE(fat.aid_name, s.scholarship_name, 'General Aid') as aid_name
                         FROM disbursements d
-                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                        JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        LEFT JOIN aid_components ac ON d.component_id = ac.component_id
+                        LEFT JOIN aid_packages ap ON ac.package_id = ap.package_id
+                        LEFT JOIN student_financial_aid sfa ON d.student_id = sfa.student_id AND ap.academic_year = sfa.notes
+                        LEFT JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                        LEFT JOIN scholarship_awards sa ON d.award_id = sa.award_id
+                        LEFT JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                         WHERE d.status = 'disbursed'
                         AND d.disbursement_date >= date('now', '-30 days')
                         ORDER BY d.disbursement_date DESC

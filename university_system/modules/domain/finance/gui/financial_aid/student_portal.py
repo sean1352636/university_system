@@ -121,8 +121,7 @@ class StudentPortal:
                     result = conn.execute("""
                         SELECT COALESCE(SUM(d.amount), 0) as total
                         FROM disbursements d
-                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                        WHERE sfa.student_id = ? AND d.status = 'disbursed'
+                        WHERE d.student_id = ? AND d.status = 'disbursed'
                     """, (self.student_id,)).fetchone()
                     stats['total_disbursed'] = float(result['total']) if result else 0.0
                 except Exception:
@@ -808,8 +807,7 @@ Active Awards: {stats['active_count']}
                     result = conn.execute("""
                         SELECT COALESCE(SUM(d.amount), 0) as total
                         FROM disbursements d
-                        JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                        WHERE sfa.student_id = ? AND d.status = 'disbursed'
+                        WHERE d.student_id = ? AND d.status = 'disbursed'
                     """, (self.student_id,)).fetchone()
                     stats['total_disbursed'] = float(result['total']) if result else 0.0
                 except Exception:

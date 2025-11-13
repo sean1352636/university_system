@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Financial Aid GUI - Disbursements Query Column Error
+
+**Issue: Disbursements Query Referencing Non-Existent Column:**
+- Fixed "no such column: d.aid_id" error when loading disbursements
+  - Problem: Queries joining disbursements table using d.aid_id column that doesn't exist
+  - Root cause: disbursements table has award_id and component_id, NOT aid_id
+  - disbursements table already has student_id, no need to join through student_financial_aid
+  - Solution: Updated all 5 queries to use correct table structure:
+    * admin_portal.py: show_disbursements() - Join directly with users table using student_id
+    * admin_portal.py: _generate_disbursement_schedule_report() - 2 queries for pending and completed
+      - Use LEFT JOINs to get aid names from aid_components → aid_packages OR scholarship_awards → scholarships
+      - COALESCE to show aid name from either path or 'General Aid' as fallback
+    * student_portal.py: _get_student_stats() and _get_award_stats() - 2 identical queries
+      - Query directly by student_id without joining student_financial_aid
+  - All queries now use proper disbursements table schema
+
+**Technical Details:**
+- Disbursements table structure:
+  * Has: disbursement_id, award_id, component_id, student_id, amount, status, dates
+  * Does NOT have: aid_id column
+  * Links to scholarships via award_id → scholarship_awards
+  * Links to aid packages via component_id → aid_components
+  * Has student_id directly, no intermediate join needed
+- Query patterns fixed:
+  * Simple disbursement lists: Join users table on student_id
+  * Detailed reports: Use LEFT JOINs through award_id or component_id to get aid type names
+  * Student stats: Query directly on student_id
+
+**Files Modified:**
+- admin_portal.py:663-669 - show_disbursements() query
+- admin_portal.py:1007-1019 - Pending disbursements report query
+- admin_portal.py:1037-1050 - Completed disbursements report query
+- student_portal.py:120-130 - _get_student_stats() query
+- student_portal.py:807-817 - _get_award_stats() query
+
+**Impact:**
+- Disbursements page now loads correctly ✓
+- Disbursement schedule reports now work ✓
+- Student dashboard shows correct disbursement totals ✓
+- No more "no such column" errors ✓
+
 ### Fixed - 2025-11-13: Financial Aid GUI - Complete Fixes (8 Critical Issues)
 
 **Issue 1: Missing financial_aid_applications Table:**
