@@ -807,18 +807,20 @@ class AdminPortal:
                 """).fetchall()
 
                 for disb in disbursements:
-                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
+                    # Convert Row to dict
+                    d = dict(disb)
+                    student_name = f"{d.get('first_name', 'N/A')} {d.get('last_name', '')}"
                     tree.insert('', 'end', values=(
                         '☐',  # Checkbox
-                        disb['disbursement_id'],
+                        d['disbursement_id'],
                         student_name,
-                        disb.get('sid', disb['student_id']),
-                        disb.get('disbursement_type', 'General Aid'),
-                        format_currency(disb['amount']),
-                        format_date(disb.get('scheduled_date', disb.get('disbursement_date'))),
-                        disb.get('academic_term', 'N/A'),
-                        disb.get('payment_method', 'account_credit'),
-                        disb.get('transaction_id', 'Pending')
+                        d.get('sid', d['student_id']),
+                        d.get('disbursement_type', 'General Aid'),
+                        format_currency(d['amount']),
+                        format_date(d.get('scheduled_date', d.get('disbursement_date'))),
+                        d.get('academic_term', 'N/A'),
+                        d.get('payment_method', 'account_credit'),
+                        d.get('transaction_id', 'Pending')
                     ))
 
         except Exception as e:
@@ -844,17 +846,19 @@ class AdminPortal:
                 """).fetchall()
 
                 for disb in disbursements:
-                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
+                    # Convert Row to dict
+                    d = dict(disb)
+                    student_name = f"{d.get('first_name', 'N/A')} {d.get('last_name', '')}"
                     tree.insert('', 'end', values=(
-                        disb['disbursement_id'],
+                        d['disbursement_id'],
                         student_name,
-                        disb.get('sid', disb['student_id']),
-                        disb.get('disbursement_type', 'General Aid'),
-                        format_currency(disb['amount']),
-                        format_date(disb.get('disbursement_date')),
-                        format_date(disb.get('processed_at')),
-                        disb.get('processor_name', 'System'),
-                        disb.get('transaction_id', 'N/A')
+                        d.get('sid', d['student_id']),
+                        d.get('disbursement_type', 'General Aid'),
+                        format_currency(d['amount']),
+                        format_date(d.get('disbursement_date')),
+                        format_date(d.get('processed_at')),
+                        d.get('processor_name', 'System'),
+                        d.get('transaction_id', 'N/A')
                     ))
 
         except Exception as e:
@@ -878,14 +882,16 @@ class AdminPortal:
                 """).fetchall()
 
                 for disb in disbursements:
-                    student_name = f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}"
+                    # Convert Row to dict
+                    d = dict(disb)
+                    student_name = f"{d.get('first_name', 'N/A')} {d.get('last_name', '')}"
                     tree.insert('', 'end', values=(
-                        disb['disbursement_id'],
+                        d['disbursement_id'],
                         student_name,
-                        format_currency(disb['amount']),
-                        format_date(disb.get('scheduled_date')),
-                        disb['status'].upper(),
-                        disb.get('error_message', 'No error message')
+                        format_currency(d['amount']),
+                        format_date(d.get('scheduled_date')),
+                        d['status'].upper(),
+                        d.get('error_message', 'No error message')
                     ))
 
         except Exception as e:
@@ -1042,6 +1048,9 @@ class AdminPortal:
                     show_error("Not Found", "Disbursement not found.")
                     return
 
+                # Convert Row to dict
+                d = dict(disb)
+
                 # Create details window
                 details_window = tk.Toplevel(self.parent_frame)
                 details_window.title(f"Disbursement Details - ID: {disb_id}")
@@ -1060,29 +1069,29 @@ class AdminPortal:
                     ttk.Label(row_frame, text=f"{label}:", font=('Arial', 10, 'bold'), width=20).pack(side='left')
                     ttk.Label(row_frame, text=str(value), font=('Arial', 10)).pack(side='left')
 
-                add_detail("Status", disb['status'].upper())
-                add_detail("Student Name", f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}")
-                add_detail("Student ID", disb.get('sid', disb['student_id']))
-                add_detail("Student Email", disb.get('email', 'N/A'))
-                add_detail("Disbursement Type", disb.get('disbursement_type', 'General Aid'))
-                add_detail("Amount", format_currency(disb['amount']))
-                add_detail("Academic Term", disb.get('academic_term', 'N/A'))
-                add_detail("Payment Method", disb.get('payment_method', 'N/A'))
-                add_detail("Transaction ID", disb.get('transaction_id', 'Pending'))
-                add_detail("Scheduled Date", format_date(disb.get('scheduled_date')))
-                add_detail("Disbursement Date", format_date(disb.get('disbursement_date', 'N/A')))
+                add_detail("Status", d['status'].upper())
+                add_detail("Student Name", f"{d.get('first_name', 'N/A')} {d.get('last_name', '')}")
+                add_detail("Student ID", d.get('sid', d['student_id']))
+                add_detail("Student Email", d.get('email', 'N/A'))
+                add_detail("Disbursement Type", d.get('disbursement_type', 'General Aid'))
+                add_detail("Amount", format_currency(d['amount']))
+                add_detail("Academic Term", d.get('academic_term', 'N/A'))
+                add_detail("Payment Method", d.get('payment_method', 'N/A'))
+                add_detail("Transaction ID", d.get('transaction_id', 'Pending'))
+                add_detail("Scheduled Date", format_date(d.get('scheduled_date')))
+                add_detail("Disbursement Date", format_date(d.get('disbursement_date', 'N/A')))
 
-                if disb.get('processed_at'):
-                    add_detail("Processed Date", format_date(disb['processed_at']))
-                    add_detail("Processed By", disb.get('processor_name', 'System'))
+                if d.get('processed_at'):
+                    add_detail("Processed Date", format_date(d['processed_at']))
+                    add_detail("Processed By", d.get('processor_name', 'System'))
 
-                if disb.get('award_id'):
-                    add_detail("Award ID", disb['award_id'])
-                if disb.get('component_id'):
-                    add_detail("Component ID", disb['component_id'])
+                if d.get('award_id'):
+                    add_detail("Award ID", d['award_id'])
+                if d.get('component_id'):
+                    add_detail("Component ID", d['component_id'])
 
-                if disb.get('error_message'):
-                    add_detail("Error Message", disb['error_message'])
+                if d.get('error_message'):
+                    add_detail("Error Message", d['error_message'])
 
                 # Close button
                 ttk.Button(details_window, text="Close", command=details_window.destroy).pack(pady=10)
@@ -1208,20 +1217,22 @@ class AdminPortal:
 
                 data = []
                 for disb in disbursements:
+                    # Convert Row to dict
+                    d = dict(disb)
                     data.append({
-                        'Disbursement ID': disb['disbursement_id'],
-                        'Student Name': f"{disb.get('first_name', 'N/A')} {disb.get('last_name', '')}",
-                        'Student ID': disb.get('sid', disb['student_id']),
-                        'Type': disb.get('disbursement_type', 'N/A'),
-                        'Amount': disb['amount'],
-                        'Status': disb['status'],
-                        'Scheduled Date': disb.get('scheduled_date', 'N/A'),
-                        'Disbursement Date': disb.get('disbursement_date', 'N/A'),
-                        'Processed Date': disb.get('processed_at', 'N/A'),
-                        'Processed By': disb.get('processor', 'N/A'),
-                        'Term': disb.get('academic_term', 'N/A'),
-                        'Payment Method': disb.get('payment_method', 'N/A'),
-                        'Transaction ID': disb.get('transaction_id', 'N/A')
+                        'Disbursement ID': d['disbursement_id'],
+                        'Student Name': f"{d.get('first_name', 'N/A')} {d.get('last_name', '')}",
+                        'Student ID': d.get('sid', d['student_id']),
+                        'Type': d.get('disbursement_type', 'N/A'),
+                        'Amount': d['amount'],
+                        'Status': d['status'],
+                        'Scheduled Date': d.get('scheduled_date', 'N/A'),
+                        'Disbursement Date': d.get('disbursement_date', 'N/A'),
+                        'Processed Date': d.get('processed_at', 'N/A'),
+                        'Processed By': d.get('processor', 'N/A'),
+                        'Term': d.get('academic_term', 'N/A'),
+                        'Payment Method': d.get('payment_method', 'N/A'),
+                        'Transaction ID': d.get('transaction_id', 'N/A')
                     })
 
                 export_to_csv(data, f"disbursement_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
