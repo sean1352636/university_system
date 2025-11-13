@@ -24,17 +24,35 @@ class AdminPortal:
         self.auth = auth_instance or get_auth()
         self.aid_manager = FinancialAidManager()
         self.scholarship_manager_gui = ScholarshipManagerGUI(parent_frame, auth_instance)
+        self.standalone_window = None
+
+    def _ensure_valid_parent(self):
+        """
+        Ensure parent frame exists, create standalone window if needed
+
+        Returns:
+            Valid parent frame/window
+        """
+        try:
+            if self.parent_frame and self.parent_frame.winfo_exists():
+                return self.parent_frame
+        except Exception:
+            pass
+
+        # Parent frame doesn't exist, create standalone window
+        if self.standalone_window is None or not self.standalone_window.winfo_exists():
+            self.standalone_window = tk.Toplevel()
+            self.standalone_window.title("Financial Aid Administration")
+            self.standalone_window.geometry("1200x800")
+            logger.info("Created standalone window for financial aid administration")
+
+        return self.standalone_window
 
     def show_dashboard(self):
         """Display admin dashboard"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -184,14 +202,9 @@ class AdminPortal:
 
     def show_aid_applications(self):
         """Show financial aid applications for review"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -426,14 +439,9 @@ class AdminPortal:
 
     def show_create_package(self, student_id: str = None, academic_year: str = None):
         """Show create aid package interface"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -570,14 +578,9 @@ class AdminPortal:
 
     def show_aid_types(self):
         """Show aid types management"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -621,14 +624,9 @@ class AdminPortal:
 
     def show_disbursements(self):
         """Show disbursements management"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -684,14 +682,9 @@ class AdminPortal:
 
     def show_reports(self):
         """Show reports interface"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 
@@ -1270,14 +1263,9 @@ This is an automated report from the University Financial Aid System.
 
     def show_fafsa_import(self):
         """Show FAFSA import interface"""
-        # Check if parent frame is valid
-        try:
-            if not self.parent_frame.winfo_exists():
-                logger.debug("Parent frame no longer exists (likely window closed)")
-                return
-        except Exception as e:
-            logger.debug(f"Parent frame check failed: {e}")
-            return
+        # Ensure we have a valid parent frame/window
+        parent = self._ensure_valid_parent()
+        self.parent_frame = parent
 
         clear_frame(self.parent_frame)
 

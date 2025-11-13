@@ -7,6 +7,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Enhanced - 2025-11-13: Financial Aid GUI - Auto-Reopen Windows on Frame Destruction
+
+**Feature: Automatic Window Recreation Instead of Silent Failures**
+- Changed behavior when parent frame is destroyed: Now reopens window instead of silently returning
+  - Problem: When parent frame destroyed (window closed), subsequent calls would silently fail
+  - Old behavior: Check frame exists → if not, return (feature becomes inaccessible)
+  - New behavior: Check frame exists → if not, create new Toplevel window → continue normally
+  - Significantly improved user experience and reliability
+
+**Implementation Details:**
+
+1. **Added _ensure_valid_parent() Helper Method:**
+   - ScholarshipManagerGUI (scholarship_manager.py:27-47)
+   - AdminPortal (admin_portal.py:29-49)
+   - Checks if parent_frame still exists
+   - If yes: Returns existing parent_frame
+   - If no: Creates new Toplevel window with appropriate title and size
+   - Caches standalone window to reuse across calls
+   - Logs window creation for debugging
+
+2. **Standalone Window Specifications:**
+   - Scholarship Management: 1200x800, title "Scholarship Management"
+   - Financial Aid Admin: 1200x800, title "Financial Aid Administration"
+   - Windows persist across multiple operations
+   - Can be closed and reopened automatically
+
+3. **Updated All View Methods (11 total):**
+
+   **ScholarshipManagerGUI (4 methods):**
+   - show_main_interface() - Main scholarships dashboard
+   - show_scholarships() - Scholarship listing
+   - review_applications() - Application review interface
+   - show_awards() - Awards interface
+
+   **AdminPortal (7 methods):**
+   - show_dashboard() - Admin dashboard
+   - show_aid_applications() - Aid application review
+   - show_create_package() - Create aid package form
+   - show_aid_types() - Aid types management
+   - show_disbursements() - Disbursement management
+   - show_reports() - Reports interface
+   - show_fafsa_import() - FAFSA import interface
+
+**Before vs After:**
+
+BEFORE:
+```python
+def show_scholarships(self):
+    try:
+        if not self.parent_frame.winfo_exists():
+            logger.debug("Parent frame no longer exists")
+            return  # ← Feature becomes inaccessible!
+    except Exception:
+        return
+    # ... rest of method
+```
+
+AFTER:
+```python
+def show_scholarships(self):
+    # Ensure we have a valid parent frame/window
+    parent = self._ensure_valid_parent()  # ← Auto-creates window if needed
+    self.parent_frame = parent
+    # ... rest of method continues normally
+```
+
+**User Experience Improvements:**
+
+OLD Behavior:
+1. User closes Financial Aid window
+2. Clicks "Manage Scholarships" button again
+3. Nothing happens (silently fails)
+4. User confused, has to restart application
+
+NEW Behavior:
+1. User closes Financial Aid window
+2. Clicks "Manage Scholarships" button again
+3. New window automatically opens with scholarship management
+4. Feature works normally
+
+**Technical Benefits:**
+- No more silent failures when parent frame destroyed
+- Features remain accessible even after window closures
+- Eliminates need to restart application
+- Graceful degradation to standalone windows
+- Better separation of concerns (windows are independent)
+- More robust against unexpected frame destruction
+
+**Files Modified:**
+- scholarship_manager.py:25-47 - Added _ensure_valid_parent() method and standalone_window tracking
+- scholarship_manager.py: Updated 4 view methods (show_main_interface, show_scholarships, review_applications, show_awards)
+- admin_portal.py:27-49 - Added _ensure_valid_parent() method and standalone_window tracking
+- admin_portal.py: Updated 7 view methods (all show_* methods)
+
+**Impact:**
+- Financial Aid features always accessible ✓
+- No more silent failures when windows closed ✓
+- Better user experience with automatic window reopening ✓
+- More robust application behavior ✓
+- Reduced user frustration ✓
+
 ### Fixed - 2025-11-13: Financial Aid GUI - Student ID NOT NULL Constraint Error
 
 **Issue: NOT NULL Constraint Failed on student_id:**
