@@ -3625,12 +3625,16 @@ Research & Grants Management Features:
         """Update timestamp in status bar"""
         if hasattr(self, 'time_var') and self.time_var:
             try:
+                # Check if root window still exists
+                if not hasattr(self, 'root') or not self.root.winfo_exists():
+                    return
+
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.time_var.set(current_time)
                 self.root.after(1000, self.update_time)
-            except Exception as e:
-                # Time display unavailable, silently ignore
-                print(f"Debug: Time update failed: {e}")
+            except Exception:
+                # Time display unavailable or window destroyed, silently ignore
+                pass
     
 
     def update_system_status(self):

@@ -584,9 +584,17 @@ class FinancialManagementGUI:
     
     def update_time(self):
         """Update current time display"""
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.time_var.set(current_time)
-        self.root.after(1000, self.update_time)
+        try:
+            # Check if root window still exists
+            if not self.root.winfo_exists():
+                return
+
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.time_var.set(current_time)
+            self.root.after(1000, self.update_time)
+        except Exception:
+            # Window destroyed, don't schedule next update
+            pass
     
     def update_status(self, message, progress=None):
         """Update status bar message and progress"""

@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Financial Aid GUI - Timer Callbacks & Backend Table Fixes (2 Issues)
+
+**Issue 1: Invalid Command Name 'update_time' Timer Callback:**
+- Fixed "invalid command name update_time" Tkinter error
+  - Problem: Timer callbacks executing after window destroyed
+  - Solution: Added widget existence checks before scheduling updates
+  - Fixed in 2 locations:
+    * finance_reporting_gui.py:585-597
+    * layout_manager.py:3624-3637
+  - Pattern: Check `self.root.winfo_exists()` before `after()` call
+  - Prevents callback errors when window closes
+
+**Issue 2: No Such Table 'aid_packages' Backend Error:**
+- Fixed "no such table: aid_packages" in create_aid_package()
+  - Problem: Backend trying to INSERT into non-existent aid_packages table
+  - Solution: Updated to use actual student_financial_aid table
+  - Added table existence check before INSERT
+  - Uses appropriate columns: student_id, aid_type_id, awarded_amount, etc.
+  - Returns None with error message if table doesn't exist
+  - Location: aid_manager.py:133-167
+
+**Technical Details:**
+- Timer callbacks now check window existence before scheduling
+- Wrapped in try/except to catch destruction edge cases
+- Backend validates table existence before database operations
+- Proper error messages for missing database tables
+- No more "invalid command name" errors on window close
+
+**Files Modified:**
+- finance_reporting_gui.py: update_time() with existence check
+- layout_manager.py: update_time() with existence check
+- aid_manager.py: create_aid_package() table validation and correction
+
 ### Fixed - 2025-11-13: Financial Aid GUI - Backend Fixes & Complete Report Implementation (3 Issues)
 
 **Issue 1: create_aid_package() Unexpected Keyword Argument:**

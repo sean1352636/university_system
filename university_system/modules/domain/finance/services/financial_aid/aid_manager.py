@@ -141,14 +141,25 @@ class FinancialAidManager:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
+
+                # Use student_financial_aid table instead of aid_packages
+                # Check if table exists first
+                table_check = cursor.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='student_financial_aid'
+                """).fetchone()
+
+                if not table_check:
+                    print("Error: student_financial_aid table does not exist")
+                    return None
+
+                # Insert into student_financial_aid table with appropriate fields
                 cursor.execute("""
-                    INSERT INTO aid_packages (
-                        student_id, academic_year, created_by, offered_date, response_deadline
-                    ) VALUES (?, ?, ?, CURRENT_DATE, ?)
-                    ON CONFLICT(student_id, academic_year) DO UPDATE SET
-                        created_by = excluded.created_by,
-                        offered_date = excluded.offered_date
-                """, (student_id, academic_year, created_by, response_deadline))
+                    INSERT INTO student_financial_aid (
+                        student_id, aid_type_id, awarded_amount, disbursed_amount,
+                        remaining_amount, status, award_date
+                    ) VALUES (?, 1, 0, 0, 0, 'pending', CURRENT_DATE)
+                """, (student_id,))
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:
