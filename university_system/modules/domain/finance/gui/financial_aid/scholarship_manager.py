@@ -597,10 +597,10 @@ class ScholarshipManagerGUI:
         # Check if parent frame is valid before proceeding
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
