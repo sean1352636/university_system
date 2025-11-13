@@ -7,6 +7,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Health Portal GUI - 4 Critical Issues (Login, Email, GUI Conflicts, Routing)
+
+**Fixed 4 critical issues in Health Portal GUI affecting user experience and functionality**
+
+This commit addresses vaccination records login, email geometry conflicts, GUI routing errors, and adds admin reporting capability.
+
+**ISSUES FIXED:**
+
+**1. Vaccination Records Requiring Login Despite User Already Logged In**
+- **Location**: Line 3882-3885
+- **Problem**: Code tried to get user_id from non-existent attributes (`current_user_id`, `self.current_user`)
+- **Fix**:
+  ```python
+  # OLD (lines 3882-3885)
+  user_id = getattr(self, 'current_user_id', None)
+  if not user_id and hasattr(self, 'current_user'):
+      user_id = self.current_user.get('id')
+
+  # NEW
+  user_id = None
+  if self.auth and self.auth.current_user:
+      user_id = self.auth.current_user.get('id')
+  ```
+- **Impact**: Vaccination records now properly recognize logged-in users
+
+**2. Email GUI Geometry Manager Error (Pack/Grid Conflict)**
+- **Location**: Line 4058-4073 (`_send_email_via_gui` function)
+- **Error**: "cannot use geometry manager pack inside .!toplevel which already has slaves managed by grid"
+- **Problem**:
+  - Created `EmailManagerGUI(self.root)` passing health portal's main window
+  - Health portal uses grid() for content_frame
+  - EmailManagerGUI uses pack() for its main_frame
+  - Result: Pack/grid conflict on same parent window
+- **Fix**: Changed to use email service directly instead of GUI
+  ```python
+  # OLD - Creates GUI conflict
+  email_gui = EmailManagerGUI(self.root, auth=self.auth)
+  email_gui.send_email(...)
+
+  # NEW - Direct service call
+  from university_system.infrastructure.email.email_service import send_email
+  result = send_email(to_email=to_email, subject=subject, body=message, ...)
+  ```
+- **Impact**: Email sending now works without geometry manager conflicts
+
+**3. Medical Accommodation Button Opening Wrong GUI**
+- **Location**: Line 4490-4492
+- **Problem**: "Medical Accommodations" button called `open_accessibility_tools_gui()` instead of accommodation system
+- **Root Cause**: Both accessibility tools and medical accommodations pointed to same function
+- **Fix**:
+  - Created new `open_medical_accommodation_gui()` function (lines 4439-4455)
+  - Opens `AccommodationGUI` from `housing.gui.accommodation_gui`
+  - Creates Toplevel window: "Medical Accommodation Management System" (1200x800)
+  - Updated button to call correct function (line 4491)
+- **Impact**: Medical Accommodations now opens correct GUI (accommodation system, not accessibility tools)
+
+**4. Added "Send to Admin" Feature for Health Reports**
+- **Location**: Lines 3511-3512 (button), 3703-3785 (function)
+- **Feature**: New button to send generated health reports to administrators
+- **Functionality**:
+  - Validates report exists before sending
+  - Queries database for admin emails: `SELECT DISTINCT email FROM users WHERE role = 'admin'`
+  - Sends formatted email to all admins with:
+    * Report type (Immunization Status, Health Summary, etc.)
+    * Student name and ID
+    * Generated timestamp
+    * Full report content
+  - Shows success message with recipient count
+  - Logs audit event: 'send_report_to_admin'
+- **Database**: Uses `users.email` column (confirmed schema: column 4 in users table)
+- **Impact**: Students/staff can easily share health reports with administrators
+
+**TECHNICAL DETAILS:**
+
+**Vaccination Records:**
+- Now properly uses `self.auth.current_user` instead of non-existent attributes
+- Correctly retrieves user_id from authentication system
+
+**Email System:**
+- Eliminated GUI-in-GUI nesting issue
+- Uses `send_email()` service function directly
+- Cleaner, more efficient email sending
+
+**GUI Routing:**
+- Accessibility Tools → `accessibility_tools_gui.launch_accessibility_tools_gui()`
+- Medical Accommodations → `accommodation_gui.AccommodationGUI()`
+- Proper separation of distinct systems
+
+**Send to Admin:**
+- Multi-admin support (sends to all admins)
+- Proper error handling per recipient
+- Professional email formatting
+- Audit trail logging
+
+**RESULT:**
+✓ Vaccination records display for logged-in users
+✓ Email sending works without GUI conflicts
+✓ Medical Accommodations opens correct GUI
+✓ Accessibility Tools opens correct GUI
+✓ Health reports can be sent to admins
+✓ Admin emails retrieved from correct database column
+✓ No more pack/grid geometry manager errors
+✓ Proper GUI routing for all buttons
+
+**FILES CHANGED:**
+- `university_system/modules/domain/health/gui/health_portal_gui.py` (110 lines modified/added across 4 fixes)
+
+---
+
 ### Fixed - 2025-11-13: Health Portal GUI - Multiple Database Errors (5 Critical Fixes)
 
 **Fixed 5 critical database errors preventing health portal reports and updates from working**

@@ -3508,6 +3508,9 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
         ttk.Button(button_frame, text="Generate Report",
                   command=self.generate_selected_report).pack(side=tk.LEFT, padx=(0, 10))
 
+        ttk.Button(button_frame, text="Send to Admin",
+                  command=self.send_report_to_admin).pack(side=tk.LEFT, padx=(0, 10))
+
         # Report display area
         report_display_frame = ttk.LabelFrame(content_frame, text="Generated Report", padding=15)
         report_display_frame.pack(fill=tk.BOTH, expand=True, pady=(20, 0))
@@ -3697,6 +3700,90 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
         except Exception as e:
             self.report_text.insert(tk.END, f"Error generating medical history: {str(e)}")
 
+    def send_report_to_admin(self):
+        """Send the generated health report to admin via email"""
+        try:
+            # Get the report text
+            report_text = self.report_text.get("1.0", tk.END).strip()
+
+            if not report_text or report_text == "":
+                messagebox.showwarning("No Report", "Please generate a report first before sending to admin.")
+                return
+
+            # Get admin email addresses from database
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''")
+            admin_emails = [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+            if not admin_emails:
+                messagebox.showerror("Error", "No admin email addresses found in the system.")
+                return
+
+            # Get report type for subject
+            report_type_map = {
+                'immunization': 'Immunization Status',
+                'health_summary': 'Health Summary',
+                'appointment_history': 'Appointment History',
+                'medical_history': 'Medical History'
+            }
+            report_type_name = report_type_map.get(self.report_type.get(), 'Health Report')
+
+            # Get current user info
+            user_name = f"{self.auth.current_user.get('first_name', '')} {self.auth.current_user.get('last_name', '')}".strip()
+            if not user_name:
+                user_name = self.auth.current_user.get('username', 'Unknown User')
+
+            # Prepare email
+            subject = f"Health Portal - {report_type_name} - {user_name}"
+            message = f"""Health Portal Report
+
+Report Type: {report_type_name}
+Student: {user_name} (ID: {self.auth.current_user.get('id', 'N/A')})
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+{'=' * 60}
+
+{report_text}
+
+{'=' * 60}
+
+This report was automatically generated and sent from the Health Portal system.
+"""
+
+            # Send email to all admins
+            from university_system.infrastructure.email.email_service import send_email
+
+            success_count = 0
+            for admin_email in admin_emails:
+                try:
+                    result = send_email(
+                        to_email=admin_email,
+                        subject=subject,
+                        body=message,
+                        from_email="healthportal@university.edu"
+                    )
+                    if result:
+                        success_count += 1
+                except Exception as e:
+                    print(f"Failed to send to {admin_email}: {e}")
+
+            if success_count > 0:
+                messagebox.showinfo("Success",
+                    f"Report sent successfully to {success_count} admin(s).\n\n"
+                    f"Recipients: {', '.join(admin_emails[:3])}"
+                    + (f" and {len(admin_emails) - 3} more" if len(admin_emails) > 3 else ""))
+                self.log_audit_event('send_report_to_admin', 'health_report', f"{report_type_name} sent to admins")
+            else:
+                messagebox.showerror("Error", "Failed to send report to any admin.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send report to admin: {str(e)}")
+            print(f"Error in send_report_to_admin: {e}")
+            import traceback
+            traceback.print_exc()
+
     def create_manage_emergency_contacts(self):
         """Manage emergency contacts interface"""
         content_frame = ttk.Frame(self.content_area)
@@ -3879,10 +3966,10 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
-                # Get user ID (assuming self.current_user contains user info)
-                user_id = getattr(self, 'current_user_id', None)
-                if not user_id and hasattr(self, 'current_user'):
-                    user_id = self.current_user.get('id') if isinstance(self.current_user, dict) else None
+                # Get user ID from authenticated user
+                user_id = None
+                if self.auth and self.auth.current_user:
+                    user_id = self.auth.current_user.get('id')
 
                 display_data = f"VACCINATION RECORDS\n"
                 display_data += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -4056,18 +4143,20 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
     # ==================== EMAIL INTEGRATION METHODS ====================
 
     def _send_email_via_gui(self, to_email, subject, message):
-        """Send email via email manager GUI"""
+        """Send email via email service"""
         try:
-            from university_system.infrastructure.email.gui.email_manager_gui import EmailManagerGUI
-            email_gui = EmailManagerGUI(self.root, auth=self.auth)
-            if hasattr(email_gui, 'send_email'):
-                email_gui.send_email(to_email=to_email, subject=subject, message=message)
-                return True
-            return False
+            from university_system.infrastructure.email.email_service import send_email
+            result = send_email(
+                to_email=to_email,
+                subject=subject,
+                body=message,
+                from_email="healthportal@university.edu"
+            )
+            return result
         except ImportError:
             return False
         except Exception as e:
-            print(f"Error sending email via GUI: {e}")
+            print(f"Error sending email via service: {e}")
             return False
 
     def _show_email_fallback_dialog(self, to_email, subject, message):
@@ -4436,6 +4525,24 @@ Click the button above to open the Accessibility Tools interface."""
         except Exception as e:
             messagebox.showerror("Error", f"Error opening Accessibility Tools: {e}")
 
+    def open_medical_accommodation_gui(self):
+        """Open Medical Accommodation GUI"""
+        try:
+            from university_system.modules.domain.housing.gui.accommodation_gui import AccommodationGUI
+
+            # Create a new window for the accommodation system
+            accommodation_window = tk.Toplevel(self.root)
+            accommodation_window.title("Medical Accommodation Management System")
+            accommodation_window.geometry("1200x800")
+            accommodation_window.minsize(1000, 700)
+
+            # Launch the accommodation GUI
+            app = AccommodationGUI(accommodation_window, self.auth)
+        except ImportError as e:
+            messagebox.showerror("Error", f"Medical Accommodation GUI not available: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error opening Medical Accommodations: {e}")
+
     def create_medical_accommodations(self):
         """Create interface for medical accommodations information"""
         title = ttk.Label(self.content_frame, text="Medical Accommodations",
@@ -4469,8 +4576,8 @@ button in this section."""
         info_label.pack(pady=10)
 
         # Quick access button
-        ttk.Button(info_frame, text="Open Accessibility Tools",
-                  command=self.open_accessibility_tools_gui,
+        ttk.Button(info_frame, text="Open Medical Accommodation System",
+                  command=self.open_medical_accommodation_gui,
                   style='Accent.TButton').pack(pady=20)
 
     def run(self):
