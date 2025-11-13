@@ -330,8 +330,25 @@ def get_student_id() -> Optional[str]:
     """Get student ID of current user"""
     user = get_current_user()
     if user:
-        user_dict = user.to_dict() if hasattr(user, 'to_dict') else user
-        return user_dict.get('student_id') or user_dict.get('user_id')
+        # Try to get dict representation
+        if hasattr(user, 'to_dict'):
+            user_dict = user.to_dict()
+        elif hasattr(user, '__dict__'):
+            user_dict = user.__dict__
+        elif isinstance(user, dict):
+            user_dict = user
+        else:
+            user_dict = {}
+
+        # Try multiple field names that might contain student ID
+        student_id = (user_dict.get('student_id') or
+                     user_dict.get('user_id') or
+                     user_dict.get('id') or
+                     getattr(user, 'student_id', None) or
+                     getattr(user, 'user_id', None) or
+                     getattr(user, 'id', None))
+
+        return str(student_id) if student_id else None
     return None
 
 

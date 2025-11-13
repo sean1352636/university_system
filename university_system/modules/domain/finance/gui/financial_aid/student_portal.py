@@ -410,6 +410,14 @@ class StudentPortal:
     def _validate_and_submit_application(self, scholarship_id: str, fields: Dict, window) -> bool:
         """Validate and submit scholarship application"""
         try:
+            # Validate student ID
+            if not self.student_id:
+                show_error("Student ID Not Found",
+                          "Unable to determine your student ID. Please ensure you are logged in as a student.\n\n"
+                          "If you continue to see this error, contact the system administrator.")
+                logger.error(f"Student ID is None for user: {self.current_user}")
+                return False
+
             # Get values
             essay = fields['essay'].get('1.0', 'end-1c').strip()
             gpa = fields['gpa'].get().strip()
@@ -495,6 +503,27 @@ class StudentPortal:
         title_frame.pack(fill='x', padx=10, pady=10)
         ttk.Label(title_frame, text="Apply for Financial Aid", style='Title.TLabel').pack(side='left')
         ttk.Button(title_frame, text="Back to Dashboard", command=self.show_dashboard).pack(side='right')
+
+        # Check if student ID exists
+        if not self.student_id:
+            error_frame = ttk.Frame(self.parent_frame, relief='solid', borderwidth=2)
+            error_frame.pack(fill='both', expand=True, padx=10, pady=10)
+            ttk.Label(error_frame,
+                     text="⚠ Student ID Not Found",
+                     font=('Arial', 14, 'bold'),
+                     foreground='red').pack(pady=(20, 10))
+            ttk.Label(error_frame,
+                     text="Unable to determine your student ID. This may occur if:\n\n"
+                          "• You are logged in as an admin or staff member (not a student)\n"
+                          "• Your student account has not been properly configured\n"
+                          "• There is a database issue with your user record\n\n"
+                          "Please contact your system administrator for assistance.",
+                     wraplength=600,
+                     justify='left').pack(padx=20, pady=20)
+            ttk.Button(error_frame, text="Back to Dashboard",
+                      command=self.show_dashboard).pack(pady=20)
+            logger.error(f"Student ID is None when accessing financial aid application. User: {self.current_user}")
+            return
 
         # Info message
         info_frame = ttk.Frame(self.parent_frame, relief='solid', borderwidth=1)
@@ -589,6 +618,14 @@ class StudentPortal:
     def _submit_aid_application(self, fields: Dict) -> bool:
         """Submit financial aid application"""
         try:
+            # Validate student ID
+            if not self.student_id:
+                show_error("Student ID Not Found",
+                          "Unable to determine your student ID. Please ensure you are logged in as a student.\n\n"
+                          "If you continue to see this error, contact the system administrator.")
+                logger.error(f"Student ID is None for user: {self.current_user}")
+                return False
+
             # Validate income
             income_str = fields['income'].get().strip()
             if not income_str:

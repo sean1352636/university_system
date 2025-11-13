@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Financial Aid GUI - Student ID NOT NULL Constraint Error
+
+**Issue: NOT NULL Constraint Failed on student_id:**
+- Fixed "NOT NULL constraint failed: financial_aid_applications.student_id" error
+  - Problem: student_id was NULL when creating financial aid applications
+  - Root cause: get_student_id() not properly extracting student ID from user object
+  - Applications were being submitted with student_id=None, violating database constraint
+
+**Root Causes Identified:**
+1. get_student_id() function only tried user.to_dict() or direct dict access
+2. Didn't handle User objects with __dict__ attribute
+3. Limited field name attempts (only 'student_id' and 'user_id')
+4. No validation before submitting applications
+
+**Solution Implemented:**
+
+1. **Enhanced get_student_id() Function** (common_imports.py:329-352):
+   - Tries multiple methods to get dict representation:
+     * user.to_dict() method
+     * user.__dict__ attribute
+     * Direct dict if already a dict
+   - Tries multiple field names in order:
+     * user_dict.get('student_id')
+     * user_dict.get('user_id')
+     * user_dict.get('id')
+     * getattr(user, 'student_id', None)
+     * getattr(user, 'user_id', None)
+     * getattr(user, 'id', None)
+   - Converts to string before returning
+   - Returns None only if all attempts fail
+
+2. **Pre-Submit Validation** (student_portal.py:592-598):
+   - Checks if student_id is None before attempting to submit
+   - Shows user-friendly error message explaining the issue
+   - Logs error with user information for debugging
+   - Prevents database constraint violation
+
+3. **Pre-Form Validation** (student_portal.py:499-518):
+   - Checks student_id when "Apply for Financial Aid" is clicked
+   - Displays comprehensive error screen if student_id is missing
+   - Explains possible causes:
+     * Logged in as admin/staff (not student)
+     * Account not properly configured
+     * Database issue with user record
+   - Prevents user from reaching form if they can't submit
+   - Logs error for administrator investigation
+
+4. **Scholarship Application Validation** (student_portal.py:413-419):
+   - Added same validation to scholarship applications
+   - Consistent error handling across both application types
+   - Early validation prevents wasted user effort
+
+**User Experience Improvements:**
+- Clear error messages explaining why application can't be submitted
+- Helpful guidance on who can apply (students only)
+- Directs users to contact administrator if needed
+- Prevents frustration of filling out form only to get error at submit
+
+**Error Handling:**
+- Graceful degradation if student_id can't be determined
+- Detailed logging for administrator troubleshooting
+- No database constraint violations
+- User-friendly error messages instead of technical errors
+
+**Files Modified:**
+- common_imports.py:329-352 - Enhanced get_student_id() with multiple extraction methods
+- student_portal.py:499-518 - Pre-form validation with error screen
+- student_portal.py:592-598 - Pre-submit validation for financial aid
+- student_portal.py:413-419 - Pre-submit validation for scholarships
+
+**Impact:**
+- No more NOT NULL constraint violations ✓
+- Better student ID extraction from user objects ✓
+- Clear error messages for non-students ✓
+- Prevents invalid application submissions ✓
+- Improved debugging with detailed logging ✓
+
 ### Fixed - 2025-11-13: Financial Aid GUI - Disbursements Query Column Error
 
 **Issue: Disbursements Query Referencing Non-Existent Column:**
