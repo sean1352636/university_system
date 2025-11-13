@@ -2109,12 +2109,38 @@ Click the button above to access the full Financial Reporting & Analytics system
         # Create notice dialog
         notice_dialog = tk.Toplevel(self.root)
         notice_dialog.title(f"Send Collection Notice - Case {case_id}")
-        notice_dialog.geometry("700x650")
+        notice_dialog.geometry("750x700")
         notice_dialog.transient(self.root)
         notice_dialog.grab_set()
 
+        # Create main container with canvas for scrolling
+        main_container = tk.Frame(notice_dialog)
+        main_container.pack(fill='both', expand=True)
+
+        # Create canvas
+        canvas = tk.Canvas(main_container, bg='white')
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
         # Case info frame
-        info_frame = ttk.LabelFrame(notice_dialog, text="Case Information", padding=15)
+        info_frame = ttk.LabelFrame(scrollable_frame, text="Case Information", padding=15)
         info_frame.pack(fill='x', padx=10, pady=10)
 
         ttk.Label(info_frame, text=f"Case ID: {case_id}", font=('Arial', 10)).pack(anchor='w')
@@ -2146,7 +2172,7 @@ Click the button above to access the full Financial Reporting & Analytics system
             ttk.Label(info_frame, text=f"Error loading student: {e}", font=('Arial', 9), foreground='red').pack(anchor='w')
 
         # Notice type frame
-        type_frame = ttk.LabelFrame(notice_dialog, text="Notice Type", padding=15)
+        type_frame = ttk.LabelFrame(scrollable_frame, text="Notice Type", padding=15)
         type_frame.pack(fill='x', padx=10, pady=10)
 
         notice_type_var = tk.StringVar(value="first_notice")
@@ -2162,7 +2188,7 @@ Click the button above to access the full Financial Reporting & Analytics system
             ttk.Radiobutton(type_frame, text=text, variable=notice_type_var, value=value).pack(anchor='w', pady=2)
 
         # Message frame
-        message_frame = ttk.LabelFrame(notice_dialog, text="Message", padding=15)
+        message_frame = ttk.LabelFrame(scrollable_frame, text="Message", padding=15)
         message_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         ttk.Label(message_frame, text="Subject:").pack(anchor='w')
@@ -2289,7 +2315,7 @@ Finance Department
                 traceback.print_exc()
 
         # Buttons
-        btn_frame = ttk.Frame(notice_dialog)
+        btn_frame = ttk.Frame(scrollable_frame)
         btn_frame.pack(pady=10)
 
         ttk.Button(btn_frame, text="📧 Send Notice", command=send_notice).pack(side='left', padx=5)
@@ -2463,7 +2489,7 @@ Finance Department
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT aid_type_id, aid_type_name FROM financial_aid_types WHERE is_active = 1")
+            cursor.execute("SELECT aid_type_id, aid_name FROM financial_aid_types WHERE is_active = 1")
             aid_types = cursor.fetchall()
             conn.close()
             aid_type_combo['values'] = [f"{at[0]} - {at[1]}" for at in aid_types]
@@ -3066,7 +3092,7 @@ Finance Department
 
                 cursor.execute('''
                     INSERT INTO financial_aid_types
-                    (aid_type_name, description, max_amount, category, is_active,
+                    (aid_name, description, max_amount, aid_category, is_active,
                      created_at, updated_at)
                     VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now'))
                 ''', (name, description, max_amount, category))
@@ -3092,7 +3118,7 @@ Finance Department
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT aid_type_id, aid_type_name, description, max_amount, category, is_active
+                SELECT aid_type_id, aid_name, description, max_amount, aid_category, is_active
                 FROM financial_aid_types
                 ORDER BY aid_type_id
             ''')

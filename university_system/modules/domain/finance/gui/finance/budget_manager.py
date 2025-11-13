@@ -142,6 +142,8 @@ class BudgetManager:
                  bg=self.gui.layout.colors['secondary'], fg='white').pack(side='left', padx=5)
         tk.Button(toolbar, text="✅ Approve Budget", command=self.approve_budget,
                  bg=self.gui.layout.colors['success'], fg='white').pack(side='left', padx=5)
+        tk.Button(toolbar, text="🔄 Refresh", command=self.refresh_budget,
+                 bg=self.gui.layout.colors['info'], fg='white').pack(side='left', padx=5)
         
         # Budget toolbar - Second row
         toolbar2 = tk.Frame(budget_frame, bg='white')
@@ -371,18 +373,32 @@ class BudgetManager:
         try:
             old_stdout = sys.stdout
             sys.stdout = mystdout = io.StringIO()
-            
+
             budget_approval_workflow()
-            
+
             output = mystdout.getvalue()
             sys.stdout = old_stdout
-            
+
             self.show_text_window("Budget Approval", output)
-            
+
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror("Error", f"Budget approval failed: {str(e)}")
-    
+
+
+    def show_text_window(self, title, content):
+        """Show content in a separate text window"""
+        window = tk.Toplevel(self.root)
+        window.title(title)
+        window.geometry("800x600")
+        window.transient(self.root)
+
+        text_widget = ScrolledText(window, font=('Courier', 10))
+        text_widget.pack(fill='both', expand=True, padx=10, pady=10)
+        text_widget.insert('1.0', content)
+
+        ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+
     # ==================== FORECASTING METHODS ====================
     
 
@@ -497,30 +513,311 @@ class BudgetManager:
     
 
     def gui_manage_budget_categories(self):
-        """GUI wrapper for manage_budget_categories"""
+        """Full GUI for managing budget categories"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Manage Budget Categories")
-        dialog.geometry("800x600")
+        dialog.geometry("1000x700")
         dialog.transient(self.root)
         dialog.grab_set()
-        
-        try:
-            old_stdout = sys.stdout
-            sys.stdout = mystdout = io.StringIO()
-            
-            manage_budget_categories()
-            
-            output = mystdout.getvalue()
-            sys.stdout = old_stdout
-            
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
-            text_widget.pack(fill='both', expand=True, padx=10, pady=10)
-            text_widget.insert('1.0', output)
-            
-            ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to manage budget categories: {e}")
+
+        # Header
+        header_frame = tk.Frame(dialog, bg='#2c3e50', height=60)
+        header_frame.pack(fill='x')
+        header_frame.pack_propagate(False)
+
+        tk.Label(header_frame, text="Budget Categories Management",
+                font=('TkDefaultFont', 16, 'bold'), bg='#2c3e50', fg='white').pack(pady=15)
+
+        # Toolbar
+        toolbar = tk.Frame(dialog, bg='white', height=50)
+        toolbar.pack(fill='x', padx=10, pady=5)
+        toolbar.pack_propagate(False)
+
+        def add_category():
+            """Add new budget category"""
+            add_dialog = tk.Toplevel(dialog)
+            add_dialog.title("Add Budget Category")
+            add_dialog.geometry("500x400")
+            add_dialog.transient(dialog)
+            add_dialog.grab_set()
+
+            form_frame = ttk.LabelFrame(add_dialog, text="Category Details", padding=20)
+            form_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+            # Category name
+            ttk.Label(form_frame, text="Category Name:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
+            name_var = tk.StringVar()
+            name_entry = ttk.Entry(form_frame, textvariable=name_var, width=35)
+            name_entry.grid(row=0, column=1, pady=5, padx=5)
+            name_entry.focus()
+
+            # Category type
+            ttk.Label(form_frame, text="Category Type:").grid(row=1, column=0, sticky='w', pady=5, padx=5)
+            type_var = tk.StringVar(value="expense")
+            type_combo = ttk.Combobox(form_frame, textvariable=type_var,
+                                     values=["revenue", "expense"], width=33, state='readonly')
+            type_combo.grid(row=1, column=1, pady=5, padx=5)
+
+            # Parent category (optional)
+            ttk.Label(form_frame, text="Parent Category:").grid(row=2, column=0, sticky='w', pady=5, padx=5)
+            parent_var = tk.StringVar()
+            parent_combo = ttk.Combobox(form_frame, textvariable=parent_var, width=33)
+            parent_combo.grid(row=2, column=1, pady=5, padx=5)
+
+            # Load parent categories
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT category_id, category_name FROM budget_categories WHERE is_active = 1 ORDER BY category_name")
+                parents = cursor.fetchall()
+                conn.close()
+                parent_combo['values'] = ['None'] + [f"{p[0]} - {p[1]}" for p in parents]
+                parent_combo.set('None')
+            except Exception as e:
+                print(f"Error loading parent categories: {e}")
+
+            # Description
+            ttk.Label(form_frame, text="Description:").grid(row=3, column=0, sticky='nw', pady=5, padx=5)
+            desc_text = tk.Text(form_frame, height=6, width=35)
+            desc_text.grid(row=3, column=1, pady=5, padx=5)
+
+            def save_category():
+                name = name_var.get().strip()
+                if not name:
+                    messagebox.showwarning("Name Required", "Please enter a category name", parent=add_dialog)
+                    return
+
+                category_type = type_var.get()
+                parent_str = parent_var.get()
+                parent_id = None
+                if parent_str and parent_str != 'None':
+                    try:
+                        parent_id = int(parent_str.split(' - ')[0])
+                    except:
+                        pass
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO budget_categories
+                        (category_name, category_type, parent_category_id, is_active, created_at)
+                        VALUES (?, ?, ?, 1, ?)
+                    ''', (name, category_type, parent_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Category '{name}' created successfully", parent=add_dialog)
+                    add_dialog.destroy()
+                    refresh_categories()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to create category: {e}", parent=add_dialog)
+
+            button_frame = ttk.Frame(form_frame)
+            button_frame.grid(row=4, column=0, columnspan=2, pady=15)
+            ttk.Button(button_frame, text="Save", command=save_category).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=add_dialog.destroy).pack(side='left', padx=5)
+
+        def edit_category():
+            """Edit selected category"""
+            selection = tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a category to edit", parent=dialog)
+                return
+
+            values = tree.item(selection[0])['values']
+            category_id = values[0]
+            current_name = values[1]
+            current_type = values[2]
+
+            edit_dialog = tk.Toplevel(dialog)
+            edit_dialog.title(f"Edit Category - {category_id}")
+            edit_dialog.geometry("500x350")
+            edit_dialog.transient(dialog)
+            edit_dialog.grab_set()
+
+            form_frame = ttk.LabelFrame(edit_dialog, text="Category Details", padding=20)
+            form_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+            # Category ID (read-only)
+            ttk.Label(form_frame, text="Category ID:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
+            ttk.Label(form_frame, text=category_id, foreground='blue').grid(row=0, column=1, sticky='w', pady=5, padx=5)
+
+            # Category name
+            ttk.Label(form_frame, text="Category Name:").grid(row=1, column=0, sticky='w', pady=5, padx=5)
+            name_var = tk.StringVar(value=current_name)
+            name_entry = ttk.Entry(form_frame, textvariable=name_var, width=35)
+            name_entry.grid(row=1, column=1, pady=5, padx=5)
+            name_entry.focus()
+
+            # Category type
+            ttk.Label(form_frame, text="Category Type:").grid(row=2, column=0, sticky='w', pady=5, padx=5)
+            type_var = tk.StringVar(value=current_type)
+            type_combo = ttk.Combobox(form_frame, textvariable=type_var,
+                                     values=["revenue", "expense"], width=33, state='readonly')
+            type_combo.grid(row=2, column=1, pady=5, padx=5)
+
+            # Description
+            ttk.Label(form_frame, text="Description:").grid(row=3, column=0, sticky='nw', pady=5, padx=5)
+            desc_text = tk.Text(form_frame, height=5, width=35)
+            desc_text.grid(row=3, column=1, pady=5, padx=5)
+
+            def save_changes():
+                name = name_var.get().strip()
+                if not name:
+                    messagebox.showwarning("Name Required", "Please enter a category name", parent=edit_dialog)
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE budget_categories
+                        SET category_name = ?, category_type = ?, updated_at = ?
+                        WHERE category_id = ?
+                    ''', (name, type_var.get(), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category_id))
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Category '{name}' updated successfully", parent=edit_dialog)
+                    edit_dialog.destroy()
+                    refresh_categories()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to update category: {e}", parent=edit_dialog)
+
+            button_frame = ttk.Frame(form_frame)
+            button_frame.grid(row=4, column=0, columnspan=2, pady=15)
+            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=edit_dialog.destroy).pack(side='left', padx=5)
+
+        def deactivate_category():
+            """Deactivate selected category"""
+            selection = tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a category to deactivate", parent=dialog)
+                return
+
+            values = tree.item(selection[0])['values']
+            category_id = values[0]
+            category_name = values[1]
+
+            if messagebox.askyesno("Confirm Deactivation",
+                                  f"Deactivate category '{category_name}'?\n\nThis will hide the category but not delete it.",
+                                  parent=dialog):
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE budget_categories
+                        SET is_active = 0, updated_at = ?
+                        WHERE category_id = ?
+                    ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category_id))
+                    conn.commit()
+                    conn.close()
+
+                    messagebox.showinfo("Success", f"Category '{category_name}' deactivated", parent=dialog)
+                    refresh_categories()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to deactivate category: {e}", parent=dialog)
+
+        def refresh_categories():
+            """Refresh category list"""
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Show active or all based on checkbox
+                if show_inactive_var.get():
+                    cursor.execute('''
+                        SELECT bc.category_id, bc.category_name, bc.category_type,
+                               COALESCE(pc.category_name, 'None') as parent_name,
+                               CASE WHEN bc.is_active = 1 THEN 'Active' ELSE 'Inactive' END as status
+                        FROM budget_categories bc
+                        LEFT JOIN budget_categories pc ON bc.parent_category_id = pc.category_id
+                        ORDER BY bc.category_type, bc.category_name
+                    ''')
+                else:
+                    cursor.execute('''
+                        SELECT bc.category_id, bc.category_name, bc.category_type,
+                               COALESCE(pc.category_name, 'None') as parent_name,
+                               'Active' as status
+                        FROM budget_categories bc
+                        LEFT JOIN budget_categories pc ON bc.parent_category_id = pc.category_id
+                        WHERE bc.is_active = 1
+                        ORDER BY bc.category_type, bc.category_name
+                    ''')
+
+                categories = cursor.fetchall()
+                conn.close()
+
+                for category in categories:
+                    tree.insert('', 'end', values=category)
+
+                status_label.config(text=f"Total categories: {len(categories)}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load categories: {e}", parent=dialog)
+
+        # Toolbar buttons
+        tk.Button(toolbar, text="➕ Add Category", command=add_category,
+                 bg='#27ae60', fg='white', padx=10).pack(side='left', padx=5)
+        tk.Button(toolbar, text="✏️ Edit Category", command=edit_category,
+                 bg='#f39c12', fg='white', padx=10).pack(side='left', padx=5)
+        tk.Button(toolbar, text="🗑️ Deactivate", command=deactivate_category,
+                 bg='#e74c3c', fg='white', padx=10).pack(side='left', padx=5)
+        tk.Button(toolbar, text="🔄 Refresh", command=refresh_categories,
+                 bg='#3498db', fg='white', padx=10).pack(side='left', padx=5)
+
+        show_inactive_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(toolbar, text="Show Inactive", variable=show_inactive_var,
+                       command=refresh_categories).pack(side='left', padx=10)
+
+        # Main content area
+        content_frame = tk.Frame(dialog, bg='white')
+        content_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Treeview
+        tree_frame = tk.Frame(content_frame)
+        tree_frame.pack(fill='both', expand=True)
+
+        tree_scroll = ttk.Scrollbar(tree_frame)
+        tree_scroll.pack(side='right', fill='y')
+
+        tree = ttk.Treeview(tree_frame,
+                           columns=('id', 'name', 'type', 'parent', 'status'),
+                           show='headings', yscrollcommand=tree_scroll.set)
+        tree_scroll.config(command=tree.yview)
+
+        tree.heading('id', text='ID')
+        tree.heading('name', text='Category Name')
+        tree.heading('type', text='Type')
+        tree.heading('parent', text='Parent Category')
+        tree.heading('status', text='Status')
+
+        tree.column('id', width=60)
+        tree.column('name', width=250)
+        tree.column('type', width=100)
+        tree.column('parent', width=200)
+        tree.column('status', width=100)
+
+        tree.pack(fill='both', expand=True)
+
+        # Status bar
+        status_frame = tk.Frame(dialog, bg='#ecf0f1', height=30)
+        status_frame.pack(fill='x', side='bottom')
+        status_frame.pack_propagate(False)
+
+        status_label = tk.Label(status_frame, text="Loading categories...",
+                               bg='#ecf0f1', anchor='w')
+        status_label.pack(side='left', padx=10)
+
+        ttk.Button(status_frame, text="Close", command=dialog.destroy).pack(side='right', padx=10, pady=3)
+
+        # Initial load
+        refresh_categories()
     
 
     def gui_edit_budget_category(self):

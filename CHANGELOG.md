@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Finance GUI Budget Management Enhancements (6 Issues)
+
+**Issue 1: Send Notice - Button Accessibility:**
+- Added scrollbar to Send Notice dialog to access Send button
+  - Problem: Send button at bottom of collection notice dialog was inaccessible
+  - Solution: Wrapped entire dialog in scrollable canvas (750x700)
+  - Mouse wheel scrolling enabled
+  - All frames (case info, notice types, message composition, buttons) now scrollable
+  - Location: layout_manager.py:2109-2322
+
+**Issue 2: Financial Aid Types - Column Name Error:**
+- Fixed `no such column: aid_type_name` error in financial aid management
+  - Problem: Queries used `aid_type_name` column which doesn't exist
+  - Actual columns: `aid_name`, `aid_category` (not `category`)
+  - Fixed 3 query locations:
+    * Load aid types for dropdown (layout_manager.py:2492)
+    * INSERT new aid type (layout_manager.py:3095) - also fixed `category` → `aid_category`
+    * View aid types (layout_manager.py:3121) - also fixed `category` → `aid_category`
+  - Verified with PRAGMA: aid_type_id, aid_name, aid_category, is_active, created_at
+
+**Issue 3: Budgets Interface - Refresh Button:**
+- Added refresh button to Budget Management toolbar
+  - Solution: Added "🔄 Refresh" button to first toolbar row
+  - Calls existing `refresh_budget()` method to reload budget plans and categories
+  - Button color: info blue, positioned after Approve Budget button
+  - Location: budget_manager.py:145-146
+
+**Issue 4: BudgetManager - show_text_window Attribute Error:**
+- Fixed `BudgetManager object has no attribute show_text_window`
+  - Problem: Methods called `self.show_text_window()` but method didn't exist
+  - Solution: Added show_text_window method to display reports in popup
+  - Creates Toplevel window (800x600) with ScrolledText widget
+  - Used by Budget Analysis and Budget Approval functions
+  - Location: budget_manager.py:389-400
+
+**Issue 5: Budget Approval - Function Not Defined:**
+- Fixed `budget_approval_workflow is not defined` error
+  - Problem: Function called but didn't exist in common_imports.py
+  - Solution: Created budget_approval_workflow placeholder function
+  - Displays workflow overview: Review, Approve/Reject, Track Status, Notify
+  - Follows same pattern as other budget analysis functions
+  - Location: common_imports.py:314-322
+
+**Issue 6: Manage Categories - Full Implementation (320 lines):**
+- Replaced text window with fully functional Budget Categories Manager
+  - Problem: `gui_manage_budget_categories()` only showed text output
+  - Solution: Created complete category management interface (1000x700) with:
+    * Professional header with title
+    * Toolbar with 4 action buttons + Show Inactive checkbox
+    * Treeview displaying: ID, Name, Type, Parent, Status
+    * Add Category dialog - Name, Type (revenue/expense), Parent, Description
+    * Edit Category dialog - Modify name, type, description
+    * Deactivate Category - Soft delete with confirmation
+    * Refresh button to reload category list
+    * Status bar showing total categories count
+  - Features:
+    * Real database integration (budget_categories table)
+    * Parent-child category hierarchy support
+    * Active/Inactive status filtering
+    * Validation on all forms
+    * User-friendly confirmation dialogs
+    * Auto-refresh after changes
+  - Location: budget_manager.py:515-820
+
+**Technical Summary:**
+- 3 files modified: layout_manager.py, budget_manager.py, common_imports.py
+- 1 scrollbar fix, 3 column name corrections, 1 refresh button, 1 method addition, 1 function creation
+- 1 complete UI implementation replacing placeholder
+- Total lines added: ~350 lines of GUI code
+
 ### Fixed - 2025-11-13: Finance GUI Critical Error Resolution (9 Issues)
 
 **Issue 1: Admin Email Query - Database Table Error:**

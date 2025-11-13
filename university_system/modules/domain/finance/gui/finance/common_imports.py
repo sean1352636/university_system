@@ -311,6 +311,16 @@ def budget_vs_actual_analysis(*args, **kwargs):
     print("=" * 60)
     print("This feature compares budgeted amounts with actual spending")
 
+def budget_approval_workflow(*args, **kwargs):
+    """Budget approval workflow"""
+    print("Budget Approval Workflow")
+    print("=" * 60)
+    print("This feature manages the budget approval process")
+    print("- Review budget plans")
+    print("- Approve/reject budgets")
+    print("- Track approval status")
+    print("- Notify stakeholders")
+
 def view_overdue_accounts(*args, **kwargs):
     """View overdue accounts"""
     print("Overdue Accounts Report")
