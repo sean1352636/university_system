@@ -854,7 +854,7 @@ __all__ = [
     'view_student_credits', 'add_student_credit', 'apply_credit_to_fees', 'view_credit_history',
 
     # Budget management
-    'create_budget_plan', 'budget_vs_actual_analysis', 'view_overdue_accounts',
+    'create_budget_plan', 'budget_vs_actual_analysis', 'budget_approval_workflow', 'view_overdue_accounts',
     'variance_analysis_report', 'budget_performance_trends', 'category_performance_report',
     'manage_budget_categories', 'view_budget_categories', 'create_budget_category',
     'edit_budget_category', 'deactivate_budget_category', 'update_actual_amounts',

@@ -725,8 +725,66 @@ class LayoutManager:
             except:
                 summary += "Pending Refund Requests: Data not available\n"
 
+            summary += "\n" + "=" * 70 + "\n"
+            summary += "BUDGET SUMMARY\n"
+            summary += "=" * 70 + "\n\n"
+
+            # Budget information
+            try:
+                cursor.execute('''
+                    SELECT COUNT(*) as plans,
+                           SUM(total_revenue_budget) as revenue_budget,
+                           SUM(total_expense_budget) as expense_budget
+                    FROM budget_plans
+                    WHERE status IN ('active', 'approved')
+                ''')
+                budget = cursor.fetchone()
+                if budget and budget[0]:
+                    revenue_budget = budget[1] or 0
+                    expense_budget = budget[2] or 0
+                    net_budget = revenue_budget - expense_budget
+                    summary += f"Active Budget Plans: {budget[0]}\n"
+                    summary += f"Total Revenue Budget: £{revenue_budget:,.2f}\n"
+                    summary += f"Total Expense Budget: £{expense_budget:,.2f}\n"
+                    summary += f"Net Budget: £{net_budget:,.2f}\n"
+                else:
+                    summary += "No active budget plans\n"
+            except:
+                summary += "Budget data: Not available\n"
+
+            summary += "\n" + "=" * 70 + "\n"
+            summary += "FINANCIAL AID SUMMARY\n"
+            summary += "=" * 70 + "\n\n"
+
+            # Financial aid
+            try:
+                cursor.execute("SELECT COUNT(*) FROM financial_aid WHERE status = 'active'")
+                active_aid = cursor.fetchone()[0]
+                cursor.execute("SELECT SUM(amount) FROM financial_aid WHERE status = 'active'")
+                total_aid = cursor.fetchone()[0] or 0
+                summary += f"Active Financial Aid Awards: {active_aid}\n"
+                summary += f"Total Financial Aid Amount: £{total_aid:,.2f}\n"
+            except:
+                summary += "Financial aid data: Not available\n"
+
+            summary += "\n" + "=" * 70 + "\n"
+            summary += "COLLECTION SUMMARY\n"
+            summary += "=" * 70 + "\n\n"
+
+            # Collection cases
+            try:
+                cursor.execute("SELECT COUNT(*) FROM collection_cases WHERE status = 'active'")
+                active_cases = cursor.fetchone()[0]
+                cursor.execute("SELECT SUM(outstanding_amount) FROM collection_cases WHERE status = 'active'")
+                outstanding_collection = cursor.fetchone()[0] or 0
+                summary += f"Active Collection Cases: {active_cases}\n"
+                summary += f"Total Outstanding in Collections: £{outstanding_collection:,.2f}\n"
+            except:
+                summary += "Collection data: Not available\n"
+
             summary += "\n" + "=" * 70 + "\n\n"
-            summary += "For detailed financial analysis, please use the Advanced Reporting GUI.\n"
+            summary += "For detailed financial analysis, charts, and reports,\n"
+            summary += "please use the Analytics tab or Advanced Reporting GUI.\n"
 
             conn.close()
 

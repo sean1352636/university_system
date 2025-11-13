@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Final Finance GUI Fixes (4 Remaining Issues)
+
+**Issue 1: budget_approval_workflow Not Defined:**
+- Fixed import error when clicking Budget > Approve Budget
+  - Problem: Function existed in common_imports.py but not exported in __all__ list
+  - Solution: Added 'budget_approval_workflow' to __all__ list (line 857)
+  - Now properly accessible via `from common_imports import *`
+  - Location: common_imports.py:857
+
+**Issue 2: get_db_path Import Error:**
+- Fixed "cannot import name get_db_path" error in database backup
+  - Problem: get_db_path function doesn't exist in db module
+  - Solution: Changed to use paths.DEFAULT_DB_PATH from shared constants
+  - Also imported paths module for proper database path resolution
+  - Location: db_manager.py:410-414
+
+**Issue 3: Database Stats - Full Implementation:**
+- Enhanced Settings > Maintenance > Database Stats display
+  - Problem: Showed placeholder "Database file information would be displayed here"
+  - Solution: Added complete database file information section:
+    * Full database file path from paths.DEFAULT_DB_PATH
+    * File size in bytes and MB
+    * Last modified timestamp
+    * Total table count
+    * File existence check with error message if not found
+  - Location: db_manager.py:510-537
+
+**Issue 4: Financial Summary - Enhanced Implementation:**
+- Expanded Core Finance > Financial Summary report
+  - Problem: Basic implementation, missing comprehensive data
+  - Solution: Added 3 new major sections:
+    * Budget Summary: Active plans, revenue/expense budgets, net budget
+    * Financial Aid Summary: Active awards count and total amount
+    * Collection Summary: Active cases and outstanding collection amounts
+  - Maintains existing data: revenue, outstanding fees, students, payments, refunds
+  - Comprehensive report now covers all major financial areas
+  - Location: layout_manager.py:728-788 (60 lines added)
+
+**Technical Details:**
+- All database queries use proper error handling with try/except
+- Fallbacks display "Not available" instead of crashing
+- Uses get_connection() for consistent database access
+- Formatted output with section headers and separators
+- All monetary values formatted with thousands separators
+
 ### Fixed - 2025-11-13: Multiple Finance GUI Critical Fixes (7 Issues)
 
 **Issue 1: apply_credit_to_fees Function Signature Error:**

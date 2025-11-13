@@ -407,11 +407,11 @@ class DatabaseManager:
             import shutil
             from datetime import datetime
             from tkinter import filedialog
-            from university_system.infrastructure.database.db import get_db_path
             from pathlib import Path
+            from university_system.modules.shared.constants import paths
 
             # Get database path
-            db_path = get_db_path()
+            db_path = str(paths.DEFAULT_DB_PATH)
             if not os.path.exists(db_path):
                 messagebox.showerror("Error", "Database file not found")
                 return
@@ -508,7 +508,32 @@ class DatabaseManager:
                     stats_text += f"{table.replace('_', ' ').title()}: Table not found\n"
 
             stats_text += "\n" + "=" * 50 + "\n"
-            stats_text += "Database file information would be displayed here\n"
+            stats_text += "DATABASE FILE INFORMATION\n"
+            stats_text += "=" * 50 + "\n\n"
+
+            # Get database file path and info
+            from university_system.modules.shared.constants import paths
+            db_path = str(paths.DEFAULT_DB_PATH)
+
+            if os.path.exists(db_path):
+                file_size = os.path.getsize(db_path)
+                file_size_mb = file_size / (1024 * 1024)
+                stats_text += f"Database Path: {db_path}\n"
+                stats_text += f"File Size: {file_size:,} bytes ({file_size_mb:.2f} MB)\n"
+
+                # Get last modified time
+                import time
+                mod_time = os.path.getmtime(db_path)
+                mod_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mod_time))
+                stats_text += f"Last Modified: {mod_time_str}\n"
+
+                # Get total records across all tables
+                cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
+                table_count = cursor.fetchone()[0]
+                stats_text += f"\nTotal Tables: {table_count}\n"
+            else:
+                stats_text += f"Database Path: {db_path}\n"
+                stats_text += "Status: File not found!\n"
 
             conn.close()
 
