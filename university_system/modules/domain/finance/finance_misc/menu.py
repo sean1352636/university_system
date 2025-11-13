@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import logging
 
-from university_system.modules.domain.finance.finance_misc.finance_context import auth
+from university_system.modules.domain.finance.finance_misc.finance_context import get_auth
 from university_system.modules.domain.finance.finance_misc.finance_db_operations import initialize_finance
 
 def display_enhanced_finance_menu():
     """Display the enhanced finance management menu"""
-    global auth
+    # Get current auth instance
+    auth = get_auth()
 
-    # Initialize system if not already done
-    if not auth:
+    # Initialize system if not already done (check if auth is properly configured)
+    if not auth or not hasattr(auth, 'check_permission'):
         initialize_finance()
+        auth = get_auth()
 
     while True:
         print("\n" + "=" * 60)

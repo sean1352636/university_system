@@ -7,7 +7,7 @@ import threading
 import time
 from university_system.infrastructure.database.db import sqlite3
 
-from university_system.modules.domain.finance.finance_misc.finance_context import auth, get_connection
+from university_system.modules.domain.finance.finance_misc.finance_context import get_connection
 from university_system.modules.domain.finance.core.security_automation import send_email_notification
 from university_system.modules.domain.finance.reporting.revenue_analytics import view_student_collection_detail
 from university_system.modules.domain.finance.billing.fee_structure import calculate_late_fees, update_exchange_rates

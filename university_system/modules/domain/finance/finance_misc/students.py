@@ -4,7 +4,7 @@ from datetime import datetime
 from university_system.infrastructure.database.db import sqlite3
 from flask import jsonify
 
-from university_system.modules.domain.finance.finance_misc.finance_context import auth, get_connection
+from university_system.modules.domain.finance.finance_misc.finance_context import get_connection, get_current_user
 
 def student_exists(student_id):
     """Check if a student exists in the database"""
@@ -187,7 +187,7 @@ def add_student_credit():
          expiry_date, created_by, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (student_id, credit_amount, credit_amount, credit_source, description,
-              expiry_date, auth.current_user['username'], now, now))
+              expiry_date, get_current_user()['username'] if get_current_user() else 'system', now, now))
 
         credit_id = cursor.lastrowid
 
@@ -417,10 +417,10 @@ def apply_credit_to_fees():
             INSERT INTO payments 
             (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (student_id, application_amount, 'Credit Application', 
-                  datetime.now().strftime('%Y-%m-%d'), 
-                  f'Applied credit to {fee_name}', 
-                  auth.current_user['username'], now))
+            ''', (student_id, application_amount, 'Credit Application',
+                  datetime.now().strftime('%Y-%m-%d'),
+                  f'Applied credit to {fee_name}',
+                  get_current_user()['username'] if get_current_user() else 'system', now))
 
             payment_id = cursor.lastrowid
 

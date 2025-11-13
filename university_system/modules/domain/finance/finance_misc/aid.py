@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from university_system.infrastructure.database.db import sqlite3
 
-from university_system.modules.domain.finance.finance_misc.finance_context import auth, get_connection
+from university_system.modules.domain.finance.finance_misc.finance_context import get_connection, get_current_user
 from university_system.modules.domain.finance.core.security_automation import (
     log_audit_action,
     send_email_notification,
@@ -106,7 +106,7 @@ def approve_reject_aid_application():
             UPDATE student_financial_aid
             SET status = ?, approved_by = ?, approval_date = ?, updated_at = ?
             WHERE aid_id = ?
-            ''', (new_status, auth.current_user['username'], approval_date, updated_at, aid_id))
+            ''', (new_status, get_current_user()['username'] if get_current_user() else 'system', approval_date, updated_at, aid_id))
 
             print(f"Application approved for full amount: £{approved_amount:.2f}")
 
@@ -132,7 +132,7 @@ def approve_reject_aid_application():
             SET status = ?, awarded_amount = ?, remaining_amount = ?, approved_by = ?, 
                 approval_date = ?, updated_at = ?
             WHERE aid_id = ?
-            ''', (new_status, approved_amount, approved_amount, auth.current_user['username'], 
+            ''', (new_status, approved_amount, approved_amount, get_current_user()['username'] if get_current_user() else 'system',
                   approval_date, updated_at, aid_id))
 
             print(f"Application approved for partial amount: £{approved_amount:.2f}")
@@ -152,7 +152,7 @@ def approve_reject_aid_application():
             SET status = ?, approved_by = ?, approval_date = ?, 
                 notes = notes || ' | REJECTED: ' || ?, updated_at = ?
             WHERE aid_id = ?
-            ''', (new_status, auth.current_user['username'], approval_date, 
+            ''', (new_status, get_current_user()['username'] if get_current_user() else 'system', approval_date,
                   rejection_reason, updated_at, aid_id))
 
             print(f"Application rejected. Reason: {rejection_reason}")
@@ -185,7 +185,7 @@ def approve_reject_aid_application():
         # Log the action
         log_audit_action('review_aid_application', 'student_financial_aid', str(aid_id), {
             'decision': decision,
-            'reviewer': auth.current_user['username'],
+            'reviewer': get_current_user()['username'] if get_current_user() else 'system',
             'approved_amount': approved_amount if decision in ['1', '2'] else 0
         })
 
@@ -594,8 +594,8 @@ def process_loan_payment(loans):
         (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (student_id, payment_amount, 'Loan Repayment', payment_date,
-              f'Loan repayment for Aid ID {aid_id}', 
-              auth.current_user['username'], now))
+              f'Loan repayment for Aid ID {aid_id}',
+              get_current_user()['username'] if get_current_user() else 'system', now))
 
         # Update loan record
         new_total_repaid = (repaid or 0) + payment_amount
@@ -879,10 +879,10 @@ def apply_aid_to_fees(student_id, amount, aid_id):
             INSERT INTO payments 
             (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (student_id, application_amount, 'Financial Aid', 
+            ''', (student_id, application_amount, 'Financial Aid',
                   datetime.now().strftime('%Y-%m-%d'),
                   f'Aid disbursement (ID: {aid_id}) applied to {fee_name}',
-                  auth.current_user['username'], now))
+                  get_current_user()['username'] if get_current_user() else 'system', now))
 
             payment_id = cursor.lastrowid
 
@@ -995,7 +995,7 @@ def create_payment_arrangement():
         # Update collection case with arrangement
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        arrangement_notes = f"PAYMENT ARRANGEMENT: {schedule_info}. Terms: {terms}. Arranged by: {auth.current_user['username']}"
+        arrangement_notes = f"PAYMENT ARRANGEMENT: {schedule_info}. Terms: {terms}. Arranged by: {get_current_user()['username'] if get_current_user() else 'system'}"
 
         cursor.execute('''
         UPDATE collection_cases 

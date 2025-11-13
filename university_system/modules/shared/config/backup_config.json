@@ -1,5 +1,5 @@
 {
-    "backup_directory": "backups",
+    "backup_directory": "/home/seancatchpole989/university_system/backups",
     "scheduled_backup_time": "02:00",
     "backup_frequency": "daily",
     "max_backups": 10,

@@ -7,7 +7,7 @@ from university_system.infrastructure.database.db import sqlite3, get_connection
 # Use centralized schema initialization
 from university_system.infrastructure.database.schemas import init_finance_system_db
 
-from university_system.modules.domain.finance.finance_misc.finance_context import auth
+# Auth is available via get_auth() from shared_context if needed
 from university_system.modules.domain.finance.finance_misc.students import create_sample_students
 
 def init_enhanced_finance_db():

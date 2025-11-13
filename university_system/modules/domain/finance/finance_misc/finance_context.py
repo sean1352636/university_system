@@ -155,5 +155,6 @@ from university_system.infrastructure.shared_context import (
     check_permission,
 )
 
-# Backward compatibility - get auth instance
-auth = get_auth()
+# Backward compatibility - auth will be initialized lazily
+# Don't call get_auth() at module level to avoid warnings
+auth = None

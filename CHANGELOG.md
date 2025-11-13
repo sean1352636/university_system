@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Configuration and Auth Warning Issues
+
+**Fixed 2 critical configuration issues causing warnings and incorrect backup paths**
+
+This commit addresses incorrect backup directory path and auth module initialization warnings.
+
+**ISSUES FIXED:**
+
+**1. Backups Folder Created in Home Directory Instead of university_system Directory**
+- **Location**: `university_system/modules/shared/config/backup_config.json:2`
+- **Problem**: Config file had relative path `"backups"` which created folder in current working directory (home directory) instead of the correct location within university_system directory
+- **Impact**: Backups were being saved to `/home/seancatchpole989/backups/` instead of `/home/seancatchpole989/university_system/backups/`
+- **Fix**: Changed `"backup_directory": "backups"` to `"backup_directory": "/home/seancatchpole989/university_system/backups"`
+- **Files Modified**: `university_system/modules/shared/config/backup_config.json`
+
+**2. Auth Instance Warning on Startup**
+- **Location**: `university_system/modules/domain/finance/finance_misc/finance_context.py:159`
+- **Problem**: Module called `get_auth()` at import time (line 159), triggering warning "No auth instance configured, using dummy auth" before auth was initialized
+- **Impact**: Warning message appeared every time the application started: `2025-11-13 20:32:38,938 - root - WARNING - No auth instance configured, using dummy auth`
+- **Root Cause**: Module-level initialization `auth = get_auth()` executed during import before auth system was set up
+- **Fix**:
+  - Changed `auth = get_auth()` to `auth = None` in finance_context.py
+  - Updated 5 files that imported `auth` from finance_context to use `get_auth()` or `get_current_user()` instead:
+    - `finance_misc/students.py`: Changed 2 usages of `auth.current_user['username']`
+    - `finance_misc/analytics.py`: Removed unused `auth` import
+    - `finance_misc/aid.py`: Changed 8 usages of `auth.current_user['username']`
+    - `finance_misc/finance_db_operations.py`: Removed unused `auth` import
+    - `finance_misc/menu.py`: Changed to call `get_auth()` inside function instead of module level
+- **Files Modified**:
+  - `university_system/modules/domain/finance/finance_misc/finance_context.py`
+  - `university_system/modules/domain/finance/finance_misc/students.py`
+  - `university_system/modules/domain/finance/finance_misc/analytics.py`
+  - `university_system/modules/domain/finance/finance_misc/aid.py`
+  - `university_system/modules/domain/finance/finance_misc/finance_db_operations.py`
+  - `university_system/modules/domain/finance/finance_misc/menu.py`
+
+**TESTING:**
+- ✓ No more auth warning on startup
+- ✓ Backups now correctly saved to `university_system/backups/` directory
+- ✓ Auth functionality preserved with lazy initialization
+- ✓ Finance module functions work correctly with updated auth access pattern
+
+**COMPATIBILITY:**
+- Backward compatible - all auth functionality preserved
+- Auth is now lazily initialized when needed, avoiding import-time warnings
+
+---
+
 ### Fixed - 2025-11-13: Health Portal GUI - 4 Critical Issues (Login, Email, GUI Conflicts, Routing)
 
 **Fixed 4 critical issues in Health Portal GUI affecting user experience and functionality**
