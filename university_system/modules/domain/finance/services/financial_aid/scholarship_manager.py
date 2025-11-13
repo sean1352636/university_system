@@ -59,13 +59,37 @@ class ScholarshipManager:
         self,
         scholarship_id: int,
         student_id: int,
+        academic_year: Optional[str] = None,
+        application_data: Optional[Dict[str, Any]] = None,
         essay_text: Optional[str] = None,
         gpa: Optional[float] = None,
         transcript_url: Optional[str] = None,
         resume_url: Optional[str] = None
     ) -> Optional[int]:
-        """Submit scholarship application"""
+        """
+        Submit scholarship application
+
+        Args:
+            scholarship_id: ID of scholarship
+            student_id: Student ID
+            academic_year: Academic year (stored for reference, not in applications table)
+            application_data: Dict containing application data (alternative to individual params)
+            essay_text: Essay text (or from application_data)
+            gpa: Student GPA (or from application_data)
+            transcript_url: Transcript URL (or from application_data)
+            resume_url: Resume URL (or from application_data)
+
+        Returns:
+            Application ID if successful, None otherwise
+        """
         try:
+            # Extract from application_data if provided
+            if application_data:
+                essay_text = application_data.get('essay', essay_text)
+                gpa = application_data.get('gpa', gpa)
+                transcript_url = application_data.get('transcript_url', transcript_url)
+                resume_url = application_data.get('resume_url', resume_url)
+
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
