@@ -729,15 +729,22 @@ class FinancialManagementGUI:
                 months = [row[0] for row in revenue_data]
                 revenues = [float(row[1]) if row[1] else 0 for row in revenue_data]
 
-                # Simple forecasting using linear regression
-                x = np.arange(len(revenues))
-                z = np.polyfit(x, revenues, 1)
-                p = np.poly1d(z)
+                # Simple forecasting using linear regression with error handling
+                try:
+                    x = np.arange(len(revenues))
+                    z = np.polyfit(x, revenues, 1)
+                    p = np.poly1d(z)
 
-                # Forecast next 6 months
-                forecast_x = np.arange(len(revenues), len(revenues) + 6)
-                forecast_values = p(forecast_x)
-                forecast_months = [f"Forecast {i+1}" for i in range(6)]
+                    # Forecast next 6 months
+                    forecast_x = np.arange(len(revenues), len(revenues) + 6)
+                    forecast_values = p(forecast_x)
+                    forecast_months = [f"Forecast {i+1}" for i in range(6)]
+                except (np.linalg.LinAlgError, ValueError) as e:
+                    print(f"Warning: Could not generate forecast due to insufficient data: {e}")
+                    # Use simple average-based forecast as fallback
+                    avg_revenue = np.mean(revenues) if len(revenues) > 0 else 0
+                    forecast_values = [avg_revenue] * 6
+                    forecast_months = [f"Forecast {i+1}" for i in range(6)]
 
                 # Plot 1: Revenue Trend and Forecast
                 ax1 = fig.add_subplot(2, 2, 1)
@@ -832,13 +839,14 @@ class FinancialManagementGUI:
                 # Get fee and payment data by category/type
                 cursor.execute("""
                     SELECT
-                        f.fee_type,
+                        COALESCE(ft.fee_name, 'Unknown') as fee_type,
                         SUM(f.amount) as budgeted,
                         COALESCE(SUM(p.amount), 0) as actual
-                    FROM fees f
+                    FROM student_fees f
+                    LEFT JOIN fee_types ft ON f.fee_type_id = ft.fee_type_id
                     LEFT JOIN payments p ON f.student_id = p.student_id
                     WHERE f.due_date >= date('now', '-12 months')
-                    GROUP BY f.fee_type
+                    GROUP BY ft.fee_name
                 """)
                 budget_data = cursor.fetchall()
 
@@ -846,7 +854,7 @@ class FinancialManagementGUI:
                 cursor.execute("""
                     SELECT
                         SUM(amount) as total_fees
-                    FROM fees
+                    FROM student_fees
                     WHERE due_date >= date('now', '-12 months')
                 """)
                 total_budgeted = cursor.fetchone()[0] or 0
@@ -977,7 +985,7 @@ class FinancialManagementGUI:
                 cursor.execute("""
                     SELECT
                         SUM(amount) as outstanding
-                    FROM fees
+                    FROM student_fees
                     WHERE status = 'pending' OR status = 'unpaid'
                 """)
                 outstanding = cursor.fetchone()[0] or 0
@@ -1000,7 +1008,7 @@ class FinancialManagementGUI:
                         f.status,
                         COUNT(*) as count,
                         SUM(f.amount) as total
-                    FROM fees f
+                    FROM student_fees f
                     GROUP BY f.status
                 """)
                 status_data = cursor.fetchall()
@@ -1219,11 +1227,11 @@ class FinancialManagementGUI:
                 # Get activity by type
                 cursor.execute("""
                     SELECT
-                        activity_type,
+                        action,
                         COUNT(*) as count
                     FROM activity_log
                     WHERE timestamp >= date('now', '-30 days')
-                    GROUP BY activity_type
+                    GROUP BY action
                 """)
                 activity_data = cursor.fetchall()
 
@@ -4670,10 +4678,12 @@ For technical support, contact your system administrator.
 
                 # Get student records statistics
                 cursor.execute("SELECT COUNT(*) FROM students")
-                total_students = cursor.fetchone()[0] if cursor.fetchone() else 0
+                total_students_result = cursor.fetchone()
+                total_students = total_students_result[0] if total_students_result else 0
 
-                cursor.execute("SELECT COUNT(DISTINCT student_id) FROM transactions")
-                students_with_transactions = cursor.fetchone()[0] if cursor.fetchone() else 0
+                cursor.execute("SELECT COUNT(DISTINCT student_id) FROM payments")
+                students_with_payments_result = cursor.fetchone()
+                students_with_transactions = students_with_payments_result[0] if students_with_payments_result else 0
 
                 log_report(f"Total Students: {total_students}")
                 log_report(f"Students with Financial Records: {students_with_transactions}")
@@ -4689,9 +4699,10 @@ For technical support, contact your system administrator.
                 log_report("TAX DOCUMENTATION SUMMARY")
                 log_report("-" * 80)
 
-                # Get tax-related statistics
-                cursor.execute("SELECT COUNT(*) FROM transactions WHERE transaction_type = 'Tuition'")
-                tuition_transactions = cursor.fetchone()[0] if cursor.fetchone() else 0
+                # Get tax-related statistics (using payments as proxy for tuition transactions)
+                cursor.execute("SELECT COUNT(*) FROM payments WHERE status = 'completed'")
+                tuition_result = cursor.fetchone()
+                tuition_transactions = tuition_result[0] if tuition_result else 0
 
                 log_report(f"1098-T Forms Required: {tuition_transactions}")
                 log_report(f"Forms Generated: {int(tuition_transactions * 0.85)}")
@@ -5155,22 +5166,15 @@ For technical support, contact your system administrator.
             log_progress("\n[1/4] Archiving old transactions...")
             try:
                 # Check if tables exist
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'")
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='payments'")
                 if cursor.fetchone():
-                    cursor.execute('''
-                        INSERT INTO archived_transactions
-                        SELECT *, CURRENT_TIMESTAMP FROM transactions
-                        WHERE transaction_date < ?
-                    ''', (two_years_ago,))
-
-                    archived_count = cursor.rowcount
-
-                    cursor.execute('DELETE FROM transactions WHERE transaction_date < ?', (two_years_ago,))
-
-                    total_archived += archived_count
-                    log_progress(f"  ✓ Archived {archived_count} transaction records")
+                    # Note: We don't delete old payments as they're historical records
+                    # Just log that we checked them
+                    cursor.execute('SELECT COUNT(*) FROM payments WHERE payment_date < ?', (two_years_ago,))
+                    old_payments = cursor.fetchone()[0] or 0
+                    log_progress(f"  ℹ Found {old_payments} old payment records (retained for audit trail)")
                 else:
-                    log_progress("  ⚠ Transactions table not found - skipping")
+                    log_progress("  ⚠ Payments table not found - skipping")
             except Exception as e:
                 log_progress(f"  ✗ Error archiving transactions: {e}")
 
@@ -5446,12 +5450,17 @@ For technical support, contact your system administrator.
         """Show automated reporting configuration dialog"""
         reporting_window = tk.Toplevel(self.root)
         reporting_window.title("Automated Reporting Configuration")
-        # Make window full screen
-        reporting_window.state('zoomed')  # For Linux/Windows
+        # Make window full screen - use geometry instead of state('zoomed')
         try:
-            reporting_window.attributes('-zoomed', True)  # For Linux
-        except:
-            pass
+            # Try to maximize window using platform-specific methods
+            reporting_window.state('normal')
+            width = reporting_window.winfo_screenwidth()
+            height = reporting_window.winfo_screenheight()
+            reporting_window.geometry(f"{width}x{height}+0+0")
+        except Exception as e:
+            print(f"Warning: Could not maximize window: {e}")
+            # Fallback to a large fixed size
+            reporting_window.geometry("1200x800")
 
         main_frame = ttk.Frame(reporting_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -5518,12 +5527,17 @@ For technical support, contact your system administrator.
         """Show performance monitoring dashboard"""
         perf_window = tk.Toplevel(self.root)
         perf_window.title("Performance Monitoring Dashboard")
-        # Make window full screen
-        perf_window.state('zoomed')  # For Linux/Windows
+        # Make window full screen - use geometry instead of state('zoomed')
         try:
-            perf_window.attributes('-zoomed', True)  # For Linux
-        except:
-            pass
+            # Try to maximize window using platform-specific methods
+            perf_window.state('normal')
+            width = perf_window.winfo_screenwidth()
+            height = perf_window.winfo_screenheight()
+            perf_window.geometry(f"{width}x{height}+0+0")
+        except Exception as e:
+            print(f"Warning: Could not maximize window: {e}")
+            # Fallback to a large fixed size
+            perf_window.geometry("1200x800")
 
         main_frame = ttk.Frame(perf_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -8664,16 +8678,14 @@ def generate_advanced_financial_forecasting():
         # Get historical revenue data
         print("[1/5] Analyzing historical data...")
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_type IN ('Tuition', 'Fee')
-            AND transaction_date >= date('now', '-12 months')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date >= date('now', '-12 months')
         ''')
         annual_revenue = cursor.fetchone()[0] or 0.0
 
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_type IN ('Tuition', 'Fee')
-            AND transaction_date >= date('now', '-1 month')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date >= date('now', '-1 month')
         ''')
         monthly_revenue = cursor.fetchone()[0] or 0.0
 
@@ -8918,36 +8930,36 @@ def real_time_financial_dashboard():
         # Today's collections
         today = datetime.now().strftime('%Y-%m-%d')
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_date = ?
-            AND transaction_type IN ('Tuition', 'Fee', 'Payment')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date = ?
+            AND status = 'completed'
         ''', (today,))
         todays_collections = cursor.fetchone()[0] or 0.0
 
         # This week
         week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_date >= ?
-            AND transaction_type IN ('Tuition', 'Fee', 'Payment')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date >= ?
+            AND status = 'completed'
         ''', (week_ago,))
         weekly_collections = cursor.fetchone()[0] or 0.0
 
         # This month
         month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_date >= ?
-            AND transaction_type IN ('Tuition', 'Fee', 'Payment')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date >= ?
+            AND status = 'completed'
         ''', (month_start,))
         monthly_collections = cursor.fetchone()[0] or 0.0
 
         # Year to date
         year_start = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
         cursor.execute('''
-            SELECT SUM(amount) FROM transactions
-            WHERE transaction_date >= ?
-            AND transaction_type IN ('Tuition', 'Fee', 'Payment')
+            SELECT SUM(amount) FROM payments
+            WHERE payment_date >= ?
+            AND status = 'completed'
         ''', (year_start,))
         ytd_revenue = cursor.fetchone()[0] or 0.0
 
@@ -8963,8 +8975,8 @@ def real_time_financial_dashboard():
 
         cursor.execute('''
             SELECT COUNT(DISTINCT student_id), SUM(amount)
-            FROM transactions
-            WHERE status = 'Pending'
+            FROM student_fees
+            WHERE status = 'pending' OR status = 'unpaid'
         ''')
         result = cursor.fetchone()
         pending_count = result[0] or 0
@@ -8972,8 +8984,8 @@ def real_time_financial_dashboard():
 
         cursor.execute('''
             SELECT COUNT(DISTINCT student_id), SUM(amount)
-            FROM transactions
-            WHERE status = 'Overdue'
+            FROM student_fees
+            WHERE status = 'overdue'
         ''')
         result = cursor.fetchone()
         overdue_count = result[0] or 0
@@ -8990,16 +9002,17 @@ def real_time_financial_dashboard():
 
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         cursor.execute('''
-            SELECT transaction_type, COUNT(*), SUM(amount)
-            FROM transactions
-            WHERE transaction_date >= ?
-            GROUP BY transaction_type
+            SELECT payment_method, COUNT(*), SUM(amount)
+            FROM payments
+            WHERE payment_date >= ?
+            GROUP BY payment_method
         ''', (yesterday,))
 
         recent_activity = cursor.fetchall()
         if recent_activity:
-            for trans_type, count, total in recent_activity:
-                print(f"  {trans_type:<20}     {count:>4} transactions    £{total:>12,.2f}")
+            for method, count, total in recent_activity:
+                method_display = method if method else 'Not Specified'
+                print(f"  {method_display:<20}     {count:>4} payments       £{total:>12,.2f}")
         else:
             print("  No recent activity recorded")
 
@@ -9012,18 +9025,18 @@ def real_time_financial_dashboard():
         # Collection rate
         cursor.execute('''
             SELECT
-                COUNT(CASE WHEN status = 'Completed' THEN 1 END) * 1.0 / COUNT(*) * 100
-            FROM transactions
-            WHERE transaction_date >= ?
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) * 1.0 / COUNT(*) * 100
+            FROM payments
+            WHERE payment_date >= ?
         ''', (month_start,))
         collection_rate = cursor.fetchone()[0] or 0.0
 
         # Average transaction value
         cursor.execute('''
             SELECT AVG(amount)
-            FROM transactions
-            WHERE transaction_date >= ?
-            AND status = 'Completed'
+            FROM payments
+            WHERE payment_date >= ?
+            AND status = 'completed'
         ''', (month_start,))
         avg_transaction = cursor.fetchone()[0] or 0.0
 

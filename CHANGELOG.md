@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Finance Reporting GUI - Multiple Database Schema & Error Handling Fixes
+
+**Seven Critical Fixes for Database Queries and Error Handling**
+
+**FIX 1: "no such table: fees" Errors**
+- Fixed 4 SQL queries referencing non-existent 'fees' table
+  - Problem: Code querying 'fees' table but actual table is 'student_fees'
+  - Also needed to join with 'fee_types' to get fee_name (not directly in student_fees)
+  - Solution: Updated all queries to use correct table and joins:
+    * Line 838: Budget variance report - JOIN student_fees with fee_types
+    * Line 850: Total fees query - Changed to student_fees
+    * Line 981: Outstanding fees query - Changed to student_fees
+    * Line 1004: Payment status distribution - Changed to student_fees
+  - Location: finance_reporting_gui.py
+
+**FIX 2: "no such column: activity_type" Error**
+- Fixed compliance audit query using wrong column name
+  - Problem: activity_log table has 'action' column, not 'activity_type'
+  - Solution: Changed query to use correct column:
+    * Line 1222-1227: GROUP BY action instead of activity_type
+  - Location: finance_reporting_gui.py:1220-1228
+
+**FIX 3: "no such table: transactions" Errors (10+ occurrences)**
+- Fixed multiple queries referencing non-existent 'transactions' table
+  - Problem: No 'transactions' table exists; should use 'payments' or 'student_fees'
+  - Also needed to adjust column names (payment_date vs transaction_date, status values)
+  - Solution: Replaced all instances with appropriate table:
+    * Lines 4676-4679: Student financial records query → payments
+    * Lines 4696-4698: Tax documentation query → payments
+    * Lines 5162-5170: Archiving function → payments (with note to retain records)
+    * Lines 8668-8677: Revenue forecasting → payments
+    * Lines 8920-8951: Revenue metrics (today/week/month/YTD) → payments
+    * Lines 8964-8979: Outstanding balances → student_fees (more appropriate)
+    * Lines 8992-9002: Recent activity → payments (grouped by payment_method)
+    * Lines 9015-9026: Quick stats (collection rate, avg) → payments
+  - Also adjusted status filters ('completed' vs 'Completed', 'pending' vs 'Pending')
+  - Location: finance_reporting_gui.py (multiple functions)
+
+**FIX 4: numpy SVD Convergence Error**
+- Added error handling for linear regression forecasting failure
+  - Problem: np.polyfit() throws LinAlgError when SVD doesn't converge
+  - Error: "SVD did not converge in Linear Least Squares"
+  - Solution: Wrapped polyfit in try-except with fallback:
+    * Catches np.linalg.LinAlgError and ValueError
+    * Falls back to simple average-based forecast
+    * Prints warning message for debugging
+  - Location: finance_reporting_gui.py:733-747
+
+**FIX 5: Tkinter Window State Error (2 occurrences)**
+- Fixed "bad argument 'zoomed': must be normal, iconic, or withdrawn" error
+  - Problem: state('zoomed') not valid on all platforms for Toplevel windows
+  - Solution: Replaced with geometry-based maximization:
+    * Set state to 'normal' first
+    * Calculate screen width/height
+    * Use geometry() to set window size to full screen
+    * Added try-except with fallback to 1200x800 if maximization fails
+  - Locations:
+    * Line 5454: show_automated_reporting_dialog()
+    * Line 5531: show_performance_monitoring_dialog()
+  - Location: finance_reporting_gui.py
+
+**FIX 6: Database Query Result Handling**
+- Fixed improper cursor.fetchone() usage causing missed results
+  - Problem: Calling fetchone() twice consumes the result
+  - Solution: Store result in variable first, then access it
+  - Locations:
+    * Lines 4673-4679: Student count queries
+    * Lines 4696-4698: Tax documentation queries
+
+**FIX 7: Payment Method Display in Reports**
+- Changed transaction_type grouping to payment_method grouping
+  - Problem: Payments table doesn't have transaction_type column
+  - Solution: Group by payment_method instead (Card, Cash, Bank Transfer, etc.)
+  - Updated display text from "transactions" to "payments"
+  - Added fallback for null payment_method values
+  - Location: finance_reporting_gui.py:8992-9002
+
+**TECHNICAL DETAILS:**
+- Database schema corrections: fees → student_fees (with fee_types join)
+- Database schema corrections: transactions → payments or student_fees
+- Column name corrections: activity_type → action, transaction_date → payment_date
+- Status value corrections: 'Completed'/'Pending' → 'completed'/'pending'/'unpaid'/'overdue'
+- Added numpy.linalg.LinAlgError exception handling
+- Replaced platform-specific window state() calls with geometry()
+- Fixed cursor result handling to avoid consuming results twice
+
+**FILES MODIFIED:**
+- university_system/modules/domain/finance/gui/finance_reporting_gui.py (~20 changes)
+
+**IMPACT:**
+- All 7 errors now resolved
+- Budget variance reports work correctly
+- Compliance audit queries execute successfully
+- Financial forecasting handles edge cases gracefully
+- Windows open properly on all platforms
+- Recent activity reports show correct data grouping
+
 ### Fixed & Enhanced - 2025-11-13: Financial Aid GUI - Multiple Fixes & Complete Disbursement System
 
 **Three Critical Fixes + Full-Featured Disbursement Management**
