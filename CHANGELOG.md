@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Finance Management GUI Chart Display Fix
+
+**Dashboard Charts AttributeError Resolution:**
+- Fixed `DashboardManager.update_dashboard_charts()` calling non-existent `self.ax1` attributes
+  - Problem: Charts axes (`ax1`, `ax2`, `ax3`, `ax4`) created in AnalyticsManager but accessed from DashboardManager
+  - Solution: Moved `update_dashboard_charts()` method from DashboardManager to AnalyticsManager (where axes are initialized)
+  - Updated `gui_generate_financial_dashboard()` to delegate chart updates to analytics manager
+  - Added safety check: method exits gracefully if axes not yet created
+  - Fixed `show_tab()` delegation to go through `self.gui.layout.show_tab()`
+  - Resolves: "DashboardManager object has no attribute ax1" error
+
+**Technical Implementation:**
+- Proper separation of concerns: charts in AnalyticsManager, summary in DashboardManager
+- Safe attribute checking with `hasattr()` before accessing matplotlib objects
+- Method delegation pattern: DashboardManager → AnalyticsManager for chart operations
+- 140+ lines moved to correct manager class
+
+**Files Modified:**
+- `dashboard.py`: Removed misplaced `update_dashboard_charts()` method (108 lines)
+- `dashboard.py`: Fixed `gui_generate_financial_dashboard()` delegation (30 lines modified)
+- `analytics.py`: Added proper `update_dashboard_charts()` class method (140 lines)
+
+**Impact:**
+- Financial Summary dashboard now generates without errors
+- Charts display correctly with revenue trends, payment methods, fees, and plans
+- Analytics tab properly updates with live data
+- Graceful degradation if analytics tab not yet initialized
+
 ### Fixed - 2025-11-13: Finance Management GUI Dialog and Manager Fixes
 
 **Dialog Size and Scrollbar Improvements (2 critical UX fixes):**

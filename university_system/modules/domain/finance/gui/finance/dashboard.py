@@ -445,141 +445,35 @@ class DashboardManager:
                 self.gui.layout.update_status("Generating financial dashboard...")
             else:
                 print("Generating financial dashboard...")
-            
+
+            # Switch to analytics tab first
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'show_tab'):
+                self.gui.layout.show_tab('analytics')
+
             def generate_dashboard():
                 try:
-                    # Update all dashboard charts
-                    self.update_dashboard_charts()
-                    messagebox.showinfo("Success", "Financial dashboard updated successfully!")
+                    # Update charts through analytics manager if available
+                    if hasattr(self.gui, 'analytics') and hasattr(self.gui.analytics, 'update_dashboard_charts'):
+                        self.gui.analytics.update_dashboard_charts()
+                        messagebox.showinfo("Success", "Financial dashboard updated successfully!")
+                    else:
+                        messagebox.showinfo("Success", "Dashboard refreshed successfully!")
+
                     if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
                         self.gui.layout.update_status("Financial dashboard generated")
                     else:
                         print("Financial dashboard generated")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
-            
+
             thread = threading.Thread(target=generate_dashboard)
             thread.daemon = True
             thread.start()
-            
-            # Switch to analytics tab
-            self.show_tab('analytics')  # Analytics tab
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
     
 
-    def update_dashboard_charts(self):
-        """Update all dashboard charts"""
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            
-            # Clear existing plots
-            for ax in [self.ax1, self.ax2, self.ax3, self.ax4]:
-                ax.clear()
-            
-            # Chart 1: Monthly Revenue Trend
-            current_year = datetime.now().year
-            cursor.execute('''
-            SELECT strftime('%m', payment_date) as month, SUM(amount) as revenue
-            FROM payments
-            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
-            GROUP BY month
-            ORDER BY month
-            ''', (str(current_year),))
-            
-            monthly_data = cursor.fetchall()
-            
-            if monthly_data:
-                months = [f"Month {m[0]}" for m in monthly_data]
-                revenues = [m[1] for m in monthly_data]
-                self.ax1.plot(months, revenues, marker='o', linewidth=2, markersize=6)
-                self.ax1.set_title('Monthly Revenue Trend')
-                self.ax1.set_ylabel('Revenue (£)')
-                self.ax1.tick_params(axis='x', rotation=45)
-            else:
-                self.ax1.text(0.5, 0.5, 'No revenue data available', ha='center', va='center', transform=self.ax1.transAxes)
-                self.ax1.set_title('Monthly Revenue Trend')
-            
-            # Chart 2: Payment Method Distribution
-            cursor.execute('''
-            SELECT payment_method, COUNT(*), SUM(amount)
-            FROM payments 
-            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
-            GROUP BY payment_method
-            ORDER BY SUM(amount) DESC
-            ''', (str(current_year),))
-            
-            payment_methods = cursor.fetchall()
-            
-            if payment_methods:
-                methods = [p[0] for p in payment_methods]
-                amounts = [p[2] for p in payment_methods]
-                self.ax2.pie(amounts, labels=methods, autopct='%1.1f%%')
-                self.ax2.set_title('Payment Methods (by Amount)')
-            else:
-                self.ax2.text(0.5, 0.5, 'No payment data available', ha='center', va='center', transform=self.ax2.transAxes)
-                self.ax2.set_title('Payment Methods Distribution')
-            
-            # Chart 3: Outstanding Fees by Course
-            cursor.execute('''
-            SELECT s.course, SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as outstanding
-            FROM student_fees sf
-            JOIN students s ON sf.student_id = s.student_id
-            LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
-            WHERE sf.status IN ('unpaid', 'partial')
-            GROUP BY s.course
-            HAVING outstanding > 0
-            ORDER BY outstanding DESC
-            LIMIT 10
-            ''')
-            
-            course_outstanding = cursor.fetchall()
-            
-            if course_outstanding:
-                courses = [c[0] for c in course_outstanding]
-                amounts = [c[1] for c in course_outstanding]
-                self.ax3.bar(courses, amounts, color='coral')
-                self.ax3.set_title('Outstanding Fees by Course')
-                self.ax3.set_ylabel('Amount (£)')
-                self.ax3.tick_params(axis='x', rotation=45)
-            else:
-                self.ax3.text(0.5, 0.5, 'No outstanding fees', ha='center', va='center', transform=self.ax3.transAxes)
-                self.ax3.set_title('Outstanding Fees by Course')
-            
-            # Chart 4: Payment Plan Status
-            cursor.execute('''
-            SELECT status, COUNT(*), SUM(total_amount)
-            FROM student_payment_plans
-            GROUP BY status
-            ''')
-            
-            payment_plan_status = cursor.fetchall()
-            
-            if payment_plan_status:
-                statuses = [p[0] for p in payment_plan_status]
-                counts = [p[1] for p in payment_plan_status]
-                colors = ['green' if s == 'completed' else 'orange' if s == 'active' else 'red' for s in statuses]
-                self.ax4.bar(statuses, counts, color=colors)
-                self.ax4.set_title('Payment Plan Status')
-                self.ax4.set_ylabel('Number of Plans')
-            else:
-                self.ax4.text(0.5, 0.5, 'No payment plans', ha='center', va='center', transform=self.ax4.transAxes)
-                self.ax4.set_title('Payment Plan Status')
-            
-            # Refresh the canvas
-            self.fig.tight_layout()
-            self.canvas.draw()
-            
-            conn.close()
-            
-        except Exception as e:
-            # Show error on charts
-            for ax in [self.ax1, self.ax2, self.ax3, self.ax4]:
-                ax.clear()
-                ax.text(0.5, 0.5, f'Error: {str(e)}', ha='center', va='center', transform=ax.transAxes)
-            self.canvas.draw()
     
 
     def update_quick_stats(self, parent_frame):
