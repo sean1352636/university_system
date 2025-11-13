@@ -27,6 +27,15 @@ class AdminPortal:
 
     def show_dashboard(self):
         """Display admin dashboard"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -134,11 +143,11 @@ class AdminPortal:
                     """).fetchone()
                     stats['pending_reviews'] = result['total'] if result else 0
 
-                # Active aid packages
+                # Active aid packages (using student_financial_aid table)
                 result = conn.execute("""
                     SELECT COUNT(*) as count
-                    FROM aid_packages
-                    WHERE status = 'active'
+                    FROM student_financial_aid
+                    WHERE status IN ('approved', 'disbursed')
                 """).fetchone()
                 stats['active_packages'] = result['count'] if result else 0
 
@@ -175,6 +184,15 @@ class AdminPortal:
 
     def show_aid_applications(self):
         """Show financial aid applications for review"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -408,6 +426,15 @@ class AdminPortal:
 
     def show_create_package(self, student_id: str = None, academic_year: str = None):
         """Show create aid package interface"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -549,6 +576,15 @@ class AdminPortal:
 
     def show_aid_types(self):
         """Show aid types management"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -589,6 +625,15 @@ class AdminPortal:
 
     def show_disbursements(self):
         """Show disbursements management"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -644,6 +689,15 @@ class AdminPortal:
 
     def show_reports(self):
         """Show reports interface"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -679,6 +733,15 @@ class AdminPortal:
 
     def show_fafsa_import(self):
         """Show FAFSA import interface"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title

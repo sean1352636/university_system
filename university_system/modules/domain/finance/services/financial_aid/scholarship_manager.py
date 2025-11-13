@@ -32,24 +32,23 @@ class ScholarshipManager:
         renewable: bool = False,
         max_renewals: Optional[int] = None,
         available_count: Optional[int] = None,
-        donor_name: Optional[str] = None
+        donor_name: Optional[str] = None,
+        academic_year: Optional[str] = None,
+        criteria: Optional[str] = None
     ) -> Optional[int]:
         """Create a new scholarship"""
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
 
-                criteria_json = json.dumps(eligibility_criteria) if eligibility_criteria else None
-
+                # Use the actual GUI database schema (scholarship_name, criteria, academic_year, etc.)
                 cursor.execute("""
                     INSERT INTO scholarships (
-                        name, description, amount, amount_type, scholarship_type,
-                        eligibility_criteria, min_gpa, deadline, renewable,
-                        max_renewals, available_count, donor_name
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (name, description, amount, amount_type, scholarship_type,
-                      criteria_json, min_gpa, deadline, 1 if renewable else 0,
-                      max_renewals, available_count, donor_name))
+                        scholarship_name, description, amount, academic_year,
+                        criteria, deadline, is_active, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, (name, description, amount, academic_year,
+                      criteria, deadline))
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:

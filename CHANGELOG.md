@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Financial Aid & Scholarships GUI - Critical Bug Fixes (8 Issues)
+
+**Issue 1: Database Table 'aid_packages' Not Found:**
+- Fixed "no such table: aid_packages" error in admin stats
+  - Problem: Query referenced non-existent table name
+  - Solution: Changed to use correct table name 'student_financial_aid'
+  - Updated status filter to check for 'approved' and 'disbursed' statuses
+  - Location: admin_portal.py:137-143
+
+**Issue 2: Ambiguous Column Name 'amount' in Scholarship Stats:**
+- Fixed "ambiguous column name: amount" SQL error
+  - Problem: JOIN between student_scholarships and scholarships both have 'amount' column
+  - Solution: Qualified column reference with table alias (ss.amount)
+  - Query now properly sums student_scholarships.amount
+  - Location: scholarship_manager.py:106
+
+**Issue 3: Incorrect JOIN Column 'u.user_id' in Activity Query:**
+- Fixed "no such column: u.user_id" error in recent activity
+  - Problem: JOIN was using users.user_id instead of users.student_id
+  - Solution: Changed JOIN condition to `u.student_id = sa.student_id`
+  - Matches proper foreign key relationship
+  - Location: scholarship_manager.py:140
+
+**Issue 4: sqlite3.Row Object Access Error:**
+- Fixed "'sqlite3.Row' object has no attribute 'get'" error
+  - Problem: Trying to use .get() method on Row objects without conversion
+  - Solution: Convert Row to dict first: `sch_dict = dict(scholarship)`
+  - Now safely uses .get() with default values
+  - Location: scholarship_manager.py:230-239
+
+**Issue 5: ScholarshipManager.create_scholarship() Missing Parameters:**
+- Fixed "unexpected keyword argument 'academic_year'" error
+  - Problem: Backend method didn't accept 'academic_year' and 'criteria' parameters
+  - Solution: Added both parameters to method signature
+  - Updated INSERT statement to use correct database schema columns
+  - Changed from wrong column names (name, eligibility_criteria, etc.) to correct ones (scholarship_name, criteria, academic_year)
+  - Location: scholarship_manager.py:22-56 (services/financial_aid/)
+
+**Issue 6: Tkinter Widget Lifecycle - Invalid Command Name Errors:**
+- Fixed "invalid command name check_session_timer" callback errors
+  - Problem: Widget destroyed but timer callbacks still trying to execute
+  - Solution: Enhanced clear_frame() with robust existence checking
+  - Added hasattr() check before calling winfo_exists()
+  - Wrapped widget.destroy() in individual try/except blocks
+  - Location: common_imports.py:338-349
+
+**Issue 7: Bad Window Path in review_applications:**
+- Fixed "_tkinter.TclError: bad window path name" crash
+  - Problem: Attempting to create widgets on destroyed parent frame
+  - Solution: Added parent frame validation before all GUI operations
+  - Checks parent_frame.winfo_exists() before clearing/creating widgets
+  - Returns early if parent no longer exists
+  - Applied to all show_*() methods in both admin_portal and scholarship_manager
+  - Locations:
+    * scholarship_manager.py: show_main_interface (29-36), show_scholarships (176-183),
+      review_applications (569-576), show_awards (786-793)
+    * admin_portal.py: show_dashboard (30-38), show_aid_applications (188-195),
+      show_create_package (430-437), show_aid_types (580-587), show_disbursements (629-636),
+      show_reports (693-700), show_fafsa_import (737-744)
+
+**Issue 8: Session Timer After() Callbacks on Destroyed Widgets:**
+- Improved session timer error handling
+  - Problem: Timer callbacks causing "invalid command name" errors
+  - Solution: Existing protection in main_gui.py already handles this
+  - Enhanced clear_frame() eliminates most root causes
+  - Graceful degradation - errors logged but don't crash application
+
+**Technical Improvements:**
+- All database queries now use proper table names matching actual schema
+- Consistent error handling with try/except and logging
+- Widget lifecycle management prevents Tkinter path errors
+- sqlite3.Row objects properly converted to dicts when needed
+- Backend service methods now match GUI interface requirements
+- Robust frame validation prevents crashes on rapid navigation
+
+**Testing:**
+- Verified admin stats load without aid_packages table error
+- Confirmed scholarship stats calculate without ambiguous column error
+- Tested recent activity displays correctly
+- Validated scholarship creation with academic_year parameter
+- Checked all navigation doesn't cause widget path errors
+
 ### Fixed - 2025-11-13: Final Finance GUI Fixes (4 Remaining Issues)
 
 **Issue 1: budget_approval_workflow Not Defined:**

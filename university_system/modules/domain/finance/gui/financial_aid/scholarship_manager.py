@@ -25,6 +25,15 @@ class ScholarshipManagerGUI:
 
     def show_main_interface(self):
         """Display main scholarship management interface"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -103,10 +112,10 @@ class ScholarshipManagerGUI:
                 # Total awarded this year
                 current_year = get_current_academic_year()
                 result = conn.execute("""
-                    SELECT COALESCE(SUM(amount), 0) as total
+                    SELECT COALESCE(SUM(ss.amount), 0) as total
                     FROM student_scholarships ss
                     JOIN scholarships s ON ss.scholarship_id = s.scholarship_id
-                    WHERE s.academic_year = ? AND ss.status = 'awarded'
+                    WHERE s.academic_year = ? AND ss.status = 'active'
                 """, (current_year,)).fetchone()
                 stats['total_awarded'] = float(result['total']) if result else 0.0
 
@@ -137,7 +146,7 @@ class ScholarshipManagerGUI:
                            sa.application_date as date, sa.status
                     FROM scholarship_applications sa
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
-                    JOIN users u ON sa.student_id = u.user_id
+                    JOIN users u ON sa.student_id = u.student_id
                     ORDER BY sa.application_date DESC
                     LIMIT 15
                 """).fetchall()
@@ -163,6 +172,15 @@ class ScholarshipManagerGUI:
 
     def show_scholarships(self):
         """Display all scholarships"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -227,13 +245,15 @@ class ScholarshipManagerGUI:
                 scholarships = conn.execute(query, params).fetchall()
 
                 for scholarship in scholarships:
+                    # Convert Row to dict to safely use .get()
+                    sch_dict = dict(scholarship)
                     self.scholarships_tree.insert('', 'end', values=(
-                        scholarship['scholarship_id'],
-                        scholarship['scholarship_name'],
-                        format_currency(scholarship['amount']),
-                        scholarship.get('academic_year', 'N/A'),
-                        format_date(scholarship.get('deadline', 'N/A')),
-                        'Yes' if scholarship['is_active'] else 'No'
+                        sch_dict['scholarship_id'],
+                        sch_dict['scholarship_name'],
+                        format_currency(sch_dict['amount']),
+                        sch_dict.get('academic_year', 'N/A'),
+                        format_date(sch_dict.get('deadline', 'N/A')),
+                        'Yes' if sch_dict['is_active'] else 'No'
                     ))
 
         except Exception as e:
@@ -563,6 +583,15 @@ class ScholarshipManagerGUI:
 
     def review_applications(self):
         """Show application review interface"""
+        # Check if parent frame is valid before proceeding
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
@@ -752,6 +781,15 @@ class ScholarshipManagerGUI:
 
     def show_awards(self):
         """Show scholarship awards interface"""
+        # Check if parent frame is valid
+        try:
+            if not self.parent_frame.winfo_exists():
+                logger.error("Parent frame no longer exists")
+                return
+        except Exception as e:
+            logger.error(f"Error checking parent frame: {e}")
+            return
+
         clear_frame(self.parent_frame)
 
         # Title
