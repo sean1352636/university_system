@@ -28,10 +28,10 @@ class ScholarshipManagerGUI:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -175,10 +175,10 @@ class ScholarshipManagerGUI:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -210,7 +210,8 @@ class ScholarshipManagerGUI:
         btn_frame.pack(fill='x', padx=10, pady=10)
 
         ttk.Button(btn_frame, text="Edit", command=self._edit_scholarship).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Deactivate", command=self._toggle_scholarship_status).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Activate", command=lambda: self._change_scholarship_status(True), style='Success.TButton').pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Deactivate", command=lambda: self._change_scholarship_status(False), style='Danger.TButton').pack(side='left', padx=5)
         ttk.Button(btn_frame, text="View Applications", command=self._view_scholarship_applications).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Create New", command=self.create_scholarship, style='Success.TButton').pack(side='right', padx=5)
 
@@ -497,8 +498,8 @@ class ScholarshipManagerGUI:
             show_error("Error", f"Failed to update scholarship: {str(e)}")
             return False
 
-    def _toggle_scholarship_status(self):
-        """Toggle scholarship active status"""
+    def _change_scholarship_status(self, activate: bool):
+        """Activate or deactivate scholarship"""
         selection = self.scholarships_tree.selection()
         if not selection:
             show_warning("Selection Required", "Please select a scholarship")
@@ -508,9 +509,19 @@ class ScholarshipManagerGUI:
         scholarship_id = item['values'][0]
         current_status = item['values'][5]
 
-        if confirm_action(f"{'Deactivate' if current_status == 'Yes' else 'Activate'} this scholarship?"):
+        # Check if already in desired state
+        is_currently_active = (current_status == 'Yes')
+        if activate and is_currently_active:
+            show_warning("Already Active", "This scholarship is already active")
+            return
+        if not activate and not is_currently_active:
+            show_warning("Already Inactive", "This scholarship is already inactive")
+            return
+
+        action = 'Activate' if activate else 'Deactivate'
+        if confirm_action(f"{action} this scholarship?"):
             try:
-                new_status = 0 if current_status == 'Yes' else 1
+                new_status = 1 if activate else 0
 
                 with transaction() as conn:
                     conn.execute("""
@@ -520,10 +531,10 @@ class ScholarshipManagerGUI:
                     """, (new_status, scholarship_id))
 
                 log_activity('update', 'scholarship', scholarship_id, {
-                    'action': 'activated' if new_status else 'deactivated'
+                    'action': 'activated' if activate else 'deactivated'
                 })
 
-                show_success("Success", "Scholarship status updated!")
+                show_success("Success", f"Scholarship {action.lower()}d successfully!")
                 self._load_all_scholarships()
 
             except Exception as e:
@@ -562,7 +573,7 @@ class ScholarshipManagerGUI:
                 applications = conn.execute("""
                     SELECT sa.*, u.username, u.email
                     FROM scholarship_applications sa
-                    JOIN users u ON sa.student_id = u.user_id
+                    JOIN users u ON sa.student_id = u.student_id
                     WHERE sa.scholarship_id = ?
                     ORDER BY sa.application_date DESC
                 """, (scholarship_id,)).fetchall()
@@ -630,7 +641,7 @@ class ScholarshipManagerGUI:
                 applications = conn.execute("""
                     SELECT sa.*, u.username, s.scholarship_name
                     FROM scholarship_applications sa
-                    JOIN users u ON sa.student_id = u.user_id
+                    JOIN users u ON sa.student_id = u.student_id
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.status = 'pending'
                     ORDER BY sa.application_date ASC
@@ -666,7 +677,7 @@ class ScholarshipManagerGUI:
                 app = conn.execute("""
                     SELECT sa.*, u.username, u.email, s.scholarship_name, s.amount
                     FROM scholarship_applications sa
-                    JOIN users u ON sa.student_id = u.user_id
+                    JOIN users u ON sa.student_id = u.student_id
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.application_id = ?
                 """, (app_id,)).fetchone()
@@ -784,10 +795,10 @@ class ScholarshipManagerGUI:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -812,7 +823,7 @@ class ScholarshipManagerGUI:
                 awards = conn.execute("""
                     SELECT ss.*, u.username, s.scholarship_name
                     FROM student_scholarships ss
-                    JOIN users u ON ss.student_id = u.user_id
+                    JOIN users u ON ss.student_id = u.student_id
                     JOIN scholarships s ON ss.scholarship_id = s.scholarship_id
                     ORDER BY ss.awarded_date DESC
                 """).fetchall()

@@ -30,10 +30,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -187,10 +187,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -248,7 +248,7 @@ class AdminPortal:
                     query = """
                         SELECT fa.*, u.username
                         FROM financial_aid_applications fa
-                        JOIN users u ON fa.student_id = u.user_id
+                        JOIN users u ON fa.student_id = u.student_id
                         WHERE 1=1
                     """
                     params = []
@@ -300,7 +300,7 @@ class AdminPortal:
                     app = conn.execute("""
                         SELECT fa.*, u.username, u.email
                         FROM financial_aid_applications fa
-                        JOIN users u ON fa.student_id = u.user_id
+                        JOIN users u ON fa.student_id = u.student_id
                         WHERE fa.application_id = ?
                     """, (app_id,)).fetchone()
                 except Exception as e:
@@ -429,10 +429,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -579,10 +579,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -628,10 +628,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -668,7 +668,7 @@ class AdminPortal:
                     SELECT d.*, u.username, sfa.student_id
                     FROM disbursements d
                     JOIN student_financial_aid sfa ON d.aid_id = sfa.aid_id
-                    JOIN users u ON sfa.student_id = u.user_id
+                    JOIN users u ON sfa.student_id = u.student_id
                     WHERE d.status = 'pending'
                     ORDER BY d.scheduled_date ASC
                 """).fetchall()
@@ -692,10 +692,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)
@@ -736,10 +736,10 @@ class AdminPortal:
         # Check if parent frame is valid
         try:
             if not self.parent_frame.winfo_exists():
-                logger.error("Parent frame no longer exists")
+                logger.debug("Parent frame no longer exists (likely window closed)")
                 return
         except Exception as e:
-            logger.error(f"Error checking parent frame: {e}")
+            logger.debug(f"Parent frame check failed: {e}")
             return
 
         clear_frame(self.parent_frame)

@@ -122,7 +122,7 @@ class FinancialAidGUI:
                   style='Secondary.TButton').pack(side='left', padx=5)
 
         ttk.Button(button_frame,
-                  text="🏠 Return to Homepage",
+                  text="✖ Close Window",
                   command=self.return_to_homepage,
                   style='Primary.TButton').pack(side='left', padx=5)
 
@@ -307,7 +307,7 @@ class FinancialAidGUI:
                 self.parent.destroy()
 
     def return_to_homepage(self):
-        """Return to main homepage (main_gui.py)"""
+        """Close the Financial Aid window"""
         try:
             # Close current window
             if self.root and isinstance(self.root, tk.Tk):
@@ -320,20 +320,18 @@ class FinancialAidGUI:
                 if isinstance(self.parent, tk.Toplevel):
                     self.parent.destroy()
 
-            # Import and launch main GUI
-            from university_system.modules.shared.gui.main_gui import UnifiedManagementGUI
-            main_gui = UnifiedManagementGUI(self.auth)
-            main_gui.run()
-
         except Exception as e:
-            print(f"Error returning to homepage: {e}")
+            logger.error(f"Error closing window: {e}")
             import traceback
             traceback.print_exc()
-            # If failed, just close this window
-            if self.root:
-                self.root.destroy()
-            elif self.parent and isinstance(self.parent, tk.Toplevel):
-                self.parent.destroy()
+            # If failed, try to destroy root or parent
+            try:
+                if self.root:
+                    self.root.destroy()
+                elif self.parent and isinstance(self.parent, tk.Toplevel):
+                    self.parent.destroy()
+            except:
+                pass
 
 
 def launch_financial_aid_gui(parent=None, auth=None):

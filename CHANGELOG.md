@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Financial Aid GUI - Additional Fixes & UX Improvements (4 Issues)
+
+**Issue 1: Remaining 'u.user_id' JOIN Errors (7 locations):**
+- Fixed all remaining "no such column: u.user_id" errors
+  - Problem: Multiple queries still using incorrect JOIN column
+  - Solution: Changed all JOINs from `u.user_id` to `u.student_id`
+  - Fixed in 7 queries across scholarship_manager.py and admin_portal.py:
+    * View scholarship applications (line 565)
+    * Load pending applications (line 633)
+    * View application details (line 669)
+    * Show scholarship awards (line 815)
+    * Load financial aid applications (line 251)
+    * View aid application details (line 303)
+    * Load disbursements (line 671)
+  - All queries now properly join on users.student_id foreign key
+
+**Issue 2: Add Activate Button for Scholarships:**
+- Added dedicated "Activate" button alongside "Deactivate" button
+  - Replaced generic toggle button with explicit Activate/Deactivate buttons
+  - Activate button uses Success.TButton style (green)
+  - Deactivate button uses Danger.TButton style (red)
+  - New _change_scholarship_status() method with activation boolean parameter
+  - Prevents redundant actions (warns if already in desired state)
+  - Location: scholarship_manager.py:213-214, 501-542
+
+**Issue 3: Exit Behavior - Close Window Instead of Homepage:**
+- Changed "Return to Homepage" to simply close the window
+  - Problem: Exit button destroyed window and launched new main GUI
+  - Solution: Now just closes current window cleanly
+  - Updated button label: "🏠 Return to Homepage" → "✖ Close Window"
+  - Removed code that relaunched UnifiedManagementGUI
+  - Better user experience - doesn't unexpectedly open new windows
+  - Location: financial_aid_gui.py:125-126, 309-334
+
+**Issue 4: Reduced Log Noise - Parent Frame Checks:**
+- Changed parent frame validation logs from ERROR to DEBUG level
+  - Problem: Seeing ERROR logs when window closed during navigation
+  - Solution: Changed log level to DEBUG since these are expected edge cases
+  - Message updated: "Parent frame no longer exists" → "Parent frame no longer exists (likely window closed)"
+  - Applied to all 11 validation points (4 in scholarship_manager, 7 in admin_portal)
+  - Prevents log spam while maintaining crash protection
+  - Locations: scholarship_manager.py (4 methods), admin_portal.py (7 methods)
+
+**Technical Details:**
+- All database JOINs now use correct users.student_id foreign key
+- Button styling follows consistent color scheme (green=activate, red=deactivate)
+- Window lifecycle managed cleanly without unexpected GUI launches
+- Log levels appropriately reflect severity (DEBUG for edge cases, ERROR for real issues)
+- All parent frame checks remain in place for crash prevention
+
+**User Experience Improvements:**
+- Clearer button labels (Activate vs Deactivate instead of generic toggle)
+- No unexpected window launches when exiting
+- Reduced error log noise from normal window operations
+- All database queries work correctly with proper foreign key relationships
+
 ### Fixed - 2025-11-13: Financial Aid & Scholarships GUI - Critical Bug Fixes (8 Issues)
 
 **Issue 1: Database Table 'aid_packages' Not Found:**
