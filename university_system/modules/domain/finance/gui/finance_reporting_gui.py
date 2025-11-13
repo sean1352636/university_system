@@ -5732,18 +5732,18 @@ For technical support, contact your system administrator.
                 conn = get_connection()
                 cursor = conn.cursor()
 
-                # Get department data
+                # Get department data (using course as proxy for department)
                 cursor.execute('''
                 SELECT
-                    s.department,
+                    s.course,
                     COUNT(DISTINCT sf.student_id) as student_count,
                     SUM(sf.amount) as total_fees,
-                    SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as collected,
+                    SUM(CASE WHEN sf.status = 'paid' OR sf.status = 'completed' THEN sf.amount ELSE 0 END) as collected,
                     AVG(sf.amount) as avg_fee
                 FROM student_fees sf
-                JOIN students s ON sf.student_id = s.id
-                WHERE s.department IS NOT NULL
-                GROUP BY s.department
+                JOIN students s ON sf.student_id = s.student_id
+                WHERE s.course IS NOT NULL
+                GROUP BY s.course
                 ORDER BY total_fees DESC
                 ''')
 
@@ -6607,27 +6607,30 @@ Integration Examples:
         thread.daemon = True
         thread.start()
 
-    def show_benchmarking_results(self, benchmark_data):
-        """Show peer benchmarking results in new window"""
+    def show_benchmarking_results_UNUSED_DUPLICATE(self, benchmark_data):
+        """UNUSED DUPLICATE - Show peer benchmarking results in new window"""
+        # NOTE: This is a duplicate function that expects different data structure
+        # The active implementation is at line ~5861
         benchmark_window = tk.Toplevel(self.root)
         benchmark_window.title("Peer Institution Benchmarking Results")
         benchmark_window.geometry("900x700")
-        
+
         main_frame = ttk.Frame(benchmark_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(main_frame, text="Peer Institution Benchmarking", 
+
+        ttk.Label(main_frame, text="Peer Institution Benchmarking",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Our performance summary
         our_frame = ttk.LabelFrame(main_frame, text="Our Institution Performance", padding="10")
         our_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        our_perf = benchmark_data['our_performance']
-        ttk.Label(our_frame, text=f"Collection Rate: {our_perf['collection_rate']:.1f}%").pack(anchor=tk.W)
-        ttk.Label(our_frame, text=f"Average Fee: £{our_perf['avg_fee']:,.0f}").pack(anchor=tk.W)
-        ttk.Label(our_frame, text=f"Student Count: {our_perf['student_count']:,}").pack(anchor=tk.W)
-        ttk.Label(our_frame, text=f"Percentile Ranking: {our_perf['percentile']:.0f}th percentile").pack(anchor=tk.W)
+
+        # Use .get() to avoid KeyError
+        our_perf = benchmark_data.get('our_performance', {})
+        ttk.Label(our_frame, text=f"Collection Rate: {our_perf.get('collection_rate', 0):.1f}%").pack(anchor=tk.W)
+        ttk.Label(our_frame, text=f"Average Fee: £{our_perf.get('avg_fee', 0):,.0f}").pack(anchor=tk.W)
+        ttk.Label(our_frame, text=f"Student Count: {our_perf.get('student_count', 0):,}").pack(anchor=tk.W)
+        ttk.Label(our_frame, text=f"Percentile Ranking: {our_perf.get('percentile', 50):.0f}th percentile").pack(anchor=tk.W)
         
         # Peer comparison
         peer_frame = ttk.LabelFrame(main_frame, text="Peer Comparison", padding="10")
@@ -7921,21 +7924,71 @@ class PaymentPredictionML:
     
     def predict_payment_risk(self, student_ids=None):
         """Predict payment risk for students"""
-        if student_ids is None:
-            # Get all students if none specified
-            try:
-                from university_system.infrastructure.database.db import get_connection
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute('SELECT student_id FROM students LIMIT 10')
-                student_ids = [row[0] for row in cursor.fetchall()]
-                conn.close()
-            except:
-                student_ids = []
-
-        print(f"🔮 Predicting payment risk for {len(student_ids)} students...")
+        print(f"🔮 Predicting payment risk for students...")
         print("   Using historical payment behavior analysis")
-        return {"high_risk": [], "medium_risk": [], "low_risk": student_ids}
+
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get students with fee and payment information
+            cursor.execute('''
+                SELECT
+                    s.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    COALESCE(SUM(sf.amount), 0) as total_fees,
+                    COUNT(DISTINCT p.payment_id) as payments_made,
+                    COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as total_paid
+                FROM students s
+                LEFT JOIN student_fees sf ON s.student_id = sf.student_id
+                LEFT JOIN payments p ON s.student_id = p.student_id
+                WHERE s.status = 'Active'
+                GROUP BY s.student_id, student_name
+                LIMIT 50
+            ''')
+
+            students_data = cursor.fetchall()
+            conn.close()
+
+            risk_students = []
+            for row in students_data:
+                student_id, student_name, total_fees, payments_made, total_paid = row
+
+                # Calculate risk score based on payment behavior
+                if total_fees > 0:
+                    payment_ratio = total_paid / total_fees
+
+                    # Determine risk level
+                    if payment_ratio >= 0.8:
+                        risk_level = 'Low'
+                        risk_score = 0.2
+                    elif payment_ratio >= 0.5:
+                        risk_level = 'Medium'
+                        risk_score = 0.5
+                    else:
+                        risk_level = 'High'
+                        risk_score = 0.8
+                else:
+                    risk_level = 'Low'
+                    risk_score = 0.1
+
+                risk_students.append({
+                    'student_id': student_id,
+                    'student_name': student_name,
+                    'total_fees': total_fees,
+                    'payments_made': payments_made,
+                    'total_paid': total_paid,
+                    'risk_level': risk_level,
+                    'risk_score': risk_score
+                })
+
+            print(f"✓ Analyzed {len(risk_students)} students")
+            return risk_students
+
+        except Exception as e:
+            print(f"Error predicting payment risk: {e}")
+            return []
 
 class AnomalyDetector:
     """Detect anomalous payment patterns"""
@@ -8785,27 +8838,48 @@ def generate_comprehensive_budget_variance_report():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get budget allocations
-        print("[1/4] Analyzing budget allocations...")
-        cursor.execute('''
-            SELECT department, SUM(allocated_amount), SUM(spent_amount)
-            FROM budget_allocations
-            WHERE fiscal_year = ?
-            GROUP BY department
-        ''', (datetime.now().year,))
+        # Get budget allocations - using fees vs payments as proxy for budget variance
+        print("[1/4] Analyzing budget variance (fees vs payments)...")
 
-        budget_data = cursor.fetchall()
+        # Check if budget_allocations table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='budget_allocations'")
+        has_budget_table = cursor.fetchone() is not None
+
+        if has_budget_table:
+            cursor.execute('''
+                SELECT department, SUM(allocated_amount), SUM(spent_amount)
+                FROM budget_allocations
+                WHERE fiscal_year = ?
+                GROUP BY department
+            ''', (datetime.now().year,))
+            budget_data = cursor.fetchall()
+        else:
+            # Use student fees (budgeted) vs payments (actual) by course as proxy
+            cursor.execute('''
+                SELECT
+                    s.course as category,
+                    SUM(sf.amount) as budgeted_fees,
+                    SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END) as actual_payments
+                FROM student_fees sf
+                JOIN students s ON sf.student_id = s.student_id
+                LEFT JOIN payments p ON s.student_id = p.student_id
+                WHERE s.course IS NOT NULL
+                GROUP BY s.course
+                ORDER BY budgeted_fees DESC
+                LIMIT 10
+            ''')
+            budget_data = cursor.fetchall()
 
         if not budget_data:
-            print("  ⚠ No budget data found for current fiscal year")
+            print("  ⚠ No budget data available")
             print(f"  Using sample data for demonstration...")
             # Sample data
             budget_data = [
-                ('Academics', 500000, 485000),
-                ('Student Services', 300000, 312000),
-                ('Facilities', 250000, 248000),
-                ('Administration', 200000, 195000),
-                ('IT Services', 150000, 158000)
+                ('Computer Science', 500000, 485000),
+                ('Business Administration', 300000, 312000),
+                ('Engineering', 250000, 248000),
+                ('Medicine', 200000, 195000),
+                ('Law', 150000, 158000)
             ]
 
         total_allocated = sum(row[1] for row in budget_data)
