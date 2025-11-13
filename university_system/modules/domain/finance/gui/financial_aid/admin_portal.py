@@ -1820,7 +1820,7 @@ This is an automated report from the University Financial Aid System.
             """
 
             send_email(
-                to=admin_email,
+                recipient_email=admin_email,
                 subject=subject,
                 body=body
             )

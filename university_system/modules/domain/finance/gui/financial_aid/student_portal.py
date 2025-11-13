@@ -476,7 +476,7 @@ class StudentPortal:
                     email = user_dict.get('email')
                     if email:
                         send_email(
-                            to=email,
+                            recipient_email=email,
                             subject="Scholarship Application Submitted",
                             body=f"Your application for scholarship ID {scholarship_id} has been submitted successfully."
                         )
@@ -669,7 +669,7 @@ class StudentPortal:
                     email = user_dict.get('email')
                     if email:
                         send_email(
-                            to=email,
+                            recipient_email=email,
                             subject="Financial Aid Application Submitted",
                             body=f"Your financial aid application for {app_data['academic_year']} has been submitted."
                         )
