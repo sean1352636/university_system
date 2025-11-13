@@ -1483,20 +1483,28 @@ Click the button above to open the full Email Manager interface."""
                     ))
 
                     conn.commit()
+                    conn.close()
                     messagebox.showinfo("Success", "Health record updated successfully")
                     self.search_health_records()  # Refresh list
                     dialog.destroy()
 
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to update record: {e}")
+                    if conn:
+                        conn.close()
+
+            def on_cancel():
+                conn.close()
+                dialog.destroy()
 
             buttons_frame = ttk.Frame(main_frame)
             buttons_frame.pack(pady=10)
 
             ttk.Button(buttons_frame, text="Save", command=save_updates).pack(side='left', padx=5)
-            ttk.Button(buttons_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(buttons_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
 
-            conn.close()
+            # Close connection when dialog is closed via X button
+            dialog.protocol("WM_DELETE_WINDOW", on_cancel)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load record: {e}")
@@ -3540,10 +3548,10 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                SELECT vaccine_name, vaccination_date, dose_number, next_due_date, provider
-                FROM vaccinations
-                WHERE user_id = ?
-                ORDER BY vaccination_date DESC
+                SELECT vaccine_name, administered_date, expiry_date, administered_by, lot_number
+                FROM vaccination_records
+                WHERE student_id = ?
+                ORDER BY administered_date DESC
                 """, [user_id])
 
                 vaccinations = cursor.fetchall()
@@ -3556,10 +3564,10 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
                 if vaccinations:
                     for vac in vaccinations:
                         report += f"Vaccine: {vac[0]}\n"
-                        report += f"Date: {vac[1]}\n"
-                        report += f"Dose: {vac[2] or 'N/A'}\n"
-                        report += f"Next Due: {vac[3] or 'N/A'}\n"
-                        report += f"Provider: {vac[4] or 'Not specified'}\n"
+                        report += f"Administered Date: {vac[1]}\n"
+                        report += f"Expiry Date: {vac[2] or 'N/A'}\n"
+                        report += f"Administered By: {vac[3] or 'Not specified'}\n"
+                        report += f"Lot Number: {vac[4] or 'N/A'}\n"
                         report += "-" * 40 + "\n"
                 else:
                     report += "No vaccination records found.\n"
@@ -3583,9 +3591,9 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
 
                 # Health records summary
                 cursor.execute("""
-                SELECT record_type, COUNT(*) as count, MAX(created_date) as latest
+                SELECT record_type, COUNT(*) as count, MAX(created_at) as latest
                 FROM health_records
-                WHERE user_id = ?
+                WHERE student_id = ?
                 GROUP BY record_type ORDER BY latest DESC
                 """, [user_id])
 
@@ -3600,8 +3608,8 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
 
                 # Vaccination summary
                 cursor.execute("""
-                SELECT COUNT(*) as total_vaccines, MAX(vaccination_date) as latest_vaccine
-                FROM vaccinations WHERE user_id = ?
+                SELECT COUNT(*) as total_vaccines, MAX(administered_date) as latest_vaccine
+                FROM vaccination_records WHERE student_id = ?
                 """, [user_id])
 
                 vac_summary = cursor.fetchone()
@@ -3622,8 +3630,8 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
                 cursor = conn.cursor()
                 cursor.execute("""
                 SELECT appointment_date, appointment_time, appointment_type, provider, status, notes
-                FROM appointments
-                WHERE user_id = ?
+                FROM health_appointments
+                WHERE student_id = ?
                 ORDER BY appointment_date DESC, appointment_time DESC
                 """, [user_id])
 
@@ -3658,10 +3666,10 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                SELECT record_type, condition_name, diagnosis_date, treatment, provider, notes
-                FROM health_records
-                WHERE user_id = ? AND record_type IN ('medical_history', 'diagnosis', 'treatment')
-                ORDER BY diagnosis_date DESC
+                SELECT condition_name, icd_code, severity, diagnosed_date, status, provider, notes
+                FROM medical_conditions
+                WHERE student_id = ?
+                ORDER BY diagnosed_date DESC
                 """, [user_id])
 
                 records = cursor.fetchall()
@@ -3673,13 +3681,14 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
 
                 if records:
                     for record in records:
-                        report += f"Type: {record[0]}\n"
-                        report += f"Condition: {record[1] or 'Not specified'}\n"
-                        report += f"Date: {record[2] or 'Not specified'}\n"
-                        report += f"Treatment: {record[3] or 'Not specified'}\n"
-                        report += f"Provider: {record[4] or 'Not specified'}\n"
-                        if record[5]:
-                            report += f"Notes: {record[5]}\n"
+                        report += f"Condition: {record[0] or 'Not specified'}\n"
+                        report += f"ICD Code: {record[1] or 'N/A'}\n"
+                        report += f"Severity: {record[2] or 'Not specified'}\n"
+                        report += f"Diagnosed Date: {record[3] or 'Not specified'}\n"
+                        report += f"Status: {record[4] or 'Active'}\n"
+                        report += f"Provider: {record[5] or 'Not specified'}\n"
+                        if record[6]:
+                            report += f"Notes: {record[6]}\n"
                         report += "-" * 40 + "\n"
                 else:
                     report += "No medical history found.\n"

@@ -7,6 +7,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Health Portal GUI - Multiple Database Errors (5 Critical Fixes)
+
+**Fixed 5 critical database errors preventing health portal reports and updates from working**
+
+This commit fixes multiple database-related errors in the Health Portal GUI including table name mismatches, column name errors, and premature connection closing.
+
+**ERRORS FIXED:**
+
+**1. "cannot operate on closed database" - Update Health Record**
+- **Location**: Line 1499
+- **Problem**: Database connection closed before dialog's save button could be used
+- **Fix**:
+  - Moved `conn.close()` into `save_updates()` function after commit (line 1486)
+  - Added `on_cancel()` function to close connection when dialog cancelled (line 1496)
+  - Added `dialog.protocol("WM_DELETE_WINDOW", on_cancel)` to handle X button (line 1507)
+- **Impact**: Update health record now works correctly
+
+**2. "no such table: vaccinations" - Immunization Report (3 locations)**
+- **Location**: Lines 3552, 3612, 3896
+- **Problem**: Table name is `vaccination_records`, not `vaccinations`
+- **Fix**:
+  - Line 3552: `FROM vaccinations` → `FROM vaccination_records`
+  - Line 3612: `FROM vaccinations WHERE user_id` → `FROM vaccination_records WHERE student_id`
+  - Also fixed column names:
+    - `vaccination_date` → `administered_date`
+    - `dose_number, next_due_date` → `expiry_date, administered_by, lot_number`
+  - Updated report display to match new columns (lines 3566-3570)
+- **Impact**: Immunization report now generates correctly
+
+**3. "no such column: created_date" - Health Summary Report**
+- **Location**: Line 3594
+- **Problem**: Column name is `created_at`, not `created_date`
+- **Fix**:
+  - `MAX(created_date)` → `MAX(created_at)`
+  - `WHERE user_id` → `WHERE student_id` (line 3596)
+- **Impact**: Health summary report now works
+
+**4. "no such table: appointments" - Appointment History Report**
+- **Location**: Line 3633
+- **Problem**: Table name is `health_appointments`, not `appointments`
+- **Fix**:
+  - `FROM appointments` → `FROM health_appointments`
+  - `WHERE user_id` → `WHERE student_id` (line 3634)
+- **Impact**: Appointment history report now generates
+
+**5. "no such column: condition_name" - Medical History Report**
+- **Location**: Line 3669-3672
+- **Problem**: Query used wrong table with non-existent columns
+- **Original**:
+  - Queried `health_records` table
+  - Expected columns: `condition_name, diagnosis_date, treatment` (don't exist)
+- **Fix**:
+  - Changed to query `medical_conditions` table (line 3670)
+  - Used correct columns: `condition_name, icd_code, severity, diagnosed_date, status, provider, notes`
+  - `WHERE user_id` → `WHERE student_id` (line 3671)
+  - Updated report display to match medical_conditions schema (lines 3684-3691)
+- **Impact**: Medical history report now works with proper data
+
+**SUMMARY OF TABLE/COLUMN FIXES:**
+
+| Wrong Reference | Correct Reference | Occurrences Fixed |
+|----------------|-------------------|-------------------|
+| `vaccinations` | `vaccination_records` | 3 |
+| `appointments` | `health_appointments` | 1 |
+| `created_date` | `created_at` | 1 |
+| `user_id` | `student_id` | 5 |
+| `vaccination_date` | `administered_date` | 2 |
+| health_records (medical history) | medical_conditions | 1 |
+
+**TECHNICAL DETAILS:**
+- Connection management: Proper cleanup in all code paths (success, error, cancel)
+- Dialog cleanup: Handle X button close with `protocol("WM_DELETE_WINDOW")`
+- Schema alignment: All queries now match actual database schema
+- Error handling: Connections closed even on exceptions
+
+**RESULT:**
+✓ Health record updates work without database errors
+✓ Immunization reports generate correctly
+✓ Health summary reports display accurate data
+✓ Appointment history reports work
+✓ Medical history reports show proper medical conditions
+✓ No more "closed database" errors
+✓ No more "table not found" errors
+✓ No more "column not found" errors
+
+**FILE CHANGED:**
+- `university_system/modules/domain/health/gui/health_portal_gui.py` (13 fixes across 5 functions)
+
+---
+
 ### Fixed - 2025-11-13: Health Portal GUI - Database Column Name Error (email)
 
 **Fixed "no such column: email" database error**
