@@ -213,11 +213,100 @@ class TransactionManager:
                 method = simpledialog.askstring("Payment", "Payment Method (card/cash/bank):", initialvalue="card")
                 if method:
                     try:
-                        # Here you would save the payment to database
-                        messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded for student {student_id}")
+                        # Get authentication for audit trail
+                        from university_system.infrastructure.shared_context import get_auth
+                        auth = get_auth()
+                        username = 'system'
+                        if auth and hasattr(auth, 'is_logged_in') and auth.is_logged_in():
+                            user = auth.get_current_user()
+                            username = user.get('username', 'system') if user else 'system'
+
+                        # Save payment to database
+                        conn = get_connection()
+                        cursor = conn.cursor()
+
+                        # Verify student exists
+                        cursor.execute('SELECT COUNT(*) FROM students WHERE student_id = ?', (student_id,))
+                        if cursor.fetchone()[0] == 0:
+                            messagebox.showerror("Error", f"Student {student_id} not found in database")
+                            conn.close()
+                            return
+
+                        # Insert payment record
+                        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        payment_date = datetime.now().strftime('%Y-%m-%d')
+                        cursor.execute('''
+                            INSERT INTO payments
+                            (student_id, amount, payment_method, payment_date, status, created_by, created_at)
+                            VALUES (?, ?, ?, ?, 'completed', ?, ?)
+                        ''', (student_id, amount, method, payment_date, username, now))
+
+                        payment_id = cursor.lastrowid
+
+                        # Auto-allocate to outstanding fees
+                        cursor.execute('''
+                            SELECT sf.student_fee_id, ft.fee_name, sf.amount,
+                                   COALESCE(SUM(pa.amount), 0) as paid_amount,
+                                   (sf.amount - COALESCE(SUM(pa.amount), 0)) as outstanding
+                            FROM student_fees sf
+                            JOIN fee_types ft ON sf.fee_type_id = ft.fee_type_id
+                            LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
+                            WHERE sf.student_id = ? AND sf.status != 'paid'
+                            GROUP BY sf.student_fee_id
+                            HAVING outstanding > 0
+                            ORDER BY sf.due_date
+                        ''', (student_id,))
+
+                        fees = cursor.fetchall()
+                        remaining = amount
+                        allocations = []
+
+                        for fee in fees:
+                            if remaining <= 0:
+                                break
+                            fee_id, fee_name, total_amount, paid, outstanding = fee
+                            allocation = min(remaining, outstanding)
+
+                            # Create allocation
+                            cursor.execute('''
+                                INSERT INTO payment_allocations (payment_id, student_fee_id, amount, created_at)
+                                VALUES (?, ?, ?, ?)
+                            ''', (payment_id, fee_id, allocation, now))
+
+                            # Update fee status
+                            new_paid = paid + allocation
+                            new_status = 'paid' if new_paid >= total_amount else 'partial'
+                            cursor.execute('''
+                                UPDATE student_fees SET status = ?, updated_at = ?
+                                WHERE student_fee_id = ?
+                            ''', (new_status, now, fee_id))
+
+                            remaining -= allocation
+                            allocations.append(f"£{allocation:.2f} → {fee_name}")
+
+                        # Handle overpayment as credit
+                        if remaining > 0:
+                            cursor.execute('''
+                                INSERT INTO student_credits
+                                (student_id, credit_amount, remaining_amount, credit_source, description, created_by, created_at, updated_at)
+                                VALUES (?, ?, ?, 'overpayment', ?, ?, ?, ?)
+                            ''', (student_id, remaining, remaining, f'Overpayment from payment ID {payment_id}', username, now, now))
+                            allocations.append(f"£{remaining:.2f} → Student Credit")
+
+                        conn.commit()
+                        conn.close()
+
+                        # Success message with allocations
+                        msg = f"Payment of £{amount:.2f} recorded for student {student_id}\n"
+                        if allocations:
+                            msg += "\nAllocated:\n" + "\n".join(allocations)
+                        messagebox.showinfo("Success", msg)
+
                         self.refresh_payments()
                     except Exception as e:
                         messagebox.showerror("Error", f"Failed to record payment: {e}")
+                        import traceback
+                        traceback.print_exc()
             self.refresh_dashboard()
     
 
@@ -496,12 +585,38 @@ class TransactionManager:
         # Create search dialog
         search_dialog = tk.Toplevel(self.root)
         search_dialog.title("Search Payments")
-        search_dialog.geometry("900x700")
+        search_dialog.geometry("950x750")
         search_dialog.transient(self.root)
         search_dialog.grab_set()
 
+        # Create main container with canvas for scrolling
+        main_container = tk.Frame(search_dialog)
+        main_container.pack(fill='both', expand=True)
+
+        # Create canvas
+        canvas = tk.Canvas(main_container, bg='white')
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
         # Search criteria frame
-        criteria_frame = ttk.LabelFrame(search_dialog, text="Search Criteria", padding=15)
+        criteria_frame = ttk.LabelFrame(scrollable_frame, text="Search Criteria", padding=15)
         criteria_frame.pack(fill='x', padx=10, pady=10)
 
         # Student ID
@@ -549,7 +664,7 @@ class TransactionManager:
         status_combo.grid(row=3, column=3, sticky='w', padx=5, pady=5)
 
         # Results frame
-        results_frame = ttk.LabelFrame(search_dialog, text="Search Results", padding=15)
+        results_frame = ttk.LabelFrame(scrollable_frame, text="Search Results", padding=15)
         results_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Results treeview
@@ -568,7 +683,7 @@ class TransactionManager:
         results_tree.configure(yscrollcommand=scrollbar.set)
 
         # Results label
-        results_label = ttk.Label(search_dialog, text="Results: 0 payments found")
+        results_label = ttk.Label(scrollable_frame, text="Results: 0 payments found")
         results_label.pack(pady=5)
 
         def perform_search():
@@ -697,7 +812,7 @@ class TransactionManager:
             results_label.config(text="Results: 0 payments found")
 
         # Buttons frame
-        button_frame = ttk.Frame(search_dialog)
+        button_frame = ttk.Frame(scrollable_frame)
         button_frame.pack(pady=10)
 
         ttk.Button(button_frame, text="🔍 Search", command=perform_search).pack(side='left', padx=5)
@@ -1435,8 +1550,110 @@ class TransactionManager:
             results_text.insert('1.0', analysis)
             results_text.config(state='disabled')
 
-            # Close button
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(10, 0))
+            # Store analysis for email
+            self.current_analytics_report = analysis
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=(10, 0))
+
+            def send_to_admin():
+                """Send analytics report to admin via email"""
+                try:
+                    # Get admin email from database
+                    admin_conn = get_connection()
+                    admin_cursor = admin_conn.cursor()
+
+                    # Try to find admin user email
+                    admin_cursor.execute('''
+                        SELECT email_address FROM students
+                        WHERE role = 'admin' OR student_id LIKE 'ADMIN%'
+                        LIMIT 1
+                    ''')
+                    admin_result = admin_cursor.fetchone()
+
+                    if not admin_result:
+                        # Fallback: look for any user with admin in their ID
+                        admin_cursor.execute('''
+                            SELECT email_address FROM students
+                            WHERE LOWER(student_id) LIKE '%admin%'
+                            OR LOWER(email_address) LIKE '%admin%'
+                            LIMIT 1
+                        ''')
+                        admin_result = admin_cursor.fetchone()
+
+                    admin_conn.close()
+
+                    if not admin_result or not admin_result[0]:
+                        # Ask user for admin email
+                        admin_email = simpledialog.askstring(
+                            "Admin Email",
+                            "No admin email found in database.\nPlease enter admin email address:",
+                            parent=dialog
+                        )
+                        if not admin_email:
+                            return
+                    else:
+                        admin_email = admin_result[0]
+
+                    # Validate email format
+                    if '@' not in admin_email or '.' not in admin_email:
+                        messagebox.showerror("Invalid Email",
+                                           f"The email address '{admin_email}' appears to be invalid.",
+                                           parent=dialog)
+                        return
+
+                    # Send email using email service
+                    from university_system.infrastructure.email.email_service import send_email
+
+                    subject = f"Payment Analytics Report - {datetime.now().strftime('%Y-%m-%d')}"
+
+                    # Create HTML-friendly version
+                    html_analysis = analysis.replace('\n', '<br>').replace(' ', '&nbsp;')
+
+                    message = f"""
+                    <html>
+                    <body>
+                    <h2>Payment Pattern Analysis Report</h2>
+                    <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                    <pre style="font-family: 'Courier New', monospace; font-size: 12px;">
+                    {analysis}
+                    </pre>
+                    <br>
+                    <p><em>This report was automatically generated by the University Finance Management System.</em></p>
+                    </body>
+                    </html>
+                    """
+
+                    # Send email
+                    success = send_email(
+                        to_email=admin_email,
+                        subject=subject,
+                        message=message,
+                        html=True
+                    )
+
+                    if success:
+                        messagebox.showinfo(
+                            "Email Sent",
+                            f"Payment analytics report has been sent to:\n{admin_email}",
+                            parent=dialog
+                        )
+                        print(f"✅ Analytics report emailed to {admin_email}")
+                    else:
+                        messagebox.showwarning(
+                            "Email Failed",
+                            f"Failed to send email to {admin_email}.\nPlease check email configuration.",
+                            parent=dialog
+                        )
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to send email: {e}", parent=dialog)
+                    import traceback
+                    traceback.print_exc()
+
+            ttk.Button(button_frame, text="📧 Send to Admin", command=send_to_admin).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
 
             print("✅ Payment pattern analysis completed")
 
