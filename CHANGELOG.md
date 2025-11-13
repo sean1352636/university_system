@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Budget Plans Database Persistence & Analysis Functions (7 Issues)
+
+**Issue 1: Budget Plans Not Saving to Database:**
+- Fixed create_budget_plan() method to actually persist data
+  - Problem: Method only showed messagebox but didn't INSERT into database
+  - Solution: Replaced simple dialog with full form (550x500) including:
+    * Plan name, academic year, revenue/expense budgets
+    * Currency selection (GBP/USD/EUR)
+    * Status (draft/active/approved/closed)
+    * Notes field for additional details
+    * Live budget summary display
+    * Full database INSERT with created_by tracking
+  - Location: budget_manager.py:193-348 (155 lines)
+
+**Issue 2: Budget Plan Edits Not Saving:**
+- Fixed edit_budget_plan() to UPDATE database
+  - Problem: Changes only updated tree view, not database
+  - Solution: Added UPDATE statement with all fields
+  - Saves: plan_name, academic_year, revenue, expense, status, notes, updated_at
+  - Location: budget_manager.py:453-503
+
+**Issue 3-7: Fully Implemented Budget Analysis Functions:**
+All 5 placeholder functions now query real database data:
+
+**3. budget_vs_actual_analysis()** (90 lines)
+- Queries budget_plans and budget_line_items with JOIN to budget_categories
+- Displays budgeted vs actual amounts per category
+- Calculates total variance and budget utilization %
+- Shows warnings for overspending (>100% utilization)
+- Location: common_imports.py:308-397
+
+**4. budget_approval_workflow()** (54 lines)
+- Lists all draft/pending budget plans awaiting approval
+- Shows budget ID, plan name, year, revenue, expense, status
+- Displays approval actions available
+- Counts total approved budgets
+- Location: common_imports.py:399-453
+
+**5. variance_analysis_report()** (79 lines)
+- Finds TOP 20 budget variances by absolute value
+- Joins budget_line_items → budget_plans → budget_categories
+- Calculates variance % for each line item
+- Flags variances exceeding 20% with ⚠️  icon
+- Shows both overspending (+) and underspending (-)
+- Location: common_imports.py:460-517
+
+**6. budget_performance_trends()** (79 lines)
+- Groups budgets by academic year
+- Shows revenue/expense trends over time
+- Calculates year-over-year growth rates
+- Displays net budget per year
+- Tracks approval counts
+- Location: common_imports.py:519-579
+
+**7. category_performance_report()** (79 lines)
+- Analyzes performance across all budget categories
+- Shows total budgeted vs actual per category
+- Calculates utilization % for each category
+- Status indicators:
+  * ✓ Optimal (80-100% utilization)
+  * ⚠️ Over budget (>100%)
+  * → Under-utilized (<80%)
+- Location: common_imports.py:581-639
+
+**Technical Implementation:**
+- All functions use get_connection() for database access
+- Proper error handling with try/except blocks
+- Formatted output with tables and separators
+- Real-time calculations from live database data
+- JOINs across budget_plans, budget_line_items, budget_categories
+
+**Database Tables Used:**
+- budget_plans: Budget plan master records
+- budget_line_items: Detailed budgeted/actual amounts per category
+- budget_categories: Revenue/expense category definitions
+
+**Business Impact:**
+- Budget plans now properly saved and editable
+- Full visibility into budget performance
+- Variance tracking for accountability
+- Trend analysis for forecasting
+- Category-level performance insights
+- Complete audit trail with created_by/updated_at
+
 ### Fixed - 2025-11-13: Finance GUI Budget Management Enhancements (6 Issues)
 
 **Issue 1: Send Notice - Button Accessibility:**

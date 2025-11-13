@@ -306,20 +306,151 @@ def create_budget_plan(*args, **kwargs):
     messagebox.showinfo("Budget Planning", "Budget planning interface - create new budget")
 
 def budget_vs_actual_analysis(*args, **kwargs):
-    """Budget vs actual analysis"""
-    print("Budget vs Actual Analysis Report")
-    print("=" * 60)
-    print("This feature compares budgeted amounts with actual spending")
+    """Budget vs actual analysis with real data"""
+    from university_system.infrastructure.database.db import get_connection
+
+    print("\n" + "=" * 80)
+    print("BUDGET VS ACTUAL ANALYSIS REPORT".center(80))
+    print("=" * 80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get all budget plans
+        cursor.execute('''
+            SELECT budget_id, plan_name, academic_year, status,
+                   total_revenue_budget, total_expense_budget
+            FROM budget_plans
+            ORDER BY academic_year DESC, plan_name
+        ''')
+        plans = cursor.fetchall()
+
+        if not plans:
+            print("No budget plans found in the system.\n")
+            conn.close()
+            return
+
+        for plan in plans:
+            budget_id, plan_name, year, status, revenue_budget, expense_budget = plan
+
+            print(f"\nBudget Plan: {plan_name} ({year})")
+            print(f"Status: {status.upper()}")
+            print("-" * 80)
+
+            # Get line items for this budget
+            cursor.execute('''
+                SELECT bc.category_name, bc.category_type,
+                       SUM(bli.budgeted_amount) as budgeted,
+                       SUM(bli.actual_amount) as actual,
+                       SUM(bli.variance) as variance
+                FROM budget_line_items bli
+                JOIN budget_categories bc ON bli.category_id = bc.category_id
+                WHERE bli.budget_id = ?
+                GROUP BY bc.category_name, bc.category_type
+                ORDER BY bc.category_type, bc.category_name
+            ''', (budget_id,))
+            line_items = cursor.fetchall()
+
+            if line_items:
+                print(f"\n{'Category':<30} {'Type':<10} {'Budgeted':>15} {'Actual':>15} {'Variance':>15}")
+                print("-" * 80)
+
+                total_budgeted = 0
+                total_actual = 0
+                total_variance = 0
+
+                for item in line_items:
+                    cat_name, cat_type, budgeted, actual, variance = item
+                    budgeted = float(budgeted or 0)
+                    actual = float(actual or 0)
+                    variance = float(variance or 0)
+
+                    total_budgeted += budgeted
+                    total_actual += actual
+                    total_variance += variance
+
+                    print(f"{cat_name:<30} {cat_type:<10} £{budgeted:>13,.2f} £{actual:>13,.2f} £{variance:>13,.2f}")
+
+                print("-" * 80)
+                print(f"{'TOTAL':<30} {'':<10} £{total_budgeted:>13,.2f} £{total_actual:>13,.2f} £{total_variance:>13,.2f}")
+
+                # Performance metrics
+                if total_budgeted > 0:
+                    utilization = (total_actual / total_budgeted) * 100
+                    print(f"\nBudget Utilization: {utilization:.2f}%")
+
+                    if utilization > 100:
+                        print("⚠️  WARNING: Budget overspent!")
+                    elif utilization < 50:
+                        print("ℹ️  INFO: Low budget utilization")
+                    else:
+                        print("✓ Budget utilization within acceptable range")
+            else:
+                print("\nNo line items found for this budget plan.")
+
+        conn.close()
+        print("\n" + "=" * 80 + "\n")
+
+    except Exception as e:
+        print(f"\nError generating analysis: {e}\n")
 
 def budget_approval_workflow(*args, **kwargs):
-    """Budget approval workflow"""
-    print("Budget Approval Workflow")
-    print("=" * 60)
-    print("This feature manages the budget approval process")
-    print("- Review budget plans")
-    print("- Approve/reject budgets")
-    print("- Track approval status")
-    print("- Notify stakeholders")
+    """Budget approval workflow with database integration"""
+    from university_system.infrastructure.database.db import get_connection
+
+    print("\n" + "=" * 80)
+    print("BUDGET APPROVAL WORKFLOW".center(80))
+    print("=" * 80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get pending/draft budget plans
+        cursor.execute('''
+            SELECT budget_id, plan_name, academic_year, status,
+                   total_revenue_budget, total_expense_budget,
+                   created_by, created_at
+            FROM budget_plans
+            WHERE status IN ('draft', 'pending')
+            ORDER BY created_at DESC
+        ''')
+        pending_plans = cursor.fetchall()
+
+        if not pending_plans:
+            print("No budget plans pending approval.\n")
+            cursor.execute('''
+                SELECT COUNT(*) FROM budget_plans WHERE status = 'approved'
+            ''')
+            approved_count = cursor.fetchone()[0]
+            print(f"Total approved budgets: {approved_count}\n")
+        else:
+            print(f"Found {len(pending_plans)} budget plan(s) pending approval:\n")
+            print(f"{'ID':<6} {'Plan Name':<30} {'Year':<12} {'Revenue':>15} {'Expense':>15} {'Status':<10}")
+            print("-" * 90)
+
+            for plan in pending_plans:
+                budget_id, name, year, status, revenue, expense, created_by, created_at = plan
+                print(f"{budget_id:<6} {name:<30} {year:<12} £{revenue:>13,.2f} £{expense:>13,.2f} {status:<10}")
+
+            print("\n" + "=" * 80)
+            print("APPROVAL ACTIONS AVAILABLE:")
+            print("-" * 80)
+            print("1. Review budget details and line items")
+            print("2. Approve budget (changes status to 'approved')")
+            print("3. Reject budget (requires notes)")
+            print("4. Request modifications")
+            print("5. View approval history")
+            print("\nNote: Use the 'Approve Budget' button in the main interface to approve plans.\n")
+
+        conn.close()
+        print("=" * 80 + "\n")
+
+    except Exception as e:
+        print(f"\nError in approval workflow: {e}\n")
 
 def view_overdue_accounts(*args, **kwargs):
     """View overdue accounts"""
@@ -327,19 +458,185 @@ def view_overdue_accounts(*args, **kwargs):
     print("=" * 60)
 
 def variance_analysis_report(*args, **kwargs):
-    """Variance analysis report"""
-    print("Variance Analysis Report")
-    print("=" * 60)
+    """Variance analysis report with detailed breakdown"""
+    from university_system.infrastructure.database.db import get_connection
+
+    print("\n" + "=" * 80)
+    print("VARIANCE ANALYSIS REPORT".center(80))
+    print("=" * 80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get variance data by category
+        cursor.execute('''
+            SELECT bp.plan_name, bp.academic_year,
+                   bc.category_name, bc.category_type,
+                   bli.budgeted_amount, bli.actual_amount, bli.variance
+            FROM budget_line_items bli
+            JOIN budget_plans bp ON bli.budget_id = bp.budget_id
+            JOIN budget_categories bc ON bli.category_id = bc.category_id
+            WHERE bli.variance != 0
+            ORDER BY ABS(bli.variance) DESC
+            LIMIT 20
+        ''')
+        variances = cursor.fetchall()
+
+        if not variances:
+            print("No variances found. All budgets are on track!\n")
+        else:
+            print("TOP 20 BUDGET VARIANCES (by absolute value):\n")
+            print(f"{'Budget Plan':<25} {'Category':<25} {'Type':<10} {'Budgeted':>12} {'Actual':>12} {'Variance':>12} {'%':>8}")
+            print("-" * 110)
+
+            for var in variances:
+                plan_name, year, cat_name, cat_type, budgeted, actual, variance = var
+                budgeted = float(budgeted or 0)
+                actual = float(actual or 0)
+                variance = float(variance or 0)
+
+                pct = ((actual - budgeted) / budgeted * 100) if budgeted != 0 else 0
+
+                variance_indicator = "⚠️ " if abs(pct) > 20 else "  "
+
+                print(f"{variance_indicator}{plan_name[:23]:<23} {cat_name[:23]:<23} {cat_type:<10} "
+                      f"£{budgeted:>10,.2f} £{actual:>10,.2f} £{variance:>10,.2f} {pct:>7.1f}%")
+
+            print("\n" + "=" * 110)
+            print("Legend:")
+            print("  ⚠️  = Variance exceeds 20% of budgeted amount")
+            print("  Positive variance = Overspending")
+            print("  Negative variance = Underspending\n")
+
+        conn.close()
+        print("=" * 80 + "\n")
+
+    except Exception as e:
+        print(f"\nError generating variance analysis: {e}\n")
 
 def budget_performance_trends(*args, **kwargs):
-    """Budget performance trends"""
-    print("Budget Performance Trends")
-    print("=" * 60)
+    """Budget performance trends over time"""
+    from university_system.infrastructure.database.db import get_connection
+
+    print("\n" + "=" * 80)
+    print("BUDGET PERFORMANCE TRENDS".center(80))
+    print("=" * 80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get budget performance by year
+        cursor.execute('''
+            SELECT academic_year,
+                   COUNT(*) as total_plans,
+                   SUM(total_revenue_budget) as total_revenue,
+                   SUM(total_expense_budget) as total_expense,
+                   COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count
+            FROM budget_plans
+            GROUP BY academic_year
+            ORDER BY academic_year DESC
+        ''')
+        trends = cursor.fetchall()
+
+        if not trends:
+            print("No budget data available for trend analysis.\n")
+        else:
+            print(f"{'Year':<15} {'Plans':>8} {'Revenue Budget':>18} {'Expense Budget':>18} {'Net':>18} {'Approved':>10}")
+            print("-" * 90)
+
+            for trend in trends:
+                year, total_plans, revenue, expense, approved = trend
+                revenue = float(revenue or 0)
+                expense = float(expense or 0)
+                net = revenue - expense
+
+                print(f"{year:<15} {total_plans:>8} £{revenue:>16,.2f} £{expense:>16,.2f} £{net:>16,.2f} {approved:>10}")
+
+            # Calculate growth rates
+            if len(trends) >= 2:
+                print("\n" + "-" * 90)
+                print("YEAR-OVER-YEAR GROWTH:\n")
+
+                for i in range(len(trends) - 1):
+                    current = trends[i]
+                    previous = trends[i + 1]
+
+                    curr_revenue = float(current[2] or 0)
+                    prev_revenue = float(previous[2] or 0)
+
+                    if prev_revenue > 0:
+                        growth = ((curr_revenue - prev_revenue) / prev_revenue) * 100
+                        print(f"{current[0]} vs {previous[0]}: {growth:+.2f}% revenue growth")
+
+        conn.close()
+        print("\n" + "=" * 80 + "\n")
+
+    except Exception as e:
+        print(f"\nError generating performance trends: {e}\n")
 
 def category_performance_report(*args, **kwargs):
     """Category performance report"""
-    print("Category Performance Report")
-    print("=" * 60)
+    from university_system.infrastructure.database.db import get_connection
+
+    print("\n" + "=" * 80)
+    print("CATEGORY PERFORMANCE REPORT".center(80))
+    print("=" * 80)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get performance by category
+        cursor.execute('''
+            SELECT bc.category_name, bc.category_type,
+                   COUNT(DISTINCT bli.budget_id) as budget_count,
+                   SUM(bli.budgeted_amount) as total_budgeted,
+                   SUM(bli.actual_amount) as total_actual,
+                   SUM(bli.variance) as total_variance,
+                   AVG(bli.budgeted_amount) as avg_budgeted
+            FROM budget_categories bc
+            LEFT JOIN budget_line_items bli ON bc.category_id = bli.category_id
+            WHERE bc.is_active = 1
+            GROUP BY bc.category_name, bc.category_type
+            HAVING total_budgeted IS NOT NULL
+            ORDER BY total_budgeted DESC
+        ''')
+        categories = cursor.fetchall()
+
+        if not categories:
+            print("No category data available for analysis.\n")
+        else:
+            print(f"{'Category':<30} {'Type':<10} {'Budgets':>8} {'Total Budget':>15} {'Total Actual':>15} {'Variance':>12} {'Util %':>8}")
+            print("-" * 110)
+
+            for cat in categories:
+                name, cat_type, count, budgeted, actual, variance, avg_budgeted = cat
+                budgeted = float(budgeted or 0)
+                actual = float(actual or 0)
+                variance = float(variance or 0)
+
+                utilization = (actual / budgeted * 100) if budgeted > 0 else 0
+
+                status_icon = "✓" if 80 <= utilization <= 100 else "⚠️" if utilization > 100 else "→"
+
+                print(f"{status_icon} {name:<28} {cat_type:<10} {count:>8} £{budgeted:>13,.2f} £{actual:>13,.2f} £{variance:>10,.2f} {utilization:>7.1f}%")
+
+            print("\n" + "=" * 110)
+            print("Legend:")
+            print("  ✓ = Optimal utilization (80-100%)")
+            print("  ⚠️  = Over budget (>100%)")
+            print("  → = Under-utilized (<80%)\n")
+
+        conn.close()
+        print("=" * 80 + "\n")
+
+    except Exception as e:
+        print(f"\nError generating category performance: {e}\n")
 
 def manage_budget_categories(*args, **kwargs):
     """Manage budget categories"""

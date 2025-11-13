@@ -191,15 +191,161 @@ class BudgetManager:
     
 
     def create_budget_plan(self):
-        """Create new budget plan"""
-        plan_name = simpledialog.askstring("Budget Plan", "Enter budget plan name:")
-        if plan_name:
-            year = simpledialog.askstring("Budget Plan", "Enter budget year:", initialvalue=str(datetime.now().year))
-            if year:
-                amount = simpledialog.askfloat("Budget Plan", "Enter total budget amount:")
-                if amount:
-                    messagebox.showinfo("Success", f"Budget plan '{plan_name}' for {year} created with £{amount:.2f}")
-                    self.refresh_budget()
+        """Create new budget plan with database integration"""
+        # Create dialog for budget plan details
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Create Budget Plan")
+        dialog.geometry("550x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text="Create New Budget Plan",
+                 font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
+
+        # Form frame
+        form_frame = ttk.LabelFrame(dialog, text="Budget Plan Details", padding=20)
+        form_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Plan name
+        ttk.Label(form_frame, text="Plan Name:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
+        name_var = tk.StringVar()
+        name_entry = ttk.Entry(form_frame, textvariable=name_var, width=35)
+        name_entry.grid(row=0, column=1, pady=5, padx=5)
+        name_entry.focus()
+
+        # Academic year
+        ttk.Label(form_frame, text="Academic Year:").grid(row=1, column=0, sticky='w', pady=5, padx=5)
+        year_var = tk.StringVar(value=f"{datetime.now().year}-{datetime.now().year + 1}")
+        year_entry = ttk.Entry(form_frame, textvariable=year_var, width=35)
+        year_entry.grid(row=1, column=1, pady=5, padx=5)
+
+        # Revenue budget
+        ttk.Label(form_frame, text="Revenue Budget (£):").grid(row=2, column=0, sticky='w', pady=5, padx=5)
+        revenue_var = tk.StringVar(value="0.00")
+        revenue_entry = ttk.Entry(form_frame, textvariable=revenue_var, width=35)
+        revenue_entry.grid(row=2, column=1, pady=5, padx=5)
+
+        # Expense budget
+        ttk.Label(form_frame, text="Expense Budget (£):").grid(row=3, column=0, sticky='w', pady=5, padx=5)
+        expense_var = tk.StringVar(value="0.00")
+        expense_entry = ttk.Entry(form_frame, textvariable=expense_var, width=35)
+        expense_entry.grid(row=3, column=1, pady=5, padx=5)
+
+        # Currency
+        ttk.Label(form_frame, text="Currency:").grid(row=4, column=0, sticky='w', pady=5, padx=5)
+        currency_var = tk.StringVar(value="GBP")
+        currency_combo = ttk.Combobox(form_frame, textvariable=currency_var,
+                                      values=['GBP', 'USD', 'EUR'], width=33, state='readonly')
+        currency_combo.grid(row=4, column=1, pady=5, padx=5)
+
+        # Status
+        ttk.Label(form_frame, text="Status:").grid(row=5, column=0, sticky='w', pady=5, padx=5)
+        status_var = tk.StringVar(value="draft")
+        status_combo = ttk.Combobox(form_frame, textvariable=status_var,
+                                    values=['draft', 'active', 'approved', 'closed'],
+                                    width=33, state='readonly')
+        status_combo.grid(row=5, column=1, pady=5, padx=5)
+
+        # Notes
+        ttk.Label(form_frame, text="Notes:").grid(row=6, column=0, sticky='nw', pady=5, padx=5)
+        notes_text = tk.Text(form_frame, height=4, width=35)
+        notes_text.grid(row=6, column=1, pady=5, padx=5)
+
+        # Summary display
+        summary_frame = ttk.LabelFrame(dialog, text="Budget Summary", padding=10)
+        summary_frame.pack(fill='x', padx=10, pady=5)
+
+        summary_label = ttk.Label(summary_frame, text="", font=('Courier', 9))
+        summary_label.pack()
+
+        def update_summary():
+            try:
+                revenue = float(revenue_var.get() or 0)
+                expense = float(expense_var.get() or 0)
+                net = revenue - expense
+
+                summary_text = f"""
+Revenue Budget:   £{revenue:,.2f}
+Expense Budget:   £{expense:,.2f}
+Net Budget:       £{net:,.2f}
+Status:           {status_var.get().title()}
+"""
+                summary_label.config(text=summary_text)
+            except ValueError:
+                summary_label.config(text="Invalid numeric values")
+
+        # Update summary when values change
+        revenue_var.trace('w', lambda *args: update_summary())
+        expense_var.trace('w', lambda *args: update_summary())
+        status_var.trace('w', lambda *args: update_summary())
+        update_summary()
+
+        def save_plan():
+            plan_name = name_var.get().strip()
+            if not plan_name:
+                messagebox.showwarning("Name Required", "Please enter a budget plan name", parent=dialog)
+                return
+
+            academic_year = year_var.get().strip()
+            if not academic_year:
+                messagebox.showwarning("Year Required", "Please enter an academic year", parent=dialog)
+                return
+
+            try:
+                revenue = float(revenue_var.get() or 0)
+                expense = float(expense_var.get() or 0)
+                if revenue < 0 or expense < 0:
+                    raise ValueError("Budget amounts cannot be negative")
+            except ValueError as e:
+                messagebox.showwarning("Invalid Amount", str(e), parent=dialog)
+                return
+
+            notes = notes_text.get("1.0", tk.END).strip()
+
+            # Get current user
+            try:
+                auth = get_auth()
+                if auth.is_logged_in():
+                    created_by = auth.get_current_user()['username']
+                else:
+                    created_by = 'system'
+            except:
+                created_by = 'admin'
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    INSERT INTO budget_plans
+                    (plan_name, academic_year, currency, status,
+                     total_revenue_budget, total_expense_budget,
+                     created_by, notes, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (plan_name, academic_year, currency_var.get(), status_var.get(),
+                      revenue, expense, created_by, notes, now, now))
+
+                conn.commit()
+                budget_id = cursor.lastrowid
+                conn.close()
+
+                messagebox.showinfo("Success",
+                    f"Budget plan '{plan_name}' created successfully!\n\nBudget ID: {budget_id}",
+                    parent=dialog)
+                dialog.destroy()
+                self.refresh_budget()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create budget plan: {e}", parent=dialog)
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="Create Plan", command=save_plan).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
     
 
     def edit_budget_plan(self):
@@ -309,15 +455,12 @@ class BudgetManager:
             if not new_name:
                 messagebox.showwarning("Name Required", "Please enter a budget plan name", parent=edit_dialog)
                 return
-    
-            try:
-                year = int(year_var.get())
-                if year < 2000 or year > 2100:
-                    raise ValueError("Year must be between 2000 and 2100")
-            except ValueError as e:
-                messagebox.showwarning("Invalid Year", str(e), parent=edit_dialog)
+
+            academic_year = year_var.get().strip()
+            if not academic_year:
+                messagebox.showwarning("Year Required", "Please enter an academic year", parent=edit_dialog)
                 return
-    
+
             try:
                 revenue = float(revenue_var.get() or 0)
                 expenses = float(expenses_var.get() or 0)
@@ -326,21 +469,38 @@ class BudgetManager:
             except ValueError as e:
                 messagebox.showwarning("Invalid Amount", str(e), parent=edit_dialog)
                 return
-    
-            # Update tree item
-            self.budget_plans_tree.item(selection[0], values=(
-                budget_id,
-                new_name,
-                year,
-                f"£{revenue:,.2f}",
-                f"£{expenses:,.2f}",
-                status_var.get()
-            ))
-    
-            messagebox.showinfo("Success", f"Budget plan '{new_name}' updated successfully", parent=edit_dialog)
-            edit_dialog.destroy()
-            if hasattr(self, 'refresh_budget'):
+
+            notes = notes_text.get("1.0", tk.END).strip()
+
+            # Save to database
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                    UPDATE budget_plans
+                    SET plan_name = ?,
+                        academic_year = ?,
+                        total_revenue_budget = ?,
+                        total_expense_budget = ?,
+                        status = ?,
+                        notes = ?,
+                        updated_at = ?
+                    WHERE budget_id = ?
+                ''', (new_name, academic_year, revenue, expenses,
+                      status_var.get(), notes, now, budget_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Budget plan '{new_name}' updated successfully", parent=edit_dialog)
+                edit_dialog.destroy()
                 self.refresh_budget()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update budget plan: {e}", parent=edit_dialog)
     
         # Buttons
         button_frame = ttk.Frame(edit_dialog)
