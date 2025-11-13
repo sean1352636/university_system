@@ -654,7 +654,7 @@ class FinanceGUI:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, amount, payment_date, payment_method, transaction_id
+                SELECT payment_id, amount, payment_date, payment_method, transaction_id
                 FROM payments
                 WHERE student_id = ?
                 ORDER BY payment_date DESC
