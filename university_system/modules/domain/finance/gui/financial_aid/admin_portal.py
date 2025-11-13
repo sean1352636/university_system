@@ -702,9 +702,17 @@ class AdminPortal:
         ttk.Label(title_frame, text="Financial Aid Reports", style='Title.TLabel').pack(side='left')
         ttk.Button(title_frame, text="Back to Dashboard", command=self.show_dashboard).pack(side='right')
 
-        # Reports options
-        reports_frame = ttk.LabelFrame(self.parent_frame, text="Available Reports", padding=20)
-        reports_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        # Reports options with scrollbar
+        reports_container = ttk.Frame(self.parent_frame)
+        reports_container.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Create scrollable frame
+        scrollable_frame, canvas, scrollbar = create_scrollable_frame(reports_container)
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        reports_frame = ttk.LabelFrame(scrollable_frame, text="Available Reports", padding=20)
+        reports_frame.pack(fill='both', expand=True)
 
         reports = [
             ("Aid Distribution Summary", "Summary of aid distributed by type and year"),
@@ -843,9 +851,17 @@ class AdminPortal:
             report_text.insert('1.0', f"Error generating report:\n{str(e)}")
             report_text.config(state='disabled')
 
-        # Export button
-        ttk.Button(report_window, text="Export to CSV",
-                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "aid_distribution_report")).pack(pady=10)
+        # Export buttons
+        btn_frame = ttk.Frame(report_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="Export as CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "aid_distribution_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Export as Text",
+                  command=lambda: self._export_report_to_txt(report_text.get('1.0', 'end-1c'), "aid_distribution_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email Report to Admin",
+                  command=lambda: self._email_report(report_text.get('1.0', 'end-1c'), "Aid Distribution Summary")).pack(side='left', padx=5)
+
         ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
 
     def _generate_scholarship_utilization_report(self):
@@ -937,8 +953,17 @@ class AdminPortal:
             report_text.insert('1.0', f"Error generating report:\n{str(e)}")
             report_text.config(state='disabled')
 
-        ttk.Button(report_window, text="Export to CSV",
-                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "scholarship_utilization_report")).pack(pady=10)
+        # Export buttons
+        btn_frame = ttk.Frame(report_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="Export as CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "scholarship_utilization_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Export as Text",
+                  command=lambda: self._export_report_to_txt(report_text.get('1.0', 'end-1c'), "scholarship_utilization_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email Report to Admin",
+                  command=lambda: self._email_report(report_text.get('1.0', 'end-1c'), "Scholarship Utilization")).pack(side='left', padx=5)
+
         ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
 
     def _generate_disbursement_schedule_report(self):
@@ -1038,8 +1063,17 @@ class AdminPortal:
             report_text.insert('1.0', f"Error generating report:\n{str(e)}")
             report_text.config(state='disabled')
 
-        ttk.Button(report_window, text="Export to CSV",
-                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "disbursement_schedule_report")).pack(pady=10)
+        # Export buttons
+        btn_frame = ttk.Frame(report_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="Export as CSV",
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "disbursement_schedule_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Export as Text",
+                  command=lambda: self._export_report_to_txt(report_text.get('1.0', 'end-1c'), "disbursement_schedule_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email Report to Admin",
+                  command=lambda: self._email_report(report_text.get('1.0', 'end-1c'), "Disbursement Schedule")).pack(side='left', padx=5)
+
         ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=5)
 
     def _generate_compliance_report(self):
@@ -1129,21 +1163,101 @@ class AdminPortal:
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filepath = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"{filename_base}_{timestamp}.csv"
+            )
+
+            if filepath:
+                # Convert report text to CSV format
+                lines = report_text.split('\n')
+                with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    for line in lines:
+                        # Write each line as a single CSV row
+                        writer.writerow([line])
+
+                show_success("Export Successful", f"Report exported to:\n{filepath}")
+                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base, 'format': 'csv'})
+
+        except Exception as e:
+            logger.error(f"Error exporting report to CSV: {e}")
+            show_error("Export Error", f"Failed to export report:\n{str(e)}")
+
+    def _export_report_to_txt(self, report_text: str, filename_base: str):
+        """Export report to text file"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filepath = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
                 initialfile=f"{filename_base}_{timestamp}.txt"
             )
 
             if filepath:
-                with open(filepath, 'w') as f:
+                with open(filepath, 'w', encoding='utf-8') as f:
                     f.write(report_text)
 
                 show_success("Export Successful", f"Report exported to:\n{filepath}")
-                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base})
+                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base, 'format': 'txt'})
 
         except Exception as e:
-            logger.error(f"Error exporting report: {e}")
+            logger.error(f"Error exporting report to text: {e}")
             show_error("Export Error", f"Failed to export report:\n{str(e)}")
+
+    def _email_report(self, report_text: str, report_name: str):
+        """Email report to admin"""
+        try:
+            # Get admin email from database
+            admin_email = None
+            with get_connection() as conn:
+                result = conn.execute("""
+                    SELECT u.email
+                    FROM users u
+                    WHERE u.role = 'admin' AND u.email IS NOT NULL
+                    ORDER BY u.user_id ASC
+                    LIMIT 1
+                """).fetchone()
+
+                if result:
+                    admin_email = result['email']
+
+            if not admin_email:
+                show_warning("No Admin Email", "No admin email address found in the database.")
+                return
+
+            # Send email with report
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            subject = f"Financial Aid Report: {report_name}"
+            body = f"""
+Financial Aid Report Generated
+Report: {report_name}
+Generated: {timestamp}
+
+{'=' * 80}
+
+{report_text}
+
+{'=' * 80}
+
+This is an automated report from the University Financial Aid System.
+            """
+
+            send_email(
+                to=admin_email,
+                subject=subject,
+                body=body
+            )
+
+            show_success("Email Sent", f"Report has been emailed to:\n{admin_email}")
+            log_activity('email', 'financial_aid_report', admin_email, {
+                'report_name': report_name,
+                'recipient': admin_email
+            })
+
+        except Exception as e:
+            logger.error(f"Error emailing report: {e}")
+            show_error("Email Error", f"Failed to email report:\n{str(e)}")
 
     def show_fafsa_import(self):
         """Show FAFSA import interface"""

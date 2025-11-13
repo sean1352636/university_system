@@ -24,13 +24,34 @@ class FinancialAidManager:
         self,
         student_id: int,
         academic_year: str,
+        application_data: Optional[Dict[str, Any]] = None,
         family_income: Optional[float] = None,
         household_size: Optional[int] = None,
         special_circumstances: Optional[str] = None,
         submitted_by: Optional[int] = None
     ) -> Optional[int]:
-        """Create a new financial aid application"""
+        """
+        Create a new financial aid application
+
+        Args:
+            student_id: Student ID
+            academic_year: Academic year (e.g., "2024-2025")
+            application_data: Dict containing application data (alternative to individual params)
+            family_income: Household income (or from application_data)
+            household_size: Number in household (or from application_data)
+            special_circumstances: Special circumstances text (or from application_data)
+            submitted_by: User ID who submitted
+
+        Returns:
+            Application ID if successful, None otherwise
+        """
         try:
+            # Extract from application_data if provided
+            if application_data:
+                family_income = application_data.get('household_income', family_income)
+                household_size = application_data.get('dependents', household_size)
+                special_circumstances = application_data.get('additional_info', special_circumstances)
+
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -157,7 +178,7 @@ class FinancialAidManager:
                 cursor.execute("""
                     INSERT INTO student_financial_aid (
                         student_id, aid_type_id, awarded_amount, disbursed_amount,
-                        remaining_amount, status, award_date
+                        remaining_amount, status, application_date
                     ) VALUES (?, 1, 0, 0, 0, 'pending', CURRENT_DATE)
                 """, (student_id,))
                 conn.commit()
