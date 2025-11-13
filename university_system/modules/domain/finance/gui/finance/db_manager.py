@@ -383,7 +383,7 @@ class DatabaseManager:
 
             # Delete orphaned fee records (no associated student)
             cursor.execute('''
-            DELETE FROM fees
+            DELETE FROM student_fees
             WHERE student_id NOT IN (SELECT student_id FROM students)
             ''')
             cleaned_count += cursor.rowcount

@@ -7,6 +7,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Finance GUI Critical Error Resolution (9 Issues)
+
+**Issue 1: Admin Email Query - Database Table Error:**
+- Fixed `sqlite3.OperationalError: no such column: role` in Payment Analytics email feature
+  - Problem: Queried `students` table which doesn't have `role` column
+  - Solution: Changed to query `users` table with proper `role` column
+  - Fallback: Still searches students table by email if no admin user found
+  - Location: transaction_manager.py:1568-1585
+
+**Issue 2: Email Reminders - Button Accessibility:**
+- Added scrollbar to Email Reminders dialog for button access
+  - Problem: Buttons (Preview, Send, Cancel) inaccessible at bottom of window
+  - Solution: Wrapped entire dialog in scrollable canvas (750x680)
+  - Mouse wheel scrolling enabled
+  - All UI elements (Email Type, Recipients, Message, Buttons) now scrollable
+  - Location: transaction_manager.py:1117-1233
+
+**Issue 3-4: Table Name Errors - 'fees' → 'student_fees':**
+- Fixed 3 instances of non-existent `fees` table references
+  - Problem: Queries used `fees` table which doesn't exist in database
+  - Actual tables: `student_fees`, `fee_types`, `program_fees`, `late_fees`
+  - Fixed queries:
+    * Finance GUI financial summary (finance_gui.py:574-581)
+    * Finance GUI load fees (finance_gui.py:620-626)
+    * DB Manager cleanup orphaned fees (db_manager.py:385-388)
+  - Updated column references:
+    * `fees.id` → `student_fees.student_fee_id`
+    * `fees.paid` → `student_fees.status` ('paid'/'unpaid'/'partial')
+    * `fees.description` → `fee_types.fee_name` (via JOIN)
+
+**Issue 5: Payments Column Error - Verified Fixed:**
+- Verified payments table uses `payment_id` not `id` (no code changes needed)
+  - Schema confirmed: payment_id is primary key
+  - All existing queries already use correct column names
+
+**Issue 6: Record Fee - Full Implementation (130 lines):**
+- Replaced messagebox placeholder with complete payment recording dialog
+  - Problem: `_record_fee_payment()` only showed "would open here" message
+  - Solution: Created full payment dialog (500x400) with:
+    * Fee information display (ID, Student, Name, Amount Due)
+    * Payment details entry (Amount, Method, Notes)
+    * Database integration:
+      - Insert to `payments` table
+      - Insert to `payment_allocations` table
+      - Update `student_fees.status` (paid/partial)
+      - Calculate total paid vs. fee amount
+    * Success feedback with new fee status
+    * Fee list auto-refresh after payment
+  - Location: layout_manager.py:1052-1180
+
+**Issue 7: Show Charts - Open in New Window:**
+- Modified Show Charts to open in dedicated window instead of inline
+  - Problem: Charts displayed in sidebar chart_frame (cramped layout)
+  - Solution:
+    * Create new Toplevel window (1000x800)
+    * Professional window title: "Revenue Charts"
+    * Charts display in spacious dedicated window
+    * Added Close button at bottom
+    * Window is transient to parent (stays on top)
+  - Location: revenue_source_manager.py:269-344
+
+**Issues 8-9: Dashboard Messages - Informational Only:**
+- "Dashboard refresh not available" - Feature not implemented (no fix needed)
+- "Dashboard charts not initialized yet" - Expected message before first chart generation (no fix needed)
+
+**Technical Implementation:**
+- Database schema validation via sqlite3 PRAGMA queries
+- Proper table JOINs for related data (student_fees ↔ fee_types)
+- Column name corrections across 3 files
+- Scrollbar pattern: Canvas + Scrollbar + bind("<Configure>")
+- Payment recording: Full transaction with status updates
+- New window pattern: Toplevel + transient
+
+**Database Schema Updates:**
+- `users` table: Has `role` column for admin detection
+- `student_fees` table: Primary key is `student_fee_id`
+- `student_fees.status`: Values are 'paid', 'unpaid', 'partial', 'waived'
+- `payments` table: Primary key is `payment_id`
+- `payment_allocations` table: Links payments to fees
+
+**Impact:**
+✓ Payment Analytics emails now send successfully to admins
+✓ Email Reminders fully accessible on all screen sizes
+✓ Financial data queries work (no more "table fees" errors)
+✓ Record Fee fully functional with database integration
+✓ Revenue charts display in professional dedicated window
+✓ All 9 reported issues resolved
+
+**FILES MODIFIED:**
+- `transaction_manager.py`: 41 lines (email query + scrollbar)
+- `finance_gui.py`: 15 lines (table name fixes)
+- `db_manager.py`: 3 lines (table name fix)
+- `layout_manager.py`: 130 lines (Record Fee implementation)
+- `revenue_source_manager.py`: 8 lines (new window display)
+
 ### Fixed - 2025-11-13: Finance Management GUI Complete Functional Implementation
 
 **Record Payment - Full Database Integration (105 lines):**

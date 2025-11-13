@@ -1056,8 +1056,128 @@ class LayoutManager:
             messagebox.showwarning("No Selection", "Please select a fee to record payment")
             return
 
-        fee_id = self.fees_tree.item(selection[0])['values'][0]
-        messagebox.showinfo("Record Payment", f"Payment recording for fee {fee_id} would open here")
+        fee_values = self.fees_tree.item(selection[0])['values']
+        fee_id = fee_values[0]
+        student_id = fee_values[1]
+        fee_name = fee_values[2]
+        fee_amount = float(fee_values[3])
+
+        # Create payment dialog
+        payment_dialog = tk.Toplevel(self.root)
+        payment_dialog.title(f"Record Payment for Fee {fee_id}")
+        payment_dialog.geometry("500x400")
+        payment_dialog.transient(self.root)
+        payment_dialog.grab_set()
+
+        # Fee info frame
+        info_frame = ttk.LabelFrame(payment_dialog, text="Fee Information", padding=15)
+        info_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Label(info_frame, text=f"Fee ID: {fee_id}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"Student ID: {student_id}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"Fee Name: {fee_name}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"Amount Due: £{fee_amount:.2f}", font=('Arial', 10, 'bold')).pack(anchor='w')
+
+        # Payment details frame
+        payment_frame = ttk.LabelFrame(payment_dialog, text="Payment Details", padding=15)
+        payment_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Label(payment_frame, text="Payment Amount (£):").pack(anchor='w')
+        amount_var = tk.StringVar(value=str(fee_amount))
+        amount_entry = ttk.Entry(payment_frame, textvariable=amount_var, font=('Arial', 12))
+        amount_entry.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(payment_frame, text="Payment Method:").pack(anchor='w')
+        method_var = tk.StringVar(value="card")
+        method_combo = ttk.Combobox(payment_frame, textvariable=method_var,
+                                     values=["card", "cash", "bank_transfer", "cheque", "online"],
+                                     state='readonly', font=('Arial', 12))
+        method_combo.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(payment_frame, text="Notes (optional):").pack(anchor='w')
+        notes_text = tk.Text(payment_frame, height=4, font=('Arial', 10))
+        notes_text.pack(fill='x')
+
+        def save_payment():
+            try:
+                payment_amount = float(amount_var.get())
+                payment_method = method_var.get()
+                notes = notes_text.get('1.0', tk.END).strip()
+
+                if payment_amount <= 0:
+                    messagebox.showerror("Error", "Payment amount must be greater than 0")
+                    return
+
+                # Get authentication for audit trail
+                from university_system.infrastructure.shared_context import get_auth
+                auth = get_auth()
+                username = 'system'
+                if auth and hasattr(auth, 'is_logged_in') and auth.is_logged_in():
+                    user = auth.get_current_user()
+                    username = user.get('username', 'system') if user else 'system'
+
+                # Save payment to database
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                payment_date = datetime.now().strftime('%Y-%m-%d')
+
+                # Insert payment record
+                cursor.execute('''
+                    INSERT INTO payments
+                    (student_id, amount, payment_method, payment_date, status, notes, created_by, created_at)
+                    VALUES (?, ?, ?, ?, 'completed', ?, ?, ?)
+                ''', (student_id, payment_amount, payment_method, payment_date, notes, username, now))
+
+                payment_id = cursor.lastrowid
+
+                # Create payment allocation
+                cursor.execute('''
+                    INSERT INTO payment_allocations (payment_id, student_fee_id, amount, created_at)
+                    VALUES (?, ?, ?, ?)
+                ''', (payment_id, fee_id, payment_amount, now))
+
+                # Get current paid amount for this fee
+                cursor.execute('''
+                    SELECT COALESCE(SUM(amount), 0) FROM payment_allocations
+                    WHERE student_fee_id = ?
+                ''', (fee_id,))
+                total_paid = cursor.fetchone()[0]
+
+                # Update fee status
+                if total_paid >= fee_amount:
+                    new_status = 'paid'
+                else:
+                    new_status = 'partial'
+
+                cursor.execute('''
+                    UPDATE student_fees SET status = ?, updated_at = ?
+                    WHERE student_fee_id = ?
+                ''', (new_status, now, fee_id))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success",
+                                  f"Payment of £{payment_amount:.2f} recorded successfully!\n"
+                                  f"Fee Status: {new_status.title()}")
+                payment_dialog.destroy()
+                self._refresh_fees()
+
+            except ValueError:
+                messagebox.showerror("Error", "Invalid payment amount")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to record payment: {e}")
+                import traceback
+                traceback.print_exc()
+
+        # Buttons
+        btn_frame = ttk.Frame(payment_dialog)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="Record Payment", command=save_payment).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=payment_dialog.destroy).pack(side='left', padx=5)
 
     def _waive_fee(self):
         """Waive a selected fee"""

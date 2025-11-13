@@ -1119,12 +1119,38 @@ class TransactionManager:
         # Create email reminder dialog
         email_window = tk.Toplevel(self.root)
         email_window.title("Finance Email Reminders")
-        email_window.geometry("700x600")
+        email_window.geometry("750x680")
         email_window.transient(self.root)
         email_window.grab_set()
-    
+
+        # Create main container with canvas for scrolling
+        main_container = tk.Frame(email_window)
+        main_container.pack(fill='both', expand=True)
+
+        # Create canvas
+        canvas = tk.Canvas(main_container, bg='white')
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
         # Email type selection frame
-        type_frame = ttk.LabelFrame(email_window, text="Email Type", padding=10)
+        type_frame = ttk.LabelFrame(scrollable_frame, text="Email Type", padding=10)
         type_frame.pack(fill='x', padx=10, pady=10)
     
         email_type_var = tk.StringVar(value="overdue_payment")
@@ -1141,9 +1167,9 @@ class TransactionManager:
         for i, (value, text) in enumerate(email_types):
             ttk.Radiobutton(type_frame, text=text, variable=email_type_var,
                            value=value).grid(row=i//2, column=i%2, sticky='w', padx=10, pady=2)
-    
+
         # Recipient selection frame
-        recipient_frame = ttk.LabelFrame(email_window, text="Recipients", padding=10)
+        recipient_frame = ttk.LabelFrame(scrollable_frame, text="Recipients", padding=10)
         recipient_frame.pack(fill='x', padx=10, pady=10)
     
         recipient_var = tk.StringVar(value="overdue_students")
@@ -1159,9 +1185,9 @@ class TransactionManager:
         for i, (value, text) in enumerate(recipient_options):
             ttk.Radiobutton(recipient_frame, text=text, variable=recipient_var,
                            value=value).grid(row=i//2, column=i%2, sticky='w', padx=10, pady=2)
-    
+
         # Message composition frame
-        message_frame = ttk.LabelFrame(email_window, text="Message", padding=10)
+        message_frame = ttk.LabelFrame(scrollable_frame, text="Message", padding=10)
         message_frame.pack(fill='both', expand=True, padx=10, pady=10)
     
         # Subject line
@@ -1201,9 +1227,9 @@ class TransactionManager:
     
         email_type_var.trace('w', update_default_message)
         update_default_message()  # Set initial message
-    
+
         # Buttons frame
-        buttons_frame = ttk.Frame(email_window)
+        buttons_frame = ttk.Frame(scrollable_frame)
         buttons_frame.pack(fill='x', padx=10, pady=10)
     
         def preview_recipients():
@@ -1564,16 +1590,16 @@ class TransactionManager:
                     admin_conn = get_connection()
                     admin_cursor = admin_conn.cursor()
 
-                    # Try to find admin user email
+                    # Try to find admin user email from users table
                     admin_cursor.execute('''
-                        SELECT email_address FROM students
-                        WHERE role = 'admin' OR student_id LIKE 'ADMIN%'
+                        SELECT email FROM users
+                        WHERE role = 'admin'
                         LIMIT 1
                     ''')
                     admin_result = admin_cursor.fetchone()
 
                     if not admin_result:
-                        # Fallback: look for any user with admin in their ID
+                        # Fallback: look for admin in students table
                         admin_cursor.execute('''
                             SELECT email_address FROM students
                             WHERE LOWER(student_id) LIKE '%admin%'

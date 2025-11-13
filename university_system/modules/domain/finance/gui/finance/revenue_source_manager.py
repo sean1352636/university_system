@@ -267,15 +267,17 @@ class RevenueSourceManager:
             messagebox.showerror("Error", f"Failed to load revenue data:\n{str(e)}")
 
     def show_charts(self):
-        """Display pie and bar charts for revenue breakdown"""
+        """Display pie and bar charts for revenue breakdown in a new window"""
         if not hasattr(self, 'current_revenue_data') or not self.current_revenue_data:
             messagebox.showwarning("No Data", "Please load data first using the 'Load Data' button.")
             return
 
         try:
-            # Clear existing charts
-            for widget in self.chart_frame.winfo_children():
-                widget.destroy()
+            # Create new window for charts
+            charts_window = tk.Toplevel(self.root)
+            charts_window.title("Revenue Charts")
+            charts_window.geometry("1000x800")
+            charts_window.transient(self.root)
 
             # Create figure with subplots
             fig = Figure(figsize=(10, 8), dpi=100)
@@ -329,10 +331,14 @@ class RevenueSourceManager:
 
             fig.tight_layout()
 
-            # Embed in tkinter
-            canvas = FigureCanvasTkAgg(fig, master=self.chart_frame)
+            # Embed in new window
+            canvas = FigureCanvasTkAgg(fig, master=charts_window)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill='both', expand=True)
+            canvas.get_tk_widget().pack(fill='both', expand=True, padx=10, pady=10)
+
+            # Add close button
+            close_btn = ttk.Button(charts_window, text="Close", command=charts_window.destroy)
+            close_btn.pack(pady=10)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create charts:\n{str(e)}")

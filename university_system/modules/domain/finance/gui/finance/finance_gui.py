@@ -573,11 +573,11 @@ class FinanceGUI:
             # Get financial summary
             cursor.execute('''
                 SELECT
-                    COALESCE(SUM(f.amount), 0) as total_fees,
-                    COALESCE(SUM(CASE WHEN f.paid = 1 THEN f.amount ELSE 0 END), 0) as paid_amount,
-                    COALESCE(SUM(CASE WHEN f.paid = 0 THEN f.amount ELSE 0 END), 0) as outstanding
-                FROM fees f
-                WHERE f.student_id = ?
+                    COALESCE(SUM(sf.amount), 0) as total_fees,
+                    COALESCE(SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END), 0) as paid_amount,
+                    COALESCE(SUM(CASE WHEN sf.status != 'paid' THEN sf.amount ELSE 0 END), 0) as outstanding
+                FROM student_fees sf
+                WHERE sf.student_id = ?
             ''', (student_id,))
             fee_summary = cursor.fetchone()
     
@@ -618,14 +618,15 @@ class FinanceGUI:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, description, amount, due_date, paid
-                FROM fees
-                WHERE student_id = ?
-                ORDER BY due_date DESC
+                SELECT sf.student_fee_id, ft.fee_name, sf.amount, sf.due_date, sf.status
+                FROM student_fees sf
+                JOIN fee_types ft ON sf.fee_type_id = ft.fee_type_id
+                WHERE sf.student_id = ?
+                ORDER BY sf.due_date DESC
             ''', (student_id,))
-    
+
             for row in cursor.fetchall():
-                status = 'Paid' if row[4] == 1 else 'Outstanding'
+                status = 'Paid' if row[4] == 'paid' else 'Outstanding'
                 fees_tree.insert('', 'end', values=(row[0], row[1], f"£{row[2]:.2f}", row[3], status))
     
             conn.close()
