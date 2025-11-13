@@ -441,14 +441,20 @@ class DashboardManager:
     def gui_generate_financial_dashboard(self):
         """Generate and display financial dashboard"""
         try:
-            self.update_status("Generating financial dashboard...")
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                self.gui.layout.update_status("Generating financial dashboard...")
+            else:
+                print("Generating financial dashboard...")
             
             def generate_dashboard():
                 try:
                     # Update all dashboard charts
                     self.update_dashboard_charts()
                     messagebox.showinfo("Success", "Financial dashboard updated successfully!")
-                    self.update_status("Financial dashboard generated")
+                    if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                        self.gui.layout.update_status("Financial dashboard generated")
+                    else:
+                        print("Financial dashboard generated")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
             

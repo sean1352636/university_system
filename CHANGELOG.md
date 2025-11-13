@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Finance Management GUI Dialog and Manager Fixes
+
+**Dialog Size and Scrollbar Improvements (2 critical UX fixes):**
+- **Process Payment Dialog**: Increased size from 600x500 to 850x700 pixels with scrollable canvas
+  - Added vertical scrollbar for accessing all payment options
+  - Implemented mouse wheel scrolling support
+  - All form fields now fully accessible without window resizing
+- **Manage Refund Dialog**: Increased size from 800x700 to 900x750 pixels with scrollable canvas
+  - Added vertical scrollbar for refund history and details
+  - Enhanced UX for processing refunds with multiple options
+  - All frames (Student Info, Payment History, Refund Details) now scrollable
+
+**Invoice Manager Critical Fix (structural repair):**
+- Fixed broken `InvoiceManager` class structure where all methods were nested inside `__init__`
+  - `gui_generate_invoice()` is now a proper class method (was nested function)
+  - `load_student_info()` is now a proper class method with correct indentation
+  - Button frame properly positioned in method hierarchy
+  - Resolves "invoice manager not available" error
+- Methods now properly accessible from GUI instance
+
+**Dashboard Manager AttributeError Fix:**
+- Fixed `DashboardManager.gui_generate_financial_dashboard()` calling non-existent `self.update_status()`
+  - Now properly delegates to `self.gui.layout.update_status()` with fallback
+  - Added safe attribute checking before method calls
+  - Resolves "DashboardManager object has no attribute update_status" error
+  - Dashboard generation now completes without errors
+
+**Technical Details:**
+- Canvas scrolling implementation with proper event binding
+- Cross-platform mouse wheel support
+- Proper indentation fix (8 spaces for class methods vs 12 for nested functions)
+- Safe delegation pattern for inter-manager method calls
+
+**Files Modified:**
+- `transaction_manager.py`: 64 lines modified (2 dialogs with scrolling)
+- `invoice_manager.py`: 50 lines modified (method structure fix)
+- `dashboard.py`: 6 lines modified (update_status delegation)
+
+**Impact:**
+- All Finance Management GUI features now fully functional
+- Improved user experience with larger, scrollable dialogs
+- Eliminated structural bugs preventing invoice generation
+- Professional dialog layout supporting extensive form fields
+
 ### Added - 2025-11-12: Comprehensive Payment Search Feature Implementation
 
 **New Feature: Advanced Payment Search (200+ lines)**

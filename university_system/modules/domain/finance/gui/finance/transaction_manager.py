@@ -225,12 +225,38 @@ class TransactionManager:
         """GUI wrapper for record_payment"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Record Payment")
-        dialog.geometry("600x500")
+        dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
-        
-        # Create notebook for tabs
-        notebook = ttk.Notebook(dialog)
+
+        # Create main container with canvas for scrolling
+        main_container = tk.Frame(dialog)
+        main_container.pack(fill='both', expand=True)
+
+        # Create canvas
+        canvas = tk.Canvas(main_container, bg='white')
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+        # Create notebook for tabs inside scrollable frame
+        notebook = ttk.Notebook(scrollable_frame)
         notebook.pack(fill='both', expand=True, padx=10, pady=10)
         
         # Basic payment tab
@@ -755,12 +781,38 @@ class TransactionManager:
         """GUI wrapper for process_refund"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Process Refund")
-        dialog.geometry("800x700")
+        dialog.geometry("900x750")
         dialog.transient(self.root)
         dialog.grab_set()
-        
+
+        # Create main container with canvas for scrolling
+        main_container = tk.Frame(dialog)
+        main_container.pack(fill='both', expand=True)
+
+        # Create canvas
+        canvas = tk.Canvas(main_container, bg='white')
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
         # Student selection
-        student_frame = ttk.LabelFrame(dialog, text="Student Information", padding=15)
+        student_frame = ttk.LabelFrame(scrollable_frame, text="Student Information", padding=15)
         student_frame.pack(fill='x', padx=20, pady=10)
         
         ttk.Label(student_frame, text="Student ID:", font=('Arial', 12)).pack(anchor='w')
@@ -768,11 +820,11 @@ class TransactionManager:
         student_entry = ttk.Entry(student_frame, textvariable=student_id_var, font=('Arial', 12), width=20)
         student_entry.pack(anchor='w', pady=5)
         
-        ttk.Button(student_frame, text="Load Payment History", 
+        ttk.Button(student_frame, text="Load Payment History",
                   command=lambda: self.load_payment_history(student_id_var.get(), payments_tree)).pack(anchor='w', pady=5)
-        
+
         # Payment history display
-        history_frame = ttk.LabelFrame(dialog, text="Payment History", padding=15)
+        history_frame = ttk.LabelFrame(scrollable_frame, text="Payment History", padding=15)
         history_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
         columns = ('Payment ID', 'Amount', 'Method', 'Date', 'Transaction ID')
@@ -783,9 +835,9 @@ class TransactionManager:
             payments_tree.column(col, width=120, anchor='center')
         
         payments_tree.pack(fill='both', expand=True)
-        
+
         # Refund details
-        refund_frame = ttk.LabelFrame(dialog, text="Refund Details", padding=15)
+        refund_frame = ttk.LabelFrame(scrollable_frame, text="Refund Details", padding=15)
         refund_frame.pack(fill='x', padx=20, pady=10)
         
         # Refund type
@@ -893,11 +945,12 @@ class TransactionManager:
                 messagebox.showerror("Error", "Invalid refund amount")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to process refund: {e}")
-        
+
+
         # Buttons
-        button_frame = ttk.Frame(dialog)
+        button_frame = ttk.Frame(scrollable_frame)
         button_frame.pack(pady=10)
-        
+
         ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side='left', padx=10)
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=10)
     

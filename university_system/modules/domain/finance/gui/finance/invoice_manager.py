@@ -216,53 +216,50 @@ class InvoiceManager:
         except:
             self.finance_system = None
 
-        def gui_generate_invoice(self):
-            """GUI wrapper for generate_invoice"""
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Generate Invoice")
-            dialog.geometry("700x600")
-            dialog.transient(self.root)
-            dialog.grab_set()
-            
-            # Student selection
-            input_frame = ttk.LabelFrame(dialog, text="Student Information", padding=15)
-            input_frame.pack(fill='x', padx=20, pady=10)
-            
-            ttk.Label(input_frame, text="Student ID:", font=('Arial', 12)).pack(anchor='w')
-            student_id_var = tk.StringVar()
-            student_entry = ttk.Entry(input_frame, textvariable=student_id_var, font=('Arial', 12), width=20)
-            student_entry.pack(anchor='w', pady=5)
-            
-            ttk.Button(input_frame, text="Load Student Info", 
-                      command=lambda: self.load_student_info(student_id_var.get(), student_info_text)).pack(anchor='w', pady=5)
-            
-            # Student info display
-            student_info_text = tk.Text(input_frame, height=4, width=70, font=('Arial', 10), state='disabled')
-            student_info_text.pack(pady=5)
-            
-            # Outstanding fees display
-            fees_frame = ttk.LabelFrame(dialog, text="Outstanding Fees", padding=15)
-            fees_frame.pack(fill='both', expand=True, padx=20, pady=10)
-            
-            # Fees treeview
-            columns = ('Fee Name', 'Amount', 'Due Date', 'Status')
-            fees_tree = ttk.Treeview(fees_frame, columns=columns, show='headings', height=8)
-            
-            for col in columns:
-                fees_tree.heading(col, text=col)
-                fees_tree.column(col, width=150, anchor='center')
-            
-            fees_tree.pack(fill='both', expand=True)
-            
-            # Invoice preview
-            preview_frame = ttk.LabelFrame(dialog, text="Invoice Preview", padding=15)
-            preview_frame.pack(fill='x', padx=20, pady=10)
-            
-            invoice_text = ScrolledText(preview_frame, height=6, width=80, font=('Courier', 9))
-            invoice_text.pack(fill='x')
-    
-        # ==================== DATA LOADING METHODS ====================
-    
+    def gui_generate_invoice(self):
+        """GUI wrapper for generate_invoice"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Generate Invoice")
+        dialog.geometry("700x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Student selection
+        input_frame = ttk.LabelFrame(dialog, text="Student Information", padding=15)
+        input_frame.pack(fill='x', padx=20, pady=10)
+
+        ttk.Label(input_frame, text="Student ID:", font=('Arial', 12)).pack(anchor='w')
+        student_id_var = tk.StringVar()
+        student_entry = ttk.Entry(input_frame, textvariable=student_id_var, font=('Arial', 12), width=20)
+        student_entry.pack(anchor='w', pady=5)
+
+        ttk.Button(input_frame, text="Load Student Info",
+                  command=lambda: self.load_student_info(student_id_var.get(), student_info_text)).pack(anchor='w', pady=5)
+
+        # Student info display
+        student_info_text = tk.Text(input_frame, height=4, width=70, font=('Arial', 10), state='disabled')
+        student_info_text.pack(pady=5)
+
+        # Outstanding fees display
+        fees_frame = ttk.LabelFrame(dialog, text="Outstanding Fees", padding=15)
+        fees_frame.pack(fill='both', expand=True, padx=20, pady=10)
+
+        # Fees treeview
+        columns = ('Fee Name', 'Amount', 'Due Date', 'Status')
+        fees_tree = ttk.Treeview(fees_frame, columns=columns, show='headings', height=8)
+
+        for col in columns:
+            fees_tree.heading(col, text=col)
+            fees_tree.column(col, width=150, anchor='center')
+
+        fees_tree.pack(fill='both', expand=True)
+
+        # Invoice preview
+        preview_frame = ttk.LabelFrame(dialog, text="Invoice Preview", padding=15)
+        preview_frame.pack(fill='x', padx=20, pady=10)
+
+        invoice_text = ScrolledText(preview_frame, height=6, width=80, font=('Courier', 9))
+        invoice_text.pack(fill='x')
 
         def generate_invoice():
             try:
@@ -435,64 +432,63 @@ class InvoiceManager:
                                    f"(Email sending simulated)")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to send invoice: {e}")
-    
-            # Buttons
-            button_frame = ttk.Frame(dialog)
-            button_frame.pack(pady=10)
-    
-            ttk.Button(button_frame, text="Generate Invoice", command=generate_invoice).pack(side='left', padx=5)
-            save_btn = ttk.Button(button_frame, text="Save Invoice", command=save_invoice, state='disabled')
-            save_btn.pack(side='left', padx=5)
-            send_btn = ttk.Button(button_frame, text="Send Email", command=send_invoice, state='disabled')
-            send_btn.pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
-    
 
-        def load_student_info(self, student_id, text_widget):
-            """Load and display student information"""
-            if not student_id:
-                return
-            
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+
+        ttk.Button(button_frame, text="Generate Invoice", command=generate_invoice).pack(side='left', padx=5)
+        save_btn = ttk.Button(button_frame, text="Save Invoice", command=save_invoice, state='disabled')
+        save_btn.pack(side='left', padx=5)
+        send_btn = ttk.Button(button_frame, text="Send Email", command=send_invoice, state='disabled')
+        send_btn.pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
+
+    def load_student_info(self, student_id, text_widget):
+        """Load and display student information"""
+        if not student_id:
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Try to get phone_number if it exists, otherwise use NULL
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-                
-                # Try to get phone_number if it exists, otherwise use NULL
-                try:
-                    cursor.execute('''
-                    SELECT first_name, last_name, email_address, phone_number, course, enrollment_date, status
-                    FROM students
-                    WHERE student_id = ?
-                    ''', (student_id,))
-                except:
-                    # Fallback if phone_number column doesn't exist
-                    cursor.execute('''
-                    SELECT first_name, last_name, email_address, NULL as phone_number, course, enrollment_date, status
-                    FROM students
-                    WHERE student_id = ?
-                    ''', (student_id,))
-                
-                student = cursor.fetchone()
-                
-                text_widget.config(state='normal')
-                text_widget.delete('1.0', tk.END)
-                
-                if student:
-                    first_name, last_name, email, phone, course, enrollment_date, status = student
-                    info = f"Name: {first_name} {last_name}\n"
-                    info += f"Email: {email}\n"
-                    info += f"Phone: {phone}\n"
-                    info += f"Course: {course} | Enrolled: {enrollment_date} | Status: {status}"
-                    text_widget.insert('1.0', info)
-                else:
-                    text_widget.insert('1.0', f"Student ID {student_id} not found")
-                
-                text_widget.config(state='disabled')
-                conn.close()
-                
-            except Exception as e:
-                text_widget.config(state='normal')
-                text_widget.delete('1.0', tk.END)
-                text_widget.insert('1.0', f"Error loading student info: {e}")
-                text_widget.config(state='disabled')
+                cursor.execute('''
+                SELECT first_name, last_name, email_address, phone_number, course, enrollment_date, status
+                FROM students
+                WHERE student_id = ?
+                ''', (student_id,))
+            except:
+                # Fallback if phone_number column doesn't exist
+                cursor.execute('''
+                SELECT first_name, last_name, email_address, NULL as phone_number, course, enrollment_date, status
+                FROM students
+                WHERE student_id = ?
+                ''', (student_id,))
+
+            student = cursor.fetchone()
+
+            text_widget.config(state='normal')
+            text_widget.delete('1.0', tk.END)
+
+            if student:
+                first_name, last_name, email, phone, course, enrollment_date, status = student
+                info = f"Name: {first_name} {last_name}\n"
+                info += f"Email: {email}\n"
+                info += f"Phone: {phone}\n"
+                info += f"Course: {course} | Enrolled: {enrollment_date} | Status: {status}"
+                text_widget.insert('1.0', info)
+            else:
+                text_widget.insert('1.0', f"Student ID {student_id} not found")
+
+            text_widget.config(state='disabled')
+            conn.close()
+
+        except Exception as e:
+            text_widget.config(state='normal')
+            text_widget.delete('1.0', tk.END)
+            text_widget.insert('1.0', f"Error loading student info: {e}")
+            text_widget.config(state='disabled')
     
