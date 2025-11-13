@@ -604,16 +604,21 @@ class HealthPortalGUI:
         # Clear login screen
         for widget in self.root.winfo_children():
             widget.destroy()
-        
+
         # Main container
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(0, weight=1)
+        # Row 0 (header) - no expansion
+        main_frame.rowconfigure(0, weight=0)
+        # Row 1 (navigation + content) - expand to fill space
+        main_frame.rowconfigure(1, weight=1)
+        # Row 2 (status bar) - no expansion
+        main_frame.rowconfigure(2, weight=0)
         
         # Create header
         self.create_header(main_frame)

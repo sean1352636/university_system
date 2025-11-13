@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2025-11-13: Health Portal GUI - Layout Display Issue
+
+**Fixed main interface displaying only in bottom half of window**
+
+This commit fixes a critical layout bug where the Health Portal GUI's main content was pushed to the bottom half of the window with the top half appearing blank.
+
+**ROOT CAUSE:**
+- `main_frame.rowconfigure(0, weight=1)` caused header (row 0) to expand vertically
+- Navigation and content area (row 1) had no weight configured
+- Result: Header filled top half of window as blank space, content squeezed to bottom
+
+**THE FIX:**
+```python
+# Row 0 (header) - no expansion
+main_frame.rowconfigure(0, weight=0)
+# Row 1 (navigation + content) - expand to fill space
+main_frame.rowconfigure(1, weight=1)
+# Row 2 (status bar) - no expansion
+main_frame.rowconfigure(2, weight=0)
+```
+
+**RESULT:**
+- Header stays compact at top of window
+- Navigation panel and content area expand to fill middle space
+- Status bar stays compact at bottom
+- Professional, properly laid out interface
+
+**FILE CHANGED:**
+- `university_system/modules/domain/health/gui/health_portal_gui.py` (lines 616-621)
+
+---
+
 ### Enhanced - 2025-11-13: Finance Reporting GUI - Convert CLI Reports to GUI Windows
 
 **All Command-Line Reports Now Display in GUI Windows**
