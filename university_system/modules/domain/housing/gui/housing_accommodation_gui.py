@@ -4090,8 +4090,7 @@ Housing Administration"""
                 return
 
             # Load email service
-            from university_system.infrastructure.email.email_service import EmailService
-            email_service = EmailService()
+            from university_system.infrastructure.email.email_service import send_email
 
             # Determine which template to use based on status
             if status == 'Issues Found':
@@ -4153,11 +4152,10 @@ Housing Administration"""
                     body = body.replace('{{' + key + '}}', str(value))
 
                 # Send email
-                success = email_service.send_email(
-                    to_address=email_address,
+                success = send_email(
+                    recipient_email=email_address,
                     subject=subject,
-                    body=body,
-                    email_type='inspection_result'
+                    body=body
                 )
 
                 if success:
@@ -4741,8 +4739,7 @@ Housing Administration"""
                 pass
 
             # Prepare email
-            from university_system.infrastructure.email.email_service import EmailService
-            email_service = EmailService()
+            from university_system.infrastructure.email.email_service import send_email
 
             # Format email body
             email_body = f"""Hello {admin_name},
@@ -4763,11 +4760,10 @@ This is an automated message from the University Housing Management System.
 """
 
             # Send email
-            success = email_service.send_email(
-                to_address=admin_email,
+            success = send_email(
+                recipient_email=admin_email,
                 subject=f"Housing Report: {title}",
-                body=email_body,
-                email_type='report'
+                body=email_body
             )
 
             if success:
@@ -5493,18 +5489,16 @@ This is an automated message from the University Housing Management System.
                     return
 
                 # Send email to recipients
-                from university_system.infrastructure.email.email_service import EmailService
-                email_service = EmailService()
+                from university_system.infrastructure.email.email_service import send_email
 
                 recipient_list = [email.strip() for email in recipients.split(',')]
 
                 for recipient in recipient_list:
                     if recipient:
-                        success = email_service.send_email(
-                            to_address=recipient,
+                        success = send_email(
+                            recipient_email=recipient,
                             subject=f"Housing Report: {report_name}",
-                            body=f"Automated Housing Report\n\n{report_content}",
-                            email_type='scheduled_report'
+                            body=f"Automated Housing Report\n\n{report_content}"
                         )
 
                 # Update last run date

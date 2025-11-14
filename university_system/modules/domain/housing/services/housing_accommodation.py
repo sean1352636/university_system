@@ -5622,10 +5622,14 @@ def display_reports_menu():
 
 # Main Menu Function
 @log_menu_navigation(description="Displaying housing accommodation menu")
-def display_housing_accommodation_menu():
+def display_housing_accommodation_menu(auth_instance=None):
     """Display the housing accommodation management menu"""
     global auth
-    
+
+    # Set auth instance if provided
+    if auth_instance:
+        auth = auth_instance
+
     # First, initialize the housing database if not already done
     init_housing_db()
     
