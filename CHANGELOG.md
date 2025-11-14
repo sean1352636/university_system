@@ -33,6 +33,27 @@ Fixed "no such table: administrators" error when using the "Send to Admin" butto
 
 ---
 
+### Fixed - Missing get_auth Import
+
+**Import Error Fix**
+
+Fixed "get_auth is not defined" error when sending reports to administrators.
+
+**Root Cause:**
+- `get_auth()` function was called in `send_report_to_admin()` method (line 4731)
+- Missing import statement for `get_auth` from `shared_context` module
+
+**Fix:**
+- Added import: `from university_system.infrastructure.shared_context import get_auth`
+- Location: Line 7 (imports section at top of file)
+
+**Impact:**
+- ✅ Send to Admin button retrieves current user information correctly
+- ✅ Sender name included in report emails
+- ✅ No more NameError when clicking Send to Admin
+
+---
+
 ### Fixed - Syntax Error in Housing Accommodation GUI
 
 **Critical Syntax Fix**
