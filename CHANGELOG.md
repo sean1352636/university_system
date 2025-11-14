@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.6] - 2025-01-14
 
+### Fixed - Admin Email Query Error
+
+**Database Query Fix**
+
+Fixed "no such table: administrators" error when using the "Send to Admin" button in report windows.
+
+**Root Cause:**
+- Query referenced non-existent `administrators` table
+- Used wrong column name `email_address` instead of `email`
+- Used wrong role names (`System Administrator`, `Housing Administrator`)
+
+**Fix:**
+- Changed table from `administrators` to `users`
+- Changed column from `email_address` to `email`
+- Updated roles to `admin` and `staff` (actual roles in database)
+- Maintained priority: admin > staff
+
+**Impact:**
+- ✅ "Send to Admin" button now works correctly
+- ✅ Reports can be emailed to administrators
+- ✅ Queries first admin user, falls back to staff if no admin exists
+
+**Location:** `housing_accommodation_gui.py:4702-4714`
+
+---
+
 ### Fixed - Syntax Error in Housing Accommodation GUI
 
 **Critical Syntax Fix**
