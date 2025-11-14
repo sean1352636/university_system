@@ -5,6 +5,77 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.8] - 2025-11-14
+
+### Changed - Database User ID Reorganization
+
+**Critical Database Restructuring**
+
+Reorganized the users table primary keys to establish a consistent ID structure with default system accounts at the top of the table.
+
+**Previous Structure:**
+```
+ID 1   : S12345 (default student)
+ID 2   : 7796276 (student)
+ID 3   : 7149430 (student)
+...
+ID 193 : 1952392 (default staff - Lucas Jones)
+...
+ID 196 : system_teessideuniversity (default admin)
+```
+
+**New Structure:**
+```
+ID 1   : system_teessideuniversity (default admin)
+ID 2   : 1952392 (default staff - Lucas Jones)
+ID 3   : S12345 (default student)
+ID 4+  : All other users (shifted by +2)
+```
+
+**Changes Made:**
+1. **Users Table Reorganization:**
+   - Moved admin account from ID 196 → ID 1
+   - Moved staff account from ID 193 → ID 2
+   - Moved default student from ID 1 → ID 3
+   - Shifted all other user IDs by +2 to accommodate new structure
+
+2. **Foreign Key Updates:**
+   - Updated 74 database tables with foreign key references to users table
+   - Remapped all user_id references to match new ID structure
+   - Total affected rows: ~56,500+ across all tables
+
+**Tables Updated:**
+- `user_accounts`: 588 rows
+- `activity_log`: 2,472 rows
+- `messages` (sender): 20,850 rows
+- `messages` (recipient): 32,215 rows
+- `document_repository`: 192 rows
+- `plagiarism_results`: 192 rows
+- `assignments`, `announcements`, `chat_rooms`, `rubrics`, and 60+ other tables
+
+**Impact:**
+- ✅ Consistent default user ordering (admin, staff, student)
+- ✅ Easier to identify system default accounts
+- ✅ All foreign key relationships maintained
+- ✅ Database integrity verified (PRAGMA integrity_check: ok)
+- ✅ No data loss or corruption
+- ✅ Total user count preserved: 195 users
+
+**Technical Details:**
+- Used transactional approach with temporary table
+- Created ID mapping: {1→3, 193→2, 196→1, 2-192→4-194}
+- Automated foreign key updates via Python script
+- Backup created before changes
+
+**Database:** `student_records.db` - `users` table and 74 related tables
+
+**Backward Compatibility:**
+- Student IDs unchanged (S12345, 1952392, etc.)
+- Student table unaffected (no user_id column)
+- Relationship via users.student_id → students.student_id maintained
+
+---
+
 ## [5.0.7] - 2025-11-14
 
 ### Fixed - User Database Email Addresses
