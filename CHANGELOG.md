@@ -134,11 +134,142 @@ WHERE ha.room_id IN (?) AND ha.status = 'Active'
 - `university_system/templates/email/inspection_issues_found.json`: New template
 - `university_system/templates/email/building_inspection_notice.json`: New template
 
+---
+
+### Enhanced - Reports & Analytics Window System
+
+**Complete Report System Overhaul with Export & Email Capabilities**
+
+Transformed the housing reports system from inline display to dedicated popup windows with comprehensive export and email functionality.
+
+**1. New Report Window System**
+- **Dedicated Windows**: All reports now open in separate Toplevel windows
+- **Larger Display**: 900x700 window size for better readability
+- **Professional Layout**: Title, scrollable content area, action buttons
+- **Location**: `housing_accommodation_gui.py:4390-4439`
+
+**2. Export Functionality**
+Added three export formats with file dialogs for user-friendly saving:
+
+**TXT Export** (`export_report_as_txt`)
+- Plain text format
+- UTF-8 encoding
+- Preserves formatting
+- Location: `housing_accommodation_gui.py:4441-4458`
+
+**CSV Export** (`export_report_as_csv`)
+- Line-by-line CSV format
+- Includes report title as header
+- Compatible with Excel/Google Sheets
+- UTF-8 encoding with BOM support
+- Location: `housing_accommodation_gui.py:4460-4490`
+
+**PDF Export** (`export_report_as_pdf`)
+- Professional PDF generation using reportlab
+- Automatic pagination for long reports
+- Formatted with Courier font for data alignment
+- Fallback to text file if reportlab not installed
+- Helpful error message with installation instructions
+- Location: `housing_accommodation_gui.py:4492-4551`
+
+**PDF Features**:
+- Letter-sized pages (8.5" x 11")
+- Title in Helvetica-Bold 16pt
+- Content in Courier 9pt (monospace)
+- Auto page breaks at 1" margin
+- Long lines truncated at 100 chars with "..."
+
+**3. Send to Admin Feature**
+- **Email Button**: "Send to Admin" button on all report windows
+- **Admin Lookup**: Queries database for System/Housing Administrator email
+- **Priority Order**: System Administrator > Housing Administrator
+- **Formatted Email**: Professional email template with report content
+- **Metadata**: Includes report title, generator name, timestamp
+- **Error Handling**: Clear messages if no admin found
+- **Location**: `housing_accommodation_gui.py:4553-4632`
+
+**Admin Email Query**:
+```sql
+SELECT email_address, first_name, last_name
+FROM administrators
+WHERE role = 'System Administrator' OR role = 'Housing Administrator'
+ORDER BY CASE role
+    WHEN 'System Administrator' THEN 1
+    WHEN 'Housing Administrator' THEN 2
+    ELSE 3
+END
+LIMIT 1
+```
+
+**4. Updated Report Methods**
+All four report methods refactored to use new window system:
+
+- **Occupancy Report** (`show_occupancy_report`)
+  - Building breakdown with occupancy rates
+  - Room type distribution
+  - Overall statistics
+  - Location: `housing_accommodation_gui.py:4634-4714`
+
+- **Financial Summary** (`show_financial_summary`)
+  - Monthly/annual revenue projections
+  - Payment statistics by year
+  - Revenue breakdown by building
+  - Location: `housing_accommodation_gui.py:4716-4783`
+
+- **Maintenance Summary** (`show_maintenance_summary_gui`)
+  - Request counts by status
+  - Priority distribution
+  - Emergency request warnings
+  - Location: `housing_accommodation_gui.py:4785-4879`
+
+- **Room Availability** (`show_room_availability`)
+  - Available rooms with details
+  - Accessibility information
+  - Summary by room type
+  - Location: `housing_accommodation_gui.py:4881-4933`
+
+**5. User Interface Flow**
+1. User clicks report button (e.g., "Occupancy Report")
+2. System generates report content from database
+3. New window opens with formatted report
+4. User can:
+   - Read/scroll through report
+   - Export as TXT (plain text)
+   - Export as CSV (spreadsheet)
+   - Export as PDF (professional document)
+   - Send to Admin via email
+   - Close window
+
+**6. Technical Improvements**
+- **Separation of Concerns**: Report generation separated from display
+- **Reusable Window**: Single `open_report_window()` method for all reports
+- **Error Handling**: Try/catch blocks with user-friendly error messages
+- **File Dialogs**: Native OS file picker for export locations
+- **Email Integration**: Leverages existing EmailService infrastructure
+- **Context Aware**: Includes current user info in "Send to Admin" emails
+
+**7. Benefits**
+- ✅ **Better UX**: Reports don't clutter main interface
+- ✅ **Multi-Report**: View multiple reports simultaneously
+- ✅ **Export Options**: Share reports in preferred format
+- ✅ **Admin Communication**: One-click report sharing
+- ✅ **Professional Output**: Publication-ready PDF reports
+- ✅ **Accessibility**: Larger windows, better readability
+- ✅ **Data Portability**: CSV export for further analysis
+
+**8. Dependencies**
+- **Optional**: reportlab (for full PDF support)
+  - Install: `pip install reportlab`
+  - If not installed: Falls back to text file with .pdf extension
+  - User receives helpful installation instructions
+
+**Files Modified**:
+- `housing_accommodation_gui.py`: Added 8 new methods, refactored 4 report methods
+
 **TODO - Future Enhancements (Not in this release)**:
-- [ ] Open reports in new window instead of inline display
-- [ ] Add export buttons for reports (TXT, CSV, PDF)
-- [ ] Add "Send to Admin" button for reports
 - [ ] Post-inspection email notifications with results
+- [ ] Scheduled report generation and email delivery
+- [ ] Report templates for customizable formatting
 
 ## [5.0.5] - 2025-01-14
 

@@ -4387,17 +4387,252 @@ Housing Administration"""
         ttk.Label(self.report_display_frame, 
                  text="Select a report from the menu to view results here").pack()
     
-    def show_occupancy_report(self):
-        """Show occupancy report in GUI"""
-        # Clear report area
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        # Create scrolled text for report
-        report_text = scrolledtext.ScrolledText(self.report_display_frame, wrap=tk.WORD, 
-                                              width=60, height=25)
+    def open_report_window(self, title, report_content, report_type='text'):
+        """Open a report in a new window with export and send options"""
+        # Create new window
+        report_window = tk.Toplevel(self.root)
+        report_window.title(title)
+        report_window.geometry("900x700")
+
+        # Main frame
+        main_frame = ttk.Frame(report_window, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        # Title
+        ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Report content area with scrollbar
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        report_text = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD,
+                                               width=80, height=30, font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
-        
+        report_text.insert('1.0', report_content)
+        report_text.config(state='disabled')
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(10, 0))
+
+        # Export buttons
+        ttk.Label(button_frame, text="Export as:", font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
+
+        ttk.Button(button_frame, text="TXT", width=10,
+                  command=lambda: self.export_report_as_txt(title, report_content, report_window)).pack(side='left', padx=5)
+
+        ttk.Button(button_frame, text="CSV", width=10,
+                  command=lambda: self.export_report_as_csv(title, report_content, report_window)).pack(side='left', padx=5)
+
+        ttk.Button(button_frame, text="PDF", width=10,
+                  command=lambda: self.export_report_as_pdf(title, report_content, report_window)).pack(side='left', padx=5)
+
+        # Separator
+        ttk.Separator(button_frame, orient='vertical').pack(side='left', fill='y', padx=15)
+
+        # Send to admin button
+        ttk.Button(button_frame, text="Send to Admin", width=15,
+                  command=lambda: self.send_report_to_admin(title, report_content, report_window)).pack(side='left', padx=5)
+
+        # Close button
+        ttk.Button(button_frame, text="Close", width=10,
+                  command=report_window.destroy).pack(side='right', padx=5)
+
+    def export_report_as_txt(self, title, content, parent_window):
+        """Export report as TXT file"""
+        from tkinter import filedialog
+
+        filename = filedialog.asksaveasfilename(
+            parent=parent_window,
+            title="Save Report as TXT",
+            defaultextension=".txt",
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+        )
+
+        if filename:
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+
+    def export_report_as_csv(self, title, content, parent_window):
+        """Export report as CSV file"""
+        import csv
+        from tkinter import filedialog
+
+        filename = filedialog.asksaveasfilename(
+            parent=parent_window,
+            title="Save Report as CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+        )
+
+        if filename:
+            try:
+                # Parse report content into CSV format
+                lines = content.split('\n')
+
+                with open(filename, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+
+                    # Write header
+                    writer.writerow([title])
+                    writer.writerow([])  # Empty row
+
+                    # Write content line by line
+                    for line in lines:
+                        writer.writerow([line])
+
+                messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+
+    def export_report_as_pdf(self, title, content, parent_window):
+        """Export report as PDF file"""
+        from tkinter import filedialog
+
+        filename = filedialog.asksaveasfilename(
+            parent=parent_window,
+            title="Save Report as PDF",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")]
+        )
+
+        if filename:
+            try:
+                # Try to use reportlab if available
+                try:
+                    from reportlab.lib.pagesizes import letter
+                    from reportlab.pdfgen import canvas
+                    from reportlab.lib.units import inch
+
+                    c = canvas.Canvas(filename, pagesize=letter)
+                    width, height = letter
+
+                    # Title
+                    c.setFont("Helvetica-Bold", 16)
+                    c.drawString(1*inch, height - 1*inch, title)
+
+                    # Content
+                    c.setFont("Courier", 9)
+                    y_position = height - 1.5*inch
+                    line_height = 12
+
+                    lines = content.split('\n')
+                    for line in lines:
+                        if y_position < 1*inch:
+                            c.showPage()
+                            c.setFont("Courier", 9)
+                            y_position = height - 1*inch
+
+                        # Truncate long lines
+                        if len(line) > 100:
+                            line = line[:100] + "..."
+
+                        c.drawString(0.5*inch, y_position, line)
+                        y_position -= line_height
+
+                    c.save()
+                    messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+
+                except ImportError:
+                    # Fallback: save as text with .pdf extension
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        f.write(f"{title}\n{'='*60}\n\n{content}")
+                    messagebox.showwarning("Limited PDF Support",
+                                         f"reportlab not available. Report saved as text file with .pdf extension.\n\n"
+                                         f"Install reportlab for proper PDF support:\n"
+                                         f"pip install reportlab\n\n"
+                                         f"File saved to: {filename}",
+                                         parent=parent_window)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+
+    def send_report_to_admin(self, title, content, parent_window):
+        """Send report to admin via email"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get admin email from database
+            cursor.execute('''
+                SELECT email_address, first_name, last_name
+                FROM administrators
+                WHERE role = 'System Administrator' OR role = 'Housing Administrator'
+                ORDER BY
+                    CASE role
+                        WHEN 'System Administrator' THEN 1
+                        WHEN 'Housing Administrator' THEN 2
+                        ELSE 3
+                    END
+                LIMIT 1
+            ''')
+
+            admin = cursor.fetchone()
+
+            if not admin:
+                messagebox.showerror("Error",
+                                   "No administrator email found in database.\n"
+                                   "Please ensure an administrator account exists.",
+                                   parent=parent_window)
+                conn.close()
+                return
+
+            admin_email = admin[0]
+            admin_name = f"{admin[1]} {admin[2]}"
+            conn.close()
+
+            # Get current user info
+            auth = get_auth()
+            current_user = auth.get_current_user() if auth.is_logged_in() else None
+            sender_name = f"{current_user['first_name']} {current_user['last_name']}" if current_user else "Housing System"
+
+            # Prepare email
+            from university_system.infrastructure.email.email_service import EmailService
+            email_service = EmailService()
+
+            # Format email body
+            email_body = f"""Hello {admin_name},
+
+A housing report has been generated and sent to you for review.
+
+Report: {title}
+Generated by: {sender_name}
+Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+--- REPORT CONTENT ---
+
+{content}
+
+---
+
+This is an automated message from the University Housing Management System.
+"""
+
+            # Send email
+            success = email_service.send_email(
+                to_address=admin_email,
+                subject=f"Housing Report: {title}",
+                body=email_body,
+                email_type='report'
+            )
+
+            if success:
+                messagebox.showinfo("Success",
+                                  f"Report sent successfully to:\n{admin_name} ({admin_email})",
+                                  parent=parent_window)
+            else:
+                messagebox.showerror("Error",
+                                   "Failed to send email. Please check email configuration.",
+                                   parent=parent_window)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send report to admin:\n{str(e)}", parent=parent_window)
+
+    def show_occupancy_report(self):
+        """Show occupancy report in new window"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
@@ -4405,38 +4640,38 @@ Housing Administration"""
             # Generate report content
             report_content = "HOUSING OCCUPANCY REPORT\n"
             report_content += "=" * 50 + "\n\n"
-            
+
             # Overall statistics
             cursor.execute('SELECT COUNT(*) FROM housing_buildings')
             total_buildings = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_rooms')
             total_rooms = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE status = "Occupied"')
             occupied_rooms = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE status = "Available"')
             available_rooms = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_assignments WHERE status = "Active"')
             active_assignments = cursor.fetchone()[0]
-            
+
             occupancy_rate = (occupied_rooms / total_rooms * 100) if total_rooms > 0 else 0
-            
+
             report_content += f"Total Buildings: {total_buildings}\n"
             report_content += f"Total Rooms: {total_rooms}\n"
             report_content += f"Occupied Rooms: {occupied_rooms}\n"
             report_content += f"Available Rooms: {available_rooms}\n"
             report_content += f"Active Assignments: {active_assignments}\n"
             report_content += f"Occupancy Rate: {occupancy_rate:.1f}%\n\n"
-            
+
             # Building breakdown
             report_content += "BUILDING BREAKDOWN:\n"
             report_content += "-" * 80 + "\n"
             report_content += f"{'Building':<25} {'Total':<8} {'Occupied':<10} {'Available':<10} {'Rate':<8}\n"
             report_content += "-" * 80 + "\n"
-            
+
             cursor.execute('''
             SELECT b.building_name, b.total_rooms, b.available_rooms,
                    (b.total_rooms - b.available_rooms) as occupied_rooms,
@@ -4444,18 +4679,18 @@ Housing Administration"""
             FROM housing_buildings b
             ORDER BY b.building_name
             ''')
-            
+
             buildings = cursor.fetchall()
-            
+
             for building in buildings:
                 report_content += f"{building[0]:<25} {building[1]:<8} {building[3]:<10} {building[2]:<10} {building[4]:.1f}%\n"
-            
+
             # Room type breakdown
             report_content += "\n\nROOM TYPE DISTRIBUTION:\n"
             report_content += "-" * 50 + "\n"
             report_content += f"{'Type':<12} {'Total':<8} {'Occupied':<10} {'Available':<10}\n"
             report_content += "-" * 50 + "\n"
-            
+
             cursor.execute('''
             SELECT room_type, COUNT(*) as total,
                    SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
@@ -4464,66 +4699,58 @@ Housing Administration"""
             GROUP BY room_type
             ORDER BY room_type
             ''')
-            
+
             room_types = cursor.fetchall()
-            
+
             for room_type in room_types:
                 report_content += f"{room_type[0]:<12} {room_type[1]:<8} {room_type[2]:<10} {room_type[3]:<10}\n"
-            
+
             conn.close()
-            
-            report_text.insert('1.0', report_content)
-            report_text.config(state='disabled')
-            
+
+            # Open report in new window
+            self.open_report_window("Housing Occupancy Report", report_content)
+
         except Exception as e:
-            report_text.insert('1.0', f"Error generating report: {str(e)}")
-            report_text.config(state='disabled')
+            messagebox.showerror("Error", f"Error generating report: {str(e)}")
     
     def show_financial_summary(self):
-        """Show financial summary in GUI"""
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        report_text = scrolledtext.ScrolledText(self.report_display_frame, wrap=tk.WORD, 
-                                              width=60, height=25)
-        report_text.pack(fill='both', expand=True)
-        
+        """Show financial summary in new window"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             report_content = "HOUSING FINANCIAL SUMMARY\n"
             report_content += "=" * 50 + "\n\n"
-            
+
             # Monthly revenue calculation
             cursor.execute('''
             SELECT SUM(monthly_rent) as monthly_revenue
             FROM housing_assignments
             WHERE status = 'Active'
             ''')
-            
+
             monthly_revenue = cursor.fetchone()[0] or 0
-            
+
             report_content += f"Current Monthly Revenue: ${monthly_revenue:,.2f}\n"
             report_content += f"Projected Annual Revenue: ${monthly_revenue * 12:,.2f}\n\n"
-            
+
             # Payment statistics for current year
             current_year = datetime.now().year
-            
+
             cursor.execute('''
             SELECT COUNT(*) as payment_count, SUM(amount) as total_amount
             FROM housing_payments
             WHERE strftime('%Y', payment_date) = ?
             ''', (str(current_year),))
-            
+
             year_stats = cursor.fetchone()
             payment_count = year_stats[0] or 0
             total_collected = year_stats[1] or 0
-            
+
             report_content += f"Payments Collected This Year ({current_year}):\n"
             report_content += f"Number of Payments: {payment_count}\n"
             report_content += f"Total Amount Collected: ${total_collected:,.2f}\n\n"
-            
+
             # Revenue by building
             cursor.execute('''
             SELECT b.building_name, COUNT(a.assignment_id) as active_assignments,
@@ -4534,72 +4761,64 @@ Housing Administration"""
             GROUP BY b.building_id, b.building_name
             ORDER BY monthly_revenue DESC
             ''')
-            
+
             building_revenue = cursor.fetchall()
-            
+
             report_content += "REVENUE BY BUILDING:\n"
             report_content += "-" * 60 + "\n"
             report_content += f"{'Building':<25} {'Assignments':<12} {'Monthly Revenue':<15}\n"
             report_content += "-" * 60 + "\n"
-            
+
             for building in building_revenue:
                 assignments = building[1] or 0
                 revenue = building[2] or 0
                 report_content += f"{building[0]:<25} {assignments:<12} ${revenue:,.2f}\n"
-            
+
             conn.close()
-            
-            report_text.insert('1.0', report_content)
-            report_text.config(state='disabled')
-            
+
+            # Open report in new window
+            self.open_report_window("Housing Financial Summary", report_content)
+
         except Exception as e:
-            report_text.insert('1.0', f"Error generating report: {str(e)}")
-            report_text.config(state='disabled')
+            messagebox.showerror("Error", f"Error generating report: {str(e)}")
     
     def show_maintenance_summary_gui(self):
-        """Show maintenance summary in GUI"""
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        report_text = scrolledtext.ScrolledText(self.report_display_frame, wrap=tk.WORD, 
-                                              width=60, height=25)
-        report_text.pack(fill='both', expand=True)
-        
+        """Show maintenance summary in new window"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             report_content = "MAINTENANCE REQUESTS SUMMARY\n"
             report_content += "=" * 40 + "\n\n"
-            
+
             # Overall statistics
             cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests')
             total_requests = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests WHERE status = "Open"')
             open_requests = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests WHERE status = "In Progress"')
             in_progress = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests WHERE status = "Complete"')
             completed = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests WHERE priority = "Emergency"')
             emergency_requests = cursor.fetchone()[0]
-            
+
             report_content += f"Total Requests: {total_requests}\n"
             report_content += f"Open Requests: {open_requests}\n"
             report_content += f"In Progress: {in_progress}\n"
             report_content += f"Completed: {completed}\n"
             report_content += f"Emergency Priority: {emergency_requests}\n\n"
-            
+
             # Requests by status
             cursor.execute('''
             SELECT status, COUNT(*) as count
             FROM housing_maintenance_requests
             GROUP BY status
-            ORDER BY 
+            ORDER BY
                 CASE status
                     WHEN 'Open' THEN 1
                     WHEN 'In Progress' THEN 2
@@ -4608,21 +4827,21 @@ Housing Administration"""
                     ELSE 5
                 END
             ''')
-            
+
             status_breakdown = cursor.fetchall()
-            
+
             report_content += "REQUESTS BY STATUS:\n"
             report_content += "-" * 25 + "\n"
             for status, count in status_breakdown:
                 report_content += f"{status}: {count}\n"
             report_content += "\n"
-            
+
             # Requests by priority
             cursor.execute('''
             SELECT priority, COUNT(*) as count
             FROM housing_maintenance_requests
             GROUP BY priority
-            ORDER BY 
+            ORDER BY
                 CASE priority
                     WHEN 'Emergency' THEN 1
                     WHEN 'High' THEN 2
@@ -4631,72 +4850,64 @@ Housing Administration"""
                     ELSE 5
                 END
             ''')
-            
+
             priority_breakdown = cursor.fetchall()
-            
+
             report_content += "REQUESTS BY PRIORITY:\n"
             report_content += "-" * 25 + "\n"
             for priority, count in priority_breakdown:
                 report_content += f"{priority}: {count}\n"
             report_content += "\n"
-            
+
             # Outstanding emergency requests
             cursor.execute('''
             SELECT COUNT(*) FROM housing_maintenance_requests
             WHERE priority = 'Emergency' AND status != 'Complete'
             ''')
-            
+
             outstanding_emergency = cursor.fetchone()[0]
-            
+
             if outstanding_emergency > 0:
                 report_content += f"⚠️ URGENT: {outstanding_emergency} outstanding emergency request(s)\n"
-            
+
             conn.close()
-            
-            report_text.insert('1.0', report_content)
-            report_text.config(state='disabled')
-            
+
+            # Open report in new window
+            self.open_report_window("Maintenance Requests Summary", report_content)
+
         except Exception as e:
-            report_text.insert('1.0', f"Error generating report: {str(e)}")
-            report_text.config(state='disabled')
+            messagebox.showerror("Error", f"Error generating report: {str(e)}")
     
     def show_room_availability(self):
-        """Show room availability report"""
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        report_text = scrolledtext.ScrolledText(self.report_display_frame, wrap=tk.WORD, 
-                                              width=60, height=25)
-        report_text.pack(fill='both', expand=True)
-        
+        """Show room availability report in new window"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             report_content = "ROOM AVAILABILITY REPORT\n"
             report_content += "=" * 35 + "\n\n"
-            
+
             # All available rooms
             cursor.execute('''
-            SELECT r.room_number, b.building_name, r.floor_number, r.room_type, 
+            SELECT r.room_number, b.building_name, r.floor_number, r.room_type,
                    r.max_occupants, r.monthly_rent, r.is_accessible
             FROM housing_rooms r
             JOIN housing_buildings b ON r.building_id = b.building_id
             WHERE r.status = 'Available'
             ORDER BY b.building_name, r.floor_number, r.room_number
             ''')
-            
+
             available_rooms = cursor.fetchall()
-            
+
             report_content += f"AVAILABLE ROOMS ({len(available_rooms)} total):\n"
             report_content += "-" * 90 + "\n"
             report_content += f"{'Room':<8} {'Building':<20} {'Floor':<8} {'Type':<12} {'Max Occ.':<10} {'Rent':<10} {'Accessible':<12}\n"
             report_content += "-" * 90 + "\n"
-            
+
             for room in available_rooms:
                 accessible = "Yes" if room[6] else "No"
                 report_content += f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<12} {room[4]:<10} ${room[5]:<9.2f} {accessible:<12}\n"
-            
+
             # Summary by type
             cursor.execute('''
             SELECT room_type, COUNT(*) as count
@@ -4705,22 +4916,21 @@ Housing Administration"""
             GROUP BY room_type
             ORDER BY room_type
             ''')
-            
+
             type_summary = cursor.fetchall()
-            
+
             report_content += "\n\nAVAILABILITY SUMMARY BY TYPE:\n"
             report_content += "-" * 30 + "\n"
             for room_type, count in type_summary:
                 report_content += f"{room_type}: {count} rooms\n"
-            
+
             conn.close()
-            
-            report_text.insert('1.0', report_content)
-            report_text.config(state='disabled')
-            
+
+            # Open report in new window
+            self.open_report_window("Room Availability Report", report_content)
+
         except Exception as e:
-            report_text.insert('1.0', f"Error generating report: {str(e)}")
-            report_text.config(state='disabled')
+            messagebox.showerror("Error", f"Error generating report: {str(e)}")
     
     def show_export_options(self):
         """Show data export options"""
