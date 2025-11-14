@@ -4702,12 +4702,15 @@ Housing Administration"""
             cursor.execute('''
                 SELECT email, first_name, last_name
                 FROM users
-                WHERE role = 'admin' OR role = 'staff'
+                WHERE (role = 'admin' OR role = 'staff')
+                AND email IS NOT NULL
+                AND email != ''
                 ORDER BY
-                    CASE role
-                        WHEN 'admin' THEN 1
-                        WHEN 'staff' THEN 2
-                        ELSE 3
+                    CASE
+                        WHEN username = 'system_teessideuniversity' THEN 1
+                        WHEN role = 'admin' THEN 2
+                        WHEN role = 'staff' THEN 3
+                        ELSE 4
                     END
                 LIMIT 1
             ''')
