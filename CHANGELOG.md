@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.6] - 2025-01-14
 
+### Fixed - Syntax Error in Housing Accommodation GUI
+
+**Critical Syntax Fix**
+
+Fixed Python syntax error on line 4015 that was preventing the housing accommodation GUI from loading.
+
+- **Error**: Unexpected character after line continuation character (double backslash `\\`)
+- **Location**: `housing_accommodation_gui.py:4015`
+- **Impact**: Prevented entire housing accommodation GUI from being accessible
+- **Fix**: Removed line continuation, combined statement into single line
+- **Status**: ✅ GUI now loads successfully
+
+**Before (Broken)**:
+```python
+subject = template['subject'].replace('{{building_name}}', building_name) \\
+                            .replace('{{room_number}}', room_number)
+```
+
+**After (Fixed)**:
+```python
+subject = template['subject'].replace('{{building_name}}', building_name).replace('{{room_number}}', room_number)
+```
+
+---
+
 ### Enhanced - Room Inspections with Email Notifications
 
 **Major Room Inspection System Improvements**
