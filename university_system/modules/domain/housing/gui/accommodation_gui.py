@@ -2686,18 +2686,24 @@ class AccommodationDialog:
     
     def __init__(self, parent, title, current_data=None):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("500x600")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         # Center the dialog
         self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 50, parent.winfo_rooty() + 50))
-        
+
         self.create_widgets(current_data)
-        
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         # Wait for dialog to close
         self.dialog.wait_window()
     
@@ -2820,14 +2826,21 @@ class TemplateDialog:
     
     def __init__(self, parent, title, current_data=None):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("450x400")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets(current_data)
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         self.dialog.wait_window()
     
     def create_widgets(self, current_data):
@@ -2920,14 +2933,21 @@ class ApplyTemplateDialog:
     
     def __init__(self, parent):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Apply Template")
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets()
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         self.dialog.wait_window()
     
     def create_widgets(self):
@@ -3004,14 +3024,21 @@ class ExportFilterDialog:
     
     def __init__(self, parent):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Export Filters")
         self.dialog.geometry("400x250")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets()
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         self.dialog.wait_window()
     
     def create_widgets(self):
@@ -3771,9 +3798,15 @@ class SettingsDialog:
         self.dialog.title("Settings")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets()
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
     
     def create_widgets(self):
         """Create settings widgets"""
@@ -4061,14 +4094,21 @@ class DocumentUploadDialog:
     def __init__(self, parent, accommodation_id):
         self.result = None
         self.accommodation_id = accommodation_id
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Upload Document")
         self.dialog.geometry("500x300")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets()
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         self.dialog.wait_window()
     
     def create_widgets(self):
@@ -4334,16 +4374,22 @@ class ExportFilterDialog:
     
     def __init__(self, parent):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Export Filters")
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.center_dialog()
-        
+
+        # Ensure window is visible before grabbing focus
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass  # Ignore grab errors if window not ready
+
         # Wait for dialog to close
         self.dialog.wait_window()
     

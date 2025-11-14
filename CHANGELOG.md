@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.1] - 2025-01-14
 
+### Fixed - Dialog Window Grab Errors
+
+**"grab failed: window not viewable" Error Fixed in All Dialogs**
+- **Problem**: Error occurred when opening dialogs (edit template, settings, export filters, etc.)
+- **Root Cause**: `grab_set()` was called before window was fully visible and ready
+- **Solution**:
+  - Move `grab_set()` after `create_widgets()` and geometry setup
+  - Call `update_idletasks()` before `grab_set()` to ensure window visibility
+  - Wrap `grab_set()` in try/except to gracefully handle any remaining timing issues
+- **Dialogs Fixed**:
+  - TemplateDialog (create/edit templates)
+  - ApplyTemplateDialog (apply templates to students)
+  - AccommodationDialog (add/edit accommodations)
+  - ExportFilterDialog (export filters - 2 instances)
+  - SettingsDialog (application settings)
+  - DocumentUploadDialog (upload documents)
+- **Impact**: All dialogs now open without "grab failed" errors
+
 ### Added - Template Import Feature
 
 **Medical Templates Import Button**
@@ -119,8 +137,15 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - `university_system/modules/domain/housing/gui/accommodation_gui.py`
   - Lines 501-502: Added "Import Medical Templates" button
   - Lines 639-722: Added `import_medical_templates()` function
+  - Lines 2687-2708: Fixed grab_set() timing in AccommodationDialog
+  - Lines 2821-2838: Fixed grab_set() timing in TemplateDialog
+  - Lines 2928-2945: Fixed grab_set() timing in ApplyTemplateDialog
+  - Lines 3025-3042: Fixed grab_set() timing in ExportFilterDialog (1st instance)
+  - Lines 3796-3809: Fixed grab_set() timing in SettingsDialog
+  - Lines 4094-4112: Fixed grab_set() timing in DocumentUploadDialog
+  - Lines 4375-4394: Fixed grab_set() timing in ExportFilterDialog (2nd instance)
   - Lines 3632-3643: Fixed DB_PATH undefined error in DatabaseInfoDialog.load_info()
-  - Line 3685: Increased SettingsDialog window size from 400x300 to 600x500
+  - Line 3799: Increased SettingsDialog window size from 400x300 to 600x500
 - `university_system/modules/shared/constants/paths.py`
   - Line 83: Added `MEDICAL_TEMPLATES_DIR` constant
   - Line 121: Added directory creation in `ensure_directories()`
@@ -144,6 +169,10 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - `university_system/data/submissions/templates/` (empty directory - no longer needed)
 
 **Testing Notes:**
+- ✓ All dialogs open without "grab failed: window not viewable" errors
+- ✓ Template editing dialog works correctly
+- ✓ Settings dialog opens and displays properly
+- ✓ Export filters dialog functions without errors
 - ✓ Database info dialog loads without DB_PATH error
 - ✓ Settings window displays all controls at 600x500 size
 - ✓ All 10 medical templates validated as proper JSON format
