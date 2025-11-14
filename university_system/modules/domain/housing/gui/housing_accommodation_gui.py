@@ -4012,8 +4012,7 @@ Housing Administration"""
                         continue
 
                     # Replace template variables
-                    subject = template['subject'].replace('{{building_name}}', building_name) \\
-                                                .replace('{{room_number}}', room_number)
+                    subject = template['subject'].replace('{{building_name}}', building_name).replace('{{room_number}}', room_number)
 
                     body = template['body']
                     replacements = {
