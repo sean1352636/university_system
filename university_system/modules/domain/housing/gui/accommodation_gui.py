@@ -496,9 +496,11 @@ class AccommodationGUI:
                   command=self.apply_template_dialog).pack(side=tk.LEFT, padx=2)
         ttk.Button(template_buttons, text="Edit Template", 
                   command=self.edit_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Delete Template", 
+        ttk.Button(template_buttons, text="Delete Template",
                   command=self.delete_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Refresh", 
+        ttk.Button(template_buttons, text="Import Medical Templates",
+                  command=self.import_medical_templates).pack(side=tk.LEFT, padx=2)
+        ttk.Button(template_buttons, text="Refresh",
                   command=self.refresh_templates).pack(side=tk.LEFT, padx=2)
         
         # Templates list
@@ -633,7 +635,92 @@ class AccommodationGUI:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
-    
+
+    def import_medical_templates(self):
+        """Import medical templates from JSON files into the database"""
+        try:
+            from university_system.modules.shared.constants import paths
+            import json
+            from pathlib import Path
+
+            medical_templates_dir = paths.MEDICAL_TEMPLATES_DIR
+
+            if not medical_templates_dir.exists():
+                messagebox.showerror("Error", f"Medical templates directory not found: {medical_templates_dir}")
+                return
+
+            # Find all JSON files in the medical templates directory
+            json_files = list(medical_templates_dir.glob("*.json"))
+
+            if not json_files:
+                messagebox.showinfo("Import", "No medical template JSON files found in the directory.")
+                return
+
+            imported_count = 0
+            skipped_count = 0
+            error_count = 0
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                for json_file in json_files:
+                    try:
+                        # Read JSON file
+                        with open(json_file, 'r', encoding='utf-8') as f:
+                            template_data = json.load(f)
+
+                        # Extract template information
+                        template_name = template_data.get('template_name', json_file.stem)
+                        accommodation_type = template_data.get('accommodation_type', 'Medical')
+                        description = template_data.get('description', '')
+                        duration_days = template_data.get('duration_days', 365)
+
+                        # Check if template already exists
+                        cursor.execute(f"SELECT COUNT(*) FROM {TEMPLATES_TABLE} WHERE name = ?", (template_name,))
+                        if cursor.fetchone()[0] > 0:
+                            skipped_count += 1
+                            continue
+
+                        # Insert template into database
+                        cursor.execute(f'''
+                            INSERT INTO {TEMPLATES_TABLE}
+                            (name, accommodation_type, description, start_offset_days, duration_days, created_by, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            template_name,
+                            accommodation_type,
+                            description,
+                            0,  # start_offset_days
+                            duration_days,
+                            'System',
+                            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        ))
+
+                        imported_count += 1
+
+                    except Exception as e:
+                        error_count += 1
+                        print(f"Error importing {json_file.name}: {e}")
+                        continue
+
+                conn.commit()
+
+            # Show results
+            message = f"Import complete!\n\n"
+            message += f"✓ Imported: {imported_count} templates\n"
+            if skipped_count > 0:
+                message += f"⊘ Skipped (already exist): {skipped_count} templates\n"
+            if error_count > 0:
+                message += f"✗ Errors: {error_count} templates\n"
+
+            messagebox.showinfo("Import Medical Templates", message)
+
+            # Refresh the templates display
+            self.refresh_templates()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import medical templates: {str(e)}")
+
     def refresh_dashboard(self):
         """Refresh the dashboard metrics"""
         if not CLI_AVAILABLE:

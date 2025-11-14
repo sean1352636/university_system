@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.1] - 2025-01-14
 
+### Added - Template Import Feature
+
+**Medical Templates Import Button**
+- **Location**: `accommodation_gui.py:501-502` (Templates tab)
+- **Feature**: New "Import Medical Templates" button to import JSON templates into database
+- **Function**: `import_medical_templates()` (lines 639-722)
+- **Functionality**:
+  - Reads JSON template files from `MEDICAL_TEMPLATES_DIR`
+  - Imports templates into `accommodation_templates` database table
+  - Skips duplicates automatically
+  - Shows import summary (imported/skipped/errors)
+  - Auto-refreshes template display after import
+- **Usage**: Click "Import Medical Templates" button in Templates tab → templates appear after refresh
+- **Impact**: Medical templates now accessible in the accommodation management system
+
 ### Fixed - Medical Accommodation GUI Critical Issues
 
 **Fixed 3 critical issues in Medical Accommodation system**
@@ -102,7 +117,9 @@ Created new directory `university_system/templates/medical_templates/` with stan
 
 **Files Modified:**
 - `university_system/modules/domain/housing/gui/accommodation_gui.py`
-  - Line 3632-3643: Fixed DB_PATH undefined error in DatabaseInfoDialog.load_info()
+  - Lines 501-502: Added "Import Medical Templates" button
+  - Lines 639-722: Added `import_medical_templates()` function
+  - Lines 3632-3643: Fixed DB_PATH undefined error in DatabaseInfoDialog.load_info()
   - Line 3685: Increased SettingsDialog window size from 400x300 to 600x500
 - `university_system/modules/shared/constants/paths.py`
   - Line 83: Added `MEDICAL_TEMPLATES_DIR` constant
@@ -132,6 +149,8 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - ✓ All 10 medical templates validated as proper JSON format
 - ✓ README.md provides comprehensive template usage documentation
 - ✓ Statistics report system tested for crash prevention
+- ✓ Template import button successfully imports medical templates from JSON files
+- ✓ Templates appear in GUI after clicking "Import Medical Templates" and "Refresh"
 
 ## [Unreleased]
 
