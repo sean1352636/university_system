@@ -3,9 +3,11 @@
 -- Date: 2025-11-14
 -- Description: Correct admin and staff email addresses to use proper institutional format
 
--- Update admin user (Joanne Smith) from student email to admin email
+-- Update admin user (Sean Catchpole) from student email to admin email and correct name
 UPDATE users
-SET email = 'joanne.smith@university.edu'
+SET email = 'sean.catchpole@university.edu',
+    first_name = 'sean',
+    last_name = 'catchpole'
 WHERE username = '7591239' AND role = 'admin';
 
 -- Update staff user (Lucas Jones) from student email to staff email

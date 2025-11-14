@@ -14,20 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Fixed incorrect email addresses in users database table for admin and staff accounts.
 
 **Issues Found:**
-- Admin user `7591239` (Joanne Smith) had student email format: `C7591239@tees.ac.uk`
+- Admin user `7591239` (Sean Catchpole) had student email format: `C7591239@tees.ac.uk`
 - Staff user `1952392` (Lucas Jones) had student email format: `C1952392@tees.ac.uk`
 - Admin user `system_` had no email address and no name
 - Only `system_teessideuniversity` had correct admin email
 
 **Changes Made:**
-- Updated admin `7591239` email: `C7591239@tees.ac.uk` → `joanne.smith@university.edu`
+- Updated admin `7591239` email: `C7591239@tees.ac.uk` → `sean.catchpole@university.edu`
+- Updated admin `7591239` name: Joanne Smith → Sean Catchpole
 - Updated staff `1952392` email: `C1952392@tees.ac.uk` → `lucas.jones@university.edu`
 - Deleted incomplete admin user `system_` (no email, no name)
 
 **Final State:**
 ```
 Admin Users:
-- 7591239 (Joanne Smith): joanne.smith@university.edu
+- 7591239 (Sean Catchpole): sean.catchpole@university.edu
 - system_teessideuniversity (Teesside University): noreply@university.edu
 
 Staff Users:
