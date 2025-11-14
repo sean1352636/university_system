@@ -2438,8 +2438,8 @@ Click the button above to access the full Financial Reporting & Analytics system
                                        values=["Completed", "Pending", "Failed", "Overdue"])
             status_combo.grid(row=6, column=1, pady=5, padx=10)
 
-            # Notes
-            ttk.Label(form_frame, text="Notes:").grid(row=7, column=0, sticky='w', pady=5)
+            # Transaction Reference (optional notes)
+            ttk.Label(form_frame, text="Transaction Ref/Notes:").grid(row=7, column=0, sticky='w', pady=5)
             notes_text = tk.Text(form_frame, width=30, height=5)
             notes_text.grid(row=7, column=1, pady=5, padx=10)
 
@@ -2457,17 +2457,41 @@ Click the button above to access the full Financial Reporting & Analytics system
                     import uuid
                     payment_id = f"HP{uuid.uuid4().hex[:8].upper()}"
 
+                    # Get current timestamp
+                    from datetime import datetime
+                    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    # Get current user
+                    current_user = self.auth.get_current_user()
+                    received_by = current_user.user_id if current_user else 'SYSTEM'
+
                     # Save to database
                     with transaction() as conn:
+                        # Get or create assignment_id for the student
+                        cursor = conn.cursor()
+                        cursor.execute('''
+                            SELECT assignment_id FROM housing_assignments
+                            WHERE student_id = ? AND status = 'Active'
+                            ORDER BY move_in_date DESC LIMIT 1
+                        ''', (student_id,))
+
+                        result = cursor.fetchone()
+                        if result:
+                            assignment_id = result[0]
+                        else:
+                            # Generate a temporary assignment ID if no active assignment exists
+                            assignment_id = f"HA{uuid.uuid4().hex[:8].upper()}"
+
                         conn.execute('''
                             INSERT INTO housing_payments
-                            (payment_id, student_id, amount, payment_date, payment_method,
-                             payment_period_start, payment_period_end, status, notes)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (payment_id, student_id, amount, date_entry.get(),
-                             method_var.get(), period_start_entry.get(),
-                             period_end_entry.get(), status_var.get(),
-                             notes_text.get('1.0', 'end').strip()))
+                            (payment_id, assignment_id, student_id, amount, payment_date,
+                             payment_method, transaction_reference, payment_period_start,
+                             payment_period_end, status, received_by, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (payment_id, assignment_id, student_id, amount, date_entry.get(),
+                             method_var.get(), notes_text.get('1.0', 'end').strip(),
+                             period_start_entry.get(), period_end_entry.get(),
+                             status_var.get(), received_by, current_time, current_time))
 
                     messagebox.showinfo("Success", f"Payment {payment_id} recorded successfully!")
                     dialog.destroy()

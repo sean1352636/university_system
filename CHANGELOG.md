@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Housing Payment Insert Schema Mismatch
+
+**Critical Fix for Record Payment Feature**
+
+- **Error**: `Transaction failed, rolling back: table housing_payments has no column named notes`
+- **Root Cause**: INSERT statement used `notes` column which doesn't exist in schema
+- **Fix**: Updated INSERT to match actual housing_payments schema:
+  - Changed `notes` to `transaction_reference` (existing column)
+  - Added required fields: `assignment_id`, `received_by`, `created_at`, `updated_at`
+  - Auto-lookup of student's active housing assignment
+  - Generates temporary assignment_id if no active assignment exists
+  - Records current user as `received_by`
+  - Auto-timestamps with `created_at` and `updated_at`
+- **Location**: `layout_manager.py:2441-2494`
+- **Impact**: Record Payment dialog now successfully saves to database
+
+**Schema Alignment**:
+```sql
+-- Correct housing_payments schema:
+- payment_id (generated: HP + 8-char hex)
+- assignment_id (auto-looked up or generated)
+- student_id (user input)
+- amount (user input)
+- payment_date (user input)
+- payment_method (user input)
+- transaction_reference (user input - renamed from "Notes")
+- payment_period_start (user input)
+- payment_period_end (user input)
+- status (user input)
+- received_by (current user)
+- created_at (auto timestamp)
+- updated_at (auto timestamp)
+```
+
 ### Fixed - Log Menu Navigation Call Error
 
 **Quick Fix for Finance GUI Opening**
