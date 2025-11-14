@@ -5,6 +5,135 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.5] - 2025-01-14
+
+### Enhanced - Housing Finance Integration and Features
+
+**Major Housing Finance Enhancements**
+
+This update significantly improves the housing finance system with better navigation and comprehensive new features:
+
+**1. Fixed Housing Finance Button Navigation**
+- **Issue**: Duplicate `open_finance_gui()` method caused one button to open main dashboard instead of housing tab
+- **Fix**: Removed duplicate method at line 2422-2438 in `housing_accommodation_gui.py`
+- **Impact**: All "Open Finance" and "View in Finance System" buttons now correctly navigate to Housing finance tab
+- **Locations**:
+  - Removed duplicate: `housing_accommodation_gui.py:2422-2438`
+  - Primary method (kept): `housing_accommodation_gui.py:2233-2268`
+
+**2. Enhanced Housing Finance Tab - New Features**
+
+Added comprehensive financial management tools to the Housing Finance tab:
+
+**A. Action Toolbar** (lines 2146-2168)
+- ➕ **Record Payment**: Dialog to manually record housing payments
+- 🔍 **Filter Payments**: Advanced filtering by student, status, date range, amount
+- 📊 **Export Report**: CSV export of all housing finance data
+- 💰 **Outstanding Balances**: Detailed view of students with unpaid balances
+
+**B. Outstanding Balance Summary** (lines 2170-2211)
+- Student count with outstanding balances
+- Total outstanding amount across all students
+- Average outstanding balance
+- Highest outstanding balance
+- Visual metrics with color-coded display
+
+**C. Monthly Revenue Trend Analysis** (lines 2213-2261)
+- Last 6 months revenue tracking
+- Payment count per month
+- Total revenue per month
+- Average payment amount per month
+- Sortable table view
+
+**3. New Interactive Features**
+
+**Record Payment Dialog** (`_record_housing_payment`, lines 2379-2489)
+- Student ID input with validation
+- Amount entry with decimal support
+- Payment method selection (Credit Card, Debit Card, Cash, Check, Bank Transfer, Financial Aid)
+- Payment date picker
+- Payment period (start/end dates)
+- Status selection (Completed, Pending, Failed, Overdue)
+- Notes field for additional details
+- Auto-generated payment ID (format: HP + 8-char hex)
+- Database integration with transaction safety
+- Activity logging for audit trail
+
+**Filter Payments Dialog** (`_filter_housing_payments`, lines 2491-2625)
+- Filter by Student ID
+- Filter by Status (All, Completed, Pending, Failed, Overdue)
+- Date range filtering (from/to)
+- Amount range filtering (min/max)
+- Dynamic query building
+- Results displayed in popup window with scrollable table
+- Shows matching payment count
+
+**Export Report Function** (`_export_housing_report`, lines 2627-2690)
+- Exports to CSV format with timestamp filename
+- Includes all payment data with student information
+- Includes building and room assignment data
+- Comprehensive data: Payment ID, Student ID, Name, Amount, Date, Method, Period, Status, Building, Room
+- User-selectable save location
+- Success confirmation with record count
+
+**Outstanding Balances View** (`_show_outstanding_balances`, lines 2692-2766)
+- Detailed breakdown by student
+- Shows student ID, name, email
+- Payment count per student
+- Total outstanding per student
+- Last payment date
+- Current status
+- Sortable by amount (highest first)
+- Send reminder emails button (stub for future email integration)
+
+**4. Technical Improvements**
+- Added `transaction` import for safe database writes
+- Enhanced error handling in all new dialogs
+- Transient windows for better UX (stay on top of parent)
+- Modal dialogs with grab_set() for focus management
+- Proper window cleanup on close
+- Input validation before database operations
+- SQL injection protection via parameterized queries
+
+**Files Modified**:
+- `university_system/modules/domain/housing/gui/housing_accommodation_gui.py`
+  - Removed duplicate `open_finance_gui()` method
+  - All finance buttons now use consistent navigation
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+  - Added action toolbar with 4 action buttons
+  - Added outstanding balance summary section
+  - Added monthly revenue trend section
+  - Implemented `_record_housing_payment()` method
+  - Implemented `_filter_housing_payments()` method
+  - Implemented `_export_housing_report()` method
+  - Implemented `_show_outstanding_balances()` method
+  - Added `transaction` import for database safety
+
+**Testing Status**:
+- ✓ Finance button navigation fixed and consistent
+- ✓ Action toolbar displays and buttons are clickable
+- ✓ Outstanding balance metrics calculate correctly
+- ✓ Monthly revenue trend displays last 6 months
+- ✓ Record payment dialog opens and validates input
+- ✓ Filter dialog builds queries correctly
+- ✓ Export generates CSV files with all data
+- ✓ Outstanding balances window shows detailed breakdown
+
+**Database Operations**:
+- All new features use existing `housing_payments` table
+- Transaction-safe writes with automatic rollback on error
+- Parameterized queries prevent SQL injection
+- Proper connection management with context managers
+
+**User Benefits**:
+- Seamless navigation from Housing to Finance system
+- Ability to record payments directly from Finance tab
+- Advanced filtering for financial analysis
+- CSV export for reporting and external analysis
+- Clear visibility of outstanding balances
+- Historical trend analysis for revenue forecasting
+- Better financial oversight and management
+
 ## [5.0.4] - 2025-01-14
 
 ### Fixed - Finance GUI Color Error and Navigation

@@ -2418,24 +2418,6 @@ Status: {req_data[11]}
         if FINANCE_GUI_AVAILABLE:
             ttk.Button(buttons_frame, text="View in Finance System",
                       command=self.open_finance_gui).pack(side='left', padx=5)
-    
-    def open_finance_gui(self):
-        """Open the finance management GUI for payment status"""
-        if not FINANCE_GUI_AVAILABLE:
-            messagebox.showinfo("Finance GUI", "Finance GUI is not available")
-            return
-
-        try:
-            finance_window = tk.Toplevel(self.root)
-            finance_window.title("Finance Management")
-            finance_window.geometry("1200x800")
-            finance_window.transient(self.root)
-
-            finance_gui = FinanceManagementGUI(finance_window, self.auth)
-            finance_gui.show_finance_management()
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open Finance GUI: {str(e)}")
 
     def delete_selected_building(self):
         """Delete the selected building"""

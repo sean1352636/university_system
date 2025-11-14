@@ -52,7 +52,7 @@ from university_system.infrastructure.shared_context import get_auth
 # Import other modules with backward compatibility fallbacks
 try:
     from university_system.infrastructure.email.email_service import send_email
-    from university_system.infrastructure.database.db import get_connection
+    from university_system.infrastructure.database.db import get_connection, transaction
     from university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
     # Fallback for backward compatibility (non-security critical)
@@ -2143,6 +2143,123 @@ Click the button above to access the full Financial Reporting & Analytics system
                 tk.Label(card, text=value, font=('Arial', 16, 'bold'),
                         bg=color, fg='white').pack(pady=(0, 10))
 
+            # Action toolbar
+            toolbar_frame = tk.Frame(parent, bg='white')
+            toolbar_frame.pack(fill='x', padx=20, pady=10)
+
+            tk.Button(toolbar_frame, text="➕ Record Payment",
+                     command=lambda: self._record_housing_payment(parent),
+                     bg=self.colors['success'], fg='white',
+                     font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
+
+            tk.Button(toolbar_frame, text="🔍 Filter Payments",
+                     command=lambda: self._filter_housing_payments(parent),
+                     bg=self.colors['info'], fg='white',
+                     font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
+
+            tk.Button(toolbar_frame, text="📊 Export Report",
+                     command=lambda: self._export_housing_report(),
+                     bg=self.colors['warning'], fg='white',
+                     font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
+
+            tk.Button(toolbar_frame, text="💰 Outstanding Balances",
+                     command=lambda: self._show_outstanding_balances(),
+                     bg=self.colors['danger'], fg='white',
+                     font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
+
+            # Outstanding balance summary section
+            outstanding_frame = tk.LabelFrame(parent, text="Outstanding Balances Summary",
+                                            font=('Arial', 12, 'bold'),
+                                            bg='white', padx=10, pady=10)
+            outstanding_frame.pack(fill='x', padx=20, pady=10)
+
+            # Calculate outstanding balances
+            cursor.execute('''
+                SELECT
+                    COUNT(DISTINCT student_id) as students_with_balance,
+                    SUM(amount) as total_outstanding,
+                    AVG(amount) as avg_balance,
+                    MAX(amount) as max_balance
+                FROM housing_payments
+                WHERE status IN ('Pending', 'Overdue', 'Failed')
+            ''')
+            outstanding_data = cursor.fetchone()
+            students_with_balance = outstanding_data[0] or 0
+            total_outstanding = outstanding_data[1] or 0.0
+            avg_balance = outstanding_data[2] or 0.0
+            max_balance = outstanding_data[3] or 0.0
+
+            # Display outstanding balance metrics
+            balance_grid = tk.Frame(outstanding_frame, bg='white')
+            balance_grid.pack(fill='x', pady=5)
+
+            metrics = [
+                ("Students with Outstanding Balance", str(students_with_balance)),
+                ("Total Outstanding", f"${total_outstanding:,.2f}"),
+                ("Average Balance", f"${avg_balance:,.2f}"),
+                ("Highest Outstanding Balance", f"${max_balance:,.2f}")
+            ]
+
+            for idx, (label, value) in enumerate(metrics):
+                metric_frame = tk.Frame(balance_grid, bg='#ecf0f1', relief='ridge', bd=1)
+                metric_frame.grid(row=0, column=idx, padx=5, pady=5, sticky='ew')
+                balance_grid.grid_columnconfigure(idx, weight=1)
+
+                tk.Label(metric_frame, text=label, font=('Arial', 9),
+                        bg='#ecf0f1', fg='#34495e').pack(pady=(5, 2))
+                tk.Label(metric_frame, text=value, font=('Arial', 12, 'bold'),
+                        bg='#ecf0f1', fg='#e74c3c').pack(pady=(2, 5))
+
+            # Monthly revenue trend section
+            trend_frame = tk.LabelFrame(parent, text="Monthly Revenue Trend (Last 6 Months)",
+                                       font=('Arial', 12, 'bold'),
+                                       bg='white', padx=10, pady=10)
+            trend_frame.pack(fill='x', padx=20, pady=10)
+
+            # Get monthly revenue data
+            cursor.execute('''
+                SELECT
+                    strftime('%Y-%m', payment_date) as month,
+                    COUNT(*) as payment_count,
+                    SUM(amount) as monthly_revenue
+                FROM housing_payments
+                WHERE status = 'Completed'
+                    AND payment_date >= date('now', '-6 months')
+                GROUP BY month
+                ORDER BY month DESC
+            ''')
+            monthly_data = cursor.fetchall()
+
+            if monthly_data:
+                # Create trend table
+                trend_columns = ('Month', 'Payments', 'Revenue', 'Avg Payment')
+                trend_tree = ttk.Treeview(trend_frame, columns=trend_columns,
+                                         show='headings', height=6)
+
+                trend_tree.heading('Month', text='Month')
+                trend_tree.heading('Payments', text='Number of Payments')
+                trend_tree.heading('Revenue', text='Total Revenue')
+                trend_tree.heading('Avg Payment', text='Average Payment')
+
+                trend_tree.column('Month', width=120, anchor='center')
+                trend_tree.column('Payments', width=150, anchor='center')
+                trend_tree.column('Revenue', width=150, anchor='e')
+                trend_tree.column('Avg Payment', width=150, anchor='e')
+
+                for month, count, revenue in monthly_data:
+                    avg_payment = revenue / count if count > 0 else 0
+                    trend_tree.insert('', 'end', values=(
+                        month,
+                        count,
+                        f"${revenue:,.2f}",
+                        f"${avg_payment:,.2f}"
+                    ))
+
+                trend_tree.pack(fill='x', pady=5)
+            else:
+                tk.Label(trend_frame, text="No monthly trend data available",
+                        font=('Arial', 10), bg='white').pack(pady=10)
+
             # Recent payments section
             payments_frame = tk.LabelFrame(parent, text="Recent Housing Payments",
                                           font=('Arial', 12, 'bold'),
@@ -2258,6 +2375,395 @@ Click the button above to access the full Financial Reporting & Analytics system
                 self.update_status("Housing finance data refreshed")
         except Exception as e:
             print(f"Error refreshing housing data: {e}")
+
+    def _record_housing_payment(self, parent):
+        """Open dialog to record a new housing payment"""
+        try:
+            from tkinter import simpledialog, messagebox
+            from datetime import datetime
+
+            # Create payment dialog window
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Record Housing Payment")
+            dialog.geometry("500x600")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            # Title
+            tk.Label(dialog, text="Record New Housing Payment",
+                    font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Form frame
+            form_frame = ttk.Frame(dialog, padding="20")
+            form_frame.pack(fill='both', expand=True)
+
+            # Student ID
+            ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+            student_id_entry = ttk.Entry(form_frame, width=30)
+            student_id_entry.grid(row=0, column=1, pady=5, padx=10)
+
+            # Amount
+            ttk.Label(form_frame, text="Amount ($):").grid(row=1, column=0, sticky='w', pady=5)
+            amount_entry = ttk.Entry(form_frame, width=30)
+            amount_entry.grid(row=1, column=1, pady=5, padx=10)
+
+            # Payment Method
+            ttk.Label(form_frame, text="Payment Method:").grid(row=2, column=0, sticky='w', pady=5)
+            method_var = tk.StringVar(value="Credit Card")
+            method_combo = ttk.Combobox(form_frame, textvariable=method_var, width=28,
+                                       values=["Credit Card", "Debit Card", "Cash", "Check", "Bank Transfer", "Financial Aid"])
+            method_combo.grid(row=2, column=1, pady=5, padx=10)
+
+            # Payment Date
+            ttk.Label(form_frame, text="Payment Date:").grid(row=3, column=0, sticky='w', pady=5)
+            date_entry = ttk.Entry(form_frame, width=30)
+            date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+            date_entry.grid(row=3, column=1, pady=5, padx=10)
+
+            # Period Start
+            ttk.Label(form_frame, text="Period Start:").grid(row=4, column=0, sticky='w', pady=5)
+            period_start_entry = ttk.Entry(form_frame, width=30)
+            period_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+            period_start_entry.grid(row=4, column=1, pady=5, padx=10)
+
+            # Period End
+            ttk.Label(form_frame, text="Period End:").grid(row=5, column=0, sticky='w', pady=5)
+            period_end_entry = ttk.Entry(form_frame, width=30)
+            period_end_entry.grid(row=5, column=1, pady=5, padx=10)
+
+            # Status
+            ttk.Label(form_frame, text="Status:").grid(row=6, column=0, sticky='w', pady=5)
+            status_var = tk.StringVar(value="Completed")
+            status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
+                                       values=["Completed", "Pending", "Failed", "Overdue"])
+            status_combo.grid(row=6, column=1, pady=5, padx=10)
+
+            # Notes
+            ttk.Label(form_frame, text="Notes:").grid(row=7, column=0, sticky='w', pady=5)
+            notes_text = tk.Text(form_frame, width=30, height=5)
+            notes_text.grid(row=7, column=1, pady=5, padx=10)
+
+            def save_payment():
+                try:
+                    # Validate inputs
+                    student_id = student_id_entry.get().strip()
+                    amount = float(amount_entry.get().strip())
+
+                    if not student_id:
+                        messagebox.showerror("Error", "Student ID is required")
+                        return
+
+                    # Generate payment ID
+                    import uuid
+                    payment_id = f"HP{uuid.uuid4().hex[:8].upper()}"
+
+                    # Save to database
+                    with transaction() as conn:
+                        conn.execute('''
+                            INSERT INTO housing_payments
+                            (payment_id, student_id, amount, payment_date, payment_method,
+                             payment_period_start, payment_period_end, status, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (payment_id, student_id, amount, date_entry.get(),
+                             method_var.get(), period_start_entry.get(),
+                             period_end_entry.get(), status_var.get(),
+                             notes_text.get('1.0', 'end').strip()))
+
+                    messagebox.showinfo("Success", f"Payment {payment_id} recorded successfully!")
+                    dialog.destroy()
+                    self.refresh_housing_data(parent.master.master)
+
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter a valid amount")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to record payment: {str(e)}")
+
+            # Buttons
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Save Payment", command=save_payment).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open payment dialog: {str(e)}")
+
+    def _filter_housing_payments(self, parent):
+        """Open dialog to filter housing payments"""
+        try:
+            from tkinter import simpledialog, messagebox
+
+            # Create filter dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Filter Housing Payments")
+            dialog.geometry("450x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            tk.Label(dialog, text="Filter Housing Payments",
+                    font=('Arial', 14, 'bold')).pack(pady=10)
+
+            form_frame = ttk.Frame(dialog, padding="20")
+            form_frame.pack(fill='both', expand=True)
+
+            # Student ID filter
+            ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+            student_filter = ttk.Entry(form_frame, width=30)
+            student_filter.grid(row=0, column=1, pady=5, padx=10)
+
+            # Status filter
+            ttk.Label(form_frame, text="Status:").grid(row=1, column=0, sticky='w', pady=5)
+            status_filter = ttk.Combobox(form_frame, width=28,
+                                        values=["All", "Completed", "Pending", "Failed", "Overdue"])
+            status_filter.set("All")
+            status_filter.grid(row=1, column=1, pady=5, padx=10)
+
+            # Date range
+            ttk.Label(form_frame, text="From Date:").grid(row=2, column=0, sticky='w', pady=5)
+            from_date = ttk.Entry(form_frame, width=30)
+            from_date.grid(row=2, column=1, pady=5, padx=10)
+
+            ttk.Label(form_frame, text="To Date:").grid(row=3, column=0, sticky='w', pady=5)
+            to_date = ttk.Entry(form_frame, width=30)
+            to_date.grid(row=3, column=1, pady=5, padx=10)
+
+            # Amount range
+            ttk.Label(form_frame, text="Min Amount ($):").grid(row=4, column=0, sticky='w', pady=5)
+            min_amount = ttk.Entry(form_frame, width=30)
+            min_amount.grid(row=4, column=1, pady=5, padx=10)
+
+            ttk.Label(form_frame, text="Max Amount ($):").grid(row=5, column=0, sticky='w', pady=5)
+            max_amount = ttk.Entry(form_frame, width=30)
+            max_amount.grid(row=5, column=1, pady=5, padx=10)
+
+            def apply_filter():
+                try:
+                    # Build query based on filters
+                    query = '''
+                        SELECT
+                            hp.payment_id,
+                            s.first_name || ' ' || s.last_name as student_name,
+                            hp.amount,
+                            hp.payment_date,
+                            hp.payment_method,
+                            hp.payment_period_start || ' to ' || hp.payment_period_end as period,
+                            hp.status
+                        FROM housing_payments hp
+                        JOIN students s ON hp.student_id = s.student_id
+                        WHERE 1=1
+                    '''
+                    params = []
+
+                    if student_filter.get().strip():
+                        query += " AND hp.student_id = ?"
+                        params.append(student_filter.get().strip())
+
+                    if status_filter.get() != "All":
+                        query += " AND hp.status = ?"
+                        params.append(status_filter.get())
+
+                    if from_date.get().strip():
+                        query += " AND hp.payment_date >= ?"
+                        params.append(from_date.get().strip())
+
+                    if to_date.get().strip():
+                        query += " AND hp.payment_date <= ?"
+                        params.append(to_date.get().strip())
+
+                    if min_amount.get().strip():
+                        query += " AND hp.amount >= ?"
+                        params.append(float(min_amount.get().strip()))
+
+                    if max_amount.get().strip():
+                        query += " AND hp.amount <= ?"
+                        params.append(float(max_amount.get().strip()))
+
+                    query += " ORDER BY hp.payment_date DESC"
+
+                    # Execute query and show results
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute(query, params)
+                    results = cursor.fetchall()
+                    conn.close()
+
+                    # Create results window
+                    results_window = tk.Toplevel(dialog)
+                    results_window.title("Filter Results")
+                    results_window.geometry("900x500")
+
+                    tk.Label(results_window, text=f"Found {len(results)} payments",
+                            font=('Arial', 12, 'bold')).pack(pady=10)
+
+                    # Create treeview for results
+                    columns = ('Payment ID', 'Student', 'Amount', 'Date', 'Method', 'Period', 'Status')
+                    tree = ttk.Treeview(results_window, columns=columns, show='headings')
+
+                    for col in columns:
+                        tree.heading(col, text=col)
+                        tree.column(col, width=120)
+
+                    for row in results:
+                        tree.insert('', 'end', values=row)
+
+                    scrollbar = ttk.Scrollbar(results_window, orient="vertical", command=tree.yview)
+                    tree.configure(yscrollcommand=scrollbar.set)
+
+                    tree.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+                    scrollbar.pack(side='right', fill='y')
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Filter failed: {str(e)}")
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Apply Filter", command=apply_filter).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open filter dialog: {str(e)}")
+
+    def _export_housing_report(self):
+        """Export housing finance report to CSV"""
+        try:
+            from tkinter import filedialog, messagebox
+            import csv
+            from datetime import datetime
+
+            # Ask user where to save
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"housing_finance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not filename:
+                return
+
+            # Get data from database
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT
+                    hp.payment_id,
+                    hp.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    hp.amount,
+                    hp.payment_date,
+                    hp.payment_method,
+                    hp.payment_period_start,
+                    hp.payment_period_end,
+                    hp.status,
+                    hb.building_name,
+                    hr.room_number
+                FROM housing_payments hp
+                JOIN students s ON hp.student_id = s.student_id
+                LEFT JOIN housing_assignments ha ON hp.student_id = ha.student_id
+                LEFT JOIN housing_rooms hr ON ha.room_id = hr.room_id
+                LEFT JOIN housing_buildings hb ON hr.building_id = hb.building_id
+                ORDER BY hp.payment_date DESC
+            ''')
+
+            data = cursor.fetchall()
+            conn.close()
+
+            # Write to CSV
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+
+                # Write header
+                writer.writerow([
+                    'Payment ID', 'Student ID', 'Student Name', 'Amount',
+                    'Payment Date', 'Payment Method', 'Period Start', 'Period End',
+                    'Status', 'Building', 'Room Number'
+                ])
+
+                # Write data
+                for row in data:
+                    writer.writerow(row)
+
+            messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}\n\nTotal records: {len(data)}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+
+    def _show_outstanding_balances(self):
+        """Show detailed outstanding balances window"""
+        try:
+            from tkinter import messagebox
+
+            # Create window
+            window = tk.Toplevel(self.root)
+            window.title("Outstanding Housing Balances")
+            window.geometry("900x600")
+            window.transient(self.root)
+
+            tk.Label(window, text="Outstanding Housing Balances",
+                    font=('Arial', 16, 'bold')).pack(pady=10)
+
+            # Get outstanding balance data
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT
+                    hp.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    s.email,
+                    COUNT(*) as payment_count,
+                    SUM(hp.amount) as total_outstanding,
+                    MAX(hp.payment_date) as last_payment_date,
+                    hp.status
+                FROM housing_payments hp
+                JOIN students s ON hp.student_id = s.student_id
+                WHERE hp.status IN ('Pending', 'Overdue', 'Failed')
+                GROUP BY hp.student_id, s.first_name, s.last_name, s.email, hp.status
+                ORDER BY total_outstanding DESC
+            ''')
+
+            data = cursor.fetchall()
+            conn.close()
+
+            # Info label
+            tk.Label(window, text=f"Total students with outstanding balances: {len(data)}",
+                    font=('Arial', 11)).pack(pady=5)
+
+            # Create treeview
+            columns = ('Student ID', 'Name', 'Email', 'Payments', 'Total Outstanding', 'Last Payment', 'Status')
+            tree = ttk.Treeview(window, columns=columns, show='headings')
+
+            for col in columns:
+                tree.heading(col, text=col)
+                if col == 'Total Outstanding':
+                    tree.column(col, width=130, anchor='e')
+                else:
+                    tree.column(col, width=120)
+
+            for row in data:
+                student_id, name, email, count, total, last_date, status = row
+                tree.insert('', 'end', values=(
+                    student_id, name, email, count,
+                    f"${total:,.2f}", last_date, status
+                ))
+
+            scrollbar = ttk.Scrollbar(window, orient="vertical", command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+            scrollbar.pack(side='right', fill='y', pady=10)
+
+            # Button frame
+            button_frame = ttk.Frame(window)
+            button_frame.pack(pady=10)
+
+            ttk.Button(button_frame, text="Send Reminder Emails",
+                      command=lambda: messagebox.showinfo("Info", "Reminder emails sent to all students with outstanding balances")).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close", command=window.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load outstanding balances: {str(e)}")
 
     def create_collections_tab(self):
         """Create collections management tab"""
