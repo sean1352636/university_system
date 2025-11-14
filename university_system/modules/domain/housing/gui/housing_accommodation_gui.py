@@ -4701,13 +4701,13 @@ Housing Administration"""
 
             # Get admin email from database
             cursor.execute('''
-                SELECT email_address, first_name, last_name
-                FROM administrators
-                WHERE role = 'System Administrator' OR role = 'Housing Administrator'
+                SELECT email, first_name, last_name
+                FROM users
+                WHERE role = 'admin' OR role = 'staff'
                 ORDER BY
                     CASE role
-                        WHEN 'System Administrator' THEN 1
-                        WHEN 'Housing Administrator' THEN 2
+                        WHEN 'admin' THEN 1
+                        WHEN 'staff' THEN 2
                         ELSE 3
                     END
                 LIMIT 1
