@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Log Menu Navigation Call Error
+
+**Quick Fix for Finance GUI Opening**
+
+- **Error**: `TypeError: log_menu_navigation() takes from 0 to 1 positional arguments but 2 were given`
+- **Root Cause**: Incorrect call to `log_menu_navigation()` with 2 positional arguments instead of keyword argument
+- **Fix**: Changed from `log_menu_navigation('finance_management', 'Opened from housing payment management')` to `log_menu_navigation(description='Opened finance management from housing payment management')`
+- **Location**: `housing_accommodation_gui.py:2257`
+- **Impact**: Finance GUI now opens successfully from Housing without logging errors
+
 ### Enhanced - Housing Finance Integration and Features
 
 **Major Housing Finance Enhancements**

@@ -2254,7 +2254,7 @@ Status: {req_data[11]}
             finance_gui.show_finance_management(initial_tab='housing')
 
             # Log the action
-            log_menu_navigation('finance_management', 'Opened from housing payment management')
+            log_menu_navigation(description='Opened finance management from housing payment management')
 
             print("✓ Finance Management GUI opened successfully")
 
