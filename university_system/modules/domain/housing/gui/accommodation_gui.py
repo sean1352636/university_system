@@ -3627,15 +3627,18 @@ class DatabaseInfoDialog:
         if not CLI_AVAILABLE:
             self.info_text.insert(tk.END, "CLI module not available")
             return
-        
+
         try:
+            from university_system.modules.shared.constants import paths
+            db_path = str(paths.DEFAULT_DB_PATH)
+
             info_text = "DATABASE INFORMATION\n"
             info_text += "=" * 50 + "\n\n"
-            
+
             # Database file info
-            if os.path.exists(DB_PATH):
-                stat = os.stat(DB_PATH)
-                info_text += f"Database File: {DB_PATH}\n"
+            if os.path.exists(db_path):
+                stat = os.stat(db_path)
+                info_text += f"Database File: {db_path}\n"
                 info_text += f"File Size: {stat.st_size:,} bytes\n"
                 info_text += f"Last Modified: {datetime.fromtimestamp(stat.st_mtime)}\n\n"
             
@@ -3679,7 +3682,7 @@ class SettingsDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Settings")
-        self.dialog.geometry("400x300")
+        self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
         

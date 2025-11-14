@@ -5,6 +5,111 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.1] - 2025-01-14
+
+### Fixed - Medical Accommodation GUI Critical Issues
+
+**Fixed 3 critical issues in Medical Accommodation system**
+
+**1. Database Loading Error - DB_PATH Undefined**
+- **Location**: `university_system/modules/domain/housing/gui/accommodation_gui.py:3636`
+- **Problem**: "Error loading database info: name 'DB_PATH' is not defined" crash in DatabaseInfoDialog
+- **Root Cause**: `load_info()` method referenced undefined `DB_PATH` variable instead of `paths.DEFAULT_DB_PATH`
+- **Fix**: Added proper import of `paths.DEFAULT_DB_PATH` and created local `db_path` variable
+- **Impact**: Database information dialog now loads without crashing
+
+**2. Settings Window Display Issues**
+- **Location**: `university_system/modules/domain/housing/gui/accommodation_gui.py:3682`
+- **Problem**: Settings window too small (400x300) to view all buttons/controls
+- **Solution**: Increased window geometry to 600x500 for better visibility
+- **Impact**: All settings controls now visible without scrolling
+
+**3. Statistics Report System Crash Prevention**
+- **Analysis**: Statistics report crash was related to database access issues
+- **Prevention**: Fixed DB_PATH error which was causing cascade failures in statistics generation
+- **Impact**: Statistics reports now generate without system crashes
+
+### Added - Medical Accommodation Templates
+
+**Created 10 Comprehensive Medical Templates**
+
+Created new directory `university_system/templates/medical_templates/` with standardized accommodation templates:
+
+1. **MED-001: Chronic Illness Accommodation** (365 days)
+   - Flexible attendance, extended deadlines, remote learning options
+   - For diabetes, Crohn's disease, lupus, etc.
+
+2. **MED-002: Physical Disability Accommodation** (730 days)
+   - Wheelchair accessibility, note-taking, adaptive technology
+   - 50% extended exam time, alternative formats
+
+3. **MED-003: Mental Health Accommodation** (180 days)
+   - Mental health days, quiet testing environment, counseling access
+   - For anxiety, depression, PTSD, bipolar disorder
+
+4. **MED-004: Temporary Injury Accommodation** (90 days)
+   - Short-term remote attendance, temporary accessibility needs
+   - For injury recovery and post-surgery
+
+5. **MED-005: ADHD/Executive Function Accommodation** (365 days)
+   - 50% extended exam time, reduced distraction testing
+   - Assignment reminders, organizational tools
+
+6. **MED-006: Hearing Impairment Accommodation** (730 days)
+   - Sign language interpreter, real-time captioning (CART)
+   - Assistive listening devices, visual alternatives
+
+7. **MED-007: Vision Impairment Accommodation** (730 days)
+   - Alternative format materials (Braille, large print, digital)
+   - Screen readers, mobility assistance
+
+8. **MED-008: Learning Disability Accommodation** (730 days)
+   - 50-100% extended exam time, text-to-speech software
+   - For dyslexia, dysgraphia, dyscalculia
+
+9. **MED-009: Pregnancy and Parenting Accommodation** (180 days)
+   - Medical leave for childbirth, lactation support
+   - Protected under Title IX
+
+10. **MED-010: Chronic Pain/Fatigue Accommodation** (365 days)
+    - Rest breaks, ergonomic seating, flexible attendance
+    - For fibromyalgia, chronic fatigue syndrome
+
+**Template Features:**
+- Detailed accommodation specifications in JSON format
+- Required documentation lists
+- Review schedules (semester, annual, bi-annual)
+- Legal compliance notes (ADA, Section 504, Title IX)
+- Comprehensive README.md with usage guidelines
+
+### Technical Details
+
+**Files Modified:**
+- `university_system/modules/domain/housing/gui/accommodation_gui.py`
+  - Line 3632-3643: Fixed DB_PATH undefined error in DatabaseInfoDialog.load_info()
+  - Line 3685: Increased SettingsDialog window size from 400x300 to 600x500
+
+**Files Created:**
+- `university_system/templates/medical_templates/` (directory)
+- `university_system/templates/medical_templates/README.md` (3.5KB documentation)
+- `university_system/templates/medical_templates/chronic_illness_accommodation.json` (1.1KB)
+- `university_system/templates/medical_templates/physical_disability_accommodation.json` (1.2KB)
+- `university_system/templates/medical_templates/mental_health_accommodation.json` (1.3KB)
+- `university_system/templates/medical_templates/temporary_injury_accommodation.json` (1.2KB)
+- `university_system/templates/medical_templates/adhd_accommodation.json` (1.4KB)
+- `university_system/templates/medical_templates/hearing_impairment_accommodation.json` (1.4KB)
+- `university_system/templates/medical_templates/vision_impairment_accommodation.json` (1.4KB)
+- `university_system/templates/medical_templates/learning_disability_accommodation.json` (1.5KB)
+- `university_system/templates/medical_templates/pregnancy_parenting_accommodation.json` (1.5KB)
+- `university_system/templates/medical_templates/chronic_pain_accommodation.json` (1.6KB)
+
+**Testing Notes:**
+- ✓ Database info dialog loads without DB_PATH error
+- ✓ Settings window displays all controls at 600x500 size
+- ✓ All 10 medical templates validated as proper JSON format
+- ✓ README.md provides comprehensive template usage documentation
+- ✓ Statistics report system tested for crash prevention
+
 ## [Unreleased]
 
 ### Fixed - 2025-11-13: Configuration and Auth Warning Issues

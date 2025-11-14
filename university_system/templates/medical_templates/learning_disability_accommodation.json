@@ -1,0 +1,34 @@
+{
+  "template_name": "Learning Disability Accommodation",
+  "template_id": "MED-008",
+  "description": "Accommodations for students with specific learning disabilities including dyslexia, dysgraphia, dyscalculia, and auditory processing disorders",
+  "accommodation_type": "Medical",
+  "duration_days": 730,
+  "features": {
+    "extended_exam_time": true,
+    "alternative_format_exams": true,
+    "assistive_technology": true,
+    "note_taking_assistance": true,
+    "reduced_distraction_testing": true,
+    "assignment_modifications": true
+  },
+  "specific_accommodations": [
+    "50-100% additional time on exams depending on assessment type",
+    "Use of text-to-speech and speech-to-text software",
+    "Alternative exam formats (oral exams, typed vs handwritten)",
+    "Testing in a separate, quiet location",
+    "Access to lecture recordings and slides in advance",
+    "Note-taking services or permission to record lectures",
+    "Use of spell-checker and grammar-checker on exams",
+    "Calculator permitted for math courses (including non-calculator sections)",
+    "Reduced reading load or alternative reading format"
+  ],
+  "documentation_required": [
+    "Psychoeducational evaluation (within 5 years)",
+    "Specific learning disability diagnosis",
+    "Cognitive and achievement test results",
+    "Recommendations from evaluating professional"
+  ],
+  "review_schedule": "Every 2 years",
+  "notes": "Strongly encourage tutoring and academic skill development workshops. Connect with writing center for additional support."
+}

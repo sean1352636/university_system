@@ -1,0 +1,31 @@
+{
+  "template_name": "Mental Health Accommodation",
+  "template_id": "MED-003",
+  "description": "Accommodations for students managing mental health conditions such as anxiety, depression, PTSD, or bipolar disorder",
+  "accommodation_type": "Medical",
+  "duration_days": 180,
+  "features": {
+    "flexible_attendance": true,
+    "extended_deadlines": true,
+    "reduced_course_load": true,
+    "quiet_testing_environment": true,
+    "counseling_access": true,
+    "excused_absences": true
+  },
+  "specific_accommodations": [
+    "Excused absences for mental health days (up to 5 per semester)",
+    "24-hour extension on assignments during acute episodes",
+    "Private, low-distraction testing environment",
+    "Permission to leave class briefly if needed without explanation",
+    "Reduced course load without financial penalty",
+    "Priority access to counseling services",
+    "Ability to take breaks during long exams"
+  ],
+  "documentation_required": [
+    "Letter from mental health professional (psychiatrist, psychologist, or licensed therapist)",
+    "Treatment plan overview",
+    "Functional impact statement"
+  ],
+  "review_schedule": "Semester",
+  "notes": "Student should establish connection with campus counseling center. Confidentiality maintained per FERPA and HIPAA."
+}
