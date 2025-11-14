@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.6] - 2025-01-14
 
+### Fixed - EmailService Class Import Error
+
+**Critical Import Fix**
+
+Fixed "Cannot import name EmailService" error that prevented housing accommodation system from launching.
+
+**Root Cause:**
+- Code tried to import `EmailService` class which doesn't exist
+- `email_service.py` module only exports functions, not a class
+- Used `EmailService().send_email()` object-oriented approach
+- Used parameters that don't exist (`to_address`, `email_type`)
+
+**Fix:**
+- Replaced `from ...email_service import EmailService` with `from ...email_service import send_email`
+- Changed `EmailService().send_email()` to direct `send_email()` function calls
+- Updated parameter names:
+  - `to_address` → `recipient_email` (correct parameter name)
+  - Removed `email_type` (parameter doesn't exist)
+- Applied fix in 3 locations across housing GUI
+
+**Locations Fixed:**
+- Line 4093: Post-inspection email notifications
+- Line 4744: Send report to admin functionality
+- Line 5492: Scheduled report email delivery
+
+**Impact:**
+- ✅ Housing system launches without import errors
+- ✅ Email sending works correctly with proper function calls
+- ✅ All email features functional:
+  - Post-inspection emails to students
+  - Report emails to administrators
+  - Scheduled report delivery
+
+---
+
+### Fixed - Function Signature Mismatch
+
+**Parameter Error Fix**
+
+Fixed "display_housing_accommodation_menu() takes 0 positional arguments but 1 was given" error.
+
+**Root Cause:**
+- Function defined with no parameters: `def display_housing_accommodation_menu():`
+- Called with 1 argument from main menu: `display_housing_accommodation_menu(auth_instance)`
+- Type mismatch caused system launch failure
+
+**Fix:**
+- Added `auth_instance=None` parameter to function signature
+- Set global `auth` variable if `auth_instance` provided
+- Maintains backward compatibility with no-argument calls
+
+**Before (Broken):**
+```python
+def display_housing_accommodation_menu():
+    global auth
+    init_housing_db()
+```
+
+**After (Fixed):**
+```python
+def display_housing_accommodation_menu(auth_instance=None):
+    global auth
+    if auth_instance:
+        auth = auth_instance
+    init_housing_db()
+```
+
+**Impact:**
+- ✅ Menu function accepts auth instance properly
+- ✅ Authentication context preserved across menu calls
+- ✅ Backward compatible with existing no-argument usage
+
+**Location:** `housing_accommodation.py:5625-5631`
+
+---
+
 ### Fixed - Admin Email Query Error
 
 **Database Query Fix**
