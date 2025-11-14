@@ -7,6 +7,7 @@ import hashlib
 import json
 import sys
 import os
+import logging
 from typing import Dict, List, Optional, Tuple, Any
 import threading
 import queue
@@ -1224,7 +1225,7 @@ class StudentUnionGUI:
             cursor = conn.cursor()
             cursor.execute(
                 '''
-                SELECT 1 FROM event_registrations
+                SELECT 1 FROM union_event_registrations
                 WHERE event_id = ? AND user_id = ?
                 ''',
                 (event_id, self.current_user['id'])
@@ -1255,7 +1256,37 @@ class StudentUnionGUI:
                 self.refresh_events_list()
             else:
                 messagebox.showerror("Registration Failed", "Could not register for the event. Please try again.")
-    
+
+    def _register_event_operation(self, conn, event_id):
+        """Database operation to register user for an event"""
+        cursor = conn.cursor()
+
+        # Get student_id if available
+        student_id = self.current_user.get('student_id')
+
+        # Insert registration
+        cursor.execute(
+            '''
+            INSERT INTO union_event_registrations
+            (event_id, user_id, student_id, registration_date, status)
+            VALUES (?, ?, ?, ?, ?)
+            ''',
+            (event_id, self.current_user['id'], student_id, datetime.now().isoformat(), 'registered')
+        )
+
+        # Update event attendance count
+        cursor.execute(
+            '''
+            UPDATE union_events
+            SET current_attendees = current_attendees + 1
+            WHERE event_id = ?
+            ''',
+            (event_id,)
+        )
+
+        conn.commit()
+        return True
+
     def view_event_details(self):
         """View details of the selected event"""
         selection = self.events_tree.selection()
@@ -1479,7 +1510,7 @@ class StudentUnionGUI:
                 '''
                 SELECT e.event_name, e.event_date, e.start_time, e.end_time,
                        e.location, e.status
-                FROM event_registrations r
+                FROM union_event_registrations r
                 JOIN union_events e ON r.event_id = e.event_id
                 WHERE r.user_id = ?
                 ORDER BY e.event_date, e.start_time
@@ -5543,10 +5574,9 @@ class EventAttendanceDialog:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT er.student_id, u.username, er.registration_date,
-                   CASE WHEN er.attendance_confirmed = 1 THEN 'Attended' ELSE 'Registered' END
-            FROM event_registrations er
-            JOIN users u ON er.student_id = u.student_id
+            SELECT COALESCE(er.student_id, 'N/A'), u.username, er.registration_date, er.status
+            FROM union_event_registrations er
+            JOIN users u ON er.user_id = u.id
             WHERE er.event_id = ?
             ORDER BY u.username
             ''', (event_id,))
