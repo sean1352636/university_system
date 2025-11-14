@@ -5,6 +5,141 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.6] - 2025-01-14
+
+### Enhanced - Room Inspections with Email Notifications
+
+**Major Room Inspection System Improvements**
+
+Complete overhaul of the room inspection scheduling system with database-driven dropdowns, building-wide inspections, and automated email notifications.
+
+**1. Database-Driven Building & Room Selection**
+- **Building Dropdown**: Loads all buildings from `housing_buildings` table
+- **Dynamic Room Loading**: Room dropdown updates based on selected building
+- **Data Integrity**: Only allows selection of valid buildings/rooms from database
+- **Location**: `housing_accommodation_gui.py:3765-3820`
+
+**2. Inspection Scope Selection**
+- **Single Room**: Inspect one specific room
+- **Full Building**: Inspect all rooms in a building simultaneously
+- **Dynamic UI**: Room selector shows/hides based on scope
+- **Batch Creation**: Creates individual inspection records for each room
+- **Location**: `housing_accommodation_gui.py:3785-3829`
+
+**3. Enhanced Inspection Form**
+- Added **Inspection Time** field for scheduling
+- Building selection (dropdown from DB)
+- Inspection scope (Single Room / Full Building)
+- Room selection (dynamic, building-dependent)
+- Inspection date & time
+- Inspection type (Routine, Move-in, Move-out, Maintenance, Safety)
+- Inspector name
+- Notes/findings
+- **Email notification checkbox** (default: enabled)
+
+**4. Email Notification System**
+- **Automatic Student Identification**: Queries `housing_assignments` to find affected students
+- **Template-Based Emails**: Uses JSON templates for consistent messaging
+- **Two Template Types**:
+  - `inspection_scheduled.json` - For single room inspections
+  - `building_inspection_notice.json` - For building-wide inspections
+- **Variable Substitution**: Replaces placeholders with actual data:
+  - {{student_name}}, {{building_name}}, {{room_number}}
+  - {{inspection_date}}, {{inspection_time}}, {{inspection_type}}
+  - {{inspector_name}}, {{notes}}
+- **Selective Sending**: Only emails students with active assignments in affected rooms
+- **Location**: `housing_accommodation_gui.py:3967-4052`
+
+**5. Email Templates Created**
+Created 4 new email templates in `university_system/templates/email/`:
+- **inspection_scheduled.json**: Standard single-room inspection notice
+- **inspection_completed.json**: Post-inspection results notification
+- **inspection_issues_found.json**: IMPORTANT notice when issues identified
+- **building_inspection_notice.json**: Building-wide inspection announcement
+
+**Template Features**:
+- Professional formatting with clear sections
+- Preparation instructions for students
+- Important notices and deadlines
+- Contact information for questions
+- Consistent branding
+
+**6. Fixed sqlite3.Row Error**
+- **Issue**: Treeview couldn't handle sqlite3.Row objects directly
+- **Fix**: Convert Row objects to tuples before inserting into tree
+- **Impact**: Inspection list displays correctly without type errors
+- **Location**: `housing_accommodation_gui.py:4179-4185`
+
+**7. Email Integration**
+- **Query**: Finds students via JOIN of housing_assignments + students + housing_rooms
+- **Filtering**: Only active assignments (`status = 'Active'`)
+- **Email Validation**: Skips students without email addresses
+- **Error Handling**: Graceful failure with detailed error logging
+- **Success Feedback**: Shows count of emails sent in success message
+
+**Database Queries**:
+```sql
+-- Load buildings
+SELECT building_id, building_name FROM housing_buildings ORDER BY building_name
+
+-- Load rooms for selected building
+SELECT room_id, room_number FROM housing_rooms WHERE building_id = ? ORDER BY room_number
+
+-- Get all rooms in building (for full building inspection)
+SELECT room_id FROM housing_rooms WHERE building_id = ?
+
+-- Find affected students
+SELECT DISTINCT s.student_id, s.first_name || ' ' || s.last_name, s.email_address, r.room_number
+FROM housing_assignments ha
+JOIN students s ON ha.student_id = s.student_id
+JOIN housing_rooms r ON ha.room_id = r.room_id
+WHERE ha.room_id IN (?) AND ha.status = 'Active'
+```
+
+**User Workflow**:
+1. Click "Schedule Inspection"
+2. Select building from dropdown
+3. Choose scope (Single Room or Full Building)
+4. If single room, select specific room
+5. Enter inspection date & time
+6. Select inspection type
+7. Enter inspector name
+8. Add optional notes
+9. Check/uncheck email notification
+10. Click Schedule
+11. System creates inspection record(s)
+12. System sends emails to affected students
+13. Success message shows count of inspections & emails
+
+**Technical Improvements**:
+- Dynamic form rendering based on scope
+- Trace callbacks for reactive UI updates
+- Proper error handling with user-friendly messages
+- Database transaction safety
+- Email template system integration
+- Batch processing for building-wide inspections
+
+**Impact**:
+- ✅ Streamlined inspection scheduling process
+- ✅ Automated student notifications
+- ✅ Reduced manual data entry errors
+- ✅ Better communication with students
+- ✅ Scalable to building-wide inspections
+- ✅ Professional, consistent email communications
+
+**Files Modified**:
+- `housing_accommodation_gui.py`: Enhanced inspection dialog + email system
+- `university_system/templates/email/inspection_scheduled.json`: New template
+- `university_system/templates/email/inspection_completed.json`: New template
+- `university_system/templates/email/inspection_issues_found.json`: New template
+- `university_system/templates/email/building_inspection_notice.json`: New template
+
+**TODO - Future Enhancements (Not in this release)**:
+- [ ] Open reports in new window instead of inline display
+- [ ] Add export buttons for reports (TXT, CSV, PDF)
+- [ ] Add "Send to Admin" button for reports
+- [ ] Post-inspection email notifications with results
+
 ## [5.0.5] - 2025-01-14
 
 ### Fixed - Foreign Key Constraint in Payment Recording

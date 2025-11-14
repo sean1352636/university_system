@@ -3753,7 +3753,7 @@ Housing Administration"""
         """Schedule a new inspection"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Schedule Inspection")
-        dialog.geometry("700x600")
+        dialog.geometry("800x700")
         dialog.transient(self.root)
 
         ttk.Label(dialog, text="Schedule Room Inspection",
@@ -3762,40 +3762,121 @@ Housing Administration"""
         form_frame = ttk.Frame(dialog, padding=20)
         form_frame.pack(fill='both', expand=True)
 
-        # Room selection
-        ttk.Label(form_frame, text="Room Number:").grid(row=0, column=0, sticky='w', pady=5)
+        # Building selection
+        ttk.Label(form_frame, text="Building:").grid(row=0, column=0, sticky='w', pady=5)
+        building_var = tk.StringVar()
+        building_combo = ttk.Combobox(form_frame, textvariable=building_var, width=28, state='readonly')
+        building_combo.grid(row=0, column=1, pady=5, padx=5)
+
+        # Load buildings from database
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT building_id, building_name FROM housing_buildings ORDER BY building_name')
+            buildings = cursor.fetchall()
+            conn.close()
+
+            building_dict = {f"{row[1]} (ID: {row[0]})": row[0] for row in buildings}
+            building_combo['values'] = list(building_dict.keys())
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load buildings: {str(e)}", parent=dialog)
+            building_dict = {}
+
+        # Inspection scope selection
+        ttk.Label(form_frame, text="Inspection Scope:").grid(row=1, column=0, sticky='w', pady=5)
+        scope_var = tk.StringVar(value="Single Room")
+        scope_combo = ttk.Combobox(form_frame, textvariable=scope_var,
+                                   values=['Single Room', 'Full Building'],
+                                   width=28, state='readonly')
+        scope_combo.grid(row=1, column=1, pady=5, padx=5)
+
+        # Room selection (shown only for single room)
+        room_label = ttk.Label(form_frame, text="Room Number:")
+        room_label.grid(row=2, column=0, sticky='w', pady=5)
         room_var = tk.StringVar()
-        room_entry = ttk.Entry(form_frame, textvariable=room_var, width=30)
-        room_entry.grid(row=0, column=1, pady=5, padx=5)
+        room_combo = ttk.Combobox(form_frame, textvariable=room_var, width=28, state='readonly')
+        room_combo.grid(row=2, column=1, pady=5, padx=5)
+
+        def update_rooms(*args):
+            """Update room dropdown based on selected building"""
+            selected_building = building_var.get()
+            if selected_building and selected_building in building_dict:
+                building_id = building_dict[selected_building]
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT room_id, room_number
+                        FROM housing_rooms
+                        WHERE building_id = ?
+                        ORDER BY room_number
+                    ''', (building_id,))
+                    rooms = cursor.fetchall()
+                    conn.close()
+
+                    room_dict[building_id] = {f"Room {row[1]}": row[0] for row in rooms}
+                    room_combo['values'] = list(room_dict.get(building_id, {}).keys())
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load rooms: {str(e)}", parent=dialog)
+
+        def toggle_room_selection(*args):
+            """Show/hide room selection based on scope"""
+            if scope_var.get() == "Single Room":
+                room_label.grid(row=2, column=0, sticky='w', pady=5)
+                room_combo.grid(row=2, column=1, pady=5, padx=5)
+            else:
+                room_label.grid_remove()
+                room_combo.grid_remove()
+
+        room_dict = {}
+        building_var.trace('w', update_rooms)
+        scope_var.trace('w', toggle_room_selection)
 
         # Date
-        ttk.Label(form_frame, text="Inspection Date:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text="Inspection Date:").grid(row=3, column=0, sticky='w', pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         date_entry = ttk.Entry(form_frame, textvariable=date_var, width=30)
-        date_entry.grid(row=1, column=1, pady=5, padx=5)
+        date_entry.grid(row=3, column=1, pady=5, padx=5)
+
+        # Time
+        ttk.Label(form_frame, text="Inspection Time:").grid(row=4, column=0, sticky='w', pady=5)
+        time_var = tk.StringVar(value="10:00 AM")
+        time_entry = ttk.Entry(form_frame, textvariable=time_var, width=30)
+        time_entry.grid(row=4, column=1, pady=5, padx=5)
 
         # Type
-        ttk.Label(form_frame, text="Inspection Type:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text="Inspection Type:").grid(row=5, column=0, sticky='w', pady=5)
         type_var = tk.StringVar(value="Routine")
         type_combo = ttk.Combobox(form_frame, textvariable=type_var,
                                   values=['Routine', 'Move-in', 'Move-out', 'Maintenance', 'Safety'],
                                   width=28, state='readonly')
-        type_combo.grid(row=2, column=1, pady=5, padx=5)
+        type_combo.grid(row=5, column=1, pady=5, padx=5)
 
         # Inspector
-        ttk.Label(form_frame, text="Inspector:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text="Inspector:").grid(row=6, column=0, sticky='w', pady=5)
         inspector_var = tk.StringVar()
         inspector_entry = ttk.Entry(form_frame, textvariable=inspector_var, width=30)
-        inspector_entry.grid(row=3, column=1, pady=5, padx=5)
+        inspector_entry.grid(row=6, column=1, pady=5, padx=5)
 
         # Notes
-        ttk.Label(form_frame, text="Notes:").grid(row=4, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text="Notes:").grid(row=7, column=0, sticky='nw', pady=5)
         notes_text = tk.Text(form_frame, height=4, width=30)
-        notes_text.grid(row=4, column=1, pady=5, padx=5)
+        notes_text.grid(row=7, column=1, pady=5, padx=5)
+
+        # Email notification checkbox
+        send_email_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(form_frame, text="Send email notification to affected students",
+                       variable=send_email_var).grid(row=8, column=0, columnspan=2, sticky='w', pady=10)
 
         def save_inspection():
-            if not room_var.get().strip():
-                messagebox.showwarning("Room Required", "Please enter a room number", parent=dialog)
+            # Validation
+            selected_building = building_var.get()
+            if not selected_building:
+                messagebox.showwarning("Building Required", "Please select a building", parent=dialog)
+                return
+
+            if scope_var.get() == "Single Room" and not room_var.get().strip():
+                messagebox.showwarning("Room Required", "Please select a room", parent=dialog)
                 return
 
             if not inspector_var.get().strip():
@@ -3809,46 +3890,65 @@ Housing Administration"""
 
                 # Get the notes
                 notes = notes_text.get("1.0", tk.END).strip()
+                inspection_time = time_var.get().strip()
 
                 # Save to database
                 conn = get_connection()
                 cursor = conn.cursor()
-
-                # Generate inspection ID
-                inspection_id = generate_id('INSP')
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                # Get room_id from room number
-                cursor.execute('''
-                SELECT room_id FROM housing_rooms WHERE room_number = ?
-                ''', (room_var.get(),))
+                building_id = building_dict[selected_building]
 
-                room_result = cursor.fetchone()
-                if not room_result:
-                    messagebox.showerror("Error", f"Room {room_var.get()} not found", parent=dialog)
+                # Get rooms to inspect
+                if scope_var.get() == "Single Room":
+                    # Get specific room_id
+                    selected_room = room_var.get()
+                    if selected_room in room_dict.get(building_id, {}):
+                        room_ids = [room_dict[building_id][selected_room]]
+                    else:
+                        messagebox.showerror("Error", "Please select a valid room", parent=dialog)
+                        conn.close()
+                        return
+                else:
+                    # Get all rooms in building
+                    cursor.execute('SELECT room_id FROM housing_rooms WHERE building_id = ?', (building_id,))
+                    room_ids = [row[0] for row in cursor.fetchall()]
+
+                if not room_ids:
+                    messagebox.showerror("Error", "No rooms found for inspection", parent=dialog)
                     conn.close()
                     return
 
-                room_id = room_result[0]
-
-                # Insert inspection
-                cursor.execute('''
-                INSERT INTO housing_inspections (
-                    inspection_id, room_id, inspection_date, inspection_type,
-                    inspector, findings, status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?)
-                ''', (inspection_id, room_id, inspection_date, type_var.get(),
-                     inspector_var.get(), notes, timestamp, timestamp))
+                inspection_ids = []
+                # Insert inspection for each room
+                for room_id in room_ids:
+                    inspection_id = generate_id('INSP')
+                    cursor.execute('''
+                    INSERT INTO housing_inspections (
+                        inspection_id, room_id, inspection_date, inspection_type,
+                        inspector, findings, status, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?)
+                    ''', (inspection_id, room_id, inspection_date, type_var.get(),
+                         inspector_var.get(), notes, timestamp, timestamp))
+                    inspection_ids.append(inspection_id)
 
                 conn.commit()
+
+                # Send email notifications if requested
+                if send_email_var.get():
+                    self.send_inspection_emails(cursor, building_id, room_ids, inspection_date,
+                                               inspection_time, type_var.get(), inspector_var.get(),
+                                               notes, scope_var.get() == "Full Building")
+
                 conn.close()
 
                 messagebox.showinfo("Success",
-                                  f"Inspection scheduled successfully!\n\n"
-                                  f"Inspection ID: {inspection_id}\n"
-                                  f"Room: {room_var.get()}\n"
+                                  f"Inspection(s) scheduled successfully!\n\n"
+                                  f"Total inspections: {len(inspection_ids)}\n"
+                                  f"Building: {selected_building}\n"
                                   f"Date: {inspection_date}\n"
-                                  f"Type: {type_var.get()}",
+                                  f"Type: {type_var.get()}\n"
+                                  f"{'Email notifications sent' if send_email_var.get() else 'No emails sent'}",
                                   parent=dialog)
                 dialog.destroy()
 
@@ -3856,11 +3956,100 @@ Housing Administration"""
                 messagebox.showerror("Error", "Please enter a valid date (YYYY-MM-DD)", parent=dialog)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to schedule inspection: {str(e)}", parent=dialog)
+                import traceback
+                traceback.print_exc()
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
         ttk.Button(button_frame, text="Schedule", command=save_inspection).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+    def send_inspection_emails(self, cursor, building_id, room_ids, inspection_date,
+                               inspection_time, inspection_type, inspector_name, notes, is_building_wide):
+        """Send email notifications to students about scheduled inspections"""
+        try:
+            # Get building info
+            cursor.execute('SELECT building_name FROM housing_buildings WHERE building_id = ?', (building_id,))
+            building_result = cursor.fetchone()
+            building_name = building_result[0] if building_result else "Unknown Building"
+
+            # Get students in the affected rooms
+            cursor.execute('''
+                SELECT DISTINCT
+                    s.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    s.email_address,
+                    r.room_number
+                FROM housing_assignments ha
+                JOIN students s ON ha.student_id = s.student_id
+                JOIN housing_rooms r ON ha.room_id = r.room_id
+                WHERE ha.room_id IN ({})
+                AND ha.status = 'Active'
+            '''.format(','.join('?' * len(room_ids))), room_ids)
+
+            students = cursor.fetchall()
+
+            if not students:
+                print("No active students found in selected rooms")
+                return
+
+            # Load appropriate email template
+            template_name = 'building_inspection_notice' if is_building_wide else 'inspection_scheduled'
+
+            try:
+                import json
+                from university_system.modules.shared.constants import paths
+                template_path = paths.PROJECT_ROOT / 'university_system' / 'templates' / 'email' / f'{template_name}.json'
+
+                with open(template_path, 'r') as f:
+                    template = json.load(f)
+
+                # Send email to each student
+                from university_system.infrastructure.email.email_service import send_email
+
+                for student_id, student_name, email, room_number in students:
+                    if not email:
+                        continue
+
+                    # Replace template variables
+                    subject = template['subject'].replace('{{building_name}}', building_name) \\
+                                                .replace('{{room_number}}', room_number)
+
+                    body = template['body']
+                    replacements = {
+                        '{{student_name}}': student_name,
+                        '{{building_name}}': building_name,
+                        '{{room_number}}': room_number,
+                        '{{inspection_date}}': inspection_date,
+                        '{{inspection_time}}': inspection_time,
+                        '{{inspection_type}}': inspection_type,
+                        '{{inspector_name}}': inspector_name,
+                        '{{notes}}': notes if notes else '',
+                        '{{additional_notes}}': notes if notes else ''
+                    }
+
+                    for key, value in replacements.items():
+                        body = body.replace(key, value)
+
+                    # Send email
+                    send_email(
+                        to_email=email,
+                        subject=subject,
+                        body=body,
+                        email_type='inspection_notification'
+                    )
+
+                print(f"✓ Sent {len(students)} inspection notification emails")
+
+            except Exception as email_error:
+                print(f"Error sending emails: {email_error}")
+                import traceback
+                traceback.print_exc()
+
+        except Exception as e:
+            print(f"Error in send_inspection_emails: {e}")
+            import traceback
+            traceback.print_exc()
 
     def record_inspection_dialog(self):
         """Record inspection results"""
@@ -3988,7 +4177,12 @@ Housing Administration"""
             conn.close()
 
             for inspection in inspections:
-                tree.insert('', 'end', values=inspection)
+                # Convert sqlite3.Row to tuple to avoid errors
+                if hasattr(inspection, '__iter__') and not isinstance(inspection, (str, bytes)):
+                    values = tuple(inspection)
+                else:
+                    values = inspection
+                tree.insert('', 'end', values=values)
 
             if not inspections:
                 # Insert a message if no inspections found
@@ -3998,6 +4192,8 @@ Housing Administration"""
             messagebox.showerror("Error", f"Failed to load inspections: {str(e)}")
             # Show sample data on error for demo purposes
             tree.insert('', 'end', values=(f'Error: {str(e)}', '', '', '', '', '', ''))
+            import traceback
+            traceback.print_exc()
 
     def edit_inspection(self, tree):
         """Edit an existing inspection"""
