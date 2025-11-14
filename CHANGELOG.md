@@ -5,6 +5,45 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.7] - 2025-11-14
+
+### Fixed - User Database Email Addresses
+
+**Database Correction**
+
+Fixed incorrect email addresses in users database table for admin and staff accounts.
+
+**Issues Found:**
+- Admin user `7591239` (Joanne Smith) had student email format: `C7591239@tees.ac.uk`
+- Staff user `1952392` (Lucas Jones) had student email format: `C1952392@tees.ac.uk`
+- Admin user `system_` had no email address and no name
+- Only `system_teessideuniversity` had correct admin email
+
+**Changes Made:**
+- Updated admin `7591239` email: `C7591239@tees.ac.uk` → `joanne.smith@university.edu`
+- Updated staff `1952392` email: `C1952392@tees.ac.uk` → `lucas.jones@university.edu`
+- Deleted incomplete admin user `system_` (no email, no name)
+
+**Final State:**
+```
+Admin Users:
+- 7591239 (Joanne Smith): joanne.smith@university.edu
+- system_teessideuniversity (Teesside University): noreply@university.edu
+
+Staff Users:
+- 1952392 (Lucas Jones): lucas.jones@university.edu
+```
+
+**Impact:**
+- ✅ Admin and staff now have proper institutional email addresses
+- ✅ Email format consistent: firstname.lastname@university.edu
+- ✅ System emails sent from correct admin addresses
+- ✅ Removed incomplete/invalid admin account
+
+**Database:** `student_records.db` - `users` table
+
+---
+
 ## [5.0.6] - 2025-01-14
 
 ### Fixed - EmailService Class Import Error
@@ -87,25 +126,42 @@ def display_housing_accommodation_menu(auth_instance=None):
 
 **Database Query Fix**
 
-Fixed "no such table: administrators" error when using the "Send to Admin" button in report windows.
+Fixed "no such table: administrators" error and incorrect admin email selection when using "Send to Admin" button.
 
-**Root Cause:**
+**Root Cause (Initial):**
 - Query referenced non-existent `administrators` table
 - Used wrong column name `email_address` instead of `email`
 - Used wrong role names (`System Administrator`, `Housing Administrator`)
 
-**Fix:**
+**Root Cause (Secondary):**
+- Query could return users with empty email addresses
+- Query could return student email addresses (e.g., C7591239@tees.ac.uk)
+- No prioritization for system administrator account
+- Alphabetical ordering led to wrong admin being selected
+
+**Fix (Complete):**
 - Changed table from `administrators` to `users`
 - Changed column from `email_address` to `email`
 - Updated roles to `admin` and `staff` (actual roles in database)
-- Maintained priority: admin > staff
+- Added email validation: `email IS NOT NULL AND email != ''`
+- Implemented smart prioritization:
+  1. `system_teessideuniversity` user (official system admin)
+  2. Other admin users with valid emails
+  3. Staff users with valid emails
+
+**Result:**
+Now correctly returns:
+- Email: `noreply@university.edu`
+- Name: Teesside University
+- Prevents using student emails or empty addresses
 
 **Impact:**
-- ✅ "Send to Admin" button now works correctly
-- ✅ Reports can be emailed to administrators
-- ✅ Queries first admin user, falls back to staff if no admin exists
+- ✅ Reports sent to correct system admin email
+- ✅ Professional institutional email address
+- ✅ No more empty or student email addresses
+- ✅ Consistent communication from official system account
 
-**Location:** `housing_accommodation_gui.py:4702-4714`
+**Location:** `housing_accommodation_gui.py:4702-4716`
 
 ---
 
