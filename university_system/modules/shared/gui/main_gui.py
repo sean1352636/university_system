@@ -708,21 +708,13 @@ def init_gui(session_user=None):
     # Initialize auth manager if needed
     if auth is None:
         if UserAuth is None:
-            print("Warning: UserAuth not available. Using dummy authentication.")
-            # Create a minimal auth object for testing
-            class DummyAuth:
-                def __init__(self):
-                    self.is_authenticated = True
-                    self.current_user = None
-                    self.last_activity = None
-                    self.session_timeout = 30
-                    self.login_attempts = {}
-                    self.max_attempts = 5
-                    self.lockout_time = 15
-            auth = DummyAuth()
-        else:
-            auth = UserAuth()
-            safe_auth_check(auth)
+            raise ImportError(
+                "UserAuth is not available. Please ensure the authentication module is properly installed.\n"
+                "Path: university_system/infrastructure/auth/user_authentication.py"
+            )
+
+        auth = UserAuth()
+        safe_auth_check(auth)
 
         # Register auth instance with shared_context and local auth
         set_auth(auth)

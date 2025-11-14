@@ -2397,10 +2397,56 @@ Click the button above to access the full Financial Reporting & Analytics system
             form_frame = ttk.Frame(dialog, padding="20")
             form_frame.pack(fill='both', expand=True)
 
-            # Student ID
+            # Student ID with lookup button
             ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
-            student_id_entry = ttk.Entry(form_frame, width=30)
-            student_id_entry.grid(row=0, column=1, pady=5, padx=10)
+
+            student_id_frame = ttk.Frame(form_frame)
+            student_id_frame.grid(row=0, column=1, pady=5, padx=10, sticky='w')
+
+            student_id_entry = ttk.Entry(student_id_frame, width=22)
+            student_id_entry.pack(side='left')
+
+            # Student name display (initially empty)
+            student_name_var = tk.StringVar(value="")
+            student_name_label = ttk.Label(student_id_frame, textvariable=student_name_var,
+                                          foreground='green', font=('Arial', 9))
+            student_name_label.pack(side='left', padx=(5, 0))
+
+            def lookup_student():
+                """Lookup student by ID and validate"""
+                student_id = student_id_entry.get().strip()
+                if not student_id:
+                    messagebox.showwarning("Lookup", "Please enter a Student ID")
+                    return
+
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT student_id, first_name, last_name, email_address
+                        FROM students
+                        WHERE student_id = ?
+                    ''', (student_id,))
+                    result = cursor.fetchone()
+                    conn.close()
+
+                    if result:
+                        _, first_name, last_name, email = result
+                        full_name = f"{first_name} {last_name}"
+                        student_name_var.set(f"✓ {full_name}")
+                        student_name_label.config(foreground='green')
+                        messagebox.showinfo("Student Found",
+                                          f"Student: {full_name}\nEmail: {email or 'N/A'}")
+                    else:
+                        student_name_var.set("✗ Not Found")
+                        student_name_label.config(foreground='red')
+                        messagebox.showerror("Not Found",
+                                           f"Student ID '{student_id}' not found in database")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to lookup student: {str(e)}")
+
+            ttk.Button(student_id_frame, text="🔍 Lookup", command=lookup_student,
+                      width=8).pack(side='left', padx=(5, 0))
 
             # Amount
             ttk.Label(form_frame, text="Amount ($):").grid(row=1, column=0, sticky='w', pady=5)
@@ -2447,10 +2493,31 @@ Click the button above to access the full Financial Reporting & Analytics system
                 try:
                     # Validate inputs
                     student_id = student_id_entry.get().strip()
-                    amount = float(amount_entry.get().strip())
 
                     if not student_id:
                         messagebox.showerror("Error", "Student ID is required")
+                        return
+
+                    # Validate student exists in database
+                    conn_check = get_connection()
+                    cursor_check = conn_check.cursor()
+                    cursor_check.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
+                    if not cursor_check.fetchone():
+                        conn_check.close()
+                        messagebox.showerror("Error",
+                                           f"Student ID '{student_id}' does not exist in database.\n\n"
+                                           "Please use the Lookup button to verify the student ID.")
+                        return
+                    conn_check.close()
+
+                    # Validate amount
+                    try:
+                        amount = float(amount_entry.get().strip())
+                        if amount <= 0:
+                            messagebox.showerror("Error", "Amount must be greater than 0")
+                            return
+                    except ValueError:
+                        messagebox.showerror("Error", "Please enter a valid amount")
                         return
 
                     # Generate payment ID

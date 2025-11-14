@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Auth System and Payment Form Enhancements
+
+**Major Authentication and UI Improvements**
+
+**1. Removed DummyAuth - Use Real UserAuth Only**
+- **Issue**: System fell back to DummyAuth when UserAuth import failed, causing `get_current_user()` AttributeError
+- **Fix**: Removed DummyAuth fallback completely
+  - Now raises ImportError if UserAuth is not available
+  - Forces proper authentication module installation
+  - Added `get_current_user()` method to UserAuth class
+- **Locations**:
+  - `main_gui.py:708-720` - Removed DummyAuth class
+  - `user_authentication.py:1903-1909` - Added get_current_user() method
+- **Impact**: All finance operations now use real authentication with proper audit trail
+
+**2. Fixed Double Window Opening Issue**
+- **Issue**: Opening Finance GUI from Housing created 2 windows (one from Housing, one from Finance)
+- **Root Cause**: Finance GUI always created a new Toplevel window even when parent was already Toplevel
+- **Fix**: Check if parent is already Toplevel window
+  - If parent is Toplevel, use it directly
+  - If parent is Tk root, create new Toplevel
+  - Prevents window stacking and confusion
+- **Location**: `finance_management_gui.py:100-117`
+- **Impact**: Clean single-window experience when navigating between modules
+
+**3. Added Student Lookup and Validation**
+- **Feature**: Student ID lookup button with real-time validation
+- **Components Added**:
+  - 🔍 Lookup button next to Student ID field
+  - Live student name display (green ✓ if found, red ✗ if not)
+  - Popup confirmation with student details (name, email)
+  - Database validation before payment save
+  - Amount validation (must be positive number)
+- **Validation Rules**:
+  - Student ID must exist in students table
+  - Amount must be > 0
+  - Clear error messages guide user
+- **Locations**: `layout_manager.py:2400-2521`
+- **Impact**: Prevents invalid payments, improves data integrity, better UX
+
+**User Experience Enhancements**:
+- **Lookup Flow**:
+  1. User enters Student ID
+  2. Clicks 🔍 Lookup button
+  3. System queries database
+  4. Shows student name next to field (✓ John Doe)
+  5. Popup confirms with full details
+- **Save Validation**:
+  - Checks student exists before saving
+  - Validates amount is numeric and positive
+  - Helpful error messages with next steps
+
+**Database Queries Added**:
+```sql
+-- Lookup student
+SELECT student_id, first_name, last_name, email_address
+FROM students
+WHERE student_id = ?
+
+-- Validate exists
+SELECT student_id FROM students WHERE student_id = ?
+```
+
 ### Fixed - Multiple Housing Finance Integration Issues
 
 **Three Critical Fixes for Housing Finance Features**

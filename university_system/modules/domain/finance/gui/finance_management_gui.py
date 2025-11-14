@@ -97,20 +97,28 @@ class FinanceManagementGUI:
         # Prefer the new Finance GUI
         if FINANCE_GUI_AVAILABLE and FinanceGUI:
             try:
-                win = tk.Toplevel(self.root)
-                win.title("Finance Management System")
-                win.geometry("1400x900")
-                win.minsize(1200, 800)
+                # Check if self.root is already a Toplevel window (opened from another module)
+                # If so, use it directly instead of creating a new one
+                if isinstance(self.root, tk.Toplevel):
+                    win = self.root
+                    # Ensure proper configuration
+                    win.title("Finance Management System")
+                    win.geometry("1400x900")
+                    win.minsize(1200, 800)
+                else:
+                    # Create a new Toplevel window (standalone launch)
+                    win = tk.Toplevel(self.root)
+                    win.title("Finance Management System")
+                    win.geometry("1400x900")
+                    win.minsize(1200, 800)
+                    try:
+                        win.transient(self.root)
+                    except Exception:
+                        pass
 
                 # Apply theme to window
                 if self.theme_manager:
                     self.theme_manager.apply_theme_to_window(win)
-                try:
-                    win.transient(self.root)
-                    # Don't use grab_set() - it freezes the parent window
-                    # win.grab_set()
-                except Exception:
-                    pass
 
                 app = FinanceGUI(win)
                 try:

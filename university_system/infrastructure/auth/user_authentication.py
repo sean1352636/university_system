@@ -1900,6 +1900,14 @@ class UserAuth:
             except Exception as db_error:
                 logger.error(f"Database initialization also failed: {db_error}")
 
+    def get_current_user(self):
+        """Get the current logged-in user information
+
+        Returns:
+            dict or None: Current user dictionary or None if not logged in
+        """
+        return self.current_user
+
     def _create_default_student_if_needed(self, cursor, conn):
         """Ensure the students table exists and report if it is empty."""
         try:
