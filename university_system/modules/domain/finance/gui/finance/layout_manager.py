@@ -2530,7 +2530,7 @@ Click the button above to access the full Financial Reporting & Analytics system
 
                     # Get current user
                     current_user = self.gui.auth.get_current_user()
-                    received_by = current_user.user_id if current_user else 'SYSTEM'
+                    received_by = current_user.get('username', 'SYSTEM') if current_user else 'SYSTEM'
 
                     # Save to database
                     with transaction() as conn:

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Current User Dictionary Access Error
+
+**Quick Fix for Payment Recording**
+
+- **Error**: `AttributeError: 'dict' object has no attribute 'user_id'`
+- **Root Cause**: Tried to access `current_user.user_id` but current_user is a dictionary, not an object
+- **Fix**: Changed `current_user.user_id` to `current_user.get('username', 'SYSTEM')`
+- **Location**: `layout_manager.py:2533`
+- **Impact**: Payment recording now correctly captures username for audit trail
+
+**Current User Dictionary Structure**:
+```python
+current_user = {
+    'id': user_id,
+    'account_id': account_id,
+    'username': username,
+    'role': role,
+    'permissions': permissions,
+    'password_reset_required': password_reset_required
+}
+```
+
 ### Fixed - Auth System and Payment Form Enhancements
 
 **Major Authentication and UI Improvements**
