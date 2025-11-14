@@ -5,6 +5,57 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.4] - 2025-01-14
+
+### Fixed - Finance GUI Color Error and Navigation
+
+**Additional Fixes for Finance GUI Integration**
+
+Fixed two issues that prevented the Finance GUI from opening correctly from Housing:
+
+**1. Color KeyError in Housing Finance Tab**
+- **Error**: `KeyError: 'accent'`
+- **Root Cause**: Housing tab used `self.colors['accent']` but Finance GUI only defines: primary, secondary, success, warning, danger, info
+- **Fix**: Changed refresh button color from 'accent' to 'secondary'
+- **Location**: `layout_manager.py:2069`
+- **Code Change**:
+  ```python
+  # Before:
+  bg=self.colors['accent']
+
+  # After:
+  bg=self.colors['secondary']
+  ```
+- **Impact**: Housing finance tab now displays correctly without color errors
+
+**2. Finance GUI Navigation - Auto-Open Housing Tab**
+- **Enhancement**: Finance GUI now automatically navigates to Housing tab when opened from Housing Payment Management
+- **Implementation**: Added `initial_tab` parameter to `show_finance_management()` method
+- **Changes**:
+  - Modified `FinanceManagementGUI.show_finance_management()` to accept `initial_tab` parameter
+  - Uses `win.after(100, lambda: app.layout.show_tab(initial_tab))` for delayed navigation
+  - Housing GUI passes `initial_tab='housing'` when opening Finance GUI
+- **Locations**:
+  - Parameter added: `finance_management_gui.py:77`
+  - Navigation logic: `finance_management_gui.py:126-131`
+  - Caller updated: `housing_accommodation_gui.py:2254`
+- **Impact**: Users now see housing finance data immediately when opening from Housing
+
+**Files Modified**:
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+  - Fixed refresh button color from 'accent' to 'secondary'
+- `university_system/modules/domain/finance/gui/finance_management_gui.py`
+  - Added `initial_tab` parameter to `show_finance_management()`
+  - Added automatic tab navigation logic
+- `university_system/modules/domain/housing/gui/housing_accommodation_gui.py`
+  - Updated Finance GUI call to specify `initial_tab='housing'`
+
+**Testing Performed**:
+- ✓ Finance GUI opens without color errors
+- ✓ Finance GUI automatically shows Housing tab when opened from Housing
+- ✓ Refresh button displays with correct color
+- ✓ All Finance GUI tabs accessible and functional
+
 ## [5.0.3] - 2025-01-14
 
 ### Fixed - Email Logging and Finance GUI Integration

@@ -74,8 +74,12 @@ class FinanceManagementGUI:
             # Update any cached windows if needed
             pass
 
-    def show_finance_management(self):
-        """Launch the Finance Management GUI in a child window, fallback to CLI if needed."""
+    def show_finance_management(self, initial_tab=None):
+        """Launch the Finance Management GUI in a child window, fallback to CLI if needed.
+
+        Args:
+            initial_tab: Optional tab ID to show initially (e.g., 'housing', 'payments')
+        """
         if not self.auth.current_user:
             messagebox.showerror("Error", "You must be logged in to access finance management.")
             return
@@ -117,6 +121,14 @@ class FinanceManagementGUI:
                         app.auth = self.auth
                 except Exception:
                     pass
+
+                # Navigate to specific tab if requested
+                if initial_tab and hasattr(app, 'layout') and hasattr(app.layout, 'show_tab'):
+                    try:
+                        # Give the GUI time to initialize before switching tabs
+                        win.after(100, lambda: app.layout.show_tab(initial_tab))
+                    except Exception as e:
+                        print(f"Warning: Could not navigate to tab '{initial_tab}': {e}")
 
                 print("✅ Finance Management GUI opened successfully")
                 return

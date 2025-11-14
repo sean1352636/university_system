@@ -2250,8 +2250,8 @@ Status: {req_data[11]}
             # Initialize Finance Management GUI with the new window and current auth
             finance_gui = FinanceManagementGUI(finance_window, self.auth)
 
-            # Show the finance management interface
-            finance_gui.show_finance_management()
+            # Show the finance management interface and navigate to housing tab
+            finance_gui.show_finance_management(initial_tab='housing')
 
             # Log the action
             log_menu_navigation('finance_management', 'Opened from housing payment management')

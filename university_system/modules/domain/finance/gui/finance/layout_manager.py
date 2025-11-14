@@ -2066,7 +2066,7 @@ Click the button above to access the full Financial Reporting & Analytics system
         # Refresh button
         refresh_btn = tk.Button(header_frame, text="🔄 Refresh",
                                command=lambda: self.refresh_housing_data(housing_frame),
-                               bg=self.colors['accent'], fg='white',
+                               bg=self.colors['secondary'], fg='white',
                                font=('Arial', 10, 'bold'), relief='flat',
                                padx=15, pady=5)
         refresh_btn.pack(side='right', padx=20, pady=15)
