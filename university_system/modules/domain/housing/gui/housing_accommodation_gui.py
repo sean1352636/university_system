@@ -12,6 +12,7 @@ from university_system.modules.shared.utils.simple_activity_logger import (
 # Import email service for sending confirmations
 try:
     from university_system.infrastructure.email.email_service import send_email, send_email_as_system
+    from university_system.infrastructure.email.template_utils import render_template
     EMAIL_SERVICE_AVAILABLE = True
 except ImportError:
     EMAIL_SERVICE_AVAILABLE = False
@@ -72,6 +73,105 @@ from university_system.modules.domain.housing.services.housing_accommodation imp
     display_payment_menu as orig_display_payment_menu,
     display_inspection_menu as orig_display_inspection_menu
 )
+
+
+def send_housing_email(email_type, student_id, application_data, additional_vars=None):
+    """
+    Send housing-related emails to students
+
+    Args:
+        email_type: Type of email ('receipt', 'approved', 'rejected')
+        student_id: Student ID to send email to
+        application_data: Dictionary containing application details
+        additional_vars: Additional template variables (optional)
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    if not EMAIL_SERVICE_AVAILABLE:
+        print(f"Email service not available - cannot send {email_type} email to student {student_id}")
+        return False
+
+    try:
+        # Get student email and name from database
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT email_address, first_name, last_name
+            FROM students
+            WHERE student_id = ?
+        ''', (student_id,))
+        student_info = cursor.fetchone()
+        conn.close()
+
+        if not student_info or not student_info[0]:
+            print(f"No email address found for student {student_id}")
+            return False
+
+        student_email = student_info[0]
+        student_name = f"{student_info[1] or ''} {student_info[2] or ''}".strip() or "Student"
+
+        # Map email types to template names
+        template_map = {
+            'receipt': 'accommodation_application_receipt',
+            'approved': 'accommodation_approved',
+            'rejected': 'accommodation_rejected'
+        }
+
+        template_name = template_map.get(email_type)
+        if not template_name:
+            print(f"Unknown email type: {email_type}")
+            return False
+
+        # Prepare template variables
+        template_vars = {
+            'student_name': student_name,
+            'student_id': student_id,
+            'accommodation_id': application_data.get('application_id', 'N/A'),
+            'accommodation_type': application_data.get('preferred_room_type', 'N/A'),
+            'description': application_data.get('special_requirements', 'No special requirements'),
+            'start_date': application_data.get('requested_move_in_date', 'N/A'),
+            'end_date': 'N/A',  # Calculate if duration available
+            'status': application_data.get('status', 'N/A'),
+            'submission_date': application_data.get('application_date', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        }
+
+        # Calculate end date if duration available
+        if application_data.get('requested_duration_months') and application_data.get('requested_move_in_date'):
+            try:
+                start_date = datetime.strptime(application_data['requested_move_in_date'], '%Y-%m-%d')
+                duration = int(application_data['requested_duration_months'])
+                end_date = start_date + timedelta(days=duration * 30)
+                template_vars['end_date'] = end_date.strftime('%Y-%m-%d')
+            except:
+                pass
+
+        # Add additional variables if provided
+        if additional_vars:
+            template_vars.update(additional_vars)
+
+        # Render template
+        subject, body = render_template(template_name, template_vars)
+
+        # Send email
+        send_email(
+            recipient=student_email,
+            subject=subject,
+            body=body,
+            related_to='housing_accommodation',
+            student_id=student_id,
+            template_name=template_name
+        )
+
+        print(f"✓ {email_type.title()} email sent to {student_name} ({student_email})")
+        return True
+
+    except Exception as e:
+        print(f"✗ Failed to send {email_type} email to student {student_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 
 class HousingGUI:
     def __init__(self, auth_instance=None):
@@ -2367,31 +2467,98 @@ Status: {app_data[12]}
         def process_application():
             decision = decision_var.get()
             notes = notes_text.get('1.0', tk.END).strip()
-            
+
             if not decision:
                 messagebox.showerror("Error", "Please select a decision")
                 return
-            
+
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
+
+                # Get application details for email
+                cursor.execute('''
+                    SELECT student_id, preferred_room_type, requested_move_in_date,
+                           requested_duration_months, special_requirements, application_date
+                    FROM housing_applications
+                    WHERE application_id = ?
+                ''', (application_id,))
+                app_info = cursor.fetchone()
+
+                if not app_info:
+                    messagebox.showerror("Error", "Application not found")
+                    conn.close()
+                    return
+
+                student_id, room_type, move_in_date, duration, special_req, app_date = app_info
+
+                # Update application
                 cursor.execute('''
                 UPDATE housing_applications
                 SET status = ?, notes = ?, reviewed_by = ?, review_date = ?, updated_at = ?
                 WHERE application_id = ?
                 ''', (decision, notes, self.auth.current_user['username'], timestamp, timestamp, application_id))
-                
+
                 conn.commit()
                 conn.close()
-                
-                messagebox.showinfo("Success", f"Application has been {decision.lower()}")
+
+                # Send email based on decision
+                application_data = {
+                    'application_id': application_id,
+                    'student_id': student_id,
+                    'preferred_room_type': room_type,
+                    'requested_move_in_date': move_in_date,
+                    'requested_duration_months': duration,
+                    'special_requirements': special_req or 'None',
+                    'status': decision,
+                    'application_date': app_date
+                }
+
+                # Prepare additional variables for email
+                reviewer_name = self.auth.current_user.get('username', 'Housing Administration')
+                additional_vars = {
+                    'approval_date': timestamp if decision == 'Approved' else None,
+                    'review_date': timestamp,
+                    'approved_by': reviewer_name if decision == 'Approved' else None,
+                    'reviewed_by': reviewer_name,
+                    'approval_reason': notes if decision == 'Approved' else None,
+                    'rejection_reason': notes if decision == 'Rejected' else None,
+                    'detailed_explanation': notes or 'No additional details provided.',
+                    'accommodation_details': 'Room assignment details will be provided separately.' if decision == 'Approved' else None,
+                    'housing_fee': 'TBD',
+                    'payment_due_date': 'TBD',
+                    'move_in_date': move_in_date,
+                    'check_in_time': '2:00 PM - 6:00 PM',
+                    'check_in_location': 'Housing Office - Main Building',
+                    'reservation_expiry': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=7)).strftime('%Y-%m-%d') if decision == 'Approved' else None,
+                    'documentation_deadline': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=14)).strftime('%Y-%m-%d') if decision == 'Approved' else None,
+                    'orientation_date': 'TBD',
+                    'additional_notes': 'Please contact housing@university.edu if you have any questions.',
+                    'appeal_deadline': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=10)).strftime('%Y-%m-%d') if decision == 'Rejected' else None
+                }
+
+                # Determine email type
+                if decision == 'Approved':
+                    email_sent = send_housing_email('approved', student_id, application_data, additional_vars)
+                    email_msg = "\n\nApproval email has been sent to the student." if email_sent else "\n\nNote: Email sending failed."
+                elif decision == 'Rejected':
+                    email_sent = send_housing_email('rejected', student_id, application_data, additional_vars)
+                    email_msg = "\n\nRejection email has been sent to the student." if email_sent else "\n\nNote: Email sending failed."
+                else:
+                    email_msg = ""
+
+                # Log activity
+                log_update('housing_application', application_id, f"Application {decision.lower()} by {reviewer_name}")
+
+                messagebox.showinfo("Success", f"Application has been {decision.lower()}{email_msg}")
                 self.refresh_applications_list()
                 process_window.destroy()
-                
+
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to process application: {str(e)}")
+                import traceback
+                traceback.print_exc()
         
         # Buttons
         buttons_frame = ttk.Frame(process_window)
@@ -2571,9 +2738,25 @@ Status: {app_data[12]}
             
             conn.commit()
             conn.close()
-            
-            messagebox.showinfo("Success", f"Application submitted successfully!\nApplication ID: {application_id}")
-            
+
+            # Send receipt email to student
+            application_data = {
+                'application_id': application_id,
+                'student_id': student_id,
+                'preferred_room_type': room_type,
+                'requested_move_in_date': move_in_date,
+                'requested_duration_months': duration_months,
+                'special_requirements': special_req,
+                'status': 'Pending',
+                'application_date': timestamp
+            }
+            send_housing_email('receipt', student_id, application_data)
+
+            messagebox.showinfo("Success", f"Application submitted successfully!\nApplication ID: {application_id}\n\nA confirmation email has been sent to your registered email address.")
+
+            # Log activity
+            log_create('housing_application', application_id, f"Student {student_id} submitted housing application")
+
             # Clear form
             if hasattr(self, 'student_id_entry'):
                 self.student_id_entry.delete(0, tk.END)

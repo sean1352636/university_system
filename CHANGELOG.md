@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.1] - 2025-01-14
 
+### Added - Housing Accommodation Email Notifications
+
+**Automated Email System for Housing Applications**
+
+Integrated email notification system into Housing Accommodation GUI to automatically send emails to students at key points in the application process.
+
+**1. Application Receipt Email**
+- **Trigger**: Automatically sent when student submits housing application
+- **Template**: `accommodation_application_receipt.json`
+- **Contents**:
+  - Application reference number
+  - Application details (type, dates, requirements)
+  - Review timeline (5-7 business days)
+  - Next steps and what to expect
+  - Contact information
+- **Implementation**: `housing_accommodation_gui.py:2675-2686`
+
+**2. Application Approval Email**
+- **Trigger**: Automatically sent when admin approves application
+- **Template**: `accommodation_approved.json`
+- **Contents**:
+  - Approval confirmation with reference number
+  - Approval reason (from admin notes)
+  - Accommodation details
+  - Next steps (confirmation, documentation, payment)
+  - Move-in information and dates
+  - Important deadlines
+- **Implementation**: `housing_accommodation_gui.py:2542-2544`
+
+**3. Application Rejection Email**
+- **Trigger**: Automatically sent when admin rejects application
+- **Template**: `accommodation_rejected.json`
+- **Contents**:
+  - Rejection notification with reference number
+  - Detailed rejection reason (from admin notes)
+  - Explanation of decision
+  - Appeal process and deadlines
+  - Alternative options and resources
+  - Contact information for assistance
+- **Implementation**: `housing_accommodation_gui.py:2545-2547`
+
+**Email Helper Function**
+- **Function**: `send_housing_email()` (lines 78-173)
+- **Features**:
+  - Retrieves student email and name from database
+  - Renders email templates with dynamic variables
+  - Calculates end dates based on duration
+  - Comprehensive error handling
+  - Activity logging
+- **Template Variables Supported**:
+  - Student information (name, ID, email)
+  - Application details (ID, type, dates, requirements)
+  - Decision information (approval/rejection reason)
+  - Reviewer information (name, date)
+  - Deadlines and timelines
+  - Next steps and instructions
+
+**Admin Decision Workflow**
+- Admin selects decision: Approve, Reject, Waiting List, or Request More Info
+- Admin enters reason/notes in text field
+- On submit: Application updated + Email automatically sent
+- Success message confirms email delivery
+- Student receives professional formatted email immediately
+
+**Benefits**:
+- ✅ Students receive instant confirmation of application submission
+- ✅ Students know exactly what to expect and when
+- ✅ Approval emails include all necessary next steps
+- ✅ Rejection emails provide clear reasons and appeal options
+- ✅ All communication documented in email_log table
+- ✅ Professional, consistent communication
+- ✅ Reduces manual email workload for housing staff
+
 ### Fixed - Dialog Window Grab Errors
 
 **"grab failed: window not viewable" Error Fixed in All Dialogs**
@@ -134,6 +207,13 @@ Created new directory `university_system/templates/medical_templates/` with stan
 ### Technical Details
 
 **Files Modified:**
+- `university_system/modules/domain/housing/gui/housing_accommodation_gui.py`
+  - Lines 13-15: Added email template_utils import
+  - Lines 78-173: Added `send_housing_email()` function
+  - Lines 2675-2691: Added receipt email sending in `submit_application()`
+  - Lines 2467-2561: Enhanced `process_application()` with email notifications
+  - Email sending integrated with approval/rejection workflow
+
 - `university_system/modules/domain/housing/gui/accommodation_gui.py`
   - Lines 501-502: Added "Import Medical Templates" button
   - Lines 639-722: Added `import_medical_templates()` function
@@ -152,6 +232,18 @@ Created new directory `university_system/templates/medical_templates/` with stan
   - Line 154: Added to `__all__` exports
 
 **Files Created:**
+- `university_system/templates/email/accommodation_application_receipt.json`
+  - Comprehensive receipt email template for application submissions
+  - Includes reference number, timeline, and next steps
+
+- `university_system/templates/email/accommodation_approved.json`
+  - Detailed approval email with congratulations and instructions
+  - Includes move-in details, payment info, deadlines, and requirements
+
+- `university_system/templates/email/accommodation_rejected.json`
+  - Professional rejection email with clear reasoning
+  - Includes appeal process, alternative options, and support resources
+
 - `university_system/templates/medical_templates/` (directory)
 - `university_system/templates/medical_templates/README.md` (3.5KB documentation)
 - `university_system/templates/medical_templates/chronic_illness_accommodation.json` (1.1KB)
@@ -169,6 +261,14 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - `university_system/data/submissions/templates/` (empty directory - no longer needed)
 
 **Testing Notes:**
+- ✓ Housing application submission sends receipt email to student
+- ✓ Approval decision sends detailed approval email with next steps
+- ✓ Rejection decision sends professional rejection email with appeal info
+- ✓ Admin notes field content included in email as reason/explanation
+- ✓ Email templates render correctly with all variables
+- ✓ Student email retrieved correctly from database
+- ✓ Email logging works (emails saved to email_log table)
+- ✓ Success messages confirm email delivery status
 - ✓ All dialogs open without "grab failed: window not viewable" errors
 - ✓ Template editing dialog works correctly
 - ✓ Settings dialog opens and displays properly
