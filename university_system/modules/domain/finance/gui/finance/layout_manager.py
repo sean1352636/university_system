@@ -356,6 +356,7 @@ class LayoutManager:
         self.create_reports_tab()
         self.create_revenue_source_tab()
         self.create_library_finance_tab()
+        self.create_housing_tab()
         self.create_collections_tab()
         self.create_aid_tab()
         self.create_budget_tab()
@@ -387,6 +388,7 @@ class LayoutManager:
             ("📈 Reports", "reports", "admin_staff"),  # Admin and Staff only
             ("💵 Revenue by Source", "revenue_source", "admin_staff"),  # Admin and Staff only
             ("📚 Library Finance", "library_finance", "admin_staff"),  # Admin and Staff only
+            ("🏠 Housing", "housing", "admin_staff"),  # Admin and Staff only
             ("📞 Collections", "collections", "admin_staff"),  # Admin and Staff only
             ("🎓 Aid", "aid", "all"),  # All can view aid (students view their own)
             ("💼 Budget", "budget", "admin"),  # Admin only
@@ -2045,6 +2047,217 @@ Click the button above to access the full Financial Reporting & Analytics system
         except Exception as e:
             print(f"Error creating library finance tab: {e}")
             self._create_placeholder_tab('library_finance', '📚 Library Finance')
+
+    def create_housing_tab(self):
+        """Create housing finance tab"""
+        housing_frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['housing'] = housing_frame
+
+        # Header
+        header_frame = tk.Frame(housing_frame, bg=self.colors['primary'], height=60)
+        header_frame.pack(fill='x', side='top')
+        header_frame.pack_propagate(False)
+
+        title_label = tk.Label(header_frame, text="🏠 Housing Finance",
+                              font=('Arial', 20, 'bold'),
+                              bg=self.colors['primary'], fg='white')
+        title_label.pack(side='left', padx=20, pady=15)
+
+        # Refresh button
+        refresh_btn = tk.Button(header_frame, text="🔄 Refresh",
+                               command=lambda: self.refresh_housing_data(housing_frame),
+                               bg=self.colors['accent'], fg='white',
+                               font=('Arial', 10, 'bold'), relief='flat',
+                               padx=15, pady=5)
+        refresh_btn.pack(side='right', padx=20, pady=15)
+
+        # Main content area with scrolling
+        main_canvas = tk.Canvas(housing_frame, bg='white')
+        scrollbar = ttk.Scrollbar(housing_frame, orient="vertical", command=main_canvas.yview)
+        scrollable_frame = tk.Frame(main_canvas, bg='white')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+        )
+
+        main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        main_canvas.configure(yscrollcommand=scrollbar.set)
+
+        main_canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Store reference for refresh
+        housing_frame.scrollable_frame = scrollable_frame
+
+        # Load housing data
+        self.load_housing_finance_data(scrollable_frame)
+
+    def load_housing_finance_data(self, parent):
+        """Load and display housing finance data"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Summary statistics frame
+            stats_frame = tk.Frame(parent, bg='white')
+            stats_frame.pack(fill='x', padx=20, pady=10)
+
+            # Calculate statistics
+            cursor.execute('''
+                SELECT
+                    COUNT(DISTINCT payment_id) as total_payments,
+                    SUM(amount) as total_revenue,
+                    COUNT(DISTINCT student_id) as unique_students
+                FROM housing_payments
+                WHERE status = 'Completed'
+            ''')
+            total_payments, total_revenue, unique_students = cursor.fetchone()
+            total_revenue = total_revenue or 0.0
+            total_payments = total_payments or 0
+            unique_students = unique_students or 0
+
+            # Outstanding payments
+            cursor.execute('''
+                SELECT COUNT(*) as pending_count
+                FROM housing_payments
+                WHERE status != 'Completed'
+            ''')
+            pending_count = cursor.fetchone()[0] or 0
+
+            # Display summary cards
+            summary_cards = [
+                ("Total Revenue", f"${total_revenue:,.2f}", "#27ae60"),
+                ("Total Payments", str(total_payments), "#3498db"),
+                ("Students with Housing", str(unique_students), "#9b59b6"),
+                ("Pending Payments", str(pending_count), "#e74c3c")
+            ]
+
+            for idx, (label, value, color) in enumerate(summary_cards):
+                card = tk.Frame(stats_frame, bg=color, relief='raised', bd=2)
+                card.grid(row=0, column=idx, padx=10, pady=10, sticky='nsew')
+                stats_frame.grid_columnconfigure(idx, weight=1)
+
+                tk.Label(card, text=label, font=('Arial', 11, 'bold'),
+                        bg=color, fg='white').pack(pady=(10, 5))
+                tk.Label(card, text=value, font=('Arial', 16, 'bold'),
+                        bg=color, fg='white').pack(pady=(0, 10))
+
+            # Recent payments section
+            payments_frame = tk.LabelFrame(parent, text="Recent Housing Payments",
+                                          font=('Arial', 12, 'bold'),
+                                          bg='white', padx=10, pady=10)
+            payments_frame.pack(fill='both', expand=True, padx=20, pady=10)
+
+            # Create treeview for payments
+            columns = ('Payment ID', 'Student', 'Amount', 'Date', 'Method', 'Period', 'Status')
+            tree = ttk.Treeview(payments_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                if col == 'Amount':
+                    tree.column(col, width=100, anchor='e')
+                elif col == 'Payment ID':
+                    tree.column(col, width=120)
+                elif col == 'Student':
+                    tree.column(col, width=200)
+                else:
+                    tree.column(col, width=120)
+
+            # Load payment data
+            cursor.execute('''
+                SELECT
+                    hp.payment_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    hp.amount,
+                    hp.payment_date,
+                    hp.payment_method,
+                    hp.payment_period_start || ' to ' || hp.payment_period_end as period,
+                    hp.status
+                FROM housing_payments hp
+                JOIN students s ON hp.student_id = s.student_id
+                ORDER BY hp.payment_date DESC
+                LIMIT 100
+            ''')
+
+            for row in cursor.fetchall():
+                tree.insert('', 'end', values=row)
+
+            tree.pack(fill='both', expand=True)
+
+            # Add scrollbar to treeview
+            tree_scroll = ttk.Scrollbar(payments_frame, orient="vertical", command=tree.yview)
+            tree.configure(yscrollcommand=tree_scroll.set)
+            tree_scroll.pack(side='right', fill='y')
+
+            # Payment by building section
+            building_frame = tk.LabelFrame(parent, text="Revenue by Building",
+                                          font=('Arial', 12, 'bold'),
+                                          bg='white', padx=10, pady=10)
+            building_frame.pack(fill='both', expand=True, padx=20, pady=10)
+
+            cursor.execute('''
+                SELECT
+                    hb.building_name,
+                    COUNT(DISTINCT hp.payment_id) as payment_count,
+                    SUM(hp.amount) as total_revenue
+                FROM housing_payments hp
+                JOIN housing_assignments ha ON hp.student_id = ha.student_id
+                JOIN housing_rooms hr ON ha.room_id = hr.room_id
+                JOIN housing_buildings hb ON hr.building_id = hb.building_id
+                WHERE hp.status = 'Completed'
+                GROUP BY hb.building_name
+                ORDER BY total_revenue DESC
+            ''')
+
+            building_data = cursor.fetchall()
+
+            if building_data:
+                building_tree = ttk.Treeview(building_frame,
+                                            columns=('Building', 'Payments', 'Revenue'),
+                                            show='headings', height=8)
+
+                building_tree.heading('Building', text='Building Name')
+                building_tree.heading('Payments', text='Number of Payments')
+                building_tree.heading('Revenue', text='Total Revenue')
+
+                building_tree.column('Building', width=200)
+                building_tree.column('Payments', width=150, anchor='center')
+                building_tree.column('Revenue', width=150, anchor='e')
+
+                for building, count, revenue in building_data:
+                    building_tree.insert('', 'end', values=(
+                        building,
+                        count,
+                        f"${revenue:,.2f}"
+                    ))
+
+                building_tree.pack(fill='both', expand=True)
+            else:
+                tk.Label(building_frame, text="No building revenue data available",
+                        font=('Arial', 10), bg='white').pack(pady=20)
+
+            conn.close()
+
+        except Exception as e:
+            tk.Label(parent, text=f"Error loading housing finance data: {str(e)}",
+                    font=('Arial', 12), bg='white', fg='red').pack(pady=20)
+            print(f"Error in load_housing_finance_data: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def refresh_housing_data(self, housing_frame):
+        """Refresh housing finance data"""
+        try:
+            # Clear existing content
+            if hasattr(housing_frame, 'scrollable_frame'):
+                for widget in housing_frame.scrollable_frame.winfo_children():
+                    widget.destroy()
+                # Reload data
+                self.load_housing_finance_data(housing_frame.scrollable_frame)
+                self.update_status("Housing finance data refreshed")
+        except Exception as e:
+            print(f"Error refreshing housing data: {e}")
 
     def create_collections_tab(self):
         """Create collections management tab"""

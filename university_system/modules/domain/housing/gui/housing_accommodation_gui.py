@@ -20,7 +20,7 @@ except ImportError:
 
 # Import finance GUI for payment status integration
 try:
-    from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+    from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
     FINANCE_GUI_AVAILABLE = True
 except ImportError:
     FINANCE_GUI_AVAILABLE = False
@@ -153,21 +153,165 @@ def send_housing_email(email_type, student_id, application_data, additional_vars
         # Render template
         subject, body = render_template(template_name, template_vars)
 
-        # Send email
+        # Send email (using correct parameter name: recipient_email not recipient)
         send_email(
-            recipient=student_email,
+            recipient_email=student_email,
             subject=subject,
-            body=body,
-            related_to='housing_accommodation',
-            student_id=student_id,
-            template_name=template_name
+            body=body
         )
+
+        # Log the email activity
+        log_create('housing_email', template_name, f"Sent {email_type} email to student {student_id}")
 
         print(f"✓ {email_type.title()} email sent to {student_name} ({student_email})")
         return True
 
     except Exception as e:
         print(f"✗ Failed to send {email_type} email to student {student_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def send_maintenance_email(email_type, request_id, request_data, additional_vars=None):
+    """
+    Send maintenance request-related emails to students
+
+    Args:
+        email_type: Type of email ('created', 'completed', 'investigation')
+        request_id: Request ID
+        request_data: Dictionary containing request details
+        additional_vars: Additional template variables (optional)
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    if not EMAIL_SERVICE_AVAILABLE:
+        print(f"Email service not available - cannot send {email_type} email for request {request_id}")
+        return False
+
+    try:
+        # Get student email and name from database
+        student_id = request_data.get('student_id')
+        if not student_id:
+            print(f"No student_id provided for request {request_id}")
+            return False
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT email_address, first_name, last_name
+            FROM students
+            WHERE student_id = ?
+        ''', (student_id,))
+        student_info = cursor.fetchone()
+        conn.close()
+
+        if not student_info or not student_info[0]:
+            print(f"No email address found for student {student_id}")
+            return False
+
+        student_email = student_info[0]
+        student_name = f"{student_info[1] or ''} {student_info[2] or ''}".strip() or "Student"
+
+        # Map email types to template names
+        template_map = {
+            'created': 'maintenance_request_created',
+            'completed': 'maintenance_request_completed',
+            'investigation': 'maintenance_request_investigation'
+        }
+
+        template_name = template_map.get(email_type)
+        if not template_name:
+            print(f"Unknown email type: {email_type}")
+            return False
+
+        # Prepare template variables with comprehensive defaults
+        template_vars = {
+            'student_name': student_name,
+            'student_id': student_id,
+            'request_id': request_id,
+            'issue_type': request_data.get('issue_type', 'N/A'),
+            'priority': request_data.get('priority', 'Medium'),
+            'created_by': student_name,
+            'created_date': request_data.get('request_date', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            'location': request_data.get('location', 'N/A'),
+            'description': request_data.get('description', 'No description provided'),
+            'status': request_data.get('status', 'Open'),
+            'assigned_to': request_data.get('assigned_to', 'Maintenance Team'),
+            'scheduled_date': request_data.get('scheduled_date', 'To be determined'),
+            'completion_date': request_data.get('completion_date', 'N/A'),
+            'feedback': request_data.get('feedback', ''),
+            'estimated_response': request_data.get('estimated_response', '2-3 business days'),
+            'estimated_completion': request_data.get('estimated_completion', '5-7 business days'),
+
+            # Additional variables for completed emails
+            'completed_by': request_data.get('completed_by', 'Maintenance Team'),
+            'resolution_time': request_data.get('resolution_time', 'N/A'),
+            'work_performed': request_data.get('work_performed', request_data.get('feedback', 'Repair completed')),
+            'resolution_notes': request_data.get('resolution_notes', ''),
+            'materials_used': request_data.get('materials_used', 'Standard materials'),
+            'follow_up_info': request_data.get('follow_up_info', 'None required'),
+            'maintenance_tips': request_data.get('maintenance_tips', 'None'),
+            'warranty_period': request_data.get('warranty_period', '30 days'),
+            'warranty_coverage': request_data.get('warranty_coverage', 'Standard repair warranty'),
+            'warranty_restrictions': request_data.get('warranty_restrictions', 'None'),
+
+            # Additional variables for investigation emails
+            'reviewed_by': request_data.get('reviewed_by', 'Maintenance Team'),
+            'review_date': request_data.get('review_date', datetime.now().strftime('%Y-%m-%d')),
+            'investigation_reason': request_data.get('investigation_reason', 'Further assessment required'),
+            'root_cause_details': request_data.get('root_cause_details', 'To be determined during inspection'),
+            'scope_details': request_data.get('scope_details', 'To be assessed'),
+            'resource_requirements': request_data.get('resource_requirements', 'To be determined'),
+            'inspection_date': request_data.get('inspection_date', 'To be scheduled'),
+            'inspector_name': request_data.get('inspector_name', 'Maintenance Technician'),
+            'inspection_scope': request_data.get('inspection_scope', 'Full diagnostic assessment'),
+            'specialist_info': request_data.get('specialist_info', 'Will be determined if needed'),
+            'parts_assessment': request_data.get('parts_assessment', 'To be evaluated'),
+            'investigation_start': request_data.get('investigation_start', datetime.now().strftime('%Y-%m-%d')),
+            'investigation_duration': request_data.get('investigation_duration', '2-3 business days'),
+            'assessment_target': request_data.get('assessment_target', 'Within 1 week'),
+            'inspection_appointment': request_data.get('inspection_appointment', 'To be scheduled'),
+            'inspection_time': request_data.get('inspection_time', '30-60 minutes'),
+            'special_requirements': request_data.get('special_requirements', 'None'),
+            'access_instructions': request_data.get('access_instructions', 'Please ensure access to the affected area'),
+            'action_item_1': request_data.get('action_item_1', 'Keep the area accessible'),
+            'action_item_2': request_data.get('action_item_2', 'Respond to scheduling requests promptly'),
+            'action_item_3': request_data.get('action_item_3', 'Report any changes in the issue'),
+            'temporary_measures': request_data.get('temporary_measures', 'None currently in place'),
+            'priority_update': request_data.get('priority_update', 'Priority remains unchanged'),
+            'cost_information': request_data.get('cost_information', 'No charge for standard repairs'),
+            'alternative_arrangements': request_data.get('alternative_arrangements', 'None needed at this time'),
+            'additional_notes': request_data.get('additional_notes', ''),
+            'next_update_date': request_data.get('next_update_date', 'When investigation is complete'),
+            'contact_person': request_data.get('contact_person', 'Maintenance Office'),
+            'contact_email': request_data.get('contact_email', 'maintenance@university.edu'),
+            'contact_phone': request_data.get('contact_phone', '(555) 123-4567')
+        }
+
+        # Add any additional variables
+        if additional_vars:
+            template_vars.update(additional_vars)
+
+        # Render template
+        subject, body = render_template(template_name, template_vars)
+
+        # Send email
+        send_email(
+            recipient_email=student_email,
+            subject=subject,
+            body=body
+        )
+
+        # Log the email activity
+        log_create('maintenance_email', template_name, f"Sent {email_type} email for request {request_id} to student {student_id}")
+
+        print(f"✓ {email_type.title()} email sent to {student_name} ({student_email}) for request {request_id}")
+        return True
+
+    except Exception as e:
+        print(f"✗ Failed to send {email_type} email for request {request_id}: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -1781,20 +1925,61 @@ Status: {req_data[11]}
                 conn = get_connection()
                 cursor = conn.cursor()
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
+
+                # Get current request details before update (for email)
+                cursor.execute('''
+                    SELECT m.student_id, m.request_date, m.issue_type, m.description,
+                           m.priority, r.room_number, b.building_name
+                    FROM housing_maintenance_requests m
+                    JOIN housing_rooms r ON m.room_id = r.room_id
+                    JOIN housing_buildings b ON r.building_id = b.building_id
+                    WHERE m.request_id = ?
+                ''', (request_id,))
+                request_details = cursor.fetchone()
+
                 completion_date = timestamp if status == 'Complete' else None
-                
+
                 cursor.execute('''
                 UPDATE housing_maintenance_requests
-                SET status = ?, assigned_to = ?, scheduled_date = ?, 
+                SET status = ?, assigned_to = ?, scheduled_date = ?,
                     completion_date = ?, feedback = ?, updated_at = ?
                 WHERE request_id = ?
-                ''', (status, assigned or None, scheduled or None, 
+                ''', (status, assigned or None, scheduled or None,
                       completion_date, notes or None, timestamp, request_id))
-                
+
                 conn.commit()
                 conn.close()
-                
+
+                # Send email notification based on status change
+                if request_details:
+                    try:
+                        location_str = f"{request_details[6]}, Room {request_details[5]}"
+                        email_data = {
+                            'student_id': request_details[0],
+                            'request_date': request_details[1],
+                            'issue_type': request_details[2],
+                            'description': request_details[3],
+                            'priority': request_details[4],
+                            'location': location_str,
+                            'status': status,
+                            'assigned_to': assigned or 'Maintenance Team',
+                            'scheduled_date': scheduled or 'To be determined',
+                            'completion_date': completion_date or 'N/A',
+                            'feedback': notes,
+                            'completed_by': assigned or 'Maintenance Team',
+                            'work_performed': notes or 'Repair completed',
+                            'reviewed_by': assigned or 'Maintenance Team',
+                            'investigation_reason': notes or 'Further assessment required'
+                        }
+
+                        # Send appropriate email based on status
+                        if status == 'Complete':
+                            send_maintenance_email('completed', request_id, email_data)
+                        elif status == 'Pending Parts':
+                            send_maintenance_email('investigation', request_id, email_data)
+                    except Exception as email_error:
+                        print(f"Warning: Failed to send status update email: {email_error}")
+
                 messagebox.showinfo("Success", "Maintenance request updated successfully")
                 self.refresh_maintenance_list()
                 update_window.destroy()
@@ -1931,7 +2116,7 @@ Status: {req_data[11]}
             # For staff creating request, need to specify student or get from room assignment
             if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
                 # Check if user is a student
-                cursor.execute('SELECT student_id FROM students WHERE email = ? OR student_id = ?',
+                cursor.execute('SELECT student_id FROM students WHERE email_address = ? OR student_id = ?',
                              (self.auth.current_user.get('email', ''), self.auth.current_user.get('username', '')))
                 student_result = cursor.fetchone()
 
@@ -1985,7 +2170,23 @@ Status: {req_data[11]}
             
             conn.commit()
             conn.close()
-            
+
+            # Send confirmation email to student
+            try:
+                location_str = f"{building_name}, Room {room_number}"
+                request_email_data = {
+                    'student_id': student_id,
+                    'request_date': timestamp,
+                    'issue_type': issue_type,
+                    'description': description,
+                    'priority': priority,
+                    'status': 'Open',
+                    'location': location_str
+                }
+                send_maintenance_email('created', request_id, request_email_data)
+            except Exception as email_error:
+                print(f"Warning: Failed to send confirmation email: {email_error}")
+
             messagebox.showinfo("Success", f"Maintenance request submitted successfully!\nRequest ID: {request_id}")
             
             # Clear form
@@ -2003,24 +2204,66 @@ Status: {req_data[11]}
     def show_payments(self):
         """Show payments interface"""
         self.clear_content()
-        
-        ttk.Label(self.content_frame, text="Payment Management", 
-                 font=('Arial', 16, 'bold')).pack(pady=(0, 20))
-        
+
+        # Header with title and finance button
+        header_frame = ttk.Frame(self.content_frame)
+        header_frame.pack(fill='x', pady=(0, 20))
+
+        ttk.Label(header_frame, text="Payment Management",
+                 font=('Arial', 16, 'bold')).pack(side='left', padx=(0, 20))
+
+        # Button to open Finance Management GUI
+        ttk.Button(header_frame, text="📊 Open Finance Management",
+                  command=self.open_finance_gui).pack(side='left')
+
         # Create notebook
         notebook = ttk.Notebook(self.content_frame)
         notebook.pack(fill='both', expand=True)
-        
+
         # Payment history tab
         history_frame = ttk.Frame(notebook, padding="10")
         notebook.add(history_frame, text="Payment History")
         self.create_payment_history(history_frame)
-        
+
         # Record payment tab
         record_frame = ttk.Frame(notebook, padding="10")
         notebook.add(record_frame, text="Record Payment")
         self.create_payment_form(record_frame)
-    
+
+    def open_finance_gui(self):
+        """Open Finance Management GUI in a new window"""
+        if not FINANCE_GUI_AVAILABLE:
+            messagebox.showerror(
+                "Finance GUI Not Available",
+                "The Finance Management system is not available.\n\n"
+                "Please ensure the finance module is properly installed."
+            )
+            return
+
+        try:
+            # Create new top-level window for finance GUI
+            finance_window = tk.Toplevel(self.root)
+            finance_window.title("Finance Management System")
+            finance_window.geometry("1400x900")
+            finance_window.transient(self.root)
+
+            # Initialize Finance GUI with the new window and current auth
+            finance_gui = FinanceGUI(finance_window, auth=self.auth)
+
+            # Log the action
+            log_menu_navigation('finance_management', 'Opened from housing payment management')
+
+            print("✓ Finance Management GUI opened successfully")
+
+        except Exception as e:
+            messagebox.showerror(
+                "Error Opening Finance GUI",
+                f"Failed to open Finance Management system:\n\n{str(e)}"
+            )
+            print(f"✗ Failed to open Finance GUI: {e}")
+            import traceback
+            traceback.print_exc()
+
     def create_payment_history(self, parent):
         """Create payment history view"""
         # Filter frame
@@ -2158,8 +2401,8 @@ Status: {req_data[11]}
         self.period_end_entry = ttk.Entry(period_frame, width=20)
         self.period_end_entry.grid(row=0, column=3, padx=10)
         # Set default end date to end of month
-        next_month = datetime.datetime.now().replace(day=28) + datetime.timedelta(days=4)
-        end_of_month = next_month - datetime.timedelta(days=next_month.day)
+        next_month = datetime.now().replace(day=28) + timedelta(days=4)
+        end_of_month = next_month - timedelta(days=next_month.day)
         self.period_end_entry.insert(0, end_of_month.strftime('%Y-%m-%d'))
         
         # Buttons frame
@@ -2549,7 +2792,7 @@ Status: {app_data[12]}
                     email_msg = ""
 
                 # Log activity
-                log_update('housing_application', application_id, f"Application {decision.lower()} by {reviewer_name}")
+                log_update('housing_application', f"Application {decision.lower()} by {reviewer_name} - ID: {application_id}")
 
                 messagebox.showinfo("Success", f"Application has been {decision.lower()}{email_msg}")
                 self.refresh_applications_list()
@@ -4962,7 +5205,7 @@ Housing Administration"""
 
                 if not result:
                     # Try matching by email
-                    cursor.execute('SELECT student_id FROM students WHERE email = ?',
+                    cursor.execute('SELECT student_id FROM students WHERE email_address = ?',
                                  (self.auth.current_user.get('email', ''),))
                     result = cursor.fetchone()
 

@@ -15,6 +15,15 @@ import sqlite3
 from pathlib import Path
 import logging
 
+# Email service imports
+try:
+    from university_system.infrastructure.email.template_utils import render_template
+    from university_system.infrastructure.email.email_service import send_email
+    EMAIL_SERVICE_AVAILABLE = True
+except ImportError:
+    EMAIL_SERVICE_AVAILABLE = False
+    print("Warning: Email service not available")
+
 # Import database utilities
 try:
     from university_system.infrastructure.database.db import get_connection

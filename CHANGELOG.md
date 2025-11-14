@@ -5,6 +5,208 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.2] - 2025-01-14
+
+### Added - Maintenance Request Email Notifications
+
+**Automated Email System for Maintenance Requests**
+
+Integrated comprehensive email notification system for maintenance requests with three stages:
+
+**1. Request Creation Email**
+- **Trigger**: Automatically sent when student submits maintenance request
+- **Template**: `maintenance_request_created.json`
+- **Contents**:
+  - Request ID and tracking information
+  - Issue details (type, priority, description)
+  - Location (building and room)
+  - Estimated response and completion timelines
+  - Emergency contact information
+  - Status tracking portal link
+- **Implementation**: `housing_accommodation_gui.py:2133-2147`
+
+**2. Request Completion Email**
+- **Trigger**: Automatically sent when request status updated to 'Complete'
+- **Template**: `maintenance_request_completed.json`
+- **Contents**:
+  - Completion confirmation
+  - Work performed details
+  - Resolution notes
+  - Materials used
+  - Warranty information (30 days standard)
+  - Verification checklist
+  - Satisfaction survey link
+  - Follow-up instructions
+- **Implementation**: `housing_accommodation_gui.py:1976-1977`
+
+**3. Investigation Required Email**
+- **Trigger**: Automatically sent when request status updated to 'Pending Parts'
+- **Template**: `maintenance_request_investigation.json`
+- **Contents**:
+  - Investigation status explanation
+  - Reason for further assessment
+  - Root cause analysis details
+  - Scope of work determination
+  - Inspection schedule and requirements
+  - Estimated investigation timeline
+  - Access requirements
+  - Student action items
+  - Temporary measures if applicable
+- **Implementation**: `housing_accommodation_gui.py:1978-1979`
+
+**Email Helper Function**
+- **Function**: `send_maintenance_email(email_type, request_id, request_data, additional_vars)`
+- **Location**: `housing_accommodation_gui.py:176-317`
+- **Features**:
+  - Comprehensive template variable support (50+ variables)
+  - Student email lookup from database
+  - Error handling and logging
+  - Support for all three email types
+
+### Added - Finance Integration for Housing
+
+**Housing Payment Link to Finance GUI**
+
+Added seamless integration between Housing Payment Management and Finance Management System:
+
+**1. Finance GUI Access Button**
+- **Location**: Housing Accommodation GUI → Payment Management section
+- **Button**: "📊 Open Finance Management"
+- **Functionality**: Opens Finance Management GUI in new window with current authentication
+- **Implementation**: `housing_accommodation_gui.py:2216-2217`
+
+**2. Finance GUI Launcher Function**
+- **Function**: `open_finance_gui()`
+- **Location**: `housing_accommodation_gui.py:2233-2265`
+- **Features**:
+  - Availability check for Finance GUI module
+  - Creates new Toplevel window (1400x900)
+  - Passes authentication context
+  - Activity logging
+  - Comprehensive error handling
+
+**3. Housing Finance Tab in Finance GUI**
+- **Location**: Finance Management GUI → Navigation Menu
+- **Tab**: "🏠 Housing"
+- **Access**: Admin and Staff only
+- **Implementation**: `layout_manager.py:2051-2260`
+
+**Housing Finance Dashboard Features**:
+- **Summary Statistics**:
+  - Total revenue from housing payments
+  - Total number of payments processed
+  - Number of students with housing
+  - Pending payment count
+- **Recent Housing Payments**:
+  - Last 100 payments with full details
+  - Student names, amounts, dates, methods
+  - Payment periods and status
+  - Sortable columns
+- **Revenue by Building**:
+  - Payment count per building
+  - Total revenue per building
+  - Sorted by revenue (highest to lowest)
+- **Refresh Functionality**:
+  - Real-time data refresh button
+  - Status bar updates
+
+### Fixed - Critical Database Column Errors
+
+**Email Column Name Correction**
+
+Fixed "no such column: email" errors throughout housing maintenance system:
+
+**1. Maintenance Request Submission**
+- **Error**: `SELECT student_id FROM students WHERE email = ?`
+- **Fix**: Changed to `WHERE email_address = ?`
+- **Location**: `housing_accommodation_gui.py:1934`
+- **Impact**: Prevents request submission failures
+
+**2. Student Maintenance Request Submission**
+- **Error**: `SELECT student_id FROM students WHERE email = ?`
+- **Fix**: Changed to `WHERE email_address = ?`
+- **Location**: `housing_accommodation_gui.py:4965`
+- **Impact**: Prevents student portal request failures
+
+**Note**: Database schema uses `email_address` column, not `email`. All queries updated for consistency.
+
+### Fixed - Email Service Parameter Error
+
+**send_email() Function Call Correction**
+
+- **Error**: `send_email() got an unexpected keyword argument 'recipient'`
+- **Root Cause**: Email service expects `recipient_email` parameter, not `recipient`
+- **Fix**: Updated all `send_email()` calls to use `recipient_email=` parameter
+- **Locations**:
+  - `housing_accommodation_gui.py:157-161` (housing emails)
+  - `send_maintenance_email()` function (maintenance emails)
+- **Impact**: Emails now send successfully without parameter errors
+
+### Fixed - Activity Logging Argument Error
+
+**log_update() Function Call Correction**
+
+- **Error**: `log_update() takes from 1 to 2 positional arguments but 3 were given`
+- **Root Cause**: `log_update()` expects 2 arguments: (module, message), not (module, id, message)
+- **Fix**: Changed from `log_update('module', 'id', 'message')` to `log_update('module', 'message with id')`
+- **Location**: `housing_accommodation_gui.py:2552`
+- **Example**: `log_update('housing_application', f"Application {decision.lower()} by {reviewer_name} - ID: {application_id}")`
+- **Impact**: Application approval/rejection logging now works correctly
+
+### Fixed - DateTime Attribute Error
+
+**datetime.datetime Reference Correction**
+
+- **Error**: `type object 'datetime.datetime' has no attribute 'datetime'`
+- **Root Cause**: Incorrect double reference `datetime.datetime.now()` instead of `datetime.now()`
+- **Fix**: Removed duplicate `datetime.` prefix
+- **Location**: `housing_accommodation_gui.py:2161-2162`
+- **Code**:
+  ```python
+  # Before: datetime.datetime.now()
+  # After: datetime.now()
+  next_month = datetime.now().replace(day=28) + timedelta(days=4)
+  end_of_month = next_month - timedelta(days=next_month.day)
+  ```
+- **Impact**: Payment period calculations now work correctly
+
+### Technical Details
+
+**Files Modified**:
+1. `university_system/modules/domain/housing/gui/housing_accommodation_gui.py`
+   - Added `send_maintenance_email()` function
+   - Added maintenance email integration to request submission
+   - Added maintenance email integration to status updates
+   - Fixed column name errors (email → email_address)
+   - Fixed send_email() parameter
+   - Fixed log_update() call signature
+   - Fixed datetime reference
+   - Added Finance GUI integration
+
+2. `university_system/modules/domain/finance/gui/finance/layout_manager.py`
+   - Added Housing navigation button
+   - Added `create_housing_tab()` method
+   - Added `load_housing_finance_data()` method
+   - Added `refresh_housing_data()` method
+
+**New Email Templates Created**:
+1. `university_system/templates/email/maintenance_request_created.json`
+2. `university_system/templates/email/maintenance_request_completed.json`
+3. `university_system/templates/email/maintenance_request_investigation.json`
+
+**Dependencies**:
+- Email service infrastructure (already installed)
+- Template rendering utilities (already installed)
+- Finance GUI module (already installed)
+
+**Testing Recommendations**:
+1. Submit new maintenance request → verify creation email received
+2. Mark request as Complete → verify completion email received
+3. Mark request as Pending Parts → verify investigation email received
+4. Click "Open Finance Management" in Housing → verify Finance GUI opens
+5. Navigate to Housing tab in Finance GUI → verify data displays correctly
+6. Verify all email addresses are correctly retrieved from database
+
 ## [5.0.1] - 2025-01-14
 
 ### Added - Housing Accommodation Email Notifications
