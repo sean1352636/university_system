@@ -33,11 +33,44 @@ Fixed "no such table: administrators" error when using the "Send to Admin" butto
 
 ---
 
-### Fixed - Missing get_auth Import
+### Fixed - DummyAuth AttributeError
+
+**Authentication Error Fix**
+
+Fixed "dummyauth object has no attribute is_logged_in" error when sending reports to administrators.
+
+**Root Cause:**
+- Used `get_auth()` from `shared_context` which may return a `DummyAuth` object
+- `DummyAuth` doesn't implement `is_logged_in()` or `get_current_user()` methods
+- This caused `AttributeError` when trying to retrieve sender name for report emails
+
+**Fix:**
+- Replaced `get_auth()` with `self.auth` (actual auth instance passed to GUI)
+- Added defensive programming:
+  - Check if `self.auth` exists
+  - Use `hasattr()` to verify method availability
+  - Try/except block for graceful error handling
+  - Default to "Housing System" if authentication unavailable
+- Only uses authenticated user's name if properly logged in
+
+**Benefits:**
+- ✅ No more AttributeError with DummyAuth
+- ✅ Works with or without authentication
+- ✅ Graceful fallback to default sender name
+- ✅ Defensive programming prevents crashes
+- ✅ Compatible with any auth implementation
+
+**Location:** `housing_accommodation_gui.py:4731-4741`
+
+---
+
+### Fixed - Missing get_auth Import (Superseded)
 
 **Import Error Fix**
 
 Fixed "get_auth is not defined" error when sending reports to administrators.
+
+**Note:** This fix was later improved by replacing `get_auth()` with `self.auth` to avoid DummyAuth issues (see above).
 
 **Root Cause:**
 - `get_auth()` function was called in `send_report_to_admin()` method (line 4731)
