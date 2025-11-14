@@ -45,6 +45,36 @@ Staff Users:
 
 ---
 
+### Changed - Admin Email Routing
+
+**Email Configuration Update**
+
+Updated housing accommodation system to route all admin emails to Sean Catchpole instead of system noreply address.
+
+**Previous Behavior:**
+- Admin emails sent to: `noreply@university.edu` (system_teessideuniversity)
+- Query prioritized system account over individual admins
+
+**New Behavior:**
+- Admin emails now sent to: `sean.catchpole@university.edu` (user 7591239)
+- Query prioritizes Sean Catchpole's account first
+- Falls back to other admins/staff if primary not available
+
+**Query Priority Order:**
+1. Username `7591239` (Sean Catchpole) - **Primary**
+2. Any other admin role users
+3. Any staff role users
+
+**Impact:**
+- ✅ Admin notifications go to active administrator inbox
+- ✅ Housing reports delivered to sean.catchpole@university.edu
+- ✅ Inspection notifications sent to personal admin account
+- ✅ Better visibility and response time for admin communications
+
+**Location:** `housing_accommodation_gui.py:4710`
+
+---
+
 ## [5.0.6] - 2025-01-14
 
 ### Fixed - EmailService Class Import Error
