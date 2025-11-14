@@ -54,6 +54,34 @@ After Fix:
 
 ---
 
+### Fixed - Admin Email Priority in Housing GUI
+
+**Admin Routing Fix**
+
+Fixed outdated hardcoded username reference in housing accommodation reports that was routing admin emails to a student account.
+
+**Problem:**
+The housing GUI was using a hardcoded priority for username '7591239' (previously an admin, now a student account after database changes) when selecting admin email recipients for accommodation reports.
+
+**Changes Made:**
+Updated admin email query in `housing_accommodation_gui.py:4710` to prioritize by user ID instead of hardcoded username:
+```python
+# Before:
+WHEN username = '7591239' THEN 1  # Points to student account ❌
+
+# After:
+WHEN id = 1 THEN 1  # Points to system admin ✅
+```
+
+**Impact:**
+- ✅ Housing inspection reports now sent to correct admin (ID 1: system_teessideuniversity)
+- ✅ Accommodation notifications routed to noreply@university.edu (system admin)
+- ✅ Removes dependency on outdated username references
+
+**Location:** `university_system/modules/domain/housing/gui/housing_accommodation_gui.py:4710`
+
+---
+
 ## [5.0.8] - 2025-11-14
 
 ### Changed - Database User ID Reorganization
