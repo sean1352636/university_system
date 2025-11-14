@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 import string
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
+from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.shared.utils.simple_activity_logger import (
     log_activity, log_create, log_read, log_update, log_delete,
     log_search, log_export, log_menu_navigation
