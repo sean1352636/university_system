@@ -4089,14 +4089,15 @@ class DatabaseQueryDialog:
     def send_new_club_announcement(self, club_name, club_description):
         """Send email to all students about new club"""
         try:
-            # Get all student emails
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT email, first_name, last_name FROM students WHERE email IS NOT NULL')
-            students = cursor.fetchall()
-            conn.close()
+            # Get all active student emails using helper method
+            students = self._get_all_student_emails()
 
-            for email, first_name, last_name in students:
+            if not students:
+                logging.warning("No student emails found to send club announcement")
+                return 0
+
+            emails_sent = 0
+            for email, first_name, last_name, student_id in students:
                 try:
                     subject, message = render_template("club_created_notification", {
                         "first_name": first_name,
@@ -4106,13 +4107,18 @@ class DatabaseQueryDialog:
                     })
 
                     if subject and message:
-                        self._send_email_via_gui(email, subject, message)
+                        if self._send_email_via_gui(email, subject, message):
+                            emails_sent += 1
                 except Exception as e:
                     # Error handling - log but continue
-                    pass
+                    logging.debug(f"Failed to send club announcement to {email}: {e}")
+
+            logging.info(f"Club announcement sent to {emails_sent}/{len(students)} students")
+            return emails_sent
 
         except Exception as e:
-            print(f"Failed to send new club announcements: {e}")
+            logging.error(f"Failed to send new club announcements: {e}")
+            return 0
 
     def send_club_invitation(self, club_name, recipient_email, recipient_name, inviter_name):
         """Send club invitation email"""
@@ -4379,14 +4385,15 @@ Best regards,
     def send_event_notification_to_all_students(self, event_name, event_description, event_date, event_location):
         """Send event notification to all students"""
         try:
-            # Get all student emails
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT email, first_name, last_name FROM students WHERE email IS NOT NULL')
-            students = cursor.fetchall()
-            conn.close()
+            # Get all active student emails using helper method
+            students = self._get_all_student_emails()
 
-            for email, first_name, last_name in students:
+            if not students:
+                logging.warning("No student emails found to send event notification")
+                return
+
+            emails_sent = 0
+            for email, first_name, last_name, student_id in students:
                 try:
                     subject, message = render_template("event_upcoming", {
                         "first_name": first_name,
@@ -4448,10 +4455,15 @@ Best regards,
 Student Union Events Team
 """
 
-                self._send_email_via_gui(email, subject, message)
+                if self._send_email_via_gui(email, subject, message):
+                    emails_sent += 1
+
+            logging.info(f"Event notification sent to {emails_sent}/{len(students)} students")
+            return emails_sent
 
         except Exception as e:
-            print(f"Failed to send event notifications: {e}")
+            logging.error(f"Failed to send event notifications: {e}")
+            return 0
 
     def send_trip_announcement(self, trip_name, trip_description, trip_date, trip_cost, organizer_club):
         """Send trip announcement to students"""
@@ -4542,20 +4554,48 @@ Student Union Finance Team
         except Exception as e:
             print(f"Failed to send payment confirmation: {e}")
 
-    def _send_email_via_gui(self, to_email, subject, message):
-        """Send email via email GUI"""
+    def _get_all_student_emails(self):
+        """Get all active student emails from database"""
         try:
-            from university_system.infrastructure.email.gui.email_manager_gui import EmailManagerGUI
-            email_gui = EmailManagerGUI(self.root, auth=self.auth_manager)
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
 
-            if hasattr(email_gui, 'send_email'):
-                email_gui.send_email(to_email=to_email, subject=subject, message=message)
-                return True
-            return False
-        except ImportError:
+            # Get students with valid emails, optionally filter by active users
+            cursor.execute('''
+                SELECT DISTINCT s.email_address, s.first_name, s.last_name, s.student_id
+                FROM students s
+                LEFT JOIN users u ON s.student_id = u.student_id
+                WHERE s.email_address IS NOT NULL
+                AND s.email_address != ''
+                AND (u.id IS NULL OR u.is_active = 1)
+                ORDER BY s.last_name, s.first_name
+            ''')
+
+            students = cursor.fetchall()
+            conn.close()
+
+            return students
+        except Exception as e:
+            logging.error(f"Error fetching student emails: {e}")
+            return []
+
+    def _send_email_via_gui(self, to_email, subject, message):
+        """Send email using email service"""
+        try:
+            from university_system.infrastructure.email.email_service import send_email
+
+            # Use the email service directly with correct parameter name
+            send_email(
+                recipient_email=to_email,
+                subject=subject,
+                body=message
+            )
+            return True
+        except ImportError as e:
+            logging.error(f"Email service import error: {e}")
             return False
         except Exception as e:
-            print(f"Error sending email via GUI: {e}")
+            logging.error(f"Error sending email: {e}")
             return False
 
     def _show_email_fallback(self, email, subject, message, email_type):

@@ -210,6 +210,113 @@ Fixed multiple critical errors in the Student Union GUI preventing event registr
 
 ---
 
+### Enhanced - Email System Integration for Bulk Student Notifications
+
+**Bulk Email System Enhancement**
+
+Linked email service to properly send emails to all students in database for Student Union announcements, event notifications, and club communications.
+
+**Problems Fixed:**
+
+1. **Incorrect email service integration:**
+   - `_send_email_via_gui` was trying to use EmailManagerGUI with wrong method signature
+   - Using `to_email` parameter instead of `recipient_email`
+   - Not using centralized email service
+
+2. **Inefficient database queries:**
+   - Multiple methods duplicating query logic for getting student emails
+   - No filtering for active students
+   - Missing error handling for email failures
+
+3. **No tracking of email success:**
+   - Bulk email methods didn't track how many emails were successfully sent
+   - No logging of failures
+
+**Solutions Implemented:**
+
+1. **Updated `_send_email_via_gui` method** (line 4570):
+   ```python
+   # Before (❌ Using GUI wrapper):
+   from email_manager_gui import EmailManagerGUI
+   email_gui.send_email(to_email=..., subject=..., message=...)
+
+   # After (✅ Using email service directly):
+   from email_service import send_email
+   send_email(recipient_email=..., subject=..., body=...)
+   ```
+
+2. **Created `_get_all_student_emails` helper method** (line 4545):
+   ```python
+   def _get_all_student_emails(self):
+       # Query students with valid emails
+       # Filter by active users (is_active = 1)
+       # Return list of (email, first_name, last_name, student_id)
+   ```
+
+3. **Updated bulk email methods to use helper and track success:**
+   - `send_event_notification_to_all_students` (line 4379)
+   - `send_new_club_announcement` (line 4089)
+
+**Key Improvements:**
+
+| Feature | Before | After |
+|---------|--------|-------|
+| Email Service | GUI wrapper with wrong params | Direct service with correct params |
+| Student Query | Duplicated in each method | Centralized helper method |
+| Active Filter | No filtering | Filters by user.is_active = 1 |
+| Success Tracking | None | Returns count of emails sent |
+| Error Logging | print() statements | logging module with levels |
+| Return Values | None | Returns int (emails sent) |
+
+**Bulk Email Functions Enhanced:**
+
+1. **`send_event_notification_to_all_students`:**
+   - Sends event announcements to all active students
+   - Uses email template: "event_upcoming"
+   - Tracks success rate
+   - Logs: "Event notification sent to X/Y students"
+
+2. **`send_new_club_announcement`:**
+   - Sends new club announcements to all active students
+   - Uses email template: "club_created_notification"
+   - Tracks success rate
+   - Logs: "Club announcement sent to X/Y students"
+
+3. **All other email methods:**
+   - Club invitations
+   - Join confirmations
+   - Leave confirmations
+   - Newsletters
+   - Payment confirmations
+   - All now use corrected email service parameters
+
+**Database Query Enhancement:**
+```sql
+SELECT DISTINCT s.email_address, s.first_name, s.last_name, s.student_id
+FROM students s
+LEFT JOIN users u ON s.student_id = u.student_id
+WHERE s.email_address IS NOT NULL
+AND s.email_address != ''
+AND (u.id IS NULL OR u.is_active = 1)
+ORDER BY s.last_name, s.first_name
+```
+
+**Impact:**
+- ✅ Bulk emails to all students working correctly
+- ✅ Event notifications sent successfully
+- ✅ Club announcements sent successfully
+- ✅ Email tracking and logging implemented
+- ✅ Only active students receive emails
+- ✅ No more parameter mismatch errors
+- ✅ Proper error handling with logging module
+
+**Files Changed:**
+- `student_union_gui.py` - Updated email integration, added helper method
+
+**Location:** `university_system/modules/domain/student_affairs/gui/student_union_gui.py`
+
+---
+
 ## [5.0.8] - 2025-11-14
 
 ### Changed - Database User ID Reorganization
