@@ -742,7 +742,7 @@ class AnalyticsManager:
             # Send email
             from university_system.infrastructure.email.email_service import send_email
             send_email(
-                to_email=admin_email,
+                recipient_email=admin_email,
                 subject=f"[Assignment System] {report_title}",
                 body=email_body
             )

@@ -278,7 +278,7 @@ class MessagingManager:
                         # Send email
                         from university_system.infrastructure.email.email_service import send_email
                         send_email(
-                            to_email=recipient_email,
+                            recipient_email=recipient_email,
                             subject=f"[Assignment System] {subject}",
                             body=email_body
                         )

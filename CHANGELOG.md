@@ -82,6 +82,48 @@ WHEN id = 1 THEN 1  # Points to system admin ✅
 
 ---
 
+### Fixed - Assignment System Email Parameter Error
+
+**Email Service Integration Fix**
+
+Fixed incorrect parameter name in assignment system email calls causing "unexpected keyword argument 'to_email'" errors.
+
+**Error:**
+```
+email_manager - ERROR - Unexpected error in send_email:
+send_email() got an unexpected keyword argument 'to_email'
+```
+
+**Root Cause:**
+Assignment system modules were using `to_email` parameter when calling `send_email()`, but the email service function signature expects `recipient_email`.
+
+**Files Fixed:**
+1. `messaging.py:281` - Message notifications to students/instructors
+2. `maintenance.py:491` - Health report emails to admin
+3. `analytics.py:745` - Analytics report emails to admin
+4. `assignment_gui.py:543` - Assignment notification emails
+5. `notifications.py:792` - New assignment notification emails
+
+**Changes Made:**
+```python
+# Before (❌ Incorrect):
+send_email(to_email=recipient, subject=..., body=...)
+
+# After (✅ Correct):
+send_email(recipient_email=recipient, subject=..., body=...)
+```
+
+**Impact:**
+- ✅ Assignment system emails now send successfully
+- ✅ Student assignment notifications working
+- ✅ Health report emails to admin working
+- ✅ Analytics report emails to admin working
+- ✅ No more "unexpected keyword argument" errors
+
+**Location:** `university_system/modules/domain/academics/gui/assignment_system/`
+
+---
+
 ## [5.0.8] - 2025-11-14
 
 ### Changed - Database User ID Reorganization

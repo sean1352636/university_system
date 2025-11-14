@@ -540,7 +540,7 @@ class AssignmentGUI:
             from university_system.infrastructure.email.email_service import send_email
 
             send_email(
-                to_email=email_address,
+                recipient_email=email_address,
                 subject=subject,
                 body=body
             )

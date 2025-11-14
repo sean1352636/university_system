@@ -789,7 +789,7 @@ class NotificationManager:
                     if pref and pref[0]:  # Email enabled
                         from university_system.infrastructure.email.email_service import send_email
                         send_email(
-                            to_email=email,
+                            recipient_email=email,
                             subject=f"New Assignment: {assignment_title}",
                             body=f"Hello {first_name},\n\nA new assignment has been posted:\n\n"
                                  f"Title: {assignment_title}\n"

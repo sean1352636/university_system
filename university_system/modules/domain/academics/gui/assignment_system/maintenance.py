@@ -488,7 +488,7 @@ class MaintenanceManager:
                     email_body = health_report.replace("✓", "[OK]").replace("✗", "[ERROR]").replace("⚠", "[WARNING]")
 
                     send_email(
-                        to_email=admin_email,
+                        recipient_email=admin_email,
                         subject=f"Assignment System Health Report - {datetime.now().strftime('%Y-%m-%d')}",
                         body=email_body
                     )
