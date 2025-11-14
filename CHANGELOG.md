@@ -82,12 +82,32 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - Legal compliance notes (ADA, Section 504, Title IX)
 - Comprehensive README.md with usage guidelines
 
+### Changed - Path Consolidation
+
+**Removed Unused Templates Directory**
+- **Removed**: `university_system/data/submissions/templates/` (empty directory)
+- **Added**: `MEDICAL_TEMPLATES_DIR` constant to `paths.py`
+- **Impact**: All templates now consolidated in `university_system/templates/` directory
+- **Directory Structure**:
+  ```
+  university_system/templates/
+  ├── assignments/
+  ├── backup_templates/
+  ├── email/
+  ├── medical_templates/  (NEW - with 10 templates)
+  └── reports_templates/
+  ```
+
 ### Technical Details
 
 **Files Modified:**
 - `university_system/modules/domain/housing/gui/accommodation_gui.py`
   - Line 3632-3643: Fixed DB_PATH undefined error in DatabaseInfoDialog.load_info()
   - Line 3685: Increased SettingsDialog window size from 400x300 to 600x500
+- `university_system/modules/shared/constants/paths.py`
+  - Line 83: Added `MEDICAL_TEMPLATES_DIR` constant
+  - Line 121: Added directory creation in `ensure_directories()`
+  - Line 154: Added to `__all__` exports
 
 **Files Created:**
 - `university_system/templates/medical_templates/` (directory)
@@ -102,6 +122,9 @@ Created new directory `university_system/templates/medical_templates/` with stan
 - `university_system/templates/medical_templates/learning_disability_accommodation.json` (1.5KB)
 - `university_system/templates/medical_templates/pregnancy_parenting_accommodation.json` (1.5KB)
 - `university_system/templates/medical_templates/chronic_pain_accommodation.json` (1.6KB)
+
+**Files Removed:**
+- `university_system/data/submissions/templates/` (empty directory - no longer needed)
 
 **Testing Notes:**
 - ✓ Database info dialog loads without DB_PATH error

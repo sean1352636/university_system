@@ -80,6 +80,7 @@ SUBMISSIONS_DIR: Path = DATA_DIR / "submissions"
 TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
 ASSIGNMENT_TEMPLATES_DIR: Path = TEMPLATES_DIR / "assignments"
 BACKUP_TEMPLATES_DIR: Path = TEMPLATES_DIR / "backup_templates"
+MEDICAL_TEMPLATES_DIR: Path = TEMPLATES_DIR / "medical_templates"
 
 # Email reminder templates
 EMAIL_REMINDER_TEMPLATES_DIR: Path = EMAIL_TEMPLATES_DIR / "reminders"
@@ -117,6 +118,7 @@ def ensure_directories() -> None:
     _ensure(TEMPLATES_DIR)
     _ensure(ASSIGNMENT_TEMPLATES_DIR)
     _ensure(BACKUP_TEMPLATES_DIR)
+    _ensure(MEDICAL_TEMPLATES_DIR)
     _ensure(EMAIL_REMINDER_TEMPLATES_DIR)
     _ensure(NLTK_DATA_DIR)
 
@@ -149,6 +151,7 @@ __all__ = [
     "TEMPLATES_DIR",
     "ASSIGNMENT_TEMPLATES_DIR",
     "BACKUP_TEMPLATES_DIR",
+    "MEDICAL_TEMPLATES_DIR",
     "EMAIL_REMINDER_TEMPLATES_DIR",
     "NLTK_DATA_DIR",
     "ensure_directories",
