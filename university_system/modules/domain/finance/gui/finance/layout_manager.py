@@ -2462,7 +2462,7 @@ Click the button above to access the full Financial Reporting & Analytics system
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                     # Get current user
-                    current_user = self.auth.get_current_user()
+                    current_user = self.gui.auth.get_current_user()
                     received_by = current_user.user_id if current_user else 'SYSTEM'
 
                     # Save to database
@@ -2735,7 +2735,7 @@ Click the button above to access the full Financial Reporting & Analytics system
                 SELECT
                     hp.student_id,
                     s.first_name || ' ' || s.last_name as student_name,
-                    s.email,
+                    s.email_address,
                     COUNT(*) as payment_count,
                     SUM(hp.amount) as total_outstanding,
                     MAX(hp.payment_date) as last_payment_date,
@@ -2743,7 +2743,7 @@ Click the button above to access the full Financial Reporting & Analytics system
                 FROM housing_payments hp
                 JOIN students s ON hp.student_id = s.student_id
                 WHERE hp.status IN ('Pending', 'Overdue', 'Failed')
-                GROUP BY hp.student_id, s.first_name, s.last_name, s.email, hp.status
+                GROUP BY hp.student_id, s.first_name, s.last_name, s.email_address, hp.status
                 ORDER BY total_outstanding DESC
             ''')
 

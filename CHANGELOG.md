@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Multiple Housing Finance Integration Issues
+
+**Three Critical Fixes for Housing Finance Features**
+
+**1. Layout Manager Auth Access Error**
+- **Error**: `AttributeError: 'LayoutManager' object has no attribute 'auth'`
+- **Root Cause**: Layout manager tried to access `self.auth` directly, but auth is stored in parent GUI
+- **Fix**: Changed `self.auth` to `self.gui.auth` in `_record_housing_payment()` method
+- **Location**: `layout_manager.py:2465`
+- **Impact**: Record Payment feature now correctly identifies current user
+
+**2. Students Table Email Column Name**
+- **Error**: `OperationalError: no such column: s.email`
+- **Root Cause**: Query referenced `s.email` but column is actually named `s.email_address` in students table
+- **Fix**: Updated Outstanding Balances query to use `s.email_address`
+- **Locations**: `layout_manager.py:2738, 2746`
+- **Impact**: Outstanding Balances view now displays correctly with student emails
+
+**3. Blank Screen After Closing Finance GUI**
+- **Issue**: Housing window shows blank screen when Finance GUI is closed
+- **Root Cause**: Parent housing window not regaining focus after child finance window closes
+- **Fix**: Added window close protocol handler that:
+  - Lifts parent housing window to front
+  - Forces focus back to parent
+  - Properly destroys finance window
+- **Location**: `housing_accommodation_gui.py:2250-2260`
+- **Impact**: Housing window properly regains focus and remains functional after closing Finance GUI
+
 ### Fixed - Housing Payment Insert Schema Mismatch
 
 **Critical Fix for Record Payment Feature**

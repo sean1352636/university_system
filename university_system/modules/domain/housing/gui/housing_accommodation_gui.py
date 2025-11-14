@@ -2247,6 +2247,18 @@ Status: {req_data[11]}
             finance_window.geometry("1400x900")
             finance_window.transient(self.root)
 
+            # Ensure parent window regains focus when finance window closes
+            def on_finance_close():
+                """Handle finance window closing"""
+                try:
+                    self.root.lift()
+                    self.root.focus_force()
+                    finance_window.destroy()
+                except:
+                    pass
+
+            finance_window.protocol("WM_DELETE_WINDOW", on_finance_close)
+
             # Initialize Finance Management GUI with the new window and current auth
             finance_gui = FinanceManagementGUI(finance_window, self.auth)
 
