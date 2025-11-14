@@ -5,6 +5,55 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.9] - 2025-11-14
+
+### Fixed - Default Account Login Roles
+
+**Critical Authentication Fix**
+
+Fixed issue where all three default accounts (admin, staff, student) were logging in with 'student' role instead of their correct roles.
+
+**Root Cause:**
+The user ID reorganization in v5.0.8 updated most foreign key references but missed the `user_accounts.user_id` column. The default login accounts were all pointing to an incorrect user record.
+
+**Problem Details:**
+```
+Before Fix:
+- Login: 'admin'   → user_accounts.user_id = 196 → users.id = 196 (student) → role: student ❌
+- Login: 'staff'   → user_accounts.user_id = 196 → users.id = 196 (student) → role: student ❌
+- Login: 'student' → user_accounts.user_id = 196 → users.id = 196 (student) → role: student ❌
+
+After Fix:
+- Login: 'admin'   → user_accounts.user_id = 1 → users.id = 1 (system_teessideuniversity) → role: admin ✅
+- Login: 'staff'   → user_accounts.user_id = 2 → users.id = 2 (1952392) → role: staff ✅
+- Login: 'student' → user_accounts.user_id = 3 → users.id = 3 (S12345) → role: student ✅
+```
+
+**Changes Made:**
+1. Applied ID mapping to `user_accounts.user_id` foreign keys (same mapping as v5.0.8)
+2. Explicitly corrected the three default account mappings:
+   - `admin` account → user_id 1 (admin role)
+   - `staff` account → user_id 2 (staff role)
+   - `student` account → user_id 3 (student role)
+
+**Affected Records:**
+- Updated 25 rows in `user_accounts` table
+- Fixed critical authentication for default system accounts
+
+**Impact:**
+- ✅ Admin users can now access admin features
+- ✅ Staff users can now access staff features
+- ✅ Student users retain student-level access
+- ✅ Role-based permissions working correctly
+- ✅ Default login credentials working with correct roles
+
+**Files:**
+- `fix_default_account_roles.sql`: Comprehensive fix script with documentation
+
+**Database:** `student_records.db` - `user_accounts` table
+
+---
+
 ## [5.0.8] - 2025-11-14
 
 ### Changed - Database User ID Reorganization
