@@ -266,10 +266,282 @@ All four report methods refactored to use new window system:
 **Files Modified**:
 - `housing_accommodation_gui.py`: Added 8 new methods, refactored 4 report methods
 
-**TODO - Future Enhancements (Not in this release)**:
-- [ ] Post-inspection email notifications with results
-- [ ] Scheduled report generation and email delivery
-- [ ] Report templates for customizable formatting
+---
+
+### Enhanced - Post-Inspection Email Notifications
+
+**Automated Email System for Inspection Results**
+
+Implemented automatic email notifications to students when inspections are completed with findings and results.
+
+**1. Edit Inspection Enhancement**
+- Added email notification checkbox to inspection edit dialog
+- Checkbox enabled by default for convenience
+- Only sends emails when inspection status changes to "Completed" or "Issues Found"
+- Location: `housing_accommodation_gui.py:4287-4291`
+
+**2. Post-Inspection Email Method** (`send_post_inspection_email`)
+- Queries room and building information
+- Finds all active students in the inspected room
+- Selects appropriate email template based on status:
+  - **Issues Found**: Uses `inspection_issues_found.json` template
+  - **Completed**: Uses `inspection_completed.json` template
+- Variable substitution for personalized emails
+- Sends individual emails to each affected student
+- Location: `housing_accommodation_gui.py:4054-4172`
+
+**3. Email Template Variables**
+Supports comprehensive variable substitution:
+- `student_name`, `building_name`, `room_number`
+- `inspection_date`, `inspection_type`, `inspector_name`
+- `status`, `pass_fail`, `findings`
+- `issues`, `required_actions`, `action_deadline`
+- `follow_up_instructions`
+
+**4. Status-Based Logic**
+- **Issues Found**: `pass_fail` = "FAIL - Issues Identified"
+- **Completed**: `pass_fail` = "PASS - No Issues"
+- Automatically includes follow-up date if scheduled
+
+**User Workflow**:
+1. Staff edits inspection via "Edit Inspection" button
+2. Updates findings, action required, status
+3. Checkbox "Send email notification" is pre-checked
+4. Click "Save Changes"
+5. System detects status change to Completed/Issues Found
+6. Automatically sends appropriate emails to all room occupants
+7. Success message confirms update
+
+**Benefits**:
+- ✅ Timely student notifications
+- ✅ Reduced manual communication overhead
+- ✅ Professional, consistent messaging
+- ✅ Automatic template selection
+- ✅ Batch processing for shared rooms
+
+---
+
+### Enhanced - Scheduled Report Generation & Email Delivery
+
+**Complete Scheduled Reporting System with GUI Management**
+
+Built comprehensive scheduled report system allowing automated report generation and email delivery on daily/weekly/monthly/quarterly schedules.
+
+**1. Scheduled Reports Manager Window**
+- Accessible via "Schedule Reports" button in Reports menu
+- 1000x600 window with full CRUD functionality
+- Treeview displaying all scheduled reports
+- Shows: ID, Name, Type, Frequency, Recipients, Last Run, Next Run, Status
+- Location: `housing_accommodation_gui.py:5214-5280`
+
+**2. Add Scheduled Report Dialog** (`add_scheduled_report`)
+- Report Name: Custom identifier
+- Report Type: Occupancy, Financial, Maintenance, Room Availability
+- Frequency: Daily, Weekly, Monthly, Quarterly
+- Recipients: Comma-separated email list
+- Active/Inactive toggle
+- Description field
+- Automatic next_run_date calculation
+- Location: `housing_accommodation_gui.py:5317-5416`
+
+**3. Schedule Management Operations**
+- **Add Schedule**: Create new scheduled report
+- **Edit Schedule**: Modify existing schedule (placeholder for v5.0.7)
+- **Delete Schedule**: Remove scheduled report with confirmation
+- **Run Now**: Execute report immediately and email
+- **Refresh**: Reload scheduled reports list
+
+**4. Database Integration**
+Uses existing `scheduled_reports` table:
+```sql
+CREATE TABLE scheduled_reports (
+    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_name TEXT NOT NULL,
+    report_type TEXT NOT NULL,
+    schedule_frequency TEXT NOT NULL,
+    recipients TEXT NOT NULL,
+    last_run_date TEXT,
+    next_run_date TEXT,
+    is_active BOOLEAN DEFAULT 1,
+    report_config TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+**5. Report Generation Methods**
+Four dedicated content generators:
+- `generate_occupancy_report_content()`: Building/room statistics
+- `generate_financial_report_content()`: Revenue projections
+- `generate_maintenance_report_content()`: Request summaries
+- `generate_room_availability_content()`: Available rooms
+- Locations: `housing_accommodation_gui.py:5519-5613`
+
+**6. Run Now Functionality**
+- Generates report based on type
+- Sends email to all comma-separated recipients
+- Updates `last_run_date` in database
+- Confirms success with messagebox
+- Location: `housing_accommodation_gui.py:5457-5517`
+
+**7. Next Run Date Calculation**
+Automatic scheduling based on frequency:
+- **Daily**: Tomorrow at 08:00
+- **Weekly**: +7 days at 08:00
+- **Monthly**: +30 days at 08:00
+- **Quarterly**: +90 days at 08:00
+
+**User Workflow - Creating Schedule**:
+1. Click "Schedule Reports" button
+2. Click "Add Schedule"
+3. Enter report name (e.g., "Weekly Occupancy Summary")
+4. Select report type
+5. Choose frequency
+6. Enter recipient emails (comma-separated)
+7. Add optional description
+8. Click "Save"
+9. System calculates next run date
+10. Schedule appears in list
+
+**User Workflow - Running Now**:
+1. Select scheduled report from list
+2. Click "Run Now"
+3. Confirm recipients
+4. System generates report
+5. Emails sent to all recipients
+6. Last run date updated
+
+**Benefits**:
+- ✅ Automated report delivery
+- ✅ Customizable schedules
+- ✅ Multiple recipients per report
+- ✅ On-demand execution
+- ✅ Activity tracking (last/next run)
+- ✅ Easy schedule management
+- ✅ Professional email formatting
+
+---
+
+### Enhanced - Report Template Customization System
+
+**Comprehensive Report Formatting Preferences**
+
+Implemented full template customization system allowing users to personalize report appearance, fonts, separators, and metadata.
+
+**1. Template Settings Dialog**
+- Accessible via "Template Settings" button in Reports menu
+- 700x650 settings window
+- 14 customizable parameters
+- Live preview panel
+- Save/Reset/Cancel buttons
+- Location: `housing_accommodation_gui.py:5616-5806`
+
+**2. Customizable Parameters**
+
+**Typography**:
+- Title Font: Arial, Helvetica, Times New Roman, Courier, Verdana
+- Title Size: 10-24 pt
+- Content Font: Arial, Helvetica, Times New Roman, Courier, Verdana
+- Content Size: 8-14 pt
+- Line Spacing: 1.0-2.0
+
+**Layout**:
+- Page Width: 60-120 characters
+- Section Separator: =, -, #, *, _, ~
+- Subsection Separator: =, -, #, *, _, ~
+
+**Formatting**:
+- Currency Symbol: $, €, £, ¥, etc.
+- Date Format: %Y-%m-%d, %m/%d/%Y, %d/%m/%Y, %B %d, %Y
+
+**Metadata**:
+- Include Timestamp: Yes/No
+- Include Generator Name: Yes/No
+- Header Text: Custom text
+- Footer Text: Custom text
+
+**3. Storage & Persistence**
+- Settings saved to: `university_system/data/report_templates.json`
+- JSON format for easy editing
+- Default values provided
+- Survives application restarts
+
+**4. Template Retrieval Method** (`get_report_template_settings`)
+- Loads settings from JSON file
+- Falls back to defaults if file missing
+- Returns dictionary of all settings
+- Can be called by any report generation method
+- Location: `housing_accommodation_gui.py:5808-5837`
+
+**5. Reset to Defaults**
+- One-click reset button
+- Confirmation dialog
+- Restores all 14 parameters
+- Requires window reopen to see changes
+
+**6. Live Preview**
+Shows sample output with current settings:
+- Font and size
+- Header text
+- Section separator (×20)
+- Currency formatting
+- Footer text
+
+**Default Settings**:
+```json
+{
+  "title_font": "Arial",
+  "title_size": 16,
+  "content_font": "Courier",
+  "content_size": 10,
+  "line_spacing": 1.2,
+  "page_width": 80,
+  "include_timestamp": true,
+  "include_generator_name": true,
+  "section_separator": "=",
+  "subsection_separator": "-",
+  "currency_symbol": "$",
+  "date_format": "%Y-%m-%d",
+  "header_text": "Housing Management Report",
+  "footer_text": "Generated by University Housing System"
+}
+```
+
+**User Workflow**:
+1. Click "Template Settings"
+2. Adjust fonts, sizes, separators
+3. Customize header/footer text
+4. Check live preview
+5. Click "Save Settings"
+6. Settings apply to future reports
+
+**Integration Points**:
+- Report generation methods can call `get_report_template_settings()`
+- Apply settings when generating content
+- Use custom fonts in PDF exports
+- Apply separators and formatting
+- Include/exclude metadata based on preferences
+
+**Benefits**:
+- ✅ Personalized report appearance
+- ✅ Brand consistency
+- ✅ Professional formatting options
+- ✅ Easy-to-use GUI
+- ✅ Persistent settings
+- ✅ Quick reset to defaults
+- ✅ Live preview feedback
+- ✅ No code editing required
+
+**Files Modified**:
+- `housing_accommodation_gui.py`:
+  - Added `send_post_inspection_email()` method
+  - Enhanced `edit_inspection()` with email checkbox
+  - Added `show_scheduled_reports_manager()` and 8 supporting methods
+  - Added `show_report_template_settings()` and `get_report_template_settings()`
+  - Added 4 report content generator methods
+  - Total: +600 lines of new functionality
+
+**Files Created**:
+- `university_system/data/report_templates.json` (auto-created on first save)
 
 ## [5.0.5] - 2025-01-14
 

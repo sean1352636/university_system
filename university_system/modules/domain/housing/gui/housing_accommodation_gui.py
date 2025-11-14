@@ -4051,6 +4051,126 @@ Housing Administration"""
             import traceback
             traceback.print_exc()
 
+    def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_date,
+                                   inspection_type, inspector_name, findings, status, action_required, followup_date):
+        """Send email notification to students after inspection is completed"""
+        try:
+            # Get room and building info
+            cursor.execute('''
+                SELECT r.room_number, b.building_name
+                FROM housing_rooms r
+                JOIN housing_buildings b ON r.building_id = b.building_id
+                WHERE r.room_id = ?
+            ''', (room_id,))
+
+            room_info = cursor.fetchone()
+            if not room_info:
+                print(f"Room {room_id} not found")
+                return
+
+            room_number = room_info[0]
+            building_name = room_info[1]
+
+            # Get students assigned to this room
+            cursor.execute('''
+                SELECT DISTINCT
+                    s.student_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    s.email_address
+                FROM housing_assignments ha
+                JOIN students s ON ha.student_id = s.student_id
+                WHERE ha.room_id = ?
+                AND ha.status = 'Active'
+            ''', (room_id,))
+
+            students = cursor.fetchall()
+
+            if not students:
+                print(f"No active students found for room {room_number}")
+                return
+
+            # Load email service
+            from university_system.infrastructure.email.email_service import EmailService
+            email_service = EmailService()
+
+            # Determine which template to use based on status
+            if status == 'Issues Found':
+                template_name = 'inspection_issues_found'
+            else:
+                template_name = 'inspection_completed'
+
+            # Load email template
+            template_path = f"/home/seancatchpole989/university_system/templates/email/{template_name}.json"
+            try:
+                with open(template_path, 'r') as f:
+                    import json
+                    template = json.load(f)
+            except Exception as e:
+                print(f"Failed to load email template {template_name}: {e}")
+                return
+
+            # Determine pass/fail result
+            if status == 'Issues Found':
+                pass_fail = "FAIL - Issues Identified"
+            elif status == 'Completed':
+                pass_fail = "PASS - No Issues"
+            else:
+                pass_fail = status
+
+            # Send email to each student
+            emails_sent = 0
+            for student in students:
+                student_id, student_name, email_address = student
+
+                if not email_address:
+                    print(f"No email address for student {student_name}")
+                    continue
+
+                # Prepare template variables
+                variables = {
+                    'student_name': student_name,
+                    'building_name': building_name,
+                    'room_number': room_number,
+                    'inspection_date': inspection_date,
+                    'inspection_type': inspection_type,
+                    'inspector_name': inspector_name,
+                    'status': status,
+                    'pass_fail': pass_fail,
+                    'findings': findings if findings else 'No issues found',
+                    'issues': findings if findings else 'No issues identified',
+                    'required_actions': action_required if action_required else 'No action required',
+                    'action_required': action_required if action_required else 'No action required at this time',
+                    'action_deadline': followup_date if followup_date else 'N/A',
+                    'follow_up_instructions': f"A follow-up inspection is scheduled for {followup_date}" if followup_date else ""
+                }
+
+                # Render email subject and body
+                subject = template['subject']
+                body = template['body']
+
+                for key, value in variables.items():
+                    subject = subject.replace('{{' + key + '}}', str(value))
+                    body = body.replace('{{' + key + '}}', str(value))
+
+                # Send email
+                success = email_service.send_email(
+                    to_address=email_address,
+                    subject=subject,
+                    body=body,
+                    email_type='inspection_result'
+                )
+
+                if success:
+                    emails_sent += 1
+                    print(f"✓ Sent inspection result email to {student_name} ({email_address})")
+
+            print(f"✓ Sent {emails_sent} post-inspection notification emails")
+
+        except Exception as e:
+            print(f"Error in send_post_inspection_email: {e}")
+            import traceback
+            traceback.print_exc()
+
     def record_inspection_dialog(self):
         """Record inspection results"""
         dialog = tk.Toplevel(self.root)
@@ -4284,12 +4404,20 @@ Housing Administration"""
             followup_var = tk.StringVar(value=inspection_data[8] if inspection_data[8] else '')
             ttk.Entry(form_frame, textvariable=followup_var, width=30).grid(row=7, column=1, pady=5, padx=5)
 
+            # Email notification checkbox
+            ttk.Label(form_frame, text="Email Notification:").grid(row=8, column=0, sticky='w', pady=5)
+            email_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(form_frame, text="Send email notification to student(s)",
+                           variable=email_var).grid(row=8, column=1, sticky='w', pady=5, padx=5)
+
             def save_changes():
                 try:
                     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     findings = findings_text.get("1.0", tk.END).strip()
                     action = action_text.get("1.0", tk.END).strip()
                     followup = followup_var.get().strip() if followup_var.get().strip() else None
+                    new_status = status_var.get()
+                    old_status = inspection_data[6]  # Get the original status
 
                     conn = get_connection()
                     cursor = conn.cursor()
@@ -4301,10 +4429,19 @@ Housing Administration"""
                         updated_at = ?
                     WHERE inspection_id = ?
                     ''', (date_var.get(), type_var.get(), inspector_var.get(),
-                         findings, status_var.get(), action, followup,
+                         findings, new_status, action, followup,
                          timestamp, inspection_id))
 
                     conn.commit()
+
+                    # Send email notification if status changed and checkbox is checked
+                    if email_var.get() and new_status != old_status and new_status in ['Completed', 'Issues Found']:
+                        self.send_post_inspection_email(
+                            cursor, inspection_data[0], inspection_id,
+                            date_var.get(), type_var.get(), inspector_var.get(),
+                            findings, new_status, action, followup
+                        )
+
                     conn.close()
 
                     messagebox.showinfo("Success", "Inspection updated successfully!")
@@ -4373,12 +4510,19 @@ Housing Administration"""
             ("Financial Summary", self.show_financial_summary),
             ("Maintenance Summary", self.show_maintenance_summary_gui),
             ("Room Availability", self.show_room_availability),
-            ("Export Data", self.show_export_options)
+            ("Export Data", self.show_export_options),
+            ("─" * 20, None),  # Separator
+            ("Schedule Reports", self.show_scheduled_reports_manager),
+            ("Template Settings", self.show_report_template_settings)
         ]
         
         for text, command in report_buttons:
-            ttk.Button(buttons_frame, text=text, width=20, 
-                      command=command).pack(pady=5)
+            if command is None:
+                # Separator
+                ttk.Separator(buttons_frame, orient='horizontal').pack(fill='x', pady=10)
+            else:
+                ttk.Button(buttons_frame, text=text, width=20,
+                          command=command).pack(pady=5)
         
         # Right side - report display area
         self.report_display_frame = ttk.LabelFrame(reports_frame, text="Report Output", padding="20")
@@ -5067,7 +5211,631 @@ This is an automated message from the University Housing Management System.
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export data: {str(e)}")
-    
+
+    def show_scheduled_reports_manager(self):
+        """Show scheduled reports management window"""
+        # Create window
+        manager_window = tk.Toplevel(self.root)
+        manager_window.title("Scheduled Reports Manager")
+        manager_window.geometry("1000x600")
+
+        # Main frame
+        main_frame = ttk.Frame(manager_window, padding="10")
+        main_frame.pack(fill='both', expand=True)
+
+        # Title
+        ttk.Label(main_frame, text="Scheduled Reports Manager",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Button(button_frame, text="Add Schedule", width=15,
+                  command=lambda: self.add_scheduled_report(manager_window, tree)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Edit Schedule", width=15,
+                  command=lambda: self.edit_scheduled_report(tree, manager_window)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Delete Schedule", width=15,
+                  command=lambda: self.delete_scheduled_report(tree)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Run Now", width=15,
+                  command=lambda: self.run_scheduled_report_now(tree)).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Refresh", width=15,
+                  command=lambda: self.load_scheduled_reports(tree)).pack(side='left', padx=5)
+
+        # Tree view for scheduled reports
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True)
+
+        scrollbar = ttk.Scrollbar(tree_frame)
+        scrollbar.pack(side='right', fill='y')
+
+        tree = ttk.Treeview(tree_frame, yscrollcommand=scrollbar.set,
+                           columns=('ID', 'Name', 'Type', 'Frequency', 'Recipients', 'Last Run', 'Next Run', 'Status'),
+                           show='headings', height=15)
+
+        tree.heading('ID', text='ID')
+        tree.heading('Name', text='Report Name')
+        tree.heading('Type', text='Report Type')
+        tree.heading('Frequency', text='Frequency')
+        tree.heading('Recipients', text='Recipients')
+        tree.heading('Last Run', text='Last Run')
+        tree.heading('Next Run', text='Next Run')
+        tree.heading('Status', text='Status')
+
+        tree.column('ID', width=50)
+        tree.column('Name', width=150)
+        tree.column('Type', width=120)
+        tree.column('Frequency', width=100)
+        tree.column('Recipients', width=200)
+        tree.column('Last Run', width=100)
+        tree.column('Next Run', width=100)
+        tree.column('Status', width=80)
+
+        tree.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=tree.yview)
+
+        # Load data
+        self.load_scheduled_reports(tree)
+
+        # Close button
+        ttk.Button(main_frame, text="Close", command=manager_window.destroy).pack(pady=(10, 0))
+
+    def load_scheduled_reports(self, tree):
+        """Load scheduled reports into tree view"""
+        for item in tree.get_children():
+            tree.delete(item)
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT report_id, report_name, report_type, schedule_frequency,
+                       recipients, last_run_date, next_run_date, is_active
+                FROM scheduled_reports
+                ORDER BY report_id DESC
+            ''')
+
+            reports = cursor.fetchall()
+            conn.close()
+
+            for report in reports:
+                status = "Active" if report[7] else "Inactive"
+                values = (
+                    report[0],  # ID
+                    report[1],  # Name
+                    report[2],  # Type
+                    report[3],  # Frequency
+                    report[4],  # Recipients
+                    report[5] if report[5] else 'Never',  # Last Run
+                    report[6] if report[6] else 'Not Set',  # Next Run
+                    status
+                )
+                tree.insert('', 'end', values=values)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load scheduled reports: {str(e)}")
+
+    def add_scheduled_report(self, parent_window, tree):
+        """Add a new scheduled report"""
+        dialog = tk.Toplevel(parent_window)
+        dialog.title("Add Scheduled Report")
+        dialog.geometry("600x550")
+        dialog.transient(parent_window)
+
+        ttk.Label(dialog, text="Add Scheduled Report",
+                 font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
+
+        form_frame = ttk.Frame(dialog, padding=20)
+        form_frame.pack(fill='both', expand=True)
+
+        # Report Name
+        ttk.Label(form_frame, text="Report Name:").grid(row=0, column=0, sticky='w', pady=5)
+        name_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5, padx=5)
+
+        # Report Type
+        ttk.Label(form_frame, text="Report Type:").grid(row=1, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar(value="Occupancy Report")
+        ttk.Combobox(form_frame, textvariable=type_var, width=38,
+                    values=['Occupancy Report', 'Financial Summary', 'Maintenance Summary', 'Room Availability'],
+                    state='readonly').grid(row=1, column=1, pady=5, padx=5)
+
+        # Frequency
+        ttk.Label(form_frame, text="Frequency:").grid(row=2, column=0, sticky='w', pady=5)
+        frequency_var = tk.StringVar(value="Weekly")
+        ttk.Combobox(form_frame, textvariable=frequency_var, width=38,
+                    values=['Daily', 'Weekly', 'Monthly', 'Quarterly'],
+                    state='readonly').grid(row=2, column=1, pady=5, padx=5)
+
+        # Recipients
+        ttk.Label(form_frame, text="Recipients:").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text="(comma-separated emails)", font=('TkDefaultFont', 8)).grid(row=4, column=0, sticky='w')
+        recipients_text = tk.Text(form_frame, height=4, width=40)
+        recipients_text.grid(row=3, column=1, rowspan=2, pady=5, padx=5)
+
+        # Active
+        active_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(form_frame, text="Active", variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
+
+        # Description
+        ttk.Label(form_frame, text="Description:").grid(row=6, column=0, sticky='nw', pady=5)
+        desc_text = tk.Text(form_frame, height=4, width=40)
+        desc_text.grid(row=6, column=1, pady=5, padx=5)
+
+        def save_schedule():
+            if not name_var.get().strip():
+                messagebox.showwarning("Missing Info", "Please enter a report name", parent=dialog)
+                return
+
+            recipients = recipients_text.get("1.0", tk.END).strip()
+            if not recipients:
+                messagebox.showwarning("Missing Info", "Please enter at least one recipient email", parent=dialog)
+                return
+
+            try:
+                # Calculate next run date based on frequency
+                from datetime import datetime, timedelta
+                now = datetime.now()
+                frequency = frequency_var.get()
+
+                if frequency == 'Daily':
+                    next_run = (now + timedelta(days=1)).strftime('%Y-%m-%d 08:00:00')
+                elif frequency == 'Weekly':
+                    next_run = (now + timedelta(weeks=1)).strftime('%Y-%m-%d 08:00:00')
+                elif frequency == 'Monthly':
+                    next_run = (now + timedelta(days=30)).strftime('%Y-%m-%d 08:00:00')
+                else:  # Quarterly
+                    next_run = (now + timedelta(days=90)).strftime('%Y-%m-%d 08:00:00')
+
+                config = {
+                    'description': desc_text.get("1.0", tk.END).strip()
+                }
+
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    INSERT INTO scheduled_reports
+                    (report_name, report_type, schedule_frequency, recipients, next_run_date, is_active, report_config)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (name_var.get().strip(), type_var.get(), frequency_var.get(),
+                     recipients, next_run, int(active_var.get()), str(config)))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", "Scheduled report added successfully!", parent=dialog)
+                dialog.destroy()
+                self.load_scheduled_reports(tree)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add scheduled report: {str(e)}", parent=dialog)
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="Save", command=save_schedule).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+    def edit_scheduled_report(self, tree, parent_window):
+        """Edit an existing scheduled report"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a scheduled report to edit", parent=parent_window)
+            return
+
+        report_id = tree.item(selection[0], 'values')[0]
+
+        # Implementation similar to add_scheduled_report but with pre-filled values
+        messagebox.showinfo("Coming Soon", "Edit functionality will be available in the next update", parent=parent_window)
+
+    def delete_scheduled_report(self, tree):
+        """Delete a scheduled report"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a scheduled report to delete")
+            return
+
+        values = tree.item(selection[0], 'values')
+        report_id = values[0]
+        report_name = values[1]
+
+        result = messagebox.askyesno("Confirm Delete",
+                                     f"Delete scheduled report '{report_name}'?\n\nThis will stop all future report generation and emails.")
+        if result:
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM scheduled_reports WHERE report_id = ?', (report_id,))
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Scheduled report '{report_name}' deleted successfully")
+                self.load_scheduled_reports(tree)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete scheduled report: {str(e)}")
+
+    def run_scheduled_report_now(self, tree):
+        """Run a scheduled report immediately"""
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a scheduled report to run")
+            return
+
+        values = tree.item(selection[0], 'values')
+        report_id = values[0]
+        report_name = values[1]
+        report_type = values[2]
+        recipients = values[4]
+
+        result = messagebox.askyesno("Confirm Run",
+                                     f"Run '{report_name}' now and email to:\n{recipients}?")
+        if result:
+            try:
+                # Generate report content based on type
+                if report_type == 'Occupancy Report':
+                    report_content = self.generate_occupancy_report_content()
+                elif report_type == 'Financial Summary':
+                    report_content = self.generate_financial_report_content()
+                elif report_type == 'Maintenance Summary':
+                    report_content = self.generate_maintenance_report_content()
+                elif report_type == 'Room Availability':
+                    report_content = self.generate_room_availability_content()
+                else:
+                    messagebox.showerror("Error", "Unknown report type")
+                    return
+
+                # Send email to recipients
+                from university_system.infrastructure.email.email_service import EmailService
+                email_service = EmailService()
+
+                recipient_list = [email.strip() for email in recipients.split(',')]
+
+                for recipient in recipient_list:
+                    if recipient:
+                        success = email_service.send_email(
+                            to_address=recipient,
+                            subject=f"Housing Report: {report_name}",
+                            body=f"Automated Housing Report\n\n{report_content}",
+                            email_type='scheduled_report'
+                        )
+
+                # Update last run date
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE scheduled_reports
+                    SET last_run_date = datetime('now')
+                    WHERE report_id = ?
+                ''', (report_id,))
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Report '{report_name}' generated and emailed successfully!")
+                self.load_scheduled_reports(tree)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to run report: {str(e)}")
+
+    def generate_occupancy_report_content(self):
+        """Generate occupancy report content (returns string)"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            report_content = "HOUSING OCCUPANCY REPORT\n"
+            report_content += "=" * 50 + "\n\n"
+
+            cursor.execute('SELECT COUNT(*) FROM housing_buildings')
+            total_buildings = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM housing_rooms')
+            total_rooms = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE status = "Occupied"')
+            occupied_rooms = cursor.fetchone()[0]
+
+            occupancy_rate = (occupied_rooms / total_rooms * 100) if total_rooms > 0 else 0
+
+            report_content += f"Total Buildings: {total_buildings}\n"
+            report_content += f"Total Rooms: {total_rooms}\n"
+            report_content += f"Occupied Rooms: {occupied_rooms}\n"
+            report_content += f"Occupancy Rate: {occupancy_rate:.1f}%\n"
+
+            conn.close()
+            return report_content
+
+        except Exception as e:
+            return f"Error generating report: {str(e)}"
+
+    def generate_financial_report_content(self):
+        """Generate financial report content (returns string)"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            report_content = "HOUSING FINANCIAL SUMMARY\n"
+            report_content += "=" * 50 + "\n\n"
+
+            cursor.execute('SELECT SUM(monthly_rent) FROM housing_assignments WHERE status = "Active"')
+            monthly_revenue = cursor.fetchone()[0] or 0
+
+            report_content += f"Current Monthly Revenue: ${monthly_revenue:,.2f}\n"
+            report_content += f"Projected Annual Revenue: ${monthly_revenue * 12:,.2f}\n"
+
+            conn.close()
+            return report_content
+
+        except Exception as e:
+            return f"Error generating report: {str(e)}"
+
+    def generate_maintenance_report_content(self):
+        """Generate maintenance report content (returns string)"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            report_content = "MAINTENANCE REQUESTS SUMMARY\n"
+            report_content += "=" * 40 + "\n\n"
+
+            cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests')
+            total_requests = cursor.fetchone()[0]
+
+            cursor.execute('SELECT COUNT(*) FROM housing_maintenance_requests WHERE status = "Open"')
+            open_requests = cursor.fetchone()[0]
+
+            report_content += f"Total Requests: {total_requests}\n"
+            report_content += f"Open Requests: {open_requests}\n"
+
+            conn.close()
+            return report_content
+
+        except Exception as e:
+            return f"Error generating report: {str(e)}"
+
+    def generate_room_availability_content(self):
+        """Generate room availability report content (returns string)"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            report_content = "ROOM AVAILABILITY REPORT\n"
+            report_content += "=" * 35 + "\n\n"
+
+            cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE status = "Available"')
+            available_rooms = cursor.fetchone()[0]
+
+            report_content += f"Available Rooms: {available_rooms}\n"
+
+            conn.close()
+            return report_content
+
+        except Exception as e:
+            return f"Error generating report: {str(e)}"
+
+    def show_report_template_settings(self):
+        """Show report template customization settings"""
+        settings_window = tk.Toplevel(self.root)
+        settings_window.title("Report Template Settings")
+        settings_window.geometry("700x650")
+
+        main_frame = ttk.Frame(settings_window, padding="20")
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text="Report Template Settings",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Load current settings or create defaults
+        template_file = "/home/seancatchpole989/university_system/data/report_templates.json"
+        default_settings = {
+            'title_font': 'Arial',
+            'title_size': 16,
+            'content_font': 'Courier',
+            'content_size': 10,
+            'line_spacing': 1.2,
+            'page_width': 80,
+            'include_timestamp': True,
+            'include_generator_name': True,
+            'section_separator': '=',
+            'subsection_separator': '-',
+            'currency_symbol': '$',
+            'date_format': '%Y-%m-%d',
+            'header_text': 'Housing Management Report',
+            'footer_text': 'Generated by University Housing System'
+        }
+
+        try:
+            import json
+            import os
+            if os.path.exists(template_file):
+                with open(template_file, 'r') as f:
+                    current_settings = json.load(f)
+            else:
+                current_settings = default_settings.copy()
+        except:
+            current_settings = default_settings.copy()
+
+        # Create form
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill='both', expand=True)
+
+        # Title Font
+        ttk.Label(form_frame, text="Title Font:").grid(row=0, column=0, sticky='w', pady=5)
+        title_font_var = tk.StringVar(value=current_settings.get('title_font', 'Arial'))
+        ttk.Combobox(form_frame, textvariable=title_font_var, width=30,
+                    values=['Arial', 'Helvetica', 'Times New Roman', 'Courier', 'Verdana'],
+                    state='readonly').grid(row=0, column=1, pady=5, padx=5, sticky='w')
+
+        # Title Size
+        ttk.Label(form_frame, text="Title Size:").grid(row=1, column=0, sticky='w', pady=5)
+        title_size_var = tk.IntVar(value=current_settings.get('title_size', 16))
+        ttk.Spinbox(form_frame, from_=10, to=24, textvariable=title_size_var, width=10).grid(row=1, column=1, pady=5, padx=5, sticky='w')
+
+        # Content Font
+        ttk.Label(form_frame, text="Content Font:").grid(row=2, column=0, sticky='w', pady=5)
+        content_font_var = tk.StringVar(value=current_settings.get('content_font', 'Courier'))
+        ttk.Combobox(form_frame, textvariable=content_font_var, width=30,
+                    values=['Arial', 'Helvetica', 'Times New Roman', 'Courier', 'Verdana'],
+                    state='readonly').grid(row=2, column=1, pady=5, padx=5, sticky='w')
+
+        # Content Size
+        ttk.Label(form_frame, text="Content Size:").grid(row=3, column=0, sticky='w', pady=5)
+        content_size_var = tk.IntVar(value=current_settings.get('content_size', 10))
+        ttk.Spinbox(form_frame, from_=8, to=14, textvariable=content_size_var, width=10).grid(row=3, column=1, pady=5, padx=5, sticky='w')
+
+        # Line Spacing
+        ttk.Label(form_frame, text="Line Spacing:").grid(row=4, column=0, sticky='w', pady=5)
+        line_spacing_var = tk.DoubleVar(value=current_settings.get('line_spacing', 1.2))
+        ttk.Spinbox(form_frame, from_=1.0, to=2.0, increment=0.1, textvariable=line_spacing_var, width=10).grid(row=4, column=1, pady=5, padx=5, sticky='w')
+
+        # Page Width
+        ttk.Label(form_frame, text="Page Width (chars):").grid(row=5, column=0, sticky='w', pady=5)
+        page_width_var = tk.IntVar(value=current_settings.get('page_width', 80))
+        ttk.Spinbox(form_frame, from_=60, to=120, textvariable=page_width_var, width=10).grid(row=5, column=1, pady=5, padx=5, sticky='w')
+
+        # Section Separator
+        ttk.Label(form_frame, text="Section Separator:").grid(row=6, column=0, sticky='w', pady=5)
+        section_sep_var = tk.StringVar(value=current_settings.get('section_separator', '='))
+        ttk.Combobox(form_frame, textvariable=section_sep_var, width=30,
+                    values=['=', '-', '#', '*', '_', '~'],
+                    state='readonly').grid(row=6, column=1, pady=5, padx=5, sticky='w')
+
+        # Subsection Separator
+        ttk.Label(form_frame, text="Subsection Separator:").grid(row=7, column=0, sticky='w', pady=5)
+        subsection_sep_var = tk.StringVar(value=current_settings.get('subsection_separator', '-'))
+        ttk.Combobox(form_frame, textvariable=subsection_sep_var, width=30,
+                    values=['=', '-', '#', '*', '_', '~'],
+                    state='readonly').grid(row=7, column=1, pady=5, padx=5, sticky='w')
+
+        # Currency Symbol
+        ttk.Label(form_frame, text="Currency Symbol:").grid(row=8, column=0, sticky='w', pady=5)
+        currency_var = tk.StringVar(value=current_settings.get('currency_symbol', '$'))
+        ttk.Entry(form_frame, textvariable=currency_var, width=10).grid(row=8, column=1, pady=5, padx=5, sticky='w')
+
+        # Date Format
+        ttk.Label(form_frame, text="Date Format:").grid(row=9, column=0, sticky='w', pady=5)
+        date_format_var = tk.StringVar(value=current_settings.get('date_format', '%Y-%m-%d'))
+        ttk.Combobox(form_frame, textvariable=date_format_var, width=30,
+                    values=['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%B %d, %Y'],
+                    state='readonly').grid(row=9, column=1, pady=5, padx=5, sticky='w')
+
+        # Include Timestamp
+        include_timestamp_var = tk.BooleanVar(value=current_settings.get('include_timestamp', True))
+        ttk.Checkbutton(form_frame, text="Include Timestamp", variable=include_timestamp_var).grid(row=10, column=1, sticky='w', pady=5)
+
+        # Include Generator Name
+        include_generator_var = tk.BooleanVar(value=current_settings.get('include_generator_name', True))
+        ttk.Checkbutton(form_frame, text="Include Generator Name", variable=include_generator_var).grid(row=11, column=1, sticky='w', pady=5)
+
+        # Header Text
+        ttk.Label(form_frame, text="Header Text:").grid(row=12, column=0, sticky='w', pady=5)
+        header_var = tk.StringVar(value=current_settings.get('header_text', 'Housing Management Report'))
+        ttk.Entry(form_frame, textvariable=header_var, width=40).grid(row=12, column=1, pady=5, padx=5, sticky='w')
+
+        # Footer Text
+        ttk.Label(form_frame, text="Footer Text:").grid(row=13, column=0, sticky='w', pady=5)
+        footer_var = tk.StringVar(value=current_settings.get('footer_text', 'Generated by University Housing System'))
+        ttk.Entry(form_frame, textvariable=footer_var, width=40).grid(row=13, column=1, pady=5, padx=5, sticky='w')
+
+        def save_settings():
+            try:
+                new_settings = {
+                    'title_font': title_font_var.get(),
+                    'title_size': title_size_var.get(),
+                    'content_font': content_font_var.get(),
+                    'content_size': content_size_var.get(),
+                    'line_spacing': line_spacing_var.get(),
+                    'page_width': page_width_var.get(),
+                    'include_timestamp': include_timestamp_var.get(),
+                    'include_generator_name': include_generator_var.get(),
+                    'section_separator': section_sep_var.get(),
+                    'subsection_separator': subsection_sep_var.get(),
+                    'currency_symbol': currency_var.get(),
+                    'date_format': date_format_var.get(),
+                    'header_text': header_var.get(),
+                    'footer_text': footer_var.get()
+                }
+
+                import json
+                import os
+                os.makedirs(os.path.dirname(template_file), exist_ok=True)
+                with open(template_file, 'w') as f:
+                    json.dump(new_settings, f, indent=4)
+
+                messagebox.showinfo("Success", "Report template settings saved successfully!", parent=settings_window)
+                settings_window.destroy()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {str(e)}", parent=settings_window)
+
+        def reset_to_defaults():
+            result = messagebox.askyesno("Reset to Defaults",
+                                         "Reset all template settings to default values?",
+                                         parent=settings_window)
+            if result:
+                try:
+                    import json
+                    with open(template_file, 'w') as f:
+                        json.dump(default_settings, f, indent=4)
+
+                    messagebox.showinfo("Success", "Settings reset to defaults. Please reopen this window to see changes.",
+                                      parent=settings_window)
+                    settings_window.destroy()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to reset settings: {str(e)}", parent=settings_window)
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=20)
+
+        ttk.Button(button_frame, text="Save Settings", width=15, command=save_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Reset to Defaults", width=18, command=reset_to_defaults).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancel", width=15, command=settings_window.destroy).pack(side='left', padx=5)
+
+        # Preview section
+        preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding="10")
+        preview_frame.pack(fill='x', pady=(10, 0))
+
+        preview_text = f"""Font: {content_font_var.get()} {content_size_var.get()}pt
+Header: {header_var.get()}
+Section Sep: {section_sep_var.get() * 20}
+Currency: {currency_var.get()}1,234.56
+Footer: {footer_var.get()}"""
+
+        ttk.Label(preview_frame, text=preview_text, font=(current_settings.get('content_font', 'Courier'), 9)).pack()
+
+    def get_report_template_settings(self):
+        """Load report template settings from file"""
+        template_file = "/home/seancatchpole989/university_system/data/report_templates.json"
+        default_settings = {
+            'title_font': 'Arial',
+            'title_size': 16,
+            'content_font': 'Courier',
+            'content_size': 10,
+            'line_spacing': 1.2,
+            'page_width': 80,
+            'include_timestamp': True,
+            'include_generator_name': True,
+            'section_separator': '=',
+            'subsection_separator': '-',
+            'currency_symbol': '$',
+            'date_format': '%Y-%m-%d',
+            'header_text': 'Housing Management Report',
+            'footer_text': 'Generated by University Housing System'
+        }
+
+        try:
+            import json
+            import os
+            if os.path.exists(template_file):
+                with open(template_file, 'r') as f:
+                    return json.load(f)
+        except:
+            pass
+
+        return default_settings
+
     # Student-specific interface methods
     def show_student_dashboard(self):
         """Show student dashboard"""
