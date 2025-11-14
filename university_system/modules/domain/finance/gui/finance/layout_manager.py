@@ -2534,8 +2534,10 @@ Click the button above to access the full Financial Reporting & Analytics system
 
                     # Save to database
                     with transaction() as conn:
-                        # Get or create assignment_id for the student
+                        # Get assignment_id for the student (try active first, then any)
                         cursor = conn.cursor()
+
+                        # Try to find active assignment first
                         cursor.execute('''
                             SELECT assignment_id FROM housing_assignments
                             WHERE student_id = ? AND status = 'Active'
@@ -2543,11 +2545,29 @@ Click the button above to access the full Financial Reporting & Analytics system
                         ''', (student_id,))
 
                         result = cursor.fetchone()
-                        if result:
-                            assignment_id = result[0]
-                        else:
-                            # Generate a temporary assignment ID if no active assignment exists
-                            assignment_id = f"HA{uuid.uuid4().hex[:8].upper()}"
+
+                        if not result:
+                            # Try to find any assignment for this student
+                            cursor.execute('''
+                                SELECT assignment_id FROM housing_assignments
+                                WHERE student_id = ?
+                                ORDER BY created_at DESC LIMIT 1
+                            ''', (student_id,))
+                            result = cursor.fetchone()
+
+                        if not result:
+                            # No assignment exists - need to create one or show error
+                            messagebox.showerror(
+                                "No Housing Assignment",
+                                f"Student '{student_id}' does not have a housing assignment.\n\n"
+                                "To record a payment, the student must first:\n"
+                                "1. Submit a housing application\n"
+                                "2. Be assigned to a room\n\n"
+                                "Please create a housing assignment first, then record the payment."
+                            )
+                            return
+
+                        assignment_id = result[0]
 
                         conn.execute('''
                             INSERT INTO housing_payments

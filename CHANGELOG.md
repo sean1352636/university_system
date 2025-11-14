@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.5] - 2025-01-14
 
+### Fixed - Foreign Key Constraint in Payment Recording
+
+**Critical Fix for Housing Assignment Validation**
+
+- **Error**: `FOREIGN KEY constraint failed` when recording housing payment
+- **Root Cause**: Tried to insert payment with non-existent assignment_id (generated temporary ID that wasn't in housing_assignments table)
+- **Fix**: Validate housing assignment exists before allowing payment
+  - First checks for active housing assignment
+  - If no active assignment, looks for any assignment
+  - If no assignment exists at all, shows helpful error message
+  - Only inserts payment if valid assignment_id found
+- **Location**: `layout_manager.py:2537-2570`
+- **Impact**: Prevents foreign key violations and guides users to create assignments first
+
+**Validation Flow**:
+1. Check for active assignment (`status = 'Active'`)
+2. If not found, check for any assignment
+3. If still not found, show error:
+   - "Student does not have a housing assignment"
+   - Instructions to create application and assignment first
+   - Prevents save until assignment exists
+4. If found, use valid assignment_id for payment
+
+**Foreign Key Requirements**:
+- `assignment_id` must exist in `housing_assignments` table
+- `student_id` must exist in `students` table (already validated)
+
 ### Fixed - Current User Dictionary Access Error
 
 **Quick Fix for Payment Recording**
