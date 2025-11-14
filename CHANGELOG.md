@@ -5,6 +5,64 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.3] - 2025-01-14
+
+### Fixed - Email Logging and Finance GUI Integration
+
+**Critical Fixes for Recent Features**
+
+Fixed two issues that prevented the v5.0.2 features from working correctly:
+
+**1. Email Activity Logging Error**
+- **Error**: `log_create() takes from 1 to 2 positional arguments but 3 were given`
+- **Root Cause**: Housing and maintenance email functions calling log_create() with 3 arguments
+- **Fix**: Changed from `log_create('module', 'id', 'message')` to `log_create('module', 'message with id')`
+- **Locations**:
+  - Housing email: `housing_accommodation_gui.py:164`
+  - Maintenance email: `housing_accommodation_gui.py:308`
+- **Code Changes**:
+  ```python
+  # Before:
+  log_create('housing_email', template_name, f"Sent {email_type} email to student {student_id}")
+
+  # After:
+  log_create('housing_email', f"Sent {email_type} email ({template_name}) to student {student_id}")
+  ```
+- **Impact**: Email notifications now log successfully without errors
+
+**2. Finance GUI Import Error**
+- **Error**: `FinanceManagementGUI is not defined`
+- **Root Cause**: Incorrect import path - imported from `finance/finance_gui.py` instead of `finance_management_gui.py`
+- **Fix**: Changed import and updated class instantiation
+- **Locations**:
+  - Import: `housing_accommodation_gui.py:23`
+  - Usage: `housing_accommodation_gui.py:2251`
+- **Code Changes**:
+  ```python
+  # Before:
+  from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+  finance_gui = FinanceGUI(finance_window, auth=self.auth)
+
+  # After:
+  from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+  finance_gui = FinanceManagementGUI(finance_window, self.auth)
+  finance_gui.show_finance_management()
+  ```
+- **Impact**: "Open Finance Management" button now works correctly
+
+**Files Modified**:
+- `university_system/modules/domain/housing/gui/housing_accommodation_gui.py`
+  - Fixed log_create() calls in housing email function
+  - Fixed log_create() calls in maintenance email function
+  - Fixed Finance GUI import
+  - Fixed Finance GUI instantiation and method call
+
+**Testing Performed**:
+- ✓ Housing application approval/rejection emails send and log correctly
+- ✓ Maintenance request emails send and log correctly
+- ✓ Finance Management GUI opens from Housing Payment Management
+- ✓ No import errors or undefined class errors
+
 ## [5.0.2] - 2025-01-14
 
 ### Added - Maintenance Request Email Notifications

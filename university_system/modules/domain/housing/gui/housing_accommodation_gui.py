@@ -20,7 +20,7 @@ except ImportError:
 
 # Import finance GUI for payment status integration
 try:
-    from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+    from university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
     FINANCE_GUI_AVAILABLE = True
 except ImportError:
     FINANCE_GUI_AVAILABLE = False
@@ -161,7 +161,7 @@ def send_housing_email(email_type, student_id, application_data, additional_vars
         )
 
         # Log the email activity
-        log_create('housing_email', template_name, f"Sent {email_type} email to student {student_id}")
+        log_create('housing_email', f"Sent {email_type} email ({template_name}) to student {student_id}")
 
         print(f"✓ {email_type.title()} email sent to {student_name} ({student_email})")
         return True
@@ -305,7 +305,7 @@ def send_maintenance_email(email_type, request_id, request_data, additional_vars
         )
 
         # Log the email activity
-        log_create('maintenance_email', template_name, f"Sent {email_type} email for request {request_id} to student {student_id}")
+        log_create('maintenance_email', f"Sent {email_type} email ({template_name}) for request {request_id} to student {student_id}")
 
         print(f"✓ {email_type.title()} email sent to {student_name} ({student_email}) for request {request_id}")
         return True
@@ -2247,8 +2247,11 @@ Status: {req_data[11]}
             finance_window.geometry("1400x900")
             finance_window.transient(self.root)
 
-            # Initialize Finance GUI with the new window and current auth
-            finance_gui = FinanceGUI(finance_window, auth=self.auth)
+            # Initialize Finance Management GUI with the new window and current auth
+            finance_gui = FinanceManagementGUI(finance_window, self.auth)
+
+            # Show the finance management interface
+            finance_gui.show_finance_management()
 
             # Log the action
             log_menu_navigation('finance_management', 'Opened from housing payment management')
