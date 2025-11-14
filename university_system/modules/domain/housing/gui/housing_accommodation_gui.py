@@ -4729,9 +4729,16 @@ Housing Administration"""
             conn.close()
 
             # Get current user info
-            auth = get_auth()
-            current_user = auth.get_current_user() if auth.is_logged_in() else None
-            sender_name = f"{current_user['first_name']} {current_user['last_name']}" if current_user else "Housing System"
+            sender_name = "Housing System"
+            try:
+                if self.auth and hasattr(self.auth, 'is_logged_in') and self.auth.is_logged_in():
+                    current_user = self.auth.get_current_user()
+                    if current_user and 'first_name' in current_user and 'last_name' in current_user:
+                        sender_name = f"{current_user['first_name']} {current_user['last_name']}"
+            except Exception as e:
+                # If auth fails, just use default sender name
+                print(f"Warning: Could not get current user: {e}")
+                pass
 
             # Prepare email
             from university_system.infrastructure.email.email_service import EmailService
