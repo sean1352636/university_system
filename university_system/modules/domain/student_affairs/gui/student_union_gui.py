@@ -12391,6 +12391,7 @@ class NominationDialog:
     def __init__(self, parent, auth_manager):
         self.parent = parent
         self.auth = auth_manager
+        self.election_data = {}  # Initialize to prevent AttributeError
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Submit Nomination")
@@ -12451,10 +12452,13 @@ class NominationDialog:
                 self.election_data = {f"{e[1]} ({e[2] if e[2] else 'All Departments'})": e[0] for e in elections}
                 self.election_combo['values'] = list(self.election_data.keys())
             else:
+                self.election_data = {}  # Ensure it's set even if no elections
                 self.election_combo['values'] = ["No elections accepting nominations"]
 
             conn.close()
         except Exception as e:
+            self.election_data = {}  # Ensure it's set even on error
+            self.election_combo['values'] = ["Error loading elections"]
             messagebox.showerror("Error", f"Failed to load elections: {str(e)}")
 
     def submit_nomination(self):
