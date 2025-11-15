@@ -691,6 +691,14 @@ class MobileAppPWAGUI:
                         messagebox.showerror("Error", "User ID is required")
                         return
 
+                    if not device_name:
+                        messagebox.showerror("Error", "Device Name is required")
+                        return
+
+                    if not os_version:
+                        messagebox.showerror("Error", "OS Version is required")
+                        return
+
                     # Generate push token
                     push_token = hashlib.sha256(secrets.token_bytes(32)).hexdigest()
 

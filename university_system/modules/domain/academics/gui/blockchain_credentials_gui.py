@@ -703,8 +703,16 @@ class BlockchainCredentialsGUI:
                     issue_date = issue_date_var.get().strip()
                     metadata = metadata_text.get('1.0', 'end-1c').strip()
 
-                    if not student_id or not cred_name:
-                        messagebox.showerror("Error", "Student ID and Credential Name are required")
+                    if not student_id:
+                        messagebox.showerror("Error", "Student ID is required")
+                        return
+
+                    if not cred_name:
+                        messagebox.showerror("Error", "Credential Name is required")
+                        return
+
+                    if not issue_date:
+                        messagebox.showerror("Error", "Issue Date is required")
                         return
 
                     # Validate JSON metadata
@@ -900,8 +908,16 @@ class BlockchainCredentialsGUI:
                     description = description_text.get('1.0', 'end-1c').strip()
                     issuer_name = issuer_var.get().strip()
 
-                    if not badge_name or not criteria:
-                        messagebox.showerror("Error", "Badge name and criteria are required")
+                    if not badge_name:
+                        messagebox.showerror("Error", "Badge name is required")
+                        return
+
+                    if not criteria:
+                        messagebox.showerror("Error", "Criteria is required")
+                        return
+
+                    if not issuer_name:
+                        messagebox.showerror("Error", "Issuer name is required")
                         return
 
                     with transaction() as conn:
@@ -1296,6 +1312,10 @@ class BlockchainCredentialsGUI:
 
                     if not template_name:
                         messagebox.showerror("Error", "Template name is required")
+                        return
+
+                    if not fields:
+                        messagebox.showerror("Error", "Fields are required")
                         return
 
                     # Validate JSON

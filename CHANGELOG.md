@@ -5,6 +5,49 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.37] - 2025-11-15
+
+### Bug Fixes
+
+**Mobile App GUI - Form Validation Fixes:**
+- **CRITICAL FIX**: Fixed incomplete form validation in device registration
+  - Error: Users could submit forms with missing required fields
+  - Added validation for `device_name` field (previously unchecked)
+  - Added validation for `os_version` field (previously unchecked)
+  - Only `user_id` was being validated, allowing incomplete submissions
+  - Now shows specific error messages for each missing field:
+    - "Device Name is required"
+    - "OS Version is required"
+  - Prevents empty/whitespace-only values from being saved to database
+  - File: `university_system/modules/domain/mobility/gui/mobile_app_pwa_gui.py:690-700`
+
+**Blockchain Credentials GUI - Form Validation Fixes:**
+- **CRITICAL FIX**: Fixed incomplete form validation in credential issuance
+  - Added validation for `issue_date` field (previously unchecked)
+  - Now shows error "Issue Date is required" if field is cleared
+  - Prevents credentials from being issued without proper dates
+  - File: `university_system/modules/domain/academics/gui/blockchain_credentials_gui.py:706-716`
+
+- **MAJOR FIX**: Fixed incomplete form validation in badge creation
+  - Added validation for `issuer_name` field (previously unchecked)
+  - Split combined validation into separate checks for better error messages
+  - Now shows specific errors:
+    - "Badge name is required"
+    - "Criteria is required"
+    - "Issuer name is required"
+  - File: `university_system/modules/domain/academics/gui/blockchain_credentials_gui.py:903-913`
+
+- **MAJOR FIX**: Fixed incomplete form validation in template creation
+  - Added validation for `fields` field (previously unchecked)
+  - Prevents templates from being created with empty field definitions
+  - Shows error "Fields are required" if user deletes default JSON
+  - File: `university_system/modules/domain/academics/gui/blockchain_credentials_gui.py:1309-1311`
+
+- **IMPROVEMENT**: Better user experience with specific error messages
+  - All validation now provides field-specific error messages
+  - Users immediately know which field is missing
+  - Prevents confusion from generic "required fields" messages
+
 ## [5.0.36] - 2025-11-15
 
 ### Bug Fixes
