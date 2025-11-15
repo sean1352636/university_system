@@ -363,7 +363,7 @@ This is an automated report from the University Management System.
             # Insert into emails table for sending
             with get_db_connection() as conn:
                 conn.execute("""
-                    INSERT INTO emails (recipient, subject, body, status, created_at)
+                    INSERT INTO emails (recipient, subject, body, status, sent_at)
                     VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
                 """, (recipient, f"Analytics Report: {title}", email_body))
                 conn.commit()

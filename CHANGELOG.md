@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-**Student Analytics - Multiple pandas Errors Fixed:**
+**Student Analytics - Multiple Errors Fixed:**
 
 1. **CRITICAL FIX**: Fixed ValueError - pandas Series ambiguity error
    - Error: "The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all()"
@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Now selects: `sm.id, sm.student_id, sm.module_code, sm.enrollment_date, sm.grade, sm.completion_date, sm.status`
    - Excludes `sm.module_name` and `sm.module_type` since they're selected from modules table
    - File: `student_analytics.py:181-184`
+
+3. **CRITICAL FIX**: Fixed database error - emails table column mismatch
+   - Error: "table emails has no column created_at"
+   - Occurred when sending analytics reports via email
+   - Root cause: INSERT statement used `created_at` column, but emails table schema uses `sent_at`
+   - **Solution**: Changed column name from `created_at` to `sent_at` in INSERT statement
+   - Matches the emails table schema: `sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+   - File: `student_analytics_gui.py:366`
 
 ## [5.0.40] - 2025-11-15
 
