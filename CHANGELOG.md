@@ -5,6 +5,19 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.29] - 2025-11-15
+
+### UI Fix
+
+**Student Support GUI - Full-Screen Tab Content:**
+- **MAJOR FIX**: Tab content now expands to fill full vertical space instead of only top half of screen
+- Added grid row/column configuration to all 21 tab frames (Dashboard, My Tickets, Create Ticket, FAQs, etc.)
+- Converted canvas/scrollbar layout from pack to grid for better expansion control
+- Each tab frame now has `rowconfigure(0, weight=1)` and `columnconfigure(0, weight=1)`
+- All scrollable content areas use `grid(row=0, column=0, sticky="nsew")` for proper expansion
+- Fixes issue where clicking side panel buttons showed content only in top half of window
+- File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
+
 ## [5.0.28] - 2025-11-15
 
 ### UI Enhancement

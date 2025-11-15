@@ -617,10 +617,18 @@ class StudentSupportGUI:
     def show_dashboard(self):
         """Display dashboard"""
         self.clear_content()
-        
+
         dashboard_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(dashboard_frame, text="📊 Dashboard")
-        
+
+        # Configure frame to expand
+        dashboard_frame.rowconfigure(0, weight=1)
+        dashboard_frame.columnconfigure(0, weight=1)
+
+        # Configure frame to expand
+        dashboard_frame.rowconfigure(0, weight=1)
+        dashboard_frame.columnconfigure(0, weight=1)
+
         # Create scrollable area
         canvas = tk.Canvas(dashboard_frame, bg=self.colors['background'], highlightthickness=0)
         scrollbar = ttk.Scrollbar(dashboard_frame, orient="vertical", command=canvas.yview)
@@ -645,8 +653,8 @@ class StudentSupportGUI:
         canvas.bind("<Configure>", on_canvas_configure)
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
         
         # Dashboard content - authentication already checked in __init__
         if not self.auth or not self.auth.current_user:
@@ -827,6 +835,10 @@ class StudentSupportGUI:
         
         search_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(search_frame, text="🔍 Advanced Search")
+
+        # Configure frame to expand
+        search_frame.rowconfigure(0, weight=1)
+        search_frame.columnconfigure(0, weight=1)
         
         # Search form
         form_frame = ttk.LabelFrame(search_frame, text="Search Parameters", padding="10")
@@ -1025,8 +1037,8 @@ class StudentSupportGUI:
             ttk.Button(faq_frame, text="View Full Answer", 
                       command=lambda f=faq: self.show_faq_detail(f)).pack(anchor="w", pady=(5, 0))
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
     
     def create_resources_results_tab(self, resources):
         """Create resources results tab"""
@@ -1071,8 +1083,8 @@ class StudentSupportGUI:
                 ttk.Button(btn_frame, text="Open File", 
                           command=lambda r=resource: self.open_file(r['file_path'])).pack(side="left")
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
     
     def create_kb_results_tab(self, articles):
         """Create knowledge base results tab"""
@@ -1113,8 +1125,8 @@ class StudentSupportGUI:
             ttk.Button(article_frame, text="View Full Article", 
                       command=lambda a=article: self.show_article_detail(a)).pack(anchor="w", pady=(5, 0))
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
     
     def create_suggestions_tab(self, suggestions):
         """Create suggestions tab"""
@@ -1138,7 +1150,15 @@ class StudentSupportGUI:
         
         create_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(create_frame, text="🎫 Create Ticket")
-        
+
+        # Configure frame to expand
+        create_frame.rowconfigure(0, weight=1)
+        create_frame.columnconfigure(0, weight=1)
+
+        # Configure frame to expand
+        create_frame.rowconfigure(0, weight=1)
+        create_frame.columnconfigure(0, weight=1)
+
         # Check authentication
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
             ttk.Label(create_frame, text="❌ Only students can create tickets", 
@@ -1255,8 +1275,8 @@ class StudentSupportGUI:
         ttk.Button(button_frame, text="❌ Cancel", 
                   command=self.show_dashboard).pack(side="left")
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
     
     def on_template_selected(self, event=None):
         """Handle template selection"""
@@ -1402,7 +1422,15 @@ class StudentSupportGUI:
         
         tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="📋 My Tickets")
-        
+
+        # Configure frame to expand
+        tickets_frame.rowconfigure(0, weight=1)
+        tickets_frame.columnconfigure(0, weight=1)
+
+        # Configure frame to expand
+        tickets_frame.rowconfigure(0, weight=1)
+        tickets_frame.columnconfigure(0, weight=1)
+
         # Check authentication
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
             ttk.Label(tickets_frame, text="❌ Access denied", 
@@ -1546,6 +1574,10 @@ class StudentSupportGUI:
         
         tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="🎫 All Tickets")
+
+        # Configure frame to expand
+        tickets_frame.rowconfigure(0, weight=1)
+        tickets_frame.columnconfigure(0, weight=1)
         
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
@@ -1951,8 +1983,8 @@ class StudentSupportGUI:
             response_text.insert(1.0, response['response_text'])
             response_text.config(state='disabled')
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
         
         # Add response button (if permitted)
         if self.can_respond_to_ticket(ticket):
@@ -2064,6 +2096,10 @@ class StudentSupportGUI:
         
         faqs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(faqs_frame, text="❓ FAQs")
+
+        # Configure frame to expand
+        faqs_frame.rowconfigure(0, weight=1)
+        faqs_frame.columnconfigure(0, weight=1)
         
         # Title and search
         header_frame = ttk.Frame(faqs_frame)
@@ -2279,6 +2315,10 @@ class StudentSupportGUI:
         
         prefs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(prefs_frame, text="⚙️ Preferences")
+
+        # Configure frame to expand
+        prefs_frame.rowconfigure(0, weight=1)
+        prefs_frame.columnconfigure(0, weight=1)
         
         ttk.Label(prefs_frame, text="⚙️ User Preferences", 
                  style='Title.TLabel').pack(pady=(0, 20))
@@ -2385,6 +2425,10 @@ class StudentSupportGUI:
         
         notifications_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(notifications_frame, text="🔔 Notifications")
+
+        # Configure frame to expand
+        notifications_frame.rowconfigure(0, weight=1)
+        notifications_frame.columnconfigure(0, weight=1)
         
         # Header
         header_frame = ttk.Frame(notifications_frame)
@@ -2872,6 +2916,10 @@ class StudentSupportGUI:
 
         templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="🔧 Manage Templates")
+
+        # Configure frame to expand
+        templates_frame.rowconfigure(0, weight=1)
+        templates_frame.columnconfigure(0, weight=1)
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
@@ -3442,6 +3490,10 @@ class StudentSupportGUI:
         kb_mgmt_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(kb_mgmt_frame, text="📖 Manage KB")
 
+        # Configure frame to expand
+        kb_mgmt_frame.rowconfigure(0, weight=1)
+        kb_mgmt_frame.columnconfigure(0, weight=1)
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
             ttk.Label(kb_mgmt_frame, text="❌ Staff access required",
@@ -3936,6 +3988,10 @@ class StudentSupportGUI:
         bulk_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(bulk_frame, text="📦 Bulk Operations")
 
+        # Configure frame to expand
+        bulk_frame.rowconfigure(0, weight=1)
+        bulk_frame.columnconfigure(0, weight=1)
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
             ttk.Label(bulk_frame, text="❌ Staff access required",
@@ -4268,8 +4324,8 @@ class StudentSupportGUI:
         ttk.Button(btn_frame, text="❌ Cancel", command=export_dialog.destroy).pack(side="left")
 
         # Pack canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
     
     def perform_export(self, export_type, format_type, filters=None):
         """Perform data export with optional filters"""
@@ -4924,6 +4980,10 @@ class StudentSupportGUI:
         
         user_mgmt_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(user_mgmt_frame, text="User Management")
+
+        # Configure frame to expand
+        user_mgmt_frame.rowconfigure(0, weight=1)
+        user_mgmt_frame.columnconfigure(0, weight=1)
         
         ttk.Label(user_mgmt_frame, text="User Management", 
                  style='Title.TLabel').pack(pady=(0, 20))
@@ -5394,6 +5454,10 @@ class StudentSupportGUI:
         
         templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="📄 Templates")
+
+        # Configure frame to expand
+        templates_frame.rowconfigure(0, weight=1)
+        templates_frame.columnconfigure(0, weight=1)
         
         ttk.Label(templates_frame, text="📄 Ticket Templates", 
                  style='Title.TLabel').pack(pady=(0, 20))
@@ -5562,6 +5626,10 @@ Features:
         
         prefs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(prefs_frame, text="⚙️ Preferences")
+
+        # Configure frame to expand
+        prefs_frame.rowconfigure(0, weight=1)
+        prefs_frame.columnconfigure(0, weight=1)
         
         ttk.Label(prefs_frame, text="⚙️ User Preferences", 
                  style='Title.TLabel').pack(pady=(0, 20))
@@ -5707,6 +5775,10 @@ Features:
         
         kb_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(kb_frame, text="📚 Knowledge Base")
+
+        # Configure frame to expand
+        kb_frame.rowconfigure(0, weight=1)
+        kb_frame.columnconfigure(0, weight=1)
         
         # Title and controls
         header_frame = ttk.Frame(kb_frame)
@@ -5983,8 +6055,8 @@ Features:
         ttk.Button(btn_frame, text="👎 Not helpful", 
                   command=lambda: self.mark_article_not_helpful(article['article_id'])).pack(side="left")
         
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
 
     def mark_article_helpful(self, article_id):
         """Mark article as helpful"""
@@ -6057,6 +6129,10 @@ Features:
         
         resources_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(resources_frame, text="📋 Resources")
+
+        # Configure frame to expand
+        resources_frame.rowconfigure(0, weight=1)
+        resources_frame.columnconfigure(0, weight=1)
 
         header_frame = ttk.Frame(resources_frame)
         header_frame.pack(fill="x", pady=(0, 15))
@@ -6156,6 +6232,10 @@ Features:
         
         templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="📄 Templates")
+
+        # Configure frame to expand
+        templates_frame.rowconfigure(0, weight=1)
+        templates_frame.columnconfigure(0, weight=1)
 
         header_frame = ttk.Frame(templates_frame)
         header_frame.pack(fill="x", pady=(0, 15))
@@ -6599,6 +6679,10 @@ Features:
         
         reports_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(reports_frame, text="📊 Reports")
+
+        # Configure frame to expand
+        reports_frame.rowconfigure(0, weight=1)
+        reports_frame.columnconfigure(0, weight=1)
         
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
