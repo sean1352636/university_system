@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Added proper success/warning feedback to user
    - File: `student_analytics_gui.py:345-377`
 
-5. **CRITICAL FIX**: Fixed email service not available (Enhanced Reporting GUI)
+5. **CRITICAL FIX**: Fixed email service not available (Enhanced Reporting GUI - Part 1)
    - Issue: "Email service not available" error in Enhanced Reporting GUI
    - Root cause: Code was calling `send_email_via_smtp()` with incorrect parameter handling
    - Function signature expected positional args, but was called with keyword args
@@ -58,6 +58,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Sends to each recipient individually with proper error handling
    - Added fallback email body when template rendering fails
    - Files: `enhanced_reporting_gui.py:1632-1683, 5577-5618, 6199-6239`
+
+6. **CRITICAL FIX**: Fixed email service not available (Enhanced Reporting GUI - Part 2)
+   - Issue: "Email service not available. Please check your email configuration" error
+   - Error occurred when sending analytics reports to admin
+   - Root cause: Code tried to import non-existent `EmailService` class
+   - Raised ImportError which was caught and displayed generic error message
+   - **Solution**: Replaced `EmailService` class with `send_email()` function
+   - Changed from `email_service.send_email(to_email=...)` to `send_email(recipient_email=...)`
+   - Updated parameter names to match send_email function signature
+   - Added better error messages showing actual import/exception details
+   - File: `enhanced_reporting_gui.py:6628-6664`
 
 ## [5.0.40] - 2025-11-15
 

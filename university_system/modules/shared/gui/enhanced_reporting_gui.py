@@ -6627,9 +6627,7 @@ University Reporting System""")
 
             # Import email service
             try:
-                from university_system.infrastructure.email.email_service import EmailService
-
-                email_service = EmailService()
+                from university_system.infrastructure.email.email_service import send_email
 
                 # Send email with attachment
                 subject = f"{report_title} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
@@ -6647,11 +6645,11 @@ Best regards,
 University Reporting System
 """
 
-                success = email_service.send_email(
-                    to_email=admin_email,
+                success = send_email(
+                    recipient_email=admin_email,
                     subject=subject,
                     body=body,
-                    attachment_path=temp_file.name
+                    attachments=temp_file.name
                 )
 
                 if success:
@@ -6660,8 +6658,10 @@ University Reporting System
                 else:
                     messagebox.showwarning("Warning", "Email may not have been sent. Check email configuration.")
 
-            except ImportError:
-                messagebox.showerror("Error", "Email service not available. Please check your email configuration.")
+            except ImportError as e:
+                messagebox.showerror("Error", f"Email service not available: {str(e)}\nPlease check your email configuration.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send email: {str(e)}")
             finally:
                 # Clean up temp file
                 try:
