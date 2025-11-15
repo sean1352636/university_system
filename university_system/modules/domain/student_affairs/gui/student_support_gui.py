@@ -467,6 +467,9 @@ class StudentSupportGUI:
         # Content container
         content_container = ttk.Frame(self.main_frame, style='Card.TFrame')
         content_container.grid(row=0, column=1, sticky="nsew")
+        content_container.rowconfigure(0, weight=1)
+        content_container.columnconfigure(0, weight=1)
+        
 
         # Create canvas and scrollbar for content area
         self.content_canvas = tk.Canvas(content_container, highlightthickness=0)
@@ -477,15 +480,24 @@ class StudentSupportGUI:
             "<Configure>",
             lambda e: self.content_canvas.configure(scrollregion=self.content_canvas.bbox("all"))
         )
-
-        self.content_canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
+        
+        # Put content_frame inside the canvas and keep a reference
+        self.content_window = self.content_canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
+        
+        # Keep content_frame width in sync with the canvas width
+        def _on_content_canvas_configure(event):
+            self.content_canvas.itemconfig(self.content_window, width=event.width)
+        
+        self.content_canvas.bind("<Configure>", _on_content_canvas_configure)
+        
         self.content_canvas.configure(yscrollcommand=content_scrollbar.set)
-
+        
         self.content_canvas.pack(side="left", fill="both", expand=True)
         content_scrollbar.pack(side="right", fill="y")
-
+        
         self.content_frame.columnconfigure(0, weight=1)
         self.content_frame.rowconfigure(0, weight=1)
+
 
         # Create notebook for multiple views within the scrollable content
         self.notebook = ttk.Notebook(self.content_frame)
@@ -1766,7 +1778,7 @@ class StudentSupportGUI:
         """Show ticket details in a new window"""
         detail_window = tk.Toplevel(self.root)
         detail_window.title(f"🎫 Ticket #{ticket['ticket_id']} - {ticket['title']}")
-        detail_window.geometry("1200x850")
+        detail_window.geometry("1600x950")
         detail_window.transient(self.root)
         
         # Create notebook for different sections
@@ -2679,7 +2691,7 @@ class StudentSupportGUI:
         """Show dialog to add response to ticket"""
         response_dialog = tk.Toplevel(self.root)
         response_dialog.title(f"💬 Add Response to Ticket #{ticket['ticket_id']}")
-        response_dialog.geometry("800x600")
+        response_dialog.geometry("1400x800")
         response_dialog.transient(self.root)
         response_dialog.grab_set()
         
@@ -2821,7 +2833,7 @@ class StudentSupportGUI:
         """Show FAQ detail in popup"""
         detail_window = tk.Toplevel(self.root)
         detail_window.title(f"❓ {faq['question']}")
-        detail_window.geometry("900x650")
+        detail_window.geometry("1400x850")
         detail_window.transient(self.root)
         
         # Content
@@ -3042,7 +3054,7 @@ class StudentSupportGUI:
         """Create a new ticket template"""
         dialog = tk.Toplevel(self.root)
         dialog.title("➕ Create Ticket Template")
-        dialog.geometry("600x550")
+        dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3139,7 +3151,7 @@ class StudentSupportGUI:
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
         dialog.title(f"✏️ Edit Ticket Template #{template_id}")
-        dialog.geometry("600x550")
+        dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3243,7 +3255,7 @@ class StudentSupportGUI:
         """Create a new response template"""
         dialog = tk.Toplevel(self.root)
         dialog.title("➕ Create Response Template")
-        dialog.geometry("600x550")
+        dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3331,7 +3343,7 @@ class StudentSupportGUI:
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
         dialog.title(f"✏️ Edit Response Template #{template_id}")
-        dialog.geometry("600x550")
+        dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3602,7 +3614,7 @@ class StudentSupportGUI:
         """Create a new KB article"""
         dialog = tk.Toplevel(self.root)
         dialog.title("➕ Create KB Article")
-        dialog.geometry("700x600")
+        dialog.geometry("1300x800")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3703,7 +3715,7 @@ class StudentSupportGUI:
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
         dialog.title(f"✏️ Edit KB Article #{article_id}")
-        dialog.geometry("700x600")
+        dialog.geometry("1300x800")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -3858,7 +3870,7 @@ class StudentSupportGUI:
             # Create detail window
             detail_window = tk.Toplevel(self.root)
             detail_window.title(f"📖 {article['title']}")
-            detail_window.geometry("800x700")
+            detail_window.geometry("1400x850")
 
             # Scrollable frame
             canvas = tk.Canvas(detail_window)
@@ -4135,7 +4147,7 @@ class StudentSupportGUI:
         """Show data export dialog with advanced filters"""
         export_dialog = tk.Toplevel(self.root)
         export_dialog.title("📤 Export Data")
-        export_dialog.geometry("500x650")
+        export_dialog.geometry("1200x800")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
 
@@ -4372,7 +4384,7 @@ class StudentSupportGUI:
         """Show dialog to merge tickets"""
         merge_dialog = tk.Toplevel(self.root)
         merge_dialog.title("Merge Tickets")
-        merge_dialog.geometry("400x300")
+        merge_dialog.geometry("1000x650")
         merge_dialog.transient(self.root)
         merge_dialog.grab_set()
         
@@ -4462,7 +4474,7 @@ class StudentSupportGUI:
             
             history_window = tk.Toplevel(self.root)
             history_window.title(f"Ticket #{ticket_id} History")
-            history_window.geometry("1000x700")
+            history_window.geometry("1500x900")
             history_window.transient(self.root)
             
             # Create scrollable timeline
@@ -4533,7 +4545,7 @@ class StudentSupportGUI:
         """Show dialog to add internal note"""
         note_dialog = tk.Toplevel(self.root)
         note_dialog.title(f"Add Internal Note - Ticket #{ticket['ticket_id']}")
-        note_dialog.geometry("700x450")
+        note_dialog.geometry("1200x700")
         note_dialog.transient(self.root)
         note_dialog.grab_set()
         
@@ -4570,7 +4582,7 @@ class StudentSupportGUI:
         """Show dialog to use response template"""
         template_dialog = tk.Toplevel(self.root)
         template_dialog.title("Use Response Template")
-        template_dialog.geometry("800x600")
+        template_dialog.geometry("1400x800")
         template_dialog.transient(self.root)
         template_dialog.grab_set()
         
@@ -4637,7 +4649,7 @@ class StudentSupportGUI:
         """Show add response dialog with template pre-filled"""
         response_dialog = tk.Toplevel(self.root)
         response_dialog.title(f"Add Response - Ticket #{ticket['ticket_id']}")
-        response_dialog.geometry("800x600")
+        response_dialog.geometry("1400x800")
         response_dialog.transient(self.root)
         response_dialog.grab_set()
         
@@ -4691,7 +4703,7 @@ class StudentSupportGUI:
         """Show dialog to update ticket status"""
         status_dialog = tk.Toplevel(self.root)
         status_dialog.title(f"Update Status - Ticket #{ticket_id}")
-        status_dialog.geometry("400x250")
+        status_dialog.geometry("900x550")
         status_dialog.transient(self.root)
         status_dialog.grab_set()
         
@@ -4743,7 +4755,7 @@ class StudentSupportGUI:
         
         rating_dialog = tk.Toplevel(self.root)
         rating_dialog.title("Submit Satisfaction Rating")
-        rating_dialog.geometry("700x550")
+        rating_dialog.geometry("1300x800")
         rating_dialog.transient(self.root)
         rating_dialog.grab_set()
         
@@ -4833,7 +4845,7 @@ class StudentSupportGUI:
         
         export_dialog = tk.Toplevel(self.root)
         export_dialog.title("Export Data")
-        export_dialog.geometry("700x550")
+        export_dialog.geometry("1300x800")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
         
@@ -5037,7 +5049,7 @@ class StudentSupportGUI:
         
         role_dialog = tk.Toplevel(self.root)
         role_dialog.title(f"Change Role - {username}")
-        role_dialog.geometry("300x200")
+        role_dialog.geometry("800x500")
         role_dialog.transient(self.root)
         role_dialog.grab_set()
         
@@ -5467,7 +5479,7 @@ class StudentSupportGUI:
         """Show help dialog"""
         help_dialog = tk.Toplevel(self.root)
         help_dialog.title("📖 User Guide")
-        help_dialog.geometry("800x650")
+        help_dialog.geometry("1400x850")
         help_dialog.transient(self.root)
         
         # Help content
@@ -5914,7 +5926,7 @@ Features:
         """Show full article in a new window"""
         detail_window = tk.Toplevel(self.root)
         detail_window.title(f"📖 {article['title']}")
-        detail_window.geometry("1000x750")
+        detail_window.geometry("1500x900")
         detail_window.transient(self.root)
         
         # Create scrollable content
@@ -6629,7 +6641,7 @@ Features:
         # Show date range dialog
         date_dialog = tk.Toplevel(self.root)
         date_dialog.title("📅 Report Date Range")
-        date_dialog.geometry("400x200")
+        date_dialog.geometry("900x550")
         date_dialog.transient(self.root)
         date_dialog.grab_set()
         
@@ -6687,7 +6699,7 @@ Features:
         """Show generated report in a new window"""
         report_window = tk.Toplevel(self.root)
         report_window.title(f"📊 {report_type.replace('_', ' ').title()} Report")
-        report_window.geometry("1200x850")
+        report_window.geometry("1600x950")
         
         # Create notebook for different views
         report_notebook = ttk.Notebook(report_window, padding="10")

@@ -5,6 +5,22 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.27] - 2025-11-15
+
+### UI Enhancement
+
+**Student Support GUI - Dialog Window Sizes:**
+- Significantly increased all dialog window sizes to better fill the screen
+- Ticket detail windows: 1200x850 → 1600x950
+- Response dialogs: 800x600 → 1400x800
+- FAQ detail windows: 900x650 → 1400x850
+- Category/tag/template dialogs: 600x550 → 1200x750
+- Help/article/export dialogs: 700x600 → 1300x800
+- History/report windows: 1000x700 → 1500x900
+- Status/role/date dialogs: Increased to 800x500 - 900x550
+- Eliminates large gaps and provides better content visibility
+- File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
+
 ## [5.0.26] - 2025-11-15
 
 ### UI Fix
