@@ -5,6 +5,56 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.11] - 2025-11-15
+
+### Fixed - Student Union GUI Authentication Integration
+
+**Authentication Issues Resolved**
+
+Fixed critical authentication bug where Student Union GUI would fail to load when opened from the main GUI system.
+
+**Issues Fixed:**
+
+1. **Embedded Mode Authentication:**
+   - StudentUnionGUI now properly retrieves authenticated user in both standalone and embedded modes
+   - Fixed "You must be logged in" error when opening from main GUI
+   - GUI now correctly initializes with current_user from UserAuth singleton
+
+2. **Initialization Flow:**
+   - Unified authentication check for both parent and non-parent initialization
+   - setup_gui() now called for both embedded and standalone modes
+   - Dashboard only shown for standalone mode (prevents duplicate display)
+   - Authentication manager (self.auth_manager) now properly set
+
+3. **Integration Methods:**
+   - Confirmed all integration methods exist (show_club_selection_for_merchandise, etc.)
+   - Fixed method visibility when GUI is initialized in embedded mode
+
+**Technical Changes:**
+
+- Refactored `__init__` method to handle authentication uniformly
+- Database setup now called for all initialization modes
+- UserAuth singleton accessed once and stored in self.auth_manager
+- Improved error handling for non-authenticated access
+
+**Before:**
+```python
+# Authentication only checked in standalone mode
+if not parent:
+    auth = UserAuth()
+    # ... check and setup
+```
+
+**After:**
+```python
+# Authentication always checked and set
+auth = UserAuth()
+if not auth.current_user:
+    # ... error handling
+self.current_user = {...}
+self.auth_manager = auth
+```
+
 ## [5.0.10] - 2025-11-15
 
 ### Changed - Student Union GUI Complete Navigation Redesign

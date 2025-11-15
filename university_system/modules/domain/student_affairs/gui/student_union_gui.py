@@ -45,43 +45,51 @@ class StudentUnionGUI:
         self.root.title("Student Union Management System")
         self.root.geometry("1400x900")
         self.root.minsize(1000, 700)
-        
+
         # Initialize variables
         self.current_user = None
         self.auth_manager = None
-        
+
         # Use centralized path configuration
         # Always use the central student_records.db in university_system/data/db_files
         self.db_path = str(paths.DEFAULT_DB_PATH)
-        
+
         # GUI components
         self.main_frame = None
         self.content_frame = None
         self.status_bar = None
         self.menu_bar = None
-        
-        # Setup the application only if not embedded
-        if not parent:
-            self.setup_database()
-            self.setup_gui()
-            # Check if user is authenticated via central system
-            auth = UserAuth()
-            if not auth.current_user:
-                messagebox.showerror(
-                    "Authentication Required",
-                    "Please log in through the main University System GUI.\n\n"
-                    "Run: python run.py --gui\n\n"
-                    "Student Union can only be accessed after logging in through the main system."
-                )
+
+        # Setup database
+        self.setup_database()
+
+        # Get authenticated user from UserAuth singleton
+        auth = UserAuth()
+        if not auth.current_user:
+            messagebox.showerror(
+                "Authentication Required",
+                "Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui\n\n"
+                "Student Union can only be accessed after logging in through the main system."
+            )
+            if not parent:  # Only destroy if standalone window
                 self.root.destroy()
-                return
-            # User is authenticated, get their info
-            self.current_user = {
-                'id': auth.current_user['id'],
-                'username': auth.current_user['username'],
-                'email': auth.current_user.get('email', ''),
-                'role': auth.current_user['role']
-            }
+            return
+
+        # User is authenticated, get their info
+        self.current_user = {
+            'id': auth.current_user['id'],
+            'username': auth.current_user['username'],
+            'email': auth.current_user.get('email', ''),
+            'role': auth.current_user['role']
+        }
+        self.auth_manager = auth
+
+        # Setup GUI (works for both embedded and standalone)
+        self.setup_gui()
+
+        # Show dashboard only if standalone
+        if not parent:
             self.show_main_dashboard()
     
     # ------------------------------------------------------------------ helpers
