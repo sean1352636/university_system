@@ -318,12 +318,9 @@ class StudentUnionGUI:
         style.configure('SidebarHeader.TLabel', background='#34495e', foreground='white',
                        font=('Arial', 11, 'bold'), padding=10)
 
-        # Minimal menu bar (just File menu for Exit)
+        # Menu bar setup (without File menu)
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
-        file_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Exit", command=self.root.quit)
 
         # Main container - horizontal split
         main_container = ttk.Frame(self.root)
@@ -511,7 +508,11 @@ class StudentUnionGUI:
         self.add_sidebar_button("About", self.show_about, "ℹ️")
         if CLI_AVAILABLE:
             self.add_sidebar_button("Switch to CLI", self.switch_to_cli, "💻")
-    
+
+        # Force scrollregion update to ensure all buttons are accessible
+        self.scrollable_sidebar.update_idletasks()
+        self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
+
     def clear_content(self):
         """Clear the current content frame"""
         if self.content_frame:
@@ -662,13 +663,6 @@ class StudentUnionGUI:
         is_admin = self.is_admin()
         is_staff = self.is_staff()
         is_student = self.is_student()
-
-        # File menu
-        file_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.menu_bar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Profile", command=self.show_profile)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
 
         # Tools menu
         tools_menu = tk.Menu(self.menu_bar, tearoff=0)

@@ -5,6 +5,54 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.24] - 2025-11-15
+
+### UI/UX - Student Union GUI Navigation Improvements
+
+**Removed File Menu & Enhanced Navigation**
+
+Streamlined the Student Union GUI interface by removing unnecessary exit options and improving sidebar accessibility.
+
+**Changes Made:**
+
+1. **Removed File Menu Dropdown:**
+   - Deleted File menu from simple menu bar (initialization)
+   - Deleted File menu from full menu bar
+   - Removed "Exit" menu option
+   - Removed "Profile" duplicate (already in sidebar)
+   - Cleaner, less cluttered menu bar
+
+2. **Return to Home Button:**
+   - Already exists at top-right of screen
+   - Labeled "🏠 Return to Main Menu"
+   - Properly positioned using `place(relx=1.0, rely=0.0, anchor="ne")`
+   - Visible and functional for returning to main university system
+
+3. **Fixed Sidebar Button Cutoff:**
+   - Added `update_idletasks()` call after building sidebar
+   - Forced scrollregion recalculation with `bbox("all")`
+   - Ensures all sidebar buttons are accessible via scrolling
+   - Bottom 2 buttons (About, Switch to CLI) now fully visible
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py`:
+  - Lines 321-323: Removed File menu from simple menu bar setup
+  - Lines 659-661: Removed File menu from full menu bar setup
+  - Lines 512-514: Added scrollregion update at end of `build_sidebar_navigation()`
+
+**User Experience:**
+- ✅ No more duplicate navigation options
+- ✅ Return to Home button clearly visible at top-right
+- ✅ All sidebar buttons accessible via scroll
+- ✅ Cleaner, more intuitive interface
+- ✅ No accidental exits from using top menu
+
+**Technical Details:**
+- File menu removed without affecting other menus (Tools, Integrations, etc.)
+- Scrollable sidebar properly updates scrollregion after all widgets added
+- Return to Home button uses existing `return_to_main_menu()` method
+- Backward compatible - no breaking changes
+
 ## [5.0.23] - 2025-11-15
 
 ### Enhanced - Student Union GUI Complete Implementation
