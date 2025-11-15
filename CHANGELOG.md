@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.30] - 2025-11-15
 
-### Bug Fix
+### Bug Fixes
 
 **Student Support GUI - DateTime Import Error:**
 - **CRITICAL FIX**: Corrected incorrect datetime module usage causing AttributeError
@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed 2 instances of `datetime.timedelta()` → `timedelta()` (lines 4936, 5355)
 - Error occurred because file uses `from datetime import datetime, timedelta` (line 4)
 - Fixes crash when clicking "Export Data" button or escalating tickets
+
+**Student Support GUI - Missing get_connection Import:**
+- **CRITICAL FIX**: Added missing `get_connection` imports causing NameError
+- Added import before line 4827 (satisfaction rating function)
+- Added import before line 5007 (user management - load users)
+- Added import before line 5145 (change user role fallback)
+- Fixes "error loading users name get_connection is not defined"
 - File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
 
 ## [5.0.29] - 2025-11-15

@@ -4823,6 +4823,7 @@ class StudentSupportGUI:
         
         # Get resolved tickets for this student
         try:
+            from university_system.infrastructure.database.db import get_connection
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
@@ -5002,6 +5003,7 @@ class StudentSupportGUI:
         
         # Load users
         try:
+            from university_system.infrastructure.database.db import get_connection
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('SELECT id, username, role, student_id FROM users ORDER BY username')
@@ -5139,6 +5141,7 @@ class StudentSupportGUI:
                         return
                 else:
                     # Fallback to direct DB access
+                    from university_system.infrastructure.database.db import get_connection
                     conn = get_connection()
                     cursor = conn.cursor()
                     cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
