@@ -72,6 +72,14 @@ class ApplicationManager:
                           semester: str, application_fee_paid: bool = False) -> int:
         try:
             with transaction() as conn:
+                # Verify prospect exists first
+                cursor = conn.execute(
+                    'SELECT prospect_id FROM admission_prospects WHERE prospect_id = ?',
+                    (prospect_id,)
+                )
+                if not cursor.fetchone():
+                    raise ValueError(f"Prospect ID {prospect_id} does not exist. Please create the prospect first.")
+
                 cursor = conn.execute('''
                     INSERT INTO admission_applications (
                         prospect_id, application_type, program_applied,
@@ -87,7 +95,13 @@ class ApplicationManager:
                     WHERE prospect_id = ?
                 ''', (prospect_id,))
                 return application_id
+        except ValueError as ve:
+            # Re-raise ValueError with clear message
+            raise ve
         except Exception as e:
+            # Check for foreign key constraint error
+            if "FOREIGN KEY constraint failed" in str(e):
+                raise Exception(f"Cannot create application: Prospect ID {prospect_id} does not exist in the system.")
             raise Exception(f"Error submitting application: {e}")
 
     @staticmethod
@@ -95,6 +109,14 @@ class ApplicationManager:
                        document_name: str, file_url: str) -> int:
         try:
             with transaction() as conn:
+                # Verify application exists first
+                cursor = conn.execute(
+                    'SELECT application_id FROM admission_applications WHERE application_id = ?',
+                    (application_id,)
+                )
+                if not cursor.fetchone():
+                    raise ValueError(f"Application ID {application_id} does not exist.")
+
                 cursor = conn.execute('''
                     INSERT INTO application_documents (
                         application_id, document_type, document_name, file_url
@@ -102,7 +124,11 @@ class ApplicationManager:
                 ''', (application_id, document_type, document_name, file_url))
                 document_id = cursor.lastrowid
                 return document_id
+        except ValueError as ve:
+            raise ve
         except Exception as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                raise Exception(f"Cannot upload document: Application ID {application_id} does not exist.")
             raise Exception(f"Error uploading document: {e}")
 
     @staticmethod
@@ -143,6 +169,14 @@ class ReviewWorkflowManager:
         """Assign a reviewer to an application"""
         try:
             with transaction() as conn:
+                # Verify application exists first
+                cursor = conn.execute(
+                    'SELECT application_id FROM admission_applications WHERE application_id = ?',
+                    (application_id,)
+                )
+                if not cursor.fetchone():
+                    raise ValueError(f"Application ID {application_id} does not exist.")
+
                 cursor = conn.execute('''
                     INSERT INTO application_reviews (
                         application_id, reviewer_id, review_stage
@@ -150,7 +184,11 @@ class ReviewWorkflowManager:
                 ''', (application_id, reviewer_id, review_stage))
                 review_id = cursor.lastrowid
                 return review_id
+        except ValueError as ve:
+            raise ve
         except Exception as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                raise Exception(f"Cannot assign reviewer: Application ID {application_id} does not exist.")
             raise Exception(f"Error assigning reviewer: {e}")
 
     @staticmethod
@@ -158,6 +196,14 @@ class ReviewWorkflowManager:
                      score: Optional[int], recommendation: str, comments: str = "") -> int:
         try:
             with transaction() as conn:
+                # Verify application exists first
+                cursor = conn.execute(
+                    'SELECT application_id FROM admission_applications WHERE application_id = ?',
+                    (application_id,)
+                )
+                if not cursor.fetchone():
+                    raise ValueError(f"Application ID {application_id} does not exist.")
+
                 cursor = conn.execute('''
                     INSERT INTO application_reviews (
                         application_id, reviewer_id, review_stage,
@@ -172,7 +218,11 @@ class ReviewWorkflowManager:
                     WHERE application_id = ?
                 ''', (f"in_review_{review_stage}", application_id))
                 return review_id
+        except ValueError as ve:
+            raise ve
         except Exception as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                raise Exception(f"Cannot create review: Application ID {application_id} does not exist.")
             raise Exception(f"Error creating review: {e}")
 
     @staticmethod

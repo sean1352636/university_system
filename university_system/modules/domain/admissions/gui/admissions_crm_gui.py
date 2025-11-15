@@ -836,6 +836,29 @@ class SubmitApplicationDialog:
                 messagebox.showerror("Error", "Program is required")
                 return
 
+            # Validate prospect exists before creating application
+            with get_connection() as conn:
+                cursor = conn.execute(
+                    'SELECT prospect_id, first_name, last_name FROM admission_prospects WHERE prospect_id = ?',
+                    (prospect_id,)
+                )
+                prospect = cursor.fetchone()
+
+            if not prospect:
+                messagebox.showerror(
+                    "Error",
+                    f"Prospect ID {prospect_id} not found. Please verify the prospect exists in the Prospects tab first."
+                )
+                return
+
+            # Show confirmation with prospect name
+            prospect_name = f"{prospect['first_name']} {prospect['last_name']}"
+            if not messagebox.askyesno(
+                "Confirm Application",
+                f"Submit application for {prospect_name} (ID: {prospect_id})?"
+            ):
+                return
+
             application_id = ApplicationManager.submit_application(
                 prospect_id=prospect_id,
                 application_type=self.type_combo.get(),
@@ -847,12 +870,12 @@ class SubmitApplicationDialog:
             log_activity(f'Submitted application (ID: {application_id}) for prospect {prospect_id}',
                         user=self.auth.current_user.get('username'))
 
-            messagebox.showinfo("Success", f"Application submitted (ID: {application_id})")
+            messagebox.showinfo("Success", f"Application submitted (ID: {application_id}) for {prospect_name}")
             self.callback()
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid prospect ID")
+            messagebox.showerror("Error", "Invalid prospect ID - must be a number")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to submit application: {e}")
 

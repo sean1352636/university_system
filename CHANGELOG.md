@@ -5,6 +5,45 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.35] - 2025-11-15
+
+### Bug Fixes
+
+**Admissions & Recruitment CRM GUI - Foreign Key Constraint Fixes:**
+- **CRITICAL FIX**: Fixed Foreign Key constraint failures in application submission
+  - Error: "Transaction failed, rolling back: FOREIGN KEY constraint failed"
+  - Added prospect_id validation in SubmitApplicationDialog before creating application
+  - Validates prospect exists in admission_prospects table before INSERT
+  - Shows user-friendly error message with guidance to create prospect first
+  - Added confirmation dialog showing prospect name before submitting application
+  - File: `university_system/modules/domain/admissions/gui/admissions_crm_gui.py:830-880`
+
+- **MAJOR FIX**: Enhanced ApplicationManager with Foreign Key validation
+  - Added prospect existence check before inserting into admission_applications
+  - Validates prospect_id exists with explicit error message if not found
+  - Catches Foreign Key constraint errors and provides clear user-facing messages
+  - Error message: "Cannot create application: Prospect ID X does not exist in the system"
+  - File: `university_system/modules/domain/admissions/services/admissions_crm_core.py:69-105`
+
+- **MAJOR FIX**: Enhanced ReviewWorkflowManager with Foreign Key validation
+  - Fixed assign_reviewer() to validate application_id exists before INSERT
+  - Fixed create_review() to validate application_id exists before INSERT
+  - Added explicit foreign key error handling with clear messages
+  - Prevents reviews from being created for non-existent applications
+  - File: `university_system/modules/domain/admissions/services/admissions_crm_core.py:155-214`
+
+- **ENHANCEMENT**: Enhanced ApplicationManager.upload_document with validation
+  - Added application_id existence check before uploading documents
+  - Prevents document uploads for non-existent applications
+  - Clear error message: "Cannot upload document: Application ID X does not exist"
+  - File: `university_system/modules/domain/admissions/services/admissions_crm_core.py:107-132`
+
+- **IMPROVEMENT**: Better error messages throughout
+  - All ValueError exceptions re-raised with original messages
+  - Foreign Key constraint errors detected and converted to user-friendly messages
+  - Consistent error messaging pattern across all managers
+  - Users now get actionable feedback instead of database errors
+
 ## [5.0.34] - 2025-11-15
 
 ### Bug Fixes & Enhancements
