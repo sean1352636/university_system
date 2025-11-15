@@ -2,10 +2,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import threading
 import time
+import os
+import json
 from datetime import datetime
-from university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
+from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from university_system.utils.ai.university_chatbot import LIBRARIES_AVAILABLE
 from university_system.infrastructure.shared_context import get_auth
+from university_system.modules.shared.utils.activity_logger import log_activity
 
 class ChatbotGUI:
     """Modern GUI interface for the University Chatbot"""
@@ -51,6 +54,21 @@ class ChatbotGUI:
 
         # Check if user is already authenticated and use current user
         self.setup_current_user()
+
+        # Initialize helper systems
+        self.show_notification = self.create_notification_system()
+        self.show_search = self.create_search_functionality()
+        self.apply_theme = self.create_theme_manager()
+        self.update_session_stats, self.get_session_summary = self.create_session_management()
+
+        # Add menu bar
+        self.add_menu_bar()
+
+        # Setup keyboard shortcuts
+        self.setup_keyboard_shortcuts()
+
+        # Log activity
+        log_activity('open', 'chatbot_gui', None, details={'user': self.current_user.get('username') if self.current_user else 'Unknown'})
 
         # Show chat screen (user is already authenticated)
         self.show_chat_screen()
@@ -123,6 +141,81 @@ class ChatbotGUI:
             'chat': ('Segoe UI', 10, 'normal'),
             'chat_bold': ('Segoe UI', 10, 'bold')  # Add bold variant
         }
+
+    def get_user_context(self):
+        """Get context-aware information from database for current user"""
+        try:
+            if not self.current_user:
+                return {}
+
+            context = {
+                'courses': [],
+                'grades': [],
+                'schedule': [],
+                'notifications': []
+            }
+
+            username = self.current_user.get('username', '')
+            role = self.current_user.get('role', '')
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get user's courses (if student)
+                if role == 'student':
+                    cursor.execute('''
+                        SELECT DISTINCT c.course_id, c.course_name, c.credits
+                        FROM courses c
+                        JOIN enrollments e ON c.course_id = e.course_id
+                        WHERE e.student_id = ?
+                        AND e.status = 'active'
+                        LIMIT 10
+                    ''', (username,))
+                    courses = cursor.fetchall()
+                    context['courses'] = [{'id': c[0], 'name': c[1], 'credits': c[2]} for c in courses]
+
+                    # Get recent grades
+                    cursor.execute('''
+                        SELECT c.course_name, g.grade, g.points, g.date_recorded
+                        FROM grades g
+                        JOIN courses c ON g.course_id = c.course_id
+                        WHERE g.student_id = ?
+                        ORDER BY g.date_recorded DESC
+                        LIMIT 5
+                    ''', (username,))
+                    grades = cursor.fetchall()
+                    context['grades'] = [{'course': g[0], 'grade': g[1], 'points': g[2], 'date': g[3]} for g in grades]
+
+                # Get instructor's courses
+                elif role == 'instructor':
+                    cursor.execute('''
+                        SELECT course_id, course_name, credits, semester
+                        FROM courses
+                        WHERE instructor_id = ?
+                        LIMIT 10
+                    ''', (username,))
+                    courses = cursor.fetchall()
+                    context['courses'] = [{'id': c[0], 'name': c[1], 'credits': c[2], 'semester': c[3]} for c in courses]
+
+                # Get pending notifications/tasks
+                try:
+                    cursor.execute('''
+                        SELECT message, created_at
+                        FROM notifications
+                        WHERE user_id = ? AND read = 0
+                        ORDER BY created_at DESC
+                        LIMIT 5
+                    ''', (username,))
+                    notifications = cursor.fetchall()
+                    context['notifications'] = [{'message': n[0], 'date': n[1]} for n in notifications]
+                except:
+                    pass  # Table might not exist
+
+            return context
+
+        except Exception as e:
+            print(f"Error getting user context: {e}")
+            return {}
 
     def create_chat_screen(self):
         """Create main chat interface - with fixed font handling"""
@@ -214,26 +307,26 @@ class ChatbotGUI:
         # Quick actions frame
         quick_actions_frame = ttk.LabelFrame(self.chat_frame, text="Quick Actions", padding=10)
         quick_actions_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        # Quick action buttons
+
+        # Context-aware quick action buttons
         quick_buttons = [
-            ("Course Information", lambda: self.quick_message("Tell me about available courses")),
-            ("Check Grades", lambda: self.quick_message("How can I check my grades?")),
-            ("Registration Help", lambda: self.quick_message("Help me with course registration")),
-            ("Financial Aid", lambda: self.quick_message("What financial aid options are available?")),
-            ("Technical Support", lambda: self.quick_message("I need technical support")),
-            ("Voice Help", lambda: self.quick_message("How do I use voice commands?"))
+            ("My Courses", self.show_my_courses),
+            ("My Grades", self.show_my_grades),
+            ("Search Courses", lambda: self.quick_message("Show me available courses for registration")),
+            ("Check Financial Aid", self.show_financial_aid),
+            ("View Schedule", self.show_my_schedule),
+            ("Get Help", lambda: self.quick_message("I need help with the system"))
         ]
-        
+
         for i, (text, command) in enumerate(quick_buttons):
             row = i // 3
             col = i % 3
-            btn = ttk.Button(quick_actions_frame, 
-                            text=text, 
+            btn = ttk.Button(quick_actions_frame,
+                            text=text,
                             style='Secondary.TButton',
                             command=command)
             btn.grid(row=row, column=col, padx=5, pady=5, sticky='ew')
-        
+
         # Configure grid weights for quick actions
         for i in range(3):
             quick_actions_frame.columnconfigure(i, weight=1)
@@ -1438,7 +1531,10 @@ For technical support, contact IT Services."""
     
     def hide_all_screens(self):
         """Hide all screen frames"""
-        for frame in [self.chat_frame, self.settings_frame]:
+        frames_to_hide = [self.chat_frame, self.settings_frame]
+        if hasattr(self, 'admin_frame'):
+            frames_to_hide.append(self.admin_frame)
+        for frame in frames_to_hide:
             frame.pack_forget()
 
     def handle_exit(self):
@@ -1466,20 +1562,24 @@ For technical support, contact IT Services."""
         """Send user message to chatbot"""
         if not self.conversation_active:
             return
-        
+
         message = self.message_entry.get("1.0", tk.END).strip()
         if not message:
             return
-        
+
         # Clear input
         self.message_entry.delete("1.0", tk.END)
-        
+
         # Add user message to chat
         self.add_chat_message(self.current_user.get("username", "User"), message, "user")
-        
+
+        # Update session stats
+        if hasattr(self, 'update_session_stats'):
+            self.update_session_stats("text")
+
         # Update status
         self.status_label.config(text="Processing...")
-        
+
         # Process message directly to avoid threading issues
         try:
             user_id = self.current_user.get("username", "gui_user")
@@ -1494,29 +1594,197 @@ For technical support, contact IT Services."""
             # Add bot response to chat
             self.add_chat_message("Chatbot", response, "bot")
 
+            # Log activity
+            log_activity('chat', 'chatbot_message', None,
+                        details={'user': user_id, 'message_length': len(message)})
+
         except Exception as e:
             error_response = f"I apologize, but I encountered an error: {e}"
             self.add_chat_message("Chatbot", error_response, "bot")
-        
+
         # Update status
         self.status_label.config(text="Ready")
-        
+
         # Text-to-speech if enabled
-        if (hasattr(self, 'voice_tts_enabled') and 
-            self.voice_tts_enabled.get() and 
+        if (hasattr(self, 'voice_tts_enabled') and
+            self.voice_tts_enabled.get() and
             LIBRARIES_AVAILABLE.get('pyttsx3', False)):
-            threading.Thread(target=self.chatbot.text_to_speech, 
+            threading.Thread(target=self.chatbot.text_to_speech,
                            args=(response,), daemon=True).start()
     
     def quick_message(self, message):
         """Send a quick action message"""
         if not self.conversation_active:
             return
-        
+
         # Set message in input and send
         self.message_entry.delete("1.0", tk.END)
         self.message_entry.insert("1.0", message)
         self.send_message()
+
+    def show_my_courses(self):
+        """Show user's enrolled courses with real database data"""
+        try:
+            context = self.get_user_context()
+            courses = context.get('courses', [])
+
+            if not courses:
+                response = "You are not currently enrolled in any courses. Visit the registration page to enroll in courses."
+                self.add_chat_message("Chatbot", response, "bot")
+                return
+
+            response = f"📚 **Your Enrolled Courses ({len(courses)} total):**\n\n"
+            for course in courses:
+                response += f"• **{course['name']}** (ID: {course['id']})\n"
+                response += f"  Credits: {course.get('credits', 'N/A')}\n\n"
+
+            response += "Would you like more details about any specific course?"
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'courses', None, details={'user': self.current_user.get('username')})
+
+        except Exception as e:
+            error_msg = f"Error fetching courses: {e}"
+            self.add_chat_message("Chatbot", error_msg, "bot")
+
+    def show_my_grades(self):
+        """Show user's recent grades with real database data"""
+        try:
+            context = self.get_user_context()
+            grades = context.get('grades', [])
+
+            if not grades:
+                response = "No grades are currently available. Grades will appear here once your instructors post them."
+                self.add_chat_message("Chatbot", response, "bot")
+                return
+
+            response = f"📊 **Your Recent Grades ({len(grades)} entries):**\n\n"
+            for grade in grades:
+                response += f"• **{grade['course']}**\n"
+                response += f"  Grade: {grade['grade']} ({grade['points']} points)\n"
+                response += f"  Posted: {grade['date']}\n\n"
+
+            # Calculate average if possible
+            try:
+                numeric_grades = [g['points'] for g in grades if g['points'] is not None]
+                if numeric_grades:
+                    avg = sum(numeric_grades) / len(numeric_grades)
+                    response += f"\n**Average: {avg:.2f} points**"
+            except:
+                pass
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'grades', None, details={'user': self.current_user.get('username')})
+
+        except Exception as e:
+            error_msg = f"Error fetching grades: {e}"
+            self.add_chat_message("Chatbot", error_msg, "bot")
+
+    def show_financial_aid(self):
+        """Show financial aid information"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Try to get user's financial aid applications
+                try:
+                    cursor.execute('''
+                        SELECT application_type, status, amount, application_date
+                        FROM financial_aid_applications
+                        WHERE student_id = ?
+                        ORDER BY application_date DESC
+                        LIMIT 5
+                    ''', (self.current_user.get('username'),))
+                    applications = cursor.fetchall()
+
+                    if applications:
+                        response = "💰 **Your Financial Aid Applications:**\n\n"
+                        for app in applications:
+                            response += f"• **{app[0]}**\n"
+                            response += f"  Status: {app[1]}\n"
+                            response += f"  Amount: ${app[2]:,.2f}\n"
+                            response += f"  Applied: {app[3]}\n\n"
+                    else:
+                        response = "You have no financial aid applications on record.\n\n"
+                except:
+                    response = ""
+
+                # Show available aid programs
+                response += "**Available Financial Aid Programs:**\n\n"
+                response += "• Merit Scholarships\n"
+                response += "• Need-Based Grants\n"
+                response += "• Student Loans\n"
+                response += "• Work-Study Programs\n\n"
+                response += "Visit the Financial Aid office for personalized assistance or to apply."
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'financial_aid', None, details={'user': self.current_user.get('username')})
+
+        except Exception as e:
+            error_msg = f"Error fetching financial aid info: {e}"
+            self.add_chat_message("Chatbot", error_msg, "bot")
+
+    def show_my_schedule(self):
+        """Show user's class schedule"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get schedule if available
+                try:
+                    cursor.execute('''
+                        SELECT c.course_name, s.day_of_week, s.start_time, s.end_time,
+                               s.room_number, s.building
+                        FROM course_schedule s
+                        JOIN courses c ON s.course_id = c.course_id
+                        JOIN enrollments e ON c.course_id = e.course_id
+                        WHERE e.student_id = ? AND e.status = 'active'
+                        ORDER BY
+                            CASE s.day_of_week
+                                WHEN 'Monday' THEN 1
+                                WHEN 'Tuesday' THEN 2
+                                WHEN 'Wednesday' THEN 3
+                                WHEN 'Thursday' THEN 4
+                                WHEN 'Friday' THEN 5
+                                WHEN 'Saturday' THEN 6
+                                WHEN 'Sunday' THEN 7
+                            END,
+                            s.start_time
+                    ''', (self.current_user.get('username'),))
+                    schedule = cursor.fetchall()
+
+                    if schedule:
+                        response = "📅 **Your Class Schedule:**\n\n"
+                        current_day = None
+                        for item in schedule:
+                            if item[1] != current_day:
+                                current_day = item[1]
+                                response += f"\n**{current_day}:**\n"
+                            response += f"• {item[0]}\n"
+                            response += f"  Time: {item[2]} - {item[3]}\n"
+                            response += f"  Location: {item[5]} {item[4]}\n"
+                    else:
+                        response = "No schedule information available. Your courses may not have scheduled times yet."
+
+                except Exception as e:
+                    print(f"Schedule error: {e}")
+                    # Fallback: show courses without schedule
+                    context = self.get_user_context()
+                    courses = context.get('courses', [])
+                    if courses:
+                        response = "📅 **Your Courses:**\n\n"
+                        for course in courses:
+                            response += f"• {course['name']}\n"
+                        response += "\n(Detailed schedule times not yet available)"
+                    else:
+                        response = "No courses found. Enroll in courses to see your schedule."
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'schedule', None, details={'user': self.current_user.get('username')})
+
+        except Exception as e:
+            error_msg = f"Error fetching schedule: {e}"
+            self.add_chat_message("Chatbot", error_msg, "bot")
     
     def add_chat_message(self, sender, message, msg_type="user"):
         """Add message to chat display"""
