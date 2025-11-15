@@ -5,6 +5,22 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.39] - 2025-11-15
+
+### Bug Fixes
+
+**Student Analytics - Module Popularity Analysis Fix:**
+- **CRITICAL FIX**: Fixed pandas Series ambiguity error in module popularity analysis
+  - Error: "The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all()."
+  - Occurred in `simulate_module_data()` method when checking module_type column
+  - Root cause: Using `or` operator with pandas Series in compound condition
+  - Changed from: `if 'module_type' not in df.columns or df['module_type'].isna().all():`
+  - Changed to: Split into two separate conditions using `if/elif`
+  - First check if column doesn't exist, then check if all values are NaN
+  - Prevents pandas from trying to evaluate Series as boolean in `or` expression
+  - Module Popularity analysis now runs without errors
+  - File: `university_system/modules/shared/services/analytics/student_analytics.py:239-242`
+
 ## [5.0.38] - 2025-11-15
 
 ### Major Enhancements
