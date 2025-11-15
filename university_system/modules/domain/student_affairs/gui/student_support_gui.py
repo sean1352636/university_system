@@ -620,10 +620,17 @@ class StudentSupportGUI:
         )
 
         scroll_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.bind(
-            "<Configure>",
-            lambda e: canvas.itemconfigure(scroll_window, width=e.width)
-        )
+
+        def on_canvas_configure(event):
+            # Make the scrollable frame fill the canvas width
+            canvas.itemconfigure(scroll_window, width=event.width)
+            # If content is smaller than canvas, expand scrollable_frame to fill canvas height
+            canvas_height = event.height
+            content_height = scrollable_frame.winfo_reqheight()
+            if content_height < canvas_height:
+                canvas.itemconfigure(scroll_window, height=canvas_height)
+
+        canvas.bind("<Configure>", on_canvas_configure)
         canvas.configure(yscrollcommand=scrollbar.set)
         
         canvas.pack(side="left", fill="both", expand=True)

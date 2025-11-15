@@ -5,6 +5,16 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.26] - 2025-11-15
+
+### UI Fix
+
+**Student Support GUI - Dashboard Tab:**
+- Fixed dashboard tab window size issue where content did not expand to fill available space
+- Updated canvas window configuration to properly scale both horizontally and vertically
+- Dashboard now correctly fills the entire tab area instead of appearing small
+- File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
+
 ## [5.0.25] - 2025-11-15
 
 ### Campus Events Hub - Major Enhancement & Bug Fixes
