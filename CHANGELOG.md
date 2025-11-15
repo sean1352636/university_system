@@ -5,6 +5,58 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.22] - 2025-11-15
+
+### Enhanced - Club Merchandise Button Integration
+
+**Shop GUI Club-Based Function Integration**
+
+Linked "Club Merchandise" button to club-based functions in Shop GUI, providing proper club merchandise browsing functionality.
+
+**Changes Made:**
+
+1. **Club Merchandise Button Functionality:**
+   - **Before:** Opened shop GUI directly to general dashboard
+   - **After:** Opens shop GUI with club merchandise selection page
+   - Displays list of all active student clubs
+   - Users can search and browse clubs
+   - Double-click or select club to view their merchandise
+   - Properly calls `show_club_merchandise_selection()` method in Shop GUI
+
+2. **Dual Shop Access Options:**
+   - **"👕 Club Merchandise"** - Opens shop with club selection for club-specific merchandise
+   - **"🛒 University Shop"** - Opens shop directly to general dashboard
+   - Both options available in sidebar and menu
+   - Provides flexibility for different use cases
+
+3. **Method Updates:**
+   - Modified `open_shop_for_club_merchandise()` to remove club_name parameter
+   - Method now directly shows club selection interface in shop GUI
+   - Cleaner integration between Student Union and Shop systems
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py`:
+  - Line 4270-4290: Updated `open_shop_for_club_merchandise()` method
+  - Line 488: Sidebar "Club Merchandise" button → calls `open_shop_for_club_merchandise`
+  - Line 489: Added "University Shop" button → calls `open_shop_gui_direct`
+  - Line 690: Menu "👕 Club Merchandise" → calls `open_shop_for_club_merchandise()`
+  - Line 692: Added menu "🛒 University Shop" → calls `open_shop_gui_direct()`
+
+**User Experience:**
+- ✅ Club Merchandise button shows club selection interface in shop
+- ✅ Users can browse all active clubs
+- ✅ Search functionality for finding specific clubs
+- ✅ Separate general shop access maintained
+- ✅ Clear distinction between club merchandise and general shopping
+- ✅ Proper integration with Shop GUI's club merchandise features
+
+**Shop GUI Club Merchandise Features:**
+- List of all active student clubs with ID, name, category, member count
+- Search functionality to filter clubs by name or category
+- Double-click or button to view merchandise for selected club
+- Professional interface with instructions and proper labeling
+- Integration with shop product catalog
+
 ## [5.0.21] - 2025-11-15
 
 ### Fixed - Restaurant, Shop, and Trip GUI Launch Issues

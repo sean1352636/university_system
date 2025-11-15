@@ -485,7 +485,8 @@ class StudentUnionGUI:
         self.add_sidebar_separator()
         self.add_sidebar_header("🔗 Integrations", "")
         self.add_sidebar_button("Club Payment Management", self.show_club_payments_content, "💰")
-        self.add_sidebar_button("Club Merchandise", self.open_shop_gui_direct, "👕")
+        self.add_sidebar_button("Club Merchandise", self.open_shop_for_club_merchandise, "👕")
+        self.add_sidebar_button("University Shop", self.open_shop_gui_direct, "🛒")
         self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
         self.add_sidebar_button("Student Union Calendar", self.open_calendar_with_club_events, "📅")
         self.add_sidebar_button("Trip Management", self.open_trip_gui_direct, "🧳")
@@ -687,6 +688,8 @@ class StudentUnionGUI:
 
         # Shop submenu
         integrations_menu.add_command(label="👕 Club Merchandise",
+                                     command=lambda: self.open_shop_for_club_merchandise())
+        integrations_menu.add_command(label="🛒 University Shop",
                                      command=lambda: self.open_shop_gui_direct())
 
         # Restaurant
@@ -4267,22 +4270,22 @@ This GUI version maintains backward compatibility with the CLI system.
         except Exception as e:
             messagebox.showerror("Error", f"Could not open shop system: {e}")
 
-    def open_shop_for_club_merchandise(self, club_name):
-        """Open shop GUI filtered for club merchandise"""
+    def open_shop_for_club_merchandise(self):
+        """Open shop GUI with club merchandise selection page"""
         try:
             from university_system.modules.domain.commerce.gui.shop_management_gui import UniversityShopGUI
 
             shop_window = tk.Toplevel(self.root)
-            shop_window.title(f"University Shop - {club_name} Merchandise")
+            shop_window.title("University Shop - Club Merchandise")
             shop_window.geometry("1200x800")
 
             shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
 
-            # Show club merchandise selection page
+            # Show club merchandise selection page directly
             if hasattr(shop_gui, 'show_club_merchandise_selection'):
                 shop_gui.show_club_merchandise_selection()
             else:
-                messagebox.showinfo("Shop Opened", f"Browse the shop for {club_name} merchandise")
+                messagebox.showinfo("Shop Opened", "Browse the shop for club merchandise")
 
         except ImportError:
             messagebox.showerror("Error", "Shop system is not available")
