@@ -135,7 +135,7 @@ class StudentSupportGUI:
     def __init__(self, root, auth_system=None):
         self.root = root
         self.root.title("🎓 Enhanced Student Support Portal")
-        self.root.geometry("1800x1050")
+        self.root.geometry("1850x1100")
         self.root.minsize(1400, 900)
 
         # Initialize authentication system - use provided auth or global fallback
@@ -303,8 +303,8 @@ class StudentSupportGUI:
         )
         return_btn.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
 
-        # Main container with padding
-        self.main_frame = ttk.Frame(self.root, padding="10")
+        # Main container with minimal padding
+        self.main_frame = ttk.Frame(self.root, padding="5")
         self.main_frame.grid(row=0, column=0, sticky="nsew")
 
         # Configure grid weights
@@ -326,7 +326,7 @@ class StudentSupportGUI:
         """Create scrollable navigation sidebar"""
         # Create sidebar container
         sidebar_container = ttk.Frame(self.main_frame, style='Card.TFrame', width=250)
-        sidebar_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        sidebar_container.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         sidebar_container.grid_propagate(False)
 
         # Canvas + scrollbar for sidebar
@@ -501,7 +501,7 @@ class StudentSupportGUI:
 
         # Create notebook for multiple views within the scrollable content
         self.notebook = ttk.Notebook(self.content_frame)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        self.notebook.pack(fill="both", expand=True, padx=2, pady=2)
         
         # Initialize with dashboard
         self.show_dashboard()
@@ -509,7 +509,7 @@ class StudentSupportGUI:
     def create_status_bar(self):
         """Create status bar"""
         self.status_frame = ttk.Frame(self.root)
-        self.status_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 5))
+        self.status_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=(0, 3))
         
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
@@ -618,7 +618,7 @@ class StudentSupportGUI:
         """Display dashboard"""
         self.clear_content()
         
-        dashboard_frame = ttk.Frame(self.notebook, padding="10")
+        dashboard_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(dashboard_frame, text="📊 Dashboard")
         
         # Create scrollable area
@@ -825,7 +825,7 @@ class StudentSupportGUI:
         """Show advanced search interface"""
         self.clear_content()
         
-        search_frame = ttk.Frame(self.notebook, padding="10")
+        search_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(search_frame, text="🔍 Advanced Search")
         
         # Search form
@@ -1136,7 +1136,7 @@ class StudentSupportGUI:
         """Show create ticket interface"""
         self.clear_content()
         
-        create_frame = ttk.Frame(self.notebook, padding="10")
+        create_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(create_frame, text="🎫 Create Ticket")
         
         # Check authentication
@@ -1400,7 +1400,7 @@ class StudentSupportGUI:
         """Show student's tickets"""
         self.clear_content()
         
-        tickets_frame = ttk.Frame(self.notebook, padding="10")
+        tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="📋 My Tickets")
         
         # Check authentication
@@ -1544,7 +1544,7 @@ class StudentSupportGUI:
         """Show all tickets (staff only)"""
         self.clear_content()
         
-        tickets_frame = ttk.Frame(self.notebook, padding="10")
+        tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="🎫 All Tickets")
         
         # Check permissions
@@ -2062,7 +2062,7 @@ class StudentSupportGUI:
         """Show FAQs interface"""
         self.clear_content()
         
-        faqs_frame = ttk.Frame(self.notebook, padding="10")
+        faqs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(faqs_frame, text="❓ FAQs")
         
         # Title and search
@@ -2277,7 +2277,7 @@ class StudentSupportGUI:
         """Show user preferences interface"""
         self.clear_content()
         
-        prefs_frame = ttk.Frame(self.notebook, padding="10")
+        prefs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(prefs_frame, text="⚙️ Preferences")
         
         ttk.Label(prefs_frame, text="⚙️ User Preferences", 
@@ -2383,7 +2383,7 @@ class StudentSupportGUI:
         """Show notifications interface"""
         self.clear_content()
         
-        notifications_frame = ttk.Frame(self.notebook, padding="10")
+        notifications_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(notifications_frame, text="🔔 Notifications")
         
         # Header
@@ -2870,7 +2870,7 @@ class StudentSupportGUI:
         """Show template management interface (staff only)"""
         self.clear_content()
 
-        templates_frame = ttk.Frame(self.notebook, padding="10")
+        templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="🔧 Manage Templates")
 
         # Check permissions
@@ -3439,7 +3439,7 @@ class StudentSupportGUI:
         """Show knowledge base management interface (staff only)"""
         self.clear_content()
 
-        kb_mgmt_frame = ttk.Frame(self.notebook, padding="10")
+        kb_mgmt_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(kb_mgmt_frame, text="📖 Manage KB")
 
         # Check permissions
@@ -3933,7 +3933,7 @@ class StudentSupportGUI:
         """Show bulk operations interface (staff only)"""
         self.clear_content()
 
-        bulk_frame = ttk.Frame(self.notebook, padding="10")
+        bulk_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(bulk_frame, text="📦 Bulk Operations")
 
         # Check permissions
@@ -4922,7 +4922,7 @@ class StudentSupportGUI:
         
         self.clear_content()
         
-        user_mgmt_frame = ttk.Frame(self.notebook, padding="10")
+        user_mgmt_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(user_mgmt_frame, text="User Management")
         
         ttk.Label(user_mgmt_frame, text="User Management", 
@@ -5392,7 +5392,7 @@ class StudentSupportGUI:
         """Show ticket templates for students"""
         self.clear_content()
         
-        templates_frame = ttk.Frame(self.notebook, padding="10")
+        templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="📄 Templates")
         
         ttk.Label(templates_frame, text="📄 Ticket Templates", 
@@ -5560,7 +5560,7 @@ Features:
         """Show user preferences interface"""
         self.clear_content()
         
-        prefs_frame = ttk.Frame(self.notebook, padding="10")
+        prefs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(prefs_frame, text="⚙️ Preferences")
         
         ttk.Label(prefs_frame, text="⚙️ User Preferences", 
@@ -5705,7 +5705,7 @@ Features:
         """Show knowledge base interface"""
         self.clear_content()
         
-        kb_frame = ttk.Frame(self.notebook, padding="10")
+        kb_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(kb_frame, text="📚 Knowledge Base")
         
         # Title and controls
@@ -6055,7 +6055,7 @@ Features:
         """Show support resources interface"""
         self.clear_content()
         
-        resources_frame = ttk.Frame(self.notebook, padding="10")
+        resources_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(resources_frame, text="📋 Resources")
 
         header_frame = ttk.Frame(resources_frame)
@@ -6154,7 +6154,7 @@ Features:
         """Show ticket templates for students"""
         self.clear_content()
         
-        templates_frame = ttk.Frame(self.notebook, padding="10")
+        templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="📄 Templates")
 
         header_frame = ttk.Frame(templates_frame)
@@ -6597,7 +6597,7 @@ Features:
         """Show reports interface (staff only)"""
         self.clear_content()
         
-        reports_frame = ttk.Frame(self.notebook, padding="10")
+        reports_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(reports_frame, text="📊 Reports")
         
         # Check permissions

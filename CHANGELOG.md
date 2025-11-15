@@ -5,6 +5,22 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.28] - 2025-11-15
+
+### UI Enhancement
+
+**Student Support GUI - Main Content Area Maximization:**
+- Reduced padding throughout the interface to maximize content area when clicking side panel buttons
+- Main frame padding: 10px → 5px
+- Notebook padding: 10px → 2px (saves 16px horizontal, 16px vertical)
+- Tab content frame padding: 10px → 3px (saves 14px per tab)
+- Sidebar right margin: 10px → 5px
+- Status bar padding reduced to 5px/3px
+- Increased main window size: 1800x1050 → 1850x1100 for additional space
+- Content tabs (Dashboard, My Tickets, Create Ticket, etc.) now fill significantly more screen space
+- Eliminates large gaps around content when navigating with side panel buttons
+- File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
+
 ## [5.0.27] - 2025-11-15
 
 ### UI Enhancement
