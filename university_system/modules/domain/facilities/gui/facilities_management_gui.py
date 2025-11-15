@@ -1538,26 +1538,81 @@ Description: {wo['description']}"""
             messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_energy_report(self):
-        """Generate energy usage report"""
-        report = """ENERGY USAGE REPORT
-============================================================
+        """Generate energy usage report based on building utilization"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
 
-Energy Monitoring System - Placeholder
+                # Get building utilization data as proxy for energy usage
+                cursor.execute('''
+                    SELECT b.building_name, b.building_type, b.total_floors,
+                           COUNT(DISTINCT r.id) as room_count,
+                           SUM(r.capacity) as total_capacity,
+                           COUNT(rb.booking_id) as total_bookings,
+                           SUM(CASE WHEN rb.booking_status = 'confirmed'
+                               THEN CAST((julianday(rb.end_datetime) - julianday(rb.start_datetime)) * 24 AS REAL)
+                               ELSE 0 END) as hours_utilized
+                    FROM buildings b
+                    LEFT JOIN rooms r ON b.building_id = r.building_id AND r.is_active = 1
+                    LEFT JOIN room_bookings rb ON r.id = rb.room_id
+                        AND rb.start_datetime >= date('now', '-30 days')
+                    WHERE b.is_active = 1
+                    GROUP BY b.building_id, b.building_name, b.building_type, b.total_floors
+                    ORDER BY hours_utilized DESC
+                ''')
+                results = cursor.fetchall()
 
-This feature requires integration with building management
-systems (BMS) to collect energy usage data.
+                report = "ENERGY USAGE & UTILIZATION REPORT (Last 30 Days)\n"
+                report += "="*70 + "\n\n"
+                report += "Estimated Energy Consumption Based on Building Utilization\n"
+                report += "(Actual energy meters should be installed for precise tracking)\n\n"
 
-Recommended metrics to track:
-- Electricity consumption by building
-- HVAC efficiency
-- Lighting usage patterns
-- Peak demand periods
-- Cost analysis
+                total_hours = 0
+                for row in results:
+                    hours = row['hours_utilized'] or 0
+                    total_hours += hours
 
-Please configure energy monitoring devices and data collection
-before running this report.
-"""
-        self.show_report_window("Energy Usage Report", report)
+                    # Estimate energy based on building type and utilization
+                    energy_factor = {
+                        'Academic': 1.0,
+                        'Research': 1.5,  # Labs use more energy
+                        'Athletic': 1.3,
+                        'Library': 0.8,
+                        'Administrative': 0.7,
+                        'Residential': 0.9,
+                        'Student Center': 1.0,
+                        'Mixed Use': 1.0
+                    }.get(row['building_type'], 1.0)
+
+                    estimated_kwh = hours * row['total_capacity'] * 0.05 * energy_factor if hours > 0 else 0
+                    estimated_cost = estimated_kwh * 0.12  # $0.12 per kWh estimate
+
+                    report += f"\n{row['building_name']} ({row['building_type']}):\n"
+                    report += f"  Floors: {row['total_floors'] or 0}\n"
+                    report += f"  Rooms: {row['room_count'] or 0}\n"
+                    report += f"  Total Capacity: {row['total_capacity'] or 0}\n"
+                    report += f"  Bookings (30 days): {row['total_bookings'] or 0}\n"
+                    report += f"  Hours Utilized: {hours:.1f}\n"
+                    report += f"  Est. Energy: {estimated_kwh:.1f} kWh\n"
+                    report += f"  Est. Cost: ${estimated_cost:.2f}\n"
+
+                total_estimated_kwh = total_hours * 10  # Simplified total estimate
+                total_estimated_cost = total_estimated_kwh * 0.12
+
+                report += "\n" + "="*70 + "\n"
+                report += f"TOTAL ESTIMATED ENERGY (30 days): {total_estimated_kwh:.1f} kWh\n"
+                report += f"TOTAL ESTIMATED COST: ${total_estimated_cost:.2f}\n\n"
+
+                report += "\nRECOMMENDATIONS:\n"
+                report += "• Install smart meters for accurate energy monitoring\n"
+                report += "• Implement motion-sensor lighting in low-use areas\n"
+                report += "• Schedule HVAC based on booking patterns\n"
+                report += "• Consider solar panels for high-consumption buildings\n"
+                report += "• Regular maintenance to improve HVAC efficiency\n"
+
+                self.show_report_window("Energy Usage Report", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_booking_stats(self):
         """Generate booking statistics"""

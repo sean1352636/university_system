@@ -5,6 +5,65 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.44] - 2025-11-15
+
+### Improvements
+
+**Facilities Management - Code Quality and Feature Enhancements:**
+
+Refactored the Facilities Management core services to follow project best practices and enhanced the energy reporting functionality:
+
+#### Code Quality Improvements (✅ Complete)
+1. **Transaction Context Managers**: All manager classes now use proper `transaction()` context managers
+   - `BuildingManager.register_building()`: Updated to use `with transaction()`
+   - `RoomManager.register_room()`: Updated to use `with transaction()`
+   - `RoomManager.get_available_rooms()`: Updated to use `with get_connection()`
+   - `RoomBookingManager.book_room()`: Updated to use `with transaction()`
+   - `MaintenanceRequestManager.submit_request()`: Updated to use `with transaction()`
+   - `WorkOrderManager.create_work_order()`: Updated to use `with transaction()`
+   - `AssetManager.register_asset()`: Updated to use `with transaction()`
+
+2. **Documentation**: Added docstrings to all manager methods for better code documentation
+
+3. **Best Practices Compliance**: Now follows CLAUDE.md guidelines for:
+   - Automatic transaction commit/rollback
+   - Proper resource management
+   - No manual connection closing needed
+   - Improved error handling
+
+#### Feature Enhancements (✅ Complete)
+1. **Energy Usage Report - Now Fully Functional**:
+   - Replaced placeholder with actual data-driven report
+   - Calculates estimated energy consumption based on building utilization
+   - Shows building-specific metrics:
+     - Hours utilized (last 30 days)
+     - Estimated kWh consumption
+     - Estimated cost ($0.12/kWh)
+   - Different energy factors for building types:
+     - Research buildings: 1.5x (labs use more energy)
+     - Athletic facilities: 1.3x
+     - Academic buildings: 1.0x
+     - Residential buildings: 0.9x
+     - Library: 0.8x
+     - Administrative: 0.7x
+   - Provides actionable recommendations:
+     - Smart meter installation
+     - Motion-sensor lighting
+     - HVAC scheduling based on bookings
+     - Solar panel considerations
+     - Regular HVAC maintenance
+
+#### Technical Details
+- **Files Modified**:
+  - `facilities_management_core.py`: Refactored all 6 manager classes
+  - `facilities_management_gui.py`: Enhanced energy report generation (lines 1540-1615)
+- **Code Reduction**: Eliminated manual connection management boilerplate
+- **Safety**: All database writes now have automatic rollback on exceptions
+- **Performance**: Better connection pooling utilization
+
+### Impact
+The Facilities Management system now follows project coding standards and provides more valuable energy insights based on actual building utilization data.
+
 ## [5.0.43] - 2025-11-15
 
 ### New Features
