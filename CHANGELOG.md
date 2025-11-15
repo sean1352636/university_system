@@ -5,6 +5,62 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.32] - 2025-11-15
+
+### Bug Fixes & Enhancements
+
+**Security Dashboard GUI - Multiple Critical Fixes:**
+- **CRITICAL FIX**: Fixed security_incidents table schema mismatch
+  - Database uses `category` column but code was using `incident_type`
+  - Updated IncidentResponseManager.create_incident() to use correct columns
+  - Changed INSERT to use: category, severity, description, reported_by, status, detected_at
+  - Removed non-existent columns: incident_type, affected_users, affected_resources
+  - Fixes: "Table security_incidents has no column named incident_type"
+  - File: `university_system/infrastructure/security/comprehensive_security.py`
+
+- **MAJOR FIX**: Implemented missing _load_incidents() method
+  - Method was placeholder with just `pass` statement
+  - Now properly loads security incidents from database into treeview
+  - Queries: id, category, severity, status, detected_at, description
+  - Displays up to 100 most recent incidents ordered by detected_at DESC
+  - Truncates long descriptions for better display (50 chars + '...')
+  - Includes error handling with user-friendly error messages
+  - Incidents tab now displays actual data from database
+  - File: `university_system/infrastructure/security/security_dashboard_gui.py`
+
+- **CRITICAL FIX**: Created missing MFA administration tables
+  - MFA Admin Panel required `mfa_user_settings` table that didn't exist
+  - Created 3 new tables for comprehensive MFA management:
+    - `mfa_user_settings`: Per-user MFA configuration (enabled, preferred method, backup codes)
+    - `mfa_methods`: Individual MFA method configurations per user (TOTP, email, SMS)
+    - `mfa_enforcement_policies`: Role-based MFA requirements with grace periods
+  - Populated mfa_user_settings from existing user_accounts.two_fa_enabled data
+  - Added default enforcement policies for all roles (admin: required, others: optional)
+  - MFA Admin Panel now loads without errors
+  - Fixes: "Failed to open MFA admin no such table mfa_user_settings"
+  - Database: student_records.db
+
+- **ENHANCEMENT**: Added email integration to compliance reports
+  - Added "📧 Send to Admin" button to FERPA/GDPR report windows
+  - Automatically fetches admin email from database (first admin account)
+  - Sends formatted email with full report content
+  - Email includes report period, timestamp, and formatted report data
+  - Integrated with EmailService for reliable delivery
+  - Success confirmation shows admin email address
+  - File: `university_system/infrastructure/security/security_dashboard_gui.py`
+
+- **ENHANCEMENT**: Added return to home/close buttons
+  - Main Security Dashboard header now has 3 buttons:
+    - "🔄 Refresh All" - Reloads all dashboard data
+    - "🏠 Return to Home" - Closes dashboard and returns to main menu
+    - "❌ Close" - Closes dashboard window
+  - Compliance report windows also have:
+    - "📧 Send to Admin" - Email report to admin
+    - "🏠 Return to Home" - Close report window
+    - "❌ Close" - Close report window
+  - Improved user experience with clear navigation options
+  - File: `university_system/infrastructure/security/security_dashboard_gui.py`
+
 ## [5.0.31] - 2025-11-15
 
 ### Bug Fixes

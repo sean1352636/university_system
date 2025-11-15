@@ -693,14 +693,12 @@ class IncidentResponseManager:
         try:
             cursor.execute("""
                 INSERT INTO security_incidents (
-                    incident_type, severity, description, detected_by,
-                    affected_users, affected_resources
+                    category, severity, description, reported_by,
+                    status, detected_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, 'open', CURRENT_TIMESTAMP)
             """, (
-                incident_type, severity, description, detected_by,
-                json.dumps(affected_users or []),
-                json.dumps(affected_resources or [])
+                incident_type, severity, description, detected_by
             ))
 
             incident_id = cursor.lastrowid
