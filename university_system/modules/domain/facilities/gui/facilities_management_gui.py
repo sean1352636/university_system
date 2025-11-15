@@ -6,7 +6,7 @@ work orders, assets, and space utilization.
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import traceback
@@ -1141,77 +1141,477 @@ class FacilitiesManagementGUI:
 
     def create_booking(self):
         """Create a new room booking"""
-        messagebox.showinfo("New Booking", "Room booking dialog would open here.")
+        try:
+            rooms = RoomManager.get_available_rooms()
+            if not rooms:
+                messagebox.showwarning('No Rooms', 'No available rooms found.')
+                return
+
+            # Simple dialog approach
+            room_list = '\n'.join([f"{r['id']}: {r['building']} Room {r['room_number']}" for r in rooms[:10]])
+            room_id = simpledialog.askinteger("Room ID", f"Available Rooms:\n{room_list}\n\nEnter Room ID:")
+            if not room_id:
+                return
+
+            start_time = simpledialog.askstring("Start Time", "Start (YYYY-MM-DD HH:MM):",
+                                               initialvalue=datetime.now().strftime('%Y-%m-%d %H:00'))
+            end_time = simpledialog.askstring("End Time", "End (YYYY-MM-DD HH:MM):",
+                                             initialvalue=(datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:00'))
+            purpose = simpledialog.askstring("Purpose", "Booking purpose:")
+
+            if start_time and end_time:
+                booking_id = RoomBookingManager.book_room(
+                    room_id=room_id,
+                    booked_by=self.current_user.get('username'),
+                    booking_type='Meeting',
+                    start_datetime=start_time,
+                    end_datetime=end_time,
+                    purpose=purpose or '',
+                    expected_attendees=20
+                )
+                log_activity('Created room booking', booking_id=booking_id, user=self.current_user.get('username'))
+                messagebox.showinfo('Success', f'Booking created! ID: {booking_id}')
+                self.load_bookings()
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to create booking: {str(e)}')
 
     def view_booking_details(self, event=None):
         """View booking details"""
         selection = self.bookings_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Booking Details", "Booking details dialog would open here.")
+
+        item = self.bookings_tree.item(selection[0])
+        booking_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''SELECT rb.*, r.building, r.room_number
+                                 FROM room_bookings rb JOIN rooms r ON rb.room_id = r.id
+                                 WHERE rb.booking_id = ?''', (booking_id,))
+                booking = cursor.fetchone()
+
+                if booking:
+                    details = f"""Booking ID: {booking_id}
+Room: {booking['building']} - {booking['room_number']}
+Booked By: {booking['booked_by']}
+Type: {booking['booking_type']}
+Start: {booking['start_datetime']}
+End: {booking['end_datetime']}
+Purpose: {booking['purpose'] or 'N/A'}
+Status: {booking['booking_status']}"""
+                    messagebox.showinfo('Booking Details', details)
+                else:
+                    messagebox.showerror('Error', 'Booking not found')
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to load booking: {str(e)}')
 
     def create_maintenance_request(self):
         """Create a maintenance request"""
-        messagebox.showinfo("New Request", "Maintenance request dialog would open here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT building_id, building_name FROM buildings WHERE is_active = 1 LIMIT 10')
+                buildings = cursor.fetchall()
+
+            if not buildings:
+                messagebox.showwarning('No Buildings', 'No active buildings found.')
+                return
+
+            building_list = '\n'.join([f"{b['building_id']}: {b['building_name']}" for b in buildings])
+            building_id = simpledialog.askinteger("Building", f"Select Building:\n{building_list}\n\nEnter Building ID:")
+            if not building_id:
+                return
+
+            req_type = simpledialog.askstring("Type", "Request Type (e.g., Plumbing, Electrical, HVAC):")
+            description = simpledialog.askstring("Description", "Describe the issue:")
+            priority = simpledialog.askstring("Priority", "Priority (low/medium/high):", initialvalue='medium')
+
+            if req_type and description:
+                request_id = MaintenanceRequestManager.submit_request(
+                    request_type=req_type,
+                    priority=priority or 'medium',
+                    description=description,
+                    reported_by=self.current_user.get('username'),
+                    building_id=building_id
+                )
+                log_activity('Created maintenance request', request_id=request_id, user=self.current_user.get('username'))
+                messagebox.showinfo('Success', f'Maintenance request created! ID: {request_id}')
+                self.load_maintenance_requests()
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to create request: {str(e)}')
 
     def view_maintenance_details(self, event=None):
         """View maintenance request details"""
         selection = self.maintenance_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Maintenance Details", "Maintenance details dialog would open here.")
+
+        item = self.maintenance_tree.item(selection[0])
+        request_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM maintenance_requests WHERE request_id = ?', (request_id,))
+                req = cursor.fetchone()
+
+                if req:
+                    details = f"""Request ID: {request_id}
+Type: {req['request_type']}
+Priority: {req['priority']}
+Status: {req['status']}
+Reported By: {req['reported_by']}
+Date: {req['reported_date']}
+Description: {req['description']}"""
+                    messagebox.showinfo('Maintenance Details', details)
+                else:
+                    messagebox.showerror('Error', 'Request not found')
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to load request: {str(e)}')
 
     def create_work_order(self):
         """Create a work order"""
-        messagebox.showinfo("New Work Order", "Work order dialog would open here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT request_id, request_type FROM maintenance_requests WHERE status = 'open' LIMIT 10")
+                requests = cursor.fetchall()
+
+            if not requests:
+                messagebox.showwarning('No Requests', 'No open maintenance requests found.')
+                return
+
+            req_list = '\n'.join([f"{r['request_id']}: {r['request_type']}" for r in requests])
+            request_id = simpledialog.askinteger("Request", f"Open Requests:\n{req_list}\n\nEnter Request ID:")
+            if not request_id:
+                return
+
+            work_type = simpledialog.askstring("Work Type", "Work Order Type:", initialvalue='Repair')
+            description = simpledialog.askstring("Description", "Work description:")
+            technician = simpledialog.askstring("Technician", "Assigned Technician:")
+
+            if description:
+                work_order_id = WorkOrderManager.create_work_order(
+                    request_id=request_id,
+                    work_order_type=work_type or 'Repair',
+                    description=description,
+                    assigned_technician=technician or ''
+                )
+                log_activity('Created work order', work_order_id=work_order_id, user=self.current_user.get('username'))
+                messagebox.showinfo('Success', f'Work order created! ID: {work_order_id}')
+                self.load_work_orders()
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to create work order: {str(e)}')
 
     def view_work_order_details(self, event=None):
         """View work order details"""
         selection = self.work_orders_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Work Order Details", "Work order details dialog would open here.")
+
+        item = self.work_orders_tree.item(selection[0])
+        work_order_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM work_orders WHERE work_order_id = ?', (work_order_id,))
+                wo = cursor.fetchone()
+
+                if wo:
+                    details = f"""Work Order ID: {work_order_id}
+Type: {wo['work_order_type']}
+Request ID: {wo['request_id']}
+Technician: {wo['assigned_technician'] or 'Unassigned'}
+Status: {wo['status']}
+Start: {wo['start_date'] or 'Not started'}
+Completion: {wo['completion_date'] or 'In progress'}
+Description: {wo['description']}"""
+                    messagebox.showinfo('Work Order Details', details)
+                else:
+                    messagebox.showerror('Error', 'Work order not found')
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to load work order: {str(e)}')
 
     def add_asset(self):
         """Add a new asset"""
-        messagebox.showinfo("Add Asset", "Asset add dialog would open here.")
+        try:
+            asset_name = simpledialog.askstring("Asset Name", "Enter asset name:")
+            if not asset_name:
+                return
+
+            asset_type = simpledialog.askstring("Asset Type", "Enter asset type (e.g., Furniture, Equipment):")
+            asset_tag = simpledialog.askstring("Asset Tag", "Enter asset tag/ID:")
+            cost = simpledialog.askfloat("Cost", "Purchase cost:", initialvalue=0.0)
+
+            if asset_name and asset_type and asset_tag:
+                asset_id = AssetManager.register_asset(
+                    asset_name=asset_name,
+                    asset_type=asset_type,
+                    asset_tag=asset_tag,
+                    purchase_cost=cost or 0
+                )
+                log_activity('Added asset', asset_id=asset_id, user=self.current_user.get('username'))
+                messagebox.showinfo('Success', f'Asset added! ID: {asset_id}')
+                self.load_assets()
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to add asset: {str(e)}')
 
     def edit_asset(self, event=None):
         """Edit selected asset"""
         selection = self.assets_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Edit Asset", "Asset edit dialog would open here.")
+
+        item = self.assets_tree.item(selection[0])
+        asset_id = item['values'][0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM facility_assets WHERE asset_id = ?', (asset_id,))
+                asset = cursor.fetchone()
+
+                if not asset:
+                    messagebox.showerror('Error', 'Asset not found')
+                    return
+
+                new_name = simpledialog.askstring("Asset Name", "Asset name:", initialvalue=asset['asset_name'])
+                new_condition = simpledialog.askstring("Condition", "Condition (new/good/fair/poor):",
+                                                       initialvalue=asset['condition'] or 'good')
+
+                if new_name and new_condition:
+                    with transaction() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute('''UPDATE facility_assets SET asset_name = ?, condition = ?
+                                         WHERE asset_id = ?''', (new_name, new_condition, asset_id))
+
+                    log_activity('Updated asset', asset_id=asset_id, user=self.current_user.get('username'))
+                    messagebox.showinfo('Success', 'Asset updated!')
+                    self.load_assets()
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to update asset: {str(e)}')
 
     def show_building_context_menu(self, event):
         """Show context menu for buildings"""
-        # Would implement context menu here
-        pass
+        item = self.buildings_tree.identify_row(event.y)
+        if not item:
+            return
+
+        self.buildings_tree.selection_set(item)
+
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Edit Building", command=self.edit_building)
+        menu.add_command(label="View Rooms", command=lambda: (self.notebook.select(1), self.load_rooms()))
+        menu.add_separator()
+        menu.add_command(label="Delete Building", command=self.delete_building)
+
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def delete_building(self):
+        """Delete selected building"""
+        selection = self.buildings_tree.selection()
+        if not selection:
+            return
+
+        item = self.buildings_tree.item(selection[0])
+        building_id = item['values'][0]
+        building_name = item['values'][1]
+
+        if messagebox.askyesno("Confirm Delete", f"Delete building '{building_name}'?\n\nThis will deactivate the building."):
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE buildings SET is_active = 0 WHERE building_id = ?', (building_id,))
+
+                log_activity('Deleted building', building_id=building_id, user=self.current_user.get('username'))
+                messagebox.showinfo('Success', 'Building deactivated')
+                self.load_buildings()
+            except Exception as e:
+                messagebox.showerror('Error', f'Failed to delete building: {str(e)}')
 
     # Report generation methods
     def generate_occupancy_report(self):
         """Generate building occupancy report"""
-        messagebox.showinfo("Report", "Building occupancy report would be generated here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT b.building_name, COUNT(r.id) as room_count,
+                           SUM(r.capacity) as total_capacity
+                    FROM buildings b
+                    LEFT JOIN rooms r ON b.building_id = r.building_id AND r.is_active = 1
+                    WHERE b.is_active = 1
+                    GROUP BY b.building_id, b.building_name
+                ''')
+                results = cursor.fetchall()
+
+                report = "BUILDING OCCUPANCY REPORT\n" + "="*60 + "\n\n"
+                for row in results:
+                    report += f"{row['building_name']}:\n"
+                    report += f"  Rooms: {row['room_count'] or 0}\n"
+                    report += f"  Total Capacity: {row['total_capacity'] or 0}\n\n"
+
+                self.show_report_window("Building Occupancy Report", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_utilization_report(self):
         """Generate room utilization report"""
-        messagebox.showinfo("Report", "Room utilization report would be generated here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT r.building || ' - ' || r.room_number as room,
+                           r.room_type, COUNT(rb.booking_id) as booking_count
+                    FROM rooms r
+                    LEFT JOIN room_bookings rb ON r.id = rb.room_id
+                        AND rb.start_datetime >= date('now', '-30 days')
+                    WHERE r.is_active = 1
+                    GROUP BY r.id
+                    ORDER BY booking_count DESC
+                    LIMIT 20
+                ''')
+                results = cursor.fetchall()
+
+                report = "ROOM UTILIZATION REPORT (Last 30 Days)\n" + "="*60 + "\n\n"
+                for row in results:
+                    report += f"{row['room']} ({row['room_type']}): {row['booking_count']} bookings\n"
+
+                self.show_report_window("Room Utilization Report", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_maintenance_report(self):
         """Generate maintenance summary report"""
-        messagebox.showinfo("Report", "Maintenance summary report would be generated here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT status, COUNT(*) as count, priority
+                    FROM maintenance_requests
+                    GROUP BY status, priority
+                    ORDER BY status, priority
+                ''')
+                results = cursor.fetchall()
+
+                report = "MAINTENANCE SUMMARY REPORT\n" + "="*60 + "\n\n"
+                current_status = None
+                for row in results:
+                    if row['status'] != current_status:
+                        current_status = row['status']
+                        report += f"\n{current_status.upper()}:\n"
+                    report += f"  {row['priority']} priority: {row['count']} requests\n"
+
+                self.show_report_window("Maintenance Summary", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_asset_report(self):
         """Generate asset inventory report"""
-        messagebox.showinfo("Report", "Asset inventory report would be generated here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT asset_type, condition, COUNT(*) as count
+                    FROM facility_assets
+                    GROUP BY asset_type, condition
+                    ORDER BY asset_type, condition
+                ''')
+                results = cursor.fetchall()
+
+                report = "ASSET INVENTORY REPORT\n" + "="*60 + "\n\n"
+                current_type = None
+                for row in results:
+                    if row['asset_type'] != current_type:
+                        current_type = row['asset_type']
+                        report += f"\n{current_type}:\n"
+                    report += f"  {row['condition']}: {row['count']}\n"
+
+                self.show_report_window("Asset Inventory", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def generate_energy_report(self):
         """Generate energy usage report"""
-        messagebox.showinfo("Report", "Energy usage report would be generated here.")
+        report = """ENERGY USAGE REPORT
+============================================================
+
+Energy Monitoring System - Placeholder
+
+This feature requires integration with building management
+systems (BMS) to collect energy usage data.
+
+Recommended metrics to track:
+- Electricity consumption by building
+- HVAC efficiency
+- Lighting usage patterns
+- Peak demand periods
+- Cost analysis
+
+Please configure energy monitoring devices and data collection
+before running this report.
+"""
+        self.show_report_window("Energy Usage Report", report)
 
     def generate_booking_stats(self):
         """Generate booking statistics"""
-        messagebox.showinfo("Report", "Booking statistics would be generated here.")
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT booking_type, COUNT(*) as count,
+                           AVG(CAST((julianday(end_datetime) - julianday(start_datetime)) * 24 AS REAL)) as avg_hours
+                    FROM room_bookings
+                    WHERE start_datetime >= date('now', '-30 days')
+                    GROUP BY booking_type
+                    ORDER BY count DESC
+                ''')
+                results = cursor.fetchall()
+
+                report = "BOOKING STATISTICS (Last 30 Days)\n" + "="*60 + "\n\n"
+                total = sum(r['count'] for r in results)
+                report += f"Total Bookings: {total}\n\n"
+
+                for row in results:
+                    report += f"{row['booking_type']}:\n"
+                    report += f"  Count: {row['count']}\n"
+                    report += f"  Avg Duration: {row['avg_hours']:.1f} hours\n\n"
+
+                self.show_report_window("Booking Statistics", report)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
+
+    def show_report_window(self, title, content):
+        """Show report in a new window"""
+        window = tk.Toplevel(self.window)
+        window.title(title)
+        window.geometry("800x600")
+
+        # Text widget with scrollbar
+        frame = ttk.Frame(window, padding=10)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        scroll = ttk.Scrollbar(frame)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        text = tk.Text(frame, wrap=tk.WORD, yscrollcommand=scroll.set, font=('Courier', 10))
+        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.config(command=text.yview)
+
+        text.insert('1.0', content)
+        text.config(state=tk.DISABLED)
+
+        # Button frame
+        btn_frame = ttk.Frame(window, padding=10)
+        btn_frame.pack(fill=tk.X)
+
+        ttk.Button(btn_frame, text="Close", command=window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def update_status(self, message):
         """Update status bar message"""
