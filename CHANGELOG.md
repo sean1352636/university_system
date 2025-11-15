@@ -5,6 +5,116 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.15] - 2025-11-15
+
+### Added - Finance GUI Club Payment Management Integration
+
+**Enhancement**
+
+Added dedicated Club Payment Management page to the Finance GUI, providing centralized financial management for student clubs and organizations.
+
+**New Features:**
+
+1. **Finance GUI Navigation:**
+   - Added "💰 Club Payments" button to Finance GUI sidebar (admin/staff only)
+   - New tab accessible from Finance system with three sub-sections
+
+2. **Payment Overview Tab:**
+   - Real-time payment statistics for last 30 days
+   - Total payments count
+   - Total amount processed
+   - Number of clubs with active payments
+
+3. **Record Payment Tab:**
+   - Interface for recording new club payments
+   - Integration note with Student Union system
+
+4. **Payment History Tab:**
+   - Comprehensive payment history table
+   - Sortable columns: Date, Club, Amount, Type, Status
+   - Last 100 payments displayed
+   - Database integration with `club_payments` and `student_clubs` tables
+
+**Files Modified:**
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py:387` (navigation button added)
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py:352` (tab creation added)
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py:1499-1624` (new methods added)
+
+### Added - University Shop Club Merchandise Selection Page
+
+**Enhancement**
+
+Added comprehensive Club Merchandise Selection interface to the University Shop GUI, allowing users to browse and purchase merchandise for specific student clubs.
+
+**New Features:**
+
+1. **Club Selection Interface:**
+   - Full-page club browsing interface
+   - Searchable club list with real-time filtering
+   - Club information display: ID, Name, Category, Member Count
+
+2. **Search Functionality:**
+   - Live search by club name or category
+   - Instant results updating as user types
+   - Case-insensitive search
+
+3. **Club List Display:**
+   - Sortable table with scrollable interface
+   - Shows only active clubs
+   - Double-click to view merchandise
+   - Horizontal and vertical scrollbars for large lists
+
+4. **Navigation:**
+   - "View Merchandise" button to browse club-specific products
+   - "Back to Dashboard" button for easy navigation
+   - Integration with existing product browsing system
+
+5. **User Experience:**
+   - Clear instructions for users
+   - Active club count display
+   - Error handling for database issues
+   - Informative messages when viewing club merchandise
+
+**Files Modified:**
+- `university_system/modules/domain/commerce/gui/shop_management_gui.py:787-938` (new method added)
+
+### Changed - Student Union GUI Navigation Cleanup
+
+**Enhancement**
+
+Streamlined Student Union GUI integration buttons by removing redundant direct access buttons and keeping only the essential integration points.
+
+**Changes:**
+
+1. **Sidebar Buttons Removed:**
+   - "Finance System" button (redundant with Club Payment Management)
+   - "University Shop" button (redundant with Club Merchandise)
+   - "Club Dining Booking" button (University Restaurant button retained)
+
+2. **Sidebar Buttons Retained:**
+   - "Club Payment Management" (links to finance integration)
+   - "Club Merchandise" (links to shop integration)
+   - "University Restaurant" (links to restaurant GUI)
+   - "Student Union Calendar" (links to academic calendar)
+   - "Trip Management"
+
+3. **Menu Integration Simplified:**
+   - Finance submenu removed from Integrations menu
+   - Shop submenu removed from Integrations menu
+   - Restaurant submenu removed from Integrations menu
+   - Direct menu items added for cleaner interface
+
+**Impact:**
+- ✅ Cleaner, more focused navigation
+- ✅ Reduced button clutter in sidebar
+- ✅ Streamlined menu structure
+- ✅ Maintained all essential functionality through specialized integration pages
+- ✅ Better user experience with targeted actions
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:475-482` (sidebar buttons updated)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:688-698` (menu structure simplified)
+
 ## [5.0.14] - 2025-11-15
 
 ### Fixed - Student Union Calendar Integration Method Misplaced

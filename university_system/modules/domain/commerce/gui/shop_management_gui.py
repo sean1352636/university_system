@@ -784,6 +784,159 @@ class UniversityShopGUI:
         ttk.Label(card_frame, text=str(value), font=('Arial', 14, 'bold'), 
                  style=value_style).grid(row=1, column=0)
         
+    def show_club_merchandise_selection(self):
+        """Display page to select which club to buy merchandise for"""
+        self.clear_content()
+        self.update_status("Loading club merchandise selection...")
+
+        # Title
+        title_frame = ttk.Frame(self.content_frame)
+        title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 20))
+
+        ttk.Label(title_frame, text="Club Merchandise", style='Title.TLabel').pack(side='left')
+        ttk.Label(title_frame, text="Select a club to browse merchandise",
+                 font=('Arial', 10), foreground='gray').pack(side='left', padx=20)
+
+        # Main content frame
+        main_frame = ttk.Frame(self.content_frame)
+        main_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        main_frame.columnconfigure(0, weight=1)
+
+        # Instructions
+        instructions_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="15")
+        instructions_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 15))
+
+        ttk.Label(instructions_frame, text="Select a student club below to view and purchase their official merchandise.",
+                 wraplength=600).pack()
+
+        # Club selection frame
+        clubs_frame = ttk.LabelFrame(main_frame, text="Available Clubs", padding="15")
+        clubs_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        clubs_frame.columnconfigure(0, weight=1)
+        clubs_frame.rowconfigure(1, weight=1)
+
+        # Search frame
+        search_frame = ttk.Frame(clubs_frame)
+        search_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+
+        ttk.Label(search_frame, text="Search:").pack(side='left', padx=(0, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
+        search_entry.pack(side='left', padx=5)
+
+        # Clubs list
+        list_frame = ttk.Frame(clubs_frame)
+        list_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        list_frame.columnconfigure(0, weight=1)
+        list_frame.rowconfigure(0, weight=1)
+
+        # Create treeview for clubs
+        columns = ('club_id', 'club_name', 'category', 'members')
+        clubs_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
+
+        clubs_tree.heading('club_id', text='ID')
+        clubs_tree.heading('club_name', text='Club Name')
+        clubs_tree.heading('category', text='Category')
+        clubs_tree.heading('members', text='Members')
+
+        clubs_tree.column('club_id', width=60)
+        clubs_tree.column('club_name', width=250)
+        clubs_tree.column('category', width=150)
+        clubs_tree.column('members', width=100)
+
+        # Scrollbars
+        v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=clubs_tree.yview)
+        h_scrollbar = ttk.Scrollbar(list_frame, orient='horizontal', command=clubs_tree.xview)
+        clubs_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        clubs_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        v_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        h_scrollbar.grid(row=1, column=0, sticky=(tk.W, tk.E))
+
+        # Load clubs from database
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT club_id, club_name, club_category, member_count
+                FROM student_clubs
+                WHERE active = 1
+                ORDER BY club_name
+            ''')
+            clubs = cursor.fetchall()
+
+            for club in clubs:
+                clubs_tree.insert('', tk.END, values=club)
+
+            conn.close()
+
+            # Update instructions with club count
+            ttk.Label(instructions_frame,
+                     text=f"({len(clubs)} active clubs available)",
+                     font=('Arial', 9), foreground='gray').pack()
+
+        except Exception as e:
+            ttk.Label(list_frame, text=f"Error loading clubs: {e}",
+                     foreground='red').grid(row=0, column=0, pady=20)
+
+        # Action buttons
+        button_frame = ttk.Frame(clubs_frame)
+        button_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(15, 0))
+
+        def view_club_merchandise():
+            selection = clubs_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select a club to view merchandise.")
+                return
+
+            item = clubs_tree.item(selection[0])
+            club_id = item['values'][0]
+            club_name = item['values'][1]
+
+            # Filter products by club category or tag
+            self.show_browse_products()  # Show regular browse with filter option
+            self.update_status(f"Showing merchandise for: {club_name}")
+            messagebox.showinfo("Club Merchandise",
+                               f"Browsing merchandise for {club_name}\n\n"
+                               f"Tip: Products tagged with '{club_name}' will appear in the list.")
+
+        ttk.Button(button_frame, text="View Merchandise", command=view_club_merchandise,
+                  style='Primary.TButton').pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Back to Dashboard", command=self.show_dashboard).pack(side='left', padx=5)
+
+        # Search functionality
+        def search_clubs(*args):
+            search_term = search_var.get().lower()
+            clubs_tree.delete(*clubs_tree.get_children())
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT club_id, club_name, club_category, member_count
+                    FROM student_clubs
+                    WHERE active = 1
+                    AND (LOWER(club_name) LIKE ? OR LOWER(club_category) LIKE ?)
+                    ORDER BY club_name
+                ''', (f'%{search_term}%', f'%{search_term}%'))
+                clubs = cursor.fetchall()
+
+                for club in clubs:
+                    clubs_tree.insert('', tk.END, values=club)
+
+                conn.close()
+            except Exception as e:
+                print(f"Error searching clubs: {e}")
+
+        search_var.trace('w', search_clubs)
+
+        # Double-click to view merchandise
+        clubs_tree.bind('<Double-1>', lambda e: view_club_merchandise())
+
+        self.update_status("Club merchandise selection loaded")
+
     def get_dashboard_stats(self):
         """Get dashboard statistics from backend"""
         try:

@@ -349,6 +349,7 @@ class LayoutManager:
         self.create_payment_plans_tab()
         self.create_fees_tab()
         self.create_late_fees_tab()
+        self.create_club_payments_tab()
         self.create_students_tab()
         self.create_currency_tab()
         self.create_analytics_tab()
@@ -384,6 +385,7 @@ class LayoutManager:
             ("💰 Core Finance", "core_finance", "admin_staff"),  # Admin and Staff only
             ("💳 Payments", "payments", "all"),  # All can view payments
             ("📋 Fees", "fees", "all"),  # All can view fees
+            ("💰 Club Payments", "club_payments", "admin_staff"),  # Admin and Staff only
             ("👤 Students", "students", "admin_staff"),  # Admin and Staff only
             ("📈 Reports", "reports", "admin_staff"),  # Admin and Staff only
             ("💵 Revenue by Source", "revenue_source", "admin_staff"),  # Admin and Staff only
@@ -1493,6 +1495,133 @@ class LayoutManager:
             conn.close()
         except Exception as e:
             print(f"Error refreshing late fees: {e}")
+
+    def create_club_payments_tab(self):
+        """Create club payment management tab"""
+        club_payments_frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['club_payments'] = club_payments_frame
+
+        # Title
+        title_label = tk.Label(club_payments_frame, text="💰 Club Payment Management",
+                               font=('Arial', 18, 'bold'), bg='white')
+        title_label.pack(pady=10)
+
+        # Info label
+        info_label = tk.Label(club_payments_frame,
+                             text="Manage payments for student clubs and organizations",
+                             font=('Arial', 10), bg='white', fg='gray')
+        info_label.pack(pady=5)
+
+        # Create notebook for different sections
+        notebook = ttk.Notebook(club_payments_frame)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Payment Overview Tab
+        overview_frame = tk.Frame(notebook, bg='white')
+        notebook.add(overview_frame, text="Payment Overview")
+        self._create_club_payment_overview_tab(overview_frame)
+
+        # Record Payment Tab
+        record_frame = tk.Frame(notebook, bg='white')
+        notebook.add(record_frame, text="Record Payment")
+        self._create_club_record_payment_tab(record_frame)
+
+        # Payment History Tab
+        history_frame = tk.Frame(notebook, bg='white')
+        notebook.add(history_frame, text="Payment History")
+        self._create_club_payment_history_tab(history_frame)
+
+    def _create_club_payment_overview_tab(self, parent):
+        """Create payment overview tab for club payments"""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get summary statistics
+            cursor.execute('''
+                SELECT
+                    COUNT(*) as total_payments,
+                    SUM(amount) as total_amount,
+                    COUNT(DISTINCT club_id) as clubs_with_payments
+                FROM club_payments
+                WHERE payment_date >= date('now', '-30 days')
+            ''')
+            stats = cursor.fetchone()
+
+            # Display statistics
+            stats_frame = tk.LabelFrame(parent, text="Payment Statistics (Last 30 Days)",
+                                       bg='white', font=('Arial', 12, 'bold'))
+            stats_frame.pack(fill=tk.X, padx=20, pady=20)
+
+            if stats:
+                tk.Label(stats_frame, text=f"Total Payments: {stats[0] or 0}",
+                        font=('Arial', 12), bg='white').pack(anchor='w', padx=10, pady=5)
+                tk.Label(stats_frame, text=f"Total Amount: £{stats[1] or 0:.2f}",
+                        font=('Arial', 12), bg='white').pack(anchor='w', padx=10, pady=5)
+                tk.Label(stats_frame, text=f"Clubs with Payments: {stats[2] or 0}",
+                        font=('Arial', 12), bg='white').pack(anchor='w', padx=10, pady=5)
+
+            conn.close()
+
+        except Exception as e:
+            tk.Label(parent, text=f"Error loading statistics: {e}",
+                    bg='white', fg='red').pack(pady=20)
+
+    def _create_club_record_payment_tab(self, parent):
+        """Create tab for recording new club payments"""
+        tk.Label(parent, text="Record a new club payment here",
+                font=('Arial', 12), bg='white').pack(pady=20)
+        tk.Label(parent, text="This feature integrates with the Student Union system.",
+                font=('Arial', 10), bg='white', foreground='gray').pack()
+
+    def _create_club_payment_history_tab(self, parent):
+        """Create tab for viewing payment history"""
+        try:
+            # Create treeview for payment history
+            table_frame = tk.Frame(parent, bg='white')
+            table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            columns = ('Date', 'Club', 'Amount', 'Type', 'Status')
+            tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            tree.grid(row=0, column=0, sticky='nsew')
+
+            # Add scrollbar
+            scrollbar = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
+            scrollbar.grid(row=0, column=1, sticky='ns')
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            table_frame.grid_rowconfigure(0, weight=1)
+            table_frame.grid_columnconfigure(0, weight=1)
+
+            # Load recent payments
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT payment_date, club_name, amount, payment_type, status
+                    FROM club_payments cp
+                    JOIN student_clubs sc ON cp.club_id = sc.club_id
+                    ORDER BY payment_date DESC
+                    LIMIT 100
+                ''')
+                payments = cursor.fetchall()
+
+                for payment in payments:
+                    tree.insert('', tk.END, values=payment)
+
+                conn.close()
+            except Exception as e:
+                print(f"Error loading payment history: {e}")
+
+        except Exception as e:
+            tk.Label(parent, text=f"Error creating payment history view: {e}",
+                    bg='white', fg='red').pack(pady=20)
 
     def create_students_tab(self):
         """Create students tab"""

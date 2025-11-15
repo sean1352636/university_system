@@ -1,5 +1,5 @@
 {
-  "numStartups": 242,
+  "numStartups": 243,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
@@ -14,22 +14,22 @@
     "todo-list": 230,
     "# for memory": 242,
     "install-github-app": 167,
-    "drag-and-drop-images": 231,
-    "double-esc-code-restore": 231,
+    "drag-and-drop-images": 243,
+    "double-esc-code-restore": 243,
     "continue": 231,
     "shift-tab": 231,
     "image-paste": 230,
     "tab-toggle-thinking": 231,
     "ultrathink-keyword": 231,
     "custom-agents": 233,
-    "permissions": 231,
+    "permissions": 242,
     "custom-commands": 228,
     "git-worktrees": 233,
     "ide-upsell-external-terminal": 56,
     "stickers-command": 237
   },
   "memoryUsageCount": 2,
-  "promptQueueUseCount": 17,
+  "promptQueueUseCount": 18,
   "cachedStatsigGates": {
     "tengu_disable_bypass_permissions_mode": false,
     "tengu_tool_pear": false,

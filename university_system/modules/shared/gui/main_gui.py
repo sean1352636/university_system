@@ -1125,6 +1125,132 @@ class UnifiedManagementGUI:
             messagebox.showerror("Error", f"Failed to open Financial Aid & Scholarships: {str(e)}")
             print(f"❌ Financial Aid error: {e}")
 
+    def show_club_payment_management(self):
+        """Launch the Club Payment Management interface in a child window."""
+        if not self.auth.current_user:
+            messagebox.showerror("Error", "You must be logged in to access Club Payment Management.")
+            return
+
+        try:
+            # Create new window for Club Payment Management
+            payment_window = tk.Toplevel(self.root)
+            payment_window.title("Club Payment Management")
+            payment_window.geometry("1200x800")
+
+            # Create main frame
+            main_frame = ttk.Frame(payment_window, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Title
+            title_label = ttk.Label(main_frame, text="Club Payment Management",
+                                   font=('Arial', 16, 'bold'))
+            title_label.pack(pady=10)
+
+            # Create notebook for different sections
+            notebook = ttk.Notebook(main_frame)
+            notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+
+            # Payment Overview Tab
+            overview_frame = ttk.Frame(notebook, padding="10")
+            notebook.add(overview_frame, text="Payment Overview")
+            self._create_payment_overview_tab_finance(overview_frame)
+
+            # Record Payment Tab
+            record_frame = ttk.Frame(notebook, padding="10")
+            notebook.add(record_frame, text="Record Payment")
+            self._create_record_payment_tab_finance(record_frame)
+
+            # Payment History Tab
+            history_frame = ttk.Frame(notebook, padding="10")
+            notebook.add(history_frame, text="Payment History")
+            self._create_payment_history_tab_finance(history_frame)
+
+            print("✅ Club Payment Management opened successfully")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open Club Payment Management: {str(e)}")
+            print(f"❌ Club Payment Management error: {e}")
+
+    def _create_payment_overview_tab_finance(self, parent):
+        """Create payment overview tab for club payments"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Get summary statistics
+            cursor.execute('''
+                SELECT
+                    COUNT(*) as total_payments,
+                    SUM(amount) as total_amount,
+                    COUNT(DISTINCT club_id) as clubs_with_payments
+                FROM club_payments
+                WHERE payment_date >= date('now', '-30 days')
+            ''')
+            stats = cursor.fetchone()
+
+            # Display statistics
+            stats_frame = ttk.LabelFrame(parent, text="Payment Statistics (Last 30 Days)", padding="10")
+            stats_frame.pack(fill=tk.X, pady=10)
+
+            if stats:
+                ttk.Label(stats_frame, text=f"Total Payments: {stats[0] or 0}",
+                         font=('Arial', 12)).pack(anchor='w', pady=5)
+                ttk.Label(stats_frame, text=f"Total Amount: £{stats[1] or 0:.2f}",
+                         font=('Arial', 12)).pack(anchor='w', pady=5)
+                ttk.Label(stats_frame, text=f"Clubs with Payments: {stats[2] or 0}",
+                         font=('Arial', 12)).pack(anchor='w', pady=5)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading statistics: {e}").pack()
+
+    def _create_record_payment_tab_finance(self, parent):
+        """Create tab for recording new club payments"""
+        ttk.Label(parent, text="Record a new club payment here",
+                 font=('Arial', 12)).pack(pady=20)
+        ttk.Label(parent, text="This feature integrates with the Student Union system.",
+                 font=('Arial', 10), foreground='gray').pack()
+
+    def _create_payment_history_tab_finance(self, parent):
+        """Create tab for viewing payment history"""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Create treeview for payment history
+            columns = ('Date', 'Club', 'Amount', 'Type', 'Status')
+            tree = ttk.Treeview(parent, columns=columns, show='headings', height=15)
+
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=150)
+
+            tree.pack(fill=tk.BOTH, expand=True, pady=10)
+
+            # Add scrollbar
+            scrollbar = ttk.Scrollbar(parent, orient='vertical', command=tree.yview)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            # Load recent payments
+            cursor.execute('''
+                SELECT payment_date, club_name, amount, payment_type, status
+                FROM club_payments cp
+                JOIN student_clubs sc ON cp.club_id = sc.club_id
+                ORDER BY payment_date DESC
+                LIMIT 100
+            ''')
+            payments = cursor.fetchall()
+
+            for payment in payments:
+                tree.insert('', tk.END, values=payment)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(parent, text=f"Error loading payment history: {e}").pack()
+
     def show_university_shop(self):
         """Launch the University Shop GUI in a child window"""
         if not self.auth.current_user:
@@ -1546,6 +1672,7 @@ class UnifiedManagementGUI:
         finance_frame = ttk.LabelFrame(scrollable_frame, text="Finance", padding="5")
         finance_buttons = 0
         finance_buttons += create_button_if_visible(finance_frame, 'finance_management', "Finance Management", self.show_finance_management)
+        finance_buttons += create_button_if_visible(finance_frame, 'club_payment_management', "Club Payment Management", self.show_club_payment_management)
         if finance_buttons > 0:
             finance_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
 

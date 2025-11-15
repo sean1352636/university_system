@@ -475,12 +475,9 @@ class StudentUnionGUI:
         # Integrations
         self.add_sidebar_separator()
         self.add_sidebar_header("🔗 Integrations", "")
-        self.add_sidebar_button("Finance System", lambda: self.open_finance_gui_for_club_payment("General Payment", 0), "💳")
         self.add_sidebar_button("Club Payment Management", self.show_club_payments_content, "💰")
-        self.add_sidebar_button("University Shop", lambda: self.open_shop_for_club_merchandise("General"), "🛍️")
         self.add_sidebar_button("Club Merchandise", self.show_club_selection_for_merchandise, "👕")
         self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
-        self.add_sidebar_button("Club Dining Booking", self.show_club_selection_for_dining, "🍴")
         self.add_sidebar_button("Student Union Calendar", self.open_calendar_with_club_events, "📅")
         self.add_sidebar_button("Trip Management", self.show_club_selection_for_trips, "🧳")
 
@@ -688,29 +685,17 @@ class StudentUnionGUI:
         integrations_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="🔗 Integrations", menu=integrations_menu)
 
-        # Finance submenu
-        finance_submenu = tk.Menu(integrations_menu, tearoff=0)
-        integrations_menu.add_cascade(label="💳 Finance", menu=finance_submenu)
-        finance_submenu.add_command(label="Open Finance System",
-                                   command=lambda: self.open_finance_gui_for_club_payment("General Payment", 0))
-        finance_submenu.add_command(label="Club Payments",
-                                   command=lambda: self.open_finance_gui_for_club_payment("Club Fee", 25, "Club Membership"))
+        # Club Payments
+        integrations_menu.add_command(label="💰 Club Payments",
+                                     command=lambda: self.show_club_payments_content())
 
         # Shop submenu
-        shop_submenu = tk.Menu(integrations_menu, tearoff=0)
-        integrations_menu.add_cascade(label="🛍️ Shop", menu=shop_submenu)
-        shop_submenu.add_command(label="University Shop",
-                                command=lambda: self.open_shop_for_club_merchandise("General"))
-        shop_submenu.add_command(label="Club Merchandise",
-                                command=lambda: self.show_club_selection_for_merchandise())
+        integrations_menu.add_command(label="👕 Club Merchandise",
+                                     command=lambda: self.show_club_selection_for_merchandise())
 
-        # Restaurant submenu
-        restaurant_submenu = tk.Menu(integrations_menu, tearoff=0)
-        integrations_menu.add_cascade(label="🍽️ Restaurant", menu=restaurant_submenu)
-        restaurant_submenu.add_command(label="University Restaurant",
-                                      command=lambda: self.open_restaurant_for_club_booking("General"))
-        restaurant_submenu.add_command(label="Club Dining Booking",
-                                      command=lambda: self.show_club_selection_for_dining())
+        # Restaurant
+        integrations_menu.add_command(label="🍽️ University Restaurant",
+                                     command=lambda: self.open_restaurant_for_club_booking("General"))
 
         # Calendar and Trips
         integrations_menu.add_separator()
