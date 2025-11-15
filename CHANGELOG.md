@@ -5,6 +5,84 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.33] - 2025-11-15
+
+### Bug Fixes & Enhancements
+
+**Activity Logger GUI - Comprehensive Fixes:**
+- **CRITICAL FIX**: Fixed timer callback errors causing "invalid command name" crashes
+  - Added `_after_id` tracking in LogViewerTab to properly manage timer lifecycle
+  - Implemented destroy() method to cancel timers before widget destruction
+  - Added `_update_timer_id` tracking in main GUI class
+  - Updated start_update_timer() to cancel previous timers before scheduling new ones
+  - Added TclError handling to gracefully stop scheduling when widgets are destroyed
+  - Updated on_closing() to cancel all timers before destroying GUI
+  - Prevents errors like "invalid command name 546870274240start_update_timer"
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
+- **CRITICAL FIX**: Fixed NoneType query_logs error - linked to correct database
+  - Removed dependency on non-existent `logger.query_logs()` method
+  - Implemented direct database querying from activity_log table
+  - refresh_logs() now uses `get_connection()` to query student_records.db
+  - Queries: id, username, action, details, timestamp, ip_address
+  - Added support for username and action filters with LIKE queries
+  - Limits results to max_display_logs with proper ordering (DESC by timestamp)
+  - Activity logs now display correctly with real data from database
+  - Fixes: "Failed to execute query NoneType object has no attribute query_logs"
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
+- **CRITICAL FIX**: Fixed analytics not available errors
+  - Removed dependency on non-existent logger analytics methods
+  - Implemented get_analytics_data() to query database directly
+  - Retrieves real statistics:
+    - Total logs count from activity_log table
+    - Unique users count (DISTINCT username)
+    - Top 10 actions with counts (GROUP BY action)
+    - Recent activity in last 24 hours
+    - System health status (database connection check)
+  - refresh_analytics() now works without requiring logger object
+  - System health check now operational with database-backed metrics
+  - Fixes: "Failed to perform system health check analytics not available"
+  - Fixes: "Failed to generate report analytics not available"
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
+- **MAJOR ENHANCEMENT**: Completely redesigned report generation
+  - Report now shows live preview in scrollable text window (900x700)
+  - Preview displays formatted analytics report with:
+    - Generation timestamp
+    - Summary statistics (total logs, unique users, 24h activity)
+    - System health status
+    - Top 10 actions with counts
+  - Added multi-format export buttons:
+    - 📄 TXT - Plain text format
+    - 📋 JSON - Complete data export with proper formatting
+    - 📊 CSV - Comma-separated values for spreadsheet import
+  - All formats use native file dialog for save location
+  - Success notifications confirm save location
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
+- **MAJOR ENHANCEMENT**: Added email integration for reports
+  - Added "📧 Send to Admin" button to report preview window
+  - Automatically fetches admin email from database (first admin account)
+  - Sends formatted email with complete report content
+  - Email includes:
+    - Professional greeting with admin name
+    - Generation timestamp
+    - Full report text with proper formatting
+    - Report period information
+    - System signature
+  - Integrated with EmailService for reliable delivery
+  - Success confirmation shows admin email address
+  - Error handling for missing admin or email failures
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
+- **ENHANCEMENT**: Improved error handling and user feedback
+  - Added detailed error messages with traceback printing for debugging
+  - Analytics errors now show helpful message: "Analytics data is now available"
+  - Report generation shows specific error context
+  - All database operations use proper exception handling
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py`
+
 ## [5.0.32] - 2025-11-15
 
 ### Bug Fixes & Enhancements

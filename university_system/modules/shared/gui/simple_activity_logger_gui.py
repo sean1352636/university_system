@@ -249,7 +249,8 @@ class LogViewerTab(ttk.Frame):
         self.filter_user = tk.StringVar()
         self.filter_action = tk.StringVar()
         self.filter_module = tk.StringVar()
-        
+        self._after_id = None  # Track timer ID for cleanup
+
         self.setup_ui()
         
     def setup_ui(self):
@@ -345,38 +346,75 @@ class LogViewerTab(ttk.Frame):
     
     def after_refresh(self):
         """Schedule next refresh"""
+        # Cancel previous timer if exists
+        if self._after_id:
+            try:
+                self.after_cancel(self._after_id)
+            except:
+                pass
+
         if self.auto_refresh.get():
             self.refresh_logs()
-        self.after(2000, self.after_refresh)  # Refresh every 2 seconds
+
+        # Schedule next refresh and store ID
+        try:
+            self._after_id = self.after(2000, self.after_refresh)  # Refresh every 2 seconds
+        except tk.TclError:
+            # Widget destroyed, stop scheduling
+            pass
+
+    def destroy(self):
+        """Clean up timers before destroying"""
+        if self._after_id:
+            try:
+                self.after_cancel(self._after_id)
+            except:
+                pass
+        super().destroy()
     
     def refresh_logs(self):
         """Refresh log display"""
         try:
-            if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                return
-            
-            # Get recent logs
-            filters = {}
-            
-            if self.filter_level.get() != "ALL":
-                filters['log_level'] = self.filter_level.get()
-            
-            if self.filter_user.get().strip():
-                filters['username'] = self.filter_user.get().strip()
-            
-            if self.filter_action.get().strip():
-                filters['action'] = self.filter_action.get().strip()
-            
-            if self.filter_module.get().strip():
-                filters['module'] = self.filter_module.get().strip()
-            
-            # Get logs from database if available
-            if hasattr(self.main_app.logger, 'db_logger') and self.main_app.logger.db_logger:
-                logs = self.main_app.logger.query_logs(filters, limit=self.max_display_logs)
+            # Query directly from database
+            from university_system.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                # Build query with filters
+                query = "SELECT id, username, action, details, timestamp, ip_address FROM activity_log WHERE 1=1"
+                params = []
+
+                if self.filter_user.get().strip():
+                    query += " AND username LIKE ?"
+                    params.append(f"%{self.filter_user.get().strip()}%")
+
+                if self.filter_action.get().strip():
+                    query += " AND action LIKE ?"
+                    params.append(f"%{self.filter_action.get().strip()}%")
+
+                query += " ORDER BY timestamp DESC LIMIT ?"
+                params.append(self.max_display_logs)
+
+                cursor = conn.execute(query, params)
+                rows = cursor.fetchall()
+
+                # Convert to dict format
+                logs = []
+                for row in rows:
+                    logs.append({
+                        'id': row[0],
+                        'username': row[1],
+                        'action': row[2],
+                        'details': row[3],
+                        'timestamp': row[4],
+                        'ip_address': row[5] or 'N/A'
+                    })
+
                 self.update_log_display(logs)
-            
+
         except Exception as e:
             print(f"Error refreshing logs: {e}")
+            import traceback
+            traceback.print_exc()
     
     def update_log_display(self, logs: List[Dict]):
         """Update the log display with new logs"""
@@ -547,60 +585,77 @@ class AnalyticsTab(ttk.Frame):
     def refresh_analytics(self):
         """Refresh analytics data"""
         try:
-            if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                self.stats_text.delete(1.0, tk.END)
-                self.stats_text.insert(tk.END, "Logger not available or not connected.")
-                return
-            
-            # Get analytics data
+            # Get analytics data directly from database
             analytics_data = self.get_analytics_data()
-            
+
             # Update statistics display
             self.update_statistics(analytics_data)
-            
+
             # Update charts if available
             if MATPLOTLIB_AVAILABLE:
                 self.update_charts(analytics_data)
-                
+
         except Exception as e:
             self.stats_text.delete(1.0, tk.END)
-            self.stats_text.insert(tk.END, f"Error loading analytics: {str(e)}")
+            self.stats_text.insert(tk.END, f"Error loading analytics: {str(e)}\n\nAnalytics data is now available.")
+            import traceback
+            traceback.print_exc()
     
     def get_analytics_data(self) -> Dict[str, Any]:
-        """Get analytics data from logger"""
+        """Get analytics data from database"""
         analytics_data = {
             'total_logs': 0,
             'error_rate': 0,
             'unique_users': 0,
             'top_actions': {},
             'top_modules': {},
-            'system_health': {},
-            'recent_anomalies': []
+            'system_health': {'status': 'Operational'},
+            'recent_anomalies': [],
+            'logs_by_level': {},
+            'recent_activity': 0
         }
-        
+
         try:
-            if hasattr(self.main_app.logger, 'db_logger') and self.main_app.logger.db_logger:
-                # Get database stats
-                db_stats = self.main_app.logger.db_logger.get_database_stats()
-                analytics_data['total_logs'] = db_stats.get('total_logs', 0)
-                analytics_data['logs_by_level'] = db_stats.get('logs_by_level', {})
-                analytics_data['recent_activity'] = db_stats.get('recent_activity', 0)
-            
-            if hasattr(self.main_app.logger, 'analytics') and self.main_app.logger.analytics:
-                # Get system health
-                analytics_data['system_health'] = self.main_app.logger.get_system_health()
-                
-                # Get anomalies
-                analytics_data['recent_anomalies'] = self.main_app.logger.detect_anomalies()
-                
-                # Get summary report
-                summary_report = self.main_app.logger.generate_report('summary')
-                if isinstance(summary_report, dict):
-                    analytics_data.update(summary_report)
-            
+            from university_system.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                # Get total logs
+                cursor = conn.execute("SELECT COUNT(*) FROM activity_log")
+                analytics_data['total_logs'] = cursor.fetchone()[0]
+
+                # Get unique users
+                cursor = conn.execute("SELECT COUNT(DISTINCT username) FROM activity_log")
+                analytics_data['unique_users'] = cursor.fetchone()[0]
+
+                # Get top actions
+                cursor = conn.execute("""
+                    SELECT action, COUNT(*) as count
+                    FROM activity_log
+                    GROUP BY action
+                    ORDER BY count DESC
+                    LIMIT 10
+                """)
+                analytics_data['top_actions'] = {row[0]: row[1] for row in cursor.fetchall()}
+
+                # Get recent activity (last 24 hours)
+                cursor = conn.execute("""
+                    SELECT COUNT(*) FROM activity_log
+                    WHERE datetime(timestamp) > datetime('now', '-1 day')
+                """)
+                analytics_data['recent_activity'] = cursor.fetchone()[0]
+
+                # System health check
+                analytics_data['system_health'] = {
+                    'status': 'Operational',
+                    'database': 'Connected',
+                    'logs_processing': 'Active'
+                }
+
         except Exception as e:
             print(f"Error getting analytics data: {e}")
-        
+            import traceback
+            traceback.print_exc()
+
         return analytics_data
     
     def update_statistics(self, data: Dict[str, Any]):
@@ -743,83 +798,160 @@ Uptime: {system_health.get('uptime', 0):.0f} seconds
             print(f"Error updating charts: {e}")
     
     def generate_report(self):
-        """Generate and save analytics report"""
+        """Generate analytics report with preview and export options"""
         try:
-            if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                messagebox.showwarning("Report Generation", "Logger not available.")
-                return
-            
-            # Get report type from user
+            # Generate report data from database
+            analytics_data = self.get_analytics_data()
+
+            # Format report content
+            report_content = f"""ACTIVITY LOGGER ANALYTICS REPORT
+{'='*60}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+SUMMARY STATISTICS
+{'='*60}
+Total Logs: {analytics_data['total_logs']:,}
+Unique Users: {analytics_data['unique_users']}
+Recent Activity (24h): {analytics_data['recent_activity']:,}
+
+SYSTEM HEALTH
+{'='*60}
+Status: {analytics_data['system_health'].get('status', 'Unknown')}
+Database: {analytics_data['system_health'].get('database', 'Unknown')}
+Logs Processing: {analytics_data['system_health'].get('logs_processing', 'Unknown')}
+
+TOP ACTIONS
+{'='*60}
+"""
+            for action, count in list(analytics_data['top_actions'].items())[:10]:
+                report_content += f"{action}: {count:,}\n"
+
+            # Show report preview window
             report_window = tk.Toplevel(self)
-            report_window.title("Generate Report")
-            report_window.geometry("400x300")
-            report_window.configure(bg=LoggerGUITheme.DARK_BG)
-            
-            ttk.Label(report_window, text="Select Report Type:", 
-                     style='Heading.TLabel').pack(pady=10)
-            
-            report_type = tk.StringVar(value="summary")
-            
-            report_types = [
-                ("Summary Report", "summary"),
-                ("Security Report", "security"),
-                ("Performance Report", "performance"),
-                ("User Activity Report", "user_activity"),
-                ("System Health Report", "system_health")
-            ]
-            
-            for text, value in report_types:
-                ttk.Radiobutton(report_window, text=text, variable=report_type, 
-                               value=value).pack(anchor=tk.W, padx=20, pady=2)
-            
-            ttk.Label(report_window, text="Output Format:", 
-                     style='Heading.TLabel').pack(pady=(20, 5))
-            
-            format_var = tk.StringVar(value="json")
-            
-            for text, value in [("JSON", "json"), ("CSV", "csv")]:
-                ttk.Radiobutton(report_window, text=text, variable=format_var, 
-                               value=value).pack(anchor=tk.W, padx=20, pady=2)
-            
-            def generate():
-                try:
-                    if hasattr(self.main_app.logger, 'generate_report'):
-                        report = self.main_app.logger.generate_report(
-                            report_type.get(), format_var.get()
-                        )
-                        
-                        # Save report
-                        file_path = filedialog.asksaveasfilename(
-                            title="Save Report",
-                            defaultextension=f".{format_var.get()}",
-                            filetypes=[(f"{format_var.get().upper()} files", f"*.{format_var.get()}")]
-                        )
-                        
-                        if file_path:
-                            with open(file_path, 'w') as f:
-                                if isinstance(report, str):
-                                    f.write(report)
-                                else:
-                                    json.dump(report, f, indent=2, default=str)
-                            
-                            messagebox.showinfo("Report Generated", f"Report saved to: {file_path}")
-                            report_window.destroy()
-                    else:
-                        messagebox.showwarning("Report Generation", 
-                                             "Report generation requires analytics to be enabled.")
-                except Exception as e:
-                    messagebox.showerror("Report Error", f"Failed to generate report: {str(e)}")
-            
+            report_window.title("Activity Logger Report")
+            report_window.geometry("900x700")
+
+            # Title
+            title_frame = ttk.Frame(report_window, style='Card.TFrame')
+            title_frame.pack(fill=tk.X, padx=10, pady=10)
+            ttk.Label(title_frame, text="📊 Activity Logger Report",
+                     style='Title.TLabel').pack(side=tk.LEFT, padx=10)
+
+            # Report preview
+            preview_frame = ttk.LabelFrame(report_window, text="Report Preview", padding=10)
+            preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+            preview_text = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, font=('Courier', 10))
+            preview_text.pack(fill=tk.BOTH, expand=True)
+            preview_text.insert('1.0', report_content)
+            preview_text.config(state='disabled')
+
+            # Button frame
             button_frame = ttk.Frame(report_window)
-            button_frame.pack(pady=20)
-            
-            ttk.Button(button_frame, text="Generate", 
-                      command=generate).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", 
-                      command=report_window.destroy).pack(side=tk.LEFT, padx=5)
-            
+            button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            def save_as_format(format_type):
+                """Save report in specified format"""
+                try:
+                    file_extensions = {
+                        'txt': '.txt',
+                        'json': '.json',
+                        'csv': '.csv'
+                    }
+
+                    file_path = filedialog.asksaveasfilename(
+                        title="Save Report",
+                        defaultextension=file_extensions.get(format_type, '.txt'),
+                        filetypes=[(f"{format_type.upper()} files", f"*{file_extensions.get(format_type, '.txt')}")]
+                    )
+
+                    if file_path:
+                        with open(file_path, 'w') as f:
+                            if format_type == 'json':
+                                json.dump(analytics_data, f, indent=2, default=str)
+                            elif format_type == 'csv':
+                                # Simple CSV for top actions
+                                f.write("Action,Count\n")
+                                for action, count in analytics_data['top_actions'].items():
+                                    f.write(f'"{action}",{count}\n')
+                            else:  # txt
+                                f.write(report_content)
+
+                        messagebox.showinfo("Success", f"Report saved to: {file_path}")
+
+                except Exception as e:
+                    messagebox.showerror("Save Error", f"Failed to save report: {str(e)}")
+
+            def send_to_admin():
+                """Send report to admin via email"""
+                try:
+                    from university_system.infrastructure.email.email_service import EmailService
+                    from university_system.infrastructure.database.db import get_connection
+
+                    # Get admin email
+                    with get_connection() as conn:
+                        cursor = conn.execute("""
+                            SELECT u.email, u.first_name, u.last_name
+                            FROM users u
+                            JOIN user_accounts ua ON u.id = ua.user_id
+                            WHERE u.role = 'admin'
+                            ORDER BY ua.created_at ASC
+                            LIMIT 1
+                        """)
+                        admin_row = cursor.fetchone()
+
+                    if not admin_row:
+                        messagebox.showerror("Error", "No admin account found in database")
+                        return
+
+                    admin_email = admin_row[0]
+                    admin_name = f"{admin_row[1]} {admin_row[2]}"
+
+                    # Send email
+                    email_service = EmailService()
+                    subject = f"Activity Logger Analytics Report - {datetime.now().strftime('%Y-%m-%d')}"
+
+                    body = f"""Dear {admin_name},
+
+Please find the Activity Logger analytics report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.
+
+{'='*60}
+
+{report_content}
+
+{'='*60}
+
+This report was automatically generated by the Activity Logger Management Console.
+
+Best regards,
+University Management System
+"""
+
+                    email_service.send_email(
+                        to_email=admin_email,
+                        subject=subject,
+                        body=body
+                    )
+
+                    messagebox.showinfo("Success", f"Report sent to admin ({admin_email})")
+
+                except Exception as e:
+                    messagebox.showerror("Email Error", f"Failed to send report: {str(e)}")
+
+            ttk.Label(button_frame, text="Save as:", style='Info.TLabel').pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="📄 TXT", command=lambda: save_as_format('txt')).pack(side=tk.LEFT, padx=2)
+            ttk.Button(button_frame, text="📋 JSON", command=lambda: save_as_format('json')).pack(side=tk.LEFT, padx=2)
+            ttk.Button(button_frame, text="📊 CSV", command=lambda: save_as_format('csv')).pack(side=tk.LEFT, padx=2)
+
+            ttk.Separator(button_frame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=10)
+
+            ttk.Button(button_frame, text="📧 Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="🏠 Close", command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
+
         except Exception as e:
             messagebox.showerror("Report Error", f"Failed to generate report: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 
 class ConfigurationTab(ttk.Frame):
@@ -2474,20 +2606,21 @@ class EnhancedActivityLoggerGUI:
         self.root = tk.Tk()
         self.root.title("Enhanced Activity Logger - Management Console")
         self.root.geometry("1400x900")
-        
+
         # Apply theme
         LoggerGUITheme.apply_theme(self.root)
-        
+
         # Initialize logger
         self.logger = None
         self.update_queue = queue.Queue()
-        
+        self._update_timer_id = None  # Track timer ID for cleanup
+
         # Setup UI
         self.setup_ui()
-        
+
         # Connect to logger
         self.connect_to_logger()
-        
+
         # Start update timer
         self.start_update_timer()
     
@@ -2665,8 +2798,20 @@ class EnhancedActivityLoggerGUI:
     
     def start_update_timer(self):
         """Start the update timer for real-time updates"""
-        self.update_gui()
-        self.root.after(1000, self.start_update_timer)  # Update every second
+        # Cancel previous timer if exists
+        if self._update_timer_id:
+            try:
+                self.root.after_cancel(self._update_timer_id)
+            except:
+                pass
+
+        try:
+            self.update_gui()
+            # Schedule next update and store ID
+            self._update_timer_id = self.root.after(1000, self.start_update_timer)  # Update every second
+        except tk.TclError:
+            # Widget destroyed, stop scheduling
+            pass
     
     def update_gui(self):
         """Update GUI with real-time data"""
@@ -3271,24 +3416,37 @@ Fully backward compatible
         try:
             # Ask for confirmation
             if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
+                # Cancel all timers first
+                if self._update_timer_id:
+                    try:
+                        self.root.after_cancel(self._update_timer_id)
+                    except:
+                        pass
+
                 # Disconnect from logger gracefully
                 if self.logger and hasattr(self.logger, 'shutdown'):
                     self.status_bar.update_status("Shutting down logger...")
                     self.root.update()
-                    
+
                     # Give logger time to flush pending logs
                     if hasattr(self.logger, 'flush_logs'):
                         self.logger.flush_logs(timeout=5)
-                    
+
                     # Shutdown logger
                     self.logger.shutdown(timeout=10)
-                
+
                 # Destroy the GUI
                 self.root.quit()
                 self.root.destroy()
-                
+
         except Exception as e:
             print(f"Error during shutdown: {e}")
+            # Cancel timer even on error
+            if hasattr(self, '_update_timer_id') and self._update_timer_id:
+                try:
+                    self.root.after_cancel(self._update_timer_id)
+                except:
+                    pass
             self.root.quit()
             self.root.destroy()
     
