@@ -715,28 +715,429 @@ class FacilitiesManagementGUI:
         except Exception as e:
             print(f"Error loading building filters: {e}")
 
-    # Action methods (stubs for now, would implement full dialogs)
+    # Action methods - Building Management
     def add_building(self):
         """Add a new building"""
-        messagebox.showinfo("Add Building", "Building add dialog would open here.\n\nImplement full form with fields for building details.")
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Add New Building")
+        dialog.geometry("500x450")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        # Form fields
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Add New Building", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Building Name
+        ttk.Label(main_frame, text="Building Name:*").pack(anchor=tk.W, pady=(5, 2))
+        name_entry = ttk.Entry(main_frame, width=40)
+        name_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Building Code
+        ttk.Label(main_frame, text="Building Code:*").pack(anchor=tk.W, pady=(5, 2))
+        code_entry = ttk.Entry(main_frame, width=40)
+        code_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Address
+        ttk.Label(main_frame, text="Address:").pack(anchor=tk.W, pady=(5, 2))
+        address_entry = ttk.Entry(main_frame, width=40)
+        address_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Total Floors
+        ttk.Label(main_frame, text="Total Floors:").pack(anchor=tk.W, pady=(5, 2))
+        floors_entry = ttk.Spinbox(main_frame, from_=1, to=100, width=38)
+        floors_entry.set(1)
+        floors_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Building Type
+        ttk.Label(main_frame, text="Building Type:").pack(anchor=tk.W, pady=(5, 2))
+        type_combo = ttk.Combobox(main_frame, values=[
+            'Academic', 'Administrative', 'Residential', 'Athletic',
+            'Research', 'Library', 'Student Center', 'Mixed Use'
+        ], state='readonly', width=38)
+        type_combo.current(0)
+        type_combo.pack(fill=tk.X, pady=(0, 20))
+
+        def save_building():
+            name = name_entry.get().strip()
+            code = code_entry.get().strip()
+
+            if not name or not code:
+                messagebox.showwarning("Missing Information", "Please enter building name and code.")
+                return
+
+            try:
+                building_id = BuildingManager.register_building(
+                    building_name=name,
+                    building_code=code,
+                    address=address_entry.get().strip(),
+                    total_floors=int(floors_entry.get()),
+                    building_type=type_combo.get()
+                )
+
+                log_activity('Added building', building_id=building_id,
+                           details={'name': name}, user=self.current_user.get('username'))
+
+                messagebox.showinfo("Success", f"Building '{name}' added successfully!")
+                dialog.destroy()
+                self.load_buildings()
+                self.load_building_filters()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add building: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Save", command=save_building).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def edit_building(self, event=None):
         """Edit selected building"""
         selection = self.buildings_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Edit Building", "Building edit dialog would open here.")
+
+        # Get building data
+        item = self.buildings_tree.item(selection[0])
+        values = item['values']
+        building_id = values[0]
+
+        # Load current data from database
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM buildings WHERE building_id = ?', (building_id,))
+                building = cursor.fetchone()
+
+                if not building:
+                    messagebox.showerror("Error", "Building not found")
+                    return
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load building data: {str(e)}")
+            return
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.window)
+        dialog.title(f"Edit Building - {building['building_name']}")
+        dialog.geometry("500x450")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Edit Building - {building['building_name']}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Building Name
+        ttk.Label(main_frame, text="Building Name:*").pack(anchor=tk.W, pady=(5, 2))
+        name_entry = ttk.Entry(main_frame, width=40)
+        name_entry.insert(0, building['building_name'])
+        name_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Building Code
+        ttk.Label(main_frame, text="Building Code:*").pack(anchor=tk.W, pady=(5, 2))
+        code_entry = ttk.Entry(main_frame, width=40)
+        code_entry.insert(0, building['building_code'])
+        code_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Address
+        ttk.Label(main_frame, text="Address:").pack(anchor=tk.W, pady=(5, 2))
+        address_entry = ttk.Entry(main_frame, width=40)
+        address_entry.insert(0, building['address'] or '')
+        address_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Total Floors
+        ttk.Label(main_frame, text="Total Floors:").pack(anchor=tk.W, pady=(5, 2))
+        floors_entry = ttk.Spinbox(main_frame, from_=1, to=100, width=38)
+        floors_entry.set(building['total_floors'] or 1)
+        floors_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Building Type
+        ttk.Label(main_frame, text="Building Type:").pack(anchor=tk.W, pady=(5, 2))
+        type_combo = ttk.Combobox(main_frame, values=[
+            'Academic', 'Administrative', 'Residential', 'Athletic',
+            'Research', 'Library', 'Student Center', 'Mixed Use'
+        ], state='readonly', width=38)
+
+        # Set current value
+        current_type = building['building_type'] or 'Academic'
+        if current_type in type_combo['values']:
+            type_combo.set(current_type)
+        else:
+            type_combo.current(0)
+        type_combo.pack(fill=tk.X, pady=(0, 10))
+
+        # Active status
+        is_active_var = tk.BooleanVar(value=bool(building['is_active']))
+        ttk.Checkbutton(main_frame, text="Building is active", variable=is_active_var).pack(anchor=tk.W, pady=(10, 20))
+
+        def update_building():
+            name = name_entry.get().strip()
+            code = code_entry.get().strip()
+
+            if not name or not code:
+                messagebox.showwarning("Missing Information", "Please enter building name and code.")
+                return
+
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE buildings
+                        SET building_name = ?, building_code = ?, address = ?,
+                            total_floors = ?, building_type = ?, is_active = ?
+                        WHERE building_id = ?
+                    ''', (name, code, address_entry.get().strip(), int(floors_entry.get()),
+                          type_combo.get(), 1 if is_active_var.get() else 0, building_id))
+
+                log_activity('Updated building', building_id=building_id,
+                           details={'name': name}, user=self.current_user.get('username'))
+
+                messagebox.showinfo("Success", f"Building '{name}' updated successfully!")
+                dialog.destroy()
+                self.load_buildings()
+                self.load_building_filters()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update building: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Update", command=update_building).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def add_room(self):
         """Add a new room"""
-        messagebox.showinfo("Add Room", "Room add dialog would open here.")
+        # Get list of buildings for dropdown
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT building_id, building_name, building_code FROM buildings WHERE is_active = 1 ORDER BY building_name')
+                buildings = cursor.fetchall()
+
+            if not buildings:
+                messagebox.showwarning("No Buildings", "Please add a building first before adding rooms.")
+                return
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load buildings: {str(e)}")
+            return
+
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Add New Room")
+        dialog.geometry("500x550")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text="Add New Room", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Building selection
+        ttk.Label(main_frame, text="Building:*").pack(anchor=tk.W, pady=(5, 2))
+        building_combo = ttk.Combobox(main_frame, values=[
+            f"{b['building_id']} - {b['building_name']} ({b['building_code']})" for b in buildings
+        ], state='readonly', width=38)
+        building_combo.current(0)
+        building_combo.pack(fill=tk.X, pady=(0, 10))
+
+        # Room Number
+        ttk.Label(main_frame, text="Room Number:*").pack(anchor=tk.W, pady=(5, 2))
+        room_num_entry = ttk.Entry(main_frame, width=40)
+        room_num_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Floor Number
+        ttk.Label(main_frame, text="Floor Number:*").pack(anchor=tk.W, pady=(5, 2))
+        floor_entry = ttk.Spinbox(main_frame, from_=0, to=100, width=38)
+        floor_entry.set(1)
+        floor_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Room Type
+        ttk.Label(main_frame, text="Room Type:*").pack(anchor=tk.W, pady=(5, 2))
+        room_type_combo = ttk.Combobox(main_frame, values=[
+            'Classroom', 'Lecture Hall', 'Laboratory', 'Computer Lab',
+            'Office', 'Conference Room', 'Study Room', 'Auditorium',
+            'Library', 'Storage', 'Other'
+        ], state='readonly', width=38)
+        room_type_combo.current(0)
+        room_type_combo.pack(fill=tk.X, pady=(0, 10))
+
+        # Capacity
+        ttk.Label(main_frame, text="Capacity:").pack(anchor=tk.W, pady=(5, 2))
+        capacity_entry = ttk.Spinbox(main_frame, from_=0, to=500, width=38)
+        capacity_entry.set(30)
+        capacity_entry.pack(fill=tk.X, pady=(0, 20))
+
+        def save_room():
+            building_str = building_combo.get()
+            room_number = room_num_entry.get().strip()
+            room_type = room_type_combo.get()
+
+            if not building_str or not room_number or not room_type:
+                messagebox.showwarning("Missing Information", "Please fill in all required fields (*)")
+                return
+
+            # Extract building_id from combo selection
+            building_id = int(building_str.split(' - ')[0])
+
+            try:
+                room_id = RoomManager.register_room(
+                    building_id=building_id,
+                    room_number=room_number,
+                    room_type=room_type,
+                    capacity=int(capacity_entry.get()),
+                    floor_number=int(floor_entry.get())
+                )
+
+                log_activity('Added room', room_id=room_id,
+                           details={'room_number': room_number}, user=self.current_user.get('username'))
+
+                messagebox.showinfo("Success", f"Room {room_number} added successfully!")
+                dialog.destroy()
+                self.load_rooms()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add room: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Save", command=save_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def edit_room(self, event=None):
         """Edit selected room"""
         selection = self.rooms_tree.selection()
         if not selection:
             return
-        messagebox.showinfo("Edit Room", "Room edit dialog would open here.")
+
+        item = self.rooms_tree.item(selection[0])
+        values = item['values']
+        room_id = values[0]
+
+        # Load current room data
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM rooms WHERE id = ?', (room_id,))
+                room = cursor.fetchone()
+
+                if not room:
+                    messagebox.showerror("Error", "Room not found")
+                    return
+
+                cursor.execute('SELECT building_id, building_name, building_code FROM buildings WHERE is_active = 1 ORDER BY building_name')
+                buildings = cursor.fetchall()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load room data: {str(e)}")
+            return
+
+        dialog = tk.Toplevel(self.window)
+        dialog.title(f"Edit Room - {room['room_number']}")
+        dialog.geometry("500x550")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Edit Room - {room['room_number']}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Building selection
+        ttk.Label(main_frame, text="Building:*").pack(anchor=tk.W, pady=(5, 2))
+        building_combo = ttk.Combobox(main_frame, values=[
+            f"{b['building_id']} - {b['building_name']} ({b['building_code']})" for b in buildings
+        ], state='readonly', width=38)
+
+        # Set current building
+        for idx, b in enumerate(buildings):
+            if b['building_id'] == room['building_id']:
+                building_combo.current(idx)
+                break
+        building_combo.pack(fill=tk.X, pady=(0, 10))
+
+        # Room Number
+        ttk.Label(main_frame, text="Room Number:*").pack(anchor=tk.W, pady=(5, 2))
+        room_num_entry = ttk.Entry(main_frame, width=40)
+        room_num_entry.insert(0, room['room_number'])
+        room_num_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Floor Number
+        ttk.Label(main_frame, text="Floor Number:*").pack(anchor=tk.W, pady=(5, 2))
+        floor_entry = ttk.Spinbox(main_frame, from_=0, to=100, width=38)
+        floor_entry.set(room['floor_number'] or 1)
+        floor_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Room Type
+        ttk.Label(main_frame, text="Room Type:*").pack(anchor=tk.W, pady=(5, 2))
+        room_type_combo = ttk.Combobox(main_frame, values=[
+            'Classroom', 'Lecture Hall', 'Laboratory', 'Computer Lab',
+            'Office', 'Conference Room', 'Study Room', 'Auditorium',
+            'Library', 'Storage', 'Other'
+        ], state='readonly', width=38)
+        room_type_combo.set(room['room_type'])
+        room_type_combo.pack(fill=tk.X, pady=(0, 10))
+
+        # Capacity
+        ttk.Label(main_frame, text="Capacity:").pack(anchor=tk.W, pady=(5, 2))
+        capacity_entry = ttk.Spinbox(main_frame, from_=0, to=500, width=38)
+        capacity_entry.set(room['capacity'] or 30)
+        capacity_entry.pack(fill=tk.X, pady=(0, 10))
+
+        # Active status
+        is_active_var = tk.BooleanVar(value=bool(room['is_active']))
+        ttk.Checkbutton(main_frame, text="Room is active", variable=is_active_var).pack(anchor=tk.W, pady=(10, 20))
+
+        def update_room():
+            building_str = building_combo.get()
+            room_number = room_num_entry.get().strip()
+            room_type = room_type_combo.get()
+
+            if not building_str or not room_number or not room_type:
+                messagebox.showwarning("Missing Information", "Please fill in all required fields (*)")
+                return
+
+            building_id = int(building_str.split(' - ')[0])
+
+            try:
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE rooms
+                        SET building_id = ?, room_number = ?, room_type = ?,
+                            capacity = ?, floor_number = ?, is_active = ?
+                        WHERE id = ?
+                    ''', (building_id, room_number, room_type, int(capacity_entry.get()),
+                          int(floor_entry.get()), 1 if is_active_var.get() else 0, room_id))
+
+                log_activity('Updated room', room_id=room_id,
+                           details={'room_number': room_number}, user=self.current_user.get('username'))
+
+                messagebox.showinfo("Success", f"Room {room_number} updated successfully!")
+                dialog.destroy()
+                self.load_rooms()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update room: {str(e)}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Update", command=update_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def create_booking(self):
         """Create a new room booking"""
