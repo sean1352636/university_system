@@ -53,6 +53,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensures consistent authentication state across all GUI functions
 - File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
 
+**Security Dashboard - Database Schema Mismatch:**
+- **CRITICAL FIX**: Fixed column name mismatch in encrypted_fields_metadata table
+- Database schema uses `key_id` but code was querying `encryption_key_id`
+- Updated 5 SQL queries in data_encryption.py to use correct column name:
+  - Line 233: WHERE clause in rotate_encryption_key()
+  - Line 322: SELECT in encrypt_field() - check existing key
+  - Line 338: INSERT in encrypt_field() - register metadata
+  - Line 388: SELECT in decrypt_field() - get encryption key
+  - Line 576: SELECT in list_encrypted_fields() - list all encrypted fields
+- Fixes sqlite3.OperationalError: "no such column: encryption_key_id"
+- Security dashboard now loads encryption data correctly
+- File: `university_system/infrastructure/security/data_encryption.py`
+
 ## [5.0.29] - 2025-11-15
 
 ### UI Fix

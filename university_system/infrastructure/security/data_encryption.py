@@ -230,7 +230,7 @@ class EncryptionManager:
             cursor.execute("""
                 SELECT table_name, column_name
                 FROM encrypted_fields_metadata
-                WHERE encryption_key_id = ?
+                WHERE key_id = ?
             """, (old_key_id,))
 
             fields_to_reencrypt = cursor.fetchall()
@@ -319,7 +319,7 @@ class EncryptionManager:
             if not key_id:
                 # Check if field already has a key
                 cursor.execute("""
-                    SELECT encryption_key_id FROM encrypted_fields_metadata
+                    SELECT key_id FROM encrypted_fields_metadata
                     WHERE table_name = ? AND column_name = ?
                 """, (table_name, column_name))
 
@@ -335,7 +335,7 @@ class EncryptionManager:
                     # Register field metadata
                     cursor.execute("""
                         INSERT INTO encrypted_fields_metadata (
-                            table_name, column_name, encryption_key_id
+                            table_name, column_name, key_id
                         )
                         VALUES (?, ?, ?)
                     """, (table_name, column_name, key_id))
@@ -385,7 +385,7 @@ class EncryptionManager:
         try:
             # Get encryption key for field
             cursor.execute("""
-                SELECT encryption_key_id FROM encrypted_fields_metadata
+                SELECT key_id FROM encrypted_fields_metadata
                 WHERE table_name = ? AND column_name = ?
             """, (table_name, column_name))
 
@@ -573,7 +573,7 @@ class EncryptionManager:
 
         try:
             cursor.execute("""
-                SELECT table_name, column_name, encryption_key_id, encrypted_at
+                SELECT table_name, column_name, key_id, encrypted_at
                 FROM encrypted_fields_metadata
                 ORDER BY table_name, column_name
             """)
