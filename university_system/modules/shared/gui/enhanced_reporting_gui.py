@@ -5908,7 +5908,7 @@ Sections ({len(template_data.get('sections', []))} total):
         file_path = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialname=f"{template_data['name']}_template.json"
+            initialfile=f"{template_data['name']}_template.json"
         )
         
         if file_path:
@@ -6286,17 +6286,24 @@ University Reporting System""")
         threading.Thread(target=quality_task, daemon=True).start()
     
     def _display_quality_results(self, quality_report):
-        """Display quality check results"""
+        """Display quality check results in separate window"""
         self.stop_progress()
         self.update_status("Quality check completed")
-        
-        self.quality_display.delete(1.0, tk.END)
-        
+
+        # Create new window for quality results
+        quality_window = tk.Toplevel(self.root)
+        quality_window.title("Data Quality Report")
+        quality_window.geometry("700x600")
+
+        # Results display
+        quality_text = ScrolledText(quality_window, wrap=tk.WORD)
+        quality_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+
         output = f"Data Quality Report - {quality_report['timestamp']}\n"
         output += "=" * 60 + "\n\n"
-        
+
         checks = quality_report.get('checks', {})
-        
+
         if 'missing_data' in checks:
             missing = checks['missing_data']['students']
             total = missing['total_records']
@@ -6305,22 +6312,22 @@ University Reporting System""")
             output += f"   Missing Emails: {missing['missing_emails']}\n"
             output += f"   Missing Names: {missing['missing_names']}\n"
             output += f"   Missing Courses: {missing['missing_courses']}\n"
-            
+
             if total > 0:
                 completeness = ((total * 3) - (missing['missing_emails'] + missing['missing_names'] + missing['missing_courses'])) / (total * 3) * 100
                 output += f"   Data Completeness: {completeness:.1f}%\n"
-                
+
                 if completeness < 90:
                     output += "   ⚠️  Warning: Data completeness below 90%\n"
                 else:
                     output += "   ✅ Good data completeness\n"
             output += "\n"
-        
+
         if 'duplicates' in checks:
             duplicates = checks['duplicates']
             output += f"👥 DUPLICATE ANALYSIS:\n"
             output += f"   Duplicate Emails: {duplicates['duplicate_emails']}\n"
-            
+
             if duplicates['duplicate_emails'] > 0:
                 output += "   📋 Duplicate Email Details:\n"
                 for detail in duplicates.get('duplicate_email_details', [])[:5]:
@@ -6329,19 +6336,19 @@ University Reporting System""")
             else:
                 output += "   ✅ No duplicate emails found\n"
             output += "\n"
-        
+
         if 'invalid_data' in checks:
             invalid = checks['invalid_data']
             output += f"❌ INVALID DATA ANALYSIS:\n"
             output += f"   Invalid Ages: {invalid['invalid_ages']}\n"
             output += f"   Invalid Emails: {invalid['invalid_emails']}\n"
-            
+
             if invalid['invalid_ages'] > 0 or invalid['invalid_emails'] > 0:
                 output += "   ⚠️  Action Required: Clean invalid data\n"
             else:
                 output += "   ✅ No invalid data found\n"
             output += "\n"
-        
+
         if 'data_freshness' in checks:
             freshness = checks['data_freshness']
             if freshness['last_registration_date']:
@@ -6349,7 +6356,7 @@ University Reporting System""")
                 output += f"📅 DATA FRESHNESS:\n"
                 output += f"   Last Registration: {freshness['last_registration_date']}\n"
                 output += f"   Days Since Last: {days_since}\n"
-                
+
                 if days_since > 7:
                     output += "   ⚠️  Warning: No recent registrations\n"
                 else:
@@ -6357,8 +6364,20 @@ University Reporting System""")
             else:
                 output += f"📅 DATA FRESHNESS:\n"
                 output += "   ❌ No registration data found\n"
-        
-        self.quality_display.insert(1.0, output)
+
+        quality_text.insert(1.0, output)
+        quality_text.config(state=tk.DISABLED)
+
+        # Action buttons
+        button_frame = ttk.Frame(quality_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="💾 Save Report",
+                  command=lambda: self._save_analytics_report(output, "quality_report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="📧 Send to Admin",
+                  command=lambda: self._send_report_to_admin(output, "Data Quality Report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Close",
+                  command=quality_window.destroy).pack(side=tk.RIGHT)
     
     def export_quality_report(self):
         """Export quality report to file"""
@@ -6370,7 +6389,7 @@ University Reporting System""")
         file_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            initialname=f"quality_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            initialfile=f"quality_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         )
         
         if file_path:
@@ -6405,56 +6424,75 @@ University Reporting System""")
         threading.Thread(target=predictions_task, daemon=True).start()
     
     def _display_predictions_results(self, predictions):
-        """Display prediction results"""
+        """Display prediction results in separate window"""
         self.stop_progress()
         self.update_status("Predictions completed")
-        
-        self.predictions_display.delete(1.0, tk.END)
-        
+
+        # Create new window for predictions results
+        predictions_window = tk.Toplevel(self.root)
+        predictions_window.title("Predictive Analytics Report")
+        predictions_window.geometry("700x600")
+
+        # Results display
+        predictions_text = ScrolledText(predictions_window, wrap=tk.WORD)
+        predictions_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+
         output = f"Predictive Analytics Report\n"
         output += "=" * 40 + "\n\n"
-        
+
         if 'error' in predictions:
             output += f"❌ Analysis unavailable: {predictions['error']}\n"
         else:
             output += f"🎯 DROPOUT RISK ANALYSIS:\n\n"
-            
+
             if 'model_accuracy' in predictions:
                 accuracy = predictions['model_accuracy'] * 100
                 output += f"   Model Accuracy: {accuracy:.1f}%\n"
-                
+
                 if accuracy > 80:
                     output += "   ✅ High confidence predictions\n"
                 elif accuracy > 60:
                     output += "   ⚠️  Moderate confidence predictions\n"
                 else:
                     output += "   ❌ Low confidence - more data needed\n"
-            
+
             if 'total_students_analyzed' in predictions:
                 output += f"   Students Analyzed: {predictions['total_students_analyzed']}\n"
-            
+
             if 'high_risk_students' in predictions:
                 high_risk = predictions['high_risk_students']
                 output += f"   High Risk Students: {len(high_risk)}\n\n"
-                
+
                 if high_risk:
                     output += "   🚨 Students requiring attention:\n"
                     for student in high_risk[:10]:  # Show top 10
                         output += f"      Student ID: {student['student_id']} (Risk: {student['risk_score']:.2%})\n"
-                    
+
                     if len(high_risk) > 10:
                         output += f"      ... and {len(high_risk) - 10} more\n"
-            
+
             if 'feature_importance' in predictions:
                 importance = predictions['feature_importance']
                 sorted_features = sorted(importance.items(), key=lambda x: x[1], reverse=True)
-                
+
                 output += "\n   📈 Most Important Risk Factors:\n"
                 for feature, score in sorted_features:
                     feature_name = feature.replace('_', ' ').title()
                     output += f"      {feature_name}: {score:.3f}\n"
-        
-        self.predictions_display.insert(1.0, output)
+
+        predictions_text.insert(1.0, output)
+        predictions_text.config(state=tk.DISABLED)
+
+        # Action buttons
+        button_frame = ttk.Frame(predictions_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="💾 Save Report",
+                  command=lambda: self._save_analytics_report(output, "predictions_report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="📧 Send to Admin",
+                  command=lambda: self._send_report_to_admin(output, "Predictive Analytics Report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Close",
+                  command=predictions_window.destroy).pack(side=tk.RIGHT)
     
     def run_anomaly_detection(self):
         """Run anomaly detection"""
@@ -6483,52 +6521,152 @@ University Reporting System""")
         """Display anomaly detection results"""
         self.stop_progress()
         self.update_status("Anomaly detection completed")
-        
+
         # Create new window for anomaly results
         anomaly_window = tk.Toplevel(self.root)
         anomaly_window.title("Anomaly Detection Results")
-        anomaly_window.geometry("600x500")
-        
+        anomaly_window.geometry("700x600")
+
+        # Results display
         anomaly_text = ScrolledText(anomaly_window, wrap=tk.WORD)
-        anomaly_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+        anomaly_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+
         output = f"Anomaly Detection Results\n"
         output += "=" * 35 + "\n\n"
-        
+
         if 'error' in anomalies:
             output += f"❌ Analysis unavailable: {anomalies['error']}\n"
         else:
             output += f"🔍 ANOMALY DETECTION RESULTS:\n\n"
-            
+
             anomaly_count = anomalies.get('total_anomalies', 0)
             anomaly_rate = anomalies.get('anomaly_rate', 0)
-            
+
             output += f"   Anomalous Students: {anomaly_count}\n"
             output += f"   Anomaly Rate: {anomaly_rate:.2f}%\n\n"
-            
+
             if anomaly_rate > 15:
                 output += "   ⚠️  High anomaly rate - investigate data quality\n"
             elif anomaly_rate > 5:
                 output += "   ⚠️  Moderate anomalies detected\n"
             else:
                 output += "   ✅ Normal anomaly rate\n"
-            
+
             if 'anomalous_students' in anomalies and anomalies['anomalous_students']:
                 output += "\n   🔍 Anomalous Student Profiles:\n\n"
-                
+
                 for student in anomalies['anomalous_students'][:10]:
                     output += f"      Student ID: {student['student_id']}\n"
                     output += f"         Age: {student['age']}\n"
                     output += f"         Modules: {student['unique_modules']}\n"
                     output += f"         Avg Grade: {student.get('avg_grade', 'N/A')}\n\n"
-                
+
                 if len(anomalies['anomalous_students']) > 10:
                     remaining = len(anomalies['anomalous_students']) - 10
                     output += f"      ... and {remaining} more anomalous profiles\n"
-        
+
         anomaly_text.insert(1.0, output)
         anomaly_text.config(state=tk.DISABLED)
-    
+
+        # Action buttons
+        button_frame = ttk.Frame(anomaly_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Button(button_frame, text="💾 Save Report",
+                  command=lambda: self._save_analytics_report(output, "anomaly_report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="📧 Send to Admin",
+                  command=lambda: self._send_report_to_admin(output, "Anomaly Detection Report")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Close",
+                  command=anomaly_window.destroy).pack(side=tk.RIGHT)
+
+    def _save_analytics_report(self, content, report_type):
+        """Save analytics report to file"""
+        try:
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("PDF files", "*.pdf"), ("All files", "*.*")],
+                initialfile=f"{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            )
+
+            if file_path:
+                with open(file_path, 'w') as f:
+                    f.write(content)
+                messagebox.showinfo("Success", f"Report saved successfully to:\n{file_path}")
+                self.update_status(f"Report saved to {os.path.basename(file_path)}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+            self.update_status(f"Failed to save report: {str(e)}", "error")
+
+    def _send_report_to_admin(self, content, report_title):
+        """Send analytics report to admin via email"""
+        try:
+            # Get admin email from database
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+            result = cursor.fetchone()
+            conn.close()
+
+            if not result:
+                messagebox.showerror("Error", "No admin user found in database.")
+                return
+
+            admin_email = result[0]
+
+            # Save report to temporary file
+            import tempfile
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
+            temp_file.write(content)
+            temp_file.close()
+
+            # Import email service
+            try:
+                from university_system.infrastructure.email.email_service import EmailService
+
+                email_service = EmailService()
+
+                # Send email with attachment
+                subject = f"{report_title} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                body = f"""
+Dear Administrator,
+
+Please find attached the {report_title} generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.
+
+Summary:
+{content[:500]}...
+
+Full report is attached.
+
+Best regards,
+University Reporting System
+"""
+
+                success = email_service.send_email(
+                    to_email=admin_email,
+                    subject=subject,
+                    body=body,
+                    attachment_path=temp_file.name
+                )
+
+                if success:
+                    messagebox.showinfo("Success", f"Report sent successfully to:\n{admin_email}")
+                    self.update_status(f"Report emailed to admin")
+                else:
+                    messagebox.showwarning("Warning", "Email may not have been sent. Check email configuration.")
+
+            except ImportError:
+                messagebox.showerror("Error", "Email service not available. Please check your email configuration.")
+            finally:
+                # Clean up temp file
+                try:
+                    os.unlink(temp_file.name)
+                except:
+                    pass
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send report: {str(e)}")
+            self.update_status(f"Failed to send report: {str(e)}", "error")
+
     def run_correlation_analysis(self):
         """Run correlation analysis"""
         if not ENHANCED_AVAILABLE:
@@ -7733,7 +7871,7 @@ University Reporting System""")
                             course_count = cursor.fetchone()[0]
                             metrics_text.insert(tk.END, f"📚 Total Courses: {course_count}\n")
 
-                            cursor.execute("SELECT COUNT(*) FROM enrollments")
+                            cursor.execute("SELECT COUNT(*) FROM lms_student_enrollment")
                             enrollment_count = cursor.fetchone()[0]
                             metrics_text.insert(tk.END, f"📝 Total Enrollments: {enrollment_count}\n\n")
 

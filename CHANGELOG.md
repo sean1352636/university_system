@@ -5,6 +5,87 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.40] - 2025-11-15
+
+### Major Enhancements
+
+**Enhanced Reporting GUI - Major Analytics and Template Improvements:**
+- **CRITICAL FIX**: Fixed Tkinter filedialog error with invalid parameter
+  - Error: "bad option '-initialname': must be -confirmoverwrite, -defaultextension, -filetypes..."
+  - Changed `initialname` to `initialfile` in export dialogs (2 locations)
+  - Affects template export and quality report export functions
+  - File: `university_system/modules/shared/gui/enhanced_reporting_gui.py:5911,6373`
+
+- **CRITICAL FIX**: Fixed database table reference error
+  - Error: "no such table: enrollments"
+  - Changed query from `enrollments` table to `lms_student_enrollment`
+  - Analytics tab metrics now display correctly
+  - File: `university_system/modules/shared/gui/enhanced_reporting_gui.py:7736`
+
+- **MAJOR ENHANCEMENT**: Created 10 comprehensive report templates with real database queries
+  - Student Enrollment Report: Course enrollment trends and student demographics
+  - Financial Aid Distribution: Aid packages, scholarships, and assistance analysis
+  - Course Performance Analysis: Grades, completion rates, and student performance
+  - Student Affairs Activities: Event participation, club membership statistics
+  - Health Services Utilization: Appointments, services usage, wellness metrics
+  - Housing Occupancy Report: Building occupancy, room assignments, maintenance
+  - Library Usage Statistics: Book loans, popular titles, engagement metrics
+  - Payment and Revenue Report: Tuition payments, fees, outstanding balances
+  - Academic Performance Dashboard: GPA analysis, at-risk students, performance indicators
+  - Campus Events and Engagement: Event attendance, engagement trends
+  - All templates include custom SQL queries optimized for real database schema
+  - Templates stored in `email_templates` table with type 'report_template'
+  - Script: `create_report_templates.py`
+
+- **MAJOR ENHANCEMENT**: Analytics tab now displays results in separate windows
+  - Quality Check results open in dedicated window (700x600)
+  - Predictive Analytics results open in dedicated window (700x600)
+  - Anomaly Detection results open in dedicated window (700x600)
+  - Each window includes formatted text display with ScrolledText widget
+  - Improves usability and allows multiple reports to be viewed simultaneously
+  - File: `university_system/modules/shared/gui/enhanced_reporting_gui.py:6288-6580`
+
+- **MAJOR ENHANCEMENT**: Added save and email functionality to all analytics reports
+  - New "Save Report" button on all analytics windows
+  - Saves reports to text files with timestamp in filename
+  - New "Send to Admin" button emails reports automatically
+  - Admin email retrieved from database (users table, role='admin')
+  - Email includes report summary and full content as attachment
+  - Uses EmailService infrastructure for reliable delivery
+  - Temporary file cleanup after sending
+  - File: `university_system/modules/shared/gui/enhanced_reporting_gui.py:6582-6668`
+
+- **ENHANCEMENT**: Improved analytics window UX
+  - All windows now have consistent button layout (Save, Send, Close)
+  - Status updates shown for save and send operations
+  - Error handling with user-friendly messages
+  - File path confirmation on successful save
+  - Admin email confirmation on successful send
+
+### Technical Details
+
+**Database Integration:**
+- Templates use parameterized queries for date ranges
+- Queries optimized for the actual database schema
+- Support for courses, students, enrollments, financial aid, events, and more
+- All queries tested against production database structure
+
+**Email Integration:**
+- Integrates with `university_system.infrastructure.email.email_service`
+- Supports attachments for full report delivery
+- Graceful fallback if email service not configured
+- Admin user lookup: `SELECT email FROM users WHERE role = 'admin' LIMIT 1`
+
+**Files Modified:**
+- `university_system/modules/shared/gui/enhanced_reporting_gui.py` (5 methods modified, 2 methods added)
+
+**Files Created:**
+- `create_report_templates.py` (template creation script, can be removed after use)
+
+**Database Changes:**
+- Added 10 new report templates to `email_templates` table
+- Template structure: name, description, sections, filters, custom_sql, visualization_type
+
 ## [5.0.39] - 2025-11-15
 
 ### Bug Fixes
