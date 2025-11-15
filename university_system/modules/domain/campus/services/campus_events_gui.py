@@ -114,6 +114,8 @@ class CampusEventsGUI:
         ttk.Button(btn_frame, text="View Upcoming", command=self._view_upcoming_events).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refresh", command=self._load_events).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel Event", command=self._cancel_event).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Un-cancel Event", command=self._uncancel_event).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Add to Calendar", command=self._add_to_calendar).pack(side=tk.LEFT, padx=5)
 
         # Events list
         list_frame = ttk.LabelFrame(tab, text="Campus Events", padding="10")
@@ -488,6 +490,114 @@ class CampusEventsGUI:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to cancel event: {e}")
+
+    def _uncancel_event(self):
+        """Un-cancel (reactivate) the selected event"""
+        selection = self.events_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an event to un-cancel")
+            return
+
+        item = self.events_tree.item(selection[0])
+        event_id = item['values'][0]
+        event_name = item['values'][1]
+        current_status = item['values'][8]
+
+        if current_status != 'cancelled':
+            messagebox.showwarning("Warning", f"Event '{event_name}' is not cancelled (current status: {current_status})")
+            return
+
+        if not messagebox.askyesno("Confirm Un-cancel", f"Reactivate event '{event_name}'?"):
+            return
+
+        try:
+            with transaction() as conn:
+                conn.execute('UPDATE campus_events SET status = ? WHERE event_id = ?', ('scheduled', event_id))
+
+            log_activity(f'Un-cancelled campus event: {event_id}',
+                        user=self.auth.current_user.get('username'))
+            messagebox.showinfo("Success", "Event reactivated successfully")
+            self._load_events()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to un-cancel event: {e}")
+
+    def _add_to_calendar(self):
+        """Export selected event to calendar (.ics file)"""
+        selection = self.events_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select an event to add to calendar")
+            return
+
+        item = self.events_tree.item(selection[0])
+        event_id = item['values'][0]
+
+        try:
+            # Get full event details
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT event_name, event_date, start_time, end_time,
+                           location, description
+                    FROM campus_events
+                    WHERE event_id = ?
+                ''', (event_id,))
+                event = cursor.fetchone()
+
+                if not event:
+                    messagebox.showerror("Error", "Event not found")
+                    return
+
+            # Create iCalendar content
+            event_name = event['event_name']
+            event_date = event['event_date']
+            start_time = event['start_time']
+            end_time = event['end_time']
+            location = event['location'] or 'TBA'
+            description = event['description'] or 'Campus event'
+
+            # Format datetime for iCal (YYYYMMDDTHHMMSS)
+            from datetime import datetime
+            start_dt = datetime.strptime(f"{event_date} {start_time}", "%Y-%m-%d %H:%M")
+            end_dt = datetime.strptime(f"{event_date} {end_time}", "%Y-%m-%d %H:%M")
+
+            start_ical = start_dt.strftime("%Y%m%dT%H%M%S")
+            end_ical = end_dt.strftime("%Y%m%dT%H%M%S")
+            created_ical = datetime.now().strftime("%Y%m%dT%H%M%S")
+
+            # Create .ics content
+            ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Campus Events//University System//EN
+BEGIN:VEVENT
+UID:{event_id}@campusevents.university.edu
+DTSTAMP:{created_ical}
+DTSTART:{start_ical}
+DTEND:{end_ical}
+SUMMARY:{event_name}
+LOCATION:{location}
+DESCRIPTION:{description}
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR"""
+
+            # Save to file
+            from tkinter import filedialog
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".ics",
+                filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
+                initialfile=f"{event_name.replace(' ', '_')}.ics"
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(ics_content)
+
+                log_activity(f'Exported event {event_id} to calendar',
+                            user=self.auth.current_user.get('username'))
+                messagebox.showinfo("Success", f"Event exported to calendar file:\n{filename}\n\nYou can import this file into Google Calendar, Outlook, or any other calendar application.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export event to calendar: {e}")
 
     def _register_for_event(self):
         """Register for an event"""

@@ -135,14 +135,127 @@ class EventAnnouncementManager:
                          sent_to: str, sent_by: str = "") -> int:
         try:
             with transaction() as conn:
+                # Insert announcement record
                 cursor = conn.execute('''
                     INSERT INTO event_announcements (
                         event_id, announcement_text, sent_to, sent_by
                     ) VALUES (?, ?, ?, ?)
                 ''', (event_id, announcement_text, sent_to, sent_by))
-                return cursor.lastrowid
+                announcement_id = cursor.lastrowid
+
+                # Get event details
+                event = conn.execute('''
+                    SELECT event_name, event_date, start_time, location
+                    FROM campus_events
+                    WHERE event_id = ?
+                ''', (event_id,)).fetchone()
+
+                if not event:
+                    raise Exception(f"Event {event_id} not found")
+
+                event_name = event['event_name']
+                event_date = event['event_date']
+                event_time = event['start_time']
+                event_location = event['location'] or 'TBA'
+
+                # Send emails to recipients
+                EventAnnouncementManager._send_announcement_emails(
+                    conn, event_id, event_name, event_date, event_time,
+                    event_location, announcement_text, sent_to
+                )
+
+                return announcement_id
         except Exception as e:
             raise Exception(f"Error sending announcement: {e}")
+
+    @staticmethod
+    def _send_announcement_emails(conn, event_id: int, event_name: str,
+                                 event_date: str, event_time: str,
+                                 event_location: str, announcement_text: str,
+                                 sent_to: str):
+        """Send announcement emails to registered users"""
+        try:
+            from university_system.infrastructure.email.email_service import queue_email
+
+            recipient_emails = []
+
+            if sent_to == 'all_registrants':
+                # Get emails of all registered users for this event
+                cursor = conn.execute('''
+                    SELECT DISTINCT user_id, user_type
+                    FROM event_registrations
+                    WHERE event_id = ?
+                ''', (event_id,))
+                registrants = cursor.fetchall()
+
+                # Get email addresses based on user type
+                for reg in registrants:
+                    user_id = reg['user_id']
+                    user_type = reg['user_type']
+
+                    email = EventAnnouncementManager._get_user_email(conn, user_id, user_type)
+                    if email:
+                        recipient_emails.append(email)
+
+            # Compose email
+            subject = f"Event Announcement: {event_name}"
+            body = f"""Dear Participant,
+
+We have an important announcement regarding the upcoming event:
+
+Event: {event_name}
+Date: {event_date}
+Time: {event_time}
+Location: {event_location}
+
+Announcement:
+{announcement_text}
+
+If you have any questions, please contact the event organizer.
+
+Best regards,
+Campus Events Team
+"""
+
+            # Queue emails for all recipients
+            for email in recipient_emails:
+                queue_email(email, subject, body)
+
+            print(f"✅ Queued announcement emails to {len(recipient_emails)} recipient(s)")
+
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to send announcement emails: {e}")
+
+    @staticmethod
+    def _get_user_email(conn, user_id: str, user_type: str) -> Optional[str]:
+        """Get email address for a user based on their type"""
+        try:
+            if user_type == 'student':
+                result = conn.execute(
+                    'SELECT email FROM students WHERE student_id = ?',
+                    (user_id,)
+                ).fetchone()
+            elif user_type == 'staff':
+                result = conn.execute(
+                    'SELECT email FROM staff WHERE staff_id = ?',
+                    (user_id,)
+                ).fetchone()
+            elif user_type == 'faculty':
+                result = conn.execute(
+                    'SELECT email FROM faculty WHERE faculty_id = ?',
+                    (user_id,)
+                ).fetchone()
+            else:
+                # For guest or other types, user_id might be an email
+                if '@' in user_id:
+                    return user_id
+                return None
+
+            return result['email'] if result else None
+
+        except Exception as e:
+            print(f"⚠️  Warning: Could not get email for {user_type} {user_id}: {e}")
+            return None
 
 
 class EventSponsorManager:

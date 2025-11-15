@@ -5,6 +5,72 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.25] - 2025-11-15
+
+### Campus Events Hub - Major Enhancement & Bug Fixes
+
+**Database Schema Fixes:**
+
+1. **Fixed event_registrations Table:**
+   - Migrated table from alumni-specific schema to campus events schema
+   - Added `user_id` and `user_type` columns to support all user types (students, staff, faculty, guests)
+   - Removed hardcoded `alumni_id` column dependency
+   - Added proper foreign key constraint to `campus_events` table with CASCADE delete
+   - Created indexes for performance: `idx_event_registrations_event_id`, `idx_event_registrations_user`
+
+2. **Fixed event_sponsors Foreign Key:**
+   - Verified and confirmed correct foreign key constraint to `campus_events` table
+   - Prevents orphaned sponsor records when events are deleted
+
+**New Features:**
+
+3. **Un-cancel Event Functionality:**
+   - Added "Un-cancel Event" button to Events tab
+   - Allows reactivating cancelled events by changing status back to 'scheduled'
+   - Validates that event is currently cancelled before allowing un-cancel
+   - Logs activity for audit trail
+
+4. **Email Integration for Event Announcements:**
+   - Announcements now automatically send emails to registered users
+   - Supports sending to all event registrants
+   - Retrieves email addresses based on user_type (student/staff/faculty)
+   - Uses email queue system for reliable delivery
+   - Includes event details (name, date, time, location) in announcement emails
+   - Graceful error handling if email lookup fails
+
+5. **Calendar Integration:**
+   - Added "Add to Calendar" button to Events tab
+   - Exports events to iCalendar format (.ics files)
+   - Compatible with Google Calendar, Outlook, Apple Calendar, and other calendar applications
+   - Includes all event details: name, date, time, location, description
+   - Allows users to choose save location via file dialog
+
+**Files Modified:**
+- `university_system/infrastructure/database/migrations/fix_campus_events_tables.py` (NEW)
+  - Database migration script to fix event_registrations table schema
+- `university_system/modules/domain/campus/services/campus_events_gui.py`:
+  - Line 117: Added "Un-cancel Event" button
+  - Line 118: Added "Add to Calendar" button
+  - Lines 493-522: Added `_uncancel_event()` method
+  - Lines 525-600: Added `_add_to_calendar()` method with iCalendar export
+- `university_system/modules/domain/campus/services/campus_events_core.py`:
+  - Lines 133-258: Enhanced `EventAnnouncementManager.send_announcement()` with email integration
+  - Lines 171-227: Added `_send_announcement_emails()` method
+  - Lines 229-258: Added `_get_user_email()` helper method
+
+**Technical Details:**
+- Migration uses DROP and CREATE for clean schema reset (safe as table had 0 rows)
+- Email integration uses `queue_email()` for asynchronous sending
+- iCalendar format follows RFC 5545 standard
+- All changes include proper activity logging for audit compliance
+
+**User Experience:**
+- ✅ Event registration now works for all user types (not just alumni)
+- ✅ Can reactivate mistakenly cancelled events
+- ✅ Registered users automatically receive announcement emails
+- ✅ Easy export to personal calendars
+- ✅ Better foreign key integrity prevents orphaned records
+
 ## [5.0.24] - 2025-11-15
 
 ### UI/UX - Student Union GUI Navigation Improvements
