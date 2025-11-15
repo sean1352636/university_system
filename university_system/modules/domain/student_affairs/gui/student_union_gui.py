@@ -626,44 +626,31 @@ class StudentUnionGUI:
         self._render_admin_tab(admin_frame)
 
     def show_club_payments_content(self):
-        """Display comprehensive club payment management interface"""
+        """Open Finance GUI's Club Payment Management page"""
         # Check if GUI was properly initialized
         if not self.initialized or not self.current_user:
             messagebox.showerror("Error", "Authentication required. Please log in.")
             return
 
-        self.clear_content()
-        payments_frame = ttk.Frame(self.content_frame)
-        payments_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        try:
+            from university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
 
-        # Title
-        title_label = ttk.Label(payments_frame, text="Club Payment Management",
-                               font=('Arial', 16, 'bold'))
-        title_label.pack(pady=10)
+            # Create new window for Finance GUI
+            finance_window = tk.Toplevel(self.root)
+            finance_window.title("Finance Management - Club Payments")
+            finance_window.geometry("1400x900")
 
-        # Create notebook for different payment sections
-        payment_notebook = ttk.Notebook(payments_frame)
-        payment_notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+            # Initialize Finance GUI
+            finance_gui = FinanceGUI(finance_window, auth=self.auth_manager)
 
-        # Tab 1: Payment Overview
-        overview_frame = ttk.Frame(payment_notebook)
-        payment_notebook.add(overview_frame, text="Payment Overview")
-        self._create_payment_overview_tab(overview_frame)
+            # Switch to club payments tab if the GUI is ready
+            if hasattr(finance_gui, 'layout') and hasattr(finance_gui.layout, 'show_tab'):
+                finance_gui.layout.show_tab('club_payments')
 
-        # Tab 2: Record Payment
-        record_frame = ttk.Frame(payment_notebook)
-        payment_notebook.add(record_frame, text="Record Payment")
-        self._create_record_payment_tab(record_frame)
-
-        # Tab 3: Payment History
-        history_frame = ttk.Frame(payment_notebook)
-        payment_notebook.add(history_frame, text="Payment History")
-        self._create_payment_history_tab(history_frame)
-
-        # Tab 4: Payment Reports
-        reports_frame = ttk.Frame(payment_notebook)
-        payment_notebook.add(reports_frame, text="Reports")
-        self._create_payment_reports_tab(reports_frame)
+        except ImportError:
+            messagebox.showerror("Error", "Finance system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open Finance system: {e}")
 
     def setup_main_menu(self):
         """Setup the main menu bar with role-based filtering"""
@@ -4193,9 +4180,6 @@ This GUI version maintains backward compatibility with the CLI system.
             # Add club events to calendar
             self._add_club_events_to_calendar(calendar_gui, club_name)
 
-            messagebox.showinfo("Calendar Opened",
-                               f"Calendar opened" + (f" for {club_name}" if club_name else " with all Student Union events"))
-
         except ImportError:
             messagebox.showerror("Error", "Calendar system is not available")
         except Exception as e:
@@ -4294,17 +4278,16 @@ This GUI version maintains backward compatibility with the CLI system.
     # =========================================================================
 
     def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
-        """Open restaurant GUI for club event booking"""
+        """Open full restaurant GUI"""
         try:
             from university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
 
             restaurant_window = tk.Toplevel(self.root)
-            restaurant_window.title(f"University Restaurant - {club_name} Booking")
+            restaurant_window.title("University Restaurant Management")
             restaurant_window.geometry("1200x800")
 
+            # Initialize full restaurant GUI
             restaurant_gui = RestaurantManagementGUI(restaurant_window, auth=self.auth_manager)
-
-            messagebox.showinfo("Restaurant Opened", f"Restaurant booking opened for {club_name}")
 
         except ImportError:
             messagebox.showerror("Error", "Restaurant system is not available")
@@ -4324,9 +4307,8 @@ This GUI version maintains backward compatibility with the CLI system.
             trip_window.title(f"Trip Management - {club_name}")
             trip_window.geometry("1200x800")
 
-            trip_gui = TripManagementGUI(trip_window, auth=self.auth_manager)
-
-            messagebox.showinfo("Trip Management Opened", f"Trip management opened for {club_name}")
+            # TripManagementGUI uses auth_instance and root parameters
+            trip_gui = TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)
 
         except ImportError:
             messagebox.showerror("Error", "Trip management system is not available")

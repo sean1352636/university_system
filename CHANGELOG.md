@@ -5,6 +5,77 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.18] - 2025-11-15
+
+### Changed - Student Union GUI Integration Improvements
+
+**Enhancement & Bug Fixes**
+
+Improved Student Union GUI integrations to open full-featured external GUIs and fixed database schema errors.
+
+**Changes Made:**
+
+1. **Club Payment Management Integration (line 628-653):**
+   - **Before:** Displayed payment tabs within Student Union GUI
+   - **After:** Opens Finance GUI and navigates to Club Payments tab
+   - Provides full finance management features
+   - Removes duplicate payment management code
+   - Leverages existing Finance GUI infrastructure
+
+2. **Restaurant Integration (line 4283-4298):**
+   - **Before:** Opened with messagebox notification and limited context
+   - **After:** Opens full Restaurant Management GUI
+   - Removed unnecessary messagebox
+   - Users get complete restaurant functionality
+
+3. **Trip Management Integration (line 4304-4319):**
+   - **Fixed:** AttributeError - `TripManagementGUI.__init__() got an unexpected keyword argument 'auth'`
+   - **Before:** `TripManagementGUI(trip_window, auth=self.auth_manager)`
+   - **After:** `TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)`
+   - Uses correct parameter names matching TripManagementGUI signature
+
+4. **Calendar Integration (line 4180-4186):**
+   - Removed unnecessary messagebox after opening calendar
+   - Calendar now opens directly without user acknowledgment
+   - Cleaner, faster user experience
+
+5. **University Shop Club Selection (line 862-865, 918-922):**
+   - **Fixed:** Database error "no such column: club_category"
+   - **Corrected column names:**
+     - `club_category` → `category`
+     - `active` → `status = 'active'`
+   - Fixed both main query and search query
+   - Matches actual student_clubs table schema
+
+**SQL Schema Corrections:**
+
+```sql
+-- Before (INCORRECT):
+SELECT club_id, club_name, club_category, member_count
+FROM student_clubs
+WHERE active = 1
+
+-- After (CORRECT):
+SELECT club_id, club_name, category, member_count
+FROM student_clubs
+WHERE status = 'active'
+```
+
+**Impact:**
+- ✅ Club Payment Management opens Finance GUI's full feature set
+- ✅ Restaurant button opens complete restaurant management
+- ✅ Trip Management opens without auth parameter errors
+- ✅ Calendar opens instantly without extra dialog
+- ✅ Shop club selection loads clubs successfully
+- ✅ All database queries use correct column names
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:628-653` (payment to finance)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4180-4186` (calendar messagebox removed)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4283-4298` (restaurant full GUI)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4304-4319` (trip auth fix)
+- `university_system/modules/domain/commerce/gui/shop_management_gui.py:862-865, 918-922` (column names fixed)
+
 ## [5.0.17] - 2025-11-15
 
 ### Fixed - Student Union GUI Integration Methods and Database Errors

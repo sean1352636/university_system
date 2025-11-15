@@ -859,9 +859,9 @@ class UniversityShopGUI:
             cursor = conn.cursor()
 
             cursor.execute('''
-                SELECT club_id, club_name, club_category, member_count
+                SELECT club_id, club_name, category, member_count
                 FROM student_clubs
-                WHERE active = 1
+                WHERE status = 'active'
                 ORDER BY club_name
             ''')
             clubs = cursor.fetchall()
@@ -915,10 +915,10 @@ class UniversityShopGUI:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    SELECT club_id, club_name, club_category, member_count
+                    SELECT club_id, club_name, category, member_count
                     FROM student_clubs
-                    WHERE active = 1
-                    AND (LOWER(club_name) LIKE ? OR LOWER(club_category) LIKE ?)
+                    WHERE status = 'active'
+                    AND (LOWER(club_name) LIKE ? OR LOWER(category) LIKE ?)
                     ORDER BY club_name
                 ''', (f'%{search_term}%', f'%{search_term}%'))
                 clubs = cursor.fetchall()
