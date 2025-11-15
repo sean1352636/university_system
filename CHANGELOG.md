@@ -5,6 +5,43 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.19] - 2025-11-15
+
+### Fixed - Admin and Staff User Role Assignment
+
+**Critical Database Fix**
+
+Fixed authentication role display issue where admin and staff accounts were incorrectly showing as "student" role upon login.
+
+**Root Cause:**
+- Database inconsistency: `user_accounts` table entries for 'admin' and 'staff' were pointing to user entries with role='student'
+- User ID 1 (admin account) had username='S12345' and role='student'
+- User ID 2 (staff account) had username='7796276' and role='student'
+
+**Changes Made:**
+1. **Admin User Fix (user_id=1):**
+   - Updated username from 'S12345' to 'admin'
+   - Updated role from 'student' to 'admin'
+   - Updated name to 'System Administrator'
+   - Updated email to 'admin@university.local'
+   - Removed student_id association
+
+2. **Staff User Fix (user_id=2):**
+   - Updated username from '7796276' to 'staff'
+   - Updated role from 'student' to 'staff'
+   - Updated name to 'Staff Member'
+   - Updated email to 'staff@university.local'
+   - Removed student_id association
+
+**Impact:**
+- Admin login now correctly displays role as "admin"
+- Staff login now correctly displays role as "staff"
+- Role-based permissions now work correctly
+- Authentication system displays accurate user role information
+
+**File Modified:**
+- Database: `university_system/data/db_files/student_records.db`
+
 ## [5.0.18] - 2025-11-15
 
 ### Changed - Student Union GUI Integration Improvements
