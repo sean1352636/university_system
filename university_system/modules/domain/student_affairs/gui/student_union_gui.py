@@ -49,6 +49,7 @@ class StudentUnionGUI:
         # Initialize variables
         self.current_user = None
         self.auth_manager = None
+        self.initialized = False  # Track if GUI was properly initialized
 
         # Use centralized path configuration
         # Always use the central student_records.db in university_system/data/db_files
@@ -74,6 +75,7 @@ class StudentUnionGUI:
             )
             if not parent:  # Only destroy if standalone window
                 self.root.destroy()
+            self.initialized = False
             return
 
         # User is authenticated, get their info
@@ -87,6 +89,9 @@ class StudentUnionGUI:
 
         # Setup GUI (works for both embedded and standalone)
         self.setup_gui()
+
+        # Mark as successfully initialized
+        self.initialized = True
 
         # Show dashboard only if standalone
         if not parent:
@@ -471,7 +476,7 @@ class StudentUnionGUI:
         self.add_sidebar_separator()
         self.add_sidebar_header("🔗 Integrations", "")
         self.add_sidebar_button("Finance System", lambda: self.open_finance_gui_for_club_payment("General Payment", 0), "💳")
-        self.add_sidebar_button("Club Payments", lambda: self.open_finance_gui_for_club_payment("Club Fee", 25, "Club Membership"), "💰")
+        self.add_sidebar_button("Club Payment Management", self.show_club_payments_content, "💰")
         self.add_sidebar_button("University Shop", lambda: self.open_shop_for_club_merchandise("General"), "🛍️")
         self.add_sidebar_button("Club Merchandise", self.show_club_selection_for_merchandise, "👕")
         self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
@@ -613,7 +618,47 @@ class StudentUnionGUI:
 
         # Create and display admin content without notebook
         self._render_admin_tab(admin_frame)
-    
+
+    def show_club_payments_content(self):
+        """Display comprehensive club payment management interface"""
+        # Check if GUI was properly initialized
+        if not self.initialized or not self.current_user:
+            messagebox.showerror("Error", "Authentication required. Please log in.")
+            return
+
+        self.clear_content()
+        payments_frame = ttk.Frame(self.content_frame)
+        payments_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Title
+        title_label = ttk.Label(payments_frame, text="Club Payment Management",
+                               font=('Arial', 16, 'bold'))
+        title_label.pack(pady=10)
+
+        # Create notebook for different payment sections
+        payment_notebook = ttk.Notebook(payments_frame)
+        payment_notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        # Tab 1: Payment Overview
+        overview_frame = ttk.Frame(payment_notebook)
+        payment_notebook.add(overview_frame, text="Payment Overview")
+        self._create_payment_overview_tab(overview_frame)
+
+        # Tab 2: Record Payment
+        record_frame = ttk.Frame(payment_notebook)
+        payment_notebook.add(record_frame, text="Record Payment")
+        self._create_record_payment_tab(record_frame)
+
+        # Tab 3: Payment History
+        history_frame = ttk.Frame(payment_notebook)
+        payment_notebook.add(history_frame, text="Payment History")
+        self._create_payment_history_tab(history_frame)
+
+        # Tab 4: Payment Reports
+        reports_frame = ttk.Frame(payment_notebook)
+        payment_notebook.add(reports_frame, text="Reports")
+        self._create_payment_reports_tab(reports_frame)
+
     def setup_main_menu(self):
         """Setup the main menu bar with role-based filtering"""
         # Clear existing menu
@@ -810,6 +855,410 @@ class StudentUnionGUI:
 
         self.create_main_menu_button()
 
+    # =========================================================================
+    # CLUB PAYMENT MANAGEMENT METHODS
+    # =========================================================================
+
+    def _create_payment_overview_tab(self, parent):
+        """Create payment overview tab with summary statistics"""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Label(header_frame, text="Payment Summary", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+
+        # Stats frame
+        stats_frame = ttk.LabelFrame(parent, text="Payment Statistics")
+        stats_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get payment statistics
+            cursor.execute('''
+                SELECT COUNT(*), SUM(amount), AVG(amount)
+                FROM student_fees
+                WHERE fee_type LIKE '%Club%' OR description LIKE '%Student Union%'
+            ''')
+            count, total, avg = cursor.fetchone()
+
+            # Display stats in grid
+            stats_grid = ttk.Frame(stats_frame)
+            stats_grid.pack(fill=tk.X, padx=10, pady=10)
+
+            ttk.Label(stats_grid, text="Total Payments:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+            ttk.Label(stats_grid, text=str(count or 0)).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+            ttk.Label(stats_grid, text="Total Amount:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+            ttk.Label(stats_grid, text=f"£{total or 0:.2f}").grid(row=1, column=1, sticky=tk.W, padx=5)
+
+            ttk.Label(stats_grid, text="Average Payment:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+            ttk.Label(stats_grid, text=f"£{avg or 0:.2f}").grid(row=2, column=1, sticky=tk.W, padx=5)
+
+            conn.close()
+        except Exception as e:
+            ttk.Label(stats_frame, text=f"Error loading statistics: {e}").pack(padx=10, pady=10)
+
+        # Recent payments frame
+        recent_frame = ttk.LabelFrame(parent, text="Recent Payments")
+        recent_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Create treeview for recent payments
+        columns = ('Date', 'Student', 'Type', 'Amount', 'Status')
+        tree = ttk.Treeview(recent_frame, columns=columns, show='headings', height=10)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=120)
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Add scrollbar
+        scrollbar = ttk.Scrollbar(recent_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        # Load recent payments
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT sf.created_date, s.first_name || ' ' || s.last_name,
+                       sf.fee_type, sf.amount, sf.paid_status
+                FROM student_fees sf
+                JOIN students s ON sf.student_id = s.student_id
+                WHERE sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%'
+                ORDER BY sf.created_date DESC
+                LIMIT 20
+            ''')
+
+            for row in cursor.fetchall():
+                tree.insert('', tk.END, values=row)
+
+            conn.close()
+        except Exception as e:
+            print(f"Error loading recent payments: {e}")
+
+    def _create_record_payment_tab(self, parent):
+        """Create tab for recording new club payments"""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Label(header_frame, text="Record New Payment", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+
+        # Form frame
+        form_frame = ttk.LabelFrame(parent, text="Payment Details")
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Student ID
+        ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+        student_id_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=student_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+
+        # Payment Type
+        ttk.Label(form_frame, text="Payment Type:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+        payment_type_var = tk.StringVar()
+        payment_type_combo = ttk.Combobox(form_frame, textvariable=payment_type_var, width=28, state='readonly')
+        payment_type_combo['values'] = ('Club Membership Fee', 'Event Registration Fee', 'Equipment Rental',
+                                        'Facility Booking Fee', 'Competition Entry Fee', 'Other Club Fee')
+        payment_type_combo.grid(row=1, column=1, padx=10, pady=5)
+
+        # Club Selection
+        ttk.Label(form_frame, text="Club Name:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        club_var = tk.StringVar()
+        club_combo = ttk.Combobox(form_frame, textvariable=club_var, width=28, state='readonly')
+
+        # Load clubs
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
+            clubs = [row[0] for row in cursor.fetchall()]
+            club_combo['values'] = clubs
+            conn.close()
+        except Exception:
+            pass
+
+        club_combo.grid(row=2, column=1, padx=10, pady=5)
+
+        # Amount
+        ttk.Label(form_frame, text="Amount (£):").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        amount_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=amount_var, width=30).grid(row=3, column=1, padx=10, pady=5)
+
+        # Description
+        ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+        description_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=description_var, width=30).grid(row=4, column=1, padx=10, pady=5)
+
+        # Payment Status
+        ttk.Label(form_frame, text="Payment Status:").grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
+        status_var = tk.StringVar(value='Paid')
+        status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28, state='readonly')
+        status_combo['values'] = ('Paid', 'Pending', 'Cancelled')
+        status_combo.grid(row=5, column=1, padx=10, pady=5)
+
+        # Button frame
+        button_frame = ttk.Frame(parent)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        def record_payment():
+            """Record the payment to database"""
+            try:
+                student_id = student_id_var.get().strip()
+                payment_type = payment_type_var.get()
+                club_name = club_var.get()
+                amount = float(amount_var.get().strip())
+                description = description_var.get().strip()
+                status = status_var.get()
+
+                if not all([student_id, payment_type, amount]):
+                    messagebox.showerror("Error", "Please fill in all required fields")
+                    return
+
+                # Record payment
+                result = self.process_student_union_payment(
+                    student_id,
+                    amount,
+                    f"{description} - {club_name}" if club_name else description,
+                    payment_type
+                )
+
+                if result:
+                    messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded successfully")
+                    # Clear form
+                    student_id_var.set('')
+                    payment_type_var.set('')
+                    club_var.set('')
+                    amount_var.set('')
+                    description_var.set('')
+                else:
+                    messagebox.showerror("Error", "Failed to record payment")
+
+            except ValueError:
+                messagebox.showerror("Error", "Invalid amount. Please enter a number.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error recording payment: {e}")
+
+        ttk.Button(button_frame, text="Record Payment", command=record_payment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear Form",
+                  command=lambda: [student_id_var.set(''), payment_type_var.set(''),
+                                  club_var.set(''), amount_var.set(''), description_var.set('')]).pack(side=tk.LEFT, padx=5)
+
+    def _create_payment_history_tab(self, parent):
+        """Create tab for viewing payment history"""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Label(header_frame, text="Payment History", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(parent, text="Filters")
+        filter_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        filter_grid = ttk.Frame(filter_frame)
+        filter_grid.pack(fill=tk.X, padx=10, pady=10)
+
+        # Student ID filter
+        ttk.Label(filter_grid, text="Student ID:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        filter_student_var = tk.StringVar()
+        ttk.Entry(filter_grid, textvariable=filter_student_var, width=20).grid(row=0, column=1, padx=5, pady=5)
+
+        # Payment Type filter
+        ttk.Label(filter_grid, text="Payment Type:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        filter_type_var = tk.StringVar()
+        filter_type_combo = ttk.Combobox(filter_grid, textvariable=filter_type_var, width=18, state='readonly')
+        filter_type_combo['values'] = ('All', 'Club Membership Fee', 'Event Registration Fee',
+                                       'Equipment Rental', 'Facility Booking Fee', 'Competition Entry Fee')
+        filter_type_combo.set('All')
+        filter_type_combo.grid(row=0, column=3, padx=5, pady=5)
+
+        # Payment history treeview
+        history_frame = ttk.LabelFrame(parent, text="Payment Records")
+        history_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        columns = ('ID', 'Date', 'Student ID', 'Student Name', 'Type', 'Amount', 'Description', 'Status')
+        tree = ttk.Treeview(history_frame, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=200)
+            else:
+                tree.column(col, width=100)
+
+        tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Add scrollbars
+        v_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=tree.yview)
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        h_scrollbar = ttk.Scrollbar(history_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        def load_payment_history():
+            """Load payment history with filters"""
+            # Clear existing items
+            for item in tree.get_children():
+                tree.delete(item)
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                query = '''
+                    SELECT sf.fee_id, sf.created_date, sf.student_id,
+                           s.first_name || ' ' || s.last_name,
+                           sf.fee_type, sf.amount, sf.description, sf.paid_status
+                    FROM student_fees sf
+                    JOIN students s ON sf.student_id = s.student_id
+                    WHERE (sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%')
+                '''
+
+                params = []
+
+                # Apply filters
+                student_filter = filter_student_var.get().strip()
+                if student_filter:
+                    query += ' AND sf.student_id = ?'
+                    params.append(student_filter)
+
+                type_filter = filter_type_var.get()
+                if type_filter and type_filter != 'All':
+                    query += ' AND sf.fee_type = ?'
+                    params.append(type_filter)
+
+                query += ' ORDER BY sf.created_date DESC LIMIT 500'
+
+                cursor.execute(query, params)
+
+                for row in cursor.fetchall():
+                    tree.insert('', tk.END, values=row)
+
+                conn.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Error loading payment history: {e}")
+
+        # Load button
+        button_frame = ttk.Frame(filter_frame)
+        button_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Button(button_frame, text="Apply Filters", command=load_payment_history).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Clear Filters",
+                  command=lambda: [filter_student_var.set(''), filter_type_var.set('All'), load_payment_history()]).pack(side=tk.LEFT, padx=5)
+
+        # Load initial data
+        load_payment_history()
+
+    def _create_payment_reports_tab(self, parent):
+        """Create tab for payment reports and analytics"""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Label(header_frame, text="Payment Reports & Analytics", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+
+        # Report options frame
+        options_frame = ttk.LabelFrame(parent, text="Report Options")
+        options_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        options_grid = ttk.Frame(options_frame)
+        options_grid.pack(fill=tk.X, padx=10, pady=10)
+
+        # Report type
+        ttk.Label(options_grid, text="Report Type:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        report_type_var = tk.StringVar()
+        report_type_combo = ttk.Combobox(options_grid, textvariable=report_type_var, width=25, state='readonly')
+        report_type_combo['values'] = ('By Club', 'By Payment Type', 'By Student', 'Monthly Summary', 'Outstanding Payments')
+        report_type_combo.set('By Club')
+        report_type_combo.grid(row=0, column=1, padx=5, pady=5)
+
+        # Results frame
+        results_frame = ttk.LabelFrame(parent, text="Report Results")
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD, height=20)
+        results_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        def generate_report():
+            """Generate selected report"""
+            results_text.delete('1.0', tk.END)
+            report_type = report_type_var.get()
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                if report_type == 'By Club':
+                    cursor.execute('''
+                        SELECT
+                            CASE
+                                WHEN sf.description LIKE '%-%' THEN SUBSTR(sf.description, INSTR(sf.description, '-') + 2)
+                                ELSE 'General'
+                            END as club,
+                            COUNT(*) as count,
+                            SUM(sf.amount) as total
+                        FROM student_fees sf
+                        WHERE sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%'
+                        GROUP BY club
+                        ORDER BY total DESC
+                    ''')
+
+                    results_text.insert('1.0', "PAYMENT REPORT BY CLUB\n")
+                    results_text.insert(tk.END, "=" * 60 + "\n\n")
+                    results_text.insert(tk.END, f"{'Club':<30} {'Count':<10} {'Total':<15}\n")
+                    results_text.insert(tk.END, "-" * 60 + "\n")
+
+                    for club, count, total in cursor.fetchall():
+                        results_text.insert(tk.END, f"{club:<30} {count:<10} £{total:>12.2f}\n")
+
+                elif report_type == 'By Payment Type':
+                    cursor.execute('''
+                        SELECT sf.fee_type, COUNT(*), SUM(sf.amount)
+                        FROM student_fees sf
+                        WHERE sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%'
+                        GROUP BY sf.fee_type
+                        ORDER BY SUM(sf.amount) DESC
+                    ''')
+
+                    results_text.insert('1.0', "PAYMENT REPORT BY TYPE\n")
+                    results_text.insert(tk.END, "=" * 60 + "\n\n")
+                    results_text.insert(tk.END, f"{'Type':<30} {'Count':<10} {'Total':<15}\n")
+                    results_text.insert(tk.END, "-" * 60 + "\n")
+
+                    for fee_type, count, total in cursor.fetchall():
+                        results_text.insert(tk.END, f"{fee_type:<30} {count:<10} £{total:>12.2f}\n")
+
+                elif report_type == 'Monthly Summary':
+                    cursor.execute('''
+                        SELECT strftime('%Y-%m', sf.created_date) as month,
+                               COUNT(*), SUM(sf.amount)
+                        FROM student_fees sf
+                        WHERE sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%'
+                        GROUP BY month
+                        ORDER BY month DESC
+                        LIMIT 12
+                    ''')
+
+                    results_text.insert('1.0', "MONTHLY PAYMENT SUMMARY\n")
+                    results_text.insert(tk.END, "=" * 60 + "\n\n")
+                    results_text.insert(tk.END, f"{'Month':<15} {'Count':<10} {'Total':<15}\n")
+                    results_text.insert(tk.END, "-" * 60 + "\n")
+
+                    for month, count, total in cursor.fetchall():
+                        results_text.insert(tk.END, f"{month:<15} {count:<10} £{total:>12.2f}\n")
+
+                conn.close()
+
+            except Exception as e:
+                results_text.insert('1.0', f"Error generating report: {e}")
+
+        # Button frame
+        button_frame = ttk.Frame(options_frame)
+        button_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Export to CSV",
+                  command=lambda: messagebox.showinfo("Export", "CSV export feature coming soon")).pack(side=tk.LEFT, padx=5)
+
     def create_main_menu_button(self):
         """Ensure a top-right button exists for returning to the main menu"""
         try:
@@ -827,6 +1276,12 @@ class StudentUnionGUI:
     
     def _render_dashboard_tab(self, parent_frame):
         """Render dashboard content in the provided parent frame"""
+        # Check if GUI was properly initialized
+        if not self.initialized or not self.current_user:
+            ttk.Label(parent_frame, text="Authentication required. Please log in.",
+                     font=('Arial', 12)).pack(pady=20)
+            return
+
         # Welcome section
         welcome_frame = ttk.LabelFrame(parent_frame, text="Welcome")
         welcome_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -2282,21 +2737,26 @@ class StudentUnionGUI:
     
     def show_profile(self):
         """Show user profile"""
+        # Check if GUI was properly initialized
+        if not self.initialized or not self.current_user:
+            messagebox.showerror("Error", "Authentication required. Please log in.")
+            return
+
         profile_window = tk.Toplevel(self.root)
         profile_window.title("User Profile")
         profile_window.geometry("400x300")
         profile_window.transient(self.root)
         profile_window.grab_set()
-        
+
         profile_frame = ttk.Frame(profile_window)
         profile_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
+
         ttk.Label(profile_frame, text="User Profile", font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Profile information
         info_frame = ttk.Frame(profile_frame)
         info_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Label(info_frame, text="Username:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, pady=5)
         ttk.Label(info_frame, text=self.current_user['username']).grid(row=0, column=1, sticky=tk.W, padx=10, pady=5)
         

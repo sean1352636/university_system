@@ -5,6 +5,152 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.13] - 2025-11-15
+
+### Fixed - Student Union GUI Current User NoneType Error
+
+**Critical Bug Fix**
+
+Fixed critical NoneType error where Student Union GUI would crash when accessing `self.current_user` in methods like `_render_dashboard_tab` and `show_profile` after failed authentication.
+
+**Root Cause:**
+
+When authentication failed in embedded mode, `self.current_user` remained `None`, but the GUI object was still created and methods could be called on it, causing `TypeError: 'NoneType' object is not subscriptable`.
+
+**Issues Fixed:**
+
+1. **Added initialization flag:**
+   - Added `self.initialized` flag to track successful GUI initialization
+   - Flag set to `False` on authentication failure
+   - Flag set to `True` after successful setup
+
+2. **Guard clauses in methods:**
+   - `_render_dashboard_tab()` now checks for `self.initialized` and `self.current_user`
+   - `show_profile()` now checks for `self.initialized` and `self.current_user`
+   - Methods display appropriate error messages if authentication is missing
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:52-78` (added initialization flag)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:833-839` (added guard in _render_dashboard_tab)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:2294-2299` (added guard in show_profile)
+
+### Added - Academic Calendar GUI Export in Academics Module
+
+**Enhancement**
+
+Added `CalendarGUI` to the academics GUI module exports for proper integration with Student Union GUI.
+
+**Changes:**
+
+1. **Updated `__init__.py` exports:**
+   - Added `CalendarGUI` to `__all__` list
+   - Added import with exception handling
+   - Calendar GUI now accessible via module imports
+
+**Files Modified:**
+- `university_system/modules/domain/academics/gui/__init__.py:9-29` (added CalendarGUI export)
+
+**Impact:**
+- ✅ Student Union Calendar button now works correctly
+- ✅ Calendar integration properly linked from sidebar
+- ✅ No more import errors when opening calendar
+
+### Confirmed - Finance GUI Already Linked in Main GUI
+
+**Verification**
+
+Confirmed that Finance Management GUI is already properly integrated into the main GUI system with multiple access points.
+
+**Existing Integration:**
+
+1. **Quick Access Button:**
+   - "Finance Management" button at line 7302-7303
+   - Calls `show_finance_management()` method
+
+2. **Multiple Finance Methods:**
+   - `show_finance_management()` - Main finance GUI
+   - `show_finance_reporting_dashboard()` - Reporting interface
+   - `show_financial_aid()` - Financial aid management
+
+3. **GUI Initialization:**
+   - `FinanceManagementGUI` initialized at line 806
+   - Properly integrated with auth system
+
+**No changes needed** - Finance GUI already fully integrated.
+
+### Added - Comprehensive Club Payment Management System
+
+**Major Feature Addition**
+
+Added a comprehensive club payment management interface to the Student Union GUI with four dedicated sections for managing, tracking, and reporting club-related payments.
+
+**New Features:**
+
+1. **Payment Overview Tab:**
+   - Real-time payment statistics (total payments, total amount, average payment)
+   - Recent payments table with filtering
+   - Visual summary of club financial activity
+
+2. **Record Payment Tab:**
+   - Full payment entry form
+   - Student ID lookup
+   - Payment type selection (Membership Fee, Event Registration, Equipment Rental, etc.)
+   - Club-specific payment tracking
+   - Amount and description fields
+   - Payment status management (Paid, Pending, Cancelled)
+   - Form validation and error handling
+
+3. **Payment History Tab:**
+   - Comprehensive payment records view
+   - Advanced filtering by Student ID and Payment Type
+   - Sortable columns (ID, Date, Student, Type, Amount, Description, Status)
+   - Horizontal and vertical scrolling for large datasets
+   - Up to 500 recent payments displayed
+
+4. **Payment Reports Tab:**
+   - Multiple report types:
+     - By Club (aggregated club spending)
+     - By Payment Type (fee categorization)
+     - Monthly Summary (time-series analysis)
+   - Formatted text output with totals
+   - Export to CSV (coming soon)
+
+**Integration:**
+
+- New sidebar button "Club Payment Management" (💰)
+- Replaces previous simple "Club Payments" button
+- Fully integrated with existing `process_student_union_payment()` method
+- Uses centralized database path configuration
+
+**Technical Implementation:**
+
+- Main method: `show_club_payments_content()` (line 622-660)
+- Helper methods (4 new methods, ~400 lines):
+  - `_create_payment_overview_tab()` (line 862-941)
+  - `_create_record_payment_tab()` (line 943-1047)
+  - `_create_payment_history_tab()` (line 1049-1151)
+  - `_create_payment_reports_tab()` (line 1153-1260)
+
+**Database Integration:**
+
+- Queries `student_fees` table
+- Filters for club-related payments
+- Joins with `students` table for student information
+- Joins with `student_clubs` table for club information
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:479` (updated sidebar button)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:622-660` (main content method)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:858-1260` (payment management methods)
+
+**Impact:**
+
+- ✅ Comprehensive payment tracking for all clubs
+- ✅ Easy payment recording with validation
+- ✅ Historical payment analysis
+- ✅ Financial reporting and analytics
+- ✅ Improved financial transparency for student organizations
+
 ## [5.0.12] - 2025-11-15
 
 ### Fixed - CRITICAL: Student Union GUI Integration Methods Misplaced
