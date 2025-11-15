@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added import before line 5007 (user management - load users)
 - Added import before line 5145 (change user role fallback)
 - Fixes "error loading users name get_connection is not defined"
+
+**Student Support GUI - Missing deactivate_user Method:**
+- **CRITICAL FIX**: Implemented missing `deactivate_user()` method
+- Method was called at line 5031 but never implemented
+- Added user deactivation/reactivation functionality (lines 5171-5233)
+- Toggles user active status in database with proper permissions check
+- Auto-creates 'active' and 'updated_at' columns if they don't exist
+- Includes activity logging for audit trail
+- Fixes AttributeError: 'StudentSupportGUI' object has no attribute 'deactivate_user'
 - File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
 
 ## [5.0.29] - 2025-11-15

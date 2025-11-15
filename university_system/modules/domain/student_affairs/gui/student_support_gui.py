@@ -5168,6 +5168,70 @@ class StudentSupportGUI:
         ttk.Button(btn_frame, text="Save", command=save_role).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=role_dialog.destroy).pack(side="left")
 
+    def deactivate_user(self, user_tree):
+        """Deactivate or reactivate a user account"""
+        selection = user_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a user")
+            return
+
+        user_data = user_tree.item(selection[0])['values']
+        user_id = user_data[0]
+        username = user_data[1]
+        current_status = user_data[4]  # Status column
+
+        # Check permissions
+        if not auth or not auth.current_user or auth.current_user['role'] != 'admin':
+            messagebox.showerror("Error", "Admin access required to deactivate users")
+            return
+
+        # Toggle status
+        new_status = 'Inactive' if current_status == 'Active' else 'Active'
+        action = 'deactivate' if new_status == 'Inactive' else 'reactivate'
+
+        if messagebox.askyesno("Confirm", f"Are you sure you want to {action} user '{username}'?"):
+            try:
+                # Update user status in database
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Check if users table has an 'active' or 'status' column
+                # For now, we'll use a simple flag (1 for active, 0 for inactive)
+                is_active = 1 if new_status == 'Active' else 0
+
+                # Try to update the status
+                try:
+                    cursor.execute(
+                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
+                        (is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
+                    )
+                except Exception:
+                    # If 'active' column doesn't exist, add it first
+                    cursor.execute('ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1')
+                    cursor.execute('ALTER TABLE users ADD COLUMN updated_at TEXT')
+                    cursor.execute(
+                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
+                        (is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
+                    )
+
+                conn.commit()
+                conn.close()
+
+                # Log activity
+                if ACTIVITY_LOGGER_AVAILABLE:
+                    log_activity('update', 'user_status', user_id=user_id, details={
+                        'username': username,
+                        'action': action,
+                        'new_status': new_status
+                    })
+
+                messagebox.showinfo("Success", f"User '{username}' has been {action}d")
+                self.show_user_management()  # Refresh the user list
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not {action} user: {e}")
+
     def perform_enhanced_export(self, export_type, filters, format_type):
         """Perform enhanced data export"""
         try:
