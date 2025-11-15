@@ -26,11 +26,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Student Support GUI - Missing deactivate_user Method:**
 - **CRITICAL FIX**: Implemented missing `deactivate_user()` method
 - Method was called at line 5031 but never implemented
-- Added user deactivation/reactivation functionality (lines 5171-5233)
+- Added user deactivation/reactivation functionality (lines 5173-5235)
 - Toggles user active status in database with proper permissions check
 - Auto-creates 'active' and 'updated_at' columns if they don't exist
 - Includes activity logging for audit trail
 - Fixes AttributeError: 'StudentSupportGUI' object has no attribute 'deactivate_user'
+
+**Student Support GUI - Added Activate User Button:**
+- **ENHANCEMENT**: Added separate "Activate User" button to user management interface
+- Button added at line 5032-5033 next to Deactivate User button
+- Implemented `activate_user()` method (lines 5237-5296)
+- Only activates users that are currently inactive (with status check)
+- Requires admin permissions
+- Includes activity logging for audit trail
+- Provides clearer user experience with dedicated activation button
+
+**Student Support GUI - Authentication System Fixes:**
+- **CRITICAL FIX**: Fixed authentication issues causing "need to be logged in" errors
+- Replaced all global `auth` references with `self.auth` in class methods
+- Fixed line 4811 (show_satisfaction_rating)
+- Fixed line 4902 (show_export_data_dialog)
+- Fixed line 4979 (show_user_management)
+- Fixed line 5186 (deactivate_user)
+- Updated __init__ to properly set self.auth from shared_context (lines 183-185)
+- Updated display_enhanced_support_portal() to use get_auth() from shared_context
+- Ensures consistent authentication state across all GUI functions
 - File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
 
 ## [5.0.29] - 2025-11-15

@@ -179,9 +179,12 @@ class StudentSupportGUI:
         self.setup_current_user()
 
         # Check authentication status - require login through main system
-        from university_system.infrastructure.shared_context import get_auth
-        auth = get_auth()
-        if not auth.current_user:
+        # Ensure self.auth is set from shared_context if not already provided
+        if not self.auth:
+            from university_system.infrastructure.shared_context import get_auth
+            self.auth = get_auth()
+
+        if not self.auth or not self.auth.current_user:
             messagebox.showerror("Authentication Required",
                 "Please log in through the main University System GUI.\n\n"
                 "Run: python run.py --gui")
@@ -4805,7 +4808,7 @@ class StudentSupportGUI:
 
     def show_satisfaction_rating(self):
         """Show satisfaction rating dialog for resolved tickets"""
-        if not auth or not auth.current_user or auth.current_user['role'] != 'student':
+        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
             messagebox.showerror("Error", "Only students can submit satisfaction ratings")
             return
         
@@ -4896,7 +4899,7 @@ class StudentSupportGUI:
 
     def show_export_data_dialog(self):
         """Show enhanced data export dialog"""
-        if not auth or not auth.current_user or auth.current_user['role'] not in ('staff', 'admin'):
+        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
             messagebox.showerror("Error", "Staff access required")
             return
         
@@ -4973,7 +4976,7 @@ class StudentSupportGUI:
 
     def show_user_management(self):
         """Show user management interface (admin only)"""
-        if not auth or not auth.current_user or auth.current_user['role'] != 'admin':
+        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
             messagebox.showerror("Error", "Admin access required")
             return
         
@@ -5023,12 +5026,14 @@ class StudentSupportGUI:
         actions_frame = ttk.Frame(users_frame)
         actions_frame.pack(fill="x")
         
-        ttk.Button(actions_frame, text="Reset Password", 
+        ttk.Button(actions_frame, text="Reset Password",
                   command=lambda: self.reset_user_password(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text="Change Role", 
+        ttk.Button(actions_frame, text="Change Role",
                   command=lambda: self.change_user_role(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text="Deactivate User", 
-                  command=lambda: self.deactivate_user(user_tree)).pack(side="left")
+        ttk.Button(actions_frame, text="Deactivate User",
+                  command=lambda: self.deactivate_user(user_tree)).pack(side="left", padx=(0, 5))
+        ttk.Button(actions_frame, text="Activate User",
+                  command=lambda: self.activate_user(user_tree)).pack(side="left")
 
     def reset_user_password(self, user_tree):
         """Reset user password"""
@@ -5181,7 +5186,7 @@ class StudentSupportGUI:
         current_status = user_data[4]  # Status column
 
         # Check permissions
-        if not auth or not auth.current_user or auth.current_user['role'] != 'admin':
+        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
             messagebox.showerror("Error", "Admin access required to deactivate users")
             return
 
@@ -5231,6 +5236,67 @@ class StudentSupportGUI:
 
             except Exception as e:
                 messagebox.showerror("Error", f"Could not {action} user: {e}")
+
+    def activate_user(self, user_tree):
+        """Activate a user account"""
+        selection = user_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a user")
+            return
+
+        user_data = user_tree.item(selection[0])['values']
+        user_id = user_data[0]
+        username = user_data[1]
+        current_status = user_data[4]  # Status column
+
+        # Check permissions
+        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
+            messagebox.showerror("Error", "Admin access required to activate users")
+            return
+
+        # Check if already active
+        if current_status == 'Active':
+            messagebox.showinfo("Info", f"User '{username}' is already active")
+            return
+
+        if messagebox.askyesno("Confirm", f"Are you sure you want to activate user '{username}'?"):
+            try:
+                # Update user status in database
+                from university_system.infrastructure.database.db import get_connection
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                # Activate the user (set active = 1)
+                try:
+                    cursor.execute(
+                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
+                        (1, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
+                    )
+                except Exception:
+                    # If 'active' column doesn't exist, add it first
+                    cursor.execute('ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1')
+                    cursor.execute('ALTER TABLE users ADD COLUMN updated_at TEXT')
+                    cursor.execute(
+                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
+                        (1, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
+                    )
+
+                conn.commit()
+                conn.close()
+
+                # Log activity
+                if ACTIVITY_LOGGER_AVAILABLE:
+                    log_activity('update', 'user_status', user_id=user_id, details={
+                        'username': username,
+                        'action': 'activate',
+                        'new_status': 'Active'
+                    })
+
+                messagebox.showinfo("Success", f"User '{username}' has been activated")
+                self.show_user_management()  # Refresh the user list
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not activate user: {e}")
 
     def perform_enhanced_export(self, export_type, filters, format_type):
         """Perform enhanced data export"""
@@ -7059,22 +7125,23 @@ def enhanced_display_support_menu():
 # Backwards compatibility wrapper
 def display_enhanced_support_portal():
     """Main entry point that chooses between GUI and CLI"""
-    global auth
-    
-    # Initialize authentication if not already done
-    if auth is None:
+    # Get authentication from shared context
+    try:
+        from university_system.infrastructure.shared_context import get_auth
+        auth = get_auth()
+    except ImportError:
         try:
             from university_system.infrastructure.auth.user_authentication import UserAuth
             auth = UserAuth()
         except ImportError:
             print("Warning: Could not initialize authentication system")
             auth = None
-    
+
     # Check if user is logged in
     if not auth or not auth.current_user:
         print("⚠️  Please log in first to access the support portal.")
         return
-    
+
     # Launch enhanced interface
     enhanced_display_support_menu()
 
