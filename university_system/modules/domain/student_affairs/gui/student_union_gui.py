@@ -3562,6 +3562,162 @@ This GUI version maintains backward compatibility with the CLI system.
 
 
 # Dialog Classes for More Complex GUI Interactions
+    # =========================================================================
+    # INTEGRATION HELPER METHODS
+    # =========================================================================
+
+    def show_club_selection_for_merchandise(self):
+        """Show dialog to select club for merchandise shopping"""
+        try:
+            # Get all active clubs
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
+            clubs = [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+            if not clubs:
+                messagebox.showinfo("No Clubs", "No active clubs found")
+                return
+
+            # Create selection dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Select Club for Merchandise")
+            dialog.geometry("300x200")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+
+            club_var = tk.StringVar()
+            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
+            club_combo.pack(fill='x', pady=10)
+
+            def open_merchandise_shop():
+                selected_club = club_var.get()
+                if selected_club:
+                    dialog.destroy()
+                    self.open_shop_for_club_merchandise(selected_club)
+                else:
+                    messagebox.showwarning("No Selection", "Please select a club")
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Open Shop", command=open_merchandise_shop).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not show club selection: {e}")
+
+    def show_club_selection_for_dining(self):
+        """Show dialog to select club for dining reservation"""
+        try:
+            # Get all active clubs
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
+            clubs = [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+            if not clubs:
+                messagebox.showinfo("No Clubs", "No active clubs found")
+                return
+
+            # Create selection dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Select Club for Dining Reservation")
+            dialog.geometry("300x200")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+
+            club_var = tk.StringVar()
+            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
+            club_combo.pack(fill='x', pady=10)
+
+            def open_dining_booking():
+                selected_club = club_var.get()
+                if selected_club:
+                    dialog.destroy()
+                    self.book_club_dining_dialog(selected_club)
+                else:
+                    messagebox.showwarning("No Selection", "Please select a club")
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Book Dining", command=open_dining_booking).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not show club selection: {e}")
+
+    def show_club_selection_for_trips(self):
+        """Show dialog to select club for trip management"""
+        try:
+            # Get all active clubs
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
+            clubs = [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+            if not clubs:
+                messagebox.showinfo("No Clubs", "No active clubs found")
+                return
+
+            # Create selection dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Select Club for Trip Management")
+            dialog.geometry("300x250")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+
+            club_var = tk.StringVar()
+            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
+            club_combo.pack(fill='x', pady=10)
+
+            def create_trip():
+                selected_club = club_var.get()
+                if selected_club:
+                    dialog.destroy()
+                    self.create_club_trip_dialog(selected_club)
+                else:
+                    messagebox.showwarning("No Selection", "Please select a club")
+
+            def manage_trips():
+                selected_club = club_var.get()
+                if selected_club:
+                    dialog.destroy()
+                    self.open_trip_management_for_club(selected_club)
+                else:
+                    messagebox.showwarning("No Selection", "Please select a club")
+
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(pady=20)
+
+            ttk.Button(button_frame, text="Create New Trip", command=create_trip).pack(pady=5)
+            ttk.Button(button_frame, text="Manage Existing Trips", command=manage_trips).pack(pady=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(pady=5)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not show club selection: {e}")
+
+
+
 
 class ClubJoinDialog:
     """Dialog for joining a club"""
@@ -5369,161 +5525,6 @@ Student Union Finance Team
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not create newsletter dialog: {e}")
-
-    # =========================================================================
-    # INTEGRATION HELPER METHODS
-    # =========================================================================
-
-    def show_club_selection_for_merchandise(self):
-        """Show dialog to select club for merchandise shopping"""
-        try:
-            # Get all active clubs
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
-            clubs = [row[0] for row in cursor.fetchall()]
-            conn.close()
-
-            if not clubs:
-                messagebox.showinfo("No Clubs", "No active clubs found")
-                return
-
-            # Create selection dialog
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Select Club for Merchandise")
-            dialog.geometry("300x200")
-            dialog.transient(self.root)
-            dialog.grab_set()
-
-            main_frame = ttk.Frame(dialog, padding="20")
-            main_frame.pack(fill='both', expand=True)
-
-            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
-
-            club_var = tk.StringVar()
-            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
-            club_combo.pack(fill='x', pady=10)
-
-            def open_merchandise_shop():
-                selected_club = club_var.get()
-                if selected_club:
-                    dialog.destroy()
-                    self.open_shop_for_club_merchandise(selected_club)
-                else:
-                    messagebox.showwarning("No Selection", "Please select a club")
-
-            button_frame = ttk.Frame(main_frame)
-            button_frame.pack(pady=20)
-
-            ttk.Button(button_frame, text="Open Shop", command=open_merchandise_shop).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not show club selection: {e}")
-
-    def show_club_selection_for_dining(self):
-        """Show dialog to select club for dining reservation"""
-        try:
-            # Get all active clubs
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
-            clubs = [row[0] for row in cursor.fetchall()]
-            conn.close()
-
-            if not clubs:
-                messagebox.showinfo("No Clubs", "No active clubs found")
-                return
-
-            # Create selection dialog
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Select Club for Dining Reservation")
-            dialog.geometry("300x200")
-            dialog.transient(self.root)
-            dialog.grab_set()
-
-            main_frame = ttk.Frame(dialog, padding="20")
-            main_frame.pack(fill='both', expand=True)
-
-            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
-
-            club_var = tk.StringVar()
-            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
-            club_combo.pack(fill='x', pady=10)
-
-            def open_dining_booking():
-                selected_club = club_var.get()
-                if selected_club:
-                    dialog.destroy()
-                    self.book_club_dining_dialog(selected_club)
-                else:
-                    messagebox.showwarning("No Selection", "Please select a club")
-
-            button_frame = ttk.Frame(main_frame)
-            button_frame.pack(pady=20)
-
-            ttk.Button(button_frame, text="Book Dining", command=open_dining_booking).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not show club selection: {e}")
-
-    def show_club_selection_for_trips(self):
-        """Show dialog to select club for trip management"""
-        try:
-            # Get all active clubs
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT club_name FROM student_clubs WHERE status = "active" ORDER BY club_name')
-            clubs = [row[0] for row in cursor.fetchall()]
-            conn.close()
-
-            if not clubs:
-                messagebox.showinfo("No Clubs", "No active clubs found")
-                return
-
-            # Create selection dialog
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Select Club for Trip Management")
-            dialog.geometry("300x250")
-            dialog.transient(self.root)
-            dialog.grab_set()
-
-            main_frame = ttk.Frame(dialog, padding="20")
-            main_frame.pack(fill='both', expand=True)
-
-            ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
-
-            club_var = tk.StringVar()
-            club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
-            club_combo.pack(fill='x', pady=10)
-
-            def create_trip():
-                selected_club = club_var.get()
-                if selected_club:
-                    dialog.destroy()
-                    self.create_club_trip_dialog(selected_club)
-                else:
-                    messagebox.showwarning("No Selection", "Please select a club")
-
-            def manage_trips():
-                selected_club = club_var.get()
-                if selected_club:
-                    dialog.destroy()
-                    self.open_trip_management_for_club(selected_club)
-                else:
-                    messagebox.showwarning("No Selection", "Please select a club")
-
-            button_frame = ttk.Frame(main_frame)
-            button_frame.pack(pady=20)
-
-            ttk.Button(button_frame, text="Create New Trip", command=create_trip).pack(pady=5)
-            ttk.Button(button_frame, text="Manage Existing Trips", command=manage_trips).pack(pady=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(pady=5)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not show club selection: {e}")
-
 
 class RecurringEventDialog:
     """Dialog for creating recurring events"""

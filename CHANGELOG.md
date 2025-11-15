@@ -5,6 +5,70 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.12] - 2025-11-15
+
+### Fixed - CRITICAL: Student Union GUI Integration Methods Misplaced
+
+**Critical Bug Fix**
+
+Fixed critical class structure bug where integration helper methods were accidentally placed inside the wrong class, causing `AttributeError` when accessing Student Union from the main GUI.
+
+**Root Cause:**
+
+The `StudentUnionGUI` class ended at line 3562, but integration helper methods (`show_club_selection_for_merchandise`, `show_club_selection_for_dining`, `show_club_selection_for_trips`) were defined at lines 5373-5527, inside the `DatabaseQueryDialog` class instead of `StudentUnionGUI`.
+
+**Issue:**
+```
+AttributeError: 'StudentUnionGUI' object has no attribute 'show_club_selection_for_merchandise'
+```
+
+**File Structure Before:**
+```
+Line   33: class StudentUnionGUI
+Line 3562: (end of StudentUnionGUI methods)
+Line 3566: class ClubJoinDialog
+Line 3668: class ClubCreateDialog
+Line 3783: class ClubManageDialog
+Line 3937: class EventRegistrationDialog
+Line 4073: class FacilityBookingDialog
+Line 4288: class DatabaseQueryDialog
+Line 5373:     # INTEGRATION HELPER METHODS ← WRONG CLASS!
+Line 5377:     def show_club_selection_for_merchandise(self) ← Inside DatabaseQueryDialog!
+```
+
+**File Structure After:**
+```
+Line   33: class StudentUnionGUI
+Line 3565:     # INTEGRATION HELPER METHODS ← NOW IN StudentUnionGUI
+Line 3569:     def show_club_selection_for_merchandise(self) ← Correctly in StudentUnionGUI
+Line 3616:     def show_club_selection_for_dining(self)
+Line 3663:     def show_club_selection_for_trips(self)
+Line 3722: class ClubJoinDialog
+```
+
+**Methods Relocated:**
+
+Moved 3 integration helper methods (155 lines total) from inside `DatabaseQueryDialog` class to the end of `StudentUnionGUI` class:
+
+1. `show_club_selection_for_merchandise()` - Club merchandise shop selector
+2. `show_club_selection_for_dining()` - Club dining booking selector
+3. `show_club_selection_for_trips()` - Club trip management selector
+
+**Impact:**
+
+- ✅ All sidebar navigation buttons now work correctly
+- ✅ Integration features (Finance, Shop, Restaurant, Trips) accessible
+- ✅ No more AttributeError when clicking integration buttons
+- ✅ Student Union GUI fully functional from main GUI
+
+**Technical Details:**
+
+- Used Python script to extract lines 5373-5527
+- Inserted at line 3565 (end of StudentUnionGUI class)
+- Removed from original location (line 5373-5527)
+- Verified class hierarchy with indentation analysis
+- Syntax validated with `python3 -m py_compile`
+
 ## [5.0.11] - 2025-11-15
 
 ### Fixed - Student Union GUI Authentication Integration
