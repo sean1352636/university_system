@@ -424,13 +424,15 @@ class LogViewerTab(ttk.Frame):
         
         # Add new logs
         for log in reversed(logs):  # Show newest first
-            timestamp = log.get('timestamp', '')
-            level = log.get('log_level', '')
-            user = log.get('username', '')
-            action = log.get('action', '')
-            module = log.get('module', '')
-            status = log.get('status', '')
-            details = log.get('details', '')[:100] + '...' if len(log.get('details', '')) > 100 else log.get('details', '')
+            timestamp = log.get('timestamp', '') or ''
+            level = log.get('log_level', '') or ''
+            user = log.get('username', '') or ''
+            action = log.get('action', '') or ''
+            module = log.get('module', '') or ''
+            status = log.get('status', '') or ''
+            # Handle None values from database
+            details_raw = log.get('details') or ''
+            details = details_raw[:100] + '...' if len(details_raw) > 100 else details_raw
             
             # Color code based on level and status
             tags = []

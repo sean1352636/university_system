@@ -5,6 +5,22 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.36] - 2025-11-15
+
+### Bug Fixes
+
+**Activity Logger GUI - NoneType Error Fix:**
+- **CRITICAL FIX**: Fixed TypeError when refreshing logs with NULL details
+  - Error: "object of type 'NoneType' has no len()"
+  - Traceback: `update_log_display` trying to check length of None value
+  - Root cause: Database NULL values returned as None instead of empty string
+  - Fixed by adding `or ''` fallback to all field extractions
+  - Separated details handling into two lines for clarity
+  - Changed: `log.get('details', '')` → `log.get('details') or ''`
+  - All fields now safely handle None values: timestamp, level, user, action, module, status, details
+  - Log display now works correctly even when database fields contain NULL
+  - File: `university_system/modules/shared/gui/simple_activity_logger_gui.py:426-435`
+
 ## [5.0.35] - 2025-11-15
 
 ### Bug Fixes
