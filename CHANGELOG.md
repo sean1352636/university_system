@@ -7,11 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.10] - 2025-11-15
 
-### Changed - Student Union GUI Refactoring
+### Changed - Student Union GUI Complete Navigation Redesign
 
-**Architectural Improvement**
+**Major UI/UX Overhaul**
+
+Completely redesigned the Student Union GUI interface, replacing the traditional tab and dropdown menu system with a modern, scrollable sidebar navigation for improved usability and accessibility to all features.
+
+**New Sidebar Navigation System:**
+
+1. **Sidebar Interface:**
+   - Left sidebar with scrollable button list (280px width)
+   - Dark theme styling (#2c3e50 background, #34495e buttons)
+   - Hover effects for better interactivity (buttons highlight to #1abc9c)
+   - Mouse wheel scrolling support for easy navigation
+   - Organized into 11 distinct categories with visual separators
+
+2. **Navigation Categories:**
+   - 📊 Main (Dashboard, Profile)
+   - 🎓 Core Features (Clubs, Events, Facilities)
+   - 🗳️ Elections & Voting (12 features with role-based access)
+   - 🤝 Community & Engagement (6 features)
+   - 🎉 Advanced Events (6 features)
+   - 🏢 Facilities & Equipment (12 features)
+   - 💚 Support & Wellness (2 features)
+   - 🌱 Sustainability (Green Initiatives)
+   - 🔗 Integrations (8 external system links)
+   - 🚀 Advanced Features (3 staff/admin features)
+   - ⚙️ Administration (2 admin/staff features)
+   - ❓ Help (About, Switch to CLI)
+
+3. **Role-Based Access Control:**
+   - Student features: All core features, events, equipment, support
+   - Staff features: Analytics, financial tracking, engagement trends
+   - Admin features: Election setup, equipment management, facility approvals, enhanced voting configuration
+
+**Bug Fixes:**
+
+1. **CLI Import Error Fixed:**
+   - Fixed import error: `from part2 import main` → `from university_system.cli_main import main`
+   - Added better error handling with descriptive messages
+   - Improved error dialog display for CLI import failures
+
+**Architectural Improvements:**
 
 Refactored Student Union GUI tab rendering methods to follow the same pattern as `show_dashboard_tab`, improving code modularity and flexibility.
+
+**Technical Implementation:**
+
+1. **New Helper Methods:**
+   - `_on_mousewheel(event)` - Handles mouse wheel scrolling on sidebar
+   - `add_sidebar_header(text, icon)` - Creates category headers in sidebar
+   - `add_sidebar_button(text, command, icon, admin_only, staff_only)` - Creates sidebar buttons with role filtering
+   - `add_sidebar_separator()` - Adds visual separators between categories
+   - `build_sidebar_navigation()` - Builds the complete sidebar navigation structure
+   - `show_*_content()` methods - Display content in main area (dashboard, clubs, events, facilities, admin)
 
 **Changes Made:**
 
