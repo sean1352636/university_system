@@ -5,6 +5,59 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.21] - 2025-11-15
+
+### Fixed - Restaurant, Shop, and Trip GUI Launch Issues
+
+**GUI Initialization & Navigation Improvements**
+
+Fixed critical GUI initialization and navigation issues affecting Restaurant, Shop, and Trip Management GUIs.
+
+**Issues Fixed:**
+
+1. **Restaurant GUI Blank Screen (CRITICAL):**
+   - **Problem:** Restaurant GUI opened but showed completely blank window
+   - **Root Cause:** `__init__` method never called `show_restaurant_management()` to create the interface
+   - **Fix:** Added `self.show_restaurant_management()` call at end of `__init__` method
+   - **Impact:** Restaurant GUI now displays properly with full interface
+
+2. **Shop GUI - Removed Unnecessary Club Selection Dialog:**
+   - **Problem:** Shop GUI required selecting a club from dialog before opening (extra unnecessary step)
+   - **User Experience Issue:** Dialog was useless for general shop access
+   - **Fix:** Created `open_shop_gui_direct()` method that launches Shop GUI immediately
+   - **Changed:** Sidebar button "Club Merchandise" now opens shop directly
+   - **Changed:** Menu item "👕 Club Merchandise" now opens shop directly
+   - **Impact:** Users can access shop with one click instead of two
+
+3. **Trip GUI - Removed Unnecessary Club Selection Dialog:**
+   - **Problem:** Trip GUI required selecting a club from dialog before opening (extra unnecessary step)
+   - **User Experience Issue:** Dialog was useless for general trip management access
+   - **Fix:** Created `open_trip_gui_direct()` method that launches Trip GUI immediately
+   - **Changed:** Sidebar button "Trip Management" now opens trip GUI directly
+   - **Changed:** Menu item "🧳 Trip Management" now opens trip GUI directly
+   - **Impact:** Users can access trip management with one click instead of two
+
+**Files Modified:**
+- `university_system/modules/domain/commerce/gui/restaurant_management_gui.py`:
+  - Line 189: Added `self.show_restaurant_management()` call in `__init__`
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py`:
+  - Lines 4254-4268: Added `open_shop_gui_direct()` method
+  - Lines 4317-4332: Added `open_trip_gui_direct()` method
+  - Line 488: Updated sidebar button to call `open_shop_gui_direct`
+  - Line 491: Updated sidebar button to call `open_trip_gui_direct`
+  - Line 690: Updated menu command to call `open_shop_gui_direct()`
+  - Line 701: Updated menu command to call `open_trip_gui_direct()`
+
+**User Experience Improvements:**
+- ✅ Restaurant GUI now displays properly instead of blank screen
+- ✅ Shop GUI opens immediately - no unnecessary dialog
+- ✅ Trip GUI opens immediately - no unnecessary dialog
+- ✅ Reduced clicks from 2 to 1 for Shop access
+- ✅ Reduced clicks from 2 to 1 for Trip access
+- ✅ Cleaner, faster navigation workflow
+
+**Note:** Club-specific merchandise and trip dialogs still available through other menu paths for users who need them.
+
 ## [5.0.20] - 2025-11-15
 
 ### Fixed - Finance Management GUI Club Payments Feature

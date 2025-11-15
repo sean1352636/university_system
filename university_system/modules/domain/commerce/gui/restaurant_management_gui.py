@@ -185,6 +185,9 @@ class RestaurantManagementGUI:
         self.current_user = None
         self.setup_current_user()
 
+        # Show the restaurant management interface
+        self.show_restaurant_management()
+
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
         try:

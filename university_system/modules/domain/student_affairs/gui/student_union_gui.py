@@ -485,10 +485,10 @@ class StudentUnionGUI:
         self.add_sidebar_separator()
         self.add_sidebar_header("🔗 Integrations", "")
         self.add_sidebar_button("Club Payment Management", self.show_club_payments_content, "💰")
-        self.add_sidebar_button("Club Merchandise", self.show_club_selection_for_merchandise, "👕")
+        self.add_sidebar_button("Club Merchandise", self.open_shop_gui_direct, "👕")
         self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
         self.add_sidebar_button("Student Union Calendar", self.open_calendar_with_club_events, "📅")
-        self.add_sidebar_button("Trip Management", self.show_club_selection_for_trips, "🧳")
+        self.add_sidebar_button("Trip Management", self.open_trip_gui_direct, "🧳")
 
         # Advanced Features
         self.add_sidebar_separator()
@@ -687,7 +687,7 @@ class StudentUnionGUI:
 
         # Shop submenu
         integrations_menu.add_command(label="👕 Club Merchandise",
-                                     command=lambda: self.show_club_selection_for_merchandise())
+                                     command=lambda: self.open_shop_gui_direct())
 
         # Restaurant
         integrations_menu.add_command(label="🍽️ University Restaurant",
@@ -698,7 +698,7 @@ class StudentUnionGUI:
         integrations_menu.add_command(label="📅 Student Union Calendar",
                                      command=lambda: self.open_calendar_with_club_events())
         integrations_menu.add_command(label="🧳 Trip Management",
-                                     command=lambda: self.show_club_selection_for_trips())
+                                     command=lambda: self.open_trip_gui_direct())
 
         # New Features menu
         features_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -4251,6 +4251,22 @@ This GUI version maintains backward compatibility with the CLI system.
     # SHOP INTEGRATION METHODS
     # =========================================================================
 
+    def open_shop_gui_direct(self):
+        """Open shop GUI directly without club selection dialog"""
+        try:
+            from university_system.modules.domain.commerce.gui.shop_management_gui import UniversityShopGUI
+
+            shop_window = tk.Toplevel(self.root)
+            shop_window.title("University Shop Management")
+            shop_window.geometry("1200x800")
+
+            shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
+
+        except ImportError:
+            messagebox.showerror("Error", "Shop system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open shop system: {e}")
+
     def open_shop_for_club_merchandise(self, club_name):
         """Open shop GUI filtered for club merchandise"""
         try:
@@ -4297,6 +4313,23 @@ This GUI version maintains backward compatibility with the CLI system.
     # =========================================================================
     # TRIP INTEGRATION METHODS
     # =========================================================================
+
+    def open_trip_gui_direct(self):
+        """Open trip management GUI directly without club selection dialog"""
+        try:
+            from university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+
+            trip_window = tk.Toplevel(self.root)
+            trip_window.title("Trip Management")
+            trip_window.geometry("1200x800")
+
+            # TripManagementGUI uses auth_instance and root parameters
+            trip_gui = TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)
+
+        except ImportError:
+            messagebox.showerror("Error", "Trip management system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open trip management: {e}")
 
     def create_club_trip_dialog(self, club_name):
         """Show dialog to create a new club trip"""
