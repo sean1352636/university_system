@@ -1632,41 +1632,52 @@ def start_scheduler():
 def send_report_email(report_path, recipients, template_name):
     """Send report via email to recipients"""
     try:
-        from university_system.infrastructure.email.smtp import send_email_via_smtp
+        from university_system.infrastructure.email.email_service import send_email
         from university_system.infrastructure.email.template_utils import render_template
 
         # Email body
-        _, body = render_template("automated_report_delivery", {
-            "template_name": template_name,
-            "generated_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
+        try:
+            _, body = render_template("automated_report_delivery", {
+                "template_name": template_name,
+                "generated_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except:
+            body = None
+
         if not body:
-            body = "Please find attached the automated report."
+            body = f"""Dear Recipient,
 
-        # Prepare attachment
-        attachments = None
-        if os.path.exists(report_path):
-            attachments = [report_path]
+Please find attached the automated report: {template_name}
 
-        # Send to first recipient with others as CC
-        recipient_email = recipients[0]
-        cc = recipients[1:] if len(recipients) > 1 else None
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-        current_time = datetime.now().isoformat()
-        success = send_email_via_smtp(
-            recipient_email=recipient_email,
-            subject=f"Automated Report: {template_name}",
-            body=body,
-            cc=cc,
-            bcc=None,
-            attachments=attachments,
-            current_time=current_time
-        )
+This is an automated report from the University Management System.
 
-        if success:
-            logging.info(f"Report emailed to {len(recipients)} recipients")
+Best regards,
+University Reporting System"""
+
+        # Prepare attachment - convert to comma-separated string
+        attachments = report_path if os.path.exists(report_path) else None
+
+        # Send to each recipient
+        success_count = 0
+        for recipient_email in recipients:
+            try:
+                success = send_email(
+                    recipient_email=recipient_email,
+                    subject=f"Automated Report: {template_name}",
+                    body=body,
+                    attachments=attachments
+                )
+                if success:
+                    success_count += 1
+            except Exception as e:
+                logging.error(f"Failed to send to {recipient_email}: {str(e)}")
+
+        if success_count > 0:
+            logging.info(f"Report emailed to {success_count} of {len(recipients)} recipients")
         else:
-            logging.error(f"Failed to email report to {len(recipients)} recipients")
+            logging.error(f"Failed to email report to any recipients")
 
     except Exception as e:
         logging.error(f"Error sending report email: {str(e)}")
@@ -5565,7 +5576,7 @@ This interface provides basic user management functionality."""
             
             def send_test_email():
                 try:
-                    from university_system.infrastructure.email.smtp import send_email_via_smtp
+                    from university_system.infrastructure.email.email_service import send_email
 
                     test_email = test_email_var.get().strip()
                     if not test_email or '@' not in test_email:
@@ -5595,15 +5606,10 @@ System Configuration:
 Thank you for using our system.
 """.format(**test_config)
 
-                    current_time = datetime.now().isoformat()
-                    success = send_email_via_smtp(
+                    success = send_email(
                         recipient_email=test_email,
                         subject='Test Email from University Reporting System',
-                        body=body,
-                        cc=None,
-                        bcc=None,
-                        attachments=None,
-                        current_time=current_time
+                        body=body
                     )
 
                     if success:
@@ -6200,34 +6206,34 @@ University Reporting System""")
             recipient_list = [email.strip() for email in recipients.split(',')]
 
             try:
-                from university_system.infrastructure.email.smtp import send_email_via_smtp
-
-                # Send to first recipient with others as CC
-                recipient_email = recipient_list[0]
-                cc = recipient_list[1:] if len(recipient_list) > 1 else None
+                from university_system.infrastructure.email.email_service import send_email
 
                 # Get message body
                 body = message_text.get('1.0', tk.END)
 
                 # Prepare attachment
-                attachments = [report['path']]
+                attachments = report['path']
 
-                current_time = datetime.now().isoformat()
-                success = send_email_via_smtp(
-                    recipient_email=recipient_email,
-                    subject=subject_var.get(),
-                    body=body,
-                    cc=cc,
-                    bcc=None,
-                    attachments=attachments,
-                    current_time=current_time
-                )
+                # Send to each recipient
+                success_count = 0
+                for recipient_email in recipient_list:
+                    try:
+                        success = send_email(
+                            recipient_email=recipient_email,
+                            subject=subject_var.get(),
+                            body=body,
+                            attachments=attachments
+                        )
+                        if success:
+                            success_count += 1
+                    except Exception as e:
+                        logging.error(f"Failed to send to {recipient_email}: {str(e)}")
 
-                if success:
-                    messagebox.showinfo("Report Shared", f"Report sent successfully to {len(recipient_list)} recipient(s)!")
+                if success_count > 0:
+                    messagebox.showinfo("Report Shared", f"Report sent successfully to {success_count} of {len(recipient_list)} recipient(s)!")
                     share_dialog.destroy()
                 else:
-                    messagebox.showerror("Share Failed", "Failed to share report")
+                    messagebox.showerror("Share Failed", "Failed to share report with any recipients")
 
             except Exception as e:
                 messagebox.showerror("Share Failed", f"Failed to share report: {str(e)}")

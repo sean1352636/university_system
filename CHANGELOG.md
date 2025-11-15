@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Matches the emails table schema: `sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
    - File: `student_analytics_gui.py:366`
 
-4. **CRITICAL FIX**: Fixed email sending - emails stuck in queue
+4. **CRITICAL FIX**: Fixed email sending - emails stuck in queue (Student Analytics)
    - Issue: Emails were being queued with 'pending' status but never actually sent
    - Root cause: Code only inserted emails into database but didn't call send_email function
    - No background worker was processing the pending emails queue
@@ -47,6 +47,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Emails now send immediately when user clicks "Email Report"
    - Added proper success/warning feedback to user
    - File: `student_analytics_gui.py:345-377`
+
+5. **CRITICAL FIX**: Fixed email service not available (Enhanced Reporting GUI)
+   - Issue: "Email service not available" error in Enhanced Reporting GUI
+   - Root cause: Code was calling `send_email_via_smtp()` with incorrect parameter handling
+   - Function signature expected positional args, but was called with keyword args
+   - Attachments parameter expected comma-separated string, but received list
+   - **Solution**: Replaced all `send_email_via_smtp()` calls with `send_email()` from email_service
+   - Fixed 3 locations: automated report delivery, test email function, and report sharing
+   - Sends to each recipient individually with proper error handling
+   - Added fallback email body when template rendering fails
+   - Files: `enhanced_reporting_gui.py:1632-1683, 5577-5618, 6199-6239`
 
 ## [5.0.40] - 2025-11-15
 
