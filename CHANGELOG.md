@@ -9,14 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
-**Student Analytics - pandas Series Ambiguity Error:**
-- **CRITICAL FIX**: Fixed ValueError when analyzing module popularity
-  - Error: "The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all()"
-  - Occurred in `simulate_module_data()` method at line 241
-  - Replaced problematic `elif df['module_type'].isna().all():` with pandas idiomatic `fillna('Standard')`
-  - Uses `fillna()` method to handle NaN values instead of conditional check
-  - Prevents ambiguous boolean evaluation of pandas Series
-  - File: `university_system/modules/shared/services/analytics/student_analytics.py:241-243`
+**Student Analytics - Multiple pandas Errors Fixed:**
+
+1. **CRITICAL FIX**: Fixed ValueError - pandas Series ambiguity error
+   - Error: "The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all()"
+   - Occurred in `simulate_module_data()` method at line 241
+   - Replaced problematic `elif df['module_type'].isna().all():` with pandas idiomatic `fillna('Standard')`
+   - Uses `fillna()` method to handle NaN values instead of conditional check
+   - Prevents ambiguous boolean evaluation of pandas Series
+   - File: `student_analytics.py:241-243`
+
+2. **CRITICAL FIX**: Fixed ValueError - Grouper not 1-dimensional error
+   - Error: "Grouper for 'module_name' not 1-dimensional"
+   - Occurred in `analyze_module_popularity()` when calling `value_counts()` at line 3126
+   - Root cause: SQL query used `sm.*` which selected ALL columns from student_modules
+   - This created duplicate `module_name` and `module_type` columns (from both student_modules and modules tables)
+   - When accessing `modules_df['module_name']`, pandas returned a DataFrame instead of Series
+   - **Solution**: Replaced `sm.*` with explicit column selection to avoid duplicates
+   - Now selects: `sm.id, sm.student_id, sm.module_code, sm.enrollment_date, sm.grade, sm.completion_date, sm.status`
+   - Excludes `sm.module_name` and `sm.module_type` since they're selected from modules table
+   - File: `student_analytics.py:181-184`
 
 ## [5.0.40] - 2025-11-15
 

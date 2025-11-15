@@ -178,7 +178,9 @@ class StudentAnalytics:
         try:
             conn = self.get_connection()
             query = """
-            SELECT sm.*, s.course, s.age, s.gender,
+            SELECT sm.id, sm.student_id, sm.module_code, sm.enrollment_date,
+                   sm.grade, sm.completion_date, sm.status,
+                   s.course, s.age, s.gender,
                    m.module_name, m.module_type, m.credits, m.department
             FROM student_modules sm
             JOIN students s ON sm.student_id = s.student_id
