@@ -1569,10 +1569,147 @@ class LayoutManager:
 
     def _create_club_record_payment_tab(self, parent):
         """Create tab for recording new club payments"""
-        tk.Label(parent, text="Record a new club payment here",
-                font=('Arial', 12), bg='white').pack(pady=20)
-        tk.Label(parent, text="This feature integrates with the Student Union system.",
-                font=('Arial', 10), bg='white', foreground='gray').pack()
+        # Title
+        tk.Label(parent, text="Record Club Payment",
+                font=('Arial', 14, 'bold'), bg='white').pack(pady=10)
+
+        # Form frame
+        form_frame = tk.Frame(parent, bg='white')
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
+
+        # Club selection
+        tk.Label(form_frame, text="Club:", bg='white', font=('Arial', 11)).grid(row=0, column=0, sticky='w', pady=10, padx=5)
+        club_var = tk.StringVar()
+        club_combo = ttk.Combobox(form_frame, textvariable=club_var, width=30, state='readonly')
+        club_combo.grid(row=0, column=1, sticky='w', pady=10, padx=5)
+
+        # Load clubs
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT club_id, club_name FROM student_clubs WHERE status='active' ORDER BY club_name")
+            clubs = cursor.fetchall()
+            club_combo['values'] = [f"{club[0]} - {club[1]}" for club in clubs]
+            conn.close()
+        except Exception as e:
+            print(f"Error loading clubs: {e}")
+
+        # Amount
+        tk.Label(form_frame, text="Amount (£):", bg='white', font=('Arial', 11)).grid(row=1, column=0, sticky='w', pady=10, padx=5)
+        amount_entry = tk.Entry(form_frame, width=32)
+        amount_entry.grid(row=1, column=1, sticky='w', pady=10, padx=5)
+
+        # Payment type
+        tk.Label(form_frame, text="Payment Type:", bg='white', font=('Arial', 11)).grid(row=2, column=0, sticky='w', pady=10, padx=5)
+        payment_type_var = tk.StringVar()
+        payment_type_combo = ttk.Combobox(form_frame, textvariable=payment_type_var, width=30, state='readonly')
+        payment_type_combo['values'] = ['membership_fee', 'event_fee', 'donation', 'merchandise', 'other']
+        payment_type_combo.grid(row=2, column=1, sticky='w', pady=10, padx=5)
+        payment_type_combo.current(0)
+
+        # Payment method
+        tk.Label(form_frame, text="Payment Method:", bg='white', font=('Arial', 11)).grid(row=3, column=0, sticky='w', pady=10, padx=5)
+        payment_method_var = tk.StringVar()
+        payment_method_combo = ttk.Combobox(form_frame, textvariable=payment_method_var, width=30, state='readonly')
+        payment_method_combo['values'] = ['cash', 'card', 'bank_transfer', 'online']
+        payment_method_combo.grid(row=3, column=1, sticky='w', pady=10, padx=5)
+        payment_method_combo.current(0)
+
+        # Student ID (optional)
+        tk.Label(form_frame, text="Student ID (optional):", bg='white', font=('Arial', 11)).grid(row=4, column=0, sticky='w', pady=10, padx=5)
+        student_id_entry = tk.Entry(form_frame, width=32)
+        student_id_entry.grid(row=4, column=1, sticky='w', pady=10, padx=5)
+
+        # Description
+        tk.Label(form_frame, text="Description:", bg='white', font=('Arial', 11)).grid(row=5, column=0, sticky='w', pady=10, padx=5)
+        description_entry = tk.Entry(form_frame, width=32)
+        description_entry.grid(row=5, column=1, sticky='w', pady=10, padx=5)
+
+        # Notes
+        tk.Label(form_frame, text="Notes:", bg='white', font=('Arial', 11)).grid(row=6, column=0, sticky='w', pady=10, padx=5)
+        notes_text = tk.Text(form_frame, width=30, height=3)
+        notes_text.grid(row=6, column=1, sticky='w', pady=10, padx=5)
+
+        def save_payment():
+            """Save the club payment"""
+            try:
+                # Validate inputs
+                if not club_var.get():
+                    messagebox.showerror("Error", "Please select a club")
+                    return
+
+                if not amount_entry.get():
+                    messagebox.showerror("Error", "Please enter an amount")
+                    return
+
+                try:
+                    amount = float(amount_entry.get())
+                    if amount <= 0:
+                        messagebox.showerror("Error", "Amount must be greater than 0")
+                        return
+                except ValueError:
+                    messagebox.showerror("Error", "Invalid amount")
+                    return
+
+                # Extract club_id from combo selection
+                club_id = int(club_var.get().split(' - ')[0])
+
+                # Get current user
+                current_user = self.gui.auth_manager.get_current_user()
+                processed_by = current_user.get('username', 'Unknown') if current_user else 'Unknown'
+
+                # Insert payment
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    INSERT INTO club_payments
+                    (club_id, amount, payment_type, payment_method, payment_date,
+                     student_id, description, notes, processed_by, status)
+                    VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?, ?, 'completed')
+                ''', (
+                    club_id,
+                    amount,
+                    payment_type_var.get(),
+                    payment_method_var.get(),
+                    student_id_entry.get() or None,
+                    description_entry.get() or None,
+                    notes_text.get('1.0', tk.END).strip() or None,
+                    processed_by
+                ))
+
+                conn.commit()
+                conn.close()
+
+                messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded successfully!")
+
+                # Clear form
+                club_combo.set('')
+                amount_entry.delete(0, tk.END)
+                payment_type_combo.current(0)
+                payment_method_combo.current(0)
+                student_id_entry.delete(0, tk.END)
+                description_entry.delete(0, tk.END)
+                notes_text.delete('1.0', tk.END)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save payment: {e}")
+
+        # Buttons
+        button_frame = tk.Frame(form_frame, bg='white')
+        button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+
+        tk.Button(button_frame, text="💾 Save Payment", command=save_payment,
+                 bg='#4CAF50', fg='white', font=('Arial', 12, 'bold'),
+                 padx=20, pady=10).pack(side=tk.LEFT, padx=5)
+
+        tk.Button(button_frame, text="🔄 Clear Form",
+                 command=lambda: [club_combo.set(''), amount_entry.delete(0, tk.END),
+                                payment_type_combo.current(0), payment_method_combo.current(0),
+                                student_id_entry.delete(0, tk.END), description_entry.delete(0, tk.END),
+                                notes_text.delete('1.0', tk.END)],
+                 bg='#FF9800', fg='white', font=('Arial', 12, 'bold'),
+                 padx=20, pady=10).pack(side=tk.LEFT, padx=5)
 
     def _create_club_payment_history_tab(self, parent):
         """Create tab for viewing payment history"""
@@ -1604,10 +1741,10 @@ class LayoutManager:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    SELECT payment_date, club_name, amount, payment_type, status
+                    SELECT cp.payment_date, sc.club_name, cp.amount, cp.payment_type, cp.status
                     FROM club_payments cp
                     JOIN student_clubs sc ON cp.club_id = sc.club_id
-                    ORDER BY payment_date DESC
+                    ORDER BY cp.payment_date DESC
                     LIMIT 100
                 ''')
                 payments = cursor.fetchall()

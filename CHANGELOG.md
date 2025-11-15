@@ -5,6 +5,67 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.20] - 2025-11-15
+
+### Fixed - Finance Management GUI Club Payments Feature
+
+**Database Schema & Feature Implementation**
+
+Fixed "no such table: club_payments" error in Finance Management GUI statistics loading and implemented full club payment management functionality.
+
+**Issues Fixed:**
+
+1. **Missing club_payments Table:**
+   - Created `club_payments` table with comprehensive schema
+   - Includes: payment_id, club_id, amount, payment_type, payment_method, payment_date, status, description, student_id, processed_by, notes
+   - Added proper foreign key constraints to student_clubs and students tables
+   - Created indexes for optimal query performance (club_id, payment_date, student_id)
+
+2. **Payment History Query Error:**
+   - Fixed SQL query in `_create_club_payment_history_tab` (line 1606-1612)
+   - Changed from selecting `club_name` from `club_payments` to proper JOIN with `student_clubs`
+   - Added table aliases for clarity (cp for club_payments, sc for student_clubs)
+
+3. **Incomplete Record Payment Feature:**
+   - Replaced placeholder implementation with full payment recording form
+   - Added club selection dropdown (populated from active clubs)
+   - Amount input with validation (must be > 0)
+   - Payment type selection (membership_fee, event_fee, donation, merchandise, other)
+   - Payment method selection (cash, card, bank_transfer, online)
+   - Optional student ID field for tracking who made the payment
+   - Description and notes fields for additional context
+   - Auto-captures processed_by field from current logged-in user
+   - Form validation with error messages
+   - Success confirmation with automatic form clearing
+   - Save and Clear buttons for user convenience
+
+**Files Modified:**
+- `university_system/modules/domain/finance/gui/finance/layout_manager.py`:
+  - Lines 1606-1612: Fixed payment history query
+  - Lines 1570-1712: Implemented full record payment form (replaced 6-line placeholder with 143-line implementation)
+- Database: `university_system/data/db_files/student_records.db`:
+  - Created `club_payments` table with 3 indexes
+
+**Impact:**
+- Club payment statistics now load correctly without errors
+- Users can record new club payments through intuitive form interface
+- Payment history displays properly with club names from JOIN
+- All club payment management features are now fully functional
+- Proper audit trail with processed_by tracking
+
+**Payment Types Supported:**
+- Membership fees
+- Event fees
+- Donations
+- Merchandise sales
+- Other custom payments
+
+**Payment Methods Supported:**
+- Cash
+- Card
+- Bank Transfer
+- Online payments
+
 ## [5.0.19] - 2025-11-15
 
 ### Fixed - Admin and Staff User Role Assignment
