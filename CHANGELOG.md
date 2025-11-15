@@ -5,6 +5,55 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.42] - 2025-11-15
+
+### Bug Fixes
+
+**Email Manager GUI - Multiple UX and Performance Fixes:**
+
+1. **Dashboard Navigation Fix**: Fixed incorrect tab indices for dashboard quick action buttons
+   - "View Announcements" button now correctly navigates to Announcements tab (index 4, was 3)
+   - "Chat Rooms" button now correctly navigates to Chat tab (index 5, was 4)
+   - Tab order: Dashboard=0, Email=1, Messages=2, SMS=3, Announcements=4, Chat=5, Reports=6
+   - File: `email_manager_gui.py:2036-2044`
+
+2. **Bulk Email Template Loading**: Added "Load Template" button to bulk email dialog
+   - Users can now easily load selected templates into subject and body fields
+   - Previously templates could only be selected but not loaded
+   - New button appears next to template dropdown
+   - Automatically populates subject and body when template is loaded
+   - File: `email_manager_gui.py:3245-3313`
+
+3. **Message Selection Indicator**: Added visual feedback for message selection
+   - New indicator label shows "✓ Message selected - Ready to reply" when message is selected
+   - Shows "No message selected" when no message is active
+   - Provides clear visual confirmation before replying to messages
+   - Improves UX by making reply functionality more discoverable
+   - File: `email_manager_gui.py:715-728, 1603-1670`
+
+4. **Chatroom Crash Prevention**: Enhanced error handling for chatroom operations
+   - Added comprehensive error handling to prevent system crashes when joining chatrooms
+   - Validates dashboard initialization before allowing chatroom entry
+   - Added try-catch blocks around ChatRoomWindow creation
+   - Improved error handling in load_messages() and send_message() methods
+   - Provides user-friendly error messages instead of crashing
+   - File: `email_manager_gui.py:1781-1805, 4524-4583`
+
+5. **Database Lock Performance**: Reduced database lock warnings and improved concurrency
+   - Increased SQLITE_BUSY_TIMEOUT from 5000ms to 30000ms (5s → 30s)
+   - Reduces lock timeout conflicts during concurrent email operations
+   - Changed retry log level from WARNING to INFO (expected behavior, not an error)
+   - Database locks are normal with concurrent access; retry mechanism handles them automatically
+   - Files: `constants.py:15-18`, `email_db_utilities.py:294-304`
+
+### Technical Details
+
+- Dashboard tab navigation now uses correct indices with inline documentation
+- Template loading leverages existing load_template() function from template_utils
+- Message selection indicator uses primary color (#2E86AB) for selected state
+- Chatroom error handling prevents null pointer exceptions and shows user-friendly messages
+- Database timeout increase reduces retry frequency without changing retry logic
+
 ## [5.0.41] - 2025-11-15
 
 ### Bug Fixes

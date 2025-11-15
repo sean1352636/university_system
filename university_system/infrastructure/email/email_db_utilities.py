@@ -294,7 +294,9 @@ def execute_db_operation(operation_func, *args, max_retries=3, **kwargs):
         except sqlite3.OperationalError as e:
             if "locked" in str(e).lower() and attempt < max_retries - 1:
                 delay = (2 ** attempt) + random.uniform(0, 1)
-                logger.warning(f"Database locked, retrying in {delay:.2f}s (attempt {attempt + 1})")
+                # Changed from WARNING to INFO - database locks are expected with concurrent access
+                # and the retry mechanism handles them automatically
+                logger.info(f"Database locked, retrying in {delay:.2f}s (attempt {attempt + 1})")
                 time.sleep(delay)
                 continue
             else:

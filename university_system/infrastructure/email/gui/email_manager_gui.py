@@ -711,9 +711,22 @@ class EmailManagerGUI:
         # Right pane - message viewer
         right_frame = ttk.Frame(paned)
         paned.add(right_frame, weight=2)
-        
-        ttk.Label(right_frame, text="Message Content", font=('Arial', 12, 'bold')).pack()
-        
+
+        # Header with selection indicator
+        header_frame = ttk.Frame(right_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+
+        ttk.Label(header_frame, text="Message Content", font=('Arial', 12, 'bold')).pack(side=tk.LEFT)
+
+        # Selection indicator
+        self.selected_message_indicator = ttk.Label(
+            header_frame,
+            text="No message selected",
+            font=('Arial', 9, 'italic'),
+            foreground='#666'
+        )
+        self.selected_message_indicator.pack(side=tk.RIGHT, padx=5)
+
         self.message_text = scrolledtext.ScrolledText(right_frame, state=tk.DISABLED, wrap=tk.WORD)
         self.message_text.pack(fill=tk.BOTH, expand=True)
 
@@ -1596,9 +1609,20 @@ class EmailManagerGUI:
 
             # Skip if this is a placeholder message
             if 'empty' in tags or 'error' in tags:
+                # Update indicator to show no message selected
+                if hasattr(self, 'selected_message_indicator'):
+                    self.selected_message_indicator.config(
+                        text="No message selected",
+                        foreground='#666'
+                    )
                 return
 
             if not tags:
+                if hasattr(self, 'selected_message_indicator'):
+                    self.selected_message_indicator.config(
+                        text="No message selected",
+                        foreground='#666'
+                    )
                 return
 
             message_id = tags[0]
@@ -1622,12 +1646,28 @@ class EmailManagerGUI:
                         self.message_text.insert(1.0, content)
                         self.message_text.config(state=tk.DISABLED)
 
+                        # Update selection indicator to show message is ready for reply
+                        if hasattr(self, 'selected_message_indicator'):
+                            self.selected_message_indicator.config(
+                                text="✓ Message selected - Ready to reply",
+                                foreground='#2E86AB',  # Primary color
+                                font=('Arial', 9, 'bold')
+                            )
+
                         # Mark as read
                         self.refresh_messages()
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading message: {e}")
                 import traceback
                 traceback.print_exc()
+        else:
+            # No selection - reset indicator
+            if hasattr(self, 'selected_message_indicator'):
+                self.selected_message_indicator.config(
+                    text="No message selected",
+                    foreground='#666',
+                    font=('Arial', 9, 'italic')
+                )
 
     def on_message_double_click(self, event):
         """Handle double-click on message - open reply dialog"""
@@ -1741,11 +1781,28 @@ class EmailManagerGUI:
     def enter_chat_room(self, event):
         """Enter selected chat room"""
         selection = self.my_rooms_tree.selection()
-        if selection:
+        if not selection:
+            return
+
+        if not self.dashboard:
+            messagebox.showerror("Error", "Dashboard not initialized. Please restart the application.")
+            return
+
+        try:
             item = self.my_rooms_tree.item(selection[0])
+            if not item['tags']:
+                messagebox.showwarning("Invalid Selection", "Please select a valid chat room")
+                return
+
             room_id = item['tags'][0]
-            room_name = item['values'][0]
+            room_name = item['values'][0] if item['values'] else "Unknown Room"
+
+            # Create the chat room window
             ChatRoomWindow(self.root, self.dashboard, room_id, room_name)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to enter chat room: {e}")
+            import traceback
+            traceback.print_exc()
     
     def view_invitations(self):
         """View chat room invitations"""
@@ -2035,12 +2092,12 @@ class EmailManagerGUI:
 
     def open_announcements(self):
         """Switch to announcements tab"""
-        self.notebook.select(3)  # Announcements tab index
+        self.notebook.select(4)  # Announcements tab index (Dashboard=0, Email=1, Messages=2, SMS=3, Announcements=4)
         self.refresh_announcements()
 
     def open_chat_rooms(self):
         """Switch to chat rooms tab"""
-        self.notebook.select(4)  # Chat rooms tab index
+        self.notebook.select(5)  # Chat rooms tab index (Dashboard=0, Email=1, Messages=2, SMS=3, Announcements=4, Chat=5)
         self.refresh_chat_rooms()
 
     # Additional missing helper functions that may be referenced elsewhere
@@ -3244,10 +3301,15 @@ class BulkEmailDialog:
         
         # Template
         ttk.Label(main_frame, text="Template:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        template_frame = ttk.Frame(main_frame)
+        template_frame.grid(row=2, column=1, sticky=tk.W, pady=5)
+
         self.template_var = tk.StringVar()
-        self.template_combo = ttk.Combobox(main_frame, textvariable=self.template_var, width=30)
-        self.template_combo.grid(row=2, column=1, sticky=tk.W, pady=5)
-        
+        self.template_combo = ttk.Combobox(template_frame, textvariable=self.template_var, width=30)
+        self.template_combo.pack(side=tk.LEFT, padx=(0, 5))
+
+        ttk.Button(template_frame, text="Load Template", command=self.load_selected_template).pack(side=tk.LEFT)
+
         # Body
         ttk.Label(main_frame, text="Message:").grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.body_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
@@ -3267,7 +3329,7 @@ class BulkEmailDialog:
         
         # Load templates
         self.load_templates()
-    
+
     def load_templates(self):
         """Load available templates"""
         try:
@@ -3277,7 +3339,36 @@ class BulkEmailDialog:
                 self.template_combo['values'] = template_names
         except Exception as e:
             print(f"Error loading templates: {e}")
-    
+
+    def load_selected_template(self):
+        """Load the selected template into subject and body fields"""
+        template_name = self.template_var.get()
+        if not template_name:
+            messagebox.showwarning("No Selection", "Please select a template first")
+            return
+
+        try:
+            if load_template is not None:
+                template_data = load_template(template_name)
+                if template_data:
+                    # Load subject if provided
+                    if 'subject' in template_data and template_data['subject']:
+                        self.subject_entry.delete(0, tk.END)
+                        self.subject_entry.insert(0, template_data['subject'])
+
+                    # Load body if provided
+                    if 'body' in template_data and template_data['body']:
+                        self.body_text.delete(1.0, tk.END)
+                        self.body_text.insert(1.0, template_data['body'])
+
+                    messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!")
+                else:
+                    messagebox.showerror("Error", f"Failed to load template '{template_name}'")
+            else:
+                messagebox.showerror("Error", "Template loading functionality not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading template: {e}")
+
     def send_bulk(self):
         """Send bulk email"""
         try:
@@ -4431,31 +4522,66 @@ class ChatRoomWindow:
         ttk.Button(controls_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
         
     def load_messages(self):
+        """Load chat messages for this room"""
         try:
+            if not self.dashboard:
+                self.chat_text.config(state=tk.NORMAL)
+                self.chat_text.delete(1.0, tk.END)
+                self.chat_text.insert(1.0, "Error: Dashboard not initialized. Please restart the application.\n")
+                self.chat_text.config(state=tk.DISABLED)
+                return
+
             messages_data = self.dashboard.get_chat_messages(self.room_id, limit=50)
+
             self.chat_text.config(state=tk.NORMAL)
             self.chat_text.delete(1.0, tk.END)
-            
-            for msg in messages_data.get('messages', []):
-                timestamp = msg['sent_at'][:16]
-                self.chat_text.insert(tk.END, f"[{timestamp}] {msg['sender']}: {msg['content']}\n")
-                
+
+            # Check if messages_data is valid
+            if not messages_data or not isinstance(messages_data, dict):
+                self.chat_text.insert(1.0, "No messages to display.\n")
+            else:
+                messages = messages_data.get('messages', [])
+                if not messages:
+                    self.chat_text.insert(1.0, "No messages yet. Start the conversation!\n")
+                else:
+                    for msg in messages:
+                        timestamp = msg.get('sent_at', '')[:16]
+                        sender = msg.get('sender', 'Unknown')
+                        content = msg.get('content', '')
+                        self.chat_text.insert(tk.END, f"[{timestamp}] {sender}: {content}\n")
+
             self.chat_text.config(state=tk.DISABLED)
             self.chat_text.see(tk.END)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load messages: {e}")
+            self.chat_text.config(state=tk.NORMAL)
+            self.chat_text.delete(1.0, tk.END)
+            self.chat_text.insert(1.0, f"Error loading messages: {e}\n")
+            self.chat_text.config(state=tk.DISABLED)
+            print(f"Error loading chat messages: {e}")
+            import traceback
+            traceback.print_exc()
     
     def send_message(self, event=None):
+        """Send a message to the chat room"""
         message = self.message_entry.get().strip()
-        if message:
-            try:
-                if self.dashboard.send_chat_message(self.room_id, message):
-                    self.message_entry.delete(0, tk.END)
-                    self.load_messages()  # Refresh messages
-                else:
-                    messagebox.showerror("Error", "Failed to send message")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error sending message: {e}")
+        if not message:
+            return
+
+        if not self.dashboard:
+            messagebox.showerror("Error", "Dashboard not initialized. Cannot send message.")
+            return
+
+        try:
+            result = self.dashboard.send_chat_message(self.room_id, message)
+            if result:
+                self.message_entry.delete(0, tk.END)
+                self.load_messages()  # Refresh messages
+            else:
+                messagebox.showerror("Error", "Failed to send message")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error sending message: {e}")
+            import traceback
+            traceback.print_exc()
     
     def show_members(self):
         try:

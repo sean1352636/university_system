@@ -13,7 +13,9 @@ throughout the database layer, making them explicit and easy to modify.
 DEFAULT_DB_TIMEOUT = 30.0
 
 # SQLite busy timeout - how long to wait for locks (milliseconds)
-SQLITE_BUSY_TIMEOUT = 5000
+# Increased from 5000 to 30000 to reduce database lock conflicts
+# especially during concurrent email operations
+SQLITE_BUSY_TIMEOUT = 30000
 
 # Maximum number of retry attempts for failed operations
 MAX_RETRY_ATTEMPTS = 3
