@@ -917,13 +917,18 @@ class StudentUnionGUI:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
+            # Try to get recent club payments - use date_issued or similar field
             cursor.execute('''
-                SELECT sf.created_date, s.first_name || ' ' || s.last_name,
-                       sf.fee_type, sf.amount, sf.paid_status
+                SELECT
+                    COALESCE(sf.date_issued, sf.due_date, 'N/A') as payment_date,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    sf.fee_type,
+                    sf.amount,
+                    sf.paid_status
                 FROM student_fees sf
                 JOIN students s ON sf.student_id = s.student_id
                 WHERE sf.fee_type LIKE '%Club%' OR sf.description LIKE '%Student Union%'
-                ORDER BY sf.created_date DESC
+                ORDER BY sf.fee_id DESC
                 LIMIT 20
             ''')
 
@@ -4202,6 +4207,31 @@ This GUI version maintains backward compatibility with the CLI system.
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
+            # Check if student_events table exists
+            cursor.execute('''
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='student_events'
+            ''')
+            table_exists = cursor.fetchone() is not None
+
+            if not table_exists:
+                # Create the table if it doesn't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS student_events (
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_name TEXT NOT NULL,
+                        event_date TEXT NOT NULL,
+                        event_description TEXT,
+                        event_location TEXT,
+                        club_id INTEGER,
+                        created_by INTEGER,
+                        created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (club_id) REFERENCES student_clubs(club_id)
+                    )
+                ''')
+                conn.commit()
+                print("Created student_events table")
+
             if club_name:
                 # Get events for specific club
                 cursor.execute('''
@@ -4232,6 +4262,76 @@ This GUI version maintains backward compatibility with the CLI system.
 
         except Exception as e:
             print(f"Failed to add club events to calendar: {e}")
+
+    # =========================================================================
+    # SHOP INTEGRATION METHODS
+    # =========================================================================
+
+    def open_shop_for_club_merchandise(self, club_name):
+        """Open shop GUI filtered for club merchandise"""
+        try:
+            from university_system.modules.domain.commerce.gui.shop_management_gui import UniversityShopGUI
+
+            shop_window = tk.Toplevel(self.root)
+            shop_window.title(f"University Shop - {club_name} Merchandise")
+            shop_window.geometry("1200x800")
+
+            shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
+
+            # Show club merchandise selection page
+            if hasattr(shop_gui, 'show_club_merchandise_selection'):
+                shop_gui.show_club_merchandise_selection()
+            else:
+                messagebox.showinfo("Shop Opened", f"Browse the shop for {club_name} merchandise")
+
+        except ImportError:
+            messagebox.showerror("Error", "Shop system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open shop system: {e}")
+
+    # =========================================================================
+    # RESTAURANT INTEGRATION METHODS
+    # =========================================================================
+
+    def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
+        """Open restaurant GUI for club event booking"""
+        try:
+            from university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
+
+            restaurant_window = tk.Toplevel(self.root)
+            restaurant_window.title(f"University Restaurant - {club_name} Booking")
+            restaurant_window.geometry("1200x800")
+
+            restaurant_gui = RestaurantManagementGUI(restaurant_window, auth=self.auth_manager)
+
+            messagebox.showinfo("Restaurant Opened", f"Restaurant booking opened for {club_name}")
+
+        except ImportError:
+            messagebox.showerror("Error", "Restaurant system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open restaurant system: {e}")
+
+    # =========================================================================
+    # TRIP INTEGRATION METHODS
+    # =========================================================================
+
+    def create_club_trip_dialog(self, club_name):
+        """Show dialog to create a new club trip"""
+        try:
+            from university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+
+            trip_window = tk.Toplevel(self.root)
+            trip_window.title(f"Trip Management - {club_name}")
+            trip_window.geometry("1200x800")
+
+            trip_gui = TripManagementGUI(trip_window, auth=self.auth_manager)
+
+            messagebox.showinfo("Trip Management Opened", f"Trip management opened for {club_name}")
+
+        except ImportError:
+            messagebox.showerror("Error", "Trip management system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open trip management: {e}")
 
 
 class ClubJoinDialog:

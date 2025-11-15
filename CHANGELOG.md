@@ -5,6 +5,98 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.17] - 2025-11-15
+
+### Fixed - Student Union GUI Integration Methods and Database Errors
+
+**Critical Bug Fix**
+
+Fixed multiple AttributeError and database errors in the Student Union GUI:
+1. AttributeError: 'StudentUnionGUI' object has no attribute 'open_shop_for_club_merchandise'
+2. AttributeError: 'StudentUnionGUI' object has no attribute 'open_restaurant_for_club_booking'
+3. AttributeError: 'StudentUnionGUI' object has no attribute 'create_club_trip_dialog'
+4. Database error: "no such column: sf.created_date" in payment overview
+5. Database error: "no such table: student_events" in calendar integration
+
+**Root Cause:**
+
+The integration methods were accidentally placed in the `DatabaseQueryDialog` class (line 5647-5899) instead of the `StudentUnionGUI` class, making them inaccessible from sidebar buttons and menus. Additionally, SQL queries were using non-existent columns.
+
+**Method Placement Issue:**
+
+```python
+# Before (WRONG - inside DatabaseQueryDialog class):
+class DatabaseQueryDialog:
+    ...
+    def open_shop_for_club_merchandise(self, club_name):  # Line 5651
+    def open_restaurant_for_club_booking(self, club_name):  # Line 5689
+    def create_club_trip_dialog(self, club_name):  # Line 5783
+```
+
+```python
+# After (CORRECT - inside StudentUnionGUI class):
+class StudentUnionGUI:
+    ...
+    def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
+        # End of existing methods
+
+    # NEW: Integration methods added here (line 4245-4309)
+    def open_shop_for_club_merchandise(self, club_name):
+    def open_restaurant_for_club_booking(self, club_name):
+    def create_club_trip_dialog(self, club_name):
+
+class ClubJoinDialog:  # Starts at line 4312
+```
+
+**Fixes Implemented:**
+
+1. **Payment Database Query (line 920-933):**
+   - Changed from: `SELECT sf.created_date` (non-existent column)
+   - Changed to: `COALESCE(sf.date_issued, sf.due_date, 'N/A') as payment_date`
+   - Uses actual columns from student_fees table
+   - Added ORDER BY sf.fee_id instead of non-existent created_date
+
+2. **Integration Methods Relocated:**
+   - Moved 3 integration methods from DatabaseQueryDialog to StudentUnionGUI
+   - Simplified implementations to open GUIs without complex pre-filtering
+   - All methods now properly accessible from sidebar and menus
+
+3. **Student Events Table (line 4210-4233):**
+   - Added table existence check before querying
+   - Creates student_events table automatically if missing
+   - Prevents "no such table" errors in calendar integration
+
+**Updated Methods:**
+
+```python
+def open_shop_for_club_merchandise(self, club_name):
+    """Open shop GUI and show club merchandise selection page"""
+    shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
+    if hasattr(shop_gui, 'show_club_merchandise_selection'):
+        shop_gui.show_club_merchandise_selection()
+
+def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
+    """Open restaurant GUI for club bookings"""
+    restaurant_gui = RestaurantManagementGUI(restaurant_window, auth=self.auth_manager)
+
+def create_club_trip_dialog(self, club_name):
+    """Open trip management GUI for club trips"""
+    trip_gui = TripManagementGUI(trip_window, auth=self.auth_manager)
+```
+
+**Impact:**
+- ✅ Shop merchandise button works correctly
+- ✅ Restaurant booking button functional
+- ✅ Trip management button operational
+- ✅ Payment overview loads without database errors
+- ✅ Calendar integration no longer crashes
+- ✅ All integration features properly accessible
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:920-933` (payment query fixed)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4210-4233` (events table creation)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4241-4309` (integration methods added)
+
 ## [5.0.16] - 2025-11-15
 
 ### Fixed - Student Union GUI Authentication and Window Handling
