@@ -55,8 +55,10 @@ logger = logging.getLogger(__name__)
 class IntegrationMarketplaceGUI:
     """Integration Marketplace Management GUI"""
 
-    def __init__(self, root: tk.Tk, auth_system: Optional[UserAuth] = None):
-        self.root = root
+    def __init__(self, parent: tk.Tk, auth_system: Optional[UserAuth] = None):
+        # Create a new Toplevel window instead of modifying the parent
+        self.root = tk.Toplevel(parent)
+        self.parent = parent
         self.root.title("Integration Marketplace")
         self.root.geometry("1400x900")
 
@@ -651,7 +653,15 @@ class IntegrationMarketplaceGUI:
                 credentials = cursor.fetchall()
 
                 for cred in credentials:
-                    self.cred_tree.insert('', 'end', values=cred)
+                    # Properly extract values from sqlite3.Row
+                    self.cred_tree.insert('', 'end', values=(
+                        cred[0],  # credential_id
+                        cred[1],  # install_id
+                        cred[2] or 'N/A',  # credential_type
+                        cred[3] or 'N/A',  # endpoint_url
+                        cred[4][:19] if cred[4] else 'N/A',  # created_at (trim timestamp)
+                        cred[5][:19] if cred[5] else 'N/A'   # token_expiry (trim timestamp)
+                    ))
 
             logger.info(f"Loaded {len(credentials)} credentials")
 
@@ -690,7 +700,16 @@ class IntegrationMarketplaceGUI:
                 logs = cursor.fetchall()
 
                 for log in logs:
-                    self.sync_tree.insert('', 'end', values=log)
+                    # Properly extract values from sqlite3.Row
+                    self.sync_tree.insert('', 'end', values=(
+                        log[0],  # log_id
+                        log[1],  # install_id
+                        log[2][:19] if log[2] else 'N/A',  # sync_start_time
+                        log[3][:19] if log[3] else 'N/A',  # sync_end_time
+                        log[4] or 'N/A',  # sync_status
+                        log[5] if log[5] is not None else 0,  # records_synced
+                        log[6] if log[6] is not None else 0   # errors_encountered
+                    ))
 
             logger.info(f"Loaded {len(logs)} sync logs")
 
@@ -1562,7 +1581,102 @@ class IntegrationMarketplaceGUI:
 
     def edit_mapping(self):
         """Edit selected mapping"""
-        messagebox.showinfo("Edit Mapping", "Edit mapping functionality - similar to add_mapping")
+        try:
+            selected = self.mappings_tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Please select a mapping to edit")
+                return
+
+            mapping_id = self.mappings_tree.item(selected[0])['values'][0]
+
+            # Fetch current mapping data
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT install_id, source_field, target_field, transformation_rule, is_active
+                    FROM integration_data_mappings
+                    WHERE mapping_id = ?
+                ''', (mapping_id,))
+                current_data = cursor.fetchone()
+
+            if not current_data:
+                messagebox.showerror("Error", "Mapping not found")
+                return
+
+            # Create edit dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Edit Data Mapping")
+            dialog.geometry("500x400")
+
+            ttk.Label(dialog, text="Installation ID:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            install_id_var = tk.StringVar(value=str(current_data[0]))
+            ttk.Entry(dialog, textvariable=install_id_var, width=35).grid(row=0, column=1, padx=10, pady=5)
+
+            ttk.Label(dialog, text="Source Field:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            source_var = tk.StringVar(value=current_data[1] or '')
+            ttk.Entry(dialog, textvariable=source_var, width=35).grid(row=1, column=1, padx=10, pady=5)
+
+            ttk.Label(dialog, text="Target Field:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            target_var = tk.StringVar(value=current_data[2] or '')
+            ttk.Entry(dialog, textvariable=target_var, width=35).grid(row=2, column=1, padx=10, pady=5)
+
+            ttk.Label(dialog, text="Transformation Rule (Optional):").grid(row=3, column=0, padx=10, pady=5, sticky='nw')
+            transform_text = scrolledtext.ScrolledText(dialog, width=35, height=5)
+            transform_text.grid(row=3, column=1, padx=10, pady=5)
+            if current_data[3]:
+                transform_text.insert('1.0', current_data[3])
+
+            ttk.Label(dialog, text="Status:").grid(row=4, column=0, padx=10, pady=5, sticky='w')
+            is_active_var = tk.BooleanVar(value=bool(current_data[4]))
+            ttk.Checkbutton(dialog, text="Active", variable=is_active_var).grid(row=4, column=1, padx=10, pady=5, sticky='w')
+
+            def save_changes():
+                try:
+                    install_id = install_id_var.get().strip()
+                    source_field = source_var.get().strip()
+                    target_field = target_var.get().strip()
+                    transformation = transform_text.get('1.0', 'end-1c').strip()
+                    is_active = 1 if is_active_var.get() else 0
+
+                    if not install_id or not source_field or not target_field:
+                        messagebox.showerror("Error", "Installation ID, source field, and target field are required")
+                        return
+
+                    if MANAGERS_AVAILABLE:
+                        DataMappingManager.update_mapping(
+                            mapping_id, int(install_id), source_field, target_field,
+                            transformation, is_active
+                        )
+                    else:
+                        with transaction() as conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                UPDATE integration_data_mappings
+                                SET install_id = ?, source_field = ?, target_field = ?,
+                                    transformation_rule = ?, is_active = ?
+                                WHERE mapping_id = ?
+                            ''', (install_id, source_field, target_field, transformation, is_active, mapping_id))
+
+                    log_activity('update', 'integration_data_mapping', mapping_id,
+                                details={'install_id': install_id, 'is_active': is_active})
+
+                    messagebox.showinfo("Success", "Data mapping updated successfully")
+                    dialog.destroy()
+                    self.load_mappings()
+
+                except Exception as e:
+                    logger.error(f"Error updating mapping: {e}")
+                    messagebox.showerror("Error", f"Failed to update mapping: {e}")
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.grid(row=5, column=0, columnspan=2, pady=20)
+
+            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            logger.error(f"Error opening edit mapping dialog: {e}")
+            messagebox.showerror("Error", f"Failed to open edit dialog: {e}")
 
     def delete_mapping(self):
         """Delete selected mapping"""

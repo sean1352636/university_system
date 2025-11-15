@@ -5,6 +5,50 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.34] - 2025-11-15
+
+### Bug Fixes & Enhancements
+
+**Integration Marketplace GUI - Multiple Critical Fixes:**
+- **CRITICAL FIX**: Fixed window layout changes to main_gui.py
+  - Changed `__init__` to accept `parent` instead of `root` parameter
+  - Creates new `tk.Toplevel` window instead of modifying parent window
+  - Prevents Integration Marketplace from resizing or reconfiguring main GUI window
+  - Main GUI now retains original layout and size when opening Integration Marketplace
+  - Stores parent reference for proper window hierarchy
+  - File: `university_system/modules/services/gui/integration_marketplace_gui.py`
+
+- **MAJOR FIX**: Fixed sqlite3.Row objects displaying incorrectly in tables
+  - Fixed `load_credentials()` to properly extract values from sqlite3.Row objects
+  - Fixed `load_sync_logs()` to properly extract values from sqlite3.Row objects
+  - Credentials table now displays:
+    - credential_id, install_id, credential_type
+    - endpoint_url (N/A if missing)
+    - created_at and token_expiry (trimmed to 19 chars for timestamp display)
+  - Sync logs table now displays:
+    - log_id, install_id, sync times (trimmed timestamps)
+    - sync_status with N/A fallback
+    - records_synced and errors_encountered with 0 fallback for NULL values
+  - All tables now show human-readable data instead of sqlite3.Row object references
+  - File: `university_system/modules/services/gui/integration_marketplace_gui.py`
+
+- **MAJOR ENHANCEMENT**: Fully implemented edit mapping function
+  - Replaced placeholder messagebox with complete edit dialog
+  - Fetches current mapping data from database
+  - Pre-populates all fields with existing values:
+    - Installation ID
+    - Source field
+    - Target field
+    - Transformation rule (with scrolled text widget)
+    - Active status (checkbox)
+  - Validates required fields before saving
+  - Updates database using transaction() or DataMappingManager
+  - Logs activity for audit trail
+  - Refreshes mappings table after successful update
+  - Includes Cancel button to abort changes
+  - Comprehensive error handling with user-friendly messages
+  - File: `university_system/modules/services/gui/integration_marketplace_gui.py`
+
 ## [5.0.33] - 2025-11-15
 
 ### Bug Fixes & Enhancements
