@@ -10743,6 +10743,148 @@ class CreateBadgeDialog:
             messagebox.showerror("Error", f"Failed to create badge: {str(e)}")
 
 
+class EditBadgeDialog:
+    """Dialog for editing existing achievement badges (Admin only)"""
+
+    def __init__(self, parent, auth_manager, badge_id):
+        self.parent = parent
+        self.auth = auth_manager
+        self.badge_id = badge_id
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Edit Badge")
+        self.dialog.geometry("600x550")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.load_badge_data()
+        self.create_widgets()
+
+    def load_badge_data(self):
+        """Load existing badge data from database"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT badge_name, description, criteria, point_value, rarity, category, icon
+            FROM achievement_badges WHERE badge_id = ?
+            ''', (self.badge_id,))
+
+            result = cursor.fetchone()
+            conn.close()
+
+            if result:
+                self.badge_data = {
+                    'name': result[0],
+                    'description': result[1],
+                    'criteria': result[2],
+                    'points': result[3],
+                    'rarity': result[4],
+                    'category': result[5],
+                    'icon': result[6]
+                }
+            else:
+                messagebox.showerror("Error", "Badge not found.")
+                self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load badge data: {str(e)}")
+            self.dialog.destroy()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Edit Achievement Badge", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Badge Name
+        ttk.Label(main_frame, text="Badge Name:").pack(anchor='w', pady=(0, 5))
+        self.name_entry = ttk.Entry(main_frame, width=50)
+        self.name_entry.pack(fill='x', pady=(0, 10))
+        self.name_entry.insert(0, self.badge_data['name'])
+
+        # Description
+        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=4, wrap=tk.WORD)
+        self.description_text.pack(fill='x', pady=(0, 10))
+        self.description_text.insert(1.0, self.badge_data['description'])
+
+        # Criteria
+        ttk.Label(main_frame, text="Unlock Criteria:").pack(anchor='w', pady=(0, 5))
+        self.criteria_text = scrolledtext.ScrolledText(main_frame, height=4, wrap=tk.WORD)
+        self.criteria_text.pack(fill='x', pady=(0, 10))
+        self.criteria_text.insert(1.0, self.badge_data['criteria'])
+
+        # Settings Frame
+        settings_frame = ttk.Frame(main_frame)
+        settings_frame.pack(fill='x', pady=(0, 10))
+
+        # Point Value
+        ttk.Label(settings_frame, text="Point Value:").grid(row=0, column=0, sticky='w', padx=(0, 10))
+        self.points_entry = ttk.Entry(settings_frame, width=10)
+        self.points_entry.grid(row=0, column=1, sticky='w')
+        self.points_entry.insert(0, str(self.badge_data['points']))
+
+        # Rarity
+        ttk.Label(settings_frame, text="Rarity:").grid(row=0, column=2, sticky='w', padx=(20, 10))
+        self.rarity_var = tk.StringVar(value=self.badge_data['rarity'])
+        rarity_combo = ttk.Combobox(settings_frame, textvariable=self.rarity_var, width=15, state='readonly')
+        rarity_combo['values'] = ('Common', 'Uncommon', 'Rare', 'Epic', 'Legendary')
+        rarity_combo.grid(row=0, column=3)
+
+        # Icon/Category
+        ttk.Label(settings_frame, text="Category:").grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
+        self.category_var = tk.StringVar(value=self.badge_data['category'])
+        category_combo = ttk.Combobox(settings_frame, textvariable=self.category_var, width=15)
+        category_combo['values'] = ('Participation', 'Achievement', 'Social', 'Leadership', 'Service', 'Academic')
+        category_combo.grid(row=1, column=1, sticky='w', pady=(10, 0))
+
+        # Icon
+        ttk.Label(settings_frame, text="Icon:").grid(row=1, column=2, sticky='w', padx=(20, 10), pady=(10, 0))
+        self.icon_entry = ttk.Entry(settings_frame, width=15)
+        self.icon_entry.grid(row=1, column=3, pady=(10, 0))
+        self.icon_entry.insert(0, self.badge_data['icon'])
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(15, 0))
+
+        ttk.Button(button_frame, text="Save Changes", command=self.save_badge).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def save_badge(self):
+        name = self.name_entry.get().strip()
+        description = self.description_text.get(1.0, tk.END).strip()
+        criteria = self.criteria_text.get(1.0, tk.END).strip()
+        points = self.points_entry.get().strip()
+        rarity = self.rarity_var.get()
+        category = self.category_var.get()
+        icon = self.icon_entry.get().strip()
+
+        if not all([name, description, criteria, points]):
+            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            UPDATE achievement_badges SET
+                badge_name = ?, description = ?, criteria = ?, point_value = ?,
+                rarity = ?, category = ?, icon = ?
+            WHERE badge_id = ?
+            ''', (name, description, criteria, int(points), rarity, category, icon, self.badge_id))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Badge '{name}' updated successfully!")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update badge: {str(e)}")
+
+
 class RewardSystemAdminDialog:
     """Dialog for managing reward system configuration (Admin only)"""
 
@@ -10986,7 +11128,16 @@ class RewardSystemAdminDialog:
         if not selection:
             messagebox.showwarning("Warning", "Please select a badge to edit.")
             return
-        messagebox.showinfo("Info", "Badge editing dialog would open here.")
+
+        item = self.badges_tree.item(selection[0])
+        badge_id = item['values'][0]
+
+        dialog = EditBadgeDialog(self.dialog, self.auth, badge_id)
+        self.dialog.wait_window(dialog.dialog)
+        # Refresh badges list
+        for item in self.badges_tree.get_children():
+            self.badges_tree.delete(item)
+        self.load_data()
 
     def delete_badge(self):
         selection = self.badges_tree.selection()
@@ -11484,16 +11635,398 @@ Join the challenge by clicking 'Join Challenge' below!
         self.schedule_text.insert(1.0, "READING SCHEDULE:\n\nWeek 1: Chapters 1-3\nWeek 2: Chapters 4-6\nWeek 3: Chapters 7-9\nWeek 4: Discussion & Wrap-up")
 
     def select_new_book(self):
-        messagebox.showinfo("Info", "Book selection dialog would open here.\n\nMembers can vote on the next book to read.")
+        if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
+            messagebox.showwarning("Warning", "Please select a book club first.")
+            return
+
+        selected_index = self.club_combo.current()
+        club_id = self.club_data[selected_index][0]
+
+        dialog = BookSelectionDialog(self.dialog, self.auth, club_id)
+        self.dialog.wait_window(dialog.dialog)
 
     def update_schedule(self):
-        messagebox.showinfo("Info", "Schedule update dialog would open here.")
+        if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
+            messagebox.showwarning("Warning", "Please select a book club first.")
+            return
+
+        selected_index = self.club_combo.current()
+        club_id = self.club_data[selected_index][0]
+
+        dialog = ScheduleUpdateDialog(self.dialog, self.auth, club_id)
+        self.dialog.wait_window(dialog.dialog)
+        self.on_club_selected()  # Refresh display
 
     def add_review(self):
-        messagebox.showinfo("Info", "Review submission dialog would open here.\n\nShare your thoughts about the book!")
+        if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
+            messagebox.showwarning("Warning", "Please select a book club first.")
+            return
+
+        selected_index = self.club_combo.current()
+        club_id = self.club_data[selected_index][0]
+
+        dialog = BookReviewDialog(self.dialog, self.auth, club_id)
+        self.dialog.wait_window(dialog.dialog)
 
     def join_challenge(self):
         messagebox.showinfo("Success", "You've joined the reading challenge!\n\nGood luck reaching your reading goals!")
+
+
+class BookSelectionDialog:
+    """Dialog for book clubs to select and vote on next book"""
+
+    def __init__(self, parent, auth_manager, club_id):
+        self.parent = parent
+        self.auth = auth_manager
+        self.club_id = club_id
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Select Next Book")
+        self.dialog.geometry("700x550")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Select Next Book to Read", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Book Title
+        ttk.Label(main_frame, text="Book Title:").pack(anchor='w', pady=(0, 5))
+        self.title_entry = ttk.Entry(main_frame, width=60)
+        self.title_entry.pack(fill='x', pady=(0, 10))
+
+        # Author
+        ttk.Label(main_frame, text="Author:").pack(anchor='w', pady=(0, 5))
+        self.author_entry = ttk.Entry(main_frame, width=60)
+        self.author_entry.pack(fill='x', pady=(0, 10))
+
+        # ISBN (optional)
+        ttk.Label(main_frame, text="ISBN (optional):").pack(anchor='w', pady=(0, 5))
+        self.isbn_entry = ttk.Entry(main_frame, width=60)
+        self.isbn_entry.pack(fill='x', pady=(0, 10))
+
+        # Genre
+        ttk.Label(main_frame, text="Genre:").pack(anchor='w', pady=(0, 5))
+        self.genre_var = tk.StringVar()
+        genre_combo = ttk.Combobox(main_frame, textvariable=self.genre_var, width=57)
+        genre_combo['values'] = ('Fiction', 'Non-Fiction', 'Mystery', 'Science Fiction', 'Fantasy',
+                                 'Biography', 'History', 'Self-Help', 'Other')
+        genre_combo.pack(fill='x', pady=(0, 10))
+        genre_combo.current(0)
+
+        # Page Count
+        ttk.Label(main_frame, text="Page Count:").pack(anchor='w', pady=(0, 5))
+        self.pages_entry = ttk.Entry(main_frame, width=60)
+        self.pages_entry.pack(fill='x', pady=(0, 10))
+
+        # Description
+        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
+        self.description_text.pack(fill='both', expand=True, pady=(0, 10))
+        self.description_text.insert(1.0, "Brief description of the book...")
+
+        # Proposed Discussion Date
+        ttk.Label(main_frame, text="Proposed Discussion Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        self.date_entry = ttk.Entry(main_frame, width=60)
+        self.date_entry.pack(fill='x', pady=(0, 15))
+        default_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        self.date_entry.insert(0, default_date)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Propose Book", command=self.propose_book).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def propose_book(self):
+        title = self.title_entry.get().strip()
+        author = self.author_entry.get().strip()
+        isbn = self.isbn_entry.get().strip()
+        genre = self.genre_var.get()
+        pages = self.pages_entry.get().strip()
+        description = self.description_text.get(1.0, tk.END).strip()
+        discussion_date = self.date_entry.get().strip()
+
+        if not all([title, author, pages, discussion_date]):
+            messagebox.showwarning("Warning", "Please fill in all required fields (Title, Author, Pages, Discussion Date).")
+            return
+
+        try:
+            pages_int = int(pages)
+            if pages_int <= 0:
+                raise ValueError("Page count must be positive")
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid page count.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS book_club_books (
+                book_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                club_id INTEGER,
+                title TEXT NOT NULL,
+                author TEXT NOT NULL,
+                isbn TEXT,
+                genre TEXT,
+                page_count INTEGER,
+                description TEXT,
+                discussion_date TEXT,
+                proposed_by TEXT,
+                proposed_date TEXT,
+                status TEXT DEFAULT 'proposed',
+                votes INTEGER DEFAULT 0,
+                FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            student_id = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO book_club_books (
+                club_id, title, author, isbn, genre, page_count, description,
+                discussion_date, proposed_by, proposed_date, status, votes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'proposed', 0)
+            ''', (self.club_id, title, author, isbn, genre, pages_int, description,
+                  discussion_date, student_id, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Book '{title}' has been proposed!\n\nMembers can now vote on reading this book.")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to propose book: {str(e)}")
+
+
+class ScheduleUpdateDialog:
+    """Dialog for updating book club reading schedule"""
+
+    def __init__(self, parent, auth_manager, club_id):
+        self.parent = parent
+        self.auth = auth_manager
+        self.club_id = club_id
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Update Reading Schedule")
+        self.dialog.geometry("650x500")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Update Reading Schedule", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        ttk.Label(main_frame, text="Enter the reading schedule for your book club:",
+                 font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+        # Book Title Reference
+        ttk.Label(main_frame, text="Book Title (reference):").pack(anchor='w', pady=(0, 5))
+        self.book_entry = ttk.Entry(main_frame, width=60)
+        self.book_entry.pack(fill='x', pady=(0, 10))
+
+        # Schedule Details
+        ttk.Label(main_frame, text="Reading Schedule:").pack(anchor='w', pady=(0, 5))
+        self.schedule_text = scrolledtext.ScrolledText(main_frame, height=15, wrap=tk.WORD)
+        self.schedule_text.pack(fill='both', expand=True, pady=(0, 10))
+
+        # Pre-fill with template
+        template = """Week 1 (Date Range): Chapters 1-3
+Week 2 (Date Range): Chapters 4-6
+Week 3 (Date Range): Chapters 7-9
+Week 4 (Date Range): Chapters 10-12
+Week 5 (Date Range): Discussion & Wrap-up
+
+Meeting Location: [Location]
+Meeting Time: [Time]
+
+Notes:
+- Please read assigned chapters before each meeting
+- Come prepared with discussion questions
+- Feel free to read ahead at your own pace
+"""
+        self.schedule_text.insert(1.0, template)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Save Schedule", command=self.save_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def save_schedule(self):
+        book_title = self.book_entry.get().strip()
+        schedule_content = self.schedule_text.get(1.0, tk.END).strip()
+
+        if not all([book_title, schedule_content]):
+            messagebox.showwarning("Warning", "Please fill in all fields.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS book_club_schedules (
+                schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                club_id INTEGER,
+                book_title TEXT,
+                schedule_content TEXT,
+                created_by TEXT,
+                created_date TEXT,
+                status TEXT DEFAULT 'active',
+                FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            student_id = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO book_club_schedules (
+                club_id, book_title, schedule_content, created_by, created_date, status
+            ) VALUES (?, ?, ?, ?, ?, 'active')
+            ''', (self.club_id, book_title, schedule_content, student_id, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Reading schedule has been updated!")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save schedule: {str(e)}")
+
+
+class BookReviewDialog:
+    """Dialog for submitting book reviews"""
+
+    def __init__(self, parent, auth_manager, club_id):
+        self.parent = parent
+        self.auth = auth_manager
+        self.club_id = club_id
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Submit Book Review")
+        self.dialog.geometry("700x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Submit Book Review", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Book Title
+        ttk.Label(main_frame, text="Book Title:").pack(anchor='w', pady=(0, 5))
+        self.title_entry = ttk.Entry(main_frame, width=60)
+        self.title_entry.pack(fill='x', pady=(0, 10))
+
+        # Author
+        ttk.Label(main_frame, text="Author:").pack(anchor='w', pady=(0, 5))
+        self.author_entry = ttk.Entry(main_frame, width=60)
+        self.author_entry.pack(fill='x', pady=(0, 10))
+
+        # Rating
+        rating_frame = ttk.LabelFrame(main_frame, text="Your Rating")
+        rating_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(rating_frame, text="Overall Rating:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
+
+        # Star rating
+        stars_frame = ttk.Frame(rating_frame)
+        stars_frame.pack(pady=(0, 10))
+
+        self.rating_var = tk.IntVar(value=5)
+        for i in range(1, 6):
+            ttk.Radiobutton(stars_frame, text=f"{'⭐' * i}", variable=self.rating_var, value=i).pack(side='left', padx=5)
+
+        # Review Text
+        ttk.Label(main_frame, text="Your Review:").pack(anchor='w', pady=(0, 5))
+        self.review_text = scrolledtext.ScrolledText(main_frame, height=12, wrap=tk.WORD)
+        self.review_text.pack(fill='both', expand=True, pady=(0, 10))
+        self.review_text.insert(1.0, "Share your thoughts about the book...\n\nWhat did you like? What didn't you like? Would you recommend it to others?")
+
+        # Would Recommend
+        self.recommend_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(main_frame, text="I would recommend this book to others",
+                       variable=self.recommend_var).pack(anchor='w', pady=(0, 15))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Submit Review", command=self.submit_review).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def submit_review(self):
+        title = self.title_entry.get().strip()
+        author = self.author_entry.get().strip()
+        rating = self.rating_var.get()
+        review_content = self.review_text.get(1.0, tk.END).strip()
+        recommend = self.recommend_var.get()
+
+        if not all([title, author, review_content]):
+            messagebox.showwarning("Warning", "Please fill in all fields.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS book_reviews (
+                review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                club_id INTEGER,
+                book_title TEXT NOT NULL,
+                author TEXT NOT NULL,
+                rating INTEGER,
+                review_content TEXT,
+                recommend BOOLEAN,
+                reviewer_id TEXT,
+                review_date TEXT,
+                FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            student_id = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO book_reviews (
+                club_id, book_title, author, rating, review_content, recommend,
+                reviewer_id, review_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (self.club_id, title, author, rating, review_content, recommend,
+                  student_id, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", "Thank you for your review!\n\nYour review has been submitted successfully.")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit review: {str(e)}")
 
 
 # ============================================================================
@@ -14470,13 +15003,285 @@ STATUS: ✓ Event was profitable and under budget
         self.summary_text.insert(1.0, summary)
 
     def add_income(self):
-        messagebox.showinfo("Add Income", "Income entry dialog would open here.")
+        event_name = self.event_var.get()
+        if not event_name:
+            messagebox.showwarning("Warning", "Please select an event first.")
+            return
+
+        dialog = AddIncomeDialog(self.dialog, self.auth, event_name)
+        self.dialog.wait_window(dialog.dialog)
+        self.load_finances()  # Refresh data
 
     def add_expense(self):
-        messagebox.showinfo("Add Expense", "Expense entry dialog would open here.")
+        event_name = self.event_var.get()
+        if not event_name:
+            messagebox.showwarning("Warning", "Please select an event first.")
+            return
+
+        dialog = AddExpenseDialog(self.dialog, self.auth, event_name)
+        self.dialog.wait_window(dialog.dialog)
+        self.load_finances()  # Refresh data
 
     def generate_report(self):
         messagebox.showinfo("Report Generated", "Financial report exported to:\nreports/spring_festival_2025_finances.pdf")
+
+
+class AddIncomeDialog:
+    """Dialog for adding income to an event"""
+
+    def __init__(self, parent, auth_manager, event_name):
+        self.parent = parent
+        self.auth = auth_manager
+        self.event_name = event_name
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Add Income")
+        self.dialog.geometry("600x500")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text=f"Add Income - {self.event_name}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Source
+        ttk.Label(main_frame, text="Income Source:").pack(anchor='w', pady=(0, 5))
+        self.source_var = tk.StringVar()
+        source_combo = ttk.Combobox(main_frame, textvariable=self.source_var, width=57)
+        source_combo['values'] = ('Ticket Sales', 'Sponsorships', 'Merchandise', 'Donations',
+                                  'Entry Fees', 'Food Sales', 'Grants', 'Other')
+        source_combo.pack(fill='x', pady=(0, 10))
+        source_combo.current(0)
+
+        # Amount
+        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        self.amount_entry = ttk.Entry(main_frame, width=60)
+        self.amount_entry.pack(fill='x', pady=(0, 10))
+
+        # Date
+        ttk.Label(main_frame, text="Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        self.date_entry = ttk.Entry(main_frame, width=60)
+        self.date_entry.pack(fill='x', pady=(0, 10))
+        self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        # Payment Method
+        ttk.Label(main_frame, text="Payment Method:").pack(anchor='w', pady=(0, 5))
+        self.method_var = tk.StringVar()
+        method_combo = ttk.Combobox(main_frame, textvariable=self.method_var, width=57)
+        method_combo['values'] = ('Cash', 'Card', 'Bank Transfer', 'Cheque', 'Online Payment', 'Mixed')
+        method_combo.pack(fill='x', pady=(0, 10))
+        method_combo.current(1)
+
+        # Notes
+        ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(0, 5))
+        self.notes_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
+        self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
+        self.notes_text.insert(1.0, "Additional details about this income...")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Add Income", command=self.add_income).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def add_income(self):
+        source = self.source_var.get()
+        amount = self.amount_entry.get().strip()
+        date = self.date_entry.get().strip()
+        method = self.method_var.get()
+        notes = self.notes_text.get(1.0, tk.END).strip()
+
+        if not all([source, amount, date]):
+            messagebox.showwarning("Warning", "Please fill in Source, Amount, and Date fields.")
+            return
+
+        try:
+            amount_float = float(amount)
+            if amount_float <= 0:
+                raise ValueError("Amount must be positive")
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS event_income (
+                income_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_name TEXT NOT NULL,
+                source TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                payment_method TEXT,
+                notes TEXT,
+                recorded_by TEXT,
+                recorded_date TEXT
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            recorded_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO event_income (
+                event_name, source, amount, date, payment_method, notes, recorded_by, recorded_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (self.event_name, source, amount_float, date, method, notes,
+                  recorded_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Income of £{amount_float:.2f} from {source} has been recorded!")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add income: {str(e)}")
+
+
+class AddExpenseDialog:
+    """Dialog for adding expenses to an event"""
+
+    def __init__(self, parent, auth_manager, event_name):
+        self.parent = parent
+        self.auth = auth_manager
+        self.event_name = event_name
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Add Expense")
+        self.dialog.geometry("600x550")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text=f"Add Expense - {self.event_name}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Category
+        ttk.Label(main_frame, text="Expense Category:").pack(anchor='w', pady=(0, 5))
+        self.category_var = tk.StringVar()
+        category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=57)
+        category_combo['values'] = ('Venue', 'Catering', 'Equipment', 'Marketing', 'Entertainment',
+                                    'Decorations', 'Staffing', 'Transportation', 'Supplies', 'Other')
+        category_combo.pack(fill='x', pady=(0, 10))
+        category_combo.current(0)
+
+        # Amount
+        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        self.amount_entry = ttk.Entry(main_frame, width=60)
+        self.amount_entry.pack(fill='x', pady=(0, 10))
+
+        # Date
+        ttk.Label(main_frame, text="Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        self.date_entry = ttk.Entry(main_frame, width=60)
+        self.date_entry.pack(fill='x', pady=(0, 10))
+        self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        # Vendor
+        ttk.Label(main_frame, text="Vendor/Supplier:").pack(anchor='w', pady=(0, 5))
+        self.vendor_entry = ttk.Entry(main_frame, width=60)
+        self.vendor_entry.pack(fill='x', pady=(0, 10))
+
+        # Receipt
+        receipt_frame = ttk.Frame(main_frame)
+        receipt_frame.pack(fill='x', pady=(0, 10))
+
+        self.has_receipt_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(receipt_frame, text="Receipt Available",
+                       variable=self.has_receipt_var).pack(side='left', padx=(0, 10))
+
+        ttk.Label(receipt_frame, text="Receipt #:").pack(side='left', padx=(0, 5))
+        self.receipt_entry = ttk.Entry(receipt_frame, width=20)
+        self.receipt_entry.pack(side='left')
+
+        # Notes
+        ttk.Label(main_frame, text="Description/Notes:").pack(anchor='w', pady=(0, 5))
+        self.notes_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
+        self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
+        self.notes_text.insert(1.0, "Description of expense...")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def add_expense(self):
+        category = self.category_var.get()
+        amount = self.amount_entry.get().strip()
+        date = self.date_entry.get().strip()
+        vendor = self.vendor_entry.get().strip()
+        receipt_num = self.receipt_entry.get().strip()
+        has_receipt = self.has_receipt_var.get()
+        notes = self.notes_text.get(1.0, tk.END).strip()
+
+        if not all([category, amount, date, vendor]):
+            messagebox.showwarning("Warning", "Please fill in Category, Amount, Date, and Vendor fields.")
+            return
+
+        try:
+            amount_float = float(amount)
+            if amount_float <= 0:
+                raise ValueError("Amount must be positive")
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS event_expenses (
+                expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                vendor TEXT,
+                receipt_number TEXT,
+                has_receipt BOOLEAN,
+                notes TEXT,
+                recorded_by TEXT,
+                recorded_date TEXT
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            recorded_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO event_expenses (
+                event_name, category, amount, date, vendor, receipt_number,
+                has_receipt, notes, recorded_by, recorded_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (self.event_name, category, amount_float, date, vendor, receipt_num,
+                  has_receipt, notes, recorded_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Expense of £{amount_float:.2f} for {category} has been recorded!")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add expense: {str(e)}")
 
 
 class EventTicketingDialog:
@@ -14578,13 +15383,386 @@ PROJECTED FINAL SALES: 420 tickets (44% capacity)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def create_ticket_type(self):
-        messagebox.showinfo("Create Ticket", "Ticket type creation dialog would open here.")
+        dialog = CreateTicketTypeDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def process_refund(self):
-        messagebox.showinfo("Refund", "Refund processing dialog would open here.")
+        dialog = ProcessRefundDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def manage_waitlist(self):
-        messagebox.showinfo("Waitlist", "Waitlist management dialog would open here.")
+        dialog = ManageWaitlistDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
+
+
+class CreateTicketTypeDialog:
+    """Dialog for creating a new ticket type"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Ticket Type")
+        self.dialog.geometry("550x550")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Create New Ticket Type", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event selection
+        ttk.Label(main_frame, text="Event:").pack(anchor='w', pady=(0, 5))
+        self.event_var = tk.StringVar()
+        event_combo = ttk.Combobox(main_frame, textvariable=self.event_var, width=47)
+        event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference', 'Charity Ball')
+        event_combo.pack(fill='x', pady=(0, 10))
+        event_combo.current(0)
+
+        # Ticket type name
+        ttk.Label(main_frame, text="Ticket Type Name:").pack(anchor='w', pady=(0, 5))
+        self.name_entry = ttk.Entry(main_frame, width=50)
+        self.name_entry.pack(fill='x', pady=(0, 10))
+        self.name_entry.insert(0, "General Admission")
+
+        # Price
+        ttk.Label(main_frame, text="Price (£):").pack(anchor='w', pady=(0, 5))
+        self.price_entry = ttk.Entry(main_frame, width=50)
+        self.price_entry.pack(fill='x', pady=(0, 10))
+        self.price_entry.insert(0, "10.00")
+
+        # Quantity
+        ttk.Label(main_frame, text="Total Quantity Available:").pack(anchor='w', pady=(0, 5))
+        self.quantity_entry = ttk.Entry(main_frame, width=50)
+        self.quantity_entry.pack(fill='x', pady=(0, 10))
+        self.quantity_entry.insert(0, "100")
+
+        # Sale dates
+        dates_frame = ttk.Frame(main_frame)
+        dates_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(dates_frame, text="Sale Start:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.start_entry = ttk.Entry(dates_frame, width=20)
+        self.start_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
+        self.start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(dates_frame, text="Sale End:").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        self.end_entry = ttk.Entry(dates_frame, width=20)
+        self.end_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
+        self.end_entry.insert(0, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
+
+        # Description
+        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
+        self.description_text.pack(fill='both', expand=True, pady=(0, 15))
+        self.description_text.insert(1.0, "Standard entry to the event...")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create", command=self.create_type).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def create_type(self):
+        event = self.event_var.get()
+        name = self.name_entry.get().strip()
+        price = self.price_entry.get().strip()
+        quantity = self.quantity_entry.get().strip()
+        start_date = self.start_entry.get().strip()
+        end_date = self.end_entry.get().strip()
+        description = self.description_text.get(1.0, tk.END).strip()
+
+        if not all([event, name, price, quantity, start_date, end_date]):
+            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            return
+
+        try:
+            price_float = float(price)
+            quantity_int = int(quantity)
+            if price_float < 0 or quantity_int <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter valid price and quantity values.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS event_ticket_types (
+                ticket_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_name TEXT NOT NULL,
+                type_name TEXT NOT NULL,
+                price REAL NOT NULL,
+                total_quantity INTEGER NOT NULL,
+                sold_quantity INTEGER DEFAULT 0,
+                sale_start_date TEXT,
+                sale_end_date TEXT,
+                description TEXT,
+                created_by TEXT,
+                created_date TEXT
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            created_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO event_ticket_types (
+                event_name, type_name, price, total_quantity, sold_quantity,
+                sale_start_date, sale_end_date, description, created_by, created_date
+            ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
+            ''', (event, name, price_float, quantity_int, start_date, end_date,
+                  description, created_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Ticket type '{name}' created successfully!\n\nPrice: £{price_float:.2f}\nQuantity: {quantity_int}")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create ticket type: {str(e)}")
+
+
+class ProcessRefundDialog:
+    """Dialog for processing ticket refunds"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Process Refund")
+        self.dialog.geometry("650x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Process Ticket Refund", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Ticket/Order search
+        search_frame = ttk.LabelFrame(main_frame, text="Find Ticket/Order")
+        search_frame.pack(fill='x', pady=(0, 15))
+
+        form = ttk.Frame(search_frame)
+        form.pack(padx=15, pady=15, fill='x')
+
+        ttk.Label(form, text="Ticket/Order ID:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.ticket_id_entry = ttk.Entry(form, width=25)
+        self.ticket_id_entry.grid(row=0, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
+
+        ttk.Button(form, text="Search", command=self.search_ticket).grid(row=0, column=2, pady=(0, 5))
+
+        ttk.Label(form, text="Customer Email:").grid(row=1, column=0, sticky='w', pady=(0, 5))
+        self.email_entry = ttk.Entry(form, width=25)
+        self.email_entry.grid(row=1, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
+
+        # Ticket details
+        details_frame = ttk.LabelFrame(main_frame, text="Ticket Details")
+        details_frame.pack(fill='x', pady=(0, 15))
+
+        self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
+        self.details_text.pack(fill='both', expand=True, padx=10, pady=10)
+        self.details_text.insert(1.0, "Enter ticket ID or email and click Search to load ticket details...")
+        self.details_text.config(state='disabled')
+
+        # Refund options
+        refund_frame = ttk.LabelFrame(main_frame, text="Refund Options")
+        refund_frame.pack(fill='x', pady=(0, 15))
+
+        options = ttk.Frame(refund_frame)
+        options.pack(padx=15, pady=15, fill='x')
+
+        ttk.Label(options, text="Refund Amount:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.refund_amount_entry = ttk.Entry(options, width=15)
+        self.refund_amount_entry.grid(row=0, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
+        self.refund_amount_entry.insert(0, "0.00")
+
+        ttk.Label(options, text="Refund Method:").grid(row=1, column=0, sticky='w', pady=(0, 5))
+        self.method_var = tk.StringVar(value="Original Payment Method")
+        method_combo = ttk.Combobox(options, textvariable=self.method_var, width=23, state='readonly')
+        method_combo['values'] = ('Original Payment Method', 'Bank Transfer', 'Store Credit', 'Cash')
+        method_combo.grid(row=1, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
+
+        ttk.Label(options, text="Reason:").grid(row=2, column=0, sticky='w', pady=(0, 5))
+        self.reason_var = tk.StringVar()
+        reason_combo = ttk.Combobox(options, textvariable=self.reason_var, width=23)
+        reason_combo['values'] = ('Event Cancelled', 'Customer Request', 'Duplicate Purchase',
+                                  'Unable to Attend', 'Other')
+        reason_combo.grid(row=2, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
+        reason_combo.current(0)
+
+        # Notes
+        ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(0, 5))
+        self.notes_text = scrolledtext.ScrolledText(main_frame, height=4, wrap=tk.WORD)
+        self.notes_text.pack(fill='x', pady=(0, 15))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Process Refund", command=self.process_refund).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def search_ticket(self):
+        ticket_id = self.ticket_id_entry.get().strip()
+        email = self.email_entry.get().strip()
+
+        if not ticket_id and not email:
+            messagebox.showwarning("Warning", "Please enter a Ticket ID or Email to search.")
+            return
+
+        # Simulate search result
+        sample_details = f"""TICKET FOUND
+
+Ticket ID: {ticket_id if ticket_id else "TKT-12345"}
+Event: Annual Gala 2025
+Ticket Type: VIP
+Purchase Date: 2025-03-15
+Customer: john.doe@email.com
+Original Price: £25.00
+Status: Active
+
+This ticket is eligible for a full refund.
+"""
+        self.details_text.config(state='normal')
+        self.details_text.delete(1.0, tk.END)
+        self.details_text.insert(1.0, sample_details)
+        self.details_text.config(state='disabled')
+
+        self.refund_amount_entry.delete(0, tk.END)
+        self.refund_amount_entry.insert(0, "25.00")
+
+    def process_refund(self):
+        refund_amount = self.refund_amount_entry.get().strip()
+        method = self.method_var.get()
+        reason = self.reason_var.get()
+        notes = self.notes_text.get(1.0, tk.END).strip()
+
+        if not all([refund_amount, method, reason]):
+            messagebox.showwarning("Warning", "Please fill in all refund details.")
+            return
+
+        try:
+            amount_float = float(refund_amount)
+            if amount_float <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid refund amount.")
+            return
+
+        # In a real system, this would process the refund in the database
+        messagebox.showinfo("Success", f"Refund Processed!\n\nAmount: £{amount_float:.2f}\nMethod: {method}\n\nThe customer will be notified via email.")
+        self.dialog.destroy()
+
+
+class ManageWaitlistDialog:
+    """Dialog for managing event waitlists"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Manage Waitlist")
+        self.dialog.geometry("800x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text="Event Waitlist Management", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event and ticket type selection
+        select_frame = ttk.Frame(main_frame)
+        select_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(select_frame, text="Event:").pack(side='left', padx=(0, 10))
+        event_combo = ttk.Combobox(select_frame, width=25, state='readonly')
+        event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference')
+        event_combo.pack(side='left', padx=(0, 20))
+        event_combo.current(0)
+
+        ttk.Label(select_frame, text="Ticket Type:").pack(side='left', padx=(0, 10))
+        ticket_combo = ttk.Combobox(select_frame, width=20, state='readonly')
+        ticket_combo['values'] = ('General Admission', 'VIP', 'Student')
+        ticket_combo.pack(side='left')
+        ticket_combo.current(0)
+
+        # Waitlist
+        list_frame = ttk.LabelFrame(main_frame, text="Waitlist (15 people)")
+        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        columns = ('Position', 'Name', 'Email', 'Added', 'Status')
+        self.waitlist_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
+
+        for col in columns:
+            self.waitlist_tree.heading(col, text=col)
+            if col == 'Email':
+                self.waitlist_tree.column(col, width=200)
+            else:
+                self.waitlist_tree.column(col, width=120)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.waitlist_tree.yview)
+        self.waitlist_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.waitlist_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Sample waitlist data
+        waitlist_entries = [
+            ("1", "Alice Johnson", "alice@email.com", "2025-03-10", "Waiting"),
+            ("2", "Bob Smith", "bob@email.com", "2025-03-11", "Waiting"),
+            ("3", "Carol Davis", "carol@email.com", "2025-03-12", "Waiting"),
+            ("4", "David Wilson", "david@email.com", "2025-03-13", "Waiting"),
+            ("5", "Emma Brown", "emma@email.com", "2025-03-14", "Waiting")
+        ]
+
+        for entry in waitlist_entries:
+            self.waitlist_tree.insert('', 'end', values=entry)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Notify Next Person", command=self.notify_next).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Remove from Waitlist", command=self.remove_from_waitlist).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Notify All", command=self.notify_all).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def notify_next(self):
+        messagebox.showinfo("Success", "Email sent to Alice Johnson notifying them that tickets are available!\n\nThey have 24 hours to purchase.")
+
+    def remove_from_waitlist(self):
+        selection = self.waitlist_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a person to remove.")
+            return
+
+        if messagebox.askyesno("Confirm", "Remove selected person from waitlist?"):
+            self.waitlist_tree.delete(selection[0])
+            messagebox.showinfo("Success", "Person removed from waitlist.")
+
+    def notify_all(self):
+        if messagebox.askyesno("Confirm", "Send notification emails to all 15 people on the waitlist?"):
+            messagebox.showinfo("Success", "Notification emails sent to all waitlist members!")
 
 
 class RecurringEventsDialog:
@@ -14642,13 +15820,261 @@ class RecurringEventsDialog:
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def create_series(self):
-        messagebox.showinfo("Create Series", "Recurring event series creation dialog would open here.\n\nSelect pattern:\n- Daily\n- Weekly\n- Monthly\n- Custom")
+        dialog = CreateRecurringSeriesDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def edit_series(self):
-        messagebox.showinfo("Edit Series", "Edit series dialog would open here.\n\nModify future occurrences or entire series.")
+        dialog = EditRecurringSeriesDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def cancel_occurrence(self):
         messagebox.showinfo("Cancel", "Select specific occurrence to cancel.\n\nSeries will continue after canceled event.")
+
+
+class CreateRecurringSeriesDialog:
+    """Dialog for creating a recurring event series"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Recurring Event Series")
+        self.dialog.geometry("650x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Create Recurring Event Series", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Event name
+        ttk.Label(main_frame, text="Event Name/Series Title:").pack(anchor='w', pady=(0, 5))
+        self.name_entry = ttk.Entry(main_frame, width=60)
+        self.name_entry.pack(fill='x', pady=(0, 10))
+        self.name_entry.insert(0, "Weekly Study Group")
+
+        # Recurrence pattern
+        pattern_frame = ttk.LabelFrame(main_frame, text="Recurrence Pattern")
+        pattern_frame.pack(fill='x', pady=(0, 10))
+
+        pattern_inner = ttk.Frame(pattern_frame)
+        pattern_inner.pack(padx=15, pady=15, fill='x')
+
+        ttk.Label(pattern_inner, text="Pattern:").grid(row=0, column=0, sticky='w', pady=(0, 10))
+        self.pattern_var = tk.StringVar(value="Weekly")
+        pattern_combo = ttk.Combobox(pattern_inner, textvariable=self.pattern_var, width=20, state='readonly')
+        pattern_combo['values'] = ('Daily', 'Weekly', 'Bi-Weekly', 'Monthly', 'Custom')
+        pattern_combo.grid(row=0, column=1, sticky='w', pady=(0, 10), padx=(5, 0))
+
+        ttk.Label(pattern_inner, text="Day of Week:").grid(row=1, column=0, sticky='w', pady=(0, 10))
+        self.day_var = tk.StringVar(value="Monday")
+        day_combo = ttk.Combobox(pattern_inner, textvariable=self.day_var, width=20, state='readonly')
+        day_combo['values'] = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+        day_combo.grid(row=1, column=1, sticky='w', pady=(0, 10), padx=(5, 0))
+
+        # Date range
+        dates_frame = ttk.Frame(main_frame)
+        dates_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(dates_frame, text="Start Date:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.start_entry = ttk.Entry(dates_frame, width=15)
+        self.start_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
+        self.start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(dates_frame, text="End Date:").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        self.end_entry = ttk.Entry(dates_frame, width=15)
+        self.end_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
+        self.end_entry.insert(0, (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d'))
+
+        # Time
+        time_frame = ttk.Frame(main_frame)
+        time_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(time_frame, text="Start Time:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.start_time_entry = ttk.Entry(time_frame, width=10)
+        self.start_time_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
+        self.start_time_entry.insert(0, "18:00")
+
+        ttk.Label(time_frame, text="Duration (hours):").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        self.duration_entry = ttk.Entry(time_frame, width=10)
+        self.duration_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
+        self.duration_entry.insert(0, "2")
+
+        # Location
+        ttk.Label(main_frame, text="Location:").pack(anchor='w', pady=(0, 5))
+        self.location_entry = ttk.Entry(main_frame, width=60)
+        self.location_entry.pack(fill='x', pady=(0, 10))
+        self.location_entry.insert(0, "Room 101, Student Union Building")
+
+        # Description
+        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
+        self.description_text.pack(fill='both', expand=True, pady=(0, 15))
+        self.description_text.insert(1.0, "Regular meeting for students to study together...")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Create Series", command=self.create_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def create_series(self):
+        name = self.name_entry.get().strip()
+        pattern = self.pattern_var.get()
+        day = self.day_var.get()
+        start_date = self.start_entry.get().strip()
+        end_date = self.end_entry.get().strip()
+        start_time = self.start_time_entry.get().strip()
+        duration = self.duration_entry.get().strip()
+        location = self.location_entry.get().strip()
+        description = self.description_text.get(1.0, tk.END).strip()
+
+        if not all([name, pattern, start_date, end_date, start_time, duration, location]):
+            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            return
+
+        try:
+            duration_float = float(duration)
+            if duration_float <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid duration.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS recurring_event_series (
+                series_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                series_name TEXT NOT NULL,
+                pattern TEXT NOT NULL,
+                day_of_week TEXT,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                duration_hours REAL,
+                location TEXT,
+                description TEXT,
+                created_by TEXT,
+                created_date TEXT,
+                status TEXT DEFAULT 'active'
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            created_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO recurring_event_series (
+                series_name, pattern, day_of_week, start_date, end_date, start_time,
+                duration_hours, location, description, created_by, created_date, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            ''', (name, pattern, day, start_date, end_date, start_time, duration_float,
+                  location, description, created_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Recurring series '{name}' created!\n\nPattern: {pattern} on {day}s\nFrom: {start_date} to {end_date}")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create series: {str(e)}")
+
+
+class EditRecurringSeriesDialog:
+    """Dialog for editing a recurring event series"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Edit Recurring Event Series")
+        self.dialog.geometry("650x600")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Edit Recurring Event Series", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        # Series selection
+        ttk.Label(main_frame, text="Select Series to Edit:").pack(anchor='w', pady=(0, 5))
+        self.series_var = tk.StringVar()
+        series_combo = ttk.Combobox(main_frame, textvariable=self.series_var, width=57, state='readonly')
+        series_combo['values'] = ('Weekly Tech Talks', 'Monthly Networking', 'Bi-Weekly Study Group')
+        series_combo.pack(fill='x', pady=(0, 15))
+        series_combo.current(0)
+
+        # Edit options
+        options_frame = ttk.LabelFrame(main_frame, text="What would you like to modify?")
+        options_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        options_inner = ttk.Frame(options_frame)
+        options_inner.pack(padx=20, pady=20, fill='both', expand=True)
+
+        self.edit_option = tk.StringVar(value="future")
+
+        ttk.Radiobutton(options_inner, text="Edit future occurrences only",
+                       variable=self.edit_option, value="future").pack(anchor='w', pady=(0, 10))
+
+        ttk.Radiobutton(options_inner, text="Edit all occurrences (past and future)",
+                       variable=self.edit_option, value="all").pack(anchor='w', pady=(0, 10))
+
+        ttk.Radiobutton(options_inner, text="Change recurrence pattern",
+                       variable=self.edit_option, value="pattern").pack(anchor='w', pady=(0, 10))
+
+        ttk.Radiobutton(options_inner, text="End series early",
+                       variable=self.edit_option, value="end").pack(anchor='w', pady=(0, 10))
+
+        # New end date (for ending series early)
+        end_frame = ttk.Frame(main_frame)
+        end_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(end_frame, text="New End Date (if ending early):").pack(side='left', padx=(0, 10))
+        self.new_end_entry = ttk.Entry(end_frame, width=20)
+        self.new_end_entry.pack(side='left')
+        self.new_end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Apply Changes", command=self.apply_changes).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def apply_changes(self):
+        series = self.series_var.get()
+        option = self.edit_option.get()
+        new_end = self.new_end_entry.get().strip()
+
+        if not series:
+            messagebox.showwarning("Warning", "Please select a series to edit.")
+            return
+
+        option_messages = {
+            "future": "Future occurrences of this series will be updated.",
+            "all": "All occurrences (past and future) will be updated.",
+            "pattern": "The recurrence pattern will be modified.\n\nA new pattern selection dialog would appear next.",
+            "end": f"Series will end on {new_end}.\n\nNo new occurrences will be created after this date."
+        }
+
+        message = option_messages.get(option, "Changes applied!")
+        messagebox.showinfo("Success", f"Series '{series}' has been updated!\n\n{message}")
+        self.dialog.destroy()
 
 
 # ============================================================================
@@ -15113,10 +16539,153 @@ class KnowledgeSharingDialog:
         messagebox.showinfo("Success", "Registered for session!\n\nYou'll receive session details via email.")
 
     def propose_session(self):
-        messagebox.showinfo("Propose Session", "Session proposal form would open here.\n\nShare your expertise with the community!")
+        dialog = ProposeSessionDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def view_recordings(self):
         messagebox.showinfo("Recordings", "Session recordings library:\n\n- Python Basics (50 views)\n- Data Structures (38 views)\n- Web Design (65 views)")
+
+
+class ProposeSessionDialog:
+    """Dialog for proposing a workshop/skill-sharing session"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Propose Workshop Session")
+        self.dialog.geometry("700x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Propose a Workshop/Skill Session", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        ttk.Label(main_frame, text="Share your expertise with the community!",
+                 font=('Arial', 10, 'italic')).pack(pady=(0, 15))
+
+        # Session title
+        ttk.Label(main_frame, text="Session Title:").pack(anchor='w', pady=(0, 5))
+        self.title_entry = ttk.Entry(main_frame, width=60)
+        self.title_entry.pack(fill='x', pady=(0, 10))
+        self.title_entry.insert(0, "Introduction to Python Programming")
+
+        # Category
+        ttk.Label(main_frame, text="Category:").pack(anchor='w', pady=(0, 5))
+        self.category_var = tk.StringVar()
+        category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=57)
+        category_combo['values'] = ('Programming', 'Design', 'Business', 'Languages',
+                                    'Music', 'Art', 'Wellness', 'Academic Skills', 'Other')
+        category_combo.pack(fill='x', pady=(0, 10))
+        category_combo.current(0)
+
+        # Duration & Level
+        details_frame = ttk.Frame(main_frame)
+        details_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(details_frame, text="Duration (hours):").grid(row=0, column=0, sticky='w', padx=(0, 10))
+        self.duration_entry = ttk.Entry(details_frame, width=10)
+        self.duration_entry.grid(row=0, column=1, sticky='w', padx=(0, 30))
+        self.duration_entry.insert(0, "2")
+
+        ttk.Label(details_frame, text="Level:").grid(row=0, column=2, sticky='w', padx=(0, 10))
+        self.level_var = tk.StringVar(value="Beginner")
+        level_combo = ttk.Combobox(details_frame, textvariable=self.level_var, width=15, state='readonly')
+        level_combo['values'] = ('Beginner', 'Intermediate', 'Advanced', 'All Levels')
+        level_combo.grid(row=0, column=3, sticky='w')
+
+        # Max participants
+        ttk.Label(main_frame, text="Maximum Participants:").pack(anchor='w', pady=(0, 5))
+        self.max_participants_entry = ttk.Entry(main_frame, width=60)
+        self.max_participants_entry.pack(fill='x', pady=(0, 10))
+        self.max_participants_entry.insert(0, "20")
+
+        # Description
+        ttk.Label(main_frame, text="Session Description:").pack(anchor='w', pady=(0, 5))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
+        self.description_text.pack(fill='both', expand=True, pady=(0, 10))
+        self.description_text.insert(1.0, "Describe what participants will learn, prerequisites, and what they should bring...")
+
+        # Prerequisites
+        ttk.Label(main_frame, text="Prerequisites/Requirements:").pack(anchor='w', pady=(0, 5))
+        self.prerequisites_entry = ttk.Entry(main_frame, width=60)
+        self.prerequisites_entry.pack(fill='x', pady=(0, 15))
+        self.prerequisites_entry.insert(0, "None - beginners welcome!")
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Submit Proposal", command=self.submit_proposal).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def submit_proposal(self):
+        title = self.title_entry.get().strip()
+        category = self.category_var.get()
+        duration = self.duration_entry.get().strip()
+        level = self.level_var.get()
+        max_participants = self.max_participants_entry.get().strip()
+        description = self.description_text.get(1.0, tk.END).strip()
+        prerequisites = self.prerequisites_entry.get().strip()
+
+        if not all([title, category, duration, max_participants, description]):
+            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            return
+
+        try:
+            duration_float = float(duration)
+            max_part_int = int(max_participants)
+            if duration_float <= 0 or max_part_int <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter valid duration and participant values.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS workshop_proposals (
+                proposal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                category TEXT,
+                duration_hours REAL,
+                level TEXT,
+                max_participants INTEGER,
+                description TEXT,
+                prerequisites TEXT,
+                proposed_by TEXT,
+                proposed_date TEXT,
+                status TEXT DEFAULT 'pending'
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            proposed_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO workshop_proposals (
+                title, category, duration_hours, level, max_participants,
+                description, prerequisites, proposed_by, proposed_date, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            ''', (title, category, duration_float, level, max_part_int,
+                  description, prerequisites, proposed_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Workshop proposal '{title}' submitted successfully!\n\nOur team will review your proposal and get back to you soon.")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit proposal: {str(e)}")
 
 
 class TrackCampaignExpensesDialog:
@@ -15227,7 +16796,8 @@ Events: £50.00 (12.9%)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def add_expense(self):
-        messagebox.showinfo("Add Expense", "Expense submission form would open here.\n\nRequired: Category, Description, Amount, Receipt upload")
+        dialog = CampaignExpenseSubmissionDialog(self.dialog, self.auth)
+        self.dialog.wait_window(dialog.dialog)
 
     def view_receipt(self):
         messagebox.showinfo("View Receipt", "Receipt viewer would display the scanned receipt image.")
@@ -15465,6 +17035,163 @@ Student Testimonials:
 
     def endorse(self):
         messagebox.showinfo("Endorse", "Your endorsement has been recorded!\n\nYour name will appear on the candidate's profile (if you choose to be listed publicly).")
+
+
+class CampaignExpenseSubmissionDialog:
+    """Dialog for submitting campaign expenses"""
+
+    def __init__(self, parent, auth_manager):
+        self.parent = parent
+        self.auth = auth_manager
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Submit Campaign Expense")
+        self.dialog.geometry("650x650")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(main_frame, text="Submit Campaign Expense", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        ttk.Label(main_frame, text="Required: Category, Description, Amount, Receipt",
+                 font=('Arial', 10, 'italic')).pack(pady=(0, 15))
+
+        # Category
+        ttk.Label(main_frame, text="Expense Category:").pack(anchor='w', pady=(0, 5))
+        self.category_var = tk.StringVar()
+        category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=47)
+        category_combo['values'] = ('Promotional Materials', 'Event Costs', 'Digital Marketing',
+                                    'Printing', 'Venue Rental', 'Travel', 'Other')
+        category_combo.pack(fill='x', pady=(0, 10))
+        category_combo.current(0)
+
+        # Description
+        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        self.description_entry = ttk.Entry(main_frame, width=50)
+        self.description_entry.pack(fill='x', pady=(0, 10))
+        self.description_entry.insert(0, "Campaign posters and flyers")
+
+        # Amount
+        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        self.amount_entry = ttk.Entry(main_frame, width=50)
+        self.amount_entry.pack(fill='x', pady=(0, 10))
+
+        # Date
+        ttk.Label(main_frame, text="Date of Expense (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        self.date_entry = ttk.Entry(main_frame, width=50)
+        self.date_entry.pack(fill='x', pady=(0, 10))
+        self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        # Vendor
+        ttk.Label(main_frame, text="Vendor/Supplier:").pack(anchor='w', pady=(0, 5))
+        self.vendor_entry = ttk.Entry(main_frame, width=50)
+        self.vendor_entry.pack(fill='x', pady=(0, 10))
+
+        # Receipt upload simulation
+        receipt_frame = ttk.LabelFrame(main_frame, text="Receipt")
+        receipt_frame.pack(fill='x', pady=(0, 10))
+
+        receipt_inner = ttk.Frame(receipt_frame)
+        receipt_inner.pack(padx=15, pady=15, fill='x')
+
+        ttk.Label(receipt_inner, text="Receipt Number/Reference:").pack(anchor='w', pady=(0, 5))
+        self.receipt_num_entry = ttk.Entry(receipt_inner, width=30)
+        self.receipt_num_entry.pack(anchor='w', pady=(0, 10))
+
+        ttk.Button(receipt_inner, text="📎 Attach Receipt File",
+                  command=lambda: messagebox.showinfo("Info", "File upload dialog would open here")).pack(anchor='w')
+
+        # Notes
+        ttk.Label(main_frame, text="Additional Notes:").pack(anchor='w', pady=(0, 5))
+        self.notes_text = scrolledtext.ScrolledText(main_frame, height=5, wrap=tk.WORD)
+        self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Compliance notice
+        compliance_frame = ttk.Frame(main_frame)
+        compliance_frame.pack(fill='x', pady=(0, 15))
+
+        self.compliance_var = tk.BooleanVar()
+        ttk.Checkbutton(compliance_frame,
+                       text="I certify this expense complies with campaign finance regulations",
+                       variable=self.compliance_var).pack(anchor='w')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Submit Expense", command=self.submit_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+
+    def submit_expense(self):
+        category = self.category_var.get()
+        description = self.description_entry.get().strip()
+        amount = self.amount_entry.get().strip()
+        date = self.date_entry.get().strip()
+        vendor = self.vendor_entry.get().strip()
+        receipt_num = self.receipt_num_entry.get().strip()
+        notes = self.notes_text.get(1.0, tk.END).strip()
+        compliance = self.compliance_var.get()
+
+        if not all([category, description, amount, date, vendor]):
+            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            return
+
+        if not compliance:
+            messagebox.showwarning("Warning", "You must certify compliance with campaign finance regulations.")
+            return
+
+        try:
+            amount_float = float(amount)
+            if amount_float <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS campaign_expenses (
+                expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date TEXT NOT NULL,
+                vendor TEXT,
+                receipt_number TEXT,
+                notes TEXT,
+                submitted_by TEXT,
+                submitted_date TEXT,
+                status TEXT DEFAULT 'pending_review'
+            )
+            ''')
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            submitted_by = result[0] if result else 'unknown'
+
+            cursor.execute('''
+            INSERT INTO campaign_expenses (
+                category, description, amount, date, vendor, receipt_number,
+                notes, submitted_by, submitted_date, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_review')
+            ''', (category, description, amount_float, date, vendor, receipt_num,
+                  notes, submitted_by, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Expense submitted successfully!\n\nAmount: £{amount_float:.2f}\nCategory: {category}\n\nYour expense will be reviewed for compliance.")
+            self.dialog.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to submit expense: {str(e)}")
 
 
 class ElectionAccessibilityFeaturesDialog:
@@ -20914,10 +22641,193 @@ class SharedResourcesDialog:
                            "Resource will be saved to your downloads folder.")
 
     def preview_resource(self):
-        messagebox.showinfo("Preview", "Preview window would open here with resource contents.")
+        selection = self.resources_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a resource to preview.")
+            return
+
+        item = self.resources_tree.item(selection[0])
+        resource_name = item['values'][0]
+
+        dialog = ResourcePreviewDialog(self.dialog, self.auth, resource_name)
+        self.dialog.wait_window(dialog.dialog)
 
     def rate_resource(self):
         messagebox.showinfo("Rate Resource", "Rate this resource:\n\n⭐⭐⭐⭐⭐\n\nYour feedback helps others!")
+
+
+class ResourcePreviewDialog:
+    """Dialog for previewing academic resources"""
+
+    def __init__(self, parent, auth_manager, resource_name):
+        self.parent = parent
+        self.auth = auth_manager
+        self.resource_name = resource_name
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(f"Preview: {resource_name}")
+        self.dialog.geometry("800x700")
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        # Header
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill='x', pady=(0, 15))
+
+        ttk.Label(header_frame, text="Resource Preview", font=('Arial', 14, 'bold')).pack(side='left')
+
+        # Resource info
+        info_frame = ttk.LabelFrame(main_frame, text="Resource Information")
+        info_frame.pack(fill='x', pady=(0, 15))
+
+        info_grid = ttk.Frame(info_frame)
+        info_grid.pack(padx=15, pady=10, fill='x')
+
+        ttk.Label(info_grid, text="Name:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=self.resource_name).grid(row=0, column=1, sticky='w', padx=10, pady=5)
+
+        ttk.Label(info_grid, text="Type:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text="Study Notes").grid(row=1, column=1, sticky='w', padx=10, pady=5)
+
+        ttk.Label(info_grid, text="Course:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text="CS101").grid(row=2, column=1, sticky='w', padx=10, pady=5)
+
+        ttk.Label(info_grid, text="Uploaded by:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text="Sarah J.").grid(row=3, column=1, sticky='w', padx=10, pady=5)
+
+        ttk.Label(info_grid, text="Rating:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text="⭐⭐⭐⭐⭐ 4.8/5 (142 downloads)").grid(row=4, column=1, sticky='w', padx=10, pady=5)
+
+        # Preview content
+        preview_frame = ttk.LabelFrame(main_frame, text="Content Preview")
+        preview_frame.pack(fill='both', expand=True, pady=(0, 15))
+
+        # Scrolled text for preview
+        self.preview_text = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, font=('Courier', 10))
+        self.preview_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Sample preview content
+        preview_content = f"""PYTHON BASICS - COMPREHENSIVE NOTES
+================================================================================
+
+CHAPTER 1: INTRODUCTION TO PYTHON
+
+What is Python?
+- High-level, interpreted programming language
+- Created by Guido van Rossum in 1991
+- Emphasizes code readability and simplicity
+- Used for web development, data science, AI, automation, and more
+
+Key Features:
+✓ Easy to learn and read
+✓ Large standard library
+✓ Cross-platform compatibility
+✓ Dynamic typing
+✓ Automatic memory management
+
+CHAPTER 2: VARIABLES AND DATA TYPES
+
+Variables:
+- Containers for storing data values
+- No declaration needed (dynamic typing)
+- Names must start with letter or underscore
+
+Example:
+    name = "Alice"
+    age = 25
+    height = 5.6
+    is_student = True
+
+Data Types:
+1. int - Integer numbers (e.g., 42, -10, 0)
+2. float - Decimal numbers (e.g., 3.14, -0.5)
+3. str - Text strings (e.g., "Hello", 'World')
+4. bool - Boolean values (True or False)
+5. list - Ordered, mutable collections [1, 2, 3]
+6. tuple - Ordered, immutable collections (1, 2, 3)
+7. dict - Key-value pairs {{"name": "Alice", "age": 25}}
+
+CHAPTER 3: OPERATORS
+
+Arithmetic Operators:
++ Addition        5 + 3 = 8
+- Subtraction     5 - 3 = 2
+* Multiplication  5 * 3 = 15
+/ Division        5 / 2 = 2.5
+// Floor Division 5 // 2 = 2
+% Modulus         5 % 2 = 1
+** Exponentiation 5 ** 2 = 25
+
+Comparison Operators:
+== Equal to
+!= Not equal to
+> Greater than
+< Less than
+>= Greater than or equal to
+<= Less than or equal to
+
+CHAPTER 4: CONTROL STRUCTURES
+
+If Statements:
+    if condition:
+        # code block
+    elif another_condition:
+        # code block
+    else:
+        # code block
+
+For Loops:
+    for item in iterable:
+        # process item
+
+While Loops:
+    while condition:
+        # code block
+
+CHAPTER 5: FUNCTIONS
+
+Defining Functions:
+    def function_name(parameters):
+        # function body
+        return value
+
+Example:
+    def greet(name):
+        return f"Hello, {{name}}!"
+
+    result = greet("Alice")  # Returns "Hello, Alice!"
+
+TIPS FOR SUCCESS:
+- Practice coding daily
+- Start with simple programs
+- Use Python documentation
+- Join coding communities
+- Work on projects you're passionate about
+
+================================================================================
+END OF PREVIEW - Full notes available after download
+"""
+        self.preview_text.insert(1.0, preview_content)
+        self.preview_text.config(state='disabled')
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x')
+
+        ttk.Button(button_frame, text="Download Full Resource",
+                  command=self.download_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Rate Resource",
+                  command=lambda: messagebox.showinfo("Rate", "⭐⭐⭐⭐⭐\n\nYour rating has been recorded!")).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+
+    def download_resource(self):
+        messagebox.showinfo("Download", f"Downloading '{self.resource_name}'...\n\nFull resource will be saved to your downloads folder.")
 
 
 class ExamPrepGroupsDialog:
