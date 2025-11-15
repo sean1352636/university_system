@@ -1,5 +1,5 @@
 {
-  "numStartups": 246,
+  "numStartups": 249,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
@@ -8,7 +8,7 @@
     "terminal-setup": 244,
     "memory-command": 168,
     "theme-command": 230,
-    "status-line": 220,
+    "status-line": 246,
     "prompt-queue": 58,
     "enter-to-steer-in-relatime": 230,
     "todo-list": 230,
@@ -84,7 +84,7 @@
     "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1763205896032
+      "timestamp": 1763233961664
     }
   },
   "feedbackSurveyState": {

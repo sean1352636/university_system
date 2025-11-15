@@ -5,6 +5,40 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.31] - 2025-11-15
+
+### Bug Fixes
+
+**System Administration GUI - Multiple Critical Fixes:**
+- **CRITICAL FIX**: Fixed NoneType subscript error in system status display
+  - Fixed double `fetchone()` call at line 7129 causing None subscript error
+  - Changed `cursor.fetchone()[0] if cursor.fetchone() else 0` to proper pattern
+  - First `fetchone()` consumed result, second returned None
+  - System status tab now loads correctly without "Error loading system information"
+  - File: `university_system/modules/shared/gui/main_gui.py`
+
+- **CRITICAL FIX**: Added missing UPLOAD_DIR constant to paths module
+  - Configuration tab was referencing undefined `paths.UPLOAD_DIR` attribute
+  - Added `UPLOAD_DIR: Path = DATA_DIR / "uploads"` at line 80
+  - Added to `ensure_directories()` function for automatic directory creation
+  - Added to `__all__` export list for proper module interface
+  - Fixes AttributeError: "module 'paths' has no attribute 'UPLOAD_DIR'"
+  - Configuration tab now displays file paths correctly
+  - File: `university_system/modules/shared/constants/paths.py`
+
+- **MAJOR FIX**: Enhanced user management table display with robust error handling
+  - Fixed potential sqlite3.Row display issues in user management table
+  - Removed duplicate incomplete `show_user_management()` method at line 2197
+  - Enhanced `refresh_user_list()` with defensive programming:
+    - Explicit None check for permission denied scenarios
+    - Empty list check with informative message
+    - Automatic conversion of sqlite3.Row to dict if needed
+    - Safe field extraction with defaults for missing data
+    - Per-row error handling prevents one bad record from breaking entire list
+    - Detailed error logging with full traceback for debugging
+  - User management table now displays all users correctly
+  - File: `university_system/modules/shared/gui/main_gui.py`
+
 ## [5.0.30] - 2025-11-15
 
 ### Bug Fixes

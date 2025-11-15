@@ -76,6 +76,9 @@ ANALYTICS_REPORTS_DIR: Path = ANALYTICS_DIR / "reports"
 # Submissions directory - for assignment submissions
 SUBMISSIONS_DIR: Path = DATA_DIR / "submissions"
 
+# Uploads directory - for general file uploads
+UPLOAD_DIR: Path = DATA_DIR / "uploads"
+
 # Templates directory - unified location at project root
 TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
 ASSIGNMENT_TEMPLATES_DIR: Path = TEMPLATES_DIR / "assignments"
@@ -115,6 +118,7 @@ def ensure_directories() -> None:
     _ensure(ANALYTICS_PLOTS_DIR)
     _ensure(ANALYTICS_REPORTS_DIR)
     _ensure(SUBMISSIONS_DIR)
+    _ensure(UPLOAD_DIR)
     _ensure(TEMPLATES_DIR)
     _ensure(ASSIGNMENT_TEMPLATES_DIR)
     _ensure(BACKUP_TEMPLATES_DIR)
@@ -148,6 +152,7 @@ __all__ = [
     "ANALYTICS_PLOTS_DIR",
     "ANALYTICS_REPORTS_DIR",
     "SUBMISSIONS_DIR",
+    "UPLOAD_DIR",
     "TEMPLATES_DIR",
     "ASSIGNMENT_TEMPLATES_DIR",
     "BACKUP_TEMPLATES_DIR",

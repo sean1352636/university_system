@@ -2194,17 +2194,6 @@ Your available features depend on your user role and permissions.
         # Load student data
         self.view_students_in_window(tree)
     
-    def show_user_management(self):
-        """Show user management interface"""
-        if not self.auth.current_user or 'manage_users' not in self.auth.current_user.get('permissions', []):
-            messagebox.showerror("Error", "You don't have permission to access User Management")
-            return
-        
-        self.clear_content()
-        
-        ttk.Label(self.content_frame, text="User Management", 
-                 font=('Arial', 14, 'bold')).grid(row=0, column=0, pady=(0, 20))
-        
     # 1. Student Treeview Management
     def create_student_treeview(self, parent):
         """Create treeview widget for displaying student data"""
@@ -2380,28 +2369,57 @@ Your available features depend on your user role and permissions.
         """Refresh the user list"""
         if not hasattr(self, 'user_tree'):
             return
-        
+
         # Clear existing items
         for item in self.user_tree.get_children():
             self.user_tree.delete(item)
-        
+
         # Load users
         try:
             users = self.auth.list_users()
-            if users:
-                for user in users:
-                    full_name = f"{user['first_name']} {user['last_name']}"
+            if users is None:
+                self.user_tree.insert('', tk.END, values=('Error', 'No permission or failed to load users', '', '', ''))
+                return
+
+            if not users:
+                self.user_tree.insert('', tk.END, values=('Info', 'No users found', '', '', ''))
+                return
+
+            for user in users:
+                try:
+                    # Ensure user is a dict (convert from sqlite3.Row if needed)
+                    if not isinstance(user, dict):
+                        user = dict(user)
+
+                    # Safely extract fields with defaults
+                    user_id = str(user.get('id', ''))
+                    username = str(user.get('username', ''))
+                    first_name = str(user.get('first_name', ''))
+                    last_name = str(user.get('last_name', ''))
+                    full_name = f"{first_name} {last_name}".strip() or 'N/A'
+                    role = str(user.get('role', 'Unknown'))
                     status = "Active" if user.get('is_active', True) else "Inactive"
-                    
+
                     self.user_tree.insert('', tk.END, values=(
-                        user['id'], 
-                        user['username'], 
-                        full_name, 
-                        user['role'], 
+                        user_id,
+                        username,
+                        full_name,
+                        role,
                         status
                     ))
+                except Exception as row_error:
+                    # Insert error row for this specific user
+                    self.user_tree.insert('', tk.END, values=(
+                        'Error',
+                        f'Failed to display user: {str(row_error)[:50]}',
+                        '', '', ''
+                    ))
         except Exception as e:
-            self.user_tree.insert('', tk.END, values=('Error', f'Failed to load: {e}', '', '', ''))
+            import traceback
+            error_msg = f'Failed to load: {str(e)}'
+            self.user_tree.insert('', tk.END, values=('Error', error_msg, '', '', ''))
+            print(f"User list error: {e}")
+            print(traceback.format_exc())
     
     def show_create_user(self):
         """Show create user dialog"""
@@ -7126,7 +7144,8 @@ Users by Role:
             from university_system.infrastructure.database.db import get_connection
             with get_connection() as conn:
                 cursor = conn.execute("SELECT COUNT(*) FROM activity_log")
-                log_count = cursor.fetchone()[0] if cursor.fetchone() else 0
+                result = cursor.fetchone()
+                log_count = result[0] if result else 0
 
             status_info = f"""System Status Report
 {'='*50}
