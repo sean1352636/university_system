@@ -5,6 +5,54 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.10] - 2025-11-15
+
+### Changed - Student Union GUI Refactoring
+
+**Architectural Improvement**
+
+Refactored Student Union GUI tab rendering methods to follow the same pattern as `show_dashboard_tab`, improving code modularity and flexibility.
+
+**Changes Made:**
+
+1. **Created new `_render_*_tab` methods:**
+   - `_render_clubs_tab(parent_frame)` - Extracted from `show_clubs_tab`
+   - `_render_events_tab(parent_frame)` - Extracted from `show_events_tab`
+   - `_render_facilities_tab(parent_frame)` - Extracted from `show_facilities_tab`
+   - `_render_admin_tab(parent_frame)` - Extracted from `show_admin_tab`
+
+2. **Updated legacy `show_*_tab` methods:**
+   - Now act as wrapper methods for backwards compatibility
+   - Check if `self.notebook` exists before creating tabs
+   - Fall back to content display methods when notebook is not available
+   - Delegate rendering to new `_render_*_tab` methods
+
+**Benefits:**
+- Improved code reusability - rendering logic can be used with any parent frame
+- Better separation of concerns - tab creation vs content rendering
+- Enhanced flexibility - content can be rendered in different contexts
+- Consistent pattern across all tab methods
+- Maintains backwards compatibility with existing code
+
+**Pattern:**
+```python
+def _render_X_tab(self, parent_frame):
+    """Render X content in the provided parent frame"""
+    # All rendering logic here, using parent_frame instead of self.notebook
+
+def show_X_tab(self):
+    """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+    if hasattr(self, 'notebook') and self.notebook:
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text="X")
+        self._render_X_tab(frame)
+    else:
+        self.show_X_content()
+```
+
+**Files:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py`
+
 ## [5.0.9] - 2025-11-14
 
 ### Fixed - Default Account Login Roles

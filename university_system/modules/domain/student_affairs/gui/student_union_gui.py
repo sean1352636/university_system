@@ -285,22 +285,212 @@ class StudentUnionGUI:
         self.root.protocol("WM_DELETE_WINDOW", on_closing)
     
     def setup_gui(self):
-        """Setup the main GUI structure"""
+        """Setup the main GUI structure with sidebar navigation"""
         # Configure style
         style = ttk.Style()
         style.theme_use('clam')
-        
-        # Create menu bar
+
+        # Configure colors for sidebar
+        style.configure('Sidebar.TFrame', background='#2c3e50')
+        style.configure('SidebarButton.TButton', padding=10, font=('Arial', 10))
+        style.configure('SidebarHeader.TLabel', background='#34495e', foreground='white',
+                       font=('Arial', 11, 'bold'), padding=10)
+
+        # Minimal menu bar (just File menu for Exit)
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
-        
-        # Main container
-        self.main_frame = ttk.Frame(self.root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        # Status bar - FIXED: Use consistent naming
+        file_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Exit", command=self.root.quit)
+
+        # Main container - horizontal split
+        main_container = ttk.Frame(self.root)
+        main_container.pack(fill=tk.BOTH, expand=True)
+
+        # Left sidebar with scrollbar
+        sidebar_container = ttk.Frame(main_container, style='Sidebar.TFrame')
+        sidebar_container.pack(side=tk.LEFT, fill=tk.Y, padx=0, pady=0)
+
+        # Canvas for scrollable sidebar
+        self.sidebar_canvas = tk.Canvas(sidebar_container, width=280, bg='#2c3e50',
+                                        highlightthickness=0)
+        self.sidebar_scrollbar = ttk.Scrollbar(sidebar_container, orient="vertical",
+                                               command=self.sidebar_canvas.yview)
+        self.scrollable_sidebar = ttk.Frame(self.sidebar_canvas, style='Sidebar.TFrame')
+
+        self.scrollable_sidebar.bind(
+            "<Configure>",
+            lambda e: self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
+        )
+
+        self.sidebar_canvas.create_window((0, 0), window=self.scrollable_sidebar, anchor="nw")
+        self.sidebar_canvas.configure(yscrollcommand=self.sidebar_scrollbar.set)
+
+        self.sidebar_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.sidebar_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Enable mouse wheel scrolling
+        self.sidebar_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
+        # Right content area
+        content_container = ttk.Frame(main_container)
+        content_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Main frame (for content)
+        self.main_frame = content_container
+
+        # Status bar
         self.status_label = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
         self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Build sidebar navigation
+        self.build_sidebar_navigation()
+
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling on sidebar"""
+        self.sidebar_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def add_sidebar_header(self, text, icon=""):
+        """Add a category header to sidebar"""
+        header_text = f"{icon} {text}" if icon else text
+        header = tk.Label(self.scrollable_sidebar, text=header_text,
+                         bg='#34495e', fg='white', font=('Arial', 11, 'bold'),
+                         anchor='w', padx=15, pady=8)
+        header.pack(fill=tk.X, pady=(10, 0))
+
+    def add_sidebar_button(self, text, command, icon="", admin_only=False, staff_only=False):
+        """Add a button to sidebar with role-based filtering"""
+        # Check role permissions
+        if admin_only and not self.is_admin():
+            return
+        if staff_only and not (self.is_admin() or self.is_staff()):
+            return
+
+        button_text = f"{icon} {text}" if icon else text
+        btn = tk.Button(self.scrollable_sidebar, text=button_text,
+                       command=command, bg='#34495e', fg='white',
+                       activebackground='#1abc9c', activeforeground='white',
+                       font=('Arial', 10), bd=0, padx=20, pady=12,
+                       anchor='w', cursor='hand2')
+        btn.pack(fill=tk.X, padx=5, pady=2)
+
+        # Hover effects
+        btn.bind('<Enter>', lambda e: btn.config(bg='#1abc9c'))
+        btn.bind('<Leave>', lambda e: btn.config(bg='#34495e'))
+
+    def add_sidebar_separator(self):
+        """Add a visual separator in sidebar"""
+        sep = ttk.Separator(self.scrollable_sidebar, orient='horizontal')
+        sep.pack(fill=tk.X, padx=10, pady=5)
+
+    def build_sidebar_navigation(self):
+        """Build the complete sidebar navigation with all features"""
+        # Dashboard Section
+        self.add_sidebar_header("📊 Main", "")
+        self.add_sidebar_button("Dashboard", self.show_dashboard_content, "🏠")
+        self.add_sidebar_button("My Profile", self.show_profile, "👤")
+
+        # Core Features
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🎓 Core Features", "")
+        self.add_sidebar_button("Clubs", self.show_clubs_content, "👥")
+        self.add_sidebar_button("Events", self.show_events_content, "📅")
+        self.add_sidebar_button("Facilities", self.show_facilities_content, "🏢")
+
+        # Elections & Voting
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🗳️ Elections & Voting", "")
+        self.add_sidebar_button("Elections & Voting", self.open_elections_dialog, "🗳️")
+        self.add_sidebar_button("Candidate Profiles", self.open_candidate_profiles_dialog, "👤")
+        self.add_sidebar_button("Ranked Choice Voting", self.open_ranked_choice_voting_dialog, "🥇")
+        self.add_sidebar_button("Election Accessibility", self.open_election_accessibility_dialog, "♿")
+        self.add_sidebar_button("Setup Election", self.open_setup_election_dialog, "⚙️", admin_only=True)
+        self.add_sidebar_button("Campaign Expenses", self.open_campaign_expenses_dialog, "💰", staff_only=True)
+        self.add_sidebar_button("Campaign Compliance", self.open_campaign_compliance_dialog, "⚖️", staff_only=True)
+        self.add_sidebar_button("Election Security", self.open_election_security_dialog, "🔒", staff_only=True)
+        self.add_sidebar_button("Vote Integrity Check", self.open_vote_integrity_dialog, "✅", staff_only=True)
+        self.add_sidebar_button("Manage Enhanced Voting", self.open_manage_enhanced_voting_dialog, "🔧", admin_only=True)
+        self.add_sidebar_button("Configure Voting Methods", self.open_configure_voting_methods_dialog, "⚙️", admin_only=True)
+
+        # Community & Engagement
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🤝 Community & Engagement", "")
+        self.add_sidebar_button("Community Engagement", self.open_community_engagement_dialog, "🤝")
+        self.add_sidebar_button("Volunteer Opportunities", self.open_volunteer_opportunities_dialog, "🌱")
+        self.add_sidebar_button("Community Service Hours", self.open_community_service_hours_dialog, "📋")
+        self.add_sidebar_button("Inter-Club Competitions", self.open_interclub_competitions_dialog, "🏆")
+        self.add_sidebar_button("Engagement Trends", self.open_engagement_trends_dialog, "📊", staff_only=True)
+        self.add_sidebar_button("Retention Insights", self.open_retention_insights_dialog, "📈", staff_only=True)
+
+        # Events & Activities
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🎉 Advanced Events", "")
+        self.add_sidebar_button("Event Ticketing", self.open_event_ticketing_dialog, "🎫")
+        self.add_sidebar_button("Recurring Events", self.open_recurring_events_dialog, "🔄")
+        self.add_sidebar_button("Event Attendance", self.open_event_attendance_dialog, "📊")
+        self.add_sidebar_button("Virtual Events", self.open_virtual_events_dialog, "💻")
+        self.add_sidebar_button("Knowledge Sharing", self.open_knowledge_sharing_dialog, "🎓")
+        self.add_sidebar_button("Event Financial Tracking", self.open_event_financial_tracking_dialog, "💰", staff_only=True)
+
+        # Facilities & Equipment
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🏢 Facilities & Equipment", "")
+        self.add_sidebar_button("Browse Equipment", self.open_browse_available_equipment_dialog, "📋")
+        self.add_sidebar_button("Search Equipment", self.open_search_equipment_dialog, "🔍")
+        self.add_sidebar_button("Equipment Details", self.open_view_equipment_details_dialog, "ℹ️")
+        self.add_sidebar_button("Check Out Equipment", self.open_checkout_equipment_dialog, "📤")
+        self.add_sidebar_button("Return Equipment", self.open_return_equipment_dialog, "📥")
+        self.add_sidebar_button("My Equipment Checkouts", self.open_my_equipment_checkouts_dialog, "📜")
+        self.add_sidebar_button("Equipment System Hub", self.open_manage_equipment_system_dialog, "🏠", admin_only=True)
+        self.add_sidebar_button("Add Equipment", self.open_add_new_equipment_dialog, "➕", admin_only=True)
+        self.add_sidebar_button("Update Equipment Status", self.open_update_equipment_status_dialog, "🔧", admin_only=True)
+        self.add_sidebar_button("Maintenance Tracking", self.open_equipment_maintenance_tracking_dialog, "🛠️", admin_only=True)
+        self.add_sidebar_button("Equipment Reports", self.open_generate_equipment_reports_dialog, "📊", admin_only=True)
+        self.add_sidebar_button("Approve Facility Bookings", self.open_approve_facility_bookings_dialog, "✅", admin_only=True)
+
+        # Support & Wellness
+        self.add_sidebar_separator()
+        self.add_sidebar_header("💚 Support & Wellness", "")
+        self.add_sidebar_button("Peer Support & Wellness", self.open_peer_support_wellness_dialog, "🤝")
+        self.add_sidebar_button("Academic Support", self.open_academic_support_dialog, "🎓")
+
+        # Sustainability
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🌱 Sustainability", "")
+        self.add_sidebar_button("Green Initiatives", self.open_green_initiatives_dialog, "🌱")
+
+        # Integrations
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🔗 Integrations", "")
+        self.add_sidebar_button("Finance System", lambda: self.open_finance_gui_for_club_payment("General Payment", 0), "💳")
+        self.add_sidebar_button("Club Payments", lambda: self.open_finance_gui_for_club_payment("Club Fee", 25, "Club Membership"), "💰")
+        self.add_sidebar_button("University Shop", lambda: self.open_shop_for_club_merchandise("General"), "🛍️")
+        self.add_sidebar_button("Club Merchandise", self.show_club_selection_for_merchandise, "👕")
+        self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
+        self.add_sidebar_button("Club Dining Booking", self.show_club_selection_for_dining, "🍴")
+        self.add_sidebar_button("Student Union Calendar", self.open_calendar_with_club_events, "📅")
+        self.add_sidebar_button("Trip Management", self.show_club_selection_for_trips, "🧳")
+
+        # Advanced Features
+        self.add_sidebar_separator()
+        self.add_sidebar_header("🚀 Advanced Features", "")
+        self.add_sidebar_button("Advanced Analytics", self.open_advanced_analytics_dialog, "📊", staff_only=True)
+        self.add_sidebar_button("Live Streaming", self.open_live_streaming_dialog, "📡", staff_only=True)
+        self.add_sidebar_button("Academic Conferences", self.open_academic_conferences_dialog, "🎓", staff_only=True)
+
+        # Administration
+        if self.is_admin() or self.is_staff():
+            self.add_sidebar_separator()
+            self.add_sidebar_header("⚙️ Administration", "")
+            self.add_sidebar_button("Admin Panel", self.show_admin_content, "🔧", staff_only=True)
+            self.add_sidebar_button("Database Info", self.show_database_info, "💾", staff_only=True)
+
+        # Help & About
+        self.add_sidebar_separator()
+        self.add_sidebar_header("❓ Help", "")
+        self.add_sidebar_button("About", self.show_about, "ℹ️")
+        if CLI_AVAILABLE:
+            self.add_sidebar_button("Switch to CLI", self.switch_to_cli, "💻")
     
     def clear_content(self):
         """Clear the current content frame"""
@@ -349,45 +539,72 @@ class StudentUnionGUI:
         if not CLI_AVAILABLE:
             messagebox.showerror("Error", "CLI mode is not available")
             return
-        
-        response = messagebox.askyesno("Switch to CLI", 
+
+        response = messagebox.askyesno("Switch to CLI",
                                      "Switch to command-line interface mode?\nThe GUI will close.")
         if response:
             self.root.destroy()
             # Launch CLI mode
             try:
-                from part2 import main
+                from university_system.cli_main import main
                 main()
-            except ImportError:
-                print("Error: Cannot import CLI system")
+            except ImportError as e:
+                print(f"Error: Cannot import CLI system - {e}")
+                messagebox.showerror("Error", f"Cannot import CLI system: {e}")
     
     def show_main_dashboard(self):
-        """Display the main dashboard"""
+        """Display the main dashboard with sidebar navigation"""
+        # Simply show the dashboard content (sidebar is already built)
+        self.show_dashboard_content()
+
+    def show_dashboard_content(self):
+        """Display dashboard in main content area"""
         self.clear_content()
-        self.setup_main_menu()
+        dashboard_frame = ttk.Frame(self.content_frame)
+        dashboard_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Add return to main menu button at the top
-        return_btn = ttk.Button(
-            self.root,
-            text="🏠 Return to Main Menu",
-            command=self.return_to_main_menu
-        )
-        return_btn.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+        # Create and display dashboard content without notebook
+        self._render_dashboard_tab(dashboard_frame)
 
-        # Create notebook for main content
-        self.notebook = ttk.Notebook(self.content_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Dashboard tab
-        self.show_dashboard_tab()
-        
-        # Other tabs
-        self.show_clubs_tab()
-        self.show_events_tab()
-        self.show_facilities_tab()
-        
-        if self.current_user['role'] in ['admin', 'staff']:
-            self.show_admin_tab()
+    def show_clubs_content(self):
+        """Display clubs in main content area"""
+        self.clear_content()
+        clubs_frame = ttk.Frame(self.content_frame)
+        clubs_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create and display clubs content without notebook
+        self._render_clubs_tab(clubs_frame)
+
+    def show_events_content(self):
+        """Display events in main content area"""
+        self.clear_content()
+        events_frame = ttk.Frame(self.content_frame)
+        events_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create and display events content without notebook
+        self._render_events_tab(events_frame)
+
+    def show_facilities_content(self):
+        """Display facilities in main content area"""
+        self.clear_content()
+        facilities_frame = ttk.Frame(self.content_frame)
+        facilities_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create and display facilities content without notebook
+        self._render_facilities_tab(facilities_frame)
+
+    def show_admin_content(self):
+        """Display admin panel in main content area"""
+        if not (self.is_admin() or self.is_staff()):
+            messagebox.showerror("Access Denied", "Admin or staff access required")
+            return
+
+        self.clear_content()
+        admin_frame = ttk.Frame(self.content_frame)
+        admin_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create and display admin content without notebook
+        self._render_admin_tab(admin_frame)
     
     def setup_main_menu(self):
         """Setup the main menu bar with role-based filtering"""
@@ -600,144 +817,155 @@ class StudentUnionGUI:
         )
         self.main_menu_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
     
-    def show_dashboard_tab(self):
-        """Create and display the dashboard tab"""
-        dashboard_frame = ttk.Frame(self.notebook)
-        self.notebook.add(dashboard_frame, text="Dashboard")
-        
+    def _render_dashboard_tab(self, parent_frame):
+        """Render dashboard content in the provided parent frame"""
         # Welcome section
-        welcome_frame = ttk.LabelFrame(dashboard_frame, text="Welcome")
+        welcome_frame = ttk.LabelFrame(parent_frame, text="Welcome")
         welcome_frame.pack(fill=tk.X, padx=10, pady=5)
-        
+
         welcome_text = f"Welcome back, {self.current_user['username']}!"
         ttk.Label(welcome_frame, text=welcome_text, font=('Arial', 12)).pack(pady=10)
-        
+
         # Quick stats
-        stats_frame = ttk.LabelFrame(dashboard_frame, text="Quick Statistics")
+        stats_frame = ttk.LabelFrame(parent_frame, text="Quick Statistics")
         stats_frame.pack(fill=tk.X, padx=10, pady=5)
-        
+
         stats_content = ttk.Frame(stats_frame)
         stats_content.pack(fill=tk.X, padx=10, pady=10)
-        
+
         # Get statistics from database
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Get various counts
             cursor.execute('SELECT COUNT(*) FROM student_clubs WHERE status = "active"')
             active_clubs = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM union_events WHERE status = "upcoming"')
             upcoming_events = cursor.fetchone()[0]
-            
+
             cursor.execute('SELECT COUNT(*) FROM students')
             total_students = cursor.fetchone()[0]
-            
+
             # Display stats in a grid
             ttk.Label(stats_content, text="Active Clubs:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, padx=10)
             ttk.Label(stats_content, text=str(active_clubs)).grid(row=0, column=1, sticky=tk.W)
-            
+
             ttk.Label(stats_content, text="Upcoming Events:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, padx=10)
             ttk.Label(stats_content, text=str(upcoming_events)).grid(row=1, column=1, sticky=tk.W)
-            
+
             ttk.Label(stats_content, text="Total Students:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, padx=10)
             ttk.Label(stats_content, text=str(total_students)).grid(row=2, column=1, sticky=tk.W)
-            
+
             conn.close()
-            
+
         except sqlite3.Error as e:
             ttk.Label(stats_content, text=f"Error loading statistics: {e}").pack()
-        
+
         # Quick actions
-        actions_frame = ttk.LabelFrame(dashboard_frame, text="Quick Actions")
+        actions_frame = ttk.LabelFrame(parent_frame, text="Quick Actions")
         actions_frame.pack(fill=tk.X, padx=10, pady=5)
-        
+
         actions_content = ttk.Frame(actions_frame)
         actions_content.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Button(actions_content, text="View My Clubs", 
-                  command=lambda: self.notebook.select(1)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_content, text="Browse Events", 
-                  command=lambda: self.notebook.select(2)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_content, text="Book Facility", 
-                  command=lambda: self.notebook.select(3)).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(actions_content, text="View My Clubs",
+                  command=self.show_clubs_content).pack(side=tk.LEFT, padx=5)
+        ttk.Button(actions_content, text="Browse Events",
+                  command=self.show_events_content).pack(side=tk.LEFT, padx=5)
+        ttk.Button(actions_content, text="Book Facility",
+                  command=self.show_facilities_content).pack(side=tk.LEFT, padx=5)
+
+    def show_dashboard_tab(self):
+        """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+        if hasattr(self, 'notebook') and self.notebook:
+            dashboard_frame = ttk.Frame(self.notebook)
+            self.notebook.add(dashboard_frame, text="Dashboard")
+            self._render_dashboard_tab(dashboard_frame)
+        else:
+            # Fall back to content display
+            self.show_dashboard_content()
     
-    def show_clubs_tab(self):
-        """Create and display the clubs tab"""
-        clubs_frame = ttk.Frame(self.notebook)
-        self.notebook.add(clubs_frame, text="Clubs")
-        
+    def _render_clubs_tab(self, parent_frame):
+        """Render clubs content in the provided parent frame"""
         # Create paned window for clubs
-        clubs_paned = ttk.PanedWindow(clubs_frame, orient=tk.HORIZONTAL)
+        clubs_paned = ttk.PanedWindow(parent_frame, orient=tk.HORIZONTAL)
         clubs_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
+
         # Left panel - Club list
         left_panel = ttk.Frame(clubs_paned)
         clubs_paned.add(left_panel, weight=1)
-        
+
         ttk.Label(left_panel, text="Student Clubs", font=('Arial', 12, 'bold')).pack(pady=5)
-        
+
         # Club list with scrollbar
         list_frame = ttk.Frame(left_panel)
         list_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         self.clubs_listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set)
         self.clubs_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.clubs_listbox.yview)
-        
+
         # Bind selection event
         self.clubs_listbox.bind('<<ListboxSelect>>', self.on_club_select)
-        
+
         # Club action buttons
         club_buttons_frame = ttk.Frame(left_panel)
         club_buttons_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Button(club_buttons_frame, text="Refresh", 
+
+        ttk.Button(club_buttons_frame, text="Refresh",
                   command=self.refresh_clubs_list).pack(side=tk.LEFT, padx=2)
-        ttk.Button(club_buttons_frame, text="Join Club", 
+        ttk.Button(club_buttons_frame, text="Join Club",
                   command=self.join_selected_club).pack(side=tk.LEFT, padx=2)
-        ttk.Button(club_buttons_frame, text="Create Club", 
+        ttk.Button(club_buttons_frame, text="Create Club",
                   command=self.create_club_dialog).pack(side=tk.LEFT, padx=2)
-        
+
         # Right panel - Club details
         right_panel = ttk.Frame(clubs_paned)
         clubs_paned.add(right_panel, weight=2)
-        
+
         ttk.Label(right_panel, text="Club Details", font=('Arial', 12, 'bold')).pack(pady=5)
-        
+
         # Club details text area
         self.club_details_text = scrolledtext.ScrolledText(right_panel, height=20, width=50)
         self.club_details_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
+
         # Load clubs initially
         self.refresh_clubs_list()
+
+    def show_clubs_tab(self):
+        """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+        if hasattr(self, 'notebook') and self.notebook:
+            clubs_frame = ttk.Frame(self.notebook)
+            self.notebook.add(clubs_frame, text="Clubs")
+            self._render_clubs_tab(clubs_frame)
+        else:
+            # Fall back to content display
+            self.show_clubs_content()
     
-    def show_events_tab(self):
-        """Create and display the events tab"""
-        events_frame = ttk.Frame(self.notebook)
-        self.notebook.add(events_frame, text="Events")
-        
+    def _render_events_tab(self, parent_frame):
+        """Render events content in the provided parent frame"""
         # Events control panel
-        control_frame = ttk.Frame(events_frame)
+        control_frame = ttk.Frame(parent_frame)
         control_frame.pack(fill=tk.X, padx=10, pady=5)
-        
+
         ttk.Label(control_frame, text="Events & Activities", font=('Arial', 12, 'bold')).pack(side=tk.LEFT)
-        
-        ttk.Button(control_frame, text="Refresh", 
+
+        ttk.Button(control_frame, text="Refresh",
                   command=self.refresh_events_list).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(control_frame, text="Create Event", 
+        ttk.Button(control_frame, text="Create Event",
                   command=self.create_event_dialog).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(control_frame, text="My Events", 
+        ttk.Button(control_frame, text="My Events",
                   command=self.show_my_events).pack(side=tk.RIGHT, padx=2)
-        
+
         # Events treeview
         columns = ('ID', 'Name', 'Date', 'Time', 'Location', 'Organizer', 'Attendees', 'Status')
-        self.events_tree = ttk.Treeview(events_frame, columns=columns, show='headings', height=15)
-        
+        self.events_tree = ttk.Treeview(parent_frame, columns=columns, show='headings', height=15)
+
         # Configure columns
         for col in columns:
             self.events_tree.heading(col, text=col)
@@ -747,126 +975,150 @@ class StudentUnionGUI:
                 self.events_tree.column(col, width=200)
             else:
                 self.events_tree.column(col, width=100)
-        
+
         # Add scrollbars
-        events_scrollbar_v = ttk.Scrollbar(events_frame, orient=tk.VERTICAL, command=self.events_tree.yview)
-        events_scrollbar_h = ttk.Scrollbar(events_frame, orient=tk.HORIZONTAL, command=self.events_tree.xview)
+        events_scrollbar_v = ttk.Scrollbar(parent_frame, orient=tk.VERTICAL, command=self.events_tree.yview)
+        events_scrollbar_h = ttk.Scrollbar(parent_frame, orient=tk.HORIZONTAL, command=self.events_tree.xview)
         self.events_tree.configure(yscrollcommand=events_scrollbar_v.set, xscrollcommand=events_scrollbar_h.set)
-        
+
         # Pack treeview and scrollbars
         self.events_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10,0), pady=5)
         events_scrollbar_v.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
         events_scrollbar_h.pack(side=tk.BOTTOM, fill=tk.X, padx=10)
-        
+
         # Event action buttons
-        event_actions_frame = ttk.Frame(events_frame)
+        event_actions_frame = ttk.Frame(parent_frame)
         event_actions_frame.pack(fill=tk.X, padx=10, pady=5)
-        
-        ttk.Button(event_actions_frame, text="Register for Event", 
+
+        ttk.Button(event_actions_frame, text="Register for Event",
                   command=self.register_for_selected_event).pack(side=tk.LEFT, padx=5)
-        ttk.Button(event_actions_frame, text="View Details", 
+        ttk.Button(event_actions_frame, text="View Details",
                   command=self.view_event_details).pack(side=tk.LEFT, padx=5)
-        
+
         # Load events initially
         self.refresh_events_list()
+
+    def show_events_tab(self):
+        """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+        if hasattr(self, 'notebook') and self.notebook:
+            events_frame = ttk.Frame(self.notebook)
+            self.notebook.add(events_frame, text="Events")
+            self._render_events_tab(events_frame)
+        else:
+            # Fall back to content display
+            self.show_events_content()
     
-    def show_facilities_tab(self):
-        """Create and display the facilities tab"""
-        facilities_frame = ttk.Frame(self.notebook)
-        self.notebook.add(facilities_frame, text="Facilities")
-        
+    def _render_facilities_tab(self, parent_frame):
+        """Render facilities content in the provided parent frame"""
         # Facilities content
-        ttk.Label(facilities_frame, text="Facility Booking System", 
+        ttk.Label(parent_frame, text="Facility Booking System",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Booking form
-        booking_frame = ttk.LabelFrame(facilities_frame, text="Book a Facility")
+        booking_frame = ttk.LabelFrame(parent_frame, text="Book a Facility")
         booking_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         form_frame = ttk.Frame(booking_frame)
         form_frame.pack(padx=20, pady=20)
-        
+
         # Facility selection
         ttk.Label(form_frame, text="Facility:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.facility_combo = ttk.Combobox(form_frame, width=30)
         self.facility_combo.grid(row=0, column=1, padx=10, pady=5)
-        
+
         # Date selection
         ttk.Label(form_frame, text="Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.booking_date_entry = ttk.Entry(form_frame, width=32)
         self.booking_date_entry.grid(row=1, column=1, padx=10, pady=5)
-        
+
         # Time selection
         ttk.Label(form_frame, text="Start Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.start_time_entry = ttk.Entry(form_frame, width=32)
         self.start_time_entry.grid(row=2, column=1, padx=10, pady=5)
-        
+
         ttk.Label(form_frame, text="End Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.end_time_entry = ttk.Entry(form_frame, width=32)
         self.end_time_entry.grid(row=3, column=1, padx=10, pady=5)
-        
+
         # Purpose
         ttk.Label(form_frame, text="Purpose:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.purpose_entry = ttk.Entry(form_frame, width=32)
         self.purpose_entry.grid(row=4, column=1, padx=10, pady=5)
-        
+
         # Submit button
-        ttk.Button(form_frame, text="Submit Booking Request", 
+        ttk.Button(form_frame, text="Submit Booking Request",
                   command=self.submit_booking_request).grid(row=5, column=1, pady=20)
-        
+
         # Load facilities
         self.load_facilities()
-        
+
         # My bookings section
-        bookings_frame = ttk.LabelFrame(facilities_frame, text="My Bookings")
+        bookings_frame = ttk.LabelFrame(parent_frame, text="My Bookings")
         bookings_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Bookings treeview
         booking_columns = ('ID', 'Facility', 'Date', 'Time', 'Status', 'Purpose')
         self.bookings_tree = ttk.Treeview(bookings_frame, columns=booking_columns, show='headings', height=8)
-        
+
         for col in booking_columns:
             self.bookings_tree.heading(col, text=col)
             self.bookings_tree.column(col, width=100)
-        
+
         bookings_scrollbar = ttk.Scrollbar(bookings_frame, orient=tk.VERTICAL, command=self.bookings_tree.yview)
         self.bookings_tree.configure(yscrollcommand=bookings_scrollbar.set)
-        
+
         self.bookings_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         bookings_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
-        
+
         # Load my bookings
         self.refresh_my_bookings()
+
+    def show_facilities_tab(self):
+        """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+        if hasattr(self, 'notebook') and self.notebook:
+            facilities_frame = ttk.Frame(self.notebook)
+            self.notebook.add(facilities_frame, text="Facilities")
+            self._render_facilities_tab(facilities_frame)
+        else:
+            # Fall back to content display
+            self.show_facilities_content()
     
-    def show_admin_tab(self):
-        """Create and display the admin tab (for admin users only)"""
-        admin_frame = ttk.Frame(self.notebook)
-        self.notebook.add(admin_frame, text="Administration")
-        
-        ttk.Label(admin_frame, text="System Administration", 
+    def _render_admin_tab(self, parent_frame):
+        """Render admin content in the provided parent frame"""
+        ttk.Label(parent_frame, text="System Administration",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Admin sections
-        admin_notebook = ttk.Notebook(admin_frame)
+        admin_notebook = ttk.Notebook(parent_frame)
         admin_notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
+
         # User Management
         users_frame = ttk.Frame(admin_notebook)
         admin_notebook.add(users_frame, text="Users")
-        
+
         self.setup_users_management(users_frame)
-        
+
         # Club Management
         club_admin_frame = ttk.Frame(admin_notebook)
         admin_notebook.add(club_admin_frame, text="Club Admin")
-        
+
         self.setup_club_administration(club_admin_frame)
-        
+
         # System Info
         system_frame = ttk.Frame(admin_notebook)
         admin_notebook.add(system_frame, text="System")
-        
+
         self.setup_system_info(system_frame)
+
+    def show_admin_tab(self):
+        """Legacy method for backwards compatibility - creates tab in notebook if exists"""
+        if hasattr(self, 'notebook') and self.notebook:
+            admin_frame = ttk.Frame(self.notebook)
+            self.notebook.add(admin_frame, text="Administration")
+            self._render_admin_tab(admin_frame)
+        else:
+            # Fall back to content display
+            self.show_admin_content()
     
     def setup_users_management(self, parent):
         """Setup user management interface"""
