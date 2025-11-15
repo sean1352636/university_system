@@ -67,16 +67,25 @@ class StudentUnionGUI:
         # Get authenticated user from UserAuth singleton
         auth = UserAuth()
         if not auth.current_user:
-            messagebox.showerror(
-                "Authentication Required",
-                "Please log in through the main University System GUI.\n\n"
-                "Run: python run.py --gui\n\n"
-                "Student Union can only be accessed after logging in through the main system."
-            )
-            # Destroy the window and mark as not initialized
-            self.root.destroy()
-            self.initialized = False
-            return
+            # If no user is authenticated and this is standalone mode (no parent)
+            if not parent:
+                messagebox.showerror(
+                    "Authentication Required",
+                    "Please log in through the main University System GUI.\n\n"
+                    "Run: python run.py --gui\n\n"
+                    "Student Union can only be accessed after logging in through the main system."
+                )
+                # Destroy the window and mark as not initialized
+                self.root.destroy()
+                self.initialized = False
+                return
+            else:
+                # In embedded mode (has parent), don't destroy window yet
+                # The parent will set authentication after initialization
+                # Mark as not fully initialized yet
+                self.initialized = False
+                # Don't setup GUI yet - wait for parent to set auth
+                return
 
         # User is authenticated, get their info
         self.current_user = {

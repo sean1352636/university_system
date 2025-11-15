@@ -5,6 +5,80 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.16] - 2025-11-15
+
+### Fixed - Student Union GUI Authentication and Window Handling
+
+**Critical Bug Fix**
+
+Fixed two critical errors that prevented Student Union GUI from opening from the main GUI:
+1. "bad window path name '.!toplevel'" error
+2. "You must be logged in to access the Student Union Portal" authentication failure
+
+**Root Cause:**
+
+When Student Union GUI was opened via `StudentUnionManagementGUI` from the main GUI, there was a conflict in the authentication initialization flow:
+
+1. `StudentUnionManagementGUI.open_student_union_portal_gui()` checks authentication (passes)
+2. Creates a Toplevel window and passes it to `StudentUnionGUI(parent=union_window)`
+3. `StudentUnionGUI.__init__` creates a new `UserAuth()` instance which doesn't have `current_user` set
+4. Destroys the window due to failed auth check
+5. Control returns to `StudentUnionManagementGUI` which tries to configure the destroyed window
+6. Results in "bad window path name" error
+
+**Previous Behavior (StudentUnionGUI.__init__):**
+```python
+auth = UserAuth()
+if not auth.current_user:
+    messagebox.showerror("Authentication Required", "Please log in...")
+    # Destroys window regardless of parent
+    self.root.destroy()
+    self.initialized = False
+    return
+```
+
+**New Behavior:**
+```python
+auth = UserAuth()
+if not auth.current_user:
+    if not parent:
+        # Standalone mode - show error and destroy
+        messagebox.showerror("Authentication Required", "Please log in...")
+        self.root.destroy()
+        self.initialized = False
+        return
+    else:
+        # Embedded mode - don't destroy window
+        # Parent will set authentication after initialization
+        self.initialized = False
+        return  # Wait for parent to set auth
+```
+
+**StudentUnionManagementGUI Enhancement:**
+```python
+union_gui = StudentUnionGUI(parent=union_window)
+
+if not union_gui.initialized:
+    # Set auth manually for embedded mode
+    union_gui.auth_manager = self.auth
+    union_gui.current_user = {...}
+    union_gui.setup_gui()
+    union_gui.setup_database()
+    union_gui.initialized = True
+    union_gui.show_main_dashboard()
+```
+
+**Impact:**
+- ✅ Student Union GUI now opens correctly from main GUI
+- ✅ Authentication properly passed from main system to Student Union
+- ✅ No more window destruction errors in embedded mode
+- ✅ Standalone mode still shows proper auth error messages
+- ✅ Embedded mode waits for parent to set authentication
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:69-88` (auth flow updated)
+- `university_system/modules/domain/student_affairs/gui/student_union_management_gui.py:98-128` (initialization check added)
+
 ## [5.0.15] - 2025-11-15
 
 ### Added - Finance GUI Club Payment Management Integration

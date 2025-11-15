@@ -95,33 +95,37 @@ class StudentUnionManagementGUI:
             # Initialize the Student Union GUI in the new window
             union_gui = StudentUnionGUI(parent=union_window)
 
-            # Set up the correct database path - use main student_records.db
-            union_gui.db_path = str(DEFAULT_DB_PATH)
+            # Check if initialization was successful
+            if not union_gui.initialized:
+                # Initialization incomplete - need to set auth manually
 
-            # Setup the GUI components again with the new root
-            union_gui.setup_gui()
-            union_gui.setup_database()
+                # Set up the correct database path - use main student_records.db
+                union_gui.db_path = str(DEFAULT_DB_PATH)
 
-            # Pass authentication context if supported
-            if hasattr(union_gui, 'set_auth'):
-                union_gui.set_auth(self.auth)
-            elif hasattr(union_gui, 'auth_manager'):
+                # Pass authentication context
                 union_gui.auth_manager = self.auth
-            elif hasattr(union_gui, 'current_user'):
-                union_gui.current_user = self.auth.current_user if self.auth.current_user else None
 
-            # Show the login screen or main interface based on auth status
-            if self.auth.current_user:
-                # User is already logged in to main system, try to use same credentials
-                union_gui.current_user = {
-                    'id': self.auth.current_user.get('id'),
-                    'username': self.auth.current_user.get('username'),
-                    'email': self.auth.current_user.get('email', ''),
-                    'role': self.auth.current_user.get('role', 'student')
-                }
+                # Set current user from auth
+                if self.auth.current_user:
+                    union_gui.current_user = {
+                        'id': self.auth.current_user.get('id'),
+                        'username': self.auth.current_user.get('username'),
+                        'email': self.auth.current_user.get('email', ''),
+                        'role': self.auth.current_user.get('role', 'student')
+                    }
+
+                # Now setup GUI with auth in place
+                union_gui.setup_gui()
+                union_gui.setup_database()
+
+                # Mark as successfully initialized
+                union_gui.initialized = True
+
+                # Show the main dashboard
                 union_gui.show_main_dashboard()
             else:
-                union_gui.show_login_screen()
+                # Already initialized successfully - just show dashboard
+                union_gui.show_main_dashboard()
 
             print("Student Union GUI opened successfully as child window")
 
