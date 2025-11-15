@@ -345,7 +345,7 @@ class GUIStudentAnalytics:
     def _send_report_email(self, recipient, title, summary_text):
         """Actually send the email report"""
         try:
-            from university_system.infrastructure.database.db import get_db_connection
+            from university_system.infrastructure.email.email_service import send_email
             from datetime import datetime
 
             # Build email body
@@ -360,17 +360,17 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 This is an automated report from the University Management System.
 """
 
-            # Insert into emails table for sending
-            with get_db_connection() as conn:
-                conn.execute("""
-                    INSERT INTO emails (recipient, subject, body, status, sent_at)
-                    VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
-                """, (recipient, f"Analytics Report: {title}", email_body))
-                conn.commit()
+            # Send email immediately using the email service
+            subject = f"Analytics Report: {title}"
+            success = send_email(recipient, subject, email_body)
 
-            messagebox.showinfo("Success",
-                              f"Report has been queued for sending to {recipient}\n\n"
-                              f"The email will be sent by the email service.")
+            if success:
+                messagebox.showinfo("Success",
+                                  f"Report has been sent successfully to {recipient}")
+            else:
+                messagebox.showwarning("Warning",
+                                     f"Email was logged but may not have been sent.\n"
+                                     f"Check email configuration and logs.")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send email: {e}\n\n"

@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    - Matches the emails table schema: `sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
    - File: `student_analytics_gui.py:366`
 
+4. **CRITICAL FIX**: Fixed email sending - emails stuck in queue
+   - Issue: Emails were being queued with 'pending' status but never actually sent
+   - Root cause: Code only inserted emails into database but didn't call send_email function
+   - No background worker was processing the pending emails queue
+   - **Solution**: Changed to send emails immediately using email_service.send_email()
+   - Removed database INSERT approach and replaced with direct email sending
+   - Emails now send immediately when user clicks "Email Report"
+   - Added proper success/warning feedback to user
+   - File: `student_analytics_gui.py:345-377`
+
 ## [5.0.40] - 2025-11-15
 
 ### Major Enhancements
