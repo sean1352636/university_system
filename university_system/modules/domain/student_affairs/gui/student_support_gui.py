@@ -4407,7 +4407,7 @@ class StudentSupportGUI:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
             
-            escalation_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            escalation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             cursor.execute('''
             UPDATE support_tickets 
@@ -4933,12 +4933,12 @@ class StudentSupportGUI:
         ttk.Label(date_frame, text="From:").grid(row=0, column=0, sticky="w")
         from_date = ttk.Entry(date_frame, width=12)
         from_date.grid(row=0, column=1, padx=(5, 10))
-        from_date.insert(0, (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d'))
-        
-        ttk.Label(date_frame, text="To:").grid(row=0, column=2, sticky="w") 
+        from_date.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+
+        ttk.Label(date_frame, text="To:").grid(row=0, column=2, sticky="w")
         to_date = ttk.Entry(date_frame, width=12)
         to_date.grid(row=0, column=3, padx=(5, 0))
-        to_date.insert(0, datetime.datetime.now().strftime('%Y-%m-%d'))
+        to_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
         
         # Format
         format_frame = ttk.LabelFrame(form_frame, text="Format", padding="10")
@@ -5201,7 +5201,7 @@ class StudentSupportGUI:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
             
-            update_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute('''
             UPDATE support_tickets 
             SET assigned_to = ?, last_updated_datetime = ?
@@ -5352,7 +5352,7 @@ class StudentSupportGUI:
                 print("❌ Invalid number of days.")
                 return
         
-        cutoff_date = (datetime.datetime.now() - datetime.timedelta(days=days_old)).strftime('%Y-%m-%d')
+        cutoff_date = (datetime.now() - timedelta(days=days_old)).strftime('%Y-%m-%d')
         
         try:
             # Get resolved tickets older than cutoff
@@ -5437,7 +5437,7 @@ class StudentSupportGUI:
             exported_data = support.export_data('tickets', filters, export_format)
             
             # Save to file
-            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"bulk_tickets_export_{timestamp}.{export_format}"
             
             with open(filename, 'w') as f:

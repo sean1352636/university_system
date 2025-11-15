@@ -5,6 +5,18 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.30] - 2025-11-15
+
+### Bug Fix
+
+**Student Support GUI - DateTime Import Error:**
+- **CRITICAL FIX**: Corrected incorrect datetime module usage causing AttributeError
+- Fixed 6 instances of `datetime.datetime.now()` → `datetime.now()` (lines 4410, 4936, 5204, 5355, 5440)
+- Fixed 2 instances of `datetime.timedelta()` → `timedelta()` (lines 4936, 5355)
+- Error occurred because file uses `from datetime import datetime, timedelta` (line 4)
+- Fixes crash when clicking "Export Data" button or escalating tickets
+- File: `university_system/modules/domain/student_affairs/gui/student_support_gui.py`
+
 ## [5.0.29] - 2025-11-15
 
 ### UI Fix
