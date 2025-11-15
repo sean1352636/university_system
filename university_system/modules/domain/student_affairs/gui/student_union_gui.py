@@ -73,8 +73,8 @@ class StudentUnionGUI:
                 "Run: python run.py --gui\n\n"
                 "Student Union can only be accessed after logging in through the main system."
             )
-            if not parent:  # Only destroy if standalone window
-                self.root.destroy()
+            # Destroy the window and mark as not initialized
+            self.root.destroy()
             self.initialized = False
             return
 
@@ -4176,7 +4176,68 @@ This GUI version maintains backward compatibility with the CLI system.
         except Exception as e:
             messagebox.showerror("Error", f"Could not show club selection: {e}")
 
+    # =========================================================================
+    # CALENDAR INTEGRATION METHODS
+    # =========================================================================
 
+    def open_calendar_with_club_events(self, club_name=None):
+        """Open calendar GUI with club events"""
+        try:
+            from university_system.modules.domain.academics.gui.academic_calendar_gui import CalendarGUI
+
+            calendar_window = tk.Toplevel(self.root)
+            calendar_window.title("Student Union Calendar" + (f" - {club_name}" if club_name else ""))
+            calendar_window.geometry("900x700")
+
+            calendar_gui = CalendarGUI(auth_manager=self.auth_manager, parent_window=calendar_window)
+
+            # Add club events to calendar
+            self._add_club_events_to_calendar(calendar_gui, club_name)
+
+            messagebox.showinfo("Calendar Opened",
+                               f"Calendar opened" + (f" for {club_name}" if club_name else " with all Student Union events"))
+
+        except ImportError:
+            messagebox.showerror("Error", "Calendar system is not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open calendar: {e}")
+
+    def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
+        """Add club events to calendar"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            if club_name:
+                # Get events for specific club
+                cursor.execute('''
+                    SELECT event_name, event_date, event_description, event_location
+                    FROM student_events se
+                    JOIN student_clubs sc ON se.club_id = sc.club_id
+                    WHERE sc.club_name = ?
+                ''', (club_name,))
+            else:
+                # Get all student union events
+                cursor.execute('''
+                    SELECT event_name, event_date, event_description, event_location
+                    FROM student_events
+                ''')
+
+            events = cursor.fetchall()
+            conn.close()
+
+            # Add events to calendar
+            for event_name, event_date, event_description, event_location in events:
+                if hasattr(calendar_gui, 'add_student_union_event'):
+                    calendar_gui.add_student_union_event(
+                        title=event_name,
+                        date=event_date,
+                        description=f"{event_description}\nLocation: {event_location}",
+                        event_type="student_union"
+                    )
+
+        except Exception as e:
+            print(f"Failed to add club events to calendar: {e}")
 
 
 class ClubJoinDialog:
@@ -5693,69 +5754,6 @@ Student Union Finance Team
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not open booking dialog: {e}")
-
-    # =========================================================================
-    # CALENDAR INTEGRATION METHODS
-    # =========================================================================
-
-    def open_calendar_with_club_events(self, club_name=None):
-        """Open calendar GUI with club events"""
-        try:
-            from university_system.modules.domain.academics.gui.academic_calendar_gui import CalendarGUI
-
-            calendar_window = tk.Toplevel(self.root)
-            calendar_window.title("Student Union Calendar" + (f" - {club_name}" if club_name else ""))
-            calendar_window.geometry("900x700")
-
-            calendar_gui = CalendarGUI(auth_manager=self.auth_manager, parent_window=calendar_window)
-
-            # Add club events to calendar
-            self._add_club_events_to_calendar(calendar_gui, club_name)
-
-            messagebox.showinfo("Calendar Opened",
-                               f"Calendar opened" + (f" for {club_name}" if club_name else " with all Student Union events"))
-
-        except ImportError:
-            messagebox.showerror("Error", "Calendar system is not available")
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not open calendar: {e}")
-
-    def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
-        """Add club events to calendar"""
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            if club_name:
-                # Get events for specific club
-                cursor.execute('''
-                    SELECT event_name, event_date, event_description, event_location
-                    FROM student_events se
-                    JOIN student_clubs sc ON se.club_id = sc.club_id
-                    WHERE sc.club_name = ?
-                ''', (club_name,))
-            else:
-                # Get all student union events
-                cursor.execute('''
-                    SELECT event_name, event_date, event_description, event_location
-                    FROM student_events
-                ''')
-
-            events = cursor.fetchall()
-            conn.close()
-
-            # Add events to calendar
-            for event_name, event_date, event_description, event_location in events:
-                if hasattr(calendar_gui, 'add_student_union_event'):
-                    calendar_gui.add_student_union_event(
-                        title=event_name,
-                        date=event_date,
-                        description=f"{event_description}\nLocation: {event_location}",
-                        event_type="student_union"
-                    )
-
-        except Exception as e:
-            print(f"Failed to add club events to calendar: {e}")
 
     # =========================================================================
     # TRIP INTEGRATION METHODS

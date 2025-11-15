@@ -5,6 +5,89 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.14] - 2025-11-15
+
+### Fixed - Student Union Calendar Integration Method Misplaced
+
+**Critical Bug Fix**
+
+Fixed `AttributeError: 'StudentUnionGUI' object has no attribute 'open_calendar_with_club_events'` caused by calendar methods being defined in the wrong class.
+
+**Root Cause:**
+
+The calendar integration methods (`open_calendar_with_club_events` and `_add_club_events_to_calendar`) were accidentally placed inside the `DatabaseQueryDialog` class (starting at line 5697) instead of the `StudentUnionGUI` class. This caused the calendar button in the sidebar and menu to fail.
+
+**File Structure Before:**
+```
+Line   33: class StudentUnionGUI
+Line 4178: (end of StudentUnionGUI methods)
+Line 4243: class ClubJoinDialog
+...
+Line 4966: class DatabaseQueryDialog
+Line 5697:     # CALENDAR INTEGRATION METHODS ← WRONG CLASS!
+Line 5701:     def open_calendar_with_club_events(self) ← Inside DatabaseQueryDialog!
+```
+
+**File Structure After:**
+```
+Line   33: class StudentUnionGUI
+Line 4179:     # CALENDAR INTEGRATION METHODS ← NOW IN StudentUnionGUI
+Line 4183:     def open_calendar_with_club_events(self) ← Correctly in StudentUnionGUI
+Line 4205:     def _add_club_events_to_calendar(self)
+Line 4243: class ClubJoinDialog
+```
+
+**Methods Relocated:**
+
+Moved 2 calendar integration methods (62 lines total) from inside `DatabaseQueryDialog` class to the end of `StudentUnionGUI` class:
+
+1. `open_calendar_with_club_events()` - Opens academic calendar with club events
+2. `_add_club_events_to_calendar()` - Adds student union events to calendar
+
+**Impact:**
+- ✅ "Student Union Calendar" sidebar button now works
+- ✅ Calendar menu item functional
+- ✅ Club-specific calendar viewing works
+- ✅ Calendar integration from club details pages operational
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:4179-4240` (methods added)
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:5757-5820` (duplicate removed)
+
+### Fixed - Student Union Window Cleanup on Authentication Failure
+
+**Enhancement**
+
+Improved window handling when authentication fails in embedded mode to prevent empty windows from remaining open.
+
+**Issue:**
+
+When opening Student Union from main GUI without proper authentication, the parent window would remain open but empty after the `__init__` method returned early due to authentication failure.
+
+**Previous Behavior:**
+```python
+if not parent:  # Only destroy if standalone window
+    self.root.destroy()
+self.initialized = False
+return
+```
+
+**New Behavior:**
+```python
+# Destroy the window and mark as not initialized
+self.root.destroy()
+self.initialized = False
+return
+```
+
+**Impact:**
+- ✅ Empty windows no longer left open after auth failure
+- ✅ Cleaner user experience when authentication is required
+- ✅ Consistent window management for both standalone and embedded modes
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py:76-79`
+
 ## [5.0.13] - 2025-11-15
 
 ### Fixed - Student Union GUI Current User NoneType Error
