@@ -5,6 +5,19 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.41] - 2025-11-15
+
+### Bug Fixes
+
+**Student Analytics - pandas Series Ambiguity Error:**
+- **CRITICAL FIX**: Fixed ValueError when analyzing module popularity
+  - Error: "The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all()"
+  - Occurred in `simulate_module_data()` method at line 241
+  - Replaced problematic `elif df['module_type'].isna().all():` with pandas idiomatic `fillna('Standard')`
+  - Uses `fillna()` method to handle NaN values instead of conditional check
+  - Prevents ambiguous boolean evaluation of pandas Series
+  - File: `university_system/modules/shared/services/analytics/student_analytics.py:241-243`
+
 ## [5.0.40] - 2025-11-15
 
 ### Major Enhancements
