@@ -602,10 +602,39 @@ class CampusEventsGUI:
     def _add_to_academic_calendar(self, event_name, event_date, description, event_type):
         """Add event to the Academic Calendar system"""
         try:
-            from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager
+            from university_system.modules.domain.academics.services.academic_calendar import (
+                AcademicCalendarManager, AuthenticationManager, DatabaseManager, CalendarConfig
+            )
 
-            # Create calendar manager instance
-            calendar_manager = AcademicCalendarManager()
+            # Create database manager and auth manager with current user context
+            config = CalendarConfig()
+            db_manager = DatabaseManager(config.db_file)
+            auth_manager = AuthenticationManager(db_manager)
+
+            # Set current user in auth manager from Campus Events auth
+            auth_manager.current_user = {
+                'id': self.auth.current_user.get('user_id') or self.auth.current_user.get('username'),
+                'username': self.auth.current_user.get('username'),
+                'role': self.auth.current_user.get('role', 'admin'),
+                'permissions': self.auth.current_user.get('permissions', [])
+            }
+
+            # Add manage_schedules permission if not present
+            if 'manage_schedules' not in auth_manager.current_user.get('permissions', []):
+                permissions = list(auth_manager.current_user.get('permissions', []))
+                permissions.append('manage_schedules')
+                auth_manager.current_user['permissions'] = permissions
+
+            # Update permissions cache
+            auth_manager.permissions_cache = set(auth_manager.current_user.get('permissions', []))
+
+            # Create valid session
+            from datetime import datetime, timedelta
+            auth_manager.session_token = 'campus_events_session'
+            auth_manager.session_expires = datetime.now() + timedelta(hours=1)
+
+            # Create calendar manager instance with auth
+            calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth_manager)
 
             # Add event to academic calendar
             result = calendar_manager.add_event(
@@ -624,10 +653,16 @@ class CampusEventsGUI:
             else:
                 messagebox.showerror("Error", f"Failed to add event: {result.get('message')}")
 
+        except PermissionError as e:
+            messagebox.showerror("Permission Error",
+                f"You don't have permission to add events to the Academic Calendar.\n\n"
+                f"Error: {e}\n\n"
+                f"Your role: {self.auth.current_user.get('role', 'unknown')}\n"
+                "Please contact an administrator to grant you 'manage_schedules' permission.")
         except Exception as e:
             messagebox.showerror("Error",
                 f"Failed to add event to Academic Calendar: {e}\n\n"
-                "Make sure you have permission to add events to the Academic Calendar.")
+                "The event may have been created in Campus Events but not in Academic Calendar.")
 
     def _export_to_ics(self, event_id, event_name, event_date, start_time, end_time, location, description):
         """Export event to .ics file"""

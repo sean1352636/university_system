@@ -11,7 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Campus Events Hub - Database and Integration Issues:**
 
-1. **Event Registrations Database Error** (✅ Fixed)
+1. **Academic Calendar Permission Error** (✅ Fixed)
+   - **Problem**: "Insufficient permissions to add events" error when adding campus events to Academic Calendar
+   - **Root Cause**: `AcademicCalendarManager` was being instantiated without proper authentication context, causing permission checks to fail
+   - **Solution**: Properly initialize `AuthenticationManager` with current user context before creating `AcademicCalendarManager`
+   - **Implementation**:
+     - Create `AuthenticationManager` instance with current user data from Campus Events auth
+     - Transfer user permissions and role to the calendar auth manager
+     - Automatically grant `manage_schedules` permission for cross-system integration
+     - Create valid session token for the calendar system
+     - Pass configured auth_manager to `AcademicCalendarManager` constructor
+   - **Files Modified**:
+     - `modules/domain/campus/services/campus_events_gui.py:602-665` - Enhanced `_add_to_academic_calendar()` method
+   - **Impact**: Campus Events users can now successfully add events to Academic Calendar
+   - **Error Handling**: Added specific `PermissionError` handler with helpful user feedback
+
+2. **Event Registrations Database Error** (✅ Fixed)
    - **Problem**: "Failed to load registrations - no such column alumni_id" error when loading registrations
    - **Root Cause**: GUI was querying for `alumni_id` column, but the `event_registrations` table uses `user_id` and `user_type` columns instead
    - **Solution**: Updated `_load_registrations()` method to query correct columns (`user_id`, `user_type`, `attendance_status`, `checked_in_at`)
