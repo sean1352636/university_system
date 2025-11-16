@@ -5,45 +5,96 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.61] - 2025-11-16
+
+### Fixed
+
+**FIX: Trip Management GUI - Report Generation Permission Issue**
+
+Fixed permission check blocking admin users from generating trip reports.
+
+**Problem:**
+- Admin users unable to generate trip reports despite having appropriate permissions
+- Error message: "You don't have permission to generate reports"
+- Issue affected all three report types: Trip Summary, Participant List, and Financial reports
+
+**Root Cause:**
+- Code checked for non-existent permission `generate_trip_reports`
+- Authorization system defines `view_trip_reports` for admin role
+- Permission mismatch caused legitimate admin access to be denied
+
+**Fix:**
+- Updated all permission checks from `generate_trip_reports` → `view_trip_reports`
+- Fixed 4 occurrences across:
+  - Line 267: Reports tab visibility check
+  - Line 1258: `generate_trip_summary_report()` method
+  - Line 1266: `generate_participant_report()` method
+  - Line 2681: `ReportGeneratorDialog` validation
+- Financial reports already correctly checked `view_financial_reports` permission
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/trip_management_gui.py`
+
 ## [5.0.60] - 2025-11-16
 
 ### Fixed
 
-**FIX: Trip Management GUI - Dialog Initial Focus Crashes**
+**FIX: Trip Management GUI - All Dialog Initial Focus Crashes**
 
-Fixed critical crashes in trip management dialogs caused by incorrect initial focus handling.
+Fixed critical crashes in ALL trip management dialogs caused by incorrect initial focus handling.
 
 **Problem:**
-- `RegisterForTripDialog` and `AddExpenseDialog` crashed immediately when opened
+- `RegisterForTripDialog`, `AddExpenseDialog`, and `AddItineraryItemDialog` crashed immediately when opened
 - Error: `AttributeError: 'StringVar' object has no attribute 'focus_set'`
 - `simpledialog.Dialog` expects `body()` to return a widget for initial focus
 - Code was returning StringVar objects instead of actual widgets
+- Issue affected 3 different dialog classes
 
 **Root Cause:**
-- `body()` method returns widget for initial focus
-- Tkinter calls `focus_set()` on returned value
-- StringVar objects don't have `focus_set()` method
-- Code incorrectly returned `self.emergency_var` (StringVar) instead of Entry widget
-- Same issue in AddExpenseDialog with `self.category_var`
+- `body()` method's return value becomes `initial_focus`
+- Tkinter calls `focus_set()` on this value during dialog initialization
+- StringVar objects don't have `focus_set()` method (they're data containers, not widgets)
+- Multiple dialogs incorrectly returned StringVar instead of Entry/Combobox widgets
 
-**Solution:**
+**Comprehensive Fix:**
+- Audited all 18 Dialog classes in trip_management_gui.py
+- Identified and fixed 3 dialogs with StringVar return issues
 - Store widget references before calling `.pack()` or `.grid()`
 - Return actual widget instances from `body()` method
-- StringVars can still be used for data binding via `textvariable`
+- StringVars still used for data binding via `textvariable` parameter
+
+**Dialogs Fixed:**
+1. **RegisterForTripDialog** (Lines 2211-2212, 2224):
+   - Store `self.emergency_entry` widget
+   - Return `self.emergency_entry` instead of `self.emergency_var`
+
+2. **AddExpenseDialog** (Lines 2798-2799, 2816):
+   - Store `self.category_combo` widget
+   - Return `self.category_combo` instead of `self.category_var`
+
+3. **AddItineraryItemDialog** (Lines 3244-3245, 3267):
+   - Store `self.activity_entry` widget
+   - Return `self.activity_entry` instead of `self.activity_var`
+
+**Verification:**
+- All 18 Dialog classes verified to return widgets or None
+- No remaining StringVar return issues
+- Syntax validation passed
 
 **Files Modified:**
 - `university_system/modules/domain/mobility/gui/trip_management_gui.py`
-  - Line 2211-2212: Store emergency_entry widget
-  - Line 2224: Return self.emergency_entry instead of self.emergency_var
-  - Line 2798-2799: Store category_combo widget
-  - Line 2816: Return self.category_combo instead of self.category_var
+  - 3 dialog classes fixed
+  - 6 lines modified total
 
 **Impact:**
-- Trip registration dialog now opens without crashing
-- Add expense dialog now opens without crashing
-- Proper focus on first input field
-- Users can register for trips successfully
-- Expense tracking functional again
+- ✓ Trip registration dialog opens without crashing
+- ✓ Add expense dialog opens without crashing
+- ✓ Add itinerary item dialog opens without crashing
+- ✓ Proper focus on first input field in all dialogs
+- ✓ Users can register for trips successfully
+- ✓ Expense tracking fully functional
+- ✓ Itinerary management fully functional
+- ✓ All trip management features working
 
 ## [5.0.59] - 2025-11-16
 

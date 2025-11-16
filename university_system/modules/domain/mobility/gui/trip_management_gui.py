@@ -264,7 +264,7 @@ class TripManagementGUI:
         if self.auth.check_permission('manage_trips'):
             self.add_admin_tab()
         
-        if self.auth.check_permission('generate_trip_reports'):
+        if self.auth.check_permission('view_trip_reports'):
             self.add_reports_tab()
         
         # Calendar integration tab
@@ -1255,18 +1255,18 @@ class TripManagementGUI:
     
     def generate_trip_summary_report(self):
         """Generate trip summary report"""
-        if not self.auth.check_permission('generate_trip_reports'):
+        if not self.auth.check_permission('view_trip_reports'):
             messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
             return
-        
+
         ReportGeneratorDialog(self.root, self.auth, 'TRIP_SUMMARY', self.report_log)
     
     def generate_participant_report(self):
         """Generate participant report"""
-        if not self.auth.check_permission('generate_trip_reports'):
+        if not self.auth.check_permission('view_trip_reports'):
             messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
             return
-        
+
         ReportGeneratorDialog(self.root, self.auth, 'PARTICIPANT_LIST', self.report_log)
     
     def generate_financial_report(self):
@@ -2678,7 +2678,7 @@ class ReportGeneratorDialog(Dialog):
                                      "You must be logged in to generate reports.")
                 return
 
-            if not self.auth.check_permission('generate_trip_reports'):
+            if not self.auth.check_permission('view_trip_reports'):
                 log_async("You do not have permission to generate reports.")
                 messagebox.showerror("Permission Denied",
                                      "You do not have permission to generate trip reports.")
@@ -3241,29 +3241,30 @@ class AddItineraryItemDialog(Dialog):
         # Activity
         ttk.Label(master, text="Activity description:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.activity_var = tk.StringVar()
-        ttk.Entry(master, textvariable=self.activity_var, width=40).grid(row=1, column=1, padx=5, pady=5)
-        
+        self.activity_entry = ttk.Entry(master, textvariable=self.activity_var, width=40)
+        self.activity_entry.grid(row=1, column=1, padx=5, pady=5)
+
         # Location
         ttk.Label(master, text="Location (optional):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.location_var, width=40).grid(row=2, column=1, padx=5, pady=5)
-        
+
         # Start time
         ttk.Label(master, text="Start time (HH:MM, optional):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.start_time_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.start_time_var, width=40).grid(row=3, column=1, padx=5, pady=5)
-        
+
         # End time
         ttk.Label(master, text="End time (HH:MM, optional):").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.end_time_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.end_time_var, width=40).grid(row=4, column=1, padx=5, pady=5)
-        
+
         # Notes
         ttk.Label(master, text="Notes (optional):").grid(row=5, column=0, sticky=tk.NW, padx=5, pady=5)
         self.notes_text = tk.Text(master, width=40, height=3)
         self.notes_text.grid(row=5, column=1, padx=5, pady=5)
-        
-        return self.activity_var
+
+        return self.activity_entry  # Return widget, not StringVar
     
     def validate(self):
         """Validate itinerary item data"""
