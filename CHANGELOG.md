@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Email Manager GUI - Tab Navigation Issue:**
+
+1. **Email Reports Button Opens Wrong Tab** (✅ Fixed)
+   - **Problem**: "Email Reports" button in dashboard opened Chat Rooms tab instead of Reports tab
+   - **Root Cause**: Incorrect tab index in `email_reports()` method - used index 5 (Chat Rooms) instead of 6 (Reports)
+   - **Solution**: Updated `self.notebook.select(5)` to `self.notebook.select(6)`
+   - **Tab Order**:
+     - 0: Dashboard
+     - 1: Email
+     - 2: Messages
+     - 3: SMS
+     - 4: Announcements
+     - 5: Chat Rooms
+     - 6: Reports ✅ (was incorrectly pointing to 5)
+   - **Files Modified**:
+     - `infrastructure/email/gui/email_manager_gui.py:1814` - Fixed tab index with clarifying comment
+   - **Impact**: Email Reports button now correctly opens the Reports tab
+
 **Campus Events Hub - Database and Integration Issues:**
 
 1. **Academic Calendar Integration Errors** (✅ Fixed)

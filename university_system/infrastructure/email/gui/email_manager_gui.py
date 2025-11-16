@@ -1811,7 +1811,7 @@ class EmailManagerGUI:
     # Report Functions
     def email_reports(self):
         """Show email reports"""
-        self.notebook.select(5)  # Switch to reports tab
+        self.notebook.select(6)  # Switch to reports tab (Dashboard=0, Email=1, Messages=2, SMS=3, Announcements=4, Chat=5, Reports=6)
         self.generate_email_report()
     
     def generate_email_report(self):
