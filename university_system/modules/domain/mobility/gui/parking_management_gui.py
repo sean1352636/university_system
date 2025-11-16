@@ -1006,29 +1006,50 @@ class ParkingManagementGUI:
         """Register a vehicle from dialog data"""
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Generate vehicle ID
-        cursor.execute('SELECT COUNT(*) FROM vehicles')
-        count = cursor.fetchone()[0] + 1
-        vehicle_id = f"V{str(count).zfill(6)}"
-        
-        # Insert vehicle
-        cursor.execute('''
-        INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            vehicle_id,
-            data['license_plate'],
-            data['make'],
-            data['model'],
-            data['year'],
-            data['color'],
-            data['vehicle_type'],
-            data.get('owner_id'),
-            data['registration_state']
-        ))
-        
-        conn.commit()
-        conn.close()
+
+        try:
+            # Generate vehicle ID
+            cursor.execute('SELECT COUNT(*) FROM vehicles')
+            count = cursor.fetchone()[0] + 1
+            vehicle_id = f"V{str(count).zfill(6)}"
+
+            # Validate owner_id if provided
+            owner_id = data.get('owner_id')
+            if owner_id:
+                try:
+                    owner_id = int(owner_id)
+                    # Verify user exists
+                    cursor.execute('SELECT id FROM users WHERE id = ?', (owner_id,))
+                    if not cursor.fetchone():
+                        logging.warning(f"Owner ID {owner_id} not found in users table, setting to NULL")
+                        owner_id = None
+                except (ValueError, TypeError):
+                    logging.warning(f"Invalid owner_id format: {owner_id}, setting to NULL")
+                    owner_id = None
+
+            # Insert vehicle
+            cursor.execute('''
+            INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                vehicle_id,
+                data['license_plate'],
+                data['make'],
+                data['model'],
+                data['year'],
+                data['color'],
+                data['vehicle_type'],
+                owner_id,
+                data['registration_state']
+            ))
+
+            conn.commit()
+            logging.info(f"Vehicle {vehicle_id} registered successfully with owner_id={owner_id}")
+        except Exception as e:
+            conn.rollback()
+            logging.error(f"Failed to register vehicle: {e}")
+            raise
+        finally:
+            conn.close()
     
     def record_violation_from_data(self, data):
         """Record a violation from dialog data"""
@@ -1670,24 +1691,58 @@ Best regards,
 Parking Management System
 """
 
-            # Send email using email service
+            # Send email using direct SMTP (synchronous)
             try:
-                from university_system.infrastructure.email.email_service import send_email
-                send_email(
-                    to_email=admin_email,
-                    subject=email_subject,
-                    body=email_body
-                )
-                messagebox.showinfo("Email Sent",
-                    f"Report successfully sent to:\n{admin_name} ({admin_email})")
-                logging.info(f"Report '{title}' sent to admin {admin_email}")
-            except ImportError:
-                # Email service not available - show the content
-                messagebox.showwarning("Email Service Unavailable",
-                    f"Email service is not available.\n\n"
-                    f"Report would have been sent to:\n{admin_name} ({admin_email})\n\n"
-                    f"Please configure the email service or contact IT support.")
-                logging.warning(f"Email service unavailable - could not send report to {admin_email}")
+                import smtplib
+                import ssl
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+
+                # Get SMTP configuration (if available)
+                smtp_config = {
+                    'smtp_server': os.getenv('SMTP_HOST', 'smtp.gmail.com'),
+                    'smtp_port': int(os.getenv('SMTP_PORT', '587')),
+                    'sender_email': os.getenv('SMTP_USER', 'noreply@university.edu'),
+                    'sender_password': os.getenv('SMTP_PASSWORD', ''),
+                    'sender_name': 'University Parking System'
+                }
+
+                # Check if SMTP is configured
+                if not smtp_config['sender_password']:
+                    # SMTP not configured - queue the email for later or show info
+                    messagebox.showinfo("Report Prepared",
+                        f"Report prepared for:\n{admin_name} ({admin_email})\n\n"
+                        f"Email service is not configured.\n"
+                        f"The report has been prepared but not sent.\n\n"
+                        f"Please configure SMTP settings in .env file or\n"
+                        f"use 'Export as TXT' to save the report.")
+                    logging.warning(f"SMTP not configured - report prepared but not sent to {admin_email}")
+                else:
+                    # Send email via SMTP
+                    msg = MIMEMultipart()
+                    msg['From'] = f"{smtp_config['sender_name']} <{smtp_config['sender_email']}>"
+                    msg['To'] = admin_email
+                    msg['Subject'] = email_subject
+                    msg.attach(MIMEText(email_body, 'plain'))
+
+                    context = ssl.create_default_context()
+                    with smtplib.SMTP(smtp_config['smtp_server'], smtp_config['smtp_port']) as server:
+                        server.starttls(context=context)
+                        if smtp_config['sender_password']:
+                            server.login(smtp_config['sender_email'], smtp_config['sender_password'])
+                        server.send_message(msg)
+
+                    messagebox.showinfo("Email Sent",
+                        f"Report successfully sent to:\n{admin_name} ({admin_email})")
+                    logging.info(f"Report '{title}' sent to admin {admin_email}")
+            except Exception as email_error:
+                # Email failed - show warning but don't error out
+                messagebox.showwarning("Email Failed",
+                    f"Could not send email to:\n{admin_name} ({admin_email})\n\n"
+                    f"Error: {str(email_error)}\n\n"
+                    f"Please use 'Export as TXT' to save the report\n"
+                    f"and send it manually.")
+                logging.error(f"Failed to send email to {admin_email}: {email_error}")
 
         except Exception as e:
             logging.error(f"Failed to send report to admin: {e}")
@@ -2815,7 +2870,7 @@ class VehicleDialog:
                 self.lookup_owner()  # Auto-lookup to display owner name
 
     def lookup_owner(self):
-        """Lookup vehicle owner (student) in database"""
+        """Lookup vehicle owner (student/user) in database"""
         owner_id = self.owner_id_var.get().strip()
 
         if not owner_id:
@@ -2826,22 +2881,47 @@ class VehicleDialog:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Search for student
+            # Try to find in users table first (for foreign key compatibility)
             cursor.execute('''
-                SELECT first_name, last_name
-                FROM students
-                WHERE student_id = ?
-            ''', (owner_id,))
+                SELECT id, first_name, last_name
+                FROM users
+                WHERE student_id = ? OR id = ?
+            ''', (owner_id, owner_id))
 
-            student = cursor.fetchone()
+            user = cursor.fetchone()
 
-            if student:
-                owner_name = f"{student[0]} {student[1]}"
+            if user:
+                owner_name = f"{user[1]} {user[2]}" if user[1] else "Unknown"
                 self.owner_name_var.set(owner_name)
+                # Update the owner_id_var to the actual user.id for foreign key
+                self.owner_id_var.set(str(user[0]))
                 messagebox.showinfo("Success", f"Owner found: {owner_name}")
             else:
-                self.owner_name_var.set("Not found")
-                messagebox.showwarning("Not Found", f"No student found with ID: {owner_id}")
+                # Fallback to students table
+                cursor.execute('''
+                    SELECT first_name, last_name
+                    FROM students
+                    WHERE student_id = ?
+                ''', (owner_id,))
+
+                student = cursor.fetchone()
+
+                if student:
+                    owner_name = f"{student[0]} {student[1]}"
+                    self.owner_name_var.set(owner_name)
+                    messagebox.showwarning("Note",
+                        f"Student found: {owner_name}\n\n"
+                        f"However, this student doesn't have a user account.\n"
+                        f"Vehicle will be registered without owner link.\n"
+                        f"Owner ID field will be cleared.")
+                    # Clear owner_id since no matching user exists
+                    self.owner_id_var.set("")
+                else:
+                    self.owner_name_var.set("Not found")
+                    messagebox.showwarning("Not Found",
+                        f"No user or student found with ID: {owner_id}\n\n"
+                        f"Owner ID field will be cleared.")
+                    self.owner_id_var.set("")
 
             conn.close()
 

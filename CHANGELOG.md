@@ -5,6 +5,92 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.58] - 2025-11-16
+
+### Fixed
+
+**FIX: Parking GUI - Email Delivery & Vehicle Registration**
+
+Fixed two critical issues preventing normal operation of parking management:
+
+**1. Report Emails Not Reaching Admin Inbox**
+
+**Problem:**
+- "Send Report to Admin" feature wasn't delivering emails
+- Emails were being queued but never sent
+- Email system requires async scheduler that wasn't running in GUI
+- Users had no feedback about email status
+
+**Solution:**
+- Implemented direct synchronous SMTP email sending
+- Bypasses queue system for immediate delivery
+- Reads SMTP configuration from environment variables
+- Provides clear user feedback for all scenarios:
+  - Success: Confirmation when email sent
+  - Not configured: Friendly message to export as TXT instead
+  - Failure: Error details with fallback suggestion
+
+**Technical Changes** (lines 1694-1745):
+- Added direct SMTP implementation using `smtplib`
+- Reads `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` from .env
+- SSL/TLS support for secure connections
+- Graceful degradation when SMTP not configured
+- Comprehensive error handling and logging
+
+**2. Vehicle Registration Foreign Key Constraint Failures**
+
+**Problem:**
+- Vehicle registration failed with foreign key error
+- `owner_id` referenced `users.id` but lookup used `students` table
+- Student IDs don't match user IDs in database
+- No validation that owner_id exists in users table
+
+**Solution:**
+- Updated `lookup_owner()` to search users table first (lines 2817-2875)
+- Automatically converts student_id to user.id for foreign key compliance
+- Validates owner_id exists before vehicle registration (lines 1016-1028)
+- Falls back to NULL if user doesn't exist
+- Clear user feedback for all scenarios:
+  - User found: Shows name and uses user.id
+  - Student found (no user): Warns and clears owner
+  - Not found: Warns and clears owner
+
+**Owner Lookup Improvements:**
+- Searches `users` table by student_id OR user.id
+- Auto-converts to correct user.id for database
+- Fallback to `students` table for informational lookup
+- Automatic field clearing when no valid user found
+
+**Vehicle Registration Validation:**
+- Validates owner_id is integer and exists in users table
+- Sets to NULL if invalid or non-existent
+- Transaction rollback on any error
+- Detailed logging for debugging
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/parking_management_gui.py`
+  - Lines 1694-1745: Direct SMTP email implementation
+  - Lines 1016-1028: Owner ID validation in vehicle registration
+  - Lines 2817-2875: Enhanced owner lookup with user table search
+
+**Impact:**
+- Reports can now be emailed directly to admins (if SMTP configured)
+- Clear feedback when email not configured
+- Vehicle registration works with proper foreign key validation
+- No more cryptic database constraint errors
+- Better user experience with informative messages
+
+**Configuration Required:**
+To enable email sending, add to `.env` file:
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@example.com
+SMTP_PASSWORD=your_app_password
+```
+
+If not configured, users can still export reports as TXT files.
+
 ## [5.0.57] - 2025-11-16
 
 ### Fixed
