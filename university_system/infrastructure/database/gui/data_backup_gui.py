@@ -21,13 +21,15 @@ from email.mime.multipart import MIMEMultipart
 # Import centralized paths
 try:
     from university_system.modules.shared.constants.paths import (
-        BACKUP_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DEFAULT_DB_PATH as DB_PATH
+        BACKUP_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
     )
 except ImportError:
-    # Fallback if paths module not available
-    BACKUP_DIR = Path("backups")
-    LOG_DIR = Path("logs")
-    BACKUP_TEMPLATES_DIR = Path("templates/backup_templates")
+    # Fallback if paths module not available - use PROJECT_ROOT relative paths
+    from pathlib import Path
+    PROJECT_ROOT = Path(__file__).resolve().parents[3]
+    BACKUP_DIR = PROJECT_ROOT / "backups"
+    LOG_DIR = PROJECT_ROOT / "logs"
+    BACKUP_TEMPLATES_DIR = PROJECT_ROOT / "templates" / "backup_templates"
     DB_PATH = DEFAULT_DB_PATH
 
 try:

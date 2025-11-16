@@ -122,6 +122,16 @@ def main():
         from university_system.modules.shared.constants.paths import ensure_directories
         ensure_directories()
 
+        # Initialize auth instance early to prevent warnings during imports
+        logger.info("Initializing auth system")
+        from university_system.infrastructure.auth.user_authentication import UserAuth
+        from university_system.infrastructure.shared_context import set_auth
+
+        # Create and set auth instance
+        auth_instance = UserAuth()
+        set_auth(auth_instance)
+        logger.info("Auth system initialized successfully")
+
         # Initialize database on startup
         logger.info("Initializing database")
         print("Initializing database...")

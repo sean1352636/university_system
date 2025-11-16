@@ -5,6 +5,49 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.45] - 2025-11-16
+
+### Fixed
+
+**Critical Startup and Configuration Issues:**
+
+1. **Authentication Warning on Startup** (✅ Fixed)
+   - **Problem**: Warning message "No auth instance configured, using dummy auth" appeared on every application startup
+   - **Root Cause**: Auth instance was not initialized until GUI/CLI mode started, but some modules called `get_auth()` during database initialization
+   - **Solution**: Initialize auth instance early in `run.py` before database initialization
+   - **Files Modified**:
+     - `run.py` - Added early auth initialization in `main()` function (lines 125-133)
+   - **Impact**: Clean startup with no spurious warnings
+
+2. **Duplicate Backup Folder Issue** (✅ Fixed)
+   - **Problem**: Backups were being created in root directory (`/home/user/backups`) instead of the correct location (`university_system/backups`)
+   - **Root Cause**: Multiple files used hardcoded relative paths like `Path("backups")` or `Path.cwd() / 'backups'` instead of centralized `paths.BACKUP_DIR`
+   - **Solution**: Updated all backup-related code to use centralized path configuration
+   - **Files Modified**:
+     - `infrastructure/database/gui/data_backup_gui.py:28` - Improved fallback to use PROJECT_ROOT relative path
+     - `modules/domain/finance/gui/finance/db_manager.py:432` - Changed from `Path.cwd() / 'backups'` to `paths.BACKUP_DIR`
+     - `modules/domain/academics/services/attendance/attendance_tracker.py:1808` - Changed from `Path("backups")` to `paths.BACKUP_DIR`
+     - `modules/domain/academics/services/attendance/attendance_tracker.py:2707` - Changed from `Path("backups")` to `paths.BACKUP_DIR`
+   - **Impact**: All backups now correctly stored in `university_system/backups/` directory
+   - **Cleanup**: Removed empty duplicate backup folder from root directory
+
+### Technical Details
+
+**Auth Initialization Flow (New):**
+```python
+# In run.py main()
+1. Ensure directories exist
+2. Initialize auth instance (NEW)
+3. Set auth in shared_context (NEW)
+4. Initialize database
+5. Start CLI/GUI mode
+```
+
+**Backup Path Resolution (Updated):**
+- Primary: Import `paths.BACKUP_DIR` from centralized constants
+- Fallback: Use `Path(__file__).resolve().parents[N] / "backups"` relative to PROJECT_ROOT
+- Never use: `Path("backups")` or `Path.cwd() / 'backups'` (creates wrong location)
+
 ## [5.0.44] - 2025-11-15
 
 ### Improvements

@@ -1805,7 +1805,13 @@ def generate_executive_summary_report(date_from=None, date_to=None, output_path=
 # Backup and Recovery System
 class BackupRecoverySystem:
     def __init__(self):
-        self.backup_dir = Path("backups")
+        # Use centralized backup directory
+        try:
+            from university_system.modules.shared.constants.paths import BACKUP_DIR
+            self.backup_dir = BACKUP_DIR
+        except ImportError:
+            # Fallback to project root relative path
+            self.backup_dir = Path(__file__).resolve().parents[4] / "backups"
         self.backup_dir.mkdir(exist_ok=True)
 
         # Get the correct database path
@@ -2704,7 +2710,13 @@ def handle_backup_recovery(backup_system):
             print("❌ Backup creation failed.")
     
     elif choice == '2':
-        backup_dir = Path("backups")
+        # Use centralized backup directory
+        try:
+            from university_system.modules.shared.constants.paths import BACKUP_DIR
+            backup_dir = BACKUP_DIR
+        except ImportError:
+            # Fallback to project root relative path
+            backup_dir = Path(__file__).resolve().parents[4] / "backups"
         
         if backup_dir.exists():
             backups = sorted(backup_dir.glob("*.db"), key=lambda x: x.stat().st_mtime, reverse=True)
