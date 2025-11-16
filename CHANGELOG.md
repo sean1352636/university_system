@@ -5,6 +5,50 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.55] - 2025-11-16
+
+### Fixed
+
+**FIX: Parking GUI - Data Display & Enhanced Report Features**
+
+Fixed sqlite3.Row display issues and added comprehensive report export/email functionality to the Parking Management GUI.
+
+**Data Display Fixes:**
+- Fixed sqlite3.Row objects displaying as random numbers instead of actual data
+- Updated `refresh_permits()` to convert Row objects to tuples (line 508)
+- Updated `refresh_vehicles()` to convert Row objects to tuples (line 538)
+- Updated `refresh_violations()` to convert Row objects to tuples (line 569)
+- All treeview displays now show proper data instead of object representations
+
+**Report Enhancements:**
+- Enhanced `show_text_dialog()` to display reports in dedicated windows
+- Added "Export as TXT" button to all report windows
+- Added "Send Report to Admin" button to all report windows
+- Implemented `export_report_as_txt()` method for saving reports locally
+  - Automatic timestamped filenames
+  - Formatted headers with generation metadata
+  - File dialog for user-selected save location
+- Implemented `send_report_to_admin()` method for email distribution
+  - Automatic admin email lookup from database
+  - Formatted email with report metadata
+  - Current user attribution in email
+  - Integration with university email service
+  - Graceful fallback when email service unavailable
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/parking_management_gui.py`
+  - Lines 506-509: Fixed permits data display
+  - Lines 536-539: Fixed vehicles data display
+  - Lines 567-570: Fixed violations data display
+  - Lines 1279-1408: Enhanced report dialog with export/email functionality
+
+**Impact:**
+- Users can now see actual parking data instead of object references
+- Reports can be exported as text files for record-keeping
+- Reports can be emailed directly to administrators
+- Improved workflow for compliance and audit reporting
+- Better integration with email notification system
+
 ## [5.0.54] - 2025-11-16
 
 ### Changed

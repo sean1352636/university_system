@@ -503,9 +503,10 @@ class ParkingManagementGUI:
             for item in self.permits_tree.get_children():
                 self.permits_tree.delete(item)
             
-            # Insert new data
+            # Insert new data - convert sqlite3.Row to tuple for display
             for permit in permits:
-                self.permits_tree.insert("", tk.END, values=permit)
+                permit_values = tuple(permit) if hasattr(permit, '__iter__') else permit
+                self.permits_tree.insert("", tk.END, values=permit_values)
             
             conn.close()
         except Exception as e:
@@ -532,9 +533,10 @@ class ParkingManagementGUI:
             for item in self.vehicles_tree.get_children():
                 self.vehicles_tree.delete(item)
             
-            # Insert new data
+            # Insert new data - convert sqlite3.Row to tuple for display
             for vehicle in vehicles:
-                self.vehicles_tree.insert("", tk.END, values=vehicle)
+                vehicle_values = tuple(vehicle) if hasattr(vehicle, '__iter__') else vehicle
+                self.vehicles_tree.insert("", tk.END, values=vehicle_values)
             
             conn.close()
         except Exception as e:
@@ -562,9 +564,10 @@ class ParkingManagementGUI:
             for item in self.violations_tree.get_children():
                 self.violations_tree.delete(item)
             
-            # Insert new data
+            # Insert new data - convert sqlite3.Row to tuple for display
             for violation in violations:
-                self.violations_tree.insert("", tk.END, values=violation)
+                violation_values = tuple(violation) if hasattr(violation, '__iter__') else violation
+                self.violations_tree.insert("", tk.END, values=violation_values)
             
             conn.close()
         except Exception as e:
@@ -1278,14 +1281,132 @@ class ParkingManagementGUI:
         dialog = tk.Toplevel(self.root)
         dialog.title(title)
         dialog.geometry("800x600")
-        
-        text_widget = ScrolledText(dialog)
-        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Main frame
+        main_frame = ttk.Frame(dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Text widget
+        text_widget = ScrolledText(main_frame)
+        text_widget.pack(fill=tk.BOTH, expand=True)
         text_widget.insert(tk.END, content)
         text_widget.config(state=tk.DISABLED)
-        
-        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=5)
-    
+
+        # Button frame
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # Export as TXT button
+        ttk.Button(button_frame, text="Export as TXT",
+                  command=lambda: self.export_report_as_txt(title, content)).pack(side=tk.LEFT, padx=5)
+
+        # Send to Admin button
+        ttk.Button(button_frame, text="Send Report to Admin",
+                  command=lambda: self.send_report_to_admin(title, content)).pack(side=tk.LEFT, padx=5)
+
+        # Close button
+        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def export_report_as_txt(self, title, content):
+        """Export report content as a text file"""
+        try:
+            # Ask user for save location
+            filename = filedialog.asksaveasfilename(
+                title="Save Report",
+                defaultextension=".txt",
+                initialfile=f"{title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            )
+
+            if filename:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(f"{title}\n")
+                    f.write("=" * len(title) + "\n")
+                    f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                    f.write(content)
+
+                messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}")
+                logging.info(f"Report '{title}' exported to {filename}")
+        except Exception as e:
+            logging.error(f"Failed to export report: {e}")
+            messagebox.showerror("Error", f"Failed to export report: {e}")
+
+    def send_report_to_admin(self, title, content):
+        """Send report to admin via email"""
+        try:
+            # Get admin email from database
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Query for admin users' emails
+            cursor.execute('''
+                SELECT email_address, first_name, last_name
+                FROM users
+                WHERE role = 'admin'
+                AND email_address IS NOT NULL
+                AND email_address != ''
+                ORDER BY id
+                LIMIT 1
+            ''')
+
+            admin = cursor.fetchone()
+            conn.close()
+
+            if not admin or not admin[0]:
+                messagebox.showwarning("No Admin Email",
+                    "No admin email address found in the system.\n"
+                    "Please contact your system administrator.")
+                return
+
+            admin_email = admin[0]
+            admin_name = f"{admin[1]} {admin[2]}" if admin[1] else "Administrator"
+
+            # Prepare email content
+            email_subject = f"Parking Management Report: {title}"
+            email_body = f"""
+Dear {admin_name},
+
+Please find the attached parking management report below.
+
+Report: {title}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Submitted by: {self.current_user.get('name', 'System')} ({self.current_user.get('id', 'N/A')})
+
+{'=' * 80}
+
+{content}
+
+{'=' * 80}
+
+This is an automated email from the University Parking Management System.
+
+Best regards,
+Parking Management System
+"""
+
+            # Send email using email service
+            try:
+                from university_system.infrastructure.email.email_service import send_email
+                send_email(
+                    to_email=admin_email,
+                    subject=email_subject,
+                    body=email_body
+                )
+                messagebox.showinfo("Email Sent",
+                    f"Report successfully sent to:\n{admin_name} ({admin_email})")
+                logging.info(f"Report '{title}' sent to admin {admin_email}")
+            except ImportError:
+                # Email service not available - show the content
+                messagebox.showwarning("Email Service Unavailable",
+                    f"Email service is not available.\n\n"
+                    f"Report would have been sent to:\n{admin_name} ({admin_email})\n\n"
+                    f"Please configure the email service or contact IT support.")
+                logging.warning(f"Email service unavailable - could not send report to {admin_email}")
+
+        except Exception as e:
+            logging.error(f"Failed to send report to admin: {e}")
+            messagebox.showerror("Error", f"Failed to send report to admin: {e}")
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
