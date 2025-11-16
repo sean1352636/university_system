@@ -571,18 +571,20 @@ class ParkingManagementGUI:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute('SELECT * FROM parking_lots ORDER BY lot_id')
             lots = cursor.fetchall()
-            
+
             # Clear existing data
             for item in self.lots_tree.get_children():
                 self.lots_tree.delete(item)
-            
-            # Insert new data
+
+            # Insert new data - convert sqlite3.Row to tuple for display
             for lot in lots:
-                self.lots_tree.insert("", tk.END, values=lot)
-            
+                # Convert sqlite3.Row object to tuple to avoid display issues
+                lot_values = tuple(lot) if hasattr(lot, '__iter__') else lot
+                self.lots_tree.insert("", tk.END, values=lot_values)
+
             conn.close()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh lots: {e}")
@@ -1652,10 +1654,10 @@ Features:
 class PermitDialog:
     def __init__(self, parent, title, permit_data=None):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("400x500")
+        self.dialog.geometry("500x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
         
@@ -1665,49 +1667,61 @@ class PermitDialog:
     def setup_ui(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
+
+        # Student Lookup Section
+        lookup_frame = ttk.LabelFrame(main_frame, text="Student Lookup", padding="5")
+        lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
+
+        ttk.Label(lookup_frame, text="Student ID:").grid(row=0, column=0, sticky="w", padx=5)
+        self.student_id_var = tk.StringVar()
+        self.student_id_entry = ttk.Entry(lookup_frame, textvariable=self.student_id_var, width=20)
+        self.student_id_entry.grid(row=0, column=1, padx=5)
+
+        ttk.Button(lookup_frame, text="Lookup Student",
+                  command=self.lookup_student).grid(row=0, column=2, padx=5)
+
         # User info
-        ttk.Label(main_frame, text="Full Name:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text="Full Name:").grid(row=1, column=0, sticky="w", pady=5)
         self.name_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.name_var).grid(row=0, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Email:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.name_var).grid(row=1, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Email:").grid(row=2, column=0, sticky="w", pady=5)
         self.email_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.email_var).grid(row=1, column=1, sticky="ew", pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.email_var).grid(row=2, column=1, sticky="ew", pady=5)
+
         # Permit info
-        ttk.Label(main_frame, text="Zone:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text="Zone:").grid(row=3, column=0, sticky="w", pady=5)
         self.zone_var = tk.StringVar()
-        zone_combo = ttk.Combobox(main_frame, textvariable=self.zone_var, 
+        zone_combo = ttk.Combobox(main_frame, textvariable=self.zone_var,
                                  values=list(PARKING_ZONES.keys()), state="readonly")
-        zone_combo.grid(row=2, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Permit Type:").grid(row=3, column=0, sticky="w", pady=5)
+        zone_combo.grid(row=3, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Permit Type:").grid(row=4, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
-        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, 
+        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var,
                                  values=PERMIT_TYPES, state="readonly")
-        type_combo.grid(row=3, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Start Date:").grid(row=4, column=0, sticky="w", pady=5)
+        type_combo.grid(row=4, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Start Date:").grid(row=5, column=0, sticky="w", pady=5)
         self.start_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-        ttk.Entry(main_frame, textvariable=self.start_var).grid(row=4, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="End Date:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.start_var).grid(row=5, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="End Date:").grid(row=6, column=0, sticky="w", pady=5)
         self.end_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.end_var).grid(row=5, column=1, sticky="ew", pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.end_var).grid(row=6, column=1, sticky="ew", pady=5)
+
         # Vehicle selection
-        ttk.Label(main_frame, text="Vehicle (optional):").grid(row=6, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text="Vehicle (optional):").grid(row=7, column=0, sticky="w", pady=5)
         self.vehicle_var = tk.StringVar()
         self.vehicle_combo = ttk.Combobox(main_frame, textvariable=self.vehicle_var, state="readonly")
-        self.vehicle_combo.grid(row=6, column=1, sticky="ew", pady=5)
-        
+        self.vehicle_combo.grid(row=7, column=1, sticky="ew", pady=5)
+
         # Load vehicles
         self.load_vehicles()
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=8, column=0, columnspan=2, pady=20)
         
         ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
@@ -1728,13 +1742,82 @@ class PermitDialog:
             cursor.execute('SELECT vehicle_id, license_plate, make, model FROM vehicles')
             vehicles = cursor.fetchall()
             conn.close()
-            
+
             vehicle_options = ["None"] + [f"{v[0]} - {v[1]} ({v[2]} {v[3]})" for v in vehicles]
             self.vehicle_combo['values'] = vehicle_options
             self.vehicle_combo.current(0)
         except Exception as e:
             print(f"Error loading vehicles: {e}")
-    
+
+    def lookup_student(self):
+        """Lookup student in database and autofill form"""
+        student_id = self.student_id_var.get().strip()
+
+        if not student_id:
+            messagebox.showwarning("Warning", "Please enter a Student ID")
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Search for student by student_id
+            cursor.execute('''
+                SELECT student_id, first_name, last_name, email_address
+                FROM students
+                WHERE student_id = ?
+            ''', (student_id,))
+
+            student = cursor.fetchone()
+
+            if student:
+                # Autofill the form with student information
+                full_name = f"{student[1]} {student[2]}"  # first_name + last_name
+                email = student[3] if student[3] else ""
+
+                self.name_var.set(full_name)
+                self.email_var.set(email)
+
+                # Also load student's vehicles if any
+                cursor.execute('''
+                    SELECT vehicle_id, license_plate, make, model
+                    FROM vehicles
+                    WHERE owner_id = ?
+                ''', (student_id,))
+
+                vehicles = cursor.fetchall()
+
+                if vehicles:
+                    # Update vehicle combo with student's vehicles at the top
+                    cursor.execute('SELECT vehicle_id, license_plate, make, model FROM vehicles')
+                    all_vehicles = cursor.fetchall()
+
+                    # Put student vehicles first
+                    vehicle_options = ["None"]
+                    for v in vehicles:
+                        vehicle_options.append(f"{v[0]} - {v[1]} ({v[2]} {v[3]}) [Student's Vehicle]")
+
+                    # Add other vehicles
+                    for v in all_vehicles:
+                        if v[0] not in [sv[0] for sv in vehicles]:
+                            vehicle_options.append(f"{v[0]} - {v[1]} ({v[2]} {v[3]})")
+
+                    self.vehicle_combo['values'] = vehicle_options
+
+                    # Auto-select first student vehicle if available
+                    if len(vehicles) > 0:
+                        self.vehicle_combo.current(1)  # Select first student vehicle
+
+                messagebox.showinfo("Success", f"Student found: {full_name}\nForm auto-filled with student information.")
+            else:
+                messagebox.showerror("Not Found", f"No student found with ID: {student_id}")
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to lookup student: {e}")
+            logging.error(f"Student lookup error: {e}")
+
     def calculate_end_date(self, event=None):
         permit_type = self.type_var.get()
         start_date = datetime.strptime(self.start_var.get(), '%Y-%m-%d')
@@ -1781,7 +1864,8 @@ class PermitDialog:
             'permit_type': self.type_var.get(),
             'start_date': self.start_var.get(),
             'end_date': self.end_var.get(),
-            'vehicle_id': vehicle_id
+            'vehicle_id': vehicle_id,
+            'student_id': self.student_id_var.get().strip() if self.student_id_var.get().strip() else None
         }
         
         self.dialog.destroy()
@@ -1793,54 +1877,71 @@ class PermitDialog:
 class VehicleDialog:
     def __init__(self, parent, title, vehicle_data=None):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("400x400")
+        self.dialog.geometry("500x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.vehicle_data = vehicle_data
         self.setup_ui()
-    
+
     def setup_ui(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
+
+        # Student/Owner Lookup Section
+        lookup_frame = ttk.LabelFrame(main_frame, text="Owner Lookup", padding="5")
+        lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
+
+        ttk.Label(lookup_frame, text="Student ID:").grid(row=0, column=0, sticky="w", padx=5)
+        self.owner_id_var = tk.StringVar()
+        self.owner_id_entry = ttk.Entry(lookup_frame, textvariable=self.owner_id_var, width=20)
+        self.owner_id_entry.grid(row=0, column=1, padx=5)
+
+        ttk.Button(lookup_frame, text="Lookup Owner",
+                  command=self.lookup_owner).grid(row=0, column=2, padx=5)
+
+        # Owner name display (read-only)
+        ttk.Label(main_frame, text="Owner Name:").grid(row=1, column=0, sticky="w", pady=5)
+        self.owner_name_var = tk.StringVar(value="Not linked")
+        ttk.Entry(main_frame, textvariable=self.owner_name_var, state="readonly").grid(row=1, column=1, sticky="ew", pady=5)
+
         # Vehicle info
-        ttk.Label(main_frame, text="License Plate:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text="License Plate:").grid(row=2, column=0, sticky="w", pady=5)
         self.plate_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.plate_var).grid(row=0, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Make:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.plate_var).grid(row=2, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Make:").grid(row=3, column=0, sticky="w", pady=5)
         self.make_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.make_var).grid(row=1, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Model:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.make_var).grid(row=3, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Model:").grid(row=4, column=0, sticky="w", pady=5)
         self.model_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.model_var).grid(row=2, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Year:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.model_var).grid(row=4, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Year:").grid(row=5, column=0, sticky="w", pady=5)
         self.year_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.year_var).grid(row=3, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Color:").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.year_var).grid(row=5, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Color:").grid(row=6, column=0, sticky="w", pady=5)
         self.color_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.color_var).grid(row=4, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Vehicle Type:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.color_var).grid(row=6, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Vehicle Type:").grid(row=7, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
-        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, 
+        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var,
                                  values=VEHICLE_TYPES, state="readonly")
-        type_combo.grid(row=5, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Registration State:").grid(row=6, column=0, sticky="w", pady=5)
+        type_combo.grid(row=7, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Registration State:").grid(row=8, column=0, sticky="w", pady=5)
         self.state_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.state_var).grid(row=6, column=1, sticky="ew", pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.state_var).grid(row=8, column=1, sticky="ew", pady=5)
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=9, column=0, columnspan=2, pady=20)
         
         ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
@@ -1860,7 +1961,47 @@ class VehicleDialog:
             self.color_var.set(self.vehicle_data[5])  # color
             self.type_var.set(self.vehicle_data[6])   # vehicle_type
             self.state_var.set(self.vehicle_data[8])  # registration_state
-    
+
+            # Load owner info if available
+            if self.vehicle_data[7]:  # owner_id
+                self.owner_id_var.set(self.vehicle_data[7])
+                self.lookup_owner()  # Auto-lookup to display owner name
+
+    def lookup_owner(self):
+        """Lookup vehicle owner (student) in database"""
+        owner_id = self.owner_id_var.get().strip()
+
+        if not owner_id:
+            self.owner_name_var.set("Not linked")
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Search for student
+            cursor.execute('''
+                SELECT first_name, last_name
+                FROM students
+                WHERE student_id = ?
+            ''', (owner_id,))
+
+            student = cursor.fetchone()
+
+            if student:
+                owner_name = f"{student[0]} {student[1]}"
+                self.owner_name_var.set(owner_name)
+                messagebox.showinfo("Success", f"Owner found: {owner_name}")
+            else:
+                self.owner_name_var.set("Not found")
+                messagebox.showwarning("Not Found", f"No student found with ID: {owner_id}")
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to lookup owner: {e}")
+            logging.error(f"Owner lookup error: {e}")
+
     def save(self):
         # Validate required fields
         if not all([self.plate_var.get(), self.make_var.get(), 
@@ -1883,7 +2024,8 @@ class VehicleDialog:
             'year': year,
             'color': self.color_var.get(),
             'vehicle_type': self.type_var.get() or 'Sedan',
-            'registration_state': self.state_var.get().upper()
+            'registration_state': self.state_var.get().upper(),
+            'owner_id': self.owner_id_var.get().strip() if self.owner_id_var.get().strip() else None
         }
         
         self.dialog.destroy()

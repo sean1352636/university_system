@@ -5,6 +5,73 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.50] - 2025-11-16
+
+### Added
+
+**Parking Management GUI - Student Lookup & Email Templates:**
+
+1. **Student Lookup in Permit Creation** (✅ Implemented)
+   - **Feature**: Added student lookup functionality to auto-fill permit creation form
+   - **Implementation**:
+     - New "Student Lookup" section in PermitDialog with Student ID field
+     - "Lookup Student" button searches database and auto-fills form
+     - Automatically loads student's name, email, and registered vehicles
+     - Student vehicles displayed at top of vehicle dropdown with [Student's Vehicle] tag
+     - Auto-selects student's first vehicle if available
+     - Student ID stored with permit for future reference
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:1671-1681` - Lookup UI
+     - `modules/domain/mobility/gui/parking_management_gui.py:1752-1819` - Lookup logic
+     - `modules/domain/mobility/gui/parking_management_gui.py:1868` - Store student_id
+     - `modules/domain/mobility/gui/parking_management_gui.py:1660` - Increased dialog size
+   - **Impact**: Permits can now be linked to students with auto-filled information
+
+2. **Owner Lookup in Vehicle Registration** (✅ Implemented)
+   - **Feature**: Added owner/student lookup for vehicle registration
+   - **Implementation**:
+     - New "Owner Lookup" section in VehicleDialog
+     - Student ID field with "Lookup Owner" button
+     - Read-only owner name field shows linked student
+     - Owner ID stored with vehicle for tracking
+     - Auto-loads owner info when editing existing vehicles
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:1894-1904` - Lookup UI
+     - `modules/domain/mobility/gui/parking_management_gui.py:1907-1909` - Owner name display
+     - `modules/domain/mobility/gui/parking_management_gui.py:1970-2003` - Lookup logic
+     - `modules/domain/mobility/gui/parking_management_gui.py:2028` - Store owner_id
+     - `modules/domain/mobility/gui/parking_management_gui.py:1883` - Increased dialog size
+   - **Impact**: Vehicles now properly linked to student owners/permit holders
+
+3. **Parking Email Templates** (✅ Created)
+   - **Feature**: Created JSON email templates for parking notifications
+   - **Templates Created**:
+     - `parking_violation_notice.json` - Initial violation notification with next steps
+     - `parking_violation_reminder.json` - Reminder for unpaid violations
+     - `parking_permit_confirmation.json` - Permit issuance confirmation
+     - `parking_permit_expiry_warning.json` - Permit expiration warning
+   - **Template Variables**:
+     - Violation templates: $student_name, $violation_id, $violation_type, $license_plate, $location, $fine_amount, etc.
+     - Permit templates: $permit_id, $zone, $zone_description, $permit_type, $start_date, $end_date, etc.
+   - **Files Created**:
+     - `templates/email/parking_violation_notice.json`
+     - `templates/email/parking_violation_reminder.json`
+     - `templates/email/parking_permit_confirmation.json`
+     - `templates/email/parking_permit_expiry_warning.json`
+   - **Impact**: Standardized email communications for parking system
+
+### Fixed
+
+**Parking Management GUI - Display Issues:**
+
+1. **Parking Lots Table Display** (✅ Fixed)
+   - **Problem**: Table showed "sqlite3.Row" objects instead of data
+   - **Root Cause**: Treeview values parameter received sqlite3.Row object directly
+   - **Solution**: Convert sqlite3.Row to tuple before inserting into treeview
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:582-586` - Convert to tuple
+   - **Impact**: Parking lots table now displays data correctly
+
 ## [5.0.49] - 2025-11-16
 
 ### Added
