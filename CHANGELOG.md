@@ -5,6 +5,77 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.47] - 2025-11-16
+
+### Fixed
+
+**Restaurant Management GUI - Report Display and Database Issues:**
+
+1. **Missing restaurant_suppliers Table** (✅ Fixed)
+   - **Problem**: "No such table: restaurant_suppliers" error when loading purchase orders
+   - **Root Cause**: Restaurant tables not included in unified database setup
+   - **Solution**: Added comprehensive restaurant/commerce tables to `setup_unified_database.py`
+   - **Tables Added**:
+     - `menu_items` - Restaurant menu with pricing and availability
+     - `restaurant_orders` - Order tracking with status and payment info
+     - `inventory` - Stock management with threshold alerts
+     - `staff_schedules` - Staff shift scheduling
+     - `restaurant_suppliers` - Supplier contact and category info
+     - `purchase_orders` - PO management with supplier foreign keys
+     - `restaurant_customers` - Customer profiles with loyalty points
+   - **Files Modified**:
+     - `modules/setup_unified_database.py:429-542` - Added RESTAURANT/COMMERCE TABLES section
+   - **Impact**: Purchase order reports and supplier management now work correctly
+
+### Added
+
+**Restaurant Management GUI - Enhanced Report Functionality:**
+
+1. **Report Window Display** (✅ Implemented)
+   - **Feature**: Reports now open in dedicated windows instead of inline text widgets
+   - **Benefit**: Better user experience with separate, focused report views
+   - **Implementation**: New `show_report_window()` helper method
+   - **Reports Updated**:
+     - Daily Sales Report
+     - Monthly Summary Report
+     - Profit Analysis Report
+     - Menu Performance Report
+     - Customer Analytics Report
+     - Staff Performance Report
+
+2. **Export as TXT Button** (✅ Implemented)
+   - **Feature**: Export any report to timestamped text file
+   - **Filename Format**: `{Report_Title}_{YYYYMMDD_HHMMSS}.txt`
+   - **Location**: Current working directory
+   - **Success Dialog**: Shows filename and full path
+
+3. **Email to Admin Button** (✅ Implemented)
+   - **Feature**: Send reports directly to admin email
+   - **Email Lookup**: Queries `users` table for admin role: `SELECT email FROM users WHERE role = 'admin' LIMIT 1`
+   - **Current Admin Email**: admin@university.local
+   - **Email Format**:
+     - Subject: "Restaurant Report: {Report Title}"
+     - Body: Full report content
+   - **Integration**: Uses `university_system.infrastructure.email.email_service.send_email()`
+   - **Error Handling**: Validates admin email exists and email service is available
+
+4. **Report Window Features** (✅ Implemented)
+   - **Window Size**: 900x700 pixels
+   - **Font**: Courier 9pt (monospace for tabular data)
+   - **Read-Only Display**: Report text widget is non-editable
+   - **Buttons**: Export as TXT | Email to Admin | Close
+   - **Modal Behavior**: Window grabs focus until closed
+
+**Files Modified:**
+- `modules/domain/commerce/gui/restaurant_management_gui.py:8015-8112` - Added `show_report_window()` helper
+- `modules/domain/commerce/gui/restaurant_management_gui.py:8114-8225` - Updated 6 report methods
+
+**Technical Details:**
+- Report export uses `os.path.join()` and timestamp generation
+- Email integration uses infrastructure email service with proper exception handling
+- Admin email validation prevents silent failures
+- All reports now use consistent window-based display with export/email capabilities
+
 ## [5.0.46] - 2025-11-16
 
 ### Fixed

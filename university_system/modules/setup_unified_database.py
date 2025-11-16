@@ -426,6 +426,121 @@ def create_unified_database():
     )
     ''')
 
+    # ==================== RESTAURANT/COMMERCE TABLES ====================
+
+    # Menu items
+    cursor.execute('''
+    CREATE TABLE menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        category TEXT NOT NULL,
+        available BOOLEAN DEFAULT 1,
+        ingredients TEXT,
+        allergens TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    # Restaurant orders
+    cursor.execute('''
+    CREATE TABLE restaurant_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id TEXT NOT NULL,
+        items TEXT NOT NULL,
+        total_amount REAL,
+        total_price REAL NOT NULL,
+        status TEXT DEFAULT 'pending',
+        order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        delivery_address TEXT,
+        special_instructions TEXT,
+        payment_method TEXT,
+        completed_at TIMESTAMP
+    )
+    ''')
+
+    # Restaurant inventory
+    cursor.execute('''
+    CREATE TABLE inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit TEXT NOT NULL,
+        minimum_threshold INTEGER DEFAULT 10,
+        supplier TEXT,
+        cost_per_unit REAL,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    # Restaurant staff schedules
+    cursor.execute('''
+    CREATE TABLE staff_schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        staff_id TEXT NOT NULL,
+        shift_date DATE NOT NULL,
+        start_time TIME NOT NULL,
+        end_time TIME NOT NULL,
+        position TEXT NOT NULL,
+        status TEXT DEFAULT 'scheduled',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    # Restaurant suppliers
+    cursor.execute('''
+    CREATE TABLE restaurant_suppliers (
+        supplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact_person TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        category TEXT,
+        status TEXT DEFAULT 'Active',
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    # Purchase orders
+    cursor.execute('''
+    CREATE TABLE purchase_orders (
+        po_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        po_number TEXT UNIQUE NOT NULL,
+        supplier_id INTEGER,
+        order_date DATE NOT NULL,
+        expected_delivery DATE,
+        actual_delivery DATE,
+        status TEXT DEFAULT 'Pending',
+        total_amount DECIMAL(10,2) NOT NULL,
+        tax_amount DECIMAL(10,2) DEFAULT 0,
+        shipping_cost DECIMAL(10,2) DEFAULT 0,
+        ordered_by TEXT,
+        received_by TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (supplier_id) REFERENCES restaurant_suppliers (supplier_id)
+    )
+    ''')
+
+    # Restaurant customers
+    cursor.execute('''
+    CREATE TABLE restaurant_customers (
+        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        loyalty_points INTEGER DEFAULT 0,
+        total_spent REAL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
     # ==================== SYSTEM TABLES ====================
 
     # System logs
@@ -606,7 +721,7 @@ def migrate_existing_data():
     print("🔄 Migrating existing data...")
 
     # This is a basic migration - in a real scenario you might want more sophisticated logic
-    existing_db = "./data/db_files/student_records.db"
+    existing_db = DEFAULT_DB_PATH
     if os.path.exists(existing_db):
         print(f"Found existing database: {existing_db}")
         # For now, we'll just note this - the new database has sample data
@@ -615,14 +730,14 @@ def migrate_existing_data():
 
 def update_database_connections():
     """Update database connection code to use the unified database"""
-    print("🔧 Database connections should be updated to use: ./student_records.db")
+    print(f"🔧 Database connections should be updated to use: {DEFAULT_DB_PATH}")
     print("   Update your get_connection() function to point to the new location.")
 
 def test_unified_database():
     """Test the unified database"""
     print("🧪 Testing unified database...")
 
-    db_path = "./student_records.db"
+    db_path = str(DEFAULT_DB_PATH)
 
     try:
         conn = sqlite3.connect(db_path)

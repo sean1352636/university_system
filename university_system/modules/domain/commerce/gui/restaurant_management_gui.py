@@ -8012,79 +8012,173 @@ TOP 5 SUPPLIERS BY VALUE:
             messagebox.showerror("Error", f"Failed to load low stock alerts:\n{str(e)}")
 
     # Report Functions
+    def show_report_window(self, title, report_content):
+        """
+        Display a report in a new window with export and email buttons.
+
+        Args:
+            title: Window title and report name
+            report_content: The text content of the report
+        """
+        # Create report window
+        report_window = tk.Toplevel(self.root)
+        report_window.title(title)
+        report_window.geometry("900x700")
+        report_window.transient(self.root)
+        report_window.grab_set()
+
+        main_frame = ttk.Frame(report_window, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Report display area
+        report_frame = ttk.LabelFrame(main_frame, text="Report", padding=10)
+        report_frame.pack(fill='both', expand=True, pady=10)
+
+        report_text = ScrolledText(report_frame, height=25, width=100, font=('Courier', 9))
+        report_text.pack(fill='both', expand=True)
+        report_text.insert('1.0', report_content)
+        report_text.config(state='disabled')  # Make read-only
+
+        # Buttons frame
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        def export_as_txt():
+            """Export report to a text file"""
+            try:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                # Clean title for filename
+                clean_title = title.replace(' ', '_').replace('/', '_').replace('\\', '_')
+                filename = f"{clean_title}_{timestamp}.txt"
+                filepath = os.path.join(os.getcwd(), filename)
+
+                with open(filepath, 'w') as f:
+                    f.write(report_content)
+
+                messagebox.showinfo("Export Success",
+                                  f"Report exported successfully!\n\n"
+                                  f"File: {filename}\n"
+                                  f"Location: {filepath}")
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export report:\n{str(e)}")
+
+        def email_to_admin():
+            """Email report to admin"""
+            try:
+                # Get admin email from database
+                conn = get_db_connection()
+                if not conn:
+                    messagebox.showerror("Database Error", "Could not connect to database")
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+                result = cursor.fetchone()
+                conn.close()
+
+                if not result or not result[0]:
+                    messagebox.showerror("Email Error",
+                                       "No admin email found in database.\n"
+                                       "Please configure an admin email address first.")
+                    return
+
+                admin_email = result[0]
+
+                # Import email service
+                try:
+                    from university_system.infrastructure.email.email_service import send_email
+                except ImportError:
+                    messagebox.showerror("Email Error",
+                                       "Email service not available.\n"
+                                       "Please check your email configuration.")
+                    return
+
+                # Send the email
+                subject = f"Restaurant Report: {title}"
+                body = f"Please find the {title} below:\n\n{report_content}"
+
+                send_email(admin_email, subject, body)
+
+                messagebox.showinfo("Email Sent",
+                                  f"Report has been sent to admin email:\n{admin_email}")
+
+            except Exception as e:
+                messagebox.showerror("Email Error", f"Failed to send email:\n{str(e)}")
+
+        ttk.Button(btn_frame, text="Export as TXT", command=export_as_txt).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+
     def daily_sales_report(self):
         """Generate daily sales report"""
-        date = simpledialog.askstring("Daily Sales Report", 
+        date = simpledialog.askstring("Daily Sales Report",
                                      "Enter date (YYYY-MM-DD) or leave empty for today:")
         if date is None:
             return
-            
+
         if not date:
             date = datetime.now().strftime('%Y-%m-%d')
-            
+
         try:
             conn = get_db_connection()
             if not conn:
-                self.report_text.delete(1.0, tk.END)
-                self.report_text.insert(tk.END, "Database connection failed")
+                messagebox.showerror("Database Error", "Database connection failed")
                 return
-                
+
             cursor = conn.cursor()
-            
+
             cursor.execute('''
-                SELECT 
+                SELECT
                     COUNT(*) as total_orders,
                     SUM(total_price) as total_revenue,
                     AVG(total_price) as avg_order_value
                 FROM restaurant_orders
                 WHERE DATE(order_time) = ? AND status = 'Completed'
             ''', (date,))
-            
+
             sales_data = cursor.fetchone()
-            
+
             report = f"DAILY SALES REPORT - {date}\n"
             report += "="*80 + "\n\n"
             report += f"Total Orders: {sales_data[0]}\n"
             report += f"Total Revenue: £{sales_data[1]:.2f}\n" if sales_data[1] else "Total Revenue: £0.00\n"
             report += f"Average Order Value: £{sales_data[2]:.2f}\n" if sales_data[2] else "Average Order Value: £0.00\n"
-            
+
             conn.close()
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, report)
-            
+
+            # Show in new window with export/email buttons
+            self.show_report_window(f"Daily Sales Report - {date}", report)
+
         except Exception as e:
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, f"Failed to generate report: {str(e)}")
+            messagebox.showerror("Report Error", f"Failed to generate report:\n{str(e)}")
 
     def monthly_summary_report(self):
         """Generate monthly summary report"""
-        self.report_text.delete(1.0, tk.END)
-        self.report_text.insert(tk.END, "Monthly summary functionality would be implemented here...")
-        
+        report = "Monthly summary functionality would be implemented here..."
+        self.show_report_window("Monthly Summary Report", report)
+
     def profit_analysis_report(self):
         """Generate profit analysis report"""
-        self.report_text.delete(1.0, tk.END)
-        self.report_text.insert(tk.END, "Profit analysis functionality would be implemented here...")
+        report = "Profit analysis functionality would be implemented here..."
+        self.show_report_window("Profit Analysis Report", report)
         
     def menu_performance_report(self):
         """Generate menu performance report"""
         try:
             analytics_text = self.generate_menu_analytics_text()
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, analytics_text)
+            self.show_report_window("Menu Performance Report", analytics_text)
         except Exception as e:
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, f"Failed to generate report: {str(e)}")
-            
+            messagebox.showerror("Report Error", f"Failed to generate report:\n{str(e)}")
+
     def customer_analytics_report(self):
         """Generate customer analytics report"""
         try:
             analytics_text = self.generate_customer_analytics_text()
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, analytics_text)
+            self.show_report_window("Customer Analytics Report", analytics_text)
         except Exception as e:
-            self.report_text.delete(1.0, tk.END)
-            self.report_text.insert(tk.END, f"Failed to generate report: {str(e)}")
+            messagebox.showerror("Report Error", f"Failed to generate report:\n{str(e)}")
             
     def generate_customer_analytics_text(self):
         """Generate customer analytics as text"""
@@ -8124,9 +8218,11 @@ TOP 5 SUPPLIERS BY VALUE:
             
     def staff_performance_report(self):
         """Generate staff performance report"""
-        analytics_text = self.generate_staff_analytics()
-        self.report_text.delete(1.0, tk.END)
-        self.report_text.insert(tk.END, analytics_text)
+        try:
+            analytics_text = self.generate_staff_analytics()
+            self.show_report_window("Staff Performance Report", analytics_text)
+        except Exception as e:
+            messagebox.showerror("Report Error", f"Failed to generate report:\n{str(e)}")
 
     # Advanced Waste Reports
     def view_waste_reports(self):
