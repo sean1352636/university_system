@@ -6555,3 +6555,26 @@ def integrate_shop_with_main():
     
     print("✅ University Shop System ready!")
     return True
+
+
+# Main execution block for running as module or script
+if __name__ == "__main__":
+    print("=" * 60)
+    print("UNIVERSITY SHOP MANAGEMENT SYSTEM - CLI MODE")
+    print("=" * 60)
+    print()
+
+    # Initialize shop database
+    if init_shop_db():
+        # Launch the shop menu
+        try:
+            display_shop_menu()
+        except KeyboardInterrupt:
+            print("\n\nExiting shop system...")
+        except Exception as e:
+            print(f"\n❌ Error running shop system: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print("❌ Failed to initialize shop database")
+        print("Please check your database configuration and try again.")
