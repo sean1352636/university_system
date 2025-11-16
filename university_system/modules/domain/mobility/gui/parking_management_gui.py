@@ -1232,7 +1232,7 @@ class ParkingManagementGUI:
             output.append("-" * 80)
             cursor.execute('''
                 SELECT p.permit_id, p.full_name, p.zone, p.permit_type,
-                       p.issue_date, p.expiry_date, v.license_plate
+                       p.issue_date, p.end_date, v.license_plate
                 FROM parking_permits p
                 LEFT JOIN vehicles v ON p.vehicle_id = v.vehicle_id
                 WHERE p.active_status = 'Active'
@@ -1299,11 +1299,11 @@ class ParkingManagementGUI:
             output.append("PERMITS EXPIRING SOON (Next 30 Days)")
             output.append("-" * 80)
             cursor.execute('''
-                SELECT permit_id, full_name, zone, permit_type, expiry_date
+                SELECT permit_id, full_name, zone, permit_type, end_date
                 FROM parking_permits
                 WHERE active_status = 'Active'
-                AND date(expiry_date) BETWEEN date('now') AND date('now', '+30 days')
-                ORDER BY expiry_date
+                AND date(end_date) BETWEEN date('now') AND date('now', '+30 days')
+                ORDER BY end_date
             ''')
             expiring = cursor.fetchall()
 
@@ -1352,13 +1352,13 @@ class ParkingManagementGUI:
             ''')
             summary = cursor.fetchone()
 
-            output.append(f"Total Violations: {summary[0]}")
-            output.append(f"  - Paid: {summary[1]}")
-            output.append(f"  - Unpaid: {summary[2]}")
-            output.append(f"  - Pending: {summary[3]}")
-            output.append(f"Total Fines: ${summary[4]:.2f}")
-            output.append(f"  - Collected: ${summary[5]:.2f}")
-            output.append(f"  - Outstanding: ${summary[6]:.2f}")
+            output.append(f"Total Violations: {summary[0] or 0}")
+            output.append(f"  - Paid: {summary[1] or 0}")
+            output.append(f"  - Unpaid: {summary[2] or 0}")
+            output.append(f"  - Pending: {summary[3] or 0}")
+            output.append(f"Total Fines: ${summary[4] or 0:.2f}")
+            output.append(f"  - Collected: ${summary[5] or 0:.2f}")
+            output.append(f"  - Outstanding: ${summary[6] or 0:.2f}")
 
             output.append("\n")
 
@@ -1549,10 +1549,10 @@ class ParkingManagementGUI:
             ''')
             revenue = cursor.fetchone()
 
-            output.append(f"Total Fines Issued: ${revenue[0]:.2f}")
-            output.append(f"Fines Collected: ${revenue[1]:.2f}")
-            output.append(f"Outstanding Fines: ${revenue[2]:.2f}")
-            output.append(f"Collection Rate: {(revenue[1] / revenue[0] * 100) if revenue[0] > 0 else 0:.1f}%")
+            output.append(f"Total Fines Issued: ${revenue[0] or 0:.2f}")
+            output.append(f"Fines Collected: ${revenue[1] or 0:.2f}")
+            output.append(f"Outstanding Fines: ${revenue[2] or 0:.2f}")
+            output.append(f"Collection Rate: {((revenue[1] or 0) / (revenue[0] or 1) * 100) if (revenue[0] or 0) > 0 else 0:.1f}%")
 
             conn.close()
 
@@ -1626,11 +1626,11 @@ class ParkingManagementGUI:
 
             # Query for admin users' emails
             cursor.execute('''
-                SELECT email_address, first_name, last_name
+                SELECT email, first_name, last_name
                 FROM users
                 WHERE role = 'admin'
-                AND email_address IS NOT NULL
-                AND email_address != ''
+                AND email IS NOT NULL
+                AND email != ''
                 ORDER BY id
                 LIMIT 1
             ''')
@@ -2028,7 +2028,7 @@ Parking Management System
             cursor.execute('''
                 SELECT COUNT(*) FROM parking_permits
                 WHERE active_status = 'Active'
-                AND date(expiry_date) < date('now')
+                AND date(end_date) < date('now')
             ''')
             expired_not_updated = cursor.fetchone()[0]
 
@@ -2099,22 +2099,28 @@ Parking Management System
             output.append("RECENT AUDIT TRAIL (Last 30 Days)")
             output.append("-" * 80)
 
-            cursor.execute('''
-                SELECT date, action, entity_type, entity_id
-                FROM recent_activity
-                WHERE date(date) >= date('now', '-30 days')
-                ORDER BY date DESC
-                LIMIT 20
-            ''')
-            audit_trail = cursor.fetchall()
+            try:
+                cursor.execute('''
+                    SELECT timestamp, activity_type, activity_description, user_id
+                    FROM user_activity_log
+                    WHERE date(timestamp) >= date('now', '-30 days')
+                    AND (activity_type LIKE '%parking%' OR activity_description LIKE '%parking%'
+                         OR activity_description LIKE '%permit%' OR activity_description LIKE '%violation%')
+                    ORDER BY timestamp DESC
+                    LIMIT 20
+                ''')
+                audit_trail = cursor.fetchall()
 
-            if audit_trail:
-                output.append(f"{'Date':<20} {'Action':<15} {'Type':<15} {'ID':<15}")
-                output.append("-" * 65)
-                for entry in audit_trail:
-                    output.append(f"{entry[0]:<20} {entry[1]:<15} {entry[2]:<15} {entry[3]:<15}")
-            else:
-                output.append("No recent audit trail available.")
+                if audit_trail:
+                    output.append(f"{'Date':<20} {'Activity':<20} {'Description':<30} {'User ID':<10}")
+                    output.append("-" * 80)
+                    for entry in audit_trail:
+                        desc = entry[2][:27] + "..." if len(entry[2]) > 30 else entry[2]
+                        output.append(f"{entry[0]:<20} {entry[1]:<20} {desc:<30} {entry[3]:<10}")
+                else:
+                    output.append("No recent parking-related audit trail available.")
+            except Exception as e:
+                output.append(f"Audit trail not available (table may not exist)")
 
             conn.close()
 
@@ -2345,22 +2351,28 @@ Parking Management System
             output.append("RECENT USER ACTIONS (Last 7 Days)")
             output.append("-" * 80)
 
-            cursor.execute('''
-                SELECT date, action, entity_type, entity_id
-                FROM recent_activity
-                WHERE date(date) >= date('now', '-7 days')
-                ORDER BY date DESC
-                LIMIT 30
-            ''')
-            recent_actions = cursor.fetchall()
+            try:
+                cursor.execute('''
+                    SELECT timestamp, activity_type, activity_description, user_id
+                    FROM user_activity_log
+                    WHERE date(timestamp) >= date('now', '-7 days')
+                    AND (activity_type LIKE '%parking%' OR activity_description LIKE '%parking%'
+                         OR activity_description LIKE '%permit%' OR activity_description LIKE '%violation%')
+                    ORDER BY timestamp DESC
+                    LIMIT 30
+                ''')
+                recent_actions = cursor.fetchall()
 
-            if recent_actions:
-                output.append(f"{'Date':<20} {'Action':<20} {'Type':<15} {'ID':<15}")
-                output.append("-" * 70)
-                for action in recent_actions:
-                    output.append(f"{action[0]:<20} {action[1]:<20} {action[2]:<15} {action[3]:<15}")
-            else:
-                output.append("No recent user actions found.")
+                if recent_actions:
+                    output.append(f"{'Date':<20} {'Activity Type':<25} {'Description':<30} {'User ID':<10}")
+                    output.append("-" * 85)
+                    for action in recent_actions:
+                        desc = action[2][:27] + "..." if len(action[2]) > 30 else action[2]
+                        output.append(f"{action[0]:<20} {action[1]:<25} {desc:<30} {action[3]:<10}")
+                else:
+                    output.append("No recent parking-related user actions found.")
+            except Exception as e:
+                output.append(f"User activity log not available (table may not exist)")
 
             output.append("\n")
 
@@ -2377,7 +2389,7 @@ Parking Management System
             cursor.execute('''
                 SELECT COUNT(*) FROM parking_permits
                 WHERE active_status = 'Active'
-                AND date(expiry_date) BETWEEN date('now') AND date('now', '+30 days')
+                AND date(end_date) BETWEEN date('now') AND date('now', '+30 days')
             ''')
             expiring_soon = cursor.fetchone()[0]
 

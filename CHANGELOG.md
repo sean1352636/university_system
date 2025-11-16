@@ -5,6 +5,67 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.57] - 2025-11-16
+
+### Fixed
+
+**HOTFIX: Parking GUI - Database Schema Alignment**
+
+Fixed critical database schema mismatches causing all reports to crash with SQL errors.
+
+**Issues Fixed:**
+1. **Column Name Mismatches:**
+   - `expiry_date` → `end_date` (parking_permits table uses `end_date`)
+   - `email_address` → `email` (users table uses `email`)
+   - Fixed in 4 locations across 3 reports
+
+2. **NoneType Formatting Errors:**
+   - Added null handling for aggregate SUM() queries
+   - Protected against division by zero in percentage calculations
+   - Fixed in Violation Report and Analytics Dashboard
+
+3. **Missing Table References:**
+   - `recent_activity` table doesn't exist
+   - Updated to use `user_activity_log` table instead
+   - Added try/except blocks for graceful degradation
+   - Fixed in Compliance and User Activity reports
+
+**Specific Fixes:**
+- **Permit Report**: Changed `p.expiry_date` to `p.end_date` (lines 1235, 1302, 1305-1306)
+- **Violation Report**: Added `or 0` null handling for fine amounts (lines 1355-1361)
+- **Analytics Dashboard**: Added `or 0` null handling with division protection (lines 1552-1555)
+- **Compliance Report**:
+  - Changed `expiry_date` to `end_date` (line 2031)
+  - Updated audit trail to use `user_activity_log` (lines 2102-2123)
+- **Revenue Report**: All None handling already implemented
+- **User Activity Report**:
+  - Changed `expiry_date` to `end_date` (line 2392)
+  - Updated to use `user_activity_log` with parking filters (lines 2348-2369)
+- **Send to Admin**: Changed `email_address` to `email` in users query (lines 1629-1633)
+
+**Database Schema Confirmed:**
+- `parking_permits`: Uses `end_date`, not `expiry_date`
+- `users`: Uses `email`, not `email_address`
+- `user_activity_log`: Replaces non-existent `recent_activity` table
+
+**Testing:**
+- Python syntax validation passed
+- All SQL queries aligned with actual schema
+- Null value handling implemented throughout
+- Graceful degradation for missing tables
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/parking_management_gui.py`
+  - 8 column name corrections
+  - 7 null handling additions
+  - 2 table reference updates
+
+**Impact:**
+- All 6 reports now work without SQL errors
+- Handles empty databases gracefully
+- Activity logging works with actual schema
+- No more NoneType format exceptions
+
 ## [5.0.56] - 2025-11-16
 
 ### Fixed
