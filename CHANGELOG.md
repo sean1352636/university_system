@@ -5,6 +5,38 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.48] - 2025-11-16
+
+### Fixed
+
+**Shop Management GUI - Database and Module Errors:**
+
+1. **Discount Cleanup SQL Error** (✅ Fixed)
+   - **Problem**: "Failed to cleanup expired discounts: no such column: code" error when cleaning up discounts
+   - **Root Cause**:
+     - SQL query attempted to SELECT 'code' column from shop_discounts table
+     - The shop_discounts table schema only has: discount_id, name, description, discount_type, discount_value, start_date, end_date, is_active, applicable_products, min_purchase_amount, created_at
+     - No 'code' column exists in the table schema
+   - **Solution**:
+     - Changed SELECT query from `SELECT discount_id, code, end_date` to `SELECT discount_id, name, end_date`
+     - Display logic now shows discount name instead of non-existent code
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4115` - Fixed SQL query to use 'name' column
+   - **Impact**: Discount cleanup now works correctly without SQL errors
+
+2. **CLI Launch ModuleNotFoundError** (✅ Fixed)
+   - **Problem**: `ModuleNotFoundError: No module named 'university_system'` when launching CLI from GUI
+   - **Root Cause**:
+     - Subprocess launched with `-m university_system.modules.domain.commerce.services.shop_management`
+     - Project root not in PYTHONPATH, preventing Python from finding university_system package
+   - **Solution**:
+     - Added PYTHONPATH environment variable to subprocess environment
+     - Set PYTHONPATH to project root before launching CLI
+     - Now Python can locate university_system package correctly
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4212-4221` - Added env with PYTHONPATH to subprocess
+   - **Impact**: CLI launches successfully from GUI without import errors
+
 ## [5.0.47] - 2025-11-16
 
 ### Fixed

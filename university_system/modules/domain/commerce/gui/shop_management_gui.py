@@ -4112,7 +4112,7 @@ class UniversityShopGUI:
 
                 # Find expired discounts
                 cursor.execute("""
-                    SELECT discount_id, code, end_date
+                    SELECT discount_id, name, end_date
                     FROM shop_discounts
                     WHERE end_date < ? AND is_active = 1
                 """, (now,))
@@ -4209,11 +4209,16 @@ class UniversityShopGUI:
                     # Navigate up from gui -> commerce -> domain -> modules -> university_system -> project_root
                     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
 
+                    # Set up environment with PYTHONPATH
+                    env = os.environ.copy()
+                    env['PYTHONPATH'] = project_root
+
                     # Launch as module to avoid import issues
                     # Use -m to run as module instead of direct file execution
                     subprocess.Popen(
                         [sys.executable, "-m", "university_system.modules.domain.commerce.services.shop_management"],
-                        cwd=project_root
+                        cwd=project_root,
+                        env=env
                     )
                     messagebox.showinfo("CLI Launched",
                                       "Shop Management CLI launched in separate process.\n"
