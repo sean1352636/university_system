@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Shop Management GUI - Product Details and Cart Issues:**
+
+1. **Tkinter grab_set Error on Product Double-Click** (✅ Fixed)
+   - **Problem**: `_tkinter.TclError: grab failed: window not viewable` when viewing product details
+   - **Root Cause**: `grab_set()` called immediately after creating Toplevel window, before it was fully rendered
+   - **Solution**:
+     - Moved `grab_set()` to after window content is created
+     - Added `update_idletasks()` to ensure window is rendered before grabbing focus
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:2934-3002` - Fixed window creation sequence
+   - **Impact**: Product details window now opens correctly without Tkinter errors
+
+2. **Add to Cart "Product Not Found" Error** (✅ Fixed)
+   - **Problem**: "Failed to add to cart product not found" error when adding products
+   - **Root Cause**: Missing `get_connection` import from database module
+   - **Details**:
+     - `get_product_details()` checked if `get_connection` was in globals
+     - Function was never imported, so check always failed
+     - Returned None, triggering "product not found" error
+   - **Solution**:
+     - Added `get_connection` import: `from university_system.infrastructure.database.db import sqlite3, get_connection`
+     - Simplified `get_product_details()` to directly use imported function
+     - Added debug logging for product lookup failures
+     - Enhanced error messages with product ID
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:3` - Added get_connection import
+     - `modules/domain/commerce/gui/shop_management_gui.py:3004-3030` - Fixed get_product_details method
+     - `modules/domain/commerce/gui/shop_management_gui.py:3057-3093` - Enhanced error handling in add_to_cart
+   - **Impact**: Add to cart functionality now works correctly
+
 **Restaurant Management GUI - Report Display and Database Issues:**
 
 1. **Missing restaurant_suppliers Table** (✅ Fixed)

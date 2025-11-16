@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
-from university_system.infrastructure.database.db import sqlite3
+from university_system.infrastructure.database.db import sqlite3, get_connection
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 import time
 import os
@@ -2930,11 +2930,10 @@ class UniversityShopGUI:
         details_window.title(f"Product Details - {product_id}")
         details_window.geometry("500x400")
         details_window.resizable(False, False)
-        
-        # Make it modal
+
+        # Make it modal (set transient first)
         details_window.transient(self.root)
-        details_window.grab_set()
-        
+
         # Create content
         main_frame = ttk.Frame(details_window, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -2992,36 +2991,42 @@ class UniversityShopGUI:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to add to cart: {e}")
         
-        ttk.Button(cart_frame, text="Add to Cart", command=add_to_cart_action, 
+        ttk.Button(cart_frame, text="Add to Cart", command=add_to_cart_action,
                   style='Primary.TButton').grid(row=0, column=2, padx=10)
-        
+
         # Close button
         ttk.Button(main_frame, text="Close", command=details_window.destroy).grid(row=2, column=0, pady=10)
+
+        # Now that window is fully created, make it modal
+        details_window.update_idletasks()  # Ensure window is rendered
+        details_window.grab_set()  # Now safe to grab focus
         
     def get_product_details(self, product_id):
         """Get detailed product information"""
         try:
-            if 'get_connection' in globals():
-                conn = get_connection()
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                cursor.execute("""
-                    SELECT p.*, i.quantity, i.restock_threshold
-                    FROM shop_products p
-                    JOIN shop_inventory i ON p.product_id = i.product_id
-                    WHERE p.product_id = ?
-                """, [product_id])
-                
-                result = cursor.fetchone()
-                conn.close()
-                
-                if result:
-                    return dict(result)
-                    
+            conn = get_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT p.*, i.quantity, i.restock_threshold
+                FROM shop_products p
+                JOIN shop_inventory i ON p.product_id = i.product_id
+                WHERE p.product_id = ?
+            """, [product_id])
+
+            result = cursor.fetchone()
+            conn.close()
+
+            if result:
+                return dict(result)
+
+            # If no result found, log and return None
+            print(f"Warning: Product {product_id} not found in database")
             return None
-            
+
         except Exception as e:
+            print(f"Error getting product details for {product_id}: {e}")
             raise Exception(f"Database error: {e}")
             
     def add_selected_to_cart(self):
@@ -3054,14 +3059,14 @@ class UniversityShopGUI:
         try:
             # Get product details
             product_details = self.get_product_details(product_id)
-            
+
             if not product_details:
-                raise Exception("Product not found")
-            
+                raise Exception(f"Product not found (ID: {product_id}). The product may not exist in inventory.")
+
             # Check stock
             if quantity > product_details['quantity']:
                 raise Exception(f"Insufficient stock. Only {product_details['quantity']} available.")
-            
+
             # Check if already in cart
             for item in self.cart_items:
                 if item['product_id'] == product_id:
@@ -3078,12 +3083,13 @@ class UniversityShopGUI:
                     'subtotal': product_details['price'] * quantity
                 }
                 self.cart_items.append(cart_item)
-            
+
             # Update status
             self.update_status(f"Added {quantity} x {product_details['name']} to cart")
             messagebox.showinfo("Success", f"Added {quantity} x {product_details['name']} to cart")
-            
+
         except Exception as e:
+            print(f"Error in add_to_cart: {e}")
             raise Exception(f"Failed to add to cart: {e}")
             
     def show_shopping_cart(self):
@@ -4017,7 +4023,8 @@ class UniversityShopGUI:
             backup_filename = f"shop_backup_{timestamp}.db"
 
             # Get the current database path
-            db_path = str(DEFAULT_DB_PATH) if 'DEFAULT_DB_PATH' in globals() else "student_records.db"
+            from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH as DB_PATH
+            db_path = str(DB_PATH)
 
             # Let user choose save location
             from tkinter import filedialog
