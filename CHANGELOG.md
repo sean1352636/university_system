@@ -5,6 +5,98 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.64] - 2025-11-16
+
+### Fixed
+
+**FIX: Facilities Management GUI - log_activity() Invalid Arguments**
+
+Fixed crashes throughout Facilities Management GUI caused by incorrect log_activity() function calls.
+
+**Problem:**
+- All building, room, asset, and booking operations crashed with: "log_activity() got an unexpected keyword argument 'building_id'" (and similar)
+- Affected 12 different operations across the entire GUI
+- Made core functionality unusable (adding buildings, rooms, assets, etc.)
+
+**Root Cause:**
+- `log_activity()` signature: `log_activity(action, entity_type, user, user_id, details)`
+- Code was passing entity IDs (building_id, room_id, etc.) as direct keyword arguments
+- These IDs aren't valid parameters for log_activity()
+- IDs should be included in the `details` dictionary instead
+
+**Fixed 12 log_activity calls:**
+
+1. **Line 98**: Accessed Facilities Management
+   - `log_activity('Accessed Facilities Management', user=...)`
+   - → `log_activity('view', 'facilities_management', user=...)`
+
+2. **Line 780**: Add building
+   - `log_activity('Added building', building_id=..., details=..., user=...)`
+   - → `log_activity('create', 'building', user=..., details={'building_id': ...})`
+
+3. **Line 899**: Update building
+   - `log_activity('Updated building', building_id=..., details=..., user=...)`
+   - → `log_activity('update', 'building', user=..., details={'building_id': ...})`
+
+4. **Line 1001**: Add room
+   - `log_activity('Added room', room_id=..., details=..., user=...)`
+   - → `log_activity('create', 'room', user=..., details={'room_id': ...})`
+
+5. **Line 1125**: Update room
+   - `log_activity('Updated room', room_id=..., details=..., user=...)`
+   - → `log_activity('update', 'room', user=..., details={'room_id': ...})`
+
+6. **Line 1172**: Create room booking
+   - `log_activity('Created room booking', booking_id=..., user=...)`
+   - → `log_activity('create', 'room_booking', user=..., details={'booking_id': ...})`
+
+7. **Line 1240**: Create maintenance request
+   - `log_activity('Created maintenance request', request_id=..., user=...)`
+   - → `log_activity('create', 'maintenance_request', user=..., details={'request_id': ...})`
+
+8. **Line 1304**: Create work order
+   - `log_activity('Created work order', work_order_id=..., user=...)`
+   - → `log_activity('create', 'work_order', user=..., details={'work_order_id': ...})`
+
+9. **Line 1359**: Add asset
+   - `log_activity('Added asset', asset_id=..., user=...)`
+   - → `log_activity('create', 'asset', user=..., details={'asset_id': ...})`
+
+10. **Line 1395**: Update asset
+    - `log_activity('Updated asset', asset_id=..., user=...)`
+    - → `log_activity('update', 'asset', user=..., details={'asset_id': ...})`
+
+11. **Line 1437**: Delete building
+    - `log_activity('Deleted building', building_id=..., user=...)`
+    - → `log_activity('delete', 'building', user=..., details={'building_id': ...})`
+
+12. **Line 1687**: Close Facilities Management
+    - `log_activity('Closed Facilities Management', user=...)`
+    - → `log_activity('close', 'facilities_management', user=...)`
+
+**Correct log_activity pattern:**
+```python
+log_activity(
+    action='create',           # Standard action (create/update/delete/view)
+    entity_type='building',    # Entity being acted upon
+    user=username,             # Username
+    details={'building_id': id}  # Additional context (IDs, names, etc.)
+)
+```
+
+**Files Modified:**
+- `university_system/modules/domain/facilities/gui/facilities_management_gui.py`
+
+**Impact:**
+- ✓ Buildings can now be added/edited/deleted successfully
+- ✓ Rooms can be created and updated
+- ✓ Room bookings work correctly
+- ✓ Maintenance requests can be submitted
+- ✓ Work orders can be created
+- ✓ Assets can be registered and updated
+- ✓ All activity logging now works properly
+- ✓ Full facilities management functionality restored
+
 ## [5.0.63] - 2025-11-16
 
 ### Fixed

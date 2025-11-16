@@ -95,7 +95,7 @@ class FacilitiesManagementGUI:
             self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
             self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-            log_activity('Accessed Facilities Management',
+            log_activity('view', 'facilities_management',
                         user=self.current_user.get('username'))
 
         except Exception as e:
@@ -777,8 +777,8 @@ class FacilitiesManagementGUI:
                     building_type=type_combo.get()
                 )
 
-                log_activity('Added building', building_id=building_id,
-                           details={'name': name}, user=self.current_user.get('username'))
+                log_activity('create', 'building', user=self.current_user.get('username'),
+                           details={'name': name, 'building_id': building_id})
 
                 messagebox.showinfo("Success", f"Building '{name}' added successfully!")
                 dialog.destroy()
@@ -896,8 +896,8 @@ class FacilitiesManagementGUI:
                     ''', (name, code, address_entry.get().strip(), int(floors_entry.get()),
                           type_combo.get(), 1 if is_active_var.get() else 0, building_id))
 
-                log_activity('Updated building', building_id=building_id,
-                           details={'name': name}, user=self.current_user.get('username'))
+                log_activity('update', 'building', user=self.current_user.get('username'),
+                           details={'name': name, 'building_id': building_id})
 
                 messagebox.showinfo("Success", f"Building '{name}' updated successfully!")
                 dialog.destroy()
@@ -998,8 +998,8 @@ class FacilitiesManagementGUI:
                     floor_number=int(floor_entry.get())
                 )
 
-                log_activity('Added room', room_id=room_id,
-                           details={'room_number': room_number}, user=self.current_user.get('username'))
+                log_activity('create', 'room', user=self.current_user.get('username'),
+                           details={'room_number': room_number, 'room_id': room_id})
 
                 messagebox.showinfo("Success", f"Room {room_number} added successfully!")
                 dialog.destroy()
@@ -1122,8 +1122,8 @@ class FacilitiesManagementGUI:
                     ''', (building_id, room_number, room_type, int(capacity_entry.get()),
                           int(floor_entry.get()), 1 if is_active_var.get() else 0, room_id))
 
-                log_activity('Updated room', room_id=room_id,
-                           details={'room_number': room_number}, user=self.current_user.get('username'))
+                log_activity('update', 'room', user=self.current_user.get('username'),
+                           details={'room_number': room_number, 'room_id': room_id})
 
                 messagebox.showinfo("Success", f"Room {room_number} updated successfully!")
                 dialog.destroy()
@@ -1169,7 +1169,8 @@ class FacilitiesManagementGUI:
                     purpose=purpose or '',
                     expected_attendees=20
                 )
-                log_activity('Created room booking', booking_id=booking_id, user=self.current_user.get('username'))
+                log_activity('create', 'room_booking', user=self.current_user.get('username'),
+                           details={'booking_id': booking_id})
                 messagebox.showinfo('Success', f'Booking created! ID: {booking_id}')
                 self.load_bookings()
         except Exception as e:
@@ -1236,7 +1237,8 @@ Status: {booking['booking_status']}"""
                     reported_by=self.current_user.get('username'),
                     building_id=building_id
                 )
-                log_activity('Created maintenance request', request_id=request_id, user=self.current_user.get('username'))
+                log_activity('create', 'maintenance_request', user=self.current_user.get('username'),
+                           details={'request_id': request_id})
                 messagebox.showinfo('Success', f'Maintenance request created! ID: {request_id}')
                 self.load_maintenance_requests()
         except Exception as e:
@@ -1299,7 +1301,8 @@ Description: {req['description']}"""
                     description=description,
                     assigned_technician=technician or ''
                 )
-                log_activity('Created work order', work_order_id=work_order_id, user=self.current_user.get('username'))
+                log_activity('create', 'work_order', user=self.current_user.get('username'),
+                           details={'work_order_id': work_order_id})
                 messagebox.showinfo('Success', f'Work order created! ID: {work_order_id}')
                 self.load_work_orders()
         except Exception as e:
@@ -1353,7 +1356,8 @@ Description: {wo['description']}"""
                     asset_tag=asset_tag,
                     purchase_cost=cost or 0
                 )
-                log_activity('Added asset', asset_id=asset_id, user=self.current_user.get('username'))
+                log_activity('create', 'asset', user=self.current_user.get('username'),
+                           details={'asset_id': asset_id})
                 messagebox.showinfo('Success', f'Asset added! ID: {asset_id}')
                 self.load_assets()
         except Exception as e:
@@ -1388,7 +1392,8 @@ Description: {wo['description']}"""
                         cursor.execute('''UPDATE facility_assets SET asset_name = ?, condition = ?
                                          WHERE asset_id = ?''', (new_name, new_condition, asset_id))
 
-                    log_activity('Updated asset', asset_id=asset_id, user=self.current_user.get('username'))
+                    log_activity('update', 'asset', user=self.current_user.get('username'),
+                               details={'asset_id': asset_id})
                     messagebox.showinfo('Success', 'Asset updated!')
                     self.load_assets()
         except Exception as e:
@@ -1429,7 +1434,8 @@ Description: {wo['description']}"""
                     cursor = conn.cursor()
                     cursor.execute('UPDATE buildings SET is_active = 0 WHERE building_id = ?', (building_id,))
 
-                log_activity('Deleted building', building_id=building_id, user=self.current_user.get('username'))
+                log_activity('delete', 'building', user=self.current_user.get('username'),
+                           details={'building_id': building_id})
                 messagebox.showinfo('Success', 'Building deactivated')
                 self.load_buildings()
             except Exception as e:
@@ -1678,7 +1684,7 @@ Description: {wo['description']}"""
         if messagebox.askyesno("Confirm", "Return to main menu?"):
             if self.window:
                 self.window.destroy()
-            log_activity('Closed Facilities Management',
+            log_activity('close', 'facilities_management',
                         user=self.current_user.get('username') if self.current_user else 'Unknown')
 
 
