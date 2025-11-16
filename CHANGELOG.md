@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Shop Management GUI - Incorrect File Path:**
+
+1. **CLI Launch File Not Found** (✅ Fixed)
+   - **Problem**: `/home/seancatchpole989/venv/bin/python: can't open file '/home/seancatchpole989/shop_management.py': [Errno 2] No such file or directory`
+   - **Root Cause**: Code tried to launch `shop_management.py` from incorrect path (root directory)
+   - **Actual Location**: `university_system/modules/domain/commerce/services/shop_management.py`
+   - **Solution**:
+     - Updated `launch_external_cli()` to build correct path dynamically
+     - Uses `os.path.join()` with `__file__` to find relative path
+     - Added file existence check before launching
+     - Shows error message with actual path if file not found
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4200-4217` - Fixed launch_external_cli function
+     - `modules/domain/commerce/gui/shop_management_gui.py:4184-4185` - Updated CLI instructions
+   - **Impact**: CLI launch button now correctly locates and launches shop_management.py
+
 **Shop Management GUI - AttributeErrors and Missing Methods:**
 
 1. **Discount Dialog AttributeError** (✅ Fixed)

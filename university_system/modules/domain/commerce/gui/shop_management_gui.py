@@ -4181,7 +4181,8 @@ class UniversityShopGUI:
             cli_text.insert(tk.END, "CLI Mode Integration\n")
             cli_text.insert(tk.END, "=" * 50 + "\n\n")
             cli_text.insert(tk.END, "The original CLI functions are available and can be called programmatically.\n")
-            cli_text.insert(tk.END, "To use the full CLI interface, run the original shop_management.py file directly.\n\n")
+            cli_text.insert(tk.END, "To use the full CLI interface, run:\n")
+            cli_text.insert(tk.END, "python university_system/modules/domain/commerce/services/shop_management.py\n\n")
             cli_text.insert(tk.END, "Available CLI functions:\n")
             cli_text.insert(tk.END, "- browse_products()\n")
             cli_text.insert(tk.END, "- add_to_shopping_cart()\n")
@@ -4201,8 +4202,18 @@ class UniversityShopGUI:
                 try:
                     import subprocess
                     import sys
-                    subprocess.Popen([sys.executable, "shop_management.py"])
-                    messagebox.showinfo("CLI Launched", "Original CLI mode launched in separate process")
+                    import os
+                    # Get the correct path to shop_management.py
+                    shop_cli_path = os.path.join(
+                        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "services",
+                        "shop_management.py"
+                    )
+                    if os.path.exists(shop_cli_path):
+                        subprocess.Popen([sys.executable, shop_cli_path])
+                        messagebox.showinfo("CLI Launched", "Original CLI mode launched in separate process")
+                    else:
+                        messagebox.showerror("Error", f"CLI file not found at:\n{shop_cli_path}")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to launch CLI: {e}")
             
