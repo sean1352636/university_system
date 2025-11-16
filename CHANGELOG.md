@@ -5,6 +5,66 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.65] - 2025-11-16
+
+### Fixed
+
+**FIX: Facilities Management GUI - Tkinter Grab Failed Errors**
+
+Fixed dialog crashes caused by calling grab_set() before windows are visible.
+
+**Problem:**
+- Edit building dialog crashed with: `_tkinter.TclError: grab failed: window not viewable`
+- Same error occurred in add building, add room, and edit room dialogs
+- Prevented users from editing or adding buildings/rooms
+
+**Root Cause:**
+- `dialog.grab_set()` was called immediately after creating the dialog window
+- Tkinter requires the window to be fully visible before grabbing input focus
+- Without `wait_visibility()`, the window isn't rendered yet and grab fails
+
+**Fix:**
+Added `dialog.wait_visibility()` before `dialog.grab_set()` in 4 dialogs:
+
+1. **Line 725-726**: Add building dialog
+   ```python
+   dialog.wait_visibility()  # Added
+   dialog.grab_set()
+   ```
+
+2. **Line 830-831**: Edit building dialog
+   ```python
+   dialog.wait_visibility()  # Added
+   dialog.grab_set()
+   ```
+
+3. **Line 940-941**: Add room dialog
+   ```python
+   dialog.wait_visibility()  # Added
+   dialog.grab_set()
+   ```
+
+4. **Line 1053-1054**: Edit room dialog
+   ```python
+   dialog.wait_visibility()  # Added
+   dialog.grab_set()
+   ```
+
+**Technical Details:**
+- `wait_visibility()` blocks until the window is mapped and visible on screen
+- After visibility is confirmed, grab_set() can safely claim input focus
+- This is the standard Tkinter pattern for modal dialogs
+
+**Files Modified:**
+- `university_system/modules/domain/facilities/gui/facilities_management_gui.py`
+
+**Impact:**
+- ✓ Add building dialog opens successfully
+- ✓ Edit building dialog opens without errors
+- ✓ Add room dialog works correctly
+- ✓ Edit room dialog functions properly
+- ✓ All modal dialogs now grab focus reliably
+
 ## [5.0.64] - 2025-11-16
 
 ### Fixed

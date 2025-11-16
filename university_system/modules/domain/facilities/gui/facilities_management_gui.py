@@ -722,6 +722,7 @@ class FacilitiesManagementGUI:
         dialog.title("Add New Building")
         dialog.geometry("500x450")
         dialog.transient(self.window)
+        dialog.wait_visibility()
         dialog.grab_set()
 
         # Form fields
@@ -826,6 +827,7 @@ class FacilitiesManagementGUI:
         dialog.title(f"Edit Building - {building['building_name']}")
         dialog.geometry("500x450")
         dialog.transient(self.window)
+        dialog.wait_visibility()
         dialog.grab_set()
 
         main_frame = ttk.Frame(dialog, padding=20)
@@ -935,6 +937,7 @@ class FacilitiesManagementGUI:
         dialog.title("Add New Room")
         dialog.geometry("500x550")
         dialog.transient(self.window)
+        dialog.wait_visibility()
         dialog.grab_set()
 
         main_frame = ttk.Frame(dialog, padding=20)
@@ -1047,6 +1050,7 @@ class FacilitiesManagementGUI:
         dialog.title(f"Edit Room - {room['room_number']}")
         dialog.geometry("500x550")
         dialog.transient(self.window)
+        dialog.wait_visibility()
         dialog.grab_set()
 
         main_frame = ttk.Frame(dialog, padding=20)
