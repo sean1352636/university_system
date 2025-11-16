@@ -5,6 +5,82 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.46] - 2025-11-16
+
+### Fixed
+
+**Campus Events Hub - Database and Integration Issues:**
+
+1. **Event Registrations Database Error** (✅ Fixed)
+   - **Problem**: "Failed to load registrations - no such column alumni_id" error when loading registrations
+   - **Root Cause**: GUI was querying for `alumni_id` column, but the `event_registrations` table uses `user_id` and `user_type` columns instead
+   - **Solution**: Updated `_load_registrations()` method to query correct columns (`user_id`, `user_type`, `attendance_status`, `checked_in_at`)
+   - **Files Modified**:
+     - `modules/domain/campus/services/campus_events_gui.py:343-370` - Fixed database query
+     - `infrastructure/database/migrations/fix_campus_events_tables.py` - Ran migration to recreate table with correct schema
+   - **Impact**: Registration list now loads successfully without errors
+
+### Added
+
+**Campus Events Hub - Academic Calendar Integration:**
+
+1. **Add to Calendar Feature Enhancement** (✅ Implemented)
+   - **Feature**: "Add to Calendar" button now offers two options:
+     1. **Add to Academic Calendar** - Directly integrates with the Academic Calendar system
+     2. **Export to .ics file** - Exports event for import into Google Calendar, Outlook, etc.
+   - **Implementation**:
+     - `_add_to_calendar()` - Shows dialog with both options
+     - `_add_to_academic_calendar()` - Integrates with AcademicCalendarManager to add event
+     - `_export_to_ics()` - Exports event to iCalendar (.ics) format
+   - **Files Modified**:
+     - `modules/domain/campus/services/campus_events_gui.py:524-680` - Refactored calendar integration
+   - **Impact**: Seamless integration between Campus Events and Academic Calendar systems
+   - **User Experience**: Users can now:
+     - Add campus events directly to the academic calendar
+     - Export events to external calendar applications
+     - Choose their preferred method via intuitive dialog
+
+### Verified
+
+**Campus Events Hub - Code Quality:**
+
+1. **Placeholder Functions Review** (✅ Complete)
+   - Reviewed all functions in Campus Events GUI and core service
+   - **Result**: All functions are fully implemented, no placeholders or stubs found
+   - **Files Reviewed**:
+     - `modules/domain/campus/services/campus_events_gui.py` - All dialogs and methods functional
+     - `modules/domain/campus/services/campus_events_core.py` - All manager classes complete
+
+### Technical Details
+
+**Database Schema (event_registrations):**
+```sql
+CREATE TABLE event_registrations (
+    registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,              -- Replaced alumni_id
+    user_type TEXT NOT NULL,            -- student/staff/faculty/guest
+    registration_date TEXT DEFAULT CURRENT_TIMESTAMP,
+    attendance_status TEXT DEFAULT 'registered',
+    checked_in_at TEXT,
+    feedback_rating INTEGER,
+    feedback_comment TEXT,
+    FOREIGN KEY (event_id) REFERENCES campus_events (event_id) ON DELETE CASCADE
+)
+```
+
+**Calendar Integration Flow:**
+1. User selects event and clicks "Add to Calendar"
+2. Dialog presents two options
+3. If "Academic Calendar" selected:
+   - Creates AcademicCalendarManager instance
+   - Calls `add_event()` with campus event details
+   - Logs activity for audit trail
+4. If "Export to .ics" selected:
+   - Generates iCalendar format file
+   - Prompts user for save location
+   - Compatible with Google Calendar, Outlook, Apple Calendar, etc.
+
 ## [5.0.45] - 2025-11-16
 
 ### Fixed

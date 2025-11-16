@@ -347,9 +347,8 @@ class CampusEventsGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT registration_id, event_id, alumni_id,
-                           registration_date, payment_status, check_in_time,
-                           attendance_confirmed
+                    SELECT registration_id, event_id, user_id, user_type,
+                           registration_date, attendance_status, checked_in_at
                     FROM event_registrations
                     ORDER BY registration_date DESC
                     LIMIT 100
@@ -359,11 +358,11 @@ class CampusEventsGUI:
                     values = (
                         row['registration_id'],
                         row['event_id'],
-                        row['alumni_id'],
-                        'Alumni',  # User type - hardcoded since table is for alumni
+                        row['user_id'],
+                        row['user_type'].capitalize() if row['user_type'] else 'N/A',
                         row['registration_date'][:10] if row['registration_date'] else '',
-                        row['payment_status'] or 'pending',
-                        row['check_in_time'][:16] if row['check_in_time'] else 'No'
+                        row['attendance_status'] or 'registered',
+                        row['checked_in_at'][:16] if row['checked_in_at'] else 'No'
                     )
                     self.registrations_tree.insert('', tk.END, values=values)
 
@@ -523,7 +522,7 @@ class CampusEventsGUI:
             messagebox.showerror("Error", f"Failed to un-cancel event: {e}")
 
     def _add_to_calendar(self):
-        """Export selected event to calendar (.ics file)"""
+        """Add selected event to Academic Calendar or export to .ics file"""
         selection = self.events_tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select an event to add to calendar")
@@ -537,7 +536,7 @@ class CampusEventsGUI:
             with get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT event_name, event_date, start_time, end_time,
-                           location, description
+                           location, description, event_type
                     FROM campus_events
                     WHERE event_id = ?
                 ''', (event_id,))
@@ -547,16 +546,96 @@ class CampusEventsGUI:
                     messagebox.showerror("Error", "Event not found")
                     return
 
-            # Create iCalendar content
             event_name = event['event_name']
             event_date = event['event_date']
             start_time = event['start_time']
             end_time = event['end_time']
             location = event['location'] or 'TBA'
             description = event['description'] or 'Campus event'
+            event_type = event['event_type'] or 'Campus Event'
+
+            # Ask user what they want to do
+            choice_dialog = tk.Toplevel(self.window)
+            choice_dialog.title("Add to Calendar")
+            choice_dialog.geometry("400x200")
+            choice_dialog.transient(self.window)
+            choice_dialog.grab_set()
+
+            user_choice = tk.StringVar(value="")
+
+            ttk.Label(
+                choice_dialog,
+                text="How would you like to add this event?",
+                font=('Arial', 11, 'bold')
+            ).pack(pady=20)
+
+            ttk.Button(
+                choice_dialog,
+                text="Add to Academic Calendar",
+                command=lambda: [user_choice.set("academic"), choice_dialog.destroy()]
+            ).pack(pady=5, padx=20, fill=tk.X)
+
+            ttk.Button(
+                choice_dialog,
+                text="Export to .ics file",
+                command=lambda: [user_choice.set("export"), choice_dialog.destroy()]
+            ).pack(pady=5, padx=20, fill=tk.X)
+
+            ttk.Button(
+                choice_dialog,
+                text="Cancel",
+                command=lambda: [user_choice.set(""), choice_dialog.destroy()]
+            ).pack(pady=5, padx=20, fill=tk.X)
+
+            self.window.wait_window(choice_dialog)
+
+            if user_choice.get() == "academic":
+                # Add to Academic Calendar
+                self._add_to_academic_calendar(event_name, event_date, description, event_type)
+            elif user_choice.get() == "export":
+                # Export to .ics file
+                self._export_to_ics(event_id, event_name, event_date, start_time, end_time, location, description)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add event to calendar: {e}")
+
+    def _add_to_academic_calendar(self, event_name, event_date, description, event_type):
+        """Add event to the Academic Calendar system"""
+        try:
+            from university_system.modules.domain.academics.services.academic_calendar import AcademicCalendarManager
+
+            # Create calendar manager instance
+            calendar_manager = AcademicCalendarManager()
+
+            # Add event to academic calendar
+            result = calendar_manager.add_event(
+                name=event_name,
+                date=event_date,
+                description=description,
+                event_type=event_type
+            )
+
+            if result.get('success'):
+                log_activity(f'Added campus event to academic calendar: {event_name}',
+                            user=self.auth.current_user.get('username'))
+                messagebox.showinfo("Success",
+                    f"Event '{event_name}' added to Academic Calendar successfully!\n\n"
+                    f"Event ID: {result.get('event_id')}")
+            else:
+                messagebox.showerror("Error", f"Failed to add event: {result.get('message')}")
+
+        except Exception as e:
+            messagebox.showerror("Error",
+                f"Failed to add event to Academic Calendar: {e}\n\n"
+                "Make sure you have permission to add events to the Academic Calendar.")
+
+    def _export_to_ics(self, event_id, event_name, event_date, start_time, end_time, location, description):
+        """Export event to .ics file"""
+        try:
+            from datetime import datetime
+            from tkinter import filedialog
 
             # Format datetime for iCal (YYYYMMDDTHHMMSS)
-            from datetime import datetime
             start_dt = datetime.strptime(f"{event_date} {start_time}", "%Y-%m-%d %H:%M")
             end_dt = datetime.strptime(f"{event_date} {end_time}", "%Y-%m-%d %H:%M")
 
@@ -581,7 +660,6 @@ END:VEVENT
 END:VCALENDAR"""
 
             # Save to file
-            from tkinter import filedialog
             filename = filedialog.asksaveasfilename(
                 defaultextension=".ics",
                 filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
@@ -592,12 +670,14 @@ END:VCALENDAR"""
                 with open(filename, 'w') as f:
                     f.write(ics_content)
 
-                log_activity(f'Exported event {event_id} to calendar',
+                log_activity(f'Exported event {event_id} to calendar file',
                             user=self.auth.current_user.get('username'))
-                messagebox.showinfo("Success", f"Event exported to calendar file:\n{filename}\n\nYou can import this file into Google Calendar, Outlook, or any other calendar application.")
+                messagebox.showinfo("Success",
+                    f"Event exported to calendar file:\n{filename}\n\n"
+                    "You can import this file into Google Calendar, Outlook, or any other calendar application.")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export event to calendar: {e}")
+            messagebox.showerror("Error", f"Failed to export event to .ics file: {e}")
 
     def _register_for_event(self):
         """Register for an event"""
