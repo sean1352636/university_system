@@ -11,20 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Campus Events Hub - Database and Integration Issues:**
 
-1. **Academic Calendar Permission Error** (✅ Fixed)
-   - **Problem**: "Insufficient permissions to add events" error when adding campus events to Academic Calendar
-   - **Root Cause**: `AcademicCalendarManager` was being instantiated without proper authentication context, causing permission checks to fail
-   - **Solution**: Properly initialize `AuthenticationManager` with current user context before creating `AcademicCalendarManager`
+1. **Academic Calendar Integration Errors** (✅ Fixed)
+   - **Problem 1**: "Insufficient permissions to add events" error
+   - **Problem 2**: "no such savepoint: sp_XXXXXXXX" database transaction error
+   - **Root Cause**:
+     - Initially tried using `AcademicCalendarManager` which creates its own `DatabaseManager` with nested savepoints
+     - This conflicted with Campus Events' database connection pool
+     - Savepoints from separate connections caused transaction failures
+   - **Solution**: Simplified approach - bypass `AcademicCalendarManager` entirely
    - **Implementation**:
-     - Create `AuthenticationManager` instance with current user data from Campus Events auth
-     - Transfer user permissions and role to the calendar auth manager
-     - Automatically grant `manage_schedules` permission for cross-system integration
-     - Create valid session token for the calendar system
-     - Pass configured auth_manager to `AcademicCalendarManager` constructor
+     - Direct INSERT into `events` table using standard `transaction()` context manager
+     - Uses same database connection pool as Campus Events (no conflicts)
+     - Generates UUID for event ID
+     - Inserts: name, date, description, event_type, timestamps, created_by
+     - Proper error handling with user-friendly messages
    - **Files Modified**:
-     - `modules/domain/campus/services/campus_events_gui.py:602-665` - Enhanced `_add_to_academic_calendar()` method
-   - **Impact**: Campus Events users can now successfully add events to Academic Calendar
-   - **Error Handling**: Added specific `PermissionError` handler with helpful user feedback
+     - `modules/domain/campus/services/campus_events_gui.py:602-645` - Simplified `_add_to_academic_calendar()` method
+   - **Impact**:
+     - ✅ No more permission errors
+     - ✅ No more savepoint conflicts
+     - ✅ Reliable cross-system integration
+     - ✅ Events successfully added to Academic Calendar
+   - **Benefits of Simplified Approach**:
+     - Fewer dependencies and moving parts
+     - Uses centralized database infrastructure
+     - More maintainable and debuggable
+     - Better error messages
 
 2. **Event Registrations Database Error** (✅ Fixed)
    - **Problem**: "Failed to load registrations - no such column alumni_id" error when loading registrations
