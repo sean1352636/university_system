@@ -1216,65 +1216,351 @@ class ParkingManagementGUI:
     # Report methods
     def generate_permit_report(self):
         """Generate permit report"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            # Call existing function
-            generate_permit_report()
+            # Generate comprehensive permit report
+            output = []
+            output.append("PARKING PERMIT REPORT")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # Active Permits
+            output.append("ACTIVE PERMITS")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT p.permit_id, p.full_name, p.zone, p.permit_type,
+                       p.issue_date, p.expiry_date, v.license_plate
+                FROM parking_permits p
+                LEFT JOIN vehicles v ON p.vehicle_id = v.vehicle_id
+                WHERE p.active_status = 'Active'
+                ORDER BY p.zone, p.issue_date DESC
+            ''')
+            active_permits = cursor.fetchall()
+
+            if active_permits:
+                output.append(f"{'ID':<12} {'Name':<25} {'Zone':<6} {'Type':<12} {'License':<12} {'Issued':<12} {'Expires':<12}")
+                output.append("-" * 80)
+                for permit in active_permits:
+                    output.append(f"{permit[0]:<12} {permit[1]:<25} {permit[2]:<6} {permit[3]:<12} {permit[6] or 'N/A':<12} {permit[4]:<12} {permit[5]:<12}")
+                output.append(f"\nTotal Active Permits: {len(active_permits)}")
+            else:
+                output.append("No active permits found.")
+
+            output.append("\n")
+
+            # Permits by Zone
+            output.append("PERMITS BY ZONE")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT zone, COUNT(*) as count,
+                       SUM(CASE WHEN active_status = 'Active' THEN 1 ELSE 0 END) as active
+                FROM parking_permits
+                GROUP BY zone
+                ORDER BY zone
+            ''')
+            zone_stats = cursor.fetchall()
+
+            if zone_stats:
+                output.append(f"{'Zone':<10} {'Total':<10} {'Active':<10}")
+                output.append("-" * 30)
+                for stat in zone_stats:
+                    output.append(f"{stat[0]:<10} {stat[1]:<10} {stat[2]:<10}")
+            else:
+                output.append("No zone data available.")
+
+            output.append("\n")
+
+            # Permits by Type
+            output.append("PERMITS BY TYPE")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT permit_type, COUNT(*) as count,
+                       SUM(CASE WHEN active_status = 'Active' THEN 1 ELSE 0 END) as active
+                FROM parking_permits
+                GROUP BY permit_type
+                ORDER BY count DESC
+            ''')
+            type_stats = cursor.fetchall()
+
+            if type_stats:
+                output.append(f"{'Type':<15} {'Total':<10} {'Active':<10}")
+                output.append("-" * 35)
+                for stat in type_stats:
+                    output.append(f"{stat[0]:<15} {stat[1]:<10} {stat[2]:<10}")
+            else:
+                output.append("No type data available.")
+
+            output.append("\n")
+
+            # Expiring Soon (within 30 days)
+            output.append("PERMITS EXPIRING SOON (Next 30 Days)")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT permit_id, full_name, zone, permit_type, expiry_date
+                FROM parking_permits
+                WHERE active_status = 'Active'
+                AND date(expiry_date) BETWEEN date('now') AND date('now', '+30 days')
+                ORDER BY expiry_date
+            ''')
+            expiring = cursor.fetchall()
+
+            if expiring:
+                output.append(f"{'ID':<12} {'Name':<30} {'Zone':<6} {'Type':<12} {'Expires':<12}")
+                output.append("-" * 72)
+                for permit in expiring:
+                    output.append(f"{permit[0]:<12} {permit[1]:<30} {permit[2]:<6} {permit[3]:<12} {permit[4]:<12}")
+                output.append(f"\nTotal Expiring Soon: {len(expiring)}")
+            else:
+                output.append("No permits expiring in the next 30 days.")
+
+            conn.close()
 
             # Show in dialog
-            self.show_text_dialog("Permit Report", output)
+            self.show_text_dialog("Parking Permit Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating permit report: {e}")
             messagebox.showerror("Error", f"Failed to generate permit report: {e}")
-        finally:
-            sys.stdout = old_stdout
 
     def generate_violation_report(self):
         """Generate violation report"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            generate_violation_report()
+            # Generate comprehensive violation report
+            output = []
+            output.append("PARKING VIOLATION REPORT")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # All Violations Summary
+            output.append("VIOLATION SUMMARY")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN 1 ELSE 0 END) as paid,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN 1 ELSE 0 END) as unpaid,
+                       SUM(CASE WHEN payment_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN fine_amount ELSE 0 END) as collected,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as outstanding
+                FROM parking_violations
+            ''')
+            summary = cursor.fetchone()
 
-            self.show_text_dialog("Violation Report", output)
+            output.append(f"Total Violations: {summary[0]}")
+            output.append(f"  - Paid: {summary[1]}")
+            output.append(f"  - Unpaid: {summary[2]}")
+            output.append(f"  - Pending: {summary[3]}")
+            output.append(f"Total Fines: ${summary[4]:.2f}")
+            output.append(f"  - Collected: ${summary[5]:.2f}")
+            output.append(f"  - Outstanding: ${summary[6]:.2f}")
+
+            output.append("\n")
+
+            # Violations by Type
+            output.append("VIOLATIONS BY TYPE")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT violation_type, COUNT(*) as count,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN 1 ELSE 0 END) as unpaid
+                FROM parking_violations
+                GROUP BY violation_type
+                ORDER BY count DESC
+            ''')
+            type_stats = cursor.fetchall()
+
+            if type_stats:
+                output.append(f"{'Type':<30} {'Count':<10} {'Total Fines':<15} {'Unpaid':<10}")
+                output.append("-" * 65)
+                for stat in type_stats:
+                    output.append(f"{stat[0]:<30} {stat[1]:<10} ${stat[2]:<14.2f} {stat[3]:<10}")
+            else:
+                output.append("No violation data available.")
+
+            output.append("\n")
+
+            # Recent Violations (last 30 days)
+            output.append("RECENT VIOLATIONS (Last 30 Days)")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT v.violation_id, v.license_plate, v.violation_type,
+                       v.violation_date, v.fine_amount, v.payment_status, v.location
+                FROM parking_violations v
+                WHERE date(v.violation_date) >= date('now', '-30 days')
+                ORDER BY v.violation_date DESC
+                LIMIT 50
+            ''')
+            recent = cursor.fetchall()
+
+            if recent:
+                output.append(f"{'ID':<12} {'Plate':<10} {'Type':<25} {'Date':<12} {'Fine':<10} {'Status':<10}")
+                output.append("-" * 80)
+                for violation in recent:
+                    output.append(f"{violation[0]:<12} {violation[1]:<10} {violation[2]:<25} {violation[3]:<12} ${violation[4]:<9.2f} {violation[5]:<10}")
+                output.append(f"\nTotal Recent Violations: {len(recent)}")
+            else:
+                output.append("No recent violations found.")
+
+            output.append("\n")
+
+            # Top Violators
+            output.append("TOP VIOLATORS")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT license_plate, COUNT(*) as violations,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as outstanding
+                FROM parking_violations
+                GROUP BY license_plate
+                HAVING violations > 1
+                ORDER BY violations DESC
+                LIMIT 10
+            ''')
+            top_violators = cursor.fetchall()
+
+            if top_violators:
+                output.append(f"{'License Plate':<15} {'Violations':<12} {'Total Fines':<15} {'Outstanding':<15}")
+                output.append("-" * 57)
+                for violator in top_violators:
+                    output.append(f"{violator[0]:<15} {violator[1]:<12} ${violator[2]:<14.2f} ${violator[3]:<14.2f}")
+            else:
+                output.append("No repeat violators found.")
+
+            conn.close()
+
+            # Show in dialog
+            self.show_text_dialog("Parking Violation Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating violation report: {e}")
             messagebox.showerror("Error", f"Failed to generate violation report: {e}")
-        finally:
-            sys.stdout = old_stdout
     
     def show_analytics(self):
         """Show analytics dashboard"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            generate_analytics_dashboard()
+            # Generate comprehensive analytics dashboard
+            output = []
+            output.append("PARKING ANALYTICS DASHBOARD")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # Overall Statistics
+            output.append("OVERALL STATISTICS")
+            output.append("-" * 80)
 
-            self.show_text_dialog("Analytics Dashboard", output)
+            cursor.execute("SELECT COUNT(*) FROM parking_permits WHERE active_status = 'Active'")
+            active_permits = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM parking_permits")
+            total_permits = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM vehicles")
+            total_vehicles = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM parking_violations WHERE payment_status = 'Unpaid'")
+            unpaid_violations = cursor.fetchone()[0]
+
+            cursor.execute("SELECT SUM(fine_amount) FROM parking_violations WHERE payment_status = 'Unpaid'")
+            unpaid_fines = cursor.fetchone()[0] or 0
+
+            cursor.execute("SELECT SUM(total_spaces) FROM parking_lots")
+            total_spaces = cursor.fetchone()[0] or 0
+
+            cursor.execute("SELECT SUM(available_spaces) FROM parking_lots")
+            available_spaces = cursor.fetchone()[0] or 0
+
+            output.append(f"Active Permits: {active_permits}")
+            output.append(f"Total Permits (All Time): {total_permits}")
+            output.append(f"Registered Vehicles: {total_vehicles}")
+            output.append(f"Unpaid Violations: {unpaid_violations}")
+            output.append(f"Unpaid Fines: ${unpaid_fines:.2f}")
+            output.append(f"Total Parking Spaces: {total_spaces}")
+            output.append(f"Available Spaces: {available_spaces}")
+            output.append(f"Occupied Spaces: {total_spaces - available_spaces}")
+            if total_spaces > 0:
+                output.append(f"Occupancy Rate: {((total_spaces - available_spaces) / total_spaces * 100):.1f}%")
+
+            output.append("\n")
+
+            # Monthly Trends
+            output.append("MONTHLY TRENDS (Last 6 Months)")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT strftime('%Y-%m', violation_date) as month,
+                       COUNT(*) as violations,
+                       SUM(fine_amount) as fines
+                FROM parking_violations
+                WHERE date(violation_date) >= date('now', '-6 months')
+                GROUP BY month
+                ORDER BY month DESC
+            ''')
+            monthly = cursor.fetchall()
+
+            if monthly:
+                output.append(f"{'Month':<10} {'Violations':<15} {'Fines':<15}")
+                output.append("-" * 40)
+                for month in monthly:
+                    output.append(f"{month[0]:<10} {month[1]:<15} ${month[2]:<14.2f}")
+            else:
+                output.append("No monthly data available.")
+
+            output.append("\n")
+
+            # Zone Utilization
+            output.append("ZONE UTILIZATION")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT zone, COUNT(*) as active_permits
+                FROM parking_permits
+                WHERE active_status = 'Active'
+                GROUP BY zone
+                ORDER BY active_permits DESC
+            ''')
+            zone_util = cursor.fetchall()
+
+            if zone_util:
+                output.append(f"{'Zone':<10} {'Active Permits':<20}")
+                output.append("-" * 30)
+                for zone in zone_util:
+                    output.append(f"{zone[0]:<10} {zone[1]:<20}")
+            else:
+                output.append("No zone utilization data available.")
+
+            output.append("\n")
+
+            # Revenue Analysis
+            output.append("REVENUE ANALYSIS")
+            output.append("-" * 80)
+            cursor.execute('''
+                SELECT SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN fine_amount ELSE 0 END) as collected,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as outstanding,
+                       COUNT(*) as total_violations
+                FROM parking_violations
+            ''')
+            revenue = cursor.fetchone()
+
+            output.append(f"Total Fines Issued: ${revenue[0]:.2f}")
+            output.append(f"Fines Collected: ${revenue[1]:.2f}")
+            output.append(f"Outstanding Fines: ${revenue[2]:.2f}")
+            output.append(f"Collection Rate: {(revenue[1] / revenue[0] * 100) if revenue[0] > 0 else 0:.1f}%")
+
+            conn.close()
+
+            # Show in dialog
+            self.show_text_dialog("Parking Analytics Dashboard", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating analytics dashboard: {e}")
             messagebox.showerror("Error", f"Failed to generate analytics: {e}")
-        finally:
-            sys.stdout = old_stdout
     
     def show_text_dialog(self, title, content):
         """Show a dialog with text content"""
@@ -1718,63 +2004,394 @@ Parking Management System
 
     def generate_compliance_report(self):
         """Generate compliance and audit report"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            generate_compliance_report()
+            # Generate comprehensive compliance report
+            output = []
+            output.append("PARKING COMPLIANCE & AUDIT REPORT")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # Permit Compliance
+            output.append("PERMIT COMPLIANCE")
+            output.append("-" * 80)
 
-            self.show_text_dialog("Compliance & Audit Report", output)
+            cursor.execute("SELECT COUNT(*) FROM parking_permits WHERE active_status = 'Active'")
+            active_permits = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM parking_permits WHERE active_status = 'Expired'")
+            expired_permits = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM parking_permits
+                WHERE active_status = 'Active'
+                AND date(expiry_date) < date('now')
+            ''')
+            expired_not_updated = cursor.fetchone()[0]
+
+            output.append(f"Active Permits: {active_permits}")
+            output.append(f"Expired Permits: {expired_permits}")
+            output.append(f"Permits Expired but Not Updated: {expired_not_updated}")
+            if expired_not_updated > 0:
+                output.append(f"⚠ WARNING: {expired_not_updated} permits need status update!")
+
+            output.append("\n")
+
+            # Violation Compliance
+            output.append("VIOLATION COMPLIANCE")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN 1 ELSE 0 END) as paid,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN 1 ELSE 0 END) as unpaid,
+                       SUM(CASE WHEN date(violation_date) < date('now', '-90 days')
+                           AND payment_status = 'Unpaid' THEN 1 ELSE 0 END) as overdue
+                FROM parking_violations
+            ''')
+            viol_compliance = cursor.fetchone()
+
+            output.append(f"Total Violations: {viol_compliance[0]}")
+            output.append(f"Paid Violations: {viol_compliance[1]}")
+            output.append(f"Unpaid Violations: {viol_compliance[2]}")
+            output.append(f"Overdue (>90 days): {viol_compliance[3]}")
+            if viol_compliance[3] > 0:
+                output.append(f"⚠ WARNING: {viol_compliance[3]} violations overdue for collection!")
+
+            output.append("\n")
+
+            # Parking Lot Compliance
+            output.append("PARKING LOT COMPLIANCE")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM parking_lots
+                WHERE available_spaces < 0
+            ''')
+            negative_spaces = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM parking_lots
+                WHERE available_spaces > total_spaces
+            ''')
+            invalid_spaces = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT lot_id, lot_name, total_spaces, available_spaces
+                FROM parking_lots
+                WHERE total_spaces - available_spaces > total_spaces
+            ''')
+            overcapacity = cursor.fetchall()
+
+            output.append(f"Lots with Negative Available Spaces: {negative_spaces}")
+            output.append(f"Lots with Invalid Space Count: {invalid_spaces}")
+            output.append(f"Lots Over Capacity: {len(overcapacity)}")
+
+            if negative_spaces > 0 or invalid_spaces > 0:
+                output.append("⚠ WARNING: Data integrity issues detected!")
+
+            output.append("\n")
+
+            # Audit Trail
+            output.append("RECENT AUDIT TRAIL (Last 30 Days)")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT date, action, entity_type, entity_id
+                FROM recent_activity
+                WHERE date(date) >= date('now', '-30 days')
+                ORDER BY date DESC
+                LIMIT 20
+            ''')
+            audit_trail = cursor.fetchall()
+
+            if audit_trail:
+                output.append(f"{'Date':<20} {'Action':<15} {'Type':<15} {'ID':<15}")
+                output.append("-" * 65)
+                for entry in audit_trail:
+                    output.append(f"{entry[0]:<20} {entry[1]:<15} {entry[2]:<15} {entry[3]:<15}")
+            else:
+                output.append("No recent audit trail available.")
+
+            conn.close()
+
+            # Show in dialog
+            self.show_text_dialog("Compliance & Audit Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating compliance report: {e}")
             messagebox.showerror("Error", f"Failed to generate compliance report: {e}")
-        finally:
-            sys.stdout = old_stdout
 
     def generate_revenue_report(self):
         """Generate revenue report"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            generate_revenue_report()
+            # Generate comprehensive revenue report
+            output = []
+            output.append("PARKING REVENUE REPORT")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # Overall Revenue Summary
+            output.append("OVERALL REVENUE SUMMARY")
+            output.append("-" * 80)
 
-            self.show_text_dialog("Revenue Report", output)
+            cursor.execute('''
+                SELECT SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN fine_amount ELSE 0 END) as collected,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as outstanding,
+                       SUM(CASE WHEN payment_status = 'Pending' THEN fine_amount ELSE 0 END) as pending,
+                       COUNT(*) as total_violations
+                FROM parking_violations
+            ''')
+            overall = cursor.fetchone()
+
+            output.append(f"Total Fines Issued: ${overall[0] or 0:.2f}")
+            output.append(f"  - Collected: ${overall[1] or 0:.2f}")
+            output.append(f"  - Outstanding: ${overall[2] or 0:.2f}")
+            output.append(f"  - Pending: ${overall[3] or 0:.2f}")
+            output.append(f"Total Violations: {overall[4]}")
+            if overall[0] and overall[0] > 0:
+                output.append(f"Collection Rate: {(overall[1] / overall[0] * 100):.1f}%")
+
+            output.append("\n")
+
+            # Monthly Revenue Breakdown
+            output.append("MONTHLY REVENUE BREAKDOWN (Last 12 Months)")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT strftime('%Y-%m', violation_date) as month,
+                       COUNT(*) as violations,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN fine_amount ELSE 0 END) as collected,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as outstanding
+                FROM parking_violations
+                WHERE date(violation_date) >= date('now', '-12 months')
+                GROUP BY month
+                ORDER BY month DESC
+            ''')
+            monthly = cursor.fetchall()
+
+            if monthly:
+                output.append(f"{'Month':<10} {'Violations':<12} {'Fines':<15} {'Collected':<15} {'Outstanding':<15}")
+                output.append("-" * 67)
+                for month in monthly:
+                    output.append(f"{month[0]:<10} {month[1]:<12} ${month[2]:<14.2f} ${month[3]:<14.2f} ${month[4]:<14.2f}")
+            else:
+                output.append("No monthly revenue data available.")
+
+            output.append("\n")
+
+            # Revenue by Violation Type
+            output.append("REVENUE BY VIOLATION TYPE")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT violation_type,
+                       COUNT(*) as violations,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Paid' THEN fine_amount ELSE 0 END) as collected,
+                       AVG(fine_amount) as avg_fine
+                FROM parking_violations
+                GROUP BY violation_type
+                ORDER BY total_fines DESC
+            ''')
+            by_type = cursor.fetchall()
+
+            if by_type:
+                output.append(f"{'Type':<30} {'Count':<8} {'Total':<15} {'Collected':<15} {'Avg Fine':<12}")
+                output.append("-" * 80)
+                for vtype in by_type:
+                    output.append(f"{vtype[0]:<30} {vtype[1]:<8} ${vtype[2]:<14.2f} ${vtype[3]:<14.2f} ${vtype[4]:<11.2f}")
+            else:
+                output.append("No violation type data available.")
+
+            output.append("\n")
+
+            # Permit Revenue Estimate
+            output.append("PERMIT REVENUE ESTIMATE")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT zone, permit_type, COUNT(*) as count
+                FROM parking_permits
+                WHERE active_status = 'Active'
+                GROUP BY zone, permit_type
+                ORDER BY zone, permit_type
+            ''')
+            permits = cursor.fetchall()
+
+            if permits:
+                total_permit_revenue = 0
+                output.append(f"{'Zone':<8} {'Type':<15} {'Count':<10} {'Est. Revenue':<15}")
+                output.append("-" * 48)
+                for permit in permits:
+                    # Estimate revenue based on zone and type
+                    zone = permit[0]
+                    ptype = permit[1]
+                    count = permit[2]
+
+                    # Estimate based on zone rates
+                    if zone in PARKING_ZONES:
+                        est_revenue = count * PARKING_ZONES[zone].get('annual_fee', 0)
+                    else:
+                        est_revenue = count * 200  # Default estimate
+
+                    total_permit_revenue += est_revenue
+                    output.append(f"{zone:<8} {ptype:<15} {count:<10} ${est_revenue:<14.2f}")
+
+                output.append("-" * 48)
+                output.append(f"{'TOTAL PERMIT REVENUE':<33} ${total_permit_revenue:<14.2f}")
+            else:
+                output.append("No permit revenue data available.")
+
+            conn.close()
+
+            # Show in dialog
+            self.show_text_dialog("Parking Revenue Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating revenue report: {e}")
             messagebox.showerror("Error", f"Failed to generate revenue report: {e}")
-        finally:
-            sys.stdout = old_stdout
 
     def generate_user_activity_report(self):
         """Generate user activity report"""
-        import io
-        import sys
-
-        old_stdout = sys.stdout
         try:
-            sys.stdout = buffer = io.StringIO()
+            conn = get_connection()
+            cursor = conn.cursor()
 
-            generate_user_activity_report()
+            # Generate comprehensive user activity report
+            output = []
+            output.append("USER ACTIVITY REPORT")
+            output.append("=" * 80)
+            output.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            output.append("")
 
-            output = buffer.getvalue()
+            # Active Permit Holders
+            output.append("ACTIVE PERMIT HOLDERS")
+            output.append("-" * 80)
 
-            self.show_text_dialog("User Activity Report", output)
+            cursor.execute('''
+                SELECT COUNT(DISTINCT full_name) as unique_users,
+                       COUNT(*) as total_permits
+                FROM parking_permits
+                WHERE active_status = 'Active'
+            ''')
+            permit_users = cursor.fetchone()
+
+            output.append(f"Unique Active Permit Holders: {permit_users[0]}")
+            output.append(f"Total Active Permits: {permit_users[1]}")
+
+            output.append("\n")
+
+            # Recent Permit Activity
+            output.append("RECENT PERMIT ACTIVITY (Last 30 Days)")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT permit_id, full_name, zone, permit_type, issue_date
+                FROM parking_permits
+                WHERE date(issue_date) >= date('now', '-30 days')
+                ORDER BY issue_date DESC
+                LIMIT 20
+            ''')
+            recent_permits = cursor.fetchall()
+
+            if recent_permits:
+                output.append(f"{'Permit ID':<12} {'Name':<30} {'Zone':<6} {'Type':<12} {'Issued':<12}")
+                output.append("-" * 72)
+                for permit in recent_permits:
+                    output.append(f"{permit[0]:<12} {permit[1]:<30} {permit[2]:<6} {permit[3]:<12} {permit[4]:<12}")
+                output.append(f"\nTotal New Permits (30 days): {len(recent_permits)}")
+            else:
+                output.append("No recent permit activity.")
+
+            output.append("\n")
+
+            # Violation Activity by User
+            output.append("TOP VIOLATORS (All Time)")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT license_plate,
+                       COUNT(*) as violations,
+                       SUM(fine_amount) as total_fines,
+                       SUM(CASE WHEN payment_status = 'Unpaid' THEN fine_amount ELSE 0 END) as unpaid,
+                       MAX(violation_date) as last_violation
+                FROM parking_violations
+                GROUP BY license_plate
+                HAVING violations > 0
+                ORDER BY violations DESC
+                LIMIT 15
+            ''')
+            violators = cursor.fetchall()
+
+            if violators:
+                output.append(f"{'License Plate':<15} {'Violations':<12} {'Total Fines':<15} {'Unpaid':<15} {'Last Violation':<15}")
+                output.append("-" * 72)
+                for violator in violators:
+                    output.append(f"{violator[0]:<15} {violator[1]:<12} ${violator[2]:<14.2f} ${violator[3]:<14.2f} {violator[4]:<15}")
+            else:
+                output.append("No violation activity found.")
+
+            output.append("\n")
+
+            # Recent User Actions
+            output.append("RECENT USER ACTIONS (Last 7 Days)")
+            output.append("-" * 80)
+
+            cursor.execute('''
+                SELECT date, action, entity_type, entity_id
+                FROM recent_activity
+                WHERE date(date) >= date('now', '-7 days')
+                ORDER BY date DESC
+                LIMIT 30
+            ''')
+            recent_actions = cursor.fetchall()
+
+            if recent_actions:
+                output.append(f"{'Date':<20} {'Action':<20} {'Type':<15} {'ID':<15}")
+                output.append("-" * 70)
+                for action in recent_actions:
+                    output.append(f"{action[0]:<20} {action[1]:<20} {action[2]:<15} {action[3]:<15}")
+            else:
+                output.append("No recent user actions found.")
+
+            output.append("\n")
+
+            # User Statistics Summary
+            output.append("USER STATISTICS SUMMARY")
+            output.append("-" * 80)
+
+            cursor.execute("SELECT COUNT(DISTINCT license_plate) FROM vehicles")
+            unique_vehicles = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(DISTINCT license_plate) FROM parking_violations")
+            vehicles_with_violations = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM parking_permits
+                WHERE active_status = 'Active'
+                AND date(expiry_date) BETWEEN date('now') AND date('now', '+30 days')
+            ''')
+            expiring_soon = cursor.fetchone()[0]
+
+            output.append(f"Total Registered Vehicles: {unique_vehicles}")
+            output.append(f"Vehicles with Violations: {vehicles_with_violations}")
+            output.append(f"Permits Expiring Soon (30 days): {expiring_soon}")
+
+            conn.close()
+
+            # Show in dialog
+            self.show_text_dialog("User Activity Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating user activity report: {e}")
             messagebox.showerror("Error", f"Failed to generate user activity report: {e}")
-        finally:
-            sys.stdout = old_stdout
     
     def _send_violation_email(self, violation_id, student_id, student_email, license_plate, violation_type, location, fine_amount):
         """Send violation notification email to student"""

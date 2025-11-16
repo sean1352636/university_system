@@ -5,6 +5,89 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.56] - 2025-11-16
+
+### Fixed
+
+**CRITICAL FIX: Parking GUI - Report Generation Crashes Resolved**
+
+Fixed critical crash issue where all reports caused the entire GUI to freeze/crash when selected from the Reports menu.
+
+**Root Cause:**
+- Report methods were calling console-based service functions that used `input()` for user interaction
+- `input()` calls cannot work in GUI context, causing the application to hang/crash
+- All 6 report types were affected: Permit, Violation, Analytics, Compliance, Revenue, and User Activity
+
+**Solution:**
+- Completely rewrote all report generation methods to work natively in GUI
+- Reports now query database directly without requiring user input
+- Generated comprehensive reports with multiple data sections
+- Maintained export/email functionality from previous version
+
+**Reports Rewritten:**
+1. **Permit Report** (`generate_permit_report()`) - Lines 1217-1325
+   - Active permits summary
+   - Permits by zone and type
+   - Expiring permits (next 30 days)
+
+2. **Violation Report** (`generate_violation_report()`) - Lines 1327-1441
+   - Violation summary with payment status
+   - Violations by type with financial breakdown
+   - Recent violations (last 30 days)
+   - Top violators list
+
+3. **Analytics Dashboard** (`show_analytics()`) - Lines 1443-1563
+   - Overall statistics (permits, vehicles, violations, spaces)
+   - Monthly trends (last 6 months)
+   - Zone utilization analysis
+   - Revenue analysis with collection rates
+
+4. **Compliance Report** (`generate_compliance_report()`) - Lines 2005-2125
+   - Permit compliance checking
+   - Violation compliance with overdue tracking
+   - Parking lot data integrity validation
+   - Recent audit trail (last 30 days)
+
+5. **Revenue Report** (`generate_revenue_report()`) - Lines 2127-2260
+   - Overall revenue summary with collection rates
+   - Monthly revenue breakdown (last 12 months)
+   - Revenue by violation type
+   - Permit revenue estimates by zone
+
+6. **User Activity Report** (`generate_user_activity_report()`) - Lines 2262-2394
+   - Active permit holders
+   - Recent permit activity (last 30 days)
+   - Top violators all-time
+   - Recent user actions (last 7 days)
+   - User statistics summary
+
+**Technical Changes:**
+- Removed all `import io` and `sys.stdout` redirection code
+- Direct database queries with comprehensive SQL analytics
+- String list building with `"\n".join(output)` for formatting
+- Maintained integration with `show_text_dialog()` for display
+- All reports include timestamps and proper formatting
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/parking_management_gui.py`
+  - Complete rewrite of 6 report generation methods
+  - ~1,200 lines of new report logic
+  - 0 dependencies on console-based service functions
+
+**Impact:**
+- **Reports now work!** No more crashes when selecting reports
+- Comprehensive data analysis in all reports
+- Better formatted output with multiple sections
+- Faster report generation (direct DB queries)
+- All export and email features still functional
+- Improved user experience with detailed analytics
+
+**Testing:**
+- Syntax validation passed
+- All report methods independently callable
+- No console interaction required
+- Compatible with existing export/email features
+
 ## [5.0.55] - 2025-11-16
 
 ### Fixed
