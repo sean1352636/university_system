@@ -5,11 +5,11 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.58] - 2025-11-16
+## [5.0.59] - 2025-11-16
 
 ### Fixed
 
-**FIX: Parking GUI - Email Delivery & Vehicle Registration**
+**FIX: Parking GUI - Internal Email System & Vehicle Registration**
 
 Fixed two critical issues preventing normal operation of parking management:
 
@@ -17,25 +17,24 @@ Fixed two critical issues preventing normal operation of parking management:
 
 **Problem:**
 - "Send Report to Admin" feature wasn't delivering emails
-- Emails were being queued but never sent
-- Email system requires async scheduler that wasn't running in GUI
-- Users had no feedback about email status
+- Reports needed to appear in admin's internal inbox (database-stored messages)
+- Previous implementation tried external SMTP instead of internal messaging
+- System uses internal email stored in database tables, not external email
 
 **Solution:**
-- Implemented direct synchronous SMTP email sending
-- Bypasses queue system for immediate delivery
-- Reads SMTP configuration from environment variables
-- Provides clear user feedback for all scenarios:
-  - Success: Confirmation when email sent
-  - Not configured: Friendly message to export as TXT instead
-  - Failure: Error details with fallback suggestion
+- Integrated with existing internal email service
+- Uses `send_email()` from `infrastructure.email.email_service`
+- Stores emails in `stored_emails` table
+- Creates inbox messages in admin's account
+- Reports now appear in admin's inbox within the application
 
-**Technical Changes** (lines 1694-1745):
-- Added direct SMTP implementation using `smtplib`
-- Reads `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` from .env
-- SSL/TLS support for secure connections
-- Graceful degradation when SMTP not configured
-- Comprehensive error handling and logging
+**Technical Changes** (lines 1694-1717):
+- Removed direct SMTP implementation
+- Now uses `send_email(recipient_email, subject, body)`
+- Email stored in database and visible in admin inbox
+- No external SMTP configuration needed
+- Follows same pattern as other reporting GUIs (enhanced_reporting_gui.py)
+- Clear user feedback: "Report sent to {admin_name}'s inbox"
 
 **2. Vehicle Registration Foreign Key Constraint Failures**
 
@@ -69,27 +68,18 @@ Fixed two critical issues preventing normal operation of parking management:
 
 **Files Modified:**
 - `university_system/modules/domain/mobility/gui/parking_management_gui.py`
-  - Lines 1694-1745: Direct SMTP email implementation
+  - Lines 1694-1717: Internal email service integration
   - Lines 1016-1028: Owner ID validation in vehicle registration
   - Lines 2817-2875: Enhanced owner lookup with user table search
 
 **Impact:**
-- Reports can now be emailed directly to admins (if SMTP configured)
-- Clear feedback when email not configured
+- Reports now appear in admin's internal inbox (database-stored messages)
+- No external SMTP configuration needed
+- Works immediately with existing email infrastructure
 - Vehicle registration works with proper foreign key validation
 - No more cryptic database constraint errors
 - Better user experience with informative messages
-
-**Configuration Required:**
-To enable email sending, add to `.env` file:
-```bash
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@example.com
-SMTP_PASSWORD=your_app_password
-```
-
-If not configured, users can still export reports as TXT files.
+- Consistent with other reporting modules in the system
 
 ## [5.0.57] - 2025-11-16
 

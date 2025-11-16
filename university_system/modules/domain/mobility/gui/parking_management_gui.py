@@ -1691,58 +1691,30 @@ Best regards,
 Parking Management System
 """
 
-            # Send email using direct SMTP (synchronous)
+            # Send email using internal email service (stores in database for admin inbox)
             try:
-                import smtplib
-                import ssl
-                from email.mime.text import MIMEText
-                from email.mime.multipart import MIMEMultipart
+                from university_system.infrastructure.email.email_service import send_email
 
-                # Get SMTP configuration (if available)
-                smtp_config = {
-                    'smtp_server': os.getenv('SMTP_HOST', 'smtp.gmail.com'),
-                    'smtp_port': int(os.getenv('SMTP_PORT', '587')),
-                    'sender_email': os.getenv('SMTP_USER', 'noreply@university.edu'),
-                    'sender_password': os.getenv('SMTP_PASSWORD', ''),
-                    'sender_name': 'University Parking System'
-                }
+                # Send email - will be stored in database and appear in admin's inbox
+                send_email(
+                    recipient_email=admin_email,
+                    subject=email_subject,
+                    body=email_body
+                )
 
-                # Check if SMTP is configured
-                if not smtp_config['sender_password']:
-                    # SMTP not configured - queue the email for later or show info
-                    messagebox.showinfo("Report Prepared",
-                        f"Report prepared for:\n{admin_name} ({admin_email})\n\n"
-                        f"Email service is not configured.\n"
-                        f"The report has been prepared but not sent.\n\n"
-                        f"Please configure SMTP settings in .env file or\n"
-                        f"use 'Export as TXT' to save the report.")
-                    logging.warning(f"SMTP not configured - report prepared but not sent to {admin_email}")
-                else:
-                    # Send email via SMTP
-                    msg = MIMEMultipart()
-                    msg['From'] = f"{smtp_config['sender_name']} <{smtp_config['sender_email']}>"
-                    msg['To'] = admin_email
-                    msg['Subject'] = email_subject
-                    msg.attach(MIMEText(email_body, 'plain'))
+                messagebox.showinfo("Report Sent",
+                    f"Report successfully sent to {admin_name}'s inbox.\n\n"
+                    f"The admin can view this report in their email inbox within the system.")
+                logging.info(f"Report '{title}' sent to admin inbox: {admin_email}")
 
-                    context = ssl.create_default_context()
-                    with smtplib.SMTP(smtp_config['smtp_server'], smtp_config['smtp_port']) as server:
-                        server.starttls(context=context)
-                        if smtp_config['sender_password']:
-                            server.login(smtp_config['sender_email'], smtp_config['sender_password'])
-                        server.send_message(msg)
-
-                    messagebox.showinfo("Email Sent",
-                        f"Report successfully sent to:\n{admin_name} ({admin_email})")
-                    logging.info(f"Report '{title}' sent to admin {admin_email}")
             except Exception as email_error:
                 # Email failed - show warning but don't error out
                 messagebox.showwarning("Email Failed",
-                    f"Could not send email to:\n{admin_name} ({admin_email})\n\n"
+                    f"Could not send report to admin inbox.\n\n"
                     f"Error: {str(email_error)}\n\n"
                     f"Please use 'Export as TXT' to save the report\n"
                     f"and send it manually.")
-                logging.error(f"Failed to send email to {admin_email}: {email_error}")
+                logging.error(f"Failed to send report to {admin_email}: {email_error}")
 
         except Exception as e:
             logging.error(f"Failed to send report to admin: {e}")
