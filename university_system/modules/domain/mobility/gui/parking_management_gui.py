@@ -34,6 +34,7 @@ try:
         export_permits, export_vehicles, export_violations, export_parking_lots
     )
     from university_system.infrastructure.auth.user_authentication import UserAuth
+    from university_system.infrastructure.shared_context import get_auth
     from university_system.infrastructure.database.db import get_connection
     PARKING_MANAGEMENT_AVAILABLE = True
 except ImportError as e:
@@ -59,11 +60,14 @@ class ParkingManagementGUI:
         self.root.geometry("1200x800")
         self.root.minsize(800, 600)
 
-        # Initialize authentication - use provided auth system or create new one
+        # Initialize authentication - use provided auth system or centralized auth
         if auth_system:
             self.auth = auth_system
         else:
-            self.auth = UserAuth()
+            # Use centralized auth system
+            self.auth = get_auth()
+            if self.auth is None:
+                self.auth = UserAuth()
         set_auth(self.auth)
 
         # Initialize database

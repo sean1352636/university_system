@@ -215,7 +215,10 @@ class UniversityShopGUI:
 
             # Initialize centralized authentication system
             if self.auth is None:  # Only create if not passed from parent
-                self.auth = UserAuth()
+                # Use centralized auth system
+                self.auth = get_auth()
+                if self.auth is None:
+                    self.auth = UserAuth()
 
         except Exception as e:
             messagebox.showerror("Initialization Error", f"Failed to initialize backend: {e}")

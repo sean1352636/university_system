@@ -21,6 +21,7 @@ import hashlib
 
 # Core infrastructure
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.database.schemas import init_integration_marketplace_system_db
 from university_system.modules.shared.constants import paths
@@ -66,7 +67,10 @@ class IntegrationMarketplaceGUI:
         if auth_system:
             self.auth = auth_system
         else:
-            self.auth = UserAuth()
+            # Use centralized auth system
+            self.auth = get_auth()
+            if self.auth is None:
+                self.auth = UserAuth()
 
         # Initialize database
         self.init_database()

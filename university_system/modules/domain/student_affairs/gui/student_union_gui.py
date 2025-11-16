@@ -13,6 +13,7 @@ import threading
 import queue
 from university_system.infrastructure.email.template_utils import render_template
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
@@ -64,8 +65,10 @@ class StudentUnionGUI:
         # Setup database
         self.setup_database()
 
-        # Get authenticated user from UserAuth singleton
-        auth = UserAuth()
+        # Get authenticated user from centralized auth
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
         if not auth.current_user:
             # If no user is authenticated and this is standalone mode (no parent)
             if not parent:

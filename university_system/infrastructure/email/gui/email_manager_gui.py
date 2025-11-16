@@ -19,6 +19,7 @@ if project_root not in sys.path:
 
 from university_system.infrastructure.database.db import get_db_connection
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 # Import get_stored_emails first - this is critical for the inbox functionality
 try:
@@ -7253,10 +7254,11 @@ def main():
     """Main application entry point with backwards compatibility"""
     # Check if running as standalone or imported
     try:
-        # Try to use existing auth system
-        # Import centralized authentication system
-        from university_system.infrastructure.auth.user_authentication import UserAuth
-        auth = UserAuth()
+        # Try to use centralized auth system first
+        auth = get_auth()
+        if auth is None:
+            from university_system.infrastructure.auth.user_authentication import UserAuth
+            auth = UserAuth()
         print("Running in standalone mode - using UserAuth")
     except Exception as e:
         print(f"❌ Failed to initialize authentication: {e}")

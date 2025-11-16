@@ -3513,7 +3513,10 @@ Configuration:
             
             # Initialize student system (you'll need to adapt this based on student system's auth)
             from university_system.infrastructure.auth.user_authentication import UserAuth
-            student_auth = UserAuth()
+            from university_system.infrastructure.shared_context import get_auth
+            student_auth = get_auth()
+            if student_auth is None:
+                student_auth = UserAuth()
             
             # Create student GUI instance
             student_app = UnifiedManagementGUI(student_auth)

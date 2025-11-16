@@ -5,11 +5,65 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.53] - 2025-11-16
+
+### Changed
+
+**REFACTOR: Centralized Authentication System - Phase 2 (Additional GUI Files)**
+
+Extended centralized authentication refactoring to remaining GUI files across Student Affairs, Health, Commerce, Mobility, Finance, Services, and Infrastructure modules.
+
+**Additional Files Updated:**
+9. **Student Support GUI** (`university_system/modules/domain/student_affairs/gui/student_support_gui.py`)
+   - Updated `display_enhanced_support_portal()` to check if `get_auth()` returns None
+   - Line 7135: Now creates fallback instance only if centralized auth is None
+
+10. **Student Union GUI** (`university_system/modules/domain/student_affairs/gui/student_union_gui.py`)
+   - Line 68: Now uses `get_auth()` with fallback
+
+11. **Health Portal GUI** (`university_system/modules/domain/health/gui/health_portal_gui.py`)
+   - Line 36: Now uses `get_auth()` with fallback
+   - Constructor updated to use centralized auth
+
+12. **Shop Management GUI** (`university_system/modules/domain/commerce/gui/shop_management_gui.py`)
+   - Line 218: Now uses `get_auth()` with fallback
+   - Already had get_auth import, updated implementation
+
+13. **Parking Management GUI** (`university_system/modules/domain/mobility/gui/parking_management_gui.py`)
+   - Line 66: Now uses `get_auth()` with fallback
+   - Added get_auth import
+
+14. **Mobile App PWA GUI** (`university_system/modules/domain/mobility/gui/mobile_app_pwa_gui.py`)
+   - Line 52: Now uses `get_centralized_auth()` with fallback
+   - Added aliased import to avoid conflicts
+
+15. **Finance Reporting GUI** (`university_system/modules/domain/finance/gui/finance_reporting_gui.py`)
+   - 4 instances updated in different functions
+   - Lines updated: 8264, 8315, 9532, 9580
+   - All functions now try `get_auth()` first
+
+16. **Integration Marketplace GUI** (`university_system/modules/services/gui/integration_marketplace_gui.py`)
+   - Line 69: Now uses `get_auth()` with fallback
+
+17. **Email Manager GUI** (`university_system/infrastructure/email/gui/email_manager_gui.py`)
+   - Line 7259: Now uses `get_auth()` with fallback
+   - Main entry point updated
+
+18. **Log Management GUI** (`university_system/utils/logging/gui/log_management_gui.py`)
+   - Line 3516: Now uses `get_auth()` with fallback
+   - Local import updated in student system integration
+
+**Impact:**
+- Additional 10+ GUI modules now use centralized authentication
+- Complete consistency across entire GUI layer
+- Total duplicate auth instances eliminated: 80+
+- Unified auth behavior throughout application
+
 ## [5.0.52] - 2025-11-16
 
 ### Changed
 
-**REFACTOR: Centralized Authentication System**
+**REFACTOR: Centralized Authentication System - Phase 1 (Core Files)**
 
 All GUI and CLI files now use the centralized authentication system via `get_auth()` from `university_system.infrastructure.shared_context` instead of creating their own `UserAuth()` instances. This ensures:
 - Single source of truth for authentication state

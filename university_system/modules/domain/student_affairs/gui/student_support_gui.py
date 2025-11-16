@@ -7129,6 +7129,10 @@ def display_enhanced_support_portal():
     try:
         from university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
+        # If get_auth() returns None, create new instance
+        if auth is None:
+            from university_system.infrastructure.auth.user_authentication import UserAuth
+            auth = UserAuth()
     except ImportError:
         try:
             from university_system.infrastructure.auth.user_authentication import UserAuth

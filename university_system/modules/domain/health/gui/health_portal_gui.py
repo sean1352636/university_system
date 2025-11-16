@@ -1,4 +1,5 @@
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.shared.constants import paths
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -29,11 +30,14 @@ class HealthPortalGUI:
         self.root.geometry("1400x900")
         self.root.configure(bg='#f0f0f0')
 
-        # Initialize authentication - use provided auth system or create new one
+        # Initialize authentication - use provided auth system or centralized auth
         if auth_system:
             self.auth = auth_system
         else:
-            self.auth = UserAuth()
+            # Use centralized auth system
+            self.auth = get_auth()
+            if self.auth is None:
+                self.auth = UserAuth()
         
         # Initialize encryption
         self.encryption_key = self.get_or_create_encryption_key()
@@ -2975,7 +2979,7 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
     def load_audit_log(self):
         """Load audit log from file"""
         try:
-            log_file = os.path.join("logs", "health_portal_audit.log")
+            log_file = paths.LOG_DIR / "health_portal_audit.log"
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
                     log_content = f.read()
@@ -3000,9 +3004,9 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
         if not user_filter and not action_filter:
             self.load_audit_log()
             return
-        
+
         try:
-            log_file = os.path.join("logs", "health_portal_audit.log")
+            log_file = paths.LOG_DIR / "health_portal_audit.log"
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
                     lines = f.readlines()
@@ -3082,9 +3086,9 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
             report.append("=" * 30)
             report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report.append("")
-            
+
             # Parse audit log for access patterns
-            log_file = os.path.join("logs", "health_portal_audit.log")
+            log_file = paths.LOG_DIR / "health_portal_audit.log"
             if os.path.exists(log_file):
                 try:
                     with open(log_file, 'r', encoding='utf-8') as f:

@@ -8,6 +8,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
+from university_system.modules.shared.constants import paths
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -34,10 +35,12 @@ def set_auth(auth_instance):
 # Import the shared authentication system
 try:
     from university_system.infrastructure.auth.user_authentication import UserAuth
+    from university_system.infrastructure.shared_context import get_auth
     print("✅ UserAuth imported successfully")
 except ImportError as e:
     print(f"⚠️ Could not import UserAuth: {e}")
     UserAuth = None
+    get_auth = lambda: None
 
 class FinancialManagementGUI:
     """Enhanced GUI for Financial Management System"""
@@ -531,8 +534,8 @@ class FinancialManagementGUI:
         ttk.Label(system_frame, text="Export Location:").grid(row=2, column=0, sticky=tk.W, pady=(10, 0))
         export_frame = ttk.Frame(system_frame)
         export_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
-        
-        self.export_path = tk.StringVar(value="./exports/")
+
+        self.export_path = tk.StringVar(value=str(paths.EXPORTS_DIR))
         ttk.Entry(export_frame, textvariable=self.export_path, width=40).grid(row=0, column=0, sticky=(tk.W, tk.E))
         ttk.Button(export_frame, text="Browse", command=self.browse_export_path).grid(row=0, column=1, padx=(5, 0))
         
@@ -8255,16 +8258,19 @@ def launch_financial_gui(auth_instance=None):
     """Launch the Enhanced Financial Management GUI with proper auth integration"""
     global auth
 
-    # Use provided auth instance or create a new one
+    # Use provided auth instance or get centralized auth
     if auth_instance:
         auth = auth_instance
-    elif not auth and UserAuth:
-        try:
-            auth = UserAuth()
-            print("✅ UserAuth instance created for financial GUI")
-        except Exception as e:
-            print(f"⚠️ Could not create UserAuth instance: {e}")
-            print("   Continuing with limited functionality...")
+    elif not auth:
+        # Try to get centralized auth first
+        auth = get_auth()
+        if auth is None and UserAuth:
+            try:
+                auth = UserAuth()
+                print("✅ UserAuth instance created for financial GUI")
+            except Exception as e:
+                print(f"⚠️ Could not create UserAuth instance: {e}")
+                print("   Continuing with limited functionality...")
 
     # Check authentication if available
     if auth and hasattr(auth, 'current_user') and hasattr(auth, 'check_permission'):
@@ -8309,12 +8315,15 @@ def display_finance_menu(auth_instance=None):
     # Use provided auth instance or ensure we have one
     if auth_instance:
         auth = auth_instance
-    elif not auth and UserAuth:
-        try:
-            auth = UserAuth()
-            print("✅ UserAuth instance created for finance menu")
-        except Exception as e:
-            print(f"⚠️ Could not create UserAuth instance: {e}")
+    elif not auth:
+        # Try to get centralized auth first
+        auth = get_auth()
+        if auth is None and UserAuth:
+            try:
+                auth = UserAuth()
+                print("✅ UserAuth instance created for finance menu")
+            except Exception as e:
+                print(f"⚠️ Could not create UserAuth instance: {e}")
 
     # Check authentication if available
     if auth and hasattr(auth, 'current_user') and hasattr(auth, 'check_permission'):
@@ -9527,8 +9536,10 @@ def test_auth_integration():
         if UserAuth:
             print("✅ UserAuth class successfully imported")
 
-            # Try to create an instance
-            test_auth = UserAuth()
+            # Try to get centralized auth or create instance
+            test_auth = get_auth()
+            if test_auth is None:
+                test_auth = UserAuth()
             print("✅ UserAuth instance created successfully")
 
             # Test basic functionality
@@ -9573,10 +9584,13 @@ def demo_auth_integration():
     print("=" * 60)
 
     try:
-        # Step 1: Create auth instance
-        print("1. Creating UserAuth instance...")
+        # Step 1: Get or create auth instance
+        print("1. Getting/Creating UserAuth instance...")
         if UserAuth:
-            auth = UserAuth()
+            # Try to get centralized auth first
+            auth = get_auth()
+            if auth is None:
+                auth = UserAuth()
             print("   ✅ UserAuth created successfully")
 
             # Step 2: Show current authentication status
