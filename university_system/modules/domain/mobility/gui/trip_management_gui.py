@@ -2208,19 +2208,20 @@ class RegisterForTripDialog(Dialog):
         # Emergency contact
         ttk.Label(reg_frame, text="Emergency Contact (Name and Phone):").pack(anchor=tk.W)
         self.emergency_var = tk.StringVar()
-        ttk.Entry(reg_frame, textvariable=self.emergency_var, width=50).pack(fill=tk.X, pady=(0, 10))
-        
+        self.emergency_entry = ttk.Entry(reg_frame, textvariable=self.emergency_var, width=50)
+        self.emergency_entry.pack(fill=tk.X, pady=(0, 10))
+
         # Medical information
         ttk.Label(reg_frame, text="Medical Information (optional):").pack(anchor=tk.W)
         self.medical_text = tk.Text(reg_frame, width=50, height=3)
         self.medical_text.pack(fill=tk.X, pady=(0, 10))
-        
+
         # Dietary requirements
         ttk.Label(reg_frame, text="Dietary Requirements (optional):").pack(anchor=tk.W)
         self.dietary_text = tk.Text(reg_frame, width=50, height=2)
         self.dietary_text.pack(fill=tk.X)
-        
-        return self.emergency_var  # Initial focus
+
+        return self.emergency_entry  # Initial focus - return widget, not StringVar
     
     def validate(self):
         """Validate registration data"""
@@ -2794,25 +2795,25 @@ class AddExpenseDialog(Dialog):
         ttk.Label(master, text="Category:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.category_var = tk.StringVar()
         categories = ['Transportation', 'Accommodation', 'Food', 'Activities', 'Equipment', 'Insurance', 'Miscellaneous']
-        category_combo = ttk.Combobox(master, textvariable=self.category_var, values=categories, state="readonly")
-        category_combo.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
-        
+        self.category_combo = ttk.Combobox(master, textvariable=self.category_var, values=categories, state="readonly")
+        self.category_combo.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
+
         # Description
         ttk.Label(master, text="Description:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.description_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.description_var, width=40).grid(row=1, column=1, padx=5, pady=5)
-        
+
         # Amount
         ttk.Label(master, text="Amount (£):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.amount_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.amount_var, width=40).grid(row=2, column=1, padx=5, pady=5)
-        
+
         # Date
         ttk.Label(master, text="Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(master, textvariable=self.date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
-        
-        return self.category_var
+
+        return self.category_combo  # Return widget, not StringVar
     
     def validate(self):
         """Validate expense data"""

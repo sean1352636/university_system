@@ -5,6 +5,46 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.60] - 2025-11-16
+
+### Fixed
+
+**FIX: Trip Management GUI - Dialog Initial Focus Crashes**
+
+Fixed critical crashes in trip management dialogs caused by incorrect initial focus handling.
+
+**Problem:**
+- `RegisterForTripDialog` and `AddExpenseDialog` crashed immediately when opened
+- Error: `AttributeError: 'StringVar' object has no attribute 'focus_set'`
+- `simpledialog.Dialog` expects `body()` to return a widget for initial focus
+- Code was returning StringVar objects instead of actual widgets
+
+**Root Cause:**
+- `body()` method returns widget for initial focus
+- Tkinter calls `focus_set()` on returned value
+- StringVar objects don't have `focus_set()` method
+- Code incorrectly returned `self.emergency_var` (StringVar) instead of Entry widget
+- Same issue in AddExpenseDialog with `self.category_var`
+
+**Solution:**
+- Store widget references before calling `.pack()` or `.grid()`
+- Return actual widget instances from `body()` method
+- StringVars can still be used for data binding via `textvariable`
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/gui/trip_management_gui.py`
+  - Line 2211-2212: Store emergency_entry widget
+  - Line 2224: Return self.emergency_entry instead of self.emergency_var
+  - Line 2798-2799: Store category_combo widget
+  - Line 2816: Return self.category_combo instead of self.category_var
+
+**Impact:**
+- Trip registration dialog now opens without crashing
+- Add expense dialog now opens without crashing
+- Proper focus on first input field
+- Users can register for trips successfully
+- Expense tracking functional again
+
 ## [5.0.59] - 2025-11-16
 
 ### Fixed
