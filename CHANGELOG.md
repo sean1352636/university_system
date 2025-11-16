@@ -5,6 +5,39 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.63] - 2025-11-16
+
+### Fixed
+
+**HOTFIX: Trip Management - Financial Report Format String Error**
+
+Fixed crash when generating financial reports due to invalid format specifiers.
+
+**Problem:**
+- Financial reports crashed with: "Invalid format specifier '.2f:<11' for object of type 'float'"
+- Error occurred in `_write_financial_report_txt()` method
+- Prevented viewing or exporting financial reports
+
+**Root Cause:**
+- Invalid f-string format specifiers combining `.2f` with `:<width`
+- Python doesn't support `.2f:<11` format (precision before alignment)
+- Correct format is `<11.2f` (alignment and width before precision)
+
+**Fix:**
+- Line 1985: `£{collected:.2f:<11}` → `£{collected:<11.2f}`
+- Line 1985: `£{pending:.2f:<11}` → `£{pending:<11.2f}`
+- Line 1996: `£{amount:.2f:<9}` → `£{amount:<9.2f}`
+- Line 2901: `£{total_expenses:.2f:<14}` → `£{total_expenses:<14.2f}`
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/services/trip_management.py`
+
+**Impact:**
+- ✓ Financial reports now generate successfully
+- ✓ Report viewer displays financial data correctly
+- ✓ PDF and TXT exports work properly
+- ✓ Expense reports format correctly
+
 ## [5.0.62] - 2025-11-16
 
 ### Added

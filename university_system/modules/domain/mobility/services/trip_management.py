@@ -1982,7 +1982,7 @@ class TripReportGenerator:
             
             for revenue in revenue_data:
                 trip_id, trip_name, cost, max_parts, participants, collected, pending, potential = revenue
-                f.write(f"{trip_id:<5} {trip_name[:24]:<25} £{cost:<9.2f} {participants:<12} £{collected:.2f:<11} £{pending:.2f:<11}\n")
+                f.write(f"{trip_id:<5} {trip_name[:24]:<25} £{cost:<9.2f} {participants:<12} £{collected:<11.2f} £{pending:<11.2f}\n")
             
             # Expenses by trip
             if expense_data:
@@ -1993,7 +1993,7 @@ class TripReportGenerator:
                 
                 for expense in expense_data:
                     trip_name, category, amount = expense
-                    f.write(f"{trip_name[:29]:<30} {category[:19]:<20} £{amount:.2f:<9}\n")
+                    f.write(f"{trip_name[:29]:<30} {category[:19]:<20} £{amount:<9.2f}\n")
             else:
                 f.write("\nNo expense data recorded.\n")
             
@@ -2898,7 +2898,7 @@ class TripReportGenerator:
             
             for trip in trips:
                 trip_id, name, destination, start_date, status, total_expenses = trip
-                print(f"{trip_id:<5} {name[:24]:<25} {destination[:19]:<20} {start_date:<12} £{total_expenses:.2f:<14}")
+                print(f"{trip_id:<5} {name[:24]:<25} {destination[:19]:<20} {start_date:<12} £{total_expenses:<14.2f}")
             
             print("=" * 80)
             
