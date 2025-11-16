@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Shop Management GUI - Update Stock, Reports, and About Window:**
+
+1. **Update Stock Button Not Working** (✅ Fixed)
+   - **Problem**: Update Stock button did nothing when clicked
+   - **Root Cause**: `update_product_stock()` method checked `if 'get_connection' in globals()` but function was already imported
+   - **Solution**:
+     - Removed the unnecessary globals check
+     - Added success confirmation message: `messagebox.showinfo("Success", ...)`
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4480-4501` - Fixed update_product_stock method
+   - **Impact**: Stock updates now work correctly with user confirmation
+
+2. **Report Display Issues** (✅ Fixed)
+   - **Problem**: Reports shown inline in main interface, no export/email options
+   - **Solution**:
+     - Added `show_report_window()` helper method (similar to Restaurant GUI)
+     - Reports now open in dedicated 900x700 popup windows
+     - Added Export as TXT button with timestamped filenames
+     - Added Email to Admin button with database email lookup
+   - **Reports Updated**:
+     - Daily Sales Report - converted to text format with export/email
+     - Low Stock Report - converted to text format with export/email
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4832-4933` - Added show_report_window helper
+     - `modules/domain/commerce/gui/shop_management_gui.py:5047-5079` - Updated show_daily_report
+     - `modules/domain/commerce/gui/shop_management_gui.py:5081-5083` - Fixed get_daily_stats (removed bad globals check)
+     - `modules/domain/commerce/gui/shop_management_gui.py:5137-5181` - Updated show_low_stock_report
+     - `modules/domain/commerce/gui/shop_management_gui.py:5183-5186` - Fixed get_low_stock_items (removed bad globals check)
+   - **Impact**: Better UX with dedicated report windows and export/email capabilities
+
+3. **About Window Too Small** (✅ Fixed)
+   - **Problem**: About window at 400x300 was too small to view all content
+   - **Solution**:
+     - Increased window size from 400x300 to 600x500
+     - Changed from non-resizable to resizable (True, True)
+     - Increased text widget from height=12, width=45 to height=15, width=60
+     - Added proper modal sequence with update_idletasks() before grab_set()
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:4166-4214` - Updated show_about method
+   - **Impact**: About window now displays all content comfortably
+
 **Shop Management GUI - Product Details and Cart Issues:**
 
 1. **Tkinter grab_set Error on Product Double-Click** (✅ Fixed)

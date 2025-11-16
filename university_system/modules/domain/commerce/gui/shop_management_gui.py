@@ -4167,12 +4167,11 @@ class UniversityShopGUI:
         """Show about dialog"""
         about_window = tk.Toplevel(self.root)
         about_window.title("About")
-        about_window.geometry("400x300")
-        about_window.resizable(False, False)
-        
+        about_window.geometry("600x500")
+        about_window.resizable(True, True)
+
         # Make it modal
         about_window.transient(self.root)
-        about_window.grab_set()
         
         main_frame = ttk.Frame(about_window, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -4202,13 +4201,17 @@ All original CLI functions remain available and can be
 called directly for automation or scripting purposes.
         """
         
-        text_widget = tk.Text(main_frame, height=12, width=45, wrap=tk.WORD, state='disabled')
+        text_widget = tk.Text(main_frame, height=15, width=60, wrap=tk.WORD, state='disabled')
         text_widget.grid(row=3, column=0, pady=10)
         text_widget.configure(state='normal')
         text_widget.insert('1.0', info_text.strip())
         text_widget.configure(state='disabled')
-        
+
         ttk.Button(main_frame, text="Close", command=about_window.destroy).grid(row=4, column=0, pady=10)
+
+        # Now that window is fully created, make it modal
+        about_window.update_idletasks()
+        about_window.grab_set()
         
     # Additional management functions
     def edit_selected_product(self):
@@ -4480,19 +4483,20 @@ called directly for automation or scripting purposes.
     def update_product_stock(self, product_id, new_stock):
         """Update product stock in database"""
         try:
-            if 'get_connection' in globals():
-                conn = get_connection()
-                cursor = conn.cursor()
-                
-                cursor.execute("""
-                    UPDATE shop_inventory
-                    SET quantity = ?, last_restock_date = ?
-                    WHERE product_id = ?
-                """, [new_stock, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id])
-                
-                conn.commit()
-                conn.close()
-                
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                UPDATE shop_inventory
+                SET quantity = ?, last_restock_date = ?
+                WHERE product_id = ?
+            """, [new_stock, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id])
+
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Success", f"Stock updated successfully for {product_id}")
+
         except Exception as e:
             if 'conn' in locals():
                 conn.rollback()
@@ -4828,6 +4832,109 @@ called directly for automation or scripting purposes.
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load transaction details: {e}")
             
+    def show_report_window(self, title, report_content):
+        """
+        Display a report in a new window with export and email buttons.
+
+        Args:
+            title: Window title and report name
+            report_content: The text content of the report
+        """
+        # Create report window
+        report_window = tk.Toplevel(self.root)
+        report_window.title(title)
+        report_window.geometry("900x700")
+        report_window.transient(self.root)
+
+        main_frame = ttk.Frame(report_window, padding=20)
+        main_frame.pack(fill='both', expand=True)
+
+        ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Report display area
+        report_frame = ttk.LabelFrame(main_frame, text="Report", padding=10)
+        report_frame.pack(fill='both', expand=True, pady=10)
+
+        from tkinter.scrolledtext import ScrolledText
+        report_text = ScrolledText(report_frame, height=25, width=100, font=('Courier', 9))
+        report_text.pack(fill='both', expand=True)
+        report_text.insert('1.0', report_content)
+        report_text.config(state='disabled')  # Make read-only
+
+        # Buttons frame
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=10)
+
+        def export_as_txt():
+            """Export report to a text file"""
+            try:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                # Clean title for filename
+                clean_title = title.replace(' ', '_').replace('/', '_').replace('\\', '_')
+                filename = f"{clean_title}_{timestamp}.txt"
+                filepath = os.path.join(os.getcwd(), filename)
+
+                with open(filepath, 'w') as f:
+                    f.write(report_content)
+
+                messagebox.showinfo("Export Success",
+                                  f"Report exported successfully!\n\n"
+                                  f"File: {filename}\n"
+                                  f"Location: {filepath}")
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export report:\n{str(e)}")
+
+        def email_to_admin():
+            """Email report to admin"""
+            try:
+                # Get admin email from database
+                conn = get_connection()
+                if not conn:
+                    messagebox.showerror("Database Error", "Could not connect to database")
+                    return
+
+                cursor = conn.cursor()
+                cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+                result = cursor.fetchone()
+                conn.close()
+
+                if not result or not result[0]:
+                    messagebox.showerror("Email Error",
+                                       "No admin email found in database.\n"
+                                       "Please configure an admin email address first.")
+                    return
+
+                admin_email = result[0]
+
+                # Import email service
+                try:
+                    from university_system.infrastructure.email.email_service import send_email
+                except ImportError:
+                    messagebox.showerror("Email Error",
+                                       "Email service not available.\n"
+                                       "Please check your email configuration.")
+                    return
+
+                # Send the email
+                subject = f"Shop Report: {title}"
+                body = f"Please find the {title} below:\n\n{report_content}"
+
+                send_email(admin_email, subject, body)
+
+                messagebox.showinfo("Email Sent",
+                                  f"Report has been sent to admin email:\n{admin_email}")
+
+            except Exception as e:
+                messagebox.showerror("Email Error", f"Failed to send email:\n{str(e)}")
+
+        ttk.Button(btn_frame, text="Export as TXT", command=export_as_txt).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+
+        # Now that window is fully created, make it modal
+        report_window.update_idletasks()
+        report_window.grab_set()
+
     def show_reports(self):
         """Display reports interface"""
         self.clear_content()
@@ -4942,50 +5049,41 @@ called directly for automation or scripting purposes.
             
     def show_daily_report(self):
         """Show daily sales report"""
-        # Clear report display
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        # Report title
-        title_frame = ttk.Frame(self.report_display_frame)
-        title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        
         today = datetime.now().strftime('%Y-%m-%d')
-        ttk.Label(title_frame, text=f"Daily Sales Report - {today}", 
-                 style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W)
-        
+
         try:
             # Get daily stats
             stats = self.get_daily_stats(today)
-            
-            # Stats display
-            stats_frame = ttk.Frame(self.report_display_frame)
-            stats_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
-            stats_frame.columnconfigure((0, 1, 2, 3), weight=1)
-            
-            self.create_stat_card(stats_frame, "Total Sales", f"£{stats.get('total_sales', 0):.2f}", 0, 0)
-            self.create_stat_card(stats_frame, "Transactions", stats.get('transaction_count', 0), 0, 1)
-            self.create_stat_card(stats_frame, "Avg Order", f"£{stats.get('avg_order', 0):.2f}", 0, 2)
-            self.create_stat_card(stats_frame, "Items Sold", stats.get('items_sold', 0), 0, 3)
-            
+
+            # Generate report content as text
+            report = f"DAILY SALES REPORT - {today}\n"
+            report += "=" * 80 + "\n\n"
+            report += "SUMMARY:\n"
+            report += "-" * 80 + "\n"
+            report += f"Total Sales:       £{stats.get('total_sales', 0):.2f}\n"
+            report += f"Transactions:      {stats.get('transaction_count', 0)}\n"
+            report += f"Average Order:     £{stats.get('avg_order', 0):.2f}\n"
+            report += f"Items Sold:        {stats.get('items_sold', 0)}\n\n"
+
             # Top products today
             if stats.get('top_products'):
-                products_frame = ttk.LabelFrame(self.report_display_frame, text="Top Products Today", padding="10")
-                products_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
-                
-                for i, product in enumerate(stats['top_products'][:5]):
-                    ttk.Label(products_frame, text=f"{i+1}. {product['name']} - {product['quantity']} sold").grid(
-                        row=i, column=0, sticky=tk.W, pady=2)
-            
+                report += "TOP PRODUCTS TODAY:\n"
+                report += "-" * 80 + "\n"
+                for i, product in enumerate(stats['top_products'][:5], 1):
+                    report += f"{i}. {product['name']:<40} {product['quantity']:>5} sold\n"
+                report += "\n"
+
+            report += "=" * 80 + "\n"
+
+            # Show in new window with export/email buttons
+            self.show_report_window(f"Daily Sales Report - {today}", report)
+
         except Exception as e:
-            ttk.Label(self.report_display_frame, text=f"Error loading daily report: {e}", 
-                     style='Error.TLabel').grid(row=1, column=0)
+            messagebox.showerror("Report Error", f"Error loading daily report:\n{str(e)}")
             
     def get_daily_stats(self, date):
         """Get daily sales statistics"""
         try:
-            if 'get_connection' not in globals():
-                return {'total_sales': 0, 'transaction_count': 0, 'avg_order': 0, 'items_sold': 0}
             
             conn = get_connection()
             conn.row_factory = sqlite3.Row
@@ -5041,104 +5139,53 @@ called directly for automation or scripting purposes.
             
     def show_low_stock_report(self):
         """Show low stock report"""
-        # Clear report display
-        for widget in self.report_display_frame.winfo_children():
-            widget.destroy()
-        
-        # Report title
-        ttk.Label(self.report_display_frame, text="Low Stock Report", 
-                 style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
-        
         try:
             # Get low stock items
             low_stock_items = self.get_low_stock_items()
-            
+
             if not low_stock_items:
-                ttk.Label(self.report_display_frame, text="✅ All products are adequately stocked!", 
-                         style='Success.TLabel').grid(row=1, column=0, pady=20)
+                messagebox.showinfo("Low Stock Report",
+                                  "✅ All products are adequately stocked!")
                 return
-            
-            # Low stock table
-            stock_frame = ttk.Frame(self.report_display_frame)
-            stock_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-            stock_frame.columnconfigure(0, weight=1)
-            stock_frame.rowconfigure(0, weight=1)
-            
-            # Create treeview
-            stock_columns = ('Product ID', 'Name', 'Category', 'Current Stock', 'Threshold', 'Action Needed')
-            stock_tree = ttk.Treeview(stock_frame, columns=stock_columns, show='headings', height=10)
-            
-            for col in stock_columns:
-                stock_tree.heading(col, text=col)
-            
-            stock_tree.column('Product ID', width=100)
-            stock_tree.column('Name', width=200)
-            stock_tree.column('Category', width=120)
-            stock_tree.column('Current Stock', width=100)
-            stock_tree.column('Threshold', width=80)
-            stock_tree.column('Action Needed', width=120)
-            
-            # Scrollbar
-            stock_scrollbar = ttk.Scrollbar(stock_frame, orient='vertical', command=stock_tree.yview)
-            stock_tree.configure(yscrollcommand=stock_scrollbar.set)
-            
-            stock_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-            stock_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-            
-            # Populate data
+
+            # Generate report content as text
+            report = "LOW STOCK REPORT\n"
+            report += "=" * 80 + "\n\n"
+
+            critical_count = len([item for item in low_stock_items if item['quantity'] == 0])
+            urgent_count = len([item for item in low_stock_items if 0 < item['quantity'] <= item['restock_threshold']])
+
+            report += f"⚠️ {len(low_stock_items)} products need attention\n"
+            if critical_count > 0:
+                report += f"🔴 {critical_count} products are OUT OF STOCK\n"
+            if urgent_count > 0:
+                report += f"🟡 {urgent_count} products need immediate restocking\n"
+            report += "\n"
+
+            report += f"{'Product ID':<15} {'Name':<30} {'Category':<15} {'Stock':<8} {'Threshold':<10} {'Action':<15}\n"
+            report += "-" * 80 + "\n"
+
             for item in low_stock_items:
                 if item['quantity'] == 0:
                     action = "OUT OF STOCK"
-                    tag = "critical"
                 elif item['quantity'] <= item['restock_threshold']:
                     action = "RESTOCK NOW"
-                    tag = "urgent"
                 else:
                     action = "Monitor"
-                    tag = "warning"
-                
-                stock_tree.insert('', 'end', values=(
-                    item['product_id'],
-                    item['name'],
-                    item['category'],
-                    item['quantity'],
-                    item['restock_threshold'],
-                    action
-                ), tags=(tag,))
-            
-            # Configure tags
-            stock_tree.tag_configure('critical', background='#ff9999')
-            stock_tree.tag_configure('urgent', background='#ffcc99')
-            stock_tree.tag_configure('warning', background='#ffff99')
-            
-            # Summary
-            summary_frame = ttk.Frame(self.report_display_frame)
-            summary_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
-            
-            critical_count = len([item for item in low_stock_items if item['quantity'] == 0])
-            urgent_count = len([item for item in low_stock_items if 0 < item['quantity'] <= item['restock_threshold']])
-            
-            ttk.Label(summary_frame, text=f"⚠️ {len(low_stock_items)} products need attention", 
-                     style='Warning.TLabel').grid(row=0, column=0, sticky=tk.W)
-            
-            if critical_count > 0:
-                ttk.Label(summary_frame, text=f"🔴 {critical_count} products are OUT OF STOCK", 
-                         style='Error.TLabel').grid(row=1, column=0, sticky=tk.W)
-            
-            if urgent_count > 0:
-                ttk.Label(summary_frame, text=f"🟡 {urgent_count} products need immediate restocking", 
-                         style='Warning.TLabel').grid(row=2, column=0, sticky=tk.W)
-            
+
+                report += f"{item['product_id']:<15} {item['name']:<30} {item['category']:<15} {item['quantity']:<8} {item['restock_threshold']:<10} {action:<15}\n"
+
+            report += "\n" + "=" * 80 + "\n"
+
+            # Show in new window with export/email buttons
+            self.show_report_window("Low Stock Report", report)
+
         except Exception as e:
-            ttk.Label(self.report_display_frame, text=f"Error loading low stock report: {e}", 
-                     style='Error.TLabel').grid(row=1, column=0)
+            messagebox.showerror("Report Error", f"Error loading low stock report:\n{str(e)}")
             
     def get_low_stock_items(self):
         """Get list of low stock items"""
         try:
-            if 'get_connection' not in globals():
-                return []
-            
             conn = get_connection()
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
