@@ -5,6 +5,94 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.62] - 2025-11-16
+
+### Added
+
+**FEATURE: Trip Management GUI - Enhanced Report Viewing & Export System**
+
+Completely redesigned trip report generation with in-window viewing, flexible export options, and admin email integration.
+
+**New Features:**
+
+1. **In-Window Report Viewer**
+   - Reports now display in a dedicated viewer window with monospace formatting
+   - Read-only text widget with horizontal and vertical scrollbars
+   - Modal dialog (900x700) with professional layout
+   - Shows report metadata (generation time, user)
+
+2. **Flexible Export Options**
+   - Export as TXT: Save report to user-selected location
+   - Export as PDF: Generate formatted PDF report (when ReportLab available)
+   - File save dialogs with default timestamped filenames
+   - Both export types available from viewer window
+
+3. **Admin Email Integration**
+   - "Send to Admin" button in report viewer
+   - Automatically retrieves all admin users with email addresses
+   - Multi-select dialog to choose specific admins
+   - Report sent as email attachment
+   - Background email sending with progress notification
+   - Professional email template with report details
+
+4. **Improved Report Management**
+   - Reports use centralized path from `paths.REPORTS_DIR`
+   - New `generate_report_content_as_string()` method for in-memory viewing
+   - New `get_admin_emails()` method for admin retrieval
+   - Temporary file management for email attachments
+
+**Technical Implementation:**
+
+- **ReportViewerDialog** (New Class):
+  - 255 lines, full-featured report viewer
+  - Monospace font for proper report formatting
+  - Export as TXT/PDF buttons
+  - Send to Admin button (when email available)
+  - Graceful degradation when dependencies unavailable
+
+- **TripReportGenerator** Enhancements:
+  - Updated to use `paths.REPORTS_DIR` instead of hardcoded "reports" directory
+  - Added `generate_report_content_as_string(data, report_type)` method
+  - Added `get_admin_emails()` method with database query
+  - Uses StringIO for in-memory content generation
+
+- **ReportGeneratorDialog** Updates:
+  - Modified to generate and display reports instead of just saving
+  - Opens ReportViewerDialog after generation
+  - Background thread processing maintained
+
+- **Email Service Integration**:
+  - Imported `send_email` from `infrastructure.email.email_service`
+  - Professional email templates with report metadata
+  - Attachment support via temporary files
+  - Success/failure notifications
+
+**User Experience:**
+
+- Generate report → View in window → Export or email as needed
+- No longer forces immediate file save
+- Users can review before exporting
+- Multiple export options from single generation
+- Easy admin notification workflow
+
+**Files Modified:**
+- `university_system/modules/domain/mobility/services/trip_management.py`
+  - Updated imports to include `REPORTS_DIR`
+  - Modified `TripReportGenerator.__init__()` and `ensure_reports_directory()`
+  - Added `generate_report_content_as_string()` method (38 lines)
+  - Added `get_admin_emails()` method (32 lines)
+
+- `university_system/modules/domain/mobility/gui/trip_management_gui.py`
+  - Added email service import with availability check
+  - Added `ReportViewerDialog` class (255 lines)
+  - Updated `ReportGeneratorDialog.apply()` to use viewer
+  - Changed from immediate save to view-first workflow
+
+**Dependencies:**
+- Email functionality requires `infrastructure.email.email_service`
+- PDF export requires ReportLab library
+- Graceful degradation when dependencies unavailable
+
 ## [5.0.61] - 2025-11-16
 
 ### Fixed
