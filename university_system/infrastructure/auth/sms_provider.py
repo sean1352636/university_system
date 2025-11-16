@@ -8,6 +8,7 @@ import os
 import json
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
+from university_system.modules.shared.constants import paths
 
 
 class SMSProvider(ABC):
@@ -115,7 +116,7 @@ class MockSMSProvider(SMSProvider):
 
     def __init__(self, log_file: str = None):
         """Initialize mock provider"""
-        self.log_file = log_file or '/tmp/sms_otp_log.txt'
+        self.log_file = log_file or str(paths.TEMP_DIR / 'sms_otp_log.txt')
 
     def send_otp(self, phone_number: str, code: str) -> Dict:
         """Mock send - logs to file instead of sending SMS"""
@@ -231,10 +232,7 @@ class SMSService:
 # Configuration loader
 def load_sms_config() -> Dict:
     """Load SMS provider configuration from file or environment"""
-    config_file = os.path.join(
-        os.path.dirname(__file__),
-        '../../config/sms_config.json'
-    )
+    config_file = paths.CONFIG_DIR / 'sms_config.json'
 
     # Try to load from config file
     if os.path.exists(config_file):

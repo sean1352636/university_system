@@ -555,9 +555,9 @@ def create_advanced_visualization(section, df):
             plt.xticks(rotation=45)
             
         plt.tight_layout()
-        
+
         # Save chart
-        chart_path = f"reports/charts/{section}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        chart_path = paths.CHARTS_DIR / f"{section}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
         plt.savefig(chart_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -586,9 +586,9 @@ def create_interactive_chart(section, df):
                             title='Interactive Registration Trends')
             else:
                 fig = px.bar(df, x=df.columns[0], y=df.columns[1])
-                
+
             # Save as HTML
-            chart_path = f"reports/charts/{section}_interactive_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+            chart_path = paths.CHARTS_DIR / f"{section}_interactive_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
             os.makedirs(os.path.dirname(chart_path), exist_ok=True)
             fig.write_html(chart_path)
             return chart_path
@@ -635,13 +635,13 @@ def create_enhanced_pie_chart(df, section):
             autotext.set_color('white')
             autotext.set_fontweight('bold')
             
-        ax.set_title(f'Enhanced {section.replace("_", " ").title()}', 
+        ax.set_title(f'Enhanced {section.replace("_", " ").title()}',
                     fontsize=14, fontweight='bold', pad=20)
-        
+
         plt.tight_layout()
-        
+
         # Save chart
-        chart_path = f"reports/charts/{section}_pie_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        chart_path = paths.CHARTS_DIR / f"{section}_pie_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
         plt.savefig(chart_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -683,11 +683,11 @@ def create_enhanced_bar_chart(df, section):
         # Rotate x-axis labels if needed
         if len(df) > 5:
             plt.xticks(rotation=45, ha='right')
-            
+
         plt.tight_layout()
-        
+
         # Save chart
-        chart_path = f"reports/charts/{section}_bar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        chart_path = paths.CHARTS_DIR / f"{section}_bar_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
         plt.savefig(chart_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -745,11 +745,11 @@ def create_enhanced_line_chart(df, section):
                 ax.legend()
             except:
                 pass
-                
+
         plt.tight_layout()
-        
+
         # Save chart
-        chart_path = f"reports/charts/{section}_line_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        chart_path = paths.CHARTS_DIR / f"{section}_line_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
         plt.savefig(chart_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -8679,7 +8679,7 @@ University Reporting System
     def get_log_file(self):
         """Get log file path"""
         try:
-            return CONFIG.get('log_file', 'logs/enhanced_reporting.log')
+            return CONFIG.get('log_file', str(paths.LOG_DIR / 'enhanced_reporting.log'))
         except Exception as e:
             logging.error(f"Error getting log file: {str(e)}")
             return None

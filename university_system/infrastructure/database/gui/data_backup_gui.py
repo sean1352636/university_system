@@ -21,7 +21,7 @@ from email.mime.multipart import MIMEMultipart
 # Import centralized paths
 try:
     from university_system.modules.shared.constants.paths import (
-        BACKUP_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
+        BACKUP_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
     )
 except ImportError:
     # Fallback if paths module not available - use PROJECT_ROOT relative paths
@@ -30,6 +30,7 @@ except ImportError:
     BACKUP_DIR = PROJECT_ROOT / "backups"
     LOG_DIR = PROJECT_ROOT / "logs"
     BACKUP_TEMPLATES_DIR = PROJECT_ROOT / "templates" / "backup_templates"
+    DATA_DIR = PROJECT_ROOT / "data"
     DB_PATH = DEFAULT_DB_PATH
 
 try:
@@ -1574,9 +1575,9 @@ class AdvancedSettingsDialog:
 
 class BackupMetadata:
     """Class to handle backup metadata and tracking - missing from GUI"""
-    
+
     def __init__(self):
-        self.metadata_file = "backup_metadata.json"
+        self.metadata_file = DATA_DIR / "backup_metadata.json"
         self.metadata = self.load_metadata()
     
     def load_metadata(self):

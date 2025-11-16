@@ -31,6 +31,7 @@ logger = configure_logging(name="ai_detector")
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 # Handle optional dependencies with proper error handling
 try:
@@ -3889,7 +3890,9 @@ def ultimate_demo():
         detector = AIDetector()
 
         # Set up authentication with demo user
-        demo_auth = UserAuth()
+        demo_auth = get_auth()
+        if demo_auth is None:
+            demo_auth = UserAuth()
         demo_auth.current_user = {'id': 1, 'username': 'demo_user', 'role': 'instructor'}
         detector.set_auth(demo_auth)
         

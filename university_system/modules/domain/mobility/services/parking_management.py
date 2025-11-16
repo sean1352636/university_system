@@ -1,5 +1,6 @@
 from university_system.infrastructure.database.database_utils import DatabaseManager, cleanup_database_connections
 from university_system.infrastructure.auth.user_authentication import UserAuth, display_auth_menu
+from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from university_system.infrastructure.email.admin import display_communication_dashboard
 from university_system.infrastructure.email import send_permit_confirmation, send_update_confirmation
@@ -6329,7 +6330,9 @@ def display_parking_menu():
 
     # Initialize authentication system if not already done
     if auth is None:
-        auth = UserAuth()
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
 
     while True:
         print("\n" + "="*60)

@@ -30,13 +30,24 @@ sys.path.insert(0, str(project_root.parent))
 try:
     from university_system.modules.shared.constants import paths
 except ImportError:
-    # Fallback for direct execution
+    # Fallback for direct execution - dynamically find the paths module
     import os
+    import importlib.util
 
-    class PathsClass:
-        DEFAULT_DB_PATH = Path(project_root) / 'data' / 'db_files' / 'student_records.db'
+    # Attempt to load paths module directly
+    paths_file = project_root / 'university_system' / 'modules' / 'shared' / 'constants' / 'paths.py'
+    if paths_file.exists():
+        spec = importlib.util.spec_from_file_location("paths", paths_file)
+        paths = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(paths)
+    else:
+        # Last resort: create minimal paths class
+        class PathsClass:
+            # Use dynamic path construction as last resort
+            _project_root = project_root
+            DEFAULT_DB_PATH = _project_root / 'data' / 'db_files' / 'student_records.db'
 
-    paths = PathsClass()
+        paths = PathsClass()
 
 
 def hash_password(password, salt=None):

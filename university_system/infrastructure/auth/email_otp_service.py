@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
+from university_system.modules.shared.constants import paths
 
 
 class EmailProvider(ABC):
@@ -258,7 +259,7 @@ class MockEmailProvider(EmailProvider):
 
     def __init__(self, log_file: str = None):
         """Initialize mock provider"""
-        self.log_file = log_file or '/tmp/email_otp_log.txt'
+        self.log_file = log_file or str(paths.TEMP_DIR / 'email_otp_log.txt')
 
     def send_otp(self, to_email: str, code: str, username: str = None) -> Dict:
         """Mock send - logs to file instead of sending email"""
@@ -379,10 +380,7 @@ class EmailOTPService:
 # Configuration loader
 def load_email_config() -> Dict:
     """Load email provider configuration from file or environment"""
-    config_file = os.path.join(
-        os.path.dirname(__file__),
-        '../../config/email_config.json'
-    )
+    config_file = paths.CONFIG_DIR / 'email_config.json'
 
     # Try to load from config file
     if os.path.exists(config_file):

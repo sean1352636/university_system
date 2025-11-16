@@ -6779,7 +6779,7 @@ Total Documents: {doc_count}
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Read backup metadata
-            backup_metadata_path = "/home/seancatchpole989/university_system/data/backup_metadata.json"
+            backup_metadata_path = paths.DATA_DIR / "backup_metadata.json"
             backups = []
 
             try:
@@ -6900,7 +6900,7 @@ Total Documents: {doc_count}
                 }
 
                 # Save configuration
-                config_path = "/home/seancatchpole989/university_system/data/backup_schedule.json"
+                config_path = paths.DATA_DIR / "backup_schedule.json"
                 try:
                     import json
                     with open(config_path, 'w') as f:
@@ -11478,7 +11478,7 @@ University Document Management System
                 'System Name': 'University Document Management System',
                 'Version': '5.0.0',
                 'Database Path': str(paths.DEFAULT_DB_PATH),
-                'Upload Directory': 'data/uploads/',
+                'Upload Directory': str(paths.UPLOAD_DIR),
                 'Max File Size': '50 MB',
                 'Allowed Formats': 'PDF, JPG, PNG, DOC, DOCX',
                 'Session Timeout': '30 minutes',
@@ -11541,7 +11541,7 @@ University Document Management System
                 'Auto-Backup': 'Disabled',
                 'Backup Frequency': 'Daily',
                 'Backup Time': '02:00 AM',
-                'Backup Location': 'backups/',
+                'Backup Location': str(paths.BACKUP_DIR),
                 'Retention Period': '30 days',
                 'Compression': 'Enabled',
                 'Last Backup': 'Never',

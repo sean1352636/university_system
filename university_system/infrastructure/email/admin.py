@@ -209,7 +209,8 @@ class CommunicationDashboard:
             if auth and hasattr(auth, 'db_path'):
                 self.db_path = auth.db_path
             else:
-                self.db_path = db_path or 'student_records.db'
+                from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+                self.db_path = db_path or str(DEFAULT_DB_PATH)
             
             self.auth = auth
             

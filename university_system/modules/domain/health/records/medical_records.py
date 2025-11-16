@@ -17,6 +17,7 @@ from collections import defaultdict
 import csv
 import statistics
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.data_backup import backup_before_operation
 from university_system.infrastructure.email import (
     send_appointment_confirmation,
@@ -4968,8 +4969,10 @@ def view_lab_results(auth):
 def display_health_portal_menu(auth=None):
     if not auth:
         from university_system.infrastructure.auth.user_authentication import UserAuth
-        auth = UserAuth()
-    
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
+
     # Initialize the enhanced database
     init_enhanced_health_db()
     # Add health permissions to authentication system

@@ -1,32 +1,32 @@
 {
-  "numStartups": 252,
+  "numStartups": 260,
   "installMethod": "global",
   "autoUpdates": true,
   "tipsHistory": {
     "new-user-warmup": 10,
-    "plan-mode-for-complex-tasks": 201,
-    "terminal-setup": 244,
+    "plan-mode-for-complex-tasks": 257,
+    "terminal-setup": 255,
     "memory-command": 168,
     "theme-command": 251,
     "status-line": 246,
     "prompt-queue": 58,
     "enter-to-steer-in-relatime": 251,
     "todo-list": 251,
-    "# for memory": 242,
+    "# for memory": 253,
     "install-github-app": 167,
-    "drag-and-drop-images": 243,
-    "double-esc-code-restore": 243,
-    "continue": 243,
-    "shift-tab": 243,
+    "drag-and-drop-images": 254,
+    "double-esc-code-restore": 255,
+    "continue": 255,
+    "shift-tab": 255,
     "image-paste": 251,
-    "tab-toggle-thinking": 243,
-    "ultrathink-keyword": 243,
+    "tab-toggle-thinking": 255,
+    "ultrathink-keyword": 255,
     "custom-agents": 249,
-    "permissions": 242,
-    "custom-commands": 244,
-    "git-worktrees": 244,
+    "permissions": 254,
+    "custom-commands": 260,
+    "git-worktrees": 255,
     "ide-upsell-external-terminal": 56,
-    "stickers-command": 237
+    "stickers-command": 258
   },
   "memoryUsageCount": 2,
   "promptQueueUseCount": 18,
@@ -84,7 +84,7 @@
     "e9e9aba2-6ff9-4868-9f39-80bf6fd3a4c0": {
       "hasAccess": false,
       "hasAccessNotAsDefault": false,
-      "timestamp": 1763239181444
+      "timestamp": 1763303963691
     }
   },
   "feedbackSurveyState": {

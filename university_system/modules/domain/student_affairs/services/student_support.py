@@ -36,11 +36,13 @@ except ImportError:
 # Import auth instance management from user_authentication
 try:
     from university_system.infrastructure.auth.user_authentication import get_current_user, set_auth_instance
+    from university_system.infrastructure.shared_context import get_auth
     HAS_AUTH = True
 except ImportError:
     HAS_AUTH = False
     get_current_user = lambda: None
     set_auth_instance = lambda x: None
+    get_auth = lambda: None
 
 auth = None
 
@@ -5189,7 +5191,7 @@ def display_enhanced_faqs(support):
         print("="*50)
         
         # Get FAQ categories
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if faqs table exists
@@ -5296,7 +5298,7 @@ def display_enhanced_resources(support):
         print("="*50)
         
         # Get resource categories
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if support_resources table exists
@@ -5336,7 +5338,7 @@ def display_enhanced_resources(support):
             display_resource_list(resources, f"{category} Resources")
         elif choice == str(len(categories) + 1):
             # Featured resources
-            conn = sqlite3.connect("student_records.db")
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM support_resources WHERE is_featured = 1 ORDER BY access_count DESC')
@@ -5622,7 +5624,7 @@ def show_kb_statistics(support):
         print("\n📊 KNOWLEDGE BASE STATISTICS")
         print("="*50)
         
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if kb_articles table exists
@@ -5842,7 +5844,7 @@ def show_template_statistics(support):
         print("\n📊 TEMPLATE USAGE STATISTICS")
         print("="*50)
         
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if tables exist
@@ -5899,7 +5901,7 @@ def show_template_statistics(support):
 def fix_user_preferences_table():
     """Fix the user_preferences table schema"""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if table exists
@@ -5969,7 +5971,7 @@ def get_user_preferences_safe(support_instance, user_id=None):
         }
     
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         
         # Check if table exists
@@ -6416,7 +6418,9 @@ def display_support_menu():
     if auth is None:
         from university_system.infrastructure.auth.user_authentication import UserAuth
         try:
-            auth = UserAuth()
+            auth = get_auth()
+            if auth is None:
+                auth = UserAuth()
         except Exception as e:
             print(f"Error initializing authentication system: {e}")
             return

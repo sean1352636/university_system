@@ -31,11 +31,13 @@ from university_system.modules.shared.utils.finance_integration import record_pa
 # Import auth instance management from user_authentication
 try:
     from university_system.infrastructure.auth.user_authentication import get_current_user, set_auth_instance
+    from university_system.infrastructure.shared_context import get_auth
     HAS_AUTH = True
 except ImportError:
     HAS_AUTH = False
     get_current_user = lambda: None
     set_auth_instance = lambda x: None
+    get_auth = lambda: None
 
 auth = None
 
@@ -5044,7 +5046,9 @@ def display_main_menu_extended():
     # Initialize authentication system if not already done
     if auth is None:
         from university_system.infrastructure.auth.user_authentication import UserAuth
-        auth = UserAuth()
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
         init_auth_for_modules()  # Initialize auth for other modules
 
     # Setup permissions for various modules
@@ -5063,7 +5067,9 @@ def display_main_menu_extended():
             if auth is None:
                 # Create a new auth object if none was returned
                 from university_system.infrastructure.auth.user_authentication import UserAuth
-                auth = UserAuth()
+                auth = get_auth()
+                if auth is None:
+                    auth = UserAuth()
             init_auth_for_modules()  # Reinitialize auth for other modules
             # Loop back to check if login was successful
             continue
@@ -5140,7 +5146,9 @@ def add_shop_system_to_main_menu(main_display_menu):
         # Initialize authentication system if not already done
         if auth is None:
             from university_system.infrastructure.auth.user_authentication import UserAuth
-            auth = UserAuth()
+            auth = get_auth()
+            if auth is None:
+                auth = UserAuth()
             init_auth_for_modules()  # Initialize auth for other modules
 
         # Setup permissions for various modules including shop
@@ -5159,7 +5167,9 @@ def add_shop_system_to_main_menu(main_display_menu):
                 if auth is None:
                     # Create a new auth object if none was returned
                     from university_system.infrastructure.auth.user_authentication import UserAuth
-                    auth = UserAuth()
+                    auth = get_auth()
+                    if auth is None:
+                        auth = UserAuth()
                 init_auth_for_modules()  # Reinitialize auth for other modules
                 # Loop back to check if login was successful
                 continue
@@ -5968,8 +5978,10 @@ def setup_shop_system():
     global auth
     if not auth:
         from university_system.infrastructure.auth.user_authentication import UserAuth
-        auth = UserAuth()
-    
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
+
     # Setup permissions
     if not setup_shop_permissions(auth):
         print("❌ Failed to setup shop permissions")

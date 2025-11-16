@@ -12,8 +12,12 @@ from datetime import datetime, timedelta
 # Local imports - Database
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
 
+# Local imports - Paths
+from university_system.modules.shared.constants import paths
+
 # Local imports - Authentication
 from university_system.infrastructure.auth.user_authentication import UserAuth, get_current_user, set_auth_instance
+from university_system.infrastructure.shared_context import get_auth
 
 # Import activity logger for audit trail
 try:
@@ -2414,12 +2418,12 @@ class DocumentManager:
             
             with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as backup_zip:
                 # Backup database
-                if os.path.exists('student_records.db'):
-                    backup_zip.write('student_records.db', 'student_records.db')
-                    
+                if os.path.exists(paths.DEFAULT_DB_PATH):
+                    backup_zip.write(str(paths.DEFAULT_DB_PATH), 'student_records.db')
+
                 # Backup document files
-                if os.path.exists('student_documents'):
-                    for root, dirs, files in os.walk('student_documents'):
+                if os.path.exists(paths.STUDENT_DOCUMENTS_DIR):
+                    for root, dirs, files in os.walk(paths.STUDENT_DOCUMENTS_DIR):
                         for file in files:
                             file_path = os.path.join(root, file)
                             arcname = os.path.relpath(file_path, '.')
@@ -6787,7 +6791,9 @@ def main():
         if cu:
             return None  # already logged in
 
-        auth = UserAuth()
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
 
         # Try common interactive auth entrypoints your UserAuth might have
         for method in ("run_authentication_menu", "login_console", "login_menu", "run_console_interface", "run"):

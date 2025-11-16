@@ -8,6 +8,7 @@ from university_system.infrastructure.database.db import sqlite3, get_connection
 from university_system.infrastructure.database.schemas import init_finance_system_db
 
 # Auth is available via get_auth() from shared_context if needed
+from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.domain.finance.finance_misc.students import create_sample_students
 
 def init_enhanced_finance_db():
@@ -814,7 +815,9 @@ def initialize_finance(auth_instance=None):
         try:
             # Import and use centralized authentication system
             from university_system.infrastructure.auth.user_authentication import UserAuth
-            auth = UserAuth()
+            auth = get_auth()
+            if auth is None:
+                auth = UserAuth()
             print("✅ UserAuth instance created successfully")
         except Exception as e:
             print(f"❌ Failed to initialize UserAuth: {e}")
@@ -834,9 +837,10 @@ def complete_database_fix():
     print("🔧 Setting up complete finance database...")
 
     # Remove existing problematic database
-    if os.path.exists('student_records.db'):
+    from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    if os.path.exists(str(DEFAULT_DB_PATH)):
         print("🗑️  Removing existing database...")
-        os.remove('student_records.db')
+        os.remove(str(DEFAULT_DB_PATH))
 
     # Create new database with complete schema
     conn = get_connection()
@@ -1627,7 +1631,8 @@ def quick_fix_database():
 def ensure_database_exists():
     """Ensure database file exists and is accessible"""
     try:
-        if not os.path.exists('student_records.db'):
+        from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        if not os.path.exists(str(DEFAULT_DB_PATH)):
             print("🔧 Creating new database...")
             complete_database_fix()
         return True

@@ -91,6 +91,21 @@ EMAIL_REMINDER_TEMPLATES_DIR: Path = EMAIL_TEMPLATES_DIR / "reminders"
 # NLTK data directory - for natural language processing data
 NLTK_DATA_DIR: Path = DATA_DIR / "nltk_data"
 
+# Student documents directory - for student document storage
+STUDENT_DOCUMENTS_DIR: Path = DATA_DIR / "student_documents"
+
+# General exports directory - for general exports (separate from DB exports)
+EXPORTS_DIR: Path = DATA_DIR / "exports"
+
+# Temporary files directory - for temporary files (instead of /tmp)
+TEMP_DIR: Path = DATA_DIR / "temp"
+
+# Runtime configuration files directory
+CONFIG_DIR: Path = DATA_DIR / "config"
+
+# Charts directory - for chart outputs
+CHARTS_DIR: Path = REPORTS_DIR / "charts"
+
 
 def ensure_directories() -> None:
     """
@@ -125,6 +140,11 @@ def ensure_directories() -> None:
     _ensure(MEDICAL_TEMPLATES_DIR)
     _ensure(EMAIL_REMINDER_TEMPLATES_DIR)
     _ensure(NLTK_DATA_DIR)
+    _ensure(STUDENT_DOCUMENTS_DIR)
+    _ensure(EXPORTS_DIR)
+    _ensure(TEMP_DIR)
+    _ensure(CONFIG_DIR)
+    _ensure(CHARTS_DIR)
 
 __all__ = [
     "PROJECT_ROOT",
@@ -159,5 +179,10 @@ __all__ = [
     "MEDICAL_TEMPLATES_DIR",
     "EMAIL_REMINDER_TEMPLATES_DIR",
     "NLTK_DATA_DIR",
+    "STUDENT_DOCUMENTS_DIR",
+    "EXPORTS_DIR",
+    "TEMP_DIR",
+    "CONFIG_DIR",
+    "CHARTS_DIR",
     "ensure_directories",
 ]

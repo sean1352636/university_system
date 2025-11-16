@@ -16,6 +16,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import re
 from university_system.infrastructure.database.db import get_connection
+from university_system.modules.shared.constants import paths
 
 # Initialize the enhanced helpdesk database
 def init_helpdesk_db():
@@ -2598,11 +2599,11 @@ def bulk_status_change(auth, ticket_ids):
 def export_ticket_list(auth, tickets):
     """Export ticket list to file"""
     try:
-        if not os.path.exists('exports'):
-            os.makedirs('exports')
-        
+        if not os.path.exists(paths.EXPORTS_DIR):
+            os.makedirs(paths.EXPORTS_DIR)
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"exports/ticket_list_{timestamp}.csv"
+        filename = paths.EXPORTS_DIR / f"ticket_list_{timestamp}.csv"
         
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             import csv
@@ -5204,8 +5205,8 @@ def backup_database(auth):
         import shutil
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_filename = f"student_records_backup_{timestamp}.db"
-        
-        db_path = '/home/seancatchpole989/university_system/data/db_files/student_records.db'
+
+        db_path = paths.DEFAULT_DB_PATH
         shutil.copy2(db_path, backup_filename)
         print(f"Database backed up to {backup_filename}")
         
@@ -5237,12 +5238,12 @@ def export_tickets_csv(auth):
     """Export tickets to CSV"""
     try:
         import csv
-        
-        if not os.path.exists('exports'):
-            os.makedirs('exports')
-        
+
+        if not os.path.exists(paths.EXPORTS_DIR):
+            os.makedirs(paths.EXPORTS_DIR)
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"exports/tickets_export_{timestamp}.csv"
+        filename = paths.EXPORTS_DIR / f"tickets_export_{timestamp}.csv"
         
         conn = get_connection()
         cursor = conn.cursor()
@@ -5290,12 +5291,12 @@ def export_users_csv(auth):
     """Export users to CSV"""
     try:
         import csv
-        
-        if not os.path.exists('exports'):
-            os.makedirs('exports')
-        
+
+        if not os.path.exists(paths.EXPORTS_DIR):
+            os.makedirs(paths.EXPORTS_DIR)
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"exports/users_export_{timestamp}.csv"
+        filename = paths.EXPORTS_DIR / f"users_export_{timestamp}.csv"
         
         conn = get_connection()
         cursor = conn.cursor()
@@ -5388,11 +5389,11 @@ def import_tickets_csv(auth):
 def export_analytics_data(auth):
     """Export analytics data"""
     try:
-        if not os.path.exists('exports'):
-            os.makedirs('exports')
-        
+        if not os.path.exists(paths.EXPORTS_DIR):
+            os.makedirs(paths.EXPORTS_DIR)
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"exports/analytics_export_{timestamp}.json"
+        filename = paths.EXPORTS_DIR / f"analytics_export_{timestamp}.json"
         
         conn = get_connection()
         cursor = conn.cursor()

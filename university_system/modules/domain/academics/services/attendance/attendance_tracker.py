@@ -1819,12 +1819,9 @@ class BackupRecoverySystem:
             from university_system.cli_main import DB_PATH
             self.db_path = DB_PATH
         except ImportError:
-            # Fallback to try relative path
-            import os
-            self.db_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'db_files', 'student_records.db')
-            if not os.path.exists(self.db_path):
-                # Final fallback
-                self.db_path = "student_records.db"
+            # Fallback to centralized path
+            from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+            self.db_path = str(DEFAULT_DB_PATH)
     
     def create_backup(self, backup_type="full"):
         """Create database backup"""

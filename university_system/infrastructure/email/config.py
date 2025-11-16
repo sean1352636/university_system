@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict
+from university_system.modules.shared.constants import paths as sys_paths
 
 # Default configuration settings for the email subsystem.  These
 # values can be adjusted by calling ``configure_email_settings`` or
@@ -77,10 +78,8 @@ def load_config(path: str | Path | None = None) -> Dict[str, Any]:
     logger = logging.getLogger(__name__)
 
     if path is None:
-        # Try default location relative to this file
-        current_dir = Path(__file__).parent  # infrastructure/email/
-        university_system_dir = current_dir.parent.parent  # university_system/
-        path = university_system_dir / 'config' / 'email_config.json'
+        # Use centralized config directory
+        path = sys_paths.CONFIG_DIR / 'email_config.json'
     else:
         path = Path(path)
 
@@ -116,10 +115,8 @@ def save_config(path: str | Path | None = None) -> None:
     logger = logging.getLogger(__name__)
 
     if path is None:
-        # Try default location relative to this file
-        current_dir = Path(__file__).parent  # infrastructure/email/
-        university_system_dir = current_dir.parent.parent  # university_system/
-        path = university_system_dir / 'config' / 'email_config.json'
+        # Use centralized config directory
+        path = sys_paths.CONFIG_DIR / 'email_config.json'
     else:
         path = Path(path)
 

@@ -1,5 +1,6 @@
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from university_system.modules.shared.constants import paths
 import os
 from datetime import datetime, timedelta
 import pandas as pd
@@ -2302,11 +2303,11 @@ class ModuleScheduler:
         ax.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(1.05, 1))
         
         plt.tight_layout()
-        
+
         # Save the plot
         if not output_path:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = f"analytics/{entity_type}_{entity_id}_visual_timetable_{timestamp}.png"
+            output_path = paths.ANALYTICS_DIR / f"{entity_type}_{entity_id}_visual_timetable_{timestamp}.png"
 
         # Ensure directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -4426,9 +4427,9 @@ def display_pdf_reports_menu(scheduler):
         
         # Create combined report
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"analytics/comprehensive_report_{timestamp}.pdf"
-        
-        doc = SimpleDocTemplate(filename, pagesize=landscape(letter))
+        filename = paths.ANALYTICS_REPORTS_DIR / f"comprehensive_report_{timestamp}.pdf"
+
+        doc = SimpleDocTemplate(str(filename), pagesize=landscape(letter))
         styles = getSampleStyleSheet()
         elements = []
         

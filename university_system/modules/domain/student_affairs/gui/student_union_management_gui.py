@@ -27,8 +27,10 @@ except ImportError:
 try:
     from university_system.modules.shared.constants.paths import PROJECT_ROOT, DEFAULT_DB_PATH
 except ImportError:
-    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    DEFAULT_DB_PATH = os.path.join(PROJECT_ROOT, "data", "db_files", "student_records.db")
+    # Fallback: import from paths module
+    from university_system.modules.shared.constants import paths
+    PROJECT_ROOT = paths.PROJECT_ROOT
+    DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 
 from university_system.infrastructure.auth.user_authentication import UserAuth
 

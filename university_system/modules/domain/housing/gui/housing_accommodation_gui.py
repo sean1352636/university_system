@@ -9,6 +9,7 @@ from university_system.modules.shared.utils.simple_activity_logger import (
     log_activity, log_create, log_read, log_update, log_delete,
     log_search, log_export, log_menu_navigation
 )
+from university_system.modules.shared.constants import paths
 
 # Import email service for sending confirmations
 try:
@@ -4099,7 +4100,7 @@ Housing Administration"""
                 template_name = 'inspection_completed'
 
             # Load email template
-            template_path = f"/home/seancatchpole989/university_system/templates/email/{template_name}.json"
+            template_path = paths.EMAIL_TEMPLATES_DIR / f"{template_name}.json"
             try:
                 with open(template_path, 'r') as f:
                     import json
@@ -5630,7 +5631,7 @@ This is an automated message from the University Housing Management System.
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Load current settings or create defaults
-        template_file = "/home/seancatchpole989/university_system/data/report_templates.json"
+        template_file = paths.DATA_DIR / "report_templates.json"
         default_settings = {
             'title_font': 'Arial',
             'title_size': 16,
@@ -5811,7 +5812,7 @@ Footer: {footer_var.get()}"""
 
     def get_report_template_settings(self):
         """Load report template settings from file"""
-        template_file = "/home/seancatchpole989/university_system/data/report_templates.json"
+        template_file = paths.DATA_DIR / "report_templates.json"
         default_settings = {
             'title_font': 'Arial',
             'title_size': 16,

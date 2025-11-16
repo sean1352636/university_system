@@ -35,6 +35,7 @@ from io import BytesIO
 import base64
 from university_system.infrastructure.email import send_email
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import get_connection
 from university_system.utils.logging.log_config import configure_logging
 
@@ -767,11 +768,13 @@ def initialize_finance():
     global auth
     
     print("🏦 Initializing Enhanced Finance Management System...")
-    
+
     # Import and use centralized authentication system
     from university_system.infrastructure.auth.user_authentication import UserAuth
-    auth = UserAuth()
-    
+    auth = get_auth()
+    if auth is None:
+        auth = UserAuth()
+
     # Initialize database
     init_enhanced_finance_db()
     

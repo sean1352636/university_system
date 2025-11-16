@@ -108,12 +108,15 @@ def launch_console():
         # lives inside ``refactored.services``, not ``utils.services``.
         from university_system.modules.domain.mobility.services.parking_management import display_parking_menu, set_auth
         from university_system.infrastructure.auth.user_authentication import UserAuth
-        
+        from university_system.infrastructure.shared_context import get_auth
+
         print("Starting Parking Management System Console Interface...")
         print("=" * 60)
-        
+
         # Initialize authentication
-        auth = UserAuth()
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
         set_auth(auth)
         
         # Run the original console interface

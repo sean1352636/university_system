@@ -40,7 +40,7 @@ def set_auth(auth):
 def init_db():
     """Initialize the restaurant database."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Create menu items table
@@ -205,7 +205,7 @@ def menu_management(auth):
 def view_menu():
     """View current menu items."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -278,7 +278,7 @@ def add_menu_item():
     allergens = input("Allergens (optional): ").strip()
 
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -329,7 +329,7 @@ def order_management(auth):
 def view_all_orders():
     """View all restaurant orders."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -360,7 +360,7 @@ def view_all_orders():
 def view_pending_orders():
     """View pending orders."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -414,7 +414,7 @@ def sales_reports(auth):
     """Generate sales reports."""
     print("\n--- Sales Reports ---")
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Today's sales
@@ -488,7 +488,7 @@ def update_order_status():
         return
 
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -518,7 +518,7 @@ def view_order_details():
         return
 
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -557,7 +557,7 @@ def view_order_details():
 def daily_order_summary():
     """Show daily order summary."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -592,7 +592,7 @@ def daily_order_summary():
 def update_menu_item():
     """Update an existing menu item."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Get menu item ID to update
@@ -645,7 +645,7 @@ def update_menu_item():
 def remove_menu_item():
     """Remove a menu item."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Get menu item ID to remove
@@ -682,7 +682,7 @@ def remove_menu_item():
 def toggle_availability():
     """Toggle menu item availability."""
     try:
-        conn = sqlite3.connect("student_records.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Get menu item ID to toggle

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from university_system.modules.shared.constants.paths import LOG_DIR
+from university_system.modules.shared.constants.paths import LOG_DIR, TEMP_DIR
 
 # Third-party scheduling / plotting / data
 # Attempt to import optional third-party libraries.  These may not be
@@ -449,10 +449,10 @@ def generate_chart(current_user):
         data = request.get_json()
         days = data.get('days', 7)
         chart_type = data.get('type', 'daily')
-        
+
         # Generate chart and save to temp file
-        temp_path = f"/tmp/chart_{current_user}_{datetime.now().timestamp()}.png"
-        
+        temp_path = TEMP_DIR / f"chart_{current_user}_{datetime.now().timestamp()}.png"
+
         chart_path = log_manager.analytics.create_activity_chart(
             chart_type, days, temp_path
         )
@@ -538,7 +538,7 @@ def export_logs(current_user):
             import pandas as pd
             df = pd.DataFrame(results)
             filename = f'logs_export_{timestamp}.csv'
-            filepath = f'/tmp/{filename}'
+            filepath = TEMP_DIR / filename
             df.to_csv(filepath, index=False)
             
             return send_file(filepath, as_attachment=True, download_name=filename)
@@ -547,7 +547,7 @@ def export_logs(current_user):
             import pandas as pd
             df = pd.DataFrame(results)
             filename = f'logs_export_{timestamp}.xlsx'
-            filepath = f'/tmp/{filename}'
+            filepath = TEMP_DIR / filename
             df.to_excel(filepath, index=False)
             
             return send_file(filepath, as_attachment=True, download_name=filename)

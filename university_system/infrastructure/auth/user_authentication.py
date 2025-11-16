@@ -3892,7 +3892,7 @@ class UserAuth:
     def _fallback_to_alternate_location(self, log_entry, reason):
         """Try alternative logging locations when primary backup fails"""
         alternate_locations = [
-            '/tmp/activity_backup.log',
+            str(paths.TEMP_DIR / 'activity_backup.log'),
             str(paths.LOG_DIR / 'activity_backup.log'),
             f'{os.path.expanduser("~")}/activity_backup.log'
         ]

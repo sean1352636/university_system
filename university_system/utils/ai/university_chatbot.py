@@ -630,7 +630,7 @@ class StudentProfile:
     interests: List[str]
     financial_aid: bool
 
-def create_chatbot_with_auth(auth_system, db_path='student_records.db'):
+def create_chatbot_with_auth(auth_system, db_path=None):
     """Factory function to create chatbot with authentication"""
     chatbot = UniversityChatbot(db_path=db_path)
     chatbot.set_auth_system(auth_system)
@@ -661,7 +661,8 @@ def test_chatbot_integration(auth_system):
     
 class MinimalChatbot:
     def __init__(self, db_path=None):
-        self.db_path = db_path or 'student_records.db'
+        from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        self.db_path = db_path or str(DEFAULT_DB_PATH)
         self.auth_system = None
         self.conversation_history = {}
         self.enabled = True
