@@ -5,6 +5,77 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.49] - 2025-11-16
+
+### Added
+
+**Shop Management GUI - Finance System Integration:**
+
+1. **Finance System Payment Option** (✅ Implemented)
+   - **Feature**: Added "Finance System (Manual)" payment option to checkout
+   - **Implementation**:
+     - Fully implemented `add_finance_payment_option_to_checkout()` method
+     - Method creates radiobutton widget for Finance System payment option
+     - Includes help text explaining manual payment processing
+     - Checks for finance system availability before adding option
+     - Integrated into `show_checkout()` method for automatic inclusion
+   - **Payment Flow**:
+     - Creates transaction with "Pending Payment" status when Finance System selected
+     - Automatically opens Finance GUI after checkout for manual payment processing
+     - Shows appropriate success message indicating pending payment status
+     - Delays Finance GUI opening by 500ms to allow checkout window to close
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:5557-5611` - Implemented method
+     - `modules/domain/commerce/gui/shop_management_gui.py:3359-3360` - Added to checkout dialog
+     - `modules/domain/commerce/gui/shop_management_gui.py:3415-3418` - Transaction status handling
+     - `modules/domain/commerce/gui/shop_management_gui.py:3460-3464` - Finance GUI auto-open
+     - `modules/domain/commerce/gui/shop_management_gui.py:3387-3395` - Custom success message
+   - **Impact**: Users can now select manual finance system payment during checkout
+
+### Improved
+
+**Shop Management GUI - Error Handling and Logging:**
+
+1. **Added Comprehensive Logging** (✅ Implemented)
+   - **Enhancement**: Added logging infrastructure throughout shop management GUI
+   - **Implementation**:
+     - Imported logging module and created logger instance
+     - Replaced empty `pass` statements in exception handlers with proper error logging
+     - Added informative error messages for debugging and troubleshooting
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:8` - Added logging import
+     - `modules/domain/commerce/gui/shop_management_gui.py:51-52` - Created logger instance
+   - **Impact**: Errors now logged for easier debugging and monitoring
+
+2. **Category Loading Error Handling** (✅ Improved)
+   - **Enhancement**: Improved error handling when loading product categories
+   - **Implementation**:
+     - Label printing: Logs error and sets empty list as fallback
+     - Bulk price update: Logs error and keeps default "All" option
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:639-642` - Label printing categories
+     - `modules/domain/commerce/gui/shop_management_gui.py:2638-2641` - Bulk update categories
+   - **Impact**: Category loading failures no longer silent, easier to diagnose issues
+
+3. **Order Items Loading Error Handling** (✅ Improved)
+   - **Enhancement**: Better error handling when loading order items in details view
+   - **Implementation**:
+     - Logs error with transaction ID for traceability
+     - Inserts error message in treeview so user knows items failed to load
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:3636-3639` - Order items loading
+   - **Impact**: Users informed when order items fail to load, not just blank display
+
+4. **Payments Table Error Handling** (✅ Improved)
+   - **Enhancement**: Better error handling for payments table inserts
+   - **Implementation**:
+     - Logs warning when payment insert fails (e.g., table doesn't exist)
+     - Includes transaction ID in warning message
+     - Added explanatory comment that transaction can continue (fee still recorded)
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:5434-5437` - Payment insert error
+   - **Impact**: Payment table issues logged without blocking shop transactions
+
 ## [5.0.48] - 2025-11-16
 
 ### Fixed

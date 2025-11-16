@@ -5,6 +5,7 @@ from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 import time
 import os
 import re
+import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 import csv
@@ -31,31 +32,24 @@ except Exception:
             toggle_discount_status, toggle_product_status, view_purchase_history
         )
     except Exception:
-        # If running standalone, we'll define the essential functions
-        pass
+        # If running standalone, we'll define the essential fallback functions
+        def get_customer_analytics():
+            return None
 
-try:
-    from university_system.modules.domain.commerce.services.shop_management import (
-        get_customer_analytics, get_inventory_valuation, 
-        print_product_labels, get_low_stock_items
-    )
-except ImportError:
-    # Fallback functions if shop_management is not available
-    def get_customer_analytics():
-        return None
-    
-    def get_inventory_valuation():
-        return {'total_value': 0, 'product_count': 0, 'total_quantity': 0}
-    
-    def print_product_labels(product_ids=None):
-        print("Label printing functionality not available")
-    
-    def get_low_stock_items():
-        return []
+        def get_inventory_valuation():
+            return {'total_value': 0, 'product_count': 0, 'total_quantity': 0}
+
+        def print_product_labels(product_ids=None):
+            print("Label printing functionality not available")
+
+        # Note: get_low_stock_items is implemented as a class method in UniversityShopGUI
 
 # Import authentication - REQUIRED (no fallback for security)
 from university_system.infrastructure.auth.user_authentication import UserAuth, get_global_auth
 from university_system.infrastructure.shared_context import get_auth
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 class UniversityShopGUI:
     def __init__(self, root, auth=None):
@@ -642,8 +636,10 @@ class UniversityShopGUI:
                 categories = [row[0] for row in cursor.fetchall()]
                 category_combo.configure(values=categories)
                 conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to load categories for label printing: {e}")
+            # Set empty list as fallback
+            category_combo.configure(values=[])
         
         def on_option_change():
             if print_option.get() == "category":
@@ -659,9 +655,10 @@ class UniversityShopGUI:
         def print_labels():
             try:
                 option = print_option.get()
-                
+                product_ids = None
+
                 if option == "all":
-                    print_product_labels()
+                    product_ids = None  # Will get all products
                 elif option == "category":
                     if not category_var.get():
                         messagebox.showerror("Error", "Please select a category")
@@ -669,19 +666,19 @@ class UniversityShopGUI:
                     # Get products by category and print labels
                     conn = get_connection()
                     cursor = conn.cursor()
-                    cursor.execute("SELECT product_id FROM shop_products WHERE category = ? AND is_active = 1", 
+                    cursor.execute("SELECT product_id FROM shop_products WHERE category = ? AND is_active = 1",
                                   [category_var.get()])
                     product_ids = [row[0] for row in cursor.fetchall()]
                     conn.close()
-                    print_product_labels(product_ids)
                 elif option == "low_stock":
                     # Get low stock product IDs
                     low_stock_items = self.get_low_stock_items()
                     product_ids = [item['product_id'] for item in low_stock_items]
-                    print_product_labels(product_ids)
-                
+
                 labels_window.destroy()
-                
+                # Call GUI-specific label printing method
+                self.display_product_labels_gui(product_ids)
+
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to print labels: {e}")
         
@@ -2638,8 +2635,10 @@ class UniversityShopGUI:
                 categories = ["All"] + [row[0] for row in cursor.fetchall()]
                 category_combo.configure(values=categories)
                 conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to load categories for bulk price update: {e}")
+            # Keep default "All" option as fallback
+            category_combo.configure(values=["All"])
         
         def execute_update():
             try:
@@ -3350,13 +3349,16 @@ class UniversityShopGUI:
         payment_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
         
         payment_var = tk.StringVar(value="Credit/Debit Card")
-        ttk.Radiobutton(payment_frame, text="Credit/Debit Card", variable=payment_var, 
+        ttk.Radiobutton(payment_frame, text="Credit/Debit Card", variable=payment_var,
                        value="Credit/Debit Card").grid(row=0, column=0, sticky=tk.W, pady=2)
-        ttk.Radiobutton(payment_frame, text="Student Account", variable=payment_var, 
+        ttk.Radiobutton(payment_frame, text="Student Account", variable=payment_var,
                        value="Student Account").grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Radiobutton(payment_frame, text="PayPal", variable=payment_var, 
+        ttk.Radiobutton(payment_frame, text="PayPal", variable=payment_var,
                        value="PayPal").grid(row=2, column=0, sticky=tk.W, pady=2)
-        
+
+        # Add finance system payment option (if available)
+        self.add_finance_payment_option_to_checkout(payment_frame, payment_var, row_index=3)
+
         # Customer info
         info_frame = ttk.LabelFrame(main_frame, text="Customer Information", padding="10")
         info_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -3376,14 +3378,24 @@ class UniversityShopGUI:
         def complete_checkout():
             try:
                 # Process checkout
-                transaction_id = self.process_checkout(payment_var.get(), name_var.get(), email_var.get())
-                
+                selected_payment = payment_var.get()
+                transaction_id = self.process_checkout(selected_payment, name_var.get(), email_var.get())
+
                 checkout_window.destroy()
                 self.cart_items.clear()
-                
-                messagebox.showinfo("Success", f"Order completed successfully!\nTransaction ID: {transaction_id}")
+
+                # Show appropriate message based on payment method
+                if selected_payment == "Finance System":
+                    messagebox.showinfo("Success",
+                        f"Order created successfully!\n"
+                        f"Transaction ID: {transaction_id}\n\n"
+                        f"The Finance System will open for manual payment processing.\n"
+                        f"Status: Pending Payment")
+                else:
+                    messagebox.showinfo("Success", f"Order completed successfully!\nTransaction ID: {transaction_id}")
+
                 self.show_order_history()
-                
+
             except Exception as e:
                 messagebox.showerror("Error", f"Checkout failed: {e}")
         
@@ -3413,6 +3425,11 @@ class UniversityShopGUI:
                         if not success:
                             raise Exception("Student account payment failed")
 
+                # Set transaction status based on payment method
+                transaction_status = "Completed"
+                if payment_method == "Finance System":
+                    transaction_status = "Pending Payment"  # Manual payment processing required
+
                 # Create transaction
                 cursor.execute("""
                     INSERT INTO shop_transactions
@@ -3425,7 +3442,7 @@ class UniversityShopGUI:
                     total,
                     transaction_date,
                     payment_method,
-                    "Completed",
+                    transaction_status,
                     f"GUI Checkout - {customer_name}"
                 ])
                 
@@ -3452,6 +3469,12 @@ class UniversityShopGUI:
                 
                 conn.commit()
                 conn.close()
+
+                # Open finance GUI for manual payment if selected
+                if payment_method == "Finance System":
+                    logger.info(f"Opening finance system for manual payment of transaction {transaction_id}")
+                    # Schedule opening finance GUI after a short delay to allow checkout window to close
+                    self.root.after(500, lambda: self.open_finance_gui_for_payment(transaction_id, total))
 
                 # Send order confirmation email
                 self._send_shop_order_confirmation_email(transaction_id, customer_name, customer_email, total, payment_method)
@@ -3635,7 +3658,9 @@ class UniversityShopGUI:
                         f"£{item['subtotal']:.2f}"
                     ))
         except Exception as e:
-            pass
+            logger.error(f"Failed to load order items for transaction {transaction_id}: {e}")
+            # Insert error message in the tree
+            items_tree.insert('', 'end', values=('Error', 'Failed to load items', '', '', ''))
         
         # Close button
         ttk.Button(main_frame, text="Close", command=details_window.destroy).grid(row=2, column=0, pady=10)
@@ -5430,9 +5455,10 @@ called directly for automation or scripting purposes.
                     payment_id, student_id, total_amount, 'Student Account', current_date, 'completed',
                     f'Shop payment for transaction #{transaction_id}'
                 ))
-            except sqlite3.Error:
-                # Payments table might not exist, continue anyway
-                pass
+            except sqlite3.Error as e:
+                # Payments table might not exist or have different schema, continue anyway
+                logger.warning(f"Could not record payment in payments table for transaction {transaction_id}: {e}")
+                # Fee is still recorded in student_fees, so transaction can continue
 
             conn.commit()
             conn.close()
@@ -5552,14 +5578,61 @@ called directly for automation or scripting purposes.
         except Exception as e:
             messagebox.showerror("Error", f"Could not open finance system: {e}")
 
-    def add_finance_payment_option_to_checkout(self):
-        """Add finance system option to checkout dialog"""
+    def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row_index=3):
+        """
+        Add finance system payment option to checkout dialog
+
+        Args:
+            payment_frame: The ttk.Frame containing payment options
+            payment_var: The tk.StringVar tracking selected payment method
+            row_index: The row index to place the new option (default: 3)
+
+        Returns:
+            ttk.Radiobutton: The created finance system payment option widget
+
+        Example:
+            In show_checkout method:
+            >>> finance_option = self.add_finance_payment_option_to_checkout(
+            ...     payment_frame, payment_var, row_index=3
+            ... )
+        """
         try:
-            # This method can be enhanced to add a "Finance System" button to checkout
-            # For now, the existing Student Account payment already integrates with finance
-            pass
+            # Check if finance system is available
+            finance_available = False
+            try:
+                from university_system.modules.domain.finance.gui.finance import FinanceGUI
+                finance_available = True
+            except ImportError:
+                logger.warning("Finance system not available for checkout integration")
+                return None
+
+            if not finance_available:
+                return None
+
+            # Create finance system payment option
+            finance_option = ttk.Radiobutton(
+                payment_frame,
+                text="Finance System (Manual)",
+                variable=payment_var,
+                value="Finance System"
+            )
+            finance_option.grid(row=row_index, column=0, sticky=tk.W, pady=2)
+
+            # Add help text
+            help_text = ttk.Label(
+                payment_frame,
+                text="  Opens finance system for manual payment processing",
+                font=('Arial', 8),
+                foreground='gray'
+            )
+            help_text.grid(row=row_index + 1, column=0, sticky=tk.W, padx=(20, 0))
+
+            logger.info("Finance system payment option added to checkout")
+            return finance_option
+
         except Exception as e:
-            print(f"Could not add finance payment option: {e}")
+            logger.error(f"Could not add finance payment option: {e}")
+            return None
 
 # Backward compatibility functions
 def run_gui_mode():
