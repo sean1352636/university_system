@@ -508,19 +508,21 @@ class FacilitiesManagementGUI:
 
                 if building_filter and building_filter != "All Buildings":
                     cursor.execute('''
-                        SELECT r.id as room_id, r.building as building_name, r.room_number, '' as room_name,
-                               0 as floor_number, r.room_type, r.capacity, 'available' as status
+                        SELECT r.id as room_id, b.building_name as building_name, r.room_number, '' as room_name,
+                               r.floor_number, r.room_type, r.capacity, r.status
                         FROM rooms r
-                        WHERE r.building = ? AND r.is_active = 1
+                        LEFT JOIN buildings b ON r.building_id = b.building_id
+                        WHERE b.building_name = ? AND r.is_active = 1
                         ORDER BY r.room_number
                     ''', (building_filter,))
                 else:
                     cursor.execute('''
-                        SELECT r.id as room_id, r.building as building_name, r.room_number, '' as room_name,
-                               0 as floor_number, r.room_type, r.capacity, 'available' as status
+                        SELECT r.id as room_id, b.building_name as building_name, r.room_number, '' as room_name,
+                               r.floor_number, r.room_type, r.capacity, r.status
                         FROM rooms r
+                        LEFT JOIN buildings b ON r.building_id = b.building_id
                         WHERE r.is_active = 1
-                        ORDER BY r.building, r.room_number
+                        ORDER BY b.building_name, r.room_number
                     ''')
 
                 for row in cursor.fetchall():
@@ -550,11 +552,12 @@ class FacilitiesManagementGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT rb.booking_id, r.building || ' - ' || r.room_number as room,
+                    SELECT rb.booking_id, b.building_name || ' - ' || r.room_number as room,
                            rb.booked_by, rb.booking_type, rb.start_datetime, rb.end_datetime,
                            rb.purpose, rb.booking_status
                     FROM room_bookings rb
                     JOIN rooms r ON rb.room_id = r.id
+                    LEFT JOIN buildings b ON r.building_id = b.building_id
                     WHERE rb.start_datetime >= date('now', '-7 days')
                     ORDER BY rb.start_datetime DESC
                     LIMIT 500
@@ -1201,8 +1204,10 @@ class FacilitiesManagementGUI:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''SELECT rb.*, r.building, r.room_number
-                                 FROM room_bookings rb JOIN rooms r ON rb.room_id = r.id
+                cursor.execute('''SELECT rb.*, b.building_name as building, r.room_number
+                                 FROM room_bookings rb
+                                 JOIN rooms r ON rb.room_id = r.id
+                                 LEFT JOIN buildings b ON r.building_id = b.building_id
                                  WHERE rb.booking_id = ?''', (booking_id,))
                 booking = cursor.fetchone()
 

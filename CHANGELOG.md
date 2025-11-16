@@ -5,6 +5,70 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.69] - 2025-11-16
+
+### Fixed
+
+**FIX: Facilities Management GUI - Database Schema Mismatches (r.building column)**
+
+Fixed SQL queries referencing non-existent `building` column in rooms table.
+
+**Problem:**
+- `load_rooms()` crashed with: `sqlite3.OperationalError: no such column: r.building` (line 518)
+- `load_bookings()` crashed with same error (line 552)
+- Booking details query also referenced non-existent column (line 1207)
+- GUI failed to display rooms and bookings data
+
+**Root Cause:**
+- Database schema has `building_id` (INTEGER) in rooms table, not `building` (TEXT)
+- Rooms table references buildings table via foreign key `building_id`
+- Queries were directly selecting `r.building` which doesn't exist
+- Missing JOIN with buildings table to get building_name
+
+**Database Schema:**
+```sql
+-- Actual schema
+rooms: building_id (INTEGER) -> foreign key to buildings.building_id
+buildings: building_id, building_name, building_code, ...
+
+-- Queries were expecting
+rooms: building (TEXT) -> doesn't exist
+```
+
+**Fix:**
+- Added `LEFT JOIN buildings b ON r.building_id = b.building_id` to all queries
+- Changed `r.building` to `b.building_name` in SELECT statements
+- Updated `load_rooms()` filter query to use `b.building_name = ?`
+- Updated `load_bookings()` to concatenate `b.building_name || ' - ' || r.room_number`
+- Fixed booking details query with same JOIN pattern
+- Used actual `r.floor_number` and `r.status` columns instead of hardcoded values
+
+**Changes:**
+```sql
+# Before (broken)
+SELECT r.building, r.room_number FROM rooms r
+
+# After (fixed)
+SELECT b.building_name, r.room_number
+FROM rooms r
+LEFT JOIN buildings b ON r.building_id = b.building_id
+```
+
+**Files Modified:**
+- `university_system/modules/domain/facilities/gui/facilities_management_gui.py` (lines 510-526, 554-564, 1207-1211)
+
+**Impact:**
+- ✓ Rooms list now loads without errors
+- ✓ Bookings list displays correctly
+- ✓ Booking details shows proper building names
+- ✓ Building filter works correctly
+- ✓ All facilities management features functional
+
+**Testing:**
+- Verified queries execute without SQL errors
+- Confirmed schema compatibility with buildings table JOIN
+- Tested with empty database (no runtime errors)
+
 ## [5.0.68] - 2025-11-16
 
 ### Fixed
