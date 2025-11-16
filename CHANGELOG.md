@@ -5,6 +5,55 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.68] - 2025-11-16
+
+### Fixed
+
+**FIX: Student Union GUI - Switch to CLI Opens Wrong Interface**
+
+Fixed "Switch to CLI" button opening main CLI instead of Student Union CLI.
+
+**Problem:**
+- Clicking "Switch to CLI" in Student Union GUI opened the general university CLI
+- Users expected to see the Student Union-specific CLI menu
+- Had to manually navigate to Student Union section from main menu
+
+**Root Cause:**
+- Code imported and called `university_system.cli_main.main()`
+- This launches the top-level university CLI with all modules
+- Should have called the Student Union-specific CLI menu instead
+
+**Fix:**
+- Changed import from `cli_main.main` to `student_union_core.display_student_union_menu`
+- Updated to call: `display_student_union_menu()`
+- Added auth transfer from GUI to CLI
+- Updated dialog message to clarify "Student Union command-line interface"
+
+**Changes:**
+```python
+# Before
+from university_system.cli_main import main
+main()
+
+# After
+from university_system.modules.domain.student_affairs.student_union.administration.student_union_core import display_student_union_menu
+# Transfer auth context
+auth = get_auth()
+if auth:
+    set_auth(auth)
+display_student_union_menu()
+```
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_union_gui.py`
+
+**Impact:**
+- ✓ Switch to CLI now opens Student Union CLI directly
+- ✓ User remains in Student Union context
+- ✓ Auth context properly transferred
+- ✓ Seamless GUI-to-CLI transition
+- ✓ Better user experience
+
 ## [5.0.67] - 2025-11-16
 
 ### Added

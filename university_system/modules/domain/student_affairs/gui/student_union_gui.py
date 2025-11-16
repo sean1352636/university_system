@@ -559,22 +559,27 @@ class StudentUnionGUI:
         return role == 'student'
 
     def switch_to_cli(self):
-        """Switch to CLI mode"""
+        """Switch to Student Union CLI mode"""
         if not CLI_AVAILABLE:
             messagebox.showerror("Error", "CLI mode is not available")
             return
 
         response = messagebox.askyesno("Switch to CLI",
-                                     "Switch to command-line interface mode?\nThe GUI will close.")
+                                     "Switch to Student Union command-line interface?\nThe GUI will close.")
         if response:
             self.root.destroy()
-            # Launch CLI mode
+            # Launch Student Union CLI mode
             try:
-                from university_system.cli_main import main
-                main()
+                from university_system.modules.domain.student_affairs.student_union.administration.student_union_core import display_student_union_menu
+                # Get current auth from GUI
+                auth = get_auth()
+                if auth:
+                    from university_system.modules.domain.student_affairs.student_union.administration.student_union_core import set_auth
+                    set_auth(auth)
+                display_student_union_menu()
             except ImportError as e:
-                print(f"Error: Cannot import CLI system - {e}")
-                messagebox.showerror("Error", f"Cannot import CLI system: {e}")
+                print(f"Error: Cannot import Student Union CLI system - {e}")
+                messagebox.showerror("Error", f"Cannot import Student Union CLI system: {e}")
     
     def show_main_dashboard(self):
         """Display the main dashboard with sidebar navigation"""
