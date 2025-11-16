@@ -5,6 +5,52 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.73] - 2025-11-16
+
+### Fixed
+
+**FIX: Parent Portal GUI - Activity Logging Keyword Argument Error**
+
+Fixed activity logging error when creating parent accounts.
+
+**Problem:**
+- Error: "Activity logging failed: log_activity() got an unexpected keyword argument 'parent_id'"
+- Occurred when admin created a new parent account
+- Activity logging failed but account creation succeeded
+
+**Root Cause:**
+- Code called: `log_activity('create', 'parent_account', parent_id=parent_id, details={...})`
+- Function signature: `log_activity(action, entity_type, user=None, user_id=None, details=None)`
+- Passing `parent_id=parent_id` as a keyword argument
+- Function doesn't have a `parent_id` parameter → TypeError
+
+**Fix:**
+- Removed invalid `parent_id=parent_id` keyword argument
+- Moved parent_id into the details dictionary instead
+- Before: `log_activity('create', 'parent_account', parent_id=parent_id, details={...})`
+- After: `log_activity('create', 'parent_account', details={'parent_id': parent_id, ...})`
+
+**Changes:**
+```python
+# Before (ERROR)
+log_activity('create', 'parent_account', parent_id=parent_id,
+            details={'username': username, 'email': email})
+
+# After (FIXED)
+log_activity('create', 'parent_account',
+            details={'parent_id': parent_id, 'username': username, 'email': email})
+```
+
+**Files Modified:**
+- `university_system/modules/domain/academics/gui/parent_portal_gui.py` (line 6616-6617)
+
+**Impact:**
+- ✓ Activity logging no longer throws error
+- ✓ Parent account creation logs successfully
+- ✓ No more "Activity logging failed" messages
+- ✓ Proper audit trail for parent account creation
+- ✓ Follows log_activity function signature correctly
+
 ## [5.0.72] - 2025-11-16
 
 ### Fixed

@@ -6613,8 +6613,8 @@ class ParentPortalGUI:
                 # Log activity
                 try:
                     from university_system.modules.shared.utils.activity_logger import log_activity
-                    log_activity('create', 'parent_account', parent_id=parent_id,
-                                details={'username': username, 'email': email})
+                    log_activity('create', 'parent_account',
+                                details={'parent_id': parent_id, 'username': username, 'email': email})
                 except Exception as log_error:
                     print(f"Activity logging failed: {log_error}")
 
