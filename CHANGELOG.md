@@ -5,6 +5,89 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.67] - 2025-11-16
+
+### Added
+
+**FEATURE: Facilities Management - Enhanced Report Viewer with Export & Email**
+
+Added comprehensive report viewing system with export and admin email capabilities.
+
+**New Features:**
+
+1. **In-Window Report Viewer**
+   - Reports display in dedicated 900x700 viewer window
+   - Monospace font for proper alignment
+   - Read-only display with horizontal/vertical scrollbars
+   - Modal dialog with professional layout
+
+2. **Export as TXT**
+   - Save reports to any location
+   - File save dialog with timestamped default filenames
+   - Preserves formatting in plain text
+
+3. **Send to Admin via Email**
+   - Automatically retrieves all admin users with email addresses
+   - Multi-select dialog to choose recipients
+   - Report sent as email attachment
+   - Background email sending with success notifications
+   - Professional email template
+
+**Technical Implementation:**
+
+- **FacilitiesReportViewerDialog** (New Class):
+  - 247 lines, full-featured report viewer
+  - Export functionality
+  - Email integration with admin selection
+  - Graceful degradation when email unavailable
+
+- **Updated show_report_window()**:
+  - Replaced simple text window with full viewer dialog
+  - Now uses FacilitiesReportViewerDialog for all reports
+
+**Reports Enhanced:**
+- Building Occupancy Report
+- Room Utilization Report
+- Maintenance Summary Report
+- Asset Inventory Report
+- Energy Usage Report
+- Booking Statistics
+
+**Files Modified:**
+- `university_system/modules/domain/facilities/gui/facilities_management_gui.py`
+  - Added email service import
+  - Added FacilitiesReportViewerDialog class (247 lines)
+  - Updated show_report_window() method
+
+### Fixed
+
+**FIX: Facilities Management - Report SQL Error**
+
+Fixed SQL query error in Room Utilization Report.
+
+**Problem:**
+- Error: `no such column: r.building`
+- Query referenced non-existent `r.building` column
+- Prevented utilization report from generating
+
+**Root Cause:**
+- Query used old schema: `SELECT r.building || ' - ' || r.room_number`
+- After migration, rooms table has `building_id` (integer), not `building` (text)
+- Needed to join with buildings table to get building name
+
+**Fix:**
+- Updated query to join with buildings table
+- Changed from: `SELECT r.building || ' - ' || r.room_number`
+- Changed to: `SELECT b.building_name || ' - ' || r.room_number`
+- Added: `LEFT JOIN buildings b ON r.building_id = b.building_id`
+
+**Impact:**
+- ✓ Room utilization reports now generate successfully
+- ✓ All 5 facility reports work correctly
+- ✓ Reports display in new enhanced viewer
+- ✓ Export and email functionality available
+- ✓ Professional report presentation
+
 ## [5.0.66] - 2025-11-16
 
 ### Fixed

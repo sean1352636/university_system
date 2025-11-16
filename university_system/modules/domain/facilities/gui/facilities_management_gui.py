@@ -6,10 +6,11 @@ work orders, assets, and space utilization.
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, simpledialog
+from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import traceback
+from threading import Thread
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.auth.user_authentication import UserAuth
@@ -18,6 +19,14 @@ from university_system.modules.domain.facilities.services.facilities_management_
     BuildingManager, RoomManager, RoomBookingManager,
     MaintenanceRequestManager, WorkOrderManager, AssetManager
 )
+from university_system.modules.shared.constants.paths import TEMP_DIR
+
+try:
+    from university_system.infrastructure.email.email_service import send_email
+    EMAIL_SERVICE_AVAILABLE = True
+except Exception:
+    send_email = None
+    EMAIL_SERVICE_AVAILABLE = False
 
 
 class FacilitiesManagementGUI:
@@ -1477,9 +1486,10 @@ Description: {wo['description']}"""
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT r.building || ' - ' || r.room_number as room,
+                    SELECT b.building_name || ' - ' || r.room_number as room,
                            r.room_type, COUNT(rb.booking_id) as booking_count
                     FROM rooms r
+                    LEFT JOIN buildings b ON r.building_id = b.building_id
                     LEFT JOIN room_bookings rb ON r.id = rb.room_id
                         AND rb.start_datetime >= date('now', '-30 days')
                     WHERE r.is_active = 1
@@ -1653,30 +1663,8 @@ Description: {wo['description']}"""
             messagebox.showerror('Error', f'Failed to generate report: {str(e)}')
 
     def show_report_window(self, title, content):
-        """Show report in a new window"""
-        window = tk.Toplevel(self.window)
-        window.title(title)
-        window.geometry("800x600")
-
-        # Text widget with scrollbar
-        frame = ttk.Frame(window, padding=10)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        scroll = ttk.Scrollbar(frame)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        text = tk.Text(frame, wrap=tk.WORD, yscrollcommand=scroll.set, font=('Courier', 10))
-        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll.config(command=text.yview)
-
-        text.insert('1.0', content)
-        text.config(state=tk.DISABLED)
-
-        # Button frame
-        btn_frame = ttk.Frame(window, padding=10)
-        btn_frame.pack(fill=tk.X)
-
-        ttk.Button(btn_frame, text="Close", command=window.destroy).pack(side=tk.RIGHT, padx=5)
+        """Show report in a new window with export and email capabilities"""
+        FacilitiesReportViewerDialog(self.window, self.auth, content, title)
 
     def update_status(self, message):
         """Update status bar message"""
@@ -1690,6 +1678,253 @@ Description: {wo['description']}"""
                 self.window.destroy()
             log_activity('close', 'facilities_management',
                         user=self.current_user.get('username') if self.current_user else 'Unknown')
+
+
+class FacilitiesReportViewerDialog(tk.Toplevel):
+    """Dialog to view and export facilities reports"""
+
+    def __init__(self, parent, auth, report_content, report_title):
+        super().__init__(parent)
+        self.auth = auth
+        self.report_content = report_content
+        self.report_title = report_title
+
+        self.title(f"{report_title}")
+        self.geometry("900x700")
+
+        # Make dialog modal
+        self.transient(parent)
+        self.wait_visibility()
+        self.grab_set()
+
+        self.create_widgets()
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (self.winfo_width() // 2)
+        y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+
+    def create_widgets(self):
+        """Create dialog widgets"""
+        # Header
+        header_frame = ttk.Frame(self)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame,
+                 text=self.report_title,
+                 font=('Arial', 14, 'bold')).pack()
+
+        ttk.Label(header_frame,
+                 text=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                 font=('Arial', 9)).pack()
+
+        # Report content area
+        content_frame = ttk.LabelFrame(self, text="Report Content")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Text widget with scrollbar
+        text_scroll = ttk.Scrollbar(content_frame)
+        text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.report_text = tk.Text(content_frame, wrap=tk.NONE, yscrollcommand=text_scroll.set,
+                                   font=('Courier', 9))
+        self.report_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        text_scroll.config(command=self.report_text.yview)
+
+        # Insert report content
+        self.report_text.insert(1.0, self.report_content)
+        self.report_text.config(state=tk.DISABLED)  # Make read-only
+
+        # Horizontal scrollbar
+        h_scroll = ttk.Scrollbar(content_frame, orient=tk.HORIZONTAL, command=self.report_text.xview)
+        h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+        self.report_text.config(xscrollcommand=h_scroll.set)
+
+        # Buttons frame
+        button_frame = ttk.Frame(self)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        # Export button
+        ttk.Button(button_frame, text="Export as TXT", command=self.export_as_txt).pack(side=tk.LEFT, padx=5)
+
+        # Send to admin button
+        if EMAIL_SERVICE_AVAILABLE:
+            ttk.Button(button_frame, text="Send to Admin", command=self.send_to_admin).pack(side=tk.LEFT, padx=5)
+
+        # Close button
+        ttk.Button(button_frame, text="Close", command=self.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def export_as_txt(self):
+        """Export report as TXT file"""
+        try:
+            # Ask for save location
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                initialfile=f"{self.report_title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            )
+
+            if filename:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(self.report_content)
+
+                messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}")
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Error exporting report: {e}")
+
+    def send_to_admin(self):
+        """Send report to admin users via email"""
+        if not EMAIL_SERVICE_AVAILABLE:
+            messagebox.showerror("Email Not Available",
+                               "Email service is not available. Please contact support.")
+            return
+
+        try:
+            # Get admin emails
+            admins = self.get_admin_emails()
+
+            if not admins:
+                messagebox.showerror("No Admins Found",
+                                   "No admin users with email addresses found.")
+                return
+
+            # Create admin selection dialog
+            admin_dialog = tk.Toplevel(self)
+            admin_dialog.title("Select Admin Recipients")
+            admin_dialog.geometry("400x300")
+            admin_dialog.transient(self)
+            admin_dialog.wait_visibility()
+            admin_dialog.grab_set()
+
+            ttk.Label(admin_dialog, text="Select admin recipients:",
+                     font=('Arial', 10, 'bold')).pack(pady=10)
+
+            # Listbox for admin selection
+            list_frame = ttk.Frame(admin_dialog)
+            list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+            scrollbar = ttk.Scrollbar(list_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            admin_listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE,
+                                      yscrollcommand=scrollbar.set)
+            admin_listbox.pack(fill=tk.BOTH, expand=True)
+            scrollbar.config(command=admin_listbox.yview)
+
+            # Populate listbox
+            for admin in admins:
+                admin_listbox.insert(tk.END, f"{admin['name']} ({admin['email']})")
+
+            # Select all by default
+            admin_listbox.select_set(0, tk.END)
+
+            # Buttons
+            button_frame = ttk.Frame(admin_dialog)
+            button_frame.pack(fill=tk.X, padx=10, pady=10)
+
+            def send_emails():
+                selected_indices = admin_listbox.curselection()
+                if not selected_indices:
+                    messagebox.showwarning("No Selection", "Please select at least one admin.")
+                    return
+
+                selected_admins = [admins[i] for i in selected_indices]
+
+                # Close selection dialog
+                admin_dialog.destroy()
+
+                # Send emails in background thread
+                def send_email_thread():
+                    success_count = 0
+                    for admin in selected_admins:
+                        try:
+                            subject = f"Facilities Management Report: {self.report_title}"
+                            body = f"""Dear {admin['name']},
+
+Please find attached the {self.report_title}.
+
+Report Details:
+- Type: {self.report_title}
+- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+This is an automatically generated report from the Facilities Management System.
+
+Best regards,
+Facilities Management System
+"""
+
+                            # Create temporary file for attachment
+                            temp_file = TEMP_DIR / f"facilities_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                            temp_file.parent.mkdir(parents=True, exist_ok=True)
+
+                            with open(temp_file, 'w', encoding='utf-8') as f:
+                                f.write(self.report_content)
+
+                            # Send email
+                            send_email(
+                                recipient_email=admin['email'],
+                                subject=subject,
+                                body=body,
+                                attachments=[str(temp_file)]
+                            )
+
+                            # Clean up temp file
+                            try:
+                                temp_file.unlink()
+                            except:
+                                pass
+
+                            success_count += 1
+
+                        except Exception as e:
+                            print(f"Error sending email to {admin['email']}: {e}")
+
+                    # Show result
+                    self.after(0, lambda: messagebox.showinfo(
+                        "Email Sent",
+                        f"Report sent successfully to {success_count} of {len(selected_admins)} admin(s)."
+                    ))
+
+                Thread(target=send_email_thread, daemon=True).start()
+
+            ttk.Button(button_frame, text="Send", command=send_emails).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=admin_dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        except Exception as e:
+            messagebox.showerror("Email Error", f"Error sending report to admin: {e}")
+
+    def get_admin_emails(self):
+        """Get email addresses of all admin users"""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT DISTINCT u.email, u.username, u.first_name, u.last_name
+                    FROM users u
+                    JOIN roles r ON u.role = r.role_name
+                    WHERE r.role_name = 'admin' AND u.email IS NOT NULL AND u.email != ''
+                    ORDER BY u.username
+                ''')
+                admins = cursor.fetchall()
+
+                if not admins:
+                    return []
+
+                return [
+                    {
+                        'email': admin['email'],
+                        'username': admin['username'],
+                        'name': f"{admin['first_name']} {admin['last_name']}" if admin['first_name'] and admin['last_name'] else admin['username']
+                    }
+                    for admin in admins
+                ]
+
+        except Exception as e:
+            print(f"Error getting admin emails: {e}")
+            return []
 
 
 def launch_facilities_management_gui(root, auth):
