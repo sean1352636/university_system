@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 import sys
 import os
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 # Import the original parent portal functionality
 try:
@@ -7814,9 +7815,11 @@ if __name__ == "__main__":
     Main entry point for the GUI application.
     This allows the GUI to be run standalone or integrated with existing systems.
     """
-    
-    # Initialize UserAuth for authentication
-    auth = UserAuth()
+
+    # Get centralized auth or initialize UserAuth for authentication
+    auth = get_auth()
+    if auth is None:
+        auth = UserAuth()
 
     # Check if running standalone
     if len(sys.argv) > 1 and sys.argv[1] == '--cli':

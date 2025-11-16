@@ -59,6 +59,7 @@ from university_system.infrastructure.auth.user_authentication import (
     set_global_auth,
     get_global_auth,
 )
+from university_system.infrastructure.shared_context import get_auth, set_auth
 
 # Import MFA (Multi-Factor Authentication) services
 try:
@@ -1891,10 +1892,8 @@ def silent_integrity_check():
             conn.close()
             # Only try to fix if we have an auth context
             try:
-                from university_system.infrastructure.auth.user_authentication import UserAuth
-                temp_auth = UserAuth()
-                auth = UserAuth()
-                if hasattr(temp_auth, 'current_user') and temp_auth.current_user:
+                temp_auth = get_auth()
+                if temp_auth and hasattr(temp_auth, 'current_user') and temp_auth.current_user:
                     temp_auth.fix_database_consistency()
                 # If no auth context, just log and continue - will be fixed later
             except Exception as e:
@@ -2249,9 +2248,9 @@ def emergency_fix_database():
         
         # Fix orphaned records
         print("\nStep 2: Fixing orphaned user records...")
-        from university_system.infrastructure.auth.user_authentication import UserAuth
-        auth = UserAuth()
-        auth.fix_database_consistency()
+        auth_instance = get_auth()
+        if auth_instance:
+            auth_instance.fix_database_consistency()
         
         # Validate integrity
         print("\nStep 3: Final integrity check...")
@@ -2944,14 +2943,14 @@ def ensure_default_users_exist_once():
     try:
         # Get global auth instance or create temporary one
         global auth
-        temp_auth = None
-        if auth is None:
-            temp_auth = UserAuth()
-            temp_auth._initialization_mode = True
-        else:
-            auth._initialization_mode = True
+        auth_instance = get_auth()
+        if auth_instance is None:
+            # Create one if doesn't exist and set it
+            auth_instance = UserAuth()
+            set_auth(auth_instance)
+            auth = auth_instance
 
-        auth_instance = auth if auth is not None else temp_auth
+        auth_instance._initialization_mode = True
 
         conn = get_db_connection(timeout=10.0)
         if not conn:
@@ -3303,10 +3302,9 @@ def validate_database_integrity():
                         fixes_applied.append("Fixed duplicate emails")
                 
                 # Fix other issues using existing auth methods
-                from university_system.infrastructure.auth.user_authentication import UserAuth
-                auth = UserAuth()
-                if orphaned_users or orphaned_accounts:
-                    if auth.fix_database_consistency():
+                auth_instance = get_auth()
+                if auth_instance and (orphaned_users or orphaned_accounts):
+                    if auth_instance.fix_database_consistency():
                         fixes_applied.append("Fixed orphaned users/accounts")
                 
                 if fixes_applied:
@@ -3652,7 +3650,11 @@ def init_all_databases():
     # Initialize user authentication database to ensure users table has correct schema
     global auth
     if auth is None:
-        auth = UserAuth()
+        auth = get_auth()
+        if auth is None:
+            # Create if doesn't exist
+            auth = UserAuth()
+            set_auth(auth)
     
     # Wait a moment to ensure the main database is fully initialized
     time.sleep(0.1)
@@ -6683,7 +6685,11 @@ def display_menu():
     # Initialize authentication system if not already done
     if auth is None:
         try:
-            auth = UserAuth()
+            auth = get_auth()
+            if auth is None:
+                # Create if doesn't exist
+                auth = UserAuth()
+                set_auth(auth)
             # Ensure auth object has all required attributes
             safe_auth_check(auth)
             # Set the global auth instance for other modules
@@ -6761,8 +6767,11 @@ def display_menu():
             try:
                 auth = display_auth_menu()
                 if auth is None:
-                    # Create a new auth object if none was returned
-                    auth = UserAuth()
+                    # Get or create auth object if none was returned
+                    auth = get_auth()
+                    if auth is None:
+                        auth = UserAuth()
+                        set_auth(auth)
                     safe_auth_check(auth)
                 # Set the global auth instance after login
                 set_auth_instance(auth)
@@ -7709,7 +7718,11 @@ def main():
 
     # Initialize auth and start the main menu
     global auth
-    auth = UserAuth()
+    auth = get_auth()
+    if auth is None:
+        # Create if doesn't exist
+        auth = UserAuth()
+        set_auth(auth)
     set_global_auth(auth)  # Set as global auth for all modules
     display_menu()
 

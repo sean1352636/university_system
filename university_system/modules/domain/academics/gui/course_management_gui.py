@@ -6,6 +6,7 @@ from university_system.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.shared.constants import paths
 
 # Use centralized path configuration
@@ -115,11 +116,14 @@ class CourseManagementGUI:
         self.root.geometry("1200x800")
         self.root.configure(bg='#f0f0f0')
 
-        # Initialize authentication - accept passed auth or create new instance
+        # Initialize authentication - accept passed auth or use centralized auth
         if auth_system:
             self.auth = auth_system
         else:
-            self.auth = UserAuth()
+            # Use centralized auth system
+            self.auth = get_auth()
+            if self.auth is None:
+                self.auth = UserAuth()
 
         # Create status bar FIRST so update_status() is safe during init
         self.status_var = tk.StringVar(value="Initializing…")
@@ -9418,9 +9422,11 @@ def cli_interface():
         # Use original CLI interface
         print("Launching original CLI interface...")
         try:
-            # Import and use centralized authentication system
-            from university_system.infrastructure.auth.user_authentication import UserAuth
-            auth = UserAuth()
+            # Use centralized authentication system
+            auth = get_auth()
+            if auth is None:
+                from university_system.infrastructure.auth.user_authentication import UserAuth
+                auth = UserAuth()
             display_enhanced_course_menu(auth)
         except NameError:
             print("Original CLI functions not available. Launching GUI instead.")

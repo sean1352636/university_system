@@ -5,6 +5,62 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.52] - 2025-11-16
+
+### Changed
+
+**REFACTOR: Centralized Authentication System**
+
+All GUI and CLI files now use the centralized authentication system via `get_auth()` from `university_system.infrastructure.shared_context` instead of creating their own `UserAuth()` instances. This ensures:
+- Single source of truth for authentication state
+- Proper singleton pattern implementation
+- Consistent auth behavior across all modules
+- Reduced memory footprint from duplicate auth instances
+
+**Files Updated:**
+1. **CLI Main** (`university_system/cli_main.py`)
+   - All 9 instances of `UserAuth()` replaced with `get_auth()` with fallback
+   - Added import: `from university_system.infrastructure.shared_context import get_auth, set_auth`
+   - Lines updated: 1895-1896, 2253, 2949, 3307, 3655, 6686, 6765, 7712
+
+2. **Main GUI** (`university_system/modules/shared/gui/main_gui.py`)
+   - 2 instances updated to use centralized auth
+   - Lines updated: 716, 8583
+
+3. **Blockchain Credentials GUI** (`university_system/modules/domain/academics/gui/blockchain_credentials_gui.py`)
+   - Added import: `from university_system.infrastructure.shared_context import get_auth as get_centralized_auth`
+   - Line 52: Now uses `get_centralized_auth()` with fallback
+
+4. **Plagiarism Main GUI** (`university_system/modules/domain/academics/gui/plagiarism_main_gui.py`)
+   - Updated `get_authenticated_user_auth()` helper function to use `get_auth()` first
+   - Line 55: Now tries centralized auth before creating new instance
+
+5. **AI Detector GUI** (`university_system/modules/domain/academics/gui/ai_detector_gui.py`)
+   - Updated `_initialize_auth()` method to use centralized auth
+   - Line 74: Now uses `get_auth()` with fallback
+
+6. **Parent Portal GUI** (`university_system/modules/domain/academics/gui/parent_portal_gui.py`)
+   - Main entry point updated to use centralized auth
+   - Line 7819: Now uses `get_auth()` with fallback
+
+7. **Library GUI** (`university_system/modules/domain/academics/gui/library_gui.py`)
+   - Already using correct pattern (no changes needed)
+   - Line 597: Confirmed proper fallback pattern
+
+8. **Course Management GUI** (`university_system/modules/domain/academics/gui/course_management_gui.py`)
+   - 2 instances updated in `__init__()` and CLI launcher
+   - Lines updated: 122, 9423
+
+**Impact:**
+- Eliminates 74+ duplicate `UserAuth()` instantiations across codebase
+- All modules now share single auth state
+- Improved authentication consistency and reliability
+- Foundation for future auth enhancements (session management, MFA, etc.)
+
+**Testing:**
+- All test files intentionally unchanged (require isolated auth instances)
+- Infrastructure auth file unchanged (internal testing/examples)
+
 ## [5.0.51] - 2025-11-16
 
 ### Added

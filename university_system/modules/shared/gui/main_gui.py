@@ -713,11 +713,12 @@ def init_gui(session_user=None):
                 "Path: university_system/infrastructure/auth/user_authentication.py"
             )
 
-        auth = UserAuth()
+        # Get centralized auth or create new one
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
+            set_auth(auth)
         safe_auth_check(auth)
-
-        # Register auth instance with shared_context and local auth
-        set_auth(auth)
 
     # If session_user is provided, set it as the current user
     if session_user is not None:
@@ -8580,7 +8581,11 @@ def main():
             if gui_funcs:
                 auth = gui_funcs['initialize_complete_system_with_gui']()
             else:
-                auth = UserAuth()
+                # Get centralized auth or create new one
+                auth = get_auth()
+                if auth is None:
+                    auth = UserAuth()
+                    set_shared_auth(auth)
                 safe_auth_check(auth)
         
         # Show system information

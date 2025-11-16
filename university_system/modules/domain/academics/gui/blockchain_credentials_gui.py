@@ -20,6 +20,7 @@ import hashlib
 
 # Core infrastructure
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth as get_centralized_auth
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.activity_logger import log_activity
@@ -49,7 +50,10 @@ class BlockchainCredentialsGUI:
         if auth_system:
             self.auth = auth_system
         else:
-            self.auth = UserAuth()
+            # Use centralized auth system
+            self.auth = get_centralized_auth()
+            if self.auth is None:
+                self.auth = UserAuth()
 
         # Initialize database
         self.init_database()

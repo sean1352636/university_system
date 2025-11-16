@@ -10,6 +10,7 @@ from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, sqlite3
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 try:
     from university_system.utils.ai.ai_detector import AIDetector
@@ -70,8 +71,11 @@ class AIDetectorGUI:
         self.current_submission_id = None
 
     def _initialize_auth(self):
-        """Initialize UserAuth with a default test user session"""
-        auth = UserAuth()
+        """Get centralized auth or initialize UserAuth with a default test user session"""
+        # Try to get centralized auth first
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
 
         # Set up a default user session for testing
         if not auth.current_user:

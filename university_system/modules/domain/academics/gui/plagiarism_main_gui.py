@@ -10,6 +10,7 @@ import os
 import sys
 import logging
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 
 try:
     from university_system.modules.domain.academics.services.plagiarism.plagiarism_main import (
@@ -51,8 +52,11 @@ except ImportError:
 
 # Helper function to create authenticated UserAuth instance
 def get_authenticated_user_auth():
-    """Create a UserAuth instance with a default test user session"""
-    auth = UserAuth()
+    """Get centralized auth or create a UserAuth instance with a default test user session"""
+    # Try to get centralized auth first
+    auth = get_auth()
+    if auth is None:
+        auth = UserAuth()
 
     # Set up a default user session for testing
     if not auth.current_user:
