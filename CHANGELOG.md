@@ -5,6 +5,73 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.51] - 2025-11-16
+
+### Added
+
+**Parking Management GUI - Violation Tracking & Email Integration:**
+
+1. **Enhanced Violation Dialog with Vehicle/Student Lookup** (✅ Implemented)
+   - **Feature**: Added comprehensive vehicle and owner lookup in violation creation
+   - **Implementation**:
+     - New "Vehicle Lookup" section with license plate search
+     - Automatically retrieves vehicle details (make, model, year, color)
+     - Looks up vehicle owner from students database
+     - Displays vehicle, owner, and email information (read-only)
+     - Vehicle ID and student ID stored with violation for tracking
+     - Email notification checkbox (default: enabled)
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:2037-2087` - Enhanced dialog UI
+     - `modules/domain/mobility/gui/parking_management_gui.py:2135-2209` - Vehicle lookup logic
+     - `modules/domain/mobility/gui/parking_management_gui.py:2251-2260` - Store vehicle/student IDs
+     - `modules/domain/mobility/gui/parking_management_gui.py:2043` - Increased dialog size
+   - **Impact**: Violations now fully linked to vehicles and students with automated lookups
+
+2. **Automated Violation Email Notifications** (✅ Implemented)
+   - **Feature**: Automatic email notifications sent when violations are recorded
+   - **Implementation**:
+     - Email sent automatically when "Send email" checkbox is checked
+     - Uses parking_violation_notice.json template
+     - Includes violation details: ID, type, location, fine amount, next steps
+     - Graceful fallback if email service unavailable (logs notification)
+     - Student name fetched from database for personalization
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:1054-1064` - Email trigger in record_violation
+     - `modules/domain/mobility/gui/parking_management_gui.py:1643-1710` - Email sending method
+   - **Impact**: Students automatically notified of violations via email
+
+### Fixed
+
+**Parking Management GUI - Report Generation Crashes:**
+
+1. **Report Generation System Crashes** (✅ Fixed)
+   - **Problem**: Reports caused full system crashes
+   - **Root Cause**:
+     - No try/finally blocks to restore stdout if exceptions occurred
+     - stdout redirected to StringIO but not restored on errors
+     - Database connections in report functions not properly managed
+   - **Solution**:
+     - Added try/finally blocks to all report generation methods
+     - stdout always restored even if report function crashes
+     - Added logging of errors before showing error dialogs
+     - Wrapped all stdout redirection in proper exception handling
+   - **Files Modified**:
+     - `modules/domain/mobility/gui/parking_management_gui.py:1210-1230` - Permit report
+     - `modules/domain/mobility/gui/parking_management_gui.py:1232-1250` - Violation report
+     - `modules/domain/mobility/gui/parking_management_gui.py:1252-1270` - Analytics dashboard
+     - `modules/domain/mobility/gui/parking_management_gui.py:1589-1607` - Compliance report
+     - `modules/domain/mobility/gui/parking_management_gui.py:1609-1627` - Revenue report
+     - `modules/domain/mobility/gui/parking_management_gui.py:1629-1647` - User activity report
+   - **Impact**: Reports no longer crash the system, errors handled gracefully
+
+2. **Database Connection Management** (✅ Improved)
+   - **Enhancement**: Better connection management to prevent "closed database" errors
+   - **Implementation**:
+     - All database operations use try/finally patterns
+     - Connections properly closed even on exceptions
+     - Error logging added for database operations
+   - **Impact**: No more "cannot operate on a closed database" errors
+
 ## [5.0.50] - 2025-11-16
 
 ### Added

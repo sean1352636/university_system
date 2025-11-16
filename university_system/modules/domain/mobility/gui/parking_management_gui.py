@@ -1027,12 +1027,12 @@ class ParkingManagementGUI:
         """Record a violation from dialog data"""
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Generate violation ID
         cursor.execute('SELECT COUNT(*) FROM parking_violations')
         count = cursor.fetchone()[0] + 1
         violation_id = f"VIO{str(count).zfill(6)}"
-        
+
         # Insert violation
         cursor.execute('''
         INSERT INTO parking_violations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1047,9 +1047,21 @@ class ParkingManagementGUI:
             data['location'],
             self.current_user['id']
         ))
-        
+
         conn.commit()
         conn.close()
+
+        # Send email notification if requested
+        if data.get('send_email', False) and data.get('student_email'):
+            self._send_violation_email(
+                violation_id,
+                data['student_id'],
+                data['student_email'],
+                data['license_plate'],
+                data['violation_type'],
+                data['location'],
+                data['fine_amount']
+            )
     
     def add_lot_from_data(self, data):
         """Add a parking lot from dialog data"""
@@ -1197,60 +1209,65 @@ class ParkingManagementGUI:
     # Report methods
     def generate_permit_report(self):
         """Generate permit report"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            # Use existing function but capture output
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             # Call existing function
             generate_permit_report()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             # Show in dialog
             self.show_text_dialog("Permit Report", output)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
-    
+            logging.error(f"Error generating permit report: {e}")
+            messagebox.showerror("Error", f"Failed to generate permit report: {e}")
+        finally:
+            sys.stdout = old_stdout
+
     def generate_violation_report(self):
         """Generate violation report"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             generate_violation_report()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             self.show_text_dialog("Violation Report", output)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            logging.error(f"Error generating violation report: {e}")
+            messagebox.showerror("Error", f"Failed to generate violation report: {e}")
+        finally:
+            sys.stdout = old_stdout
     
     def show_analytics(self):
         """Show analytics dashboard"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             generate_analytics_dashboard()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             self.show_text_dialog("Analytics Dashboard", output)
         except Exception as e:
+            logging.error(f"Error generating analytics dashboard: {e}")
             messagebox.showerror("Error", f"Failed to generate analytics: {e}")
+        finally:
+            sys.stdout = old_stdout
     
     def show_text_dialog(self, title, content):
         """Show a dialog with text content"""
@@ -1576,58 +1593,133 @@ class ParkingManagementGUI:
 
     def generate_compliance_report(self):
         """Generate compliance and audit report"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             generate_compliance_report()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             self.show_text_dialog("Compliance & Audit Report", output)
         except Exception as e:
+            logging.error(f"Error generating compliance report: {e}")
             messagebox.showerror("Error", f"Failed to generate compliance report: {e}")
+        finally:
+            sys.stdout = old_stdout
 
     def generate_revenue_report(self):
         """Generate revenue report"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             generate_revenue_report()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             self.show_text_dialog("Revenue Report", output)
         except Exception as e:
+            logging.error(f"Error generating revenue report: {e}")
             messagebox.showerror("Error", f"Failed to generate revenue report: {e}")
+        finally:
+            sys.stdout = old_stdout
 
     def generate_user_activity_report(self):
         """Generate user activity report"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
         try:
-            import io
-            import sys
-            
-            old_stdout = sys.stdout
             sys.stdout = buffer = io.StringIO()
-            
+
             generate_user_activity_report()
-            
+
             output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
+
             self.show_text_dialog("User Activity Report", output)
         except Exception as e:
+            logging.error(f"Error generating user activity report: {e}")
             messagebox.showerror("Error", f"Failed to generate user activity report: {e}")
+        finally:
+            sys.stdout = old_stdout
     
+    def _send_violation_email(self, violation_id, student_id, student_email, license_plate, violation_type, location, fine_amount):
+        """Send violation notification email to student"""
+        try:
+            # Get student name
+            student_name = "Student"
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('SELECT first_name, last_name FROM students WHERE student_id = ?', (student_id,))
+                student_data = cursor.fetchone()
+                if student_data:
+                    student_name = f"{student_data[0]} {student_data[1]}"
+                conn.close()
+            except Exception as e:
+                logging.error(f"Could not fetch student name: {e}")
+
+            # Load email template
+            import json
+            template_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                'templates', 'email', 'parking_violation_notice.json'
+            )
+
+            with open(template_path, 'r') as f:
+                template = json.load(f)
+
+            # Prepare template variables
+            violation_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            signature = "Parking Services\nUniversity Parking Management\nPhone: (555) 123-4567\nEmail: parking@university.edu"
+
+            # Replace variables in subject and body
+            subject = template['subject'].replace('$violation_id', violation_id)
+
+            body = template['body']
+            body = body.replace('$student_name', student_name)
+            body = body.replace('$violation_id', violation_id)
+            body = body.replace('$violation_type', violation_type)
+            body = body.replace('$license_plate', license_plate)
+            body = body.replace('$location', location)
+            body = body.replace('$violation_date', violation_date)
+            body = body.replace('$fine_amount', f"{fine_amount:.2f}")
+            body = body.replace('$payment_status', 'Unpaid')
+            body = body.replace('$signature', signature)
+
+            # Send email using email service
+            try:
+                from university_system.infrastructure.email.email_service import send_email
+                send_email(
+                    to_email=student_email,
+                    subject=subject,
+                    body=body
+                )
+                logging.info(f"Violation notification email sent to {student_email} for violation {violation_id}")
+            except ImportError:
+                # Fallback: Log the email content
+                logging.warning(f"Email service not available. Email would have been sent to {student_email}:")
+                logging.info(f"Subject: {subject}")
+                logging.info(f"Body: {body}")
+                messagebox.showinfo("Email Notification",
+                    f"Email service unavailable.\n\n"
+                    f"Violation notice for {student_name} logged.\n"
+                    f"Manual notification required to: {student_email}")
+
+        except Exception as e:
+            logging.error(f"Failed to send violation email: {e}")
+            messagebox.showwarning("Email Error",
+                f"Violation recorded successfully, but email notification failed.\n"
+                f"Please notify the student manually.")
+
     def show_about(self):
         """Show about dialog"""
         about_text = """
@@ -1646,6 +1738,7 @@ Features:
 - Parking Lot Management
 - Reports and Analytics
 - Data Export
+- Email Notifications
         """
         messagebox.showinfo("About", about_text)
 
@@ -2037,52 +2130,88 @@ class VehicleDialog:
 class ViolationDialog:
     def __init__(self, parent, title, violation_data=None):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("400x400")
+        self.dialog.geometry("550x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.violation_data = violation_data
+        self.vehicle_id = None
+        self.student_id = None
         self.setup_ui()
-    
+
     def setup_ui(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        # Violation info
-        ttk.Label(main_frame, text="License Plate:").grid(row=0, column=0, sticky="w", pady=5)
+
+        # Vehicle Lookup Section
+        lookup_frame = ttk.LabelFrame(main_frame, text="Vehicle Lookup", padding="5")
+        lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
+
+        ttk.Label(lookup_frame, text="License Plate:").grid(row=0, column=0, sticky="w", padx=5)
         self.plate_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.plate_var).grid(row=0, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Violation Type:").grid(row=1, column=0, sticky="w", pady=5)
+        self.plate_entry = ttk.Entry(lookup_frame, textvariable=self.plate_var, width=20)
+        self.plate_entry.grid(row=0, column=1, padx=5)
+
+        ttk.Button(lookup_frame, text="Lookup Vehicle",
+                  command=self.lookup_vehicle).grid(row=0, column=2, padx=5)
+
+        # Vehicle & Owner Info Display (read-only)
+        info_frame = ttk.LabelFrame(main_frame, text="Vehicle & Owner Information", padding="5")
+        info_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        ttk.Label(info_frame, text="Vehicle:").grid(row=0, column=0, sticky="w", pady=2)
+        self.vehicle_info_var = tk.StringVar(value="Not found")
+        ttk.Entry(info_frame, textvariable=self.vehicle_info_var, state="readonly", width=40).grid(row=0, column=1, sticky="ew", pady=2, padx=(5, 0))
+
+        ttk.Label(info_frame, text="Owner:").grid(row=1, column=0, sticky="w", pady=2)
+        self.owner_info_var = tk.StringVar(value="Not found")
+        ttk.Entry(info_frame, textvariable=self.owner_info_var, state="readonly", width=40).grid(row=1, column=1, sticky="ew", pady=2, padx=(5, 0))
+
+        ttk.Label(info_frame, text="Email:").grid(row=2, column=0, sticky="w", pady=2)
+        self.email_var = tk.StringVar(value="Not found")
+        ttk.Entry(info_frame, textvariable=self.email_var, state="readonly", width=40).grid(row=2, column=1, sticky="ew", pady=2, padx=(5, 0))
+
+        info_frame.columnconfigure(1, weight=1)
+
+        # Violation info
+        ttk.Label(main_frame, text="Violation Details", font=('Arial', 10, 'bold')).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 5))
+
+        ttk.Label(main_frame, text="Violation Type:").grid(row=3, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
         violation_types = ["No Permit", "Expired Permit", "Wrong Zone", "Improper Parking",
                           "Blocking Access", "Fire Lane", "Handicap Zone", "Other"]
-        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, 
+        type_combo = ttk.Combobox(main_frame, textvariable=self.type_var,
                                  values=violation_types, state="readonly")
-        type_combo.grid(row=1, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Location:").grid(row=2, column=0, sticky="w", pady=5)
+        type_combo.grid(row=3, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Location:").grid(row=4, column=0, sticky="w", pady=5)
         self.location_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.location_var).grid(row=2, column=1, sticky="ew", pady=5)
-        
-        ttk.Label(main_frame, text="Fine Amount:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Entry(main_frame, textvariable=self.location_var).grid(row=4, column=1, sticky="ew", pady=5)
+
+        ttk.Label(main_frame, text="Fine Amount:").grid(row=5, column=0, sticky="w", pady=5)
         self.fine_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.fine_var).grid(row=3, column=1, sticky="ew", pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.fine_var).grid(row=5, column=1, sticky="ew", pady=5)
+
         # Payment status (for editing)
         if self.violation_data:
-            ttk.Label(main_frame, text="Payment Status:").grid(row=4, column=0, sticky="w", pady=5)
+            ttk.Label(main_frame, text="Payment Status:").grid(row=6, column=0, sticky="w", pady=5)
             self.status_var = tk.StringVar()
-            status_combo = ttk.Combobox(main_frame, textvariable=self.status_var, 
+            status_combo = ttk.Combobox(main_frame, textvariable=self.status_var,
                                        values=["Paid", "Unpaid", "Appealed", "Waived"], state="readonly")
-            status_combo.grid(row=4, column=1, sticky="ew", pady=5)
-        
+            status_combo.grid(row=6, column=1, sticky="ew", pady=5)
+
+        # Send Email Notification checkbox
+        ttk.Label(main_frame, text="Notification:").grid(row=7, column=0, sticky="w", pady=5)
+        self.send_email_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(main_frame, text="Send violation email to owner",
+                       variable=self.send_email_var).grid(row=7, column=1, sticky="w", pady=5)
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=8, column=0, columnspan=2, pady=20)
         
         ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
@@ -2095,7 +2224,83 @@ class ViolationDialog:
         # Load existing data if editing
         if self.violation_data:
             self.load_violation_data()
-    
+
+    def lookup_vehicle(self):
+        """Lookup vehicle and owner from license plate"""
+        license_plate = self.plate_var.get().strip().upper()
+
+        if not license_plate:
+            messagebox.showwarning("Warning", "Please enter a license plate")
+            return
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Search for vehicle by license plate
+            cursor.execute('''
+                SELECT vehicle_id, license_plate, make, model, year, color, owner_id
+                FROM vehicles
+                WHERE UPPER(license_plate) = ?
+            ''', (license_plate,))
+
+            vehicle = cursor.fetchone()
+
+            if vehicle:
+                self.vehicle_id = vehicle[0]
+                vehicle_desc = f"{vehicle[2]} {vehicle[3]} {vehicle[4]} ({vehicle[5]})"
+                self.vehicle_info_var.set(vehicle_desc)
+
+                # Lookup owner if vehicle has owner_id
+                if vehicle[6]:  # owner_id
+                    cursor.execute('''
+                        SELECT student_id, first_name, last_name, email_address
+                        FROM students
+                        WHERE student_id = ?
+                    ''', (vehicle[6],))
+
+                    student = cursor.fetchone()
+
+                    if student:
+                        self.student_id = student[0]
+                        owner_name = f"{student[1]} {student[2]}"
+                        email = student[3] if student[3] else "No email on file"
+
+                        self.owner_info_var.set(owner_name)
+                        self.email_var.set(email)
+
+                        messagebox.showinfo("Success",
+                            f"Vehicle found!\n\n"
+                            f"Vehicle: {vehicle_desc}\n"
+                            f"Owner: {owner_name}\n"
+                            f"Email: {email}")
+                    else:
+                        self.owner_info_var.set("Owner not found in database")
+                        self.email_var.set("No email")
+                        messagebox.showwarning("Partial Match",
+                            f"Vehicle found: {vehicle_desc}\n"
+                            f"But owner ID {vehicle[6]} not found in student database")
+                else:
+                    self.owner_info_var.set("No owner linked")
+                    self.email_var.set("No email")
+                    messagebox.showinfo("Vehicle Found",
+                        f"Vehicle found: {vehicle_desc}\n"
+                        f"No owner is linked to this vehicle")
+            else:
+                self.vehicle_info_var.set("Not found")
+                self.owner_info_var.set("Not found")
+                self.email_var.set("Not found")
+                self.vehicle_id = None
+                self.student_id = None
+                messagebox.showwarning("Not Found",
+                    f"No vehicle found with license plate: {license_plate}")
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to lookup vehicle: {e}")
+            logging.error(f"Vehicle lookup error in violation dialog: {e}")
+
     def set_default_fine(self, event=None):
         violation_type = self.type_var.get()
         fine_amounts = {
@@ -2141,7 +2346,11 @@ class ViolationDialog:
             'violation_type': self.type_var.get(),
             'location': self.location_var.get(),
             'fine_amount': fine_amount,
-            'payment_status': getattr(self, 'status_var', tk.StringVar(value='Unpaid')).get()
+            'payment_status': getattr(self, 'status_var', tk.StringVar(value='Unpaid')).get(),
+            'vehicle_id': self.vehicle_id,
+            'student_id': self.student_id,
+            'send_email': self.send_email_var.get(),
+            'student_email': self.email_var.get() if self.email_var.get() not in ["Not found", "No email", "No email on file"] else None
         }
         
         self.dialog.destroy()
