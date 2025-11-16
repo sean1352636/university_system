@@ -59,7 +59,7 @@ try:
         # Main classes
         EnhancedStudentSupport, SupportConfig,
         # Utility functions
-        setup_enhanced_logging, audit_action,
+        setup_enhanced_logging, audit_action, set_auth,
         # Display functions
         display_support_menu, display_enhanced_faqs, display_enhanced_resources,
         # Ticket management functions
@@ -80,7 +80,7 @@ except ImportError:
     try:
         from university_system.modules.domain.student_affairs.services.student_support import (
             SUPPORT_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES,
-            EnhancedStudentSupport, SupportConfig, display_support_menu
+            EnhancedStudentSupport, SupportConfig, display_support_menu, set_auth
         )
         auth = None
     except ImportError:
@@ -124,6 +124,7 @@ except ImportError:
     # Define fallback helper functions
     setup_enhanced_logging = lambda: None
     audit_action = lambda *args, **kwargs: None
+    set_auth = lambda x: None  # Fallback if set_auth not available
     validate_ticket_permissions = lambda *args, **kwargs: True
     format_ticket_status_display = lambda x: str(x)
     format_priority_display = lambda x: str(x)
@@ -201,6 +202,13 @@ class StudentSupportGUI:
                 "Run: python run.py --gui")
             self.root.destroy()
             return
+
+        # Set auth in the student_support module so service functions can access it
+        try:
+            set_auth(self.auth)
+            print(f"✓ Student Support GUI: Auth context set in service module")
+        except Exception as e:
+            print(f"⚠ Warning: Could not set auth in service module: {e}")
 
         # Create main interface
         self.create_widgets()

@@ -5,6 +5,60 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.71] - 2025-11-16
+
+### Fixed
+
+**FIX: Student Support GUI - Service Layer Authentication Context**
+
+Fixed authentication errors when GUI calls service layer functions.
+
+**Problem:**
+- Getting "You must be logged in to view support tickets" errors
+- GUI authentication check passes but service functions fail
+- Error: `Action view_tickets failed: You must be logged in to view support tickets`
+- Service layer couldn't access auth context from GUI
+
+**Root Cause:**
+- Student Support GUI validated auth in __init__ but never passed it to service module
+- Service module (student_support.py) has global `auth = None` variable
+- Service functions check `if not auth or not auth.current_user` before operations
+- GUI never called `set_auth()` to set the global auth in the service module
+- Service layer had no way to access the authenticated user
+
+**Fix:**
+1. Imported `set_auth` function from student_support module
+2. Called `set_auth(self.auth)` after successful authentication in GUI
+3. Added debug logging to confirm auth context is set
+4. Added fallback `set_auth = lambda x: None` for import error cases
+5. Service functions can now access auth through global variable
+
+**Changes:**
+```python
+# Import set_auth
+from university_system.modules.domain.student_affairs.services.student_support import (
+    ..., set_auth, ...
+)
+
+# In __init__ after auth validation:
+try:
+    set_auth(self.auth)
+    print(f"✓ Auth context set in service module")
+except Exception as e:
+    print(f"⚠ Warning: Could not set auth in service module: {e}")
+```
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_support_gui.py` (lines 62, 83, 127, 205-210)
+
+**Impact:**
+- ✓ Service layer functions can now access authenticated user
+- ✓ No more "You must be logged in" errors when viewing tickets
+- ✓ Dashboard loads ticket data successfully
+- ✓ All ticket viewing, creating, and management functions work
+- ✓ Auth context properly shared between GUI and service layers
+- ✓ Better debugging with auth context confirmation messages
+
 ## [5.0.70] - 2025-11-16
 
 ### Fixed
