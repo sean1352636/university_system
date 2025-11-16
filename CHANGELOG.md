@@ -5,6 +5,76 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.72] - 2025-11-16
+
+### Fixed
+
+**FIX: Parent Portal GUI - Sidebar Scrollbar and Username Validation**
+
+Fixed two issues preventing full functionality of Parent Portal GUI.
+
+**Problem 1 - Inaccessible Sidebar Buttons:**
+- Sidebar contained many navigation buttons but no scrollbar
+- Bottom buttons were inaccessible when all buttons exceeded viewport height
+- Users couldn't access "Notifications", "Return to Main Menu", and other lower buttons
+
+**Root Cause 1:**
+- Sidebar frame using basic `.pack()` layout without scrolling capability
+- Fixed height window with overflow content had no mechanism to scroll
+- No canvas + scrollbar implementation for vertical scrolling
+
+**Fix 1:**
+- Replaced simple sidebar frame with Canvas + Scrollbar architecture
+- Created scrollable canvas (280px wide) with vertical scrollbar
+- Sidebar frame embedded in canvas window for scrolling
+- Added mouse wheel support (Windows and Linux)
+- Dynamic scroll region updates when sidebar content changes
+- Buttons now accessible via scrolling when content exceeds viewport
+
+**Problem 2 - Parent Account Creation Fails:**
+- Error: "Failed to create parent account: invalid username format"
+- Username validation rejected generated usernames
+- Parent accounts couldn't be created by admins
+
+**Root Cause 2:**
+- Username generated as: `john.doe.123` (with periods/dots)
+- Auth system username validation regex: `^[a-zA-Z0-9_-]{3,20}$`
+- Regex allows: letters, numbers, underscores, hyphens
+- Regex DOES NOT allow: periods/dots
+- Generated usernames contained dots → validation failed
+
+**Fix 2:**
+- Changed username generation from dots to underscores
+- Before: `f"{first_name.lower()}.{last_name.lower()}.{random.randint(100, 999)}"`
+- After: `f"{first_name.lower()}_{last_name.lower()}_{random.randint(100, 999)}"`
+- Example: `john.doe.123` → `john_doe_123`
+- Usernames now pass validation and accounts create successfully
+- Added comment explaining why underscores used instead of dots
+
+**Changes:**
+```python
+# Sidebar scrollbar
+self.sidebar_canvas = tk.Canvas(sidebar_container, bg='#2c3e50', highlightthickness=0, width=280)
+sidebar_scrollbar = ttk.Scrollbar(sidebar_container, orient="vertical", command=self.sidebar_canvas.yview)
+self.sidebar_frame = ttk.Frame(self.sidebar_canvas, style='Sidebar.TFrame')
+self.sidebar_window = self.sidebar_canvas.create_window((0, 0), window=self.sidebar_frame, anchor="nw")
+
+# Username generation
+username = f"{first_name.lower()}_{last_name.lower()}_{random.randint(100, 999)}"
+```
+
+**Files Modified:**
+- `university_system/modules/domain/academics/gui/parent_portal_gui.py` (lines 73-132, 6557-6560)
+
+**Impact:**
+- ✓ All sidebar buttons now accessible via scrollbar
+- ✓ Mouse wheel scrolling works on Windows and Linux
+- ✓ Better UX for navigating long menu lists
+- ✓ Parent account creation now works correctly
+- ✓ Generated usernames pass validation
+- ✓ Admins can successfully create parent accounts
+- ✓ Parent Portal fully functional
+
 ## [5.0.71] - 2025-11-16
 
 ### Fixed

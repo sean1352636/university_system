@@ -75,23 +75,60 @@ class ParentPortalGUI:
         # Main container
         main_container = ttk.Frame(self.root)
         main_container.pack(fill=tk.BOTH, expand=True)
-        
-        # Sidebar
-        self.sidebar_frame = ttk.Frame(main_container, style='Sidebar.TFrame', width=300)
-        self.sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
-        self.sidebar_frame.pack_propagate(False)
-        
+
+        # Sidebar container with fixed width
+        sidebar_container = ttk.Frame(main_container, style='Sidebar.TFrame', width=300)
+        sidebar_container.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
+        sidebar_container.pack_propagate(False)
+
+        # Create canvas and scrollbar for sidebar
+        self.sidebar_canvas = tk.Canvas(sidebar_container, bg='#2c3e50', highlightthickness=0, width=280)
+        sidebar_scrollbar = ttk.Scrollbar(sidebar_container, orient="vertical", command=self.sidebar_canvas.yview)
+        self.sidebar_frame = ttk.Frame(self.sidebar_canvas, style='Sidebar.TFrame')
+
+        # Create window in canvas for sidebar frame
+        self.sidebar_window = self.sidebar_canvas.create_window((0, 0), window=self.sidebar_frame, anchor="nw")
+
+        # Configure scrolling
+        self.sidebar_canvas.configure(yscrollcommand=sidebar_scrollbar.set)
+        self.sidebar_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sidebar_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Update scroll region when sidebar content changes
+        self.sidebar_frame.bind(
+            "<Configure>",
+            lambda e: self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
+        )
+
+        # Keep sidebar width in sync with canvas width
+        def _on_sidebar_canvas_configure(event):
+            self.sidebar_canvas.itemconfig(self.sidebar_window, width=event.width)
+        self.sidebar_canvas.bind("<Configure>", _on_sidebar_canvas_configure)
+
+        # Bind mouse wheel scrolling
+        def _on_mousewheel(event):
+            self.sidebar_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        def _on_mousewheel_linux(event):
+            if event.num == 4:
+                self.sidebar_canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                self.sidebar_canvas.yview_scroll(1, "units")
+
+        self.sidebar_canvas.bind("<MouseWheel>", _on_mousewheel)  # Windows
+        self.sidebar_canvas.bind("<Button-4>", _on_mousewheel_linux)  # Linux scroll up
+        self.sidebar_canvas.bind("<Button-5>", _on_mousewheel_linux)  # Linux scroll down
+
         # Content area
         content_container = ttk.Frame(main_container)
         content_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
+
         self.content_frame = ttk.Frame(content_container, style='Content.TFrame')
         self.content_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Status bar
         self.status_bar = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        
+
         self.setup_sidebar()
     
     def setup_sidebar(self):
@@ -6518,7 +6555,8 @@ class ParentPortalGUI:
                 ''', (parent_id, first_name, last_name, email, phone, address))
 
                 # Generate username and password
-                username = f"{first_name.lower()}.{last_name.lower()}.{random.randint(100, 999)}"
+                # Use underscores instead of dots (dots not allowed by username validation)
+                username = f"{first_name.lower()}_{last_name.lower()}_{random.randint(100, 999)}"
                 password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
                 # Close the connection - we'll use central auth now
