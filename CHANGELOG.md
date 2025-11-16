@@ -5,6 +5,81 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.66] - 2025-11-16
+
+### Fixed
+
+**FIX: Facilities Management - Database Schema Mismatches**
+
+Fixed critical database schema inconsistencies causing multiple errors in Facilities Management.
+
+**Problems:**
+
+1. **Edit room crash** - `IndexError: No item with that key` when accessing `room['building_id']`
+2. **Booking creation crash** - `no such column: status` when getting available rooms
+3. **Maintenance requests crash** - `foreign key mismatch - "maintenance_requests" referencing "rooms"`
+
+**Root Causes:**
+
+1. **rooms table schema mismatch:**
+   - Code expected: `building_id`, `floor_number`, `status` columns
+   - Database had: `building` (text), no `floor_number`, no `status`
+   - Missing columns prevented room editing and booking creation
+
+2. **Foreign key constraint error:**
+   - `maintenance_requests.room_id` referenced `rooms.room_id`
+   - But `rooms` table primary key was `id`, not `room_id`
+   - Caused foreign key mismatch errors when creating maintenance requests
+
+**Solution:**
+
+Created and executed database migration script:
+`university_system/infrastructure/database/migrations/fix_facilities_schema.py`
+
+**Migration Steps:**
+
+1. Created new `rooms` table with correct schema:
+   ```sql
+   - id INTEGER PRIMARY KEY
+   - building_id INTEGER (was 'building' TEXT)
+   - room_number TEXT
+   - room_type TEXT
+   - capacity INTEGER
+   - floor_number INTEGER (new column, default 1)
+   - status TEXT (new column, default 'available')
+   - equipment TEXT
+   - notes TEXT
+   - is_active BOOLEAN
+   ```
+
+2. Migrated existing room data:
+   - Converted `building` text codes to `building_id` integers
+   - Set default `floor_number = 1` for all existing rooms
+   - Set default `status = 'available'` for all existing rooms
+
+3. Fixed foreign key constraints:
+   - Updated `maintenance_requests` foreign key
+   - Changed from `FOREIGN KEY (room_id) REFERENCES rooms(room_id)`
+   - To `FOREIGN KEY (room_id) REFERENCES rooms(id)`
+
+**Files Added:**
+- `university_system/infrastructure/database/migrations/fix_facilities_schema.py`
+
+**Database Changes:**
+- Migrated 1 existing room to new schema
+- Fixed maintenance_requests foreign key constraint
+- Preserved all existing data
+
+**Impact:**
+- ✓ Room editing now works correctly
+- ✓ Room booking creation succeeds
+- ✓ Available rooms query works (uses 'status' column)
+- ✓ Maintenance requests can be created without foreign key errors
+- ✓ All facilities management operations functional
+- ✓ Data integrity preserved during migration
+
+**Note:** This migration is idempotent - safe to run multiple times.
+
 ## [5.0.65] - 2025-11-16
 
 ### Fixed
