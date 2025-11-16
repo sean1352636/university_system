@@ -535,14 +535,65 @@ class UniversityShopGUI:
         action_frame = ttk.Frame(dash_frame)
         action_frame.grid(row=1, column=0, columnspan=2, pady=20)
         
-        ttk.Button(action_frame, text="View Customer Analytics", 
-                  command=self.display_customer_analytics).grid(row=0, column=0, padx=5)
+        ttk.Button(action_frame, text="View Customer Analytics",
+                  command=self.show_customer_analytics).grid(row=0, column=0, padx=5)
         ttk.Button(action_frame, text="Generate Reports", 
                   command=self.show_reports).grid(row=0, column=1, padx=5)
         ttk.Button(action_frame, text="Bulk Operations", 
                   command=self.show_bulk_operations).grid(row=0, column=2, padx=5)
         
         self.update_status("Analytics dashboard loaded")
+
+    def show_customer_analytics(self):
+        """Display customer analytics"""
+        try:
+            # Get customer analytics data
+            analytics = get_customer_analytics()
+
+            if not analytics:
+                messagebox.showinfo("Customer Analytics",
+                                  "No customer analytics data available.\n"
+                                  "This feature requires customer transaction history.")
+                return
+
+            # Create analytics window
+            analytics_window = tk.Toplevel(self.root)
+            analytics_window.title("Customer Analytics")
+            analytics_window.geometry("800x600")
+            analytics_window.transient(self.root)
+
+            main_frame = ttk.Frame(analytics_window, padding=20)
+            main_frame.pack(fill='both', expand=True)
+
+            ttk.Label(main_frame, text="Customer Analytics",
+                     font=('Arial', 14, 'bold')).pack(pady=10)
+
+            # Display analytics data
+            from tkinter.scrolledtext import ScrolledText
+            text_widget = ScrolledText(main_frame, height=25, width=90, font=('Courier', 9))
+            text_widget.pack(fill='both', expand=True, pady=10)
+
+            # Format analytics as text
+            analytics_text = "CUSTOMER ANALYTICS REPORT\n"
+            analytics_text += "=" * 80 + "\n\n"
+
+            if isinstance(analytics, dict):
+                for key, value in analytics.items():
+                    analytics_text += f"{key}: {value}\n"
+            else:
+                analytics_text += str(analytics)
+
+            text_widget.insert('1.0', analytics_text)
+            text_widget.config(state='disabled')
+
+            ttk.Button(main_frame, text="Close",
+                      command=analytics_window.destroy).pack(pady=10)
+
+            analytics_window.update_idletasks()
+            analytics_window.grab_set()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load customer analytics:\n{str(e)}")
 
     def show_print_labels_dialog(self):
         """Show dialog for printing product labels"""
@@ -1304,7 +1355,7 @@ class UniversityShopGUI:
 
     def create_new_discount(self):
         """Open dialog to create a new discount"""
-        dialog = DiscountEditDialog(self.main_window, None)
+        dialog = DiscountEditDialog(self.root, None)
         if dialog.result:
             self.load_discounts()
 
@@ -1316,7 +1367,7 @@ class UniversityShopGUI:
             return
 
         discount_id = self.discounts_tree.item(selection[0])['text']
-        dialog = DiscountEditDialog(self.main_window, discount_id)
+        dialog = DiscountEditDialog(self.root, discount_id)
         if dialog.result:
             self.load_discounts()
 

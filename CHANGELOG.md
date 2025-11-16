@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Shop Management GUI - AttributeErrors and Missing Methods:**
+
+1. **Discount Dialog AttributeError** (✅ Fixed)
+   - **Problem**: `AttributeError: 'UniversityShopGUI' object has no attribute 'main_window'` when creating/editing discounts
+   - **Root Cause**: Code referenced `self.main_window` but the actual attribute is `self.root`
+   - **Solution**: Changed `self.main_window` to `self.root` in discount dialog creation
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:1305-1321` - Fixed create_new_discount and edit_selected_discount
+   - **Impact**: Discount creation and editing now works correctly
+
+2. **Missing Customer Analytics Method** (✅ Fixed)
+   - **Problem**: `AttributeError: 'UniversityShopGUI' object has no attribute 'display_customer_analytics'`
+   - **Root Cause**: Analytics dashboard button called non-existent `display_customer_analytics` method
+   - **Solution**:
+     - Renamed button command from `display_customer_analytics` to `show_customer_analytics`
+     - Created new `show_customer_analytics()` method
+     - Method displays analytics in 800x600 window with ScrolledText widget
+     - Handles case when analytics data is unavailable
+     - Uses modal window with proper update_idletasks() sequence
+   - **Files Modified**:
+     - `modules/domain/commerce/gui/shop_management_gui.py:538-539` - Fixed button command
+     - `modules/domain/commerce/gui/shop_management_gui.py:547-596` - Added show_customer_analytics method
+   - **Impact**: Customer analytics button now works correctly
+
 **Shop Management GUI - Update Stock, Reports, and About Window:**
 
 1. **Update Stock Button Not Working** (✅ Fixed)
