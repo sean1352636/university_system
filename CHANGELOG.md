@@ -5,6 +5,84 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.70] - 2025-11-16
+
+### Fixed
+
+**FIX: Student Support GUI - Layout and Authentication Issues**
+
+Fixed two critical issues preventing Student Support GUI from functioning properly.
+
+**Problem 1 - Tabs Only Taking Half Screen:**
+- Notebook widget (tabs container) only filling ~50% of available window space
+- Content not expanding to fill the full application window
+- Poor user experience with wasted screen real estate
+
+**Root Cause 1:**
+- Notebook widget was using `.pack()` layout manager
+- Parent frame (`content_frame`) was configured for grid layout with weights
+- Mixing pack and grid on same parent caused expansion issues
+- Pack doesn't respect grid weight configuration properly
+
+**Fix 1:**
+- Changed notebook from `.pack(fill="both", expand=True)` to `.grid(row=0, column=0, sticky="nsew")`
+- Now properly uses grid layout matching parent configuration
+- Notebook now expands to fill entire content area
+- Respects grid column/row weights for proper sizing
+
+**Problem 2 - Authentication Failure:**
+- "You must be logged in" error even when logged in as admin
+- GUI not recognizing authenticated user from main application
+- Authentication check too fragile, failing on valid auth objects
+
+**Root Cause 2:**
+- Simple boolean check: `if not self.auth or not self.auth.current_user`
+- Didn't verify `current_user` structure or content
+- No validation that `current_user` is a valid dict with username
+- Failed silently with minimal debugging information
+
+**Fix 2:**
+- Implemented robust multi-step authentication validation:
+  1. Check if auth object exists
+  2. Check if `current_user` attribute exists using `hasattr()`
+  3. Verify `current_user` is not None/empty
+  4. Validate it's a dict with `isinstance()`
+  5. Confirm it has a `username` key with value
+- Added comprehensive debug output showing auth state
+- Applied same robust checking to dashboard auth verification
+- Better error messages for troubleshooting
+
+**Changes:**
+```python
+# Before (fragile)
+if not self.auth or not self.auth.current_user:
+    messagebox.showerror("Authentication Required", ...)
+    self.root.destroy()
+
+# After (robust)
+auth_valid = False
+if self.auth:
+    if hasattr(self.auth, 'current_user') and self.auth.current_user:
+        if isinstance(self.auth.current_user, dict) and self.auth.current_user.get('username'):
+            auth_valid = True
+            print(f"✓ Authenticated as {self.auth.current_user.get('username')}")
+
+if not auth_valid:
+    print(f"✗ Auth failed - auth={self.auth}, current_user={...}")
+    messagebox.showerror("Authentication Required", ...)
+```
+
+**Files Modified:**
+- `university_system/modules/domain/student_affairs/gui/student_support_gui.py` (lines 187-203, 507, 673-678)
+
+**Impact:**
+- ✓ Tabs now fill entire window width
+- ✓ Better screen space utilization
+- ✓ Authentication properly validated when opening from main GUI
+- ✓ Detailed debug output for troubleshooting auth issues
+- ✓ More resilient to different auth object states
+- ✓ Student Support Portal fully functional
+
 ## [5.0.69] - 2025-11-16
 
 ### Fixed

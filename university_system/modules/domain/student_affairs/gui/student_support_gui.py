@@ -184,7 +184,18 @@ class StudentSupportGUI:
             from university_system.infrastructure.shared_context import get_auth
             self.auth = get_auth()
 
-        if not self.auth or not self.auth.current_user:
+        # Robust authentication check
+        auth_valid = False
+        if self.auth:
+            # Check if current_user exists and is not None/empty
+            if hasattr(self.auth, 'current_user') and self.auth.current_user:
+                # Additional check: ensure it's a dict with at least username
+                if isinstance(self.auth.current_user, dict) and self.auth.current_user.get('username'):
+                    auth_valid = True
+                    print(f"✓ Student Support GUI: Authenticated as {self.auth.current_user.get('username')} ({self.auth.current_user.get('role', 'user')})")
+
+        if not auth_valid:
+            print(f"✗ Student Support GUI: Authentication failed - auth={self.auth}, current_user={getattr(self.auth, 'current_user', None) if self.auth else None}")
             messagebox.showerror("Authentication Required",
                 "Please log in through the main University System GUI.\n\n"
                 "Run: python run.py --gui")
@@ -504,7 +515,7 @@ class StudentSupportGUI:
 
         # Create notebook for multiple views within the scrollable content
         self.notebook = ttk.Notebook(self.content_frame)
-        self.notebook.pack(fill="both", expand=True, padx=2, pady=2)
+        self.notebook.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
         
         # Initialize with dashboard
         self.show_dashboard()
@@ -655,12 +666,15 @@ class StudentSupportGUI:
 
         canvas.bind("<Configure>", on_canvas_configure)
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
-        
+
         # Dashboard content - authentication already checked in __init__
-        if not self.auth or not self.auth.current_user:
+        # Robust check: ensure auth and current_user are valid
+        if not self.auth or not hasattr(self.auth, 'current_user') or not self.auth.current_user:
+            return
+        if not isinstance(self.auth.current_user, dict) or not self.auth.current_user.get('username'):
             return
         
         # Load fresh data
