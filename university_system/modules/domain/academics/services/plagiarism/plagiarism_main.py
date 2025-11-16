@@ -1,6 +1,7 @@
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager, get_connection, ensure_parent_dir
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, NLTK_DATA_DIR
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 import os
 import re
 import hashlib
@@ -2768,7 +2769,10 @@ def test_plagiarism_checker():
     
     # Create a UserAuth object for testing
     try:
-        auth = UserAuth()
+        # Try to get centralized auth first
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
         # Get first user for testing
         with get_safe_db_connection() as conn:
             cursor = conn.cursor()
@@ -2875,7 +2879,9 @@ def main():
         elif choice == '3':
             try:
                 # Create UserAuth for demo
-                auth = UserAuth()
+                auth = get_auth()
+                if auth is None:
+                    auth = UserAuth()
                 with get_safe_db_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('SELECT username FROM users LIMIT 1')

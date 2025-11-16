@@ -1,6 +1,7 @@
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager, ensure_parent_dir
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, SUBMISSIONS_DIR
 from university_system.infrastructure.auth.user_authentication import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 import os
 import shutil
 from datetime import datetime, timedelta
@@ -3099,8 +3100,11 @@ def display_assignment_menu(auth):
 
 def add_assignment_permissions():
     """Add assignment-related permissions to the database"""
-    from university_system.infrastructure.auth.user_authentication import UserAuth
-    auth = UserAuth()
+    # Try to get centralized auth first
+    auth = get_auth()
+    if auth is None:
+        from university_system.infrastructure.auth.user_authentication import UserAuth
+        auth = UserAuth()
     
     assignment_permissions = [
         ('view_assignments', 'View assignments for enrolled modules'),

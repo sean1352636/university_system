@@ -124,8 +124,7 @@ except ImportError:
     logging.warning("Trip management module not available")
 
 # Configure logging - Fixed the format string and logging configuration
-log_path = os.path.join(os.path.dirname(__file__), '..', 'core', 'logs', 'calendar.log')
-log_path = os.path.abspath(log_path)
+log_path = paths.LOG_DIR / 'calendar.log'
 
 # Ensure the log directory exists
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
@@ -5689,7 +5688,7 @@ class CalendarWebAPI:
         self.app.run(host=self.host, port=self.port, debug=debug)
 
 # Factory function for easy setup
-def create_calendar_manager(db_file: str = 'student_records.db',
+def create_calendar_manager(db_file: str = None,
                           config_overrides: Optional[Dict] = None) -> AcademicCalendarManager:
     """Factory function to create a properly configured calendar manager"""
     
@@ -6778,10 +6777,11 @@ def display_events_list(events):
 def ensure_calendar_permissions():
     """Ensure calendar permissions exist in the main auth system"""
     from university_system.infrastructure.auth.user_authentication import UserAuth
-    
+    from university_system.infrastructure.shared_context import get_auth
+
     calendar_permissions = [
         ('manage_schedules', 'Manage Academic Schedules'),
-        ('view_own_timetable', 'View Own Academic Timetable'), 
+        ('view_own_timetable', 'View Own Academic Timetable'),
         ('manage_academic_calendar', 'Manage Academic Calendar'),
         ('view_academic_calendar', 'View Academic Calendar'),
         ('create_academic_events', 'Create Academic Events'),
@@ -6789,9 +6789,12 @@ def ensure_calendar_permissions():
         ('delete_academic_events', 'Delete Academic Events'),
         ('export_calendar_data', 'Export Calendar Data')
     ]
-    
+
     try:
-        auth = UserAuth()
+        # Try to get centralized auth first
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
         conn = sqlite3.connect(auth.db_path)
         cursor = conn.cursor()
         
