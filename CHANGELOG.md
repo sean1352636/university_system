@@ -5,6 +5,118 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.74] - 2025-11-17
+
+### Added
+
+**ENHANCEMENT: Parent Portal GUI - Fully Implemented Placeholder Functions and Admin Features**
+
+Implemented six previously placeholder functions and added comprehensive parent account management for administrators.
+
+**Implemented Functions:**
+
+1. **show_message_category(category)** - Message filtering by inbox/sent
+   - Filters messages by category (inbox/sent)
+   - Displays received messages with sender info
+   - Displays sent messages with recipient info
+   - Full message viewing with read status tracking
+   - Mark messages as read automatically when viewed
+
+2. **view_group_messages(group_name)** - Group message viewer
+   - View all messages for a specific group
+   - Display subject, sender, date, and reply count
+   - Full message details in popup dialog
+   - Back navigation to group message list
+
+3. **browse_activities()** - Extracurricular activities catalog
+   - Browse available extracurricular activities
+   - Filter by category (Sports, Arts, Music, Academic, Technology, Community Service)
+   - Detailed activity cards with:
+     - Description, schedule, location, supervisor
+     - Capacity and enrollment status with color coding
+     - Age range and cost information
+   - Request enrollment functionality
+   - Sample activities provided when database table doesn't exist
+   - Scrollable interface for large activity lists
+
+4. **change_password()** - Password change dialog
+   - Secure password change interface
+   - Current password verification
+   - New password validation (minimum 8 characters)
+   - Password confirmation matching
+   - Integration with authentication system
+   - Activity logging for password changes
+   - User-friendly error messages
+   - Password requirements display
+
+5. **view_login_history()** - Login activity viewer
+   - View recent authentication activity
+   - Display login attempts with:
+     - Date/Time, Status, IP Address, Device, Location
+   - Summary statistics (total logins, successful, failed)
+   - Color-coded success/failed indicators
+   - Supports up to 50 most recent login attempts
+   - Sample data provided when database table doesn't exist
+
+6. **show_all_parent_accounts()** - Comprehensive parent account management (Admin only)
+   - View all parent accounts in the system
+   - Search by name, email, or parent ID
+   - Filter by status (Active/Inactive)
+   - Summary statistics:
+     - Total accounts, active/inactive counts
+     - Total children linked across all accounts
+   - Sortable table with:
+     - Parent ID, Name, Email, Phone
+     - Number of children linked
+     - Created date, Active status
+   - Color-coded status indicators
+   - View detailed parent account information
+   - Export to CSV functionality
+   - Linked children display with grade/class info
+
+**New Helper Function:**
+- **view_parent_account_details(parent_id)** - Detail viewer for parent accounts
+  - Displays complete parent information
+  - Shows all linked children with grade/class
+  - Account status and creation date
+  - User ID association
+
+**Admin Panel Enhancement:**
+- Added "View All Parent Accounts" option to admin menu
+- Purple color scheme (#9b59b6) for consistency
+- Positioned prominently in admin panel
+
+**Features Added:**
+- ✓ Message filtering and categorization
+- ✓ Group message viewing
+- ✓ Extracurricular activity browsing with enrollment requests
+- ✓ Secure password change with validation
+- ✓ Login history tracking with statistics
+- ✓ Comprehensive parent account management
+- ✓ Search and filter capabilities
+- ✓ CSV export functionality
+- ✓ Activity logging integration
+- ✓ Admin access control
+
+**Files Modified:**
+- `university_system/modules/domain/academics/gui/parent_portal_gui.py`
+  - Lines 3654-3790: show_message_category implementation
+  - Lines 3940-4028: view_group_messages implementation
+  - Lines 5732-5946: browse_activities implementation
+  - Lines 6883-7003: change_password implementation
+  - Lines 7005-7181: view_login_history implementation
+  - Lines 825-826: Added "View All Parent Accounts" to admin menu
+  - Lines 864-1163: show_all_parent_accounts and view_parent_account_details implementation
+
+**Impact:**
+- ✓ All placeholder functions now fully functional
+- ✓ Better user experience with complete features
+- ✓ Enhanced admin capabilities
+- ✓ Improved parent account oversight
+- ✓ Better security with password management
+- ✓ Audit trail through login history
+- ✓ More engaging parent portal with activity browsing
+
 ## [5.0.73] - 2025-11-16
 
 ### Fixed

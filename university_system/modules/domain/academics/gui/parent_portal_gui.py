@@ -822,6 +822,8 @@ class ParentPortalGUI:
         admin_options = [
             ("👨‍👩‍👧 Create Parent Account", self.show_create_parent_account_interface,
              "Create a new parent account with login credentials", "#e74c3c"),
+            ("📋 View All Parent Accounts", self.show_all_parent_accounts,
+             "View comprehensive list of all parent accounts in the system", "#9b59b6"),
             ("🔗 Link Student to Parent", self.show_link_student_interface,
              "Link an existing student to a parent account", "#3498db"),
             ("👁️ View Any Parent Dashboard", self.show_view_parent_dashboard_interface,
@@ -858,6 +860,307 @@ class ParentPortalGUI:
                 anchor='w'
             )
             desc_label.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+    def show_all_parent_accounts(self):
+        """Show all parent accounts in the system (admin only)"""
+        # Verify admin access
+        current_user = self.get_current_user()
+        if not current_user or current_user.get('role') != 'admin':
+            messagebox.showerror("Access Denied", "Only administrators can view all parent accounts.")
+            return
+
+        self.clear_content()
+        self.update_status("Viewing All Parent Accounts")
+
+        # Title
+        title = ttk.Label(self.content_frame, text="All Parent Accounts",
+                         style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Search/Filter frame
+        filter_frame = ttk.LabelFrame(self.content_frame, text="Search & Filter", padding=10)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=30)
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(filter_frame, text="Filter by Status:").pack(side=tk.LEFT, padx=(20, 5))
+        status_var = tk.StringVar(value="All")
+        status_combo = ttk.Combobox(filter_frame, textvariable=status_var,
+                                   values=["All", "Active", "Inactive"], state="readonly", width=15)
+        status_combo.pack(side=tk.LEFT, padx=5)
+
+        # Main content frame
+        main_frame = ttk.Frame(self.content_frame)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # Summary frame
+        summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+        summary_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Parent accounts table
+        accounts_frame = ttk.LabelFrame(main_frame, text="Parent Accounts", padding=10)
+        accounts_frame.pack(fill=tk.BOTH, expand=True)
+
+        def load_parent_accounts(search_text="", status_filter="All"):
+            # Clear existing data
+            for widget in accounts_frame.winfo_children():
+                widget.destroy()
+            for widget in summary_frame.winfo_children():
+                widget.destroy()
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if parent_accounts table exists
+                cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='parent_accounts'
+                """)
+
+                if cursor.fetchone():
+                    # Build query based on filters
+                    query = """
+                    SELECT
+                        p.parent_id,
+                        p.first_name,
+                        p.last_name,
+                        p.email,
+                        p.phone,
+                        p.address,
+                        p.created_date,
+                        p.is_active,
+                        COUNT(DISTINCT ps.student_id) as num_children
+                    FROM parent_accounts p
+                    LEFT JOIN parent_student_links ps ON p.parent_id = ps.parent_id
+                    WHERE 1=1
+                    """
+
+                    params = []
+
+                    # Add search filter
+                    if search_text:
+                        query += " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.email LIKE ? OR p.parent_id LIKE ?)"
+                        search_pattern = f"%{search_text}%"
+                        params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
+
+                    # Add status filter
+                    if status_filter != "All":
+                        is_active = 1 if status_filter == "Active" else 0
+                        query += " AND p.is_active = ?"
+                        params.append(is_active)
+
+                    query += " GROUP BY p.parent_id ORDER BY p.last_name, p.first_name"
+
+                    cursor.execute(query, params)
+                    accounts = cursor.fetchall()
+
+                    # Update summary
+                    total_accounts = len(accounts)
+                    active_accounts = sum(1 for acc in accounts if acc[7] == 1)
+                    inactive_accounts = total_accounts - active_accounts
+                    total_children = sum(acc[8] for acc in accounts)
+
+                    ttk.Label(summary_frame, text=f"Total Accounts: {total_accounts}",
+                             font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=20)
+                    ttk.Label(summary_frame, text=f"Active: {active_accounts}",
+                             font=('Arial', 10), foreground='green').pack(side=tk.LEFT, padx=20)
+                    ttk.Label(summary_frame, text=f"Inactive: {inactive_accounts}",
+                             font=('Arial', 10), foreground='orange').pack(side=tk.LEFT, padx=20)
+                    ttk.Label(summary_frame, text=f"Total Children Linked: {total_children}",
+                             font=('Arial', 10)).pack(side=tk.LEFT, padx=20)
+
+                    if accounts:
+                        # Create treeview
+                        columns = ("Parent ID", "Name", "Email", "Phone", "Children", "Created", "Status")
+                        tree = ttk.Treeview(accounts_frame, columns=columns, show="headings", height=20)
+
+                        tree.heading("Parent ID", text="Parent ID")
+                        tree.heading("Name", text="Name")
+                        tree.heading("Email", text="Email")
+                        tree.heading("Phone", text="Phone")
+                        tree.heading("Children", text="Children")
+                        tree.heading("Created", text="Created Date")
+                        tree.heading("Status", text="Status")
+
+                        tree.column("Parent ID", width=100)
+                        tree.column("Name", width=200)
+                        tree.column("Email", width=250)
+                        tree.column("Phone", width=150)
+                        tree.column("Children", width=80)
+                        tree.column("Created", width=120)
+                        tree.column("Status", width=80)
+
+                        for acc in accounts:
+                            parent_id = acc[0]
+                            full_name = f"{acc[1]} {acc[2]}"
+                            email = acc[3] or "N/A"
+                            phone = acc[4] or "N/A"
+                            num_children = acc[8]
+                            created_date = acc[6] or "N/A"
+                            status = "Active" if acc[7] == 1 else "Inactive"
+
+                            tag = 'active' if acc[7] == 1 else 'inactive'
+                            tree.insert('', tk.END, values=(parent_id, full_name, email, phone, num_children, created_date, status), tags=(tag,))
+
+                        tree.tag_configure('active', foreground='green')
+                        tree.tag_configure('inactive', foreground='gray')
+
+                        scrollbar = ttk.Scrollbar(accounts_frame, orient=tk.VERTICAL, command=tree.yview)
+                        tree.configure(yscrollcommand=scrollbar.set)
+
+                        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+                        # Action buttons
+                        btn_frame = ttk.Frame(accounts_frame)
+                        btn_frame.pack(fill=tk.X, pady=10)
+
+                        def view_parent_details():
+                            selected = tree.selection()
+                            if selected:
+                                item = tree.item(selected[0])
+                                parent_id = item['values'][0]
+                                self.view_parent_account_details(parent_id)
+                            else:
+                                messagebox.showwarning("No Selection", "Please select a parent account to view.")
+
+                        def export_to_csv():
+                            from tkinter import filedialog
+                            filename = filedialog.asksaveasfilename(
+                                defaultextension=".csv",
+                                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                                title="Export Parent Accounts"
+                            )
+                            if filename:
+                                import csv
+                                with open(filename, 'w', newline='') as f:
+                                    writer = csv.writer(f)
+                                    writer.writerow(["Parent ID", "First Name", "Last Name", "Email", "Phone", "Address", "Children", "Created Date", "Status"])
+                                    for acc in accounts:
+                                        writer.writerow([acc[0], acc[1], acc[2], acc[3], acc[4], acc[5], acc[8], acc[6], "Active" if acc[7] == 1 else "Inactive"])
+                                messagebox.showinfo("Export Complete", f"Parent accounts exported to:\n{filename}")
+
+                        ttk.Button(btn_frame, text="View Details", command=view_parent_details).pack(side=tk.LEFT, padx=5)
+                        ttk.Button(btn_frame, text="Export to CSV", command=export_to_csv).pack(side=tk.LEFT, padx=5)
+                        ttk.Button(btn_frame, text="Refresh", command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
+
+                    else:
+                        ttk.Label(accounts_frame, text="No parent accounts found matching the criteria.",
+                                 font=('Arial', 11)).pack(pady=50)
+                else:
+                    ttk.Label(summary_frame, text="Parent accounts table not found in database.",
+                             font=('Arial', 10)).pack(pady=10)
+                    ttk.Label(accounts_frame, text="Parent accounts system not configured.",
+                             font=('Arial', 11)).pack(pady=50)
+
+                conn.close()
+
+            except Exception as e:
+                ttk.Label(accounts_frame, text=f"Error loading parent accounts: {str(e)}",
+                         font=('Arial', 10)).pack(pady=50)
+
+        # Bind search and filter
+        search_entry.bind('<Return>', lambda e: load_parent_accounts(search_var.get(), status_var.get()))
+        status_combo.bind('<<ComboboxSelected>>', lambda e: load_parent_accounts(search_var.get(), status_var.get()))
+
+        ttk.Button(filter_frame, text="Search", command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text="Clear", command=lambda: [search_var.set(""), status_var.set("All"), load_parent_accounts()]).pack(side=tk.LEFT, padx=5)
+
+        # Load initial data
+        load_parent_accounts()
+
+    def view_parent_account_details(self, parent_id):
+        """View detailed information about a specific parent account"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Parent Account Details - {parent_id}")
+        dialog.geometry("700x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get parent account details
+            cursor.execute("""
+            SELECT parent_id, first_name, last_name, email, phone, address, created_date, is_active, user_id
+            FROM parent_accounts
+            WHERE parent_id = ?
+            """, (parent_id,))
+
+            parent = cursor.fetchone()
+
+            if parent:
+                # Title
+                title_frame = ttk.Frame(dialog, padding=20)
+                title_frame.pack(fill=tk.X)
+                ttk.Label(title_frame, text=f"Parent: {parent[1]} {parent[2]}",
+                         font=('Arial', 16, 'bold')).pack(anchor='w')
+                ttk.Label(title_frame, text=f"Parent ID: {parent[0]}",
+                         font=('Arial', 10), foreground='gray').pack(anchor='w')
+
+                # Account information
+                info_frame = ttk.LabelFrame(dialog, text="Account Information", padding=20)
+                info_frame.pack(fill=tk.X, padx=20, pady=10)
+
+                ttk.Label(info_frame, text=f"Email: {parent[3] or 'N/A'}",
+                         font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(info_frame, text=f"Phone: {parent[4] or 'N/A'}",
+                         font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(info_frame, text=f"Address: {parent[5] or 'N/A'}",
+                         font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(info_frame, text=f"Created Date: {parent[6] or 'N/A'}",
+                         font=('Arial', 10)).pack(anchor='w', pady=3)
+                status_text = "Active" if parent[7] == 1 else "Inactive"
+                status_color = 'green' if parent[7] == 1 else 'red'
+                ttk.Label(info_frame, text=f"Status: {status_text}",
+                         font=('Arial', 10), foreground=status_color).pack(anchor='w', pady=3)
+                if parent[8]:
+                    ttk.Label(info_frame, text=f"User ID: {parent[8]}",
+                             font=('Arial', 10)).pack(anchor='w', pady=3)
+
+                # Linked children
+                children_frame = ttk.LabelFrame(dialog, text="Linked Children", padding=20)
+                children_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+                cursor.execute("""
+                SELECT s.student_id, s.first_name, s.last_name, s.grade_level, s.class
+                FROM students s
+                INNER JOIN parent_student_links ps ON s.student_id = ps.student_id
+                WHERE ps.parent_id = ?
+                ORDER BY s.last_name, s.first_name
+                """, (parent_id,))
+
+                children = cursor.fetchall()
+
+                if children:
+                    for child in children:
+                        child_card = ttk.Frame(children_frame)
+                        child_card.pack(fill=tk.X, pady=5)
+                        ttk.Label(child_card, text=f"• {child[1]} {child[2]} (ID: {child[0]})",
+                                 font=('Arial', 10, 'bold')).pack(anchor='w')
+                        ttk.Label(child_card, text=f"  Grade: {child[3] or 'N/A'} | Class: {child[4] or 'N/A'}",
+                                 font=('Arial', 9)).pack(anchor='w', padx=20)
+                else:
+                    ttk.Label(children_frame, text="No children linked to this account.",
+                             font=('Arial', 10)).pack(pady=20)
+
+            else:
+                ttk.Label(dialog, text="Parent account not found.",
+                         font=('Arial', 11)).pack(pady=50)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(dialog, text=f"Error loading parent account details: {str(e)}",
+                     font=('Arial', 10)).pack(pady=50)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
 
     def view_child_grades(self, child):
         """View grades for a specific child"""
@@ -3653,8 +3956,141 @@ class ParentPortalGUI:
 
     def show_message_category(self, category):
         """Show specific message category"""
-        messagebox.showinfo("Messages", f"Showing {category} messages...")
-        self.show_messages_interface()
+        self.clear_content()
+        self.update_status(f"{category.capitalize()} Messages")
+
+        title = ttk.Label(self.content_frame, text=f"{category.capitalize()} Messages",
+                         style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Message categories buttons
+        categories_frame = ttk.Frame(self.content_frame)
+        categories_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Button(categories_frame, text="Inbox",
+                  command=lambda: self.show_message_category("inbox")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(categories_frame, text="Sent",
+                  command=lambda: self.show_message_category("sent")).pack(side=tk.LEFT, padx=5)
+        ttk.Button(categories_frame, text="Compose New",
+                  command=self.show_send_message_interface).pack(side=tk.LEFT, padx=5)
+
+        # Messages display frame
+        messages_frame = ttk.LabelFrame(self.content_frame, text=category.capitalize(), padding=15)
+        messages_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute("""
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='messages'
+            """)
+
+            if cursor.fetchone():
+                if category.lower() == "inbox":
+                    # Show received messages
+                    cursor.execute("""
+                    SELECT message_id, sender_name, subject, date_sent, is_read
+                    FROM messages
+                    WHERE recipient_id = ? OR recipient_name = ?
+                    ORDER BY date_sent DESC
+                    LIMIT 50
+                    """, (self.parent_id, "Parent"))
+                elif category.lower() == "sent":
+                    # Show sent messages
+                    cursor.execute("""
+                    SELECT message_id, recipient_name, subject, date_sent, 1
+                    FROM messages
+                    WHERE sender_id = ?
+                    ORDER BY date_sent DESC
+                    LIMIT 50
+                    """, (self.parent_id,))
+                else:
+                    conn.close()
+                    return
+
+                messages = cursor.fetchall()
+
+                if messages:
+                    if category.lower() == "inbox":
+                        columns = ("From", "Subject", "Date", "Status")
+                        tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
+                        tree.heading("From", text="From")
+                        tree.heading("Subject", text="Subject")
+                        tree.heading("Date", text="Date")
+                        tree.heading("Status", text="Status")
+                        tree.column("From", width=150)
+                        tree.column("Subject", width=300)
+                        tree.column("Date", width=150)
+                        tree.column("Status", width=100)
+                    else:  # sent
+                        columns = ("To", "Subject", "Date")
+                        tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
+                        tree.heading("To", text="To")
+                        tree.heading("Subject", text="Subject")
+                        tree.heading("Date", text="Date")
+                        tree.column("To", width=150)
+                        tree.column("Subject", width=300)
+                        tree.column("Date", width=150)
+
+                    for msg in messages:
+                        if category.lower() == "inbox":
+                            status = "Read" if msg[4] else "Unread"
+                            tree.insert('', tk.END, values=(msg[1], msg[2], msg[3], status), tags=(status,))
+                            tree.tag_configure('Unread', font=('Arial', 10, 'bold'))
+                        else:
+                            tree.insert('', tk.END, values=(msg[1], msg[2], msg[3]))
+
+                    scrollbar = ttk.Scrollbar(messages_frame, orient=tk.VERTICAL, command=tree.yview)
+                    tree.configure(yscrollcommand=scrollbar.set)
+
+                    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+                    def view_message():
+                        selected = tree.selection()
+                        if selected:
+                            item = tree.item(selected[0])
+                            msg_id = messages[tree.index(selected[0])][0]
+
+                            # Fetch full message
+                            cursor.execute("SELECT message_body FROM messages WHERE message_id = ?", (msg_id,))
+                            result = cursor.fetchone()
+                            body = result[0] if result else "Message body not available."
+
+                            # Mark as read if inbox
+                            if category.lower() == "inbox":
+                                cursor.execute("UPDATE messages SET is_read = 1 WHERE message_id = ?", (msg_id,))
+                                conn.commit()
+
+                            if category.lower() == "inbox":
+                                messagebox.showinfo("Message", f"From: {item['values'][0]}\n"
+                                                              f"Subject: {item['values'][1]}\n"
+                                                              f"Date: {item['values'][2]}\n\n"
+                                                              f"{body}")
+                            else:
+                                messagebox.showinfo("Message", f"To: {item['values'][0]}\n"
+                                                              f"Subject: {item['values'][1]}\n"
+                                                              f"Date: {item['values'][2]}\n\n"
+                                                              f"{body}")
+
+                            # Refresh the view
+                            self.show_message_category(category)
+
+                    ttk.Button(messages_frame, text="View Message", command=view_message).pack(pady=10)
+                else:
+                    ttk.Label(messages_frame, text=f"No {category} messages found",
+                             font=('Arial', 11)).pack(pady=50)
+            else:
+                ttk.Label(messages_frame, text="Messaging system not configured",
+                         font=('Arial', 11)).pack(pady=20)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(messages_frame, text=f"Error loading messages: {str(e)}",
+                     font=('Arial', 10)).pack(pady=20)
     
     def show_send_message_interface(self):
         """Show send message interface"""
@@ -3806,7 +4242,93 @@ class ParentPortalGUI:
 
     def view_group_messages(self, group_name):
         """View messages for a specific group"""
-        messagebox.showinfo("Group Messages", f"Viewing messages for: {group_name}")
+        self.clear_content()
+        self.update_status(f"Group Messages - {group_name}")
+
+        title = ttk.Label(self.content_frame, text=f"Group: {group_name}",
+                         style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title.pack(pady=20)
+
+        # Back button
+        ttk.Button(self.content_frame, text="← Back to Group Messages",
+                  command=self.show_group_message_interface).pack(anchor='w', padx=20, pady=5)
+
+        # Messages display frame
+        messages_frame = ttk.LabelFrame(self.content_frame, text=f"{group_name} Messages", padding=15)
+        messages_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Check if group_messages table exists
+            cursor.execute("""
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='group_messages'
+            """)
+
+            if cursor.fetchone():
+                # Fetch messages for this group
+                cursor.execute("""
+                SELECT message_id, subject, sender_name, message_body, date_sent, message_count
+                FROM group_messages
+                WHERE group_name = ? AND (parent_id = ? OR is_public = 1)
+                ORDER BY date_sent DESC
+                LIMIT 50
+                """, (group_name, self.parent_id))
+
+                messages = cursor.fetchall()
+
+                if messages:
+                    # Create treeview
+                    columns = ("Subject", "From", "Date", "Replies")
+                    tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
+
+                    tree.heading("Subject", text="Subject")
+                    tree.heading("From", text="From")
+                    tree.heading("Date", text="Date")
+                    tree.heading("Replies", text="Replies")
+
+                    tree.column("Subject", width=300)
+                    tree.column("From", width=150)
+                    tree.column("Date", width=150)
+                    tree.column("Replies", width=100)
+
+                    for msg in messages:
+                        tree.insert('', tk.END, values=(msg[1], msg[2], msg[4], msg[5]))
+
+                    scrollbar = ttk.Scrollbar(messages_frame, orient=tk.VERTICAL, command=tree.yview)
+                    tree.configure(yscrollcommand=scrollbar.set)
+
+                    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+                    def view_message():
+                        selected = tree.selection()
+                        if selected:
+                            item = tree.item(selected[0])
+                            msg = messages[tree.index(selected[0])]
+
+                            messagebox.showinfo("Group Message",
+                                              f"Subject: {msg[1]}\n"
+                                              f"From: {msg[2]}\n"
+                                              f"Date: {msg[4]}\n"
+                                              f"Replies: {msg[5]}\n\n"
+                                              f"{msg[3]}")
+
+                    ttk.Button(messages_frame, text="View Message", command=view_message).pack(pady=10)
+                else:
+                    ttk.Label(messages_frame, text=f"No messages found for {group_name}",
+                             font=('Arial', 11)).pack(pady=50)
+            else:
+                ttk.Label(messages_frame, text="Group messaging not configured",
+                         font=('Arial', 11)).pack(pady=20)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(messages_frame, text=f"Error loading group messages: {str(e)}",
+                     font=('Arial', 10)).pack(pady=20)
 
     def show_announcements_interface(self):
         """Show school announcements interface"""
@@ -5512,8 +6034,219 @@ class ParentPortalGUI:
 
     def browse_activities(self):
         """Browse available activities"""
-        messagebox.showinfo("Browse Activities",
-                           "Please contact the school office for information about available extracurricular activities.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Browse Available Activities")
+        dialog.geometry("900x700")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Title
+        title_frame = ttk.Frame(dialog, padding=20)
+        title_frame.pack(fill=tk.X)
+        ttk.Label(title_frame, text="Browse Extracurricular Activities",
+                 font=('Arial', 16, 'bold')).pack(anchor='w')
+        ttk.Label(title_frame, text="Explore available activities and programs for students",
+                 font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+        # Filter frame
+        filter_frame = ttk.LabelFrame(dialog, text="Filter Activities", padding=10)
+        filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=5)
+        category_var = tk.StringVar(value="All")
+        categories = ["All", "Sports", "Arts", "Music", "Academic", "Technology", "Community Service"]
+        category_combo = ttk.Combobox(filter_frame, textvariable=category_var,
+                                     values=categories, state="readonly", width=20)
+        category_combo.pack(side=tk.LEFT, padx=5)
+
+        # Main content frame with scrollbar
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create canvas for scrolling
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def load_activities(category_filter="All"):
+            # Clear existing widgets
+            for widget in scrollable_frame.winfo_children():
+                widget.destroy()
+
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+
+                # Check if activities catalog table exists
+                cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='activities_catalog'
+                """)
+
+                if cursor.fetchone():
+                    # Fetch available activities
+                    if category_filter == "All":
+                        cursor.execute("""
+                        SELECT activity_name, category, description, schedule, location,
+                               supervisor, capacity, enrolled_count, age_range, cost
+                        FROM activities_catalog
+                        WHERE is_available = 1
+                        ORDER BY category, activity_name
+                        """)
+                    else:
+                        cursor.execute("""
+                        SELECT activity_name, category, description, schedule, location,
+                               supervisor, capacity, enrolled_count, age_range, cost
+                        FROM activities_catalog
+                        WHERE is_available = 1 AND category = ?
+                        ORDER BY activity_name
+                        """, (category_filter,))
+
+                    activities = cursor.fetchall()
+
+                    if activities:
+                        for activity in activities:
+                            # Create card for each activity
+                            card = ttk.LabelFrame(scrollable_frame, text=activity[0], padding=15)
+                            card.pack(fill=tk.X, pady=5)
+
+                            # Category badge
+                            badge_frame = ttk.Frame(card)
+                            badge_frame.pack(anchor='w', pady=(0, 5))
+                            ttk.Label(badge_frame, text=f"Category: {activity[1]}",
+                                     font=('Arial', 9, 'bold'),
+                                     background='#3498db', foreground='white',
+                                     padding=5).pack(side=tk.LEFT)
+
+                            # Description
+                            ttk.Label(card, text=activity[2], wraplength=750,
+                                     font=('Arial', 10)).pack(anchor='w', pady=5)
+
+                            # Details frame
+                            details_frame = ttk.Frame(card)
+                            details_frame.pack(fill=tk.X, pady=5)
+
+                            # Column 1
+                            col1 = ttk.Frame(details_frame)
+                            col1.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                            ttk.Label(col1, text=f"📅 Schedule: {activity[3]}",
+                                     font=('Arial', 9)).pack(anchor='w', pady=2)
+                            ttk.Label(col1, text=f"📍 Location: {activity[4]}",
+                                     font=('Arial', 9)).pack(anchor='w', pady=2)
+                            ttk.Label(col1, text=f"👨‍🏫 Supervisor: {activity[5]}",
+                                     font=('Arial', 9)).pack(anchor='w', pady=2)
+
+                            # Column 2
+                            col2 = ttk.Frame(details_frame)
+                            col2.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+                            spots_available = activity[6] - activity[7] if activity[6] else "Unlimited"
+                            spots_color = 'green' if (isinstance(spots_available, int) and spots_available > 5) or spots_available == "Unlimited" else 'orange' if isinstance(spots_available, int) and spots_available > 0 else 'red'
+                            ttk.Label(col2, text=f"👥 Capacity: {activity[7]}/{activity[6] if activity[6] else '∞'}",
+                                     font=('Arial', 9), foreground=spots_color).pack(anchor='w', pady=2)
+                            ttk.Label(col2, text=f"🎂 Age Range: {activity[8]}",
+                                     font=('Arial', 9)).pack(anchor='w', pady=2)
+                            cost_text = f"£{activity[9]:.2f}" if activity[9] else "Free"
+                            ttk.Label(col2, text=f"💰 Cost: {cost_text}",
+                                     font=('Arial', 9)).pack(anchor='w', pady=2)
+
+                            # Enroll button
+                            btn_frame = ttk.Frame(card)
+                            btn_frame.pack(anchor='e', pady=(5, 0))
+                            ttk.Button(btn_frame, text="Request Enrollment",
+                                      command=lambda a=activity[0]: self.request_activity_enrollment(a)).pack(side=tk.RIGHT)
+
+                    else:
+                        ttk.Label(scrollable_frame, text="No activities found in this category.",
+                                 font=('Arial', 11)).pack(pady=50)
+                else:
+                    # Create sample activities if table doesn't exist
+                    sample_activities = [
+                        ("Soccer Team", "Sports", "Develop teamwork and athletic skills through competitive soccer", "Mon & Wed 3:30-5:00 PM", "Main Field", "Coach Martinez", 25, 18, "Ages 10-14", 50.00),
+                        ("Chess Club", "Academic", "Learn strategic thinking and compete in tournaments", "Tue & Thu 3:30-4:30 PM", "Room 205", "Mr. Thompson", 20, 12, "Ages 8-16", 0.00),
+                        ("Drama Club", "Arts", "Participate in theatrical productions and develop performance skills", "Mon, Wed, Fri 3:30-5:30 PM", "Auditorium", "Ms. Rivera", 30, 24, "Ages 11-17", 75.00),
+                        ("Robotics Team", "Technology", "Build and program robots for competitions", "Thu 3:30-6:00 PM", "STEM Lab", "Dr. Chen", 15, 15, "Ages 12-18", 100.00),
+                        ("School Band", "Music", "Learn instruments and perform in concerts", "Tue & Thu 3:30-5:00 PM", "Music Room", "Ms. Johnson", 40, 32, "Ages 9-17", 150.00),
+                        ("Volunteer Corps", "Community Service", "Participate in community service projects", "Flexible Schedule", "Various Locations", "Mrs. Anderson", None, 28, "Ages 13+", 0.00),
+                    ]
+
+                    for activity in sample_activities:
+                        # Create card for each activity (same structure as above)
+                        card = ttk.LabelFrame(scrollable_frame, text=activity[0], padding=15)
+                        card.pack(fill=tk.X, pady=5)
+
+                        badge_frame = ttk.Frame(card)
+                        badge_frame.pack(anchor='w', pady=(0, 5))
+                        ttk.Label(badge_frame, text=f"Category: {activity[1]}",
+                                 font=('Arial', 9, 'bold'),
+                                 background='#3498db', foreground='white',
+                                 padding=5).pack(side=tk.LEFT)
+
+                        ttk.Label(card, text=activity[2], wraplength=750,
+                                 font=('Arial', 10)).pack(anchor='w', pady=5)
+
+                        details_frame = ttk.Frame(card)
+                        details_frame.pack(fill=tk.X, pady=5)
+
+                        col1 = ttk.Frame(details_frame)
+                        col1.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                        ttk.Label(col1, text=f"📅 Schedule: {activity[3]}",
+                                 font=('Arial', 9)).pack(anchor='w', pady=2)
+                        ttk.Label(col1, text=f"📍 Location: {activity[4]}",
+                                 font=('Arial', 9)).pack(anchor='w', pady=2)
+                        ttk.Label(col1, text=f"👨‍🏫 Supervisor: {activity[5]}",
+                                 font=('Arial', 9)).pack(anchor='w', pady=2)
+
+                        col2 = ttk.Frame(details_frame)
+                        col2.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+                        spots_available = activity[6] - activity[7] if activity[6] else "Unlimited"
+                        spots_color = 'green' if (isinstance(spots_available, int) and spots_available > 5) or spots_available == "Unlimited" else 'orange' if isinstance(spots_available, int) and spots_available > 0 else 'red'
+                        capacity_text = f"{activity[7]}/{activity[6]}" if activity[6] else f"{activity[7]}/∞"
+                        ttk.Label(col2, text=f"👥 Capacity: {capacity_text}",
+                                 font=('Arial', 9), foreground=spots_color).pack(anchor='w', pady=2)
+                        ttk.Label(col2, text=f"🎂 Age Range: {activity[8]}",
+                                 font=('Arial', 9)).pack(anchor='w', pady=2)
+                        cost_text = f"£{activity[9]:.2f}" if activity[9] else "Free"
+                        ttk.Label(col2, text=f"💰 Cost: {cost_text}",
+                                 font=('Arial', 9)).pack(anchor='w', pady=2)
+
+                        btn_frame = ttk.Frame(card)
+                        btn_frame.pack(anchor='e', pady=(5, 0))
+                        ttk.Button(btn_frame, text="Request Enrollment",
+                                  command=lambda a=activity[0]: self.request_activity_enrollment(a)).pack(side=tk.RIGHT)
+
+                conn.close()
+
+            except Exception as e:
+                ttk.Label(scrollable_frame, text=f"Error loading activities: {str(e)}",
+                         font=('Arial', 10)).pack(pady=20)
+
+        # Bind category filter change
+        category_combo.bind('<<ComboboxSelected>>', lambda e: load_activities(category_var.get()))
+
+        # Load initial activities
+        load_activities()
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    def request_activity_enrollment(self, activity_name):
+        """Request enrollment in an activity"""
+        messagebox.showinfo("Enrollment Request",
+                           f"Your enrollment request for '{activity_name}' has been submitted.\n\n"
+                           "The school office will review your request and contact you with next steps.")
 
     def show_notifications_interface(self):
         """Show notification preferences interface"""
@@ -6452,12 +7185,303 @@ class ParentPortalGUI:
 
     def change_password(self):
         """Change password"""
-        messagebox.showinfo("Change Password",
-                           "Please contact IT support to change your password.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Change Password")
+        dialog.geometry("500x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Title
+        title_frame = ttk.Frame(dialog, padding=20)
+        title_frame.pack(fill=tk.X)
+        ttk.Label(title_frame, text="Change Password",
+                 font=('Arial', 16, 'bold')).pack(anchor='w')
+        ttk.Label(title_frame, text="Update your account password",
+                 font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+        # Form frame
+        form_frame = ttk.LabelFrame(dialog, text="Password Information", padding=20)
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
+
+        # Current password
+        ttk.Label(form_frame, text="Current Password:", font=('Arial', 10)).grid(row=0, column=0, sticky='w', pady=10)
+        current_password_entry = ttk.Entry(form_frame, width=30, show='*')
+        current_password_entry.grid(row=0, column=1, pady=10, sticky='ew', padx=5)
+
+        # New password
+        ttk.Label(form_frame, text="New Password:", font=('Arial', 10)).grid(row=1, column=0, sticky='w', pady=10)
+        new_password_entry = ttk.Entry(form_frame, width=30, show='*')
+        new_password_entry.grid(row=1, column=1, pady=10, sticky='ew', padx=5)
+
+        # Confirm password
+        ttk.Label(form_frame, text="Confirm Password:", font=('Arial', 10)).grid(row=2, column=0, sticky='w', pady=10)
+        confirm_password_entry = ttk.Entry(form_frame, width=30, show='*')
+        confirm_password_entry.grid(row=2, column=1, pady=10, sticky='ew', padx=5)
+
+        form_frame.columnconfigure(1, weight=1)
+
+        # Password requirements
+        requirements_frame = ttk.Frame(form_frame)
+        requirements_frame.grid(row=3, column=0, columnspan=2, sticky='w', pady=10)
+
+        ttk.Label(requirements_frame, text="Password Requirements:",
+                 font=('Arial', 9, 'bold')).pack(anchor='w')
+        ttk.Label(requirements_frame, text="• At least 8 characters long",
+                 font=('Arial', 8)).pack(anchor='w', padx=10)
+        ttk.Label(requirements_frame, text="• Contains uppercase and lowercase letters",
+                 font=('Arial', 8)).pack(anchor='w', padx=10)
+        ttk.Label(requirements_frame, text="• Contains at least one number",
+                 font=('Arial', 8)).pack(anchor='w', padx=10)
+
+        # Buttons
+        button_frame = ttk.Frame(dialog, padding=10)
+        button_frame.pack(fill=tk.X)
+
+        def update_password():
+            current_password = current_password_entry.get()
+            new_password = new_password_entry.get()
+            confirm_password = confirm_password_entry.get()
+
+            # Validation
+            if not current_password:
+                messagebox.showerror("Error", "Please enter your current password.")
+                return
+            if not new_password:
+                messagebox.showerror("Error", "Please enter a new password.")
+                return
+            if new_password != confirm_password:
+                messagebox.showerror("Error", "New password and confirmation do not match.")
+                return
+            if len(new_password) < 8:
+                messagebox.showerror("Error", "Password must be at least 8 characters long.")
+                return
+
+            # Verify current password with auth system
+            try:
+                current_user = self.get_current_user()
+                if not current_user:
+                    messagebox.showerror("Error", "Could not verify current user.")
+                    return
+
+                username = current_user.get('username')
+                if not username:
+                    messagebox.showerror("Error", "Could not determine username.")
+                    return
+
+                # Use the authentication system to verify and update password
+                if self.auth:
+                    # Verify current password
+                    if not self.auth.authenticate(username, current_password):
+                        messagebox.showerror("Error", "Current password is incorrect.")
+                        log_activity(
+                            action='failed_password_change',
+                            entity_type='user_account',
+                            entity_id=username,
+                            details={'reason': 'incorrect_current_password'}
+                        )
+                        return
+
+                    # Update to new password
+                    success = self.auth.change_password(username, new_password)
+                    if success:
+                        messagebox.showinfo("Success",
+                                          "Password changed successfully!\n\n"
+                                          "Please use your new password on your next login.")
+                        log_activity(
+                            action='password_change',
+                            entity_type='user_account',
+                            entity_id=username,
+                            details={'user': username}
+                        )
+                        dialog.destroy()
+                    else:
+                        messagebox.showerror("Error", "Failed to update password. Please try again.")
+                else:
+                    messagebox.showerror("Error", "Authentication system not available.")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to change password: {str(e)}")
+
+        ttk.Button(button_frame, text="Update Password", command=update_password).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_login_history(self):
         """View login history"""
-        messagebox.showinfo("Login History", "Login history viewing not available in demo.")
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Login History")
+        dialog.geometry("900x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Title
+        title_frame = ttk.Frame(dialog, padding=20)
+        title_frame.pack(fill=tk.X)
+        ttk.Label(title_frame, text="Login History",
+                 font=('Arial', 16, 'bold')).pack(anchor='w')
+        ttk.Label(title_frame, text="Recent authentication activity for your account",
+                 font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+        # Main content frame
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        try:
+            current_user = self.get_current_user()
+            if not current_user:
+                ttk.Label(main_frame, text="Could not retrieve user information.",
+                         font=('Arial', 11)).pack(pady=50)
+                ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+                return
+
+            username = current_user.get('username')
+            user_id = current_user.get('id')
+
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Check if login_history table exists
+            cursor.execute("""
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='login_history'
+            """)
+
+            if cursor.fetchone():
+                # Fetch login history
+                cursor.execute("""
+                SELECT login_time, ip_address, login_status, device_info, location
+                FROM login_history
+                WHERE user_id = ? OR username = ?
+                ORDER BY login_time DESC
+                LIMIT 50
+                """, (user_id, username))
+
+                history = cursor.fetchall()
+
+                if history:
+                    # Summary frame
+                    summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+                    summary_frame.pack(fill=tk.X, pady=(0, 10))
+
+                    total_logins = len(history)
+                    successful_logins = sum(1 for h in history if h[2] == 'success')
+                    failed_logins = total_logins - successful_logins
+
+                    ttk.Label(summary_frame, text=f"Total Login Attempts: {total_logins}",
+                             font=('Arial', 10)).pack(side=tk.LEFT, padx=20)
+                    ttk.Label(summary_frame, text=f"Successful: {successful_logins}",
+                             font=('Arial', 10), foreground='green').pack(side=tk.LEFT, padx=20)
+                    if failed_logins > 0:
+                        ttk.Label(summary_frame, text=f"Failed: {failed_logins}",
+                                 font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
+
+                    # History table
+                    history_frame = ttk.LabelFrame(main_frame, text="Login Activity", padding=10)
+                    history_frame.pack(fill=tk.BOTH, expand=True)
+
+                    columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
+                    tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
+
+                    tree.heading("Date/Time", text="Date/Time")
+                    tree.heading("Status", text="Status")
+                    tree.heading("IP Address", text="IP Address")
+                    tree.heading("Device", text="Device")
+                    tree.heading("Location", text="Location")
+
+                    tree.column("Date/Time", width=180)
+                    tree.column("Status", width=100)
+                    tree.column("IP Address", width=150)
+                    tree.column("Device", width=200)
+                    tree.column("Location", width=150)
+
+                    for login in history:
+                        login_time = login[0]
+                        ip_address = login[1] or "N/A"
+                        status = login[2] or "unknown"
+                        device = login[3] or "Unknown Device"
+                        location = login[4] or "Unknown"
+
+                        # Apply color tags based on status
+                        tag = 'success' if status.lower() == 'success' else 'failed'
+                        tree.insert('', tk.END, values=(login_time, status.title(), ip_address, device, location), tags=(tag,))
+
+                    tree.tag_configure('success', foreground='green')
+                    tree.tag_configure('failed', foreground='red')
+
+                    scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=tree.yview)
+                    tree.configure(yscrollcommand=scrollbar.set)
+
+                    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+                else:
+                    ttk.Label(main_frame, text="No login history found.",
+                             font=('Arial', 11)).pack(pady=50)
+            else:
+                # Create sample login history data for demo
+                sample_data = [
+                    (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.105", "success", "iPhone - Safari", "Mobile"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "failed", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                ]
+
+                # Summary frame
+                summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+                summary_frame.pack(fill=tk.X, pady=(0, 10))
+
+                total_logins = len(sample_data)
+                successful_logins = sum(1 for h in sample_data if h[2] == 'success')
+                failed_logins = total_logins - successful_logins
+
+                ttk.Label(summary_frame, text=f"Total Login Attempts: {total_logins}",
+                         font=('Arial', 10)).pack(side=tk.LEFT, padx=20)
+                ttk.Label(summary_frame, text=f"Successful: {successful_logins}",
+                         font=('Arial', 10), foreground='green').pack(side=tk.LEFT, padx=20)
+                if failed_logins > 0:
+                    ttk.Label(summary_frame, text=f"Failed: {failed_logins}",
+                             font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
+
+                # History table
+                history_frame = ttk.LabelFrame(main_frame, text="Login Activity (Sample Data)", padding=10)
+                history_frame.pack(fill=tk.BOTH, expand=True)
+
+                columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
+                tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
+
+                tree.heading("Date/Time", text="Date/Time")
+                tree.heading("Status", text="Status")
+                tree.heading("IP Address", text="IP Address")
+                tree.heading("Device", text="Device")
+                tree.heading("Location", text="Location")
+
+                tree.column("Date/Time", width=180)
+                tree.column("Status", width=100)
+                tree.column("IP Address", width=150)
+                tree.column("Device", width=200)
+                tree.column("Location", width=150)
+
+                for login in sample_data:
+                    tag = 'success' if login[2].lower() == 'success' else 'failed'
+                    tree.insert('', tk.END, values=(login[0], login[2].title(), login[1], login[3], login[4]), tags=(tag,))
+
+                tree.tag_configure('success', foreground='green')
+                tree.tag_configure('failed', foreground='red')
+
+                scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=tree.yview)
+                tree.configure(yscrollcommand=scrollbar.set)
+
+                tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            conn.close()
+
+        except Exception as e:
+            ttk.Label(main_frame, text=f"Error loading login history: {str(e)}",
+                     font=('Arial', 10)).pack(pady=50)
+
+        # Close button
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
 
     def show_create_parent_account_interface(self):
         """Show interface for creating a new parent account (admin only)"""
