@@ -1,10 +1,11 @@
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog, scrolledtext
+from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
 from university_system.infrastructure.database.db import sqlite3
 import datetime
 import json
 import threading
+import csv
 from typing import Optional, List, Dict, Any
 import sys
 import os
@@ -7994,16 +7995,338 @@ class ParentPortalGUI:
         ttk.Button(
             report_options_frame,
             text="Export All Parent Accounts (CSV)",
-            command=lambda: messagebox.showinfo("Report", "CSV export functionality coming soon")
+            command=self.export_parent_accounts_csv
         ).pack(fill=tk.X, pady=5)
 
         ttk.Button(
             report_options_frame,
             text="View Parent Activity Log",
-            command=lambda: messagebox.showinfo("Report", "Activity log viewer coming soon")
+            command=self.view_parent_activity_log_interface
         ).pack(fill=tk.X, pady=5)
 
         ttk.Button(self.content_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(pady=20)
+
+    def export_parent_accounts_csv(self):
+        """Export all parent accounts to CSV file"""
+        try:
+            # Prompt user to select save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"parent_accounts_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not file_path:
+                return  # User cancelled
+
+            # Connect to database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Fetch all parent accounts with their associated children
+            cursor.execute('''
+                SELECT
+                    pa.parent_id,
+                    pa.first_name,
+                    pa.last_name,
+                    pa.email,
+                    pa.phone,
+                    pa.address,
+                    pa.emergency_contact,
+                    pa.registration_date,
+                    pa.two_factor_enabled,
+                    COUNT(DISTINCT pc.student_id) as child_count
+                FROM parent_accounts pa
+                LEFT JOIN parent_children pc ON pa.parent_id = pc.parent_id
+                GROUP BY pa.parent_id
+                ORDER BY pa.last_name, pa.first_name
+            ''')
+
+            parent_data = cursor.fetchall()
+
+            if not parent_data:
+                messagebox.showinfo("No Data", "No parent accounts found to export.")
+                conn.close()
+                return
+
+            # Write to CSV
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                csv_writer = csv.writer(csvfile)
+
+                # Write header
+                csv_writer.writerow([
+                    'Parent ID',
+                    'First Name',
+                    'Last Name',
+                    'Email',
+                    'Phone',
+                    'Address',
+                    'Emergency Contact',
+                    'Registration Date',
+                    '2FA Enabled',
+                    'Number of Children'
+                ])
+
+                # Write data rows
+                for row in parent_data:
+                    # Format boolean and date values
+                    formatted_row = list(row)
+                    formatted_row[6] = 'Yes' if row[6] else 'No'  # Emergency contact
+                    formatted_row[8] = 'Yes' if row[8] else 'No'  # 2FA enabled
+                    csv_writer.writerow(formatted_row)
+
+            conn.close()
+
+            # Log the activity
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            current_user = self.get_current_user()
+            if current_user:
+                log_activity(
+                    'export',
+                    'parent_accounts',
+                    user_id=current_user.get('id'),
+                    details={
+                        'export_type': 'csv',
+                        'record_count': len(parent_data),
+                        'file_path': file_path
+                    }
+                )
+
+            messagebox.showinfo(
+                "Export Successful",
+                f"Successfully exported {len(parent_data)} parent account(s) to:\n{file_path}"
+            )
+            self.update_status(f"Exported {len(parent_data)} parent accounts to CSV")
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export parent accounts:\n{str(e)}")
+            print(f"Error exporting parent accounts: {e}")
+
+    def view_parent_activity_log_interface(self):
+        """View parent activity log for all parents (admin function)"""
+        try:
+            # Create new window for activity log
+            log_window = tk.Toplevel(self.root)
+            log_window.title("Parent Activity Log")
+            log_window.geometry("1000x600")
+
+            # Title
+            title_frame = ttk.Frame(log_window)
+            title_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            title_label = ttk.Label(
+                title_frame,
+                text="Parent Activity Log",
+                font=('Arial', 18, 'bold')
+            )
+            title_label.pack(side=tk.LEFT)
+
+            # Filter controls
+            filter_frame = ttk.LabelFrame(log_window, text="Filters", padding=10)
+            filter_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            # Parent ID filter
+            ttk.Label(filter_frame, text="Parent ID:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+            parent_id_var = tk.StringVar()
+            parent_id_entry = ttk.Entry(filter_frame, textvariable=parent_id_var, width=20)
+            parent_id_entry.grid(row=0, column=1, padx=5, pady=5)
+
+            # Action filter
+            ttk.Label(filter_frame, text="Action:").grid(row=0, column=2, padx=5, pady=5, sticky='w')
+            action_var = tk.StringVar(value="All")
+            action_combo = ttk.Combobox(
+                filter_frame,
+                textvariable=action_var,
+                values=["All", "login", "view", "update", "message", "absence_report", "emergency_contact_update"],
+                state='readonly',
+                width=20
+            )
+            action_combo.grid(row=0, column=3, padx=5, pady=5)
+
+            # Date range
+            ttk.Label(filter_frame, text="Days Back:").grid(row=0, column=4, padx=5, pady=5, sticky='w')
+            days_var = tk.StringVar(value="7")
+            days_combo = ttk.Combobox(
+                filter_frame,
+                textvariable=days_var,
+                values=["1", "7", "30", "90", "365"],
+                state='readonly',
+                width=10
+            )
+            days_combo.grid(row=0, column=5, padx=5, pady=5)
+
+            # Activity log table
+            table_frame = ttk.Frame(log_window)
+            table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+            columns = ('Timestamp', 'Parent ID', 'Parent Name', 'Action', 'Details')
+            tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+
+            # Configure columns
+            tree.column('Timestamp', width=150)
+            tree.column('Parent ID', width=100)
+            tree.column('Parent Name', width=150)
+            tree.column('Action', width=150)
+            tree.column('Details', width=350)
+
+            for col in columns:
+                tree.heading(col, text=col)
+
+            # Scrollbars
+            vsb = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+            hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
+            tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+            tree.grid(row=0, column=0, sticky='nsew')
+            vsb.grid(row=0, column=1, sticky='ns')
+            hsb.grid(row=1, column=0, sticky='ew')
+
+            table_frame.grid_rowconfigure(0, weight=1)
+            table_frame.grid_columnconfigure(0, weight=1)
+
+            # Load data function
+            def load_activity_data():
+                # Clear existing data
+                for item in tree.get_children():
+                    tree.delete(item)
+
+                try:
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    # Build query based on filters
+                    days_back = int(days_var.get())
+                    cutoff_date = (datetime.datetime.now() - datetime.timedelta(days=days_back)).strftime('%Y-%m-%d %H:%M:%S')
+
+                    query = '''
+                        SELECT
+                            pal.timestamp,
+                            pal.parent_id,
+                            pa.first_name || ' ' || pa.last_name as parent_name,
+                            pal.action,
+                            pal.details
+                        FROM parent_activity_log pal
+                        LEFT JOIN parent_accounts pa ON pal.parent_id = pa.parent_id
+                        WHERE pal.timestamp >= ?
+                    '''
+                    params = [cutoff_date]
+
+                    # Add parent ID filter
+                    if parent_id_var.get().strip():
+                        query += ' AND pal.parent_id LIKE ?'
+                        params.append(f'%{parent_id_var.get().strip()}%')
+
+                    # Add action filter
+                    if action_var.get() != "All":
+                        query += ' AND pal.action = ?'
+                        params.append(action_var.get())
+
+                    query += ' ORDER BY pal.timestamp DESC LIMIT 500'
+
+                    cursor.execute(query, params)
+                    activities = cursor.fetchall()
+
+                    # Insert data into tree
+                    for activity in activities:
+                        tree.insert('', tk.END, values=activity)
+
+                    conn.close()
+
+                    # Update status label
+                    status_label.config(text=f"Showing {len(activities)} activities")
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load activity log:\n{str(e)}")
+                    print(f"Error loading activity log: {e}")
+
+            # Buttons
+            button_frame = ttk.Frame(log_window)
+            button_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            ttk.Button(
+                button_frame,
+                text="Apply Filters",
+                command=load_activity_data
+            ).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(
+                button_frame,
+                text="Export to CSV",
+                command=lambda: self.export_activity_log_csv(tree)
+            ).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(
+                button_frame,
+                text="Refresh",
+                command=load_activity_data
+            ).pack(side=tk.LEFT, padx=5)
+
+            # Status label
+            status_label = ttk.Label(button_frame, text="", font=('Arial', 9))
+            status_label.pack(side=tk.RIGHT, padx=5)
+
+            ttk.Button(
+                button_frame,
+                text="Close",
+                command=log_window.destroy
+            ).pack(side=tk.RIGHT, padx=5)
+
+            # Load initial data
+            load_activity_data()
+
+            # Log this admin action
+            from university_system.modules.shared.utils.activity_logger import log_activity
+            current_user = self.get_current_user()
+            if current_user:
+                log_activity(
+                    'view',
+                    'parent_activity_log',
+                    user_id=current_user.get('id'),
+                    details={'action': 'viewed_activity_log_interface'}
+                )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open activity log viewer:\n{str(e)}")
+            print(f"Error opening activity log viewer: {e}")
+
+    def export_activity_log_csv(self, tree):
+        """Export activity log data from tree to CSV"""
+        try:
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                initialfile=f"parent_activity_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            )
+
+            if not file_path:
+                return
+
+            # Get all items from tree
+            items = tree.get_children()
+
+            if not items:
+                messagebox.showinfo("No Data", "No activity log data to export.")
+                return
+
+            # Write to CSV
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                csv_writer = csv.writer(csvfile)
+
+                # Write header
+                csv_writer.writerow(['Timestamp', 'Parent ID', 'Parent Name', 'Action', 'Details'])
+
+                # Write data rows
+                for item in items:
+                    values = tree.item(item)['values']
+                    csv_writer.writerow(values)
+
+            messagebox.showinfo(
+                "Export Successful",
+                f"Successfully exported {len(items)} activity log entries to:\n{file_path}"
+            )
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export activity log:\n{str(e)}")
 
     def show_placeholder(self, title):
         """Show a placeholder interface"""

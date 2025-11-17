@@ -5,6 +5,89 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.75] - 2025-11-17
+
+### Added
+
+**ENHANCEMENT: Parent Portal GUI - Implemented CSV Export and Activity Log Viewer**
+
+Implemented two critical admin reporting features that were previously showing "coming soon" messages.
+
+**Implemented Functions:**
+
+1. **export_parent_accounts_csv()** - Export all parent accounts to CSV
+   - Prompts user to select save location with auto-generated filename
+   - Exports comprehensive parent account data including:
+     - Parent ID, name, email, phone, address
+     - Emergency contact status and registration date
+     - Two-factor authentication status
+     - Number of associated children
+   - Formats boolean values as Yes/No for readability
+   - Includes proper error handling and user feedback
+   - Logs export activity with user attribution
+   - Shows success message with record count and file path
+
+2. **view_parent_activity_log_interface()** - View parent activity logs
+   - Opens comprehensive activity log viewer in new window
+   - Advanced filtering capabilities:
+     - Filter by Parent ID (partial match)
+     - Filter by action type (login, view, update, message, etc.)
+     - Filter by date range (1, 7, 30, 90, or 365 days)
+   - Displays detailed activity information:
+     - Timestamp, Parent ID, Parent Name
+     - Action type and detailed description
+   - Real-time filtering with "Apply Filters" button
+   - Export filtered results to CSV functionality
+   - Refresh button to reload data
+   - Limits results to 500 entries for performance
+   - Logs admin viewing of activity log
+   - Full error handling and user feedback
+
+3. **export_activity_log_csv()** - Export activity log to CSV
+   - Helper function for exporting activity log data
+   - Exports currently filtered/displayed activity data
+   - Auto-generated timestamped filename
+   - Shows success message with entry count
+   - Proper error handling
+
+**Database Integration:**
+- Utilizes existing `parent_activity_log` table
+- Joins with `parent_accounts` for parent name display
+- Uses parameterized queries for SQL injection prevention
+- Proper connection management with error handling
+
+**User Interface:**
+- Professional dialog windows with proper sizing
+- Grid layout for filter controls
+- Treeview widget with scrollbars for data display
+- Status labels for real-time feedback
+- Intuitive button layout with clear actions
+
+**Activity Logging:**
+- Logs all CSV export operations with metadata
+- Logs admin viewing of activity log interface
+- Includes user attribution and timestamps
+- Maintains audit trail for compliance
+
+**Security & Best Practices:**
+- Uses context-appropriate file dialogs
+- Proper CSV encoding (UTF-8)
+- Parameterized SQL queries
+- Error handling with user-friendly messages
+- Activity logging for audit compliance
+
+### Changed
+- Updated button commands in admin reports section
+- Removed "coming soon" placeholder messages
+- Added CSV and filedialog imports
+
+### Technical Details
+- File: `university_system/modules/domain/academics/gui/parent_portal_gui.py`
+- Added 322 lines of new functionality
+- Follows existing code patterns and conventions
+- Maintains backward compatibility
+- Integrates with existing authentication and logging systems
+
 ## [5.0.74] - 2025-11-17
 
 ### Added
