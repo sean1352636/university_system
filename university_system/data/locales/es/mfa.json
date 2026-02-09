@@ -1,0 +1,275 @@
+{
+  "mfa": {
+    "setup": {
+      "title": "Configuración de MFA",
+      "header": "Configuración de Autenticación Multifactor"
+    },
+    "buttons": {
+      "back": "Atrás",
+      "next": "Siguiente",
+      "get_started": "Comenzar",
+      "continue": "Continuar",
+      "verify_continue": "Verificar y Continuar",
+      "verify": "Verificar",
+      "complete_setup": "Completar Configuración",
+      "save_to_file": "Guardar en Archivo",
+      "send_code": "Enviar Código"
+    },
+    "welcome": {
+      "title": "Bienvenido a la Configuración de MFA",
+      "info_text": "La Autenticación Multifactor (MFA) agrega una capa adicional de seguridad a su cuenta.\n\nCon MFA habilitado, necesitará proporcionar una segunda forma de verificación\n(además de su contraseña) al iniciar sesión.\n\nEsto ayuda a proteger su cuenta incluso si su contraseña se ve comprometida.\n\nPuede elegir entre varios métodos de autenticación:\n- Aplicación de Autenticación (TOTP) - Más seguro, recomendado\n- Mensaje de Texto SMS - Códigos enviados a su teléfono\n- Correo Electrónico - Códigos enviados a su dirección de correo\n\nHaga clic en 'Comenzar' para iniciar el proceso de configuración."
+    },
+    "method_selection": {
+      "title": "Elegir Métodos de Autenticación",
+      "subtitle": "Seleccione al menos un método. Puede habilitar múltiples métodos como respaldo."
+    },
+    "methods": {
+      "totp": {
+        "label": "Aplicación de Autenticación (TOTP)",
+        "use": "Usar Aplicación de Autenticación",
+        "description": "Use aplicaciones como Google Authenticator, Authy o Microsoft Authenticator.\nEste es el método más seguro y funciona sin conexión."
+      },
+      "sms": {
+        "label": "Mensaje de Texto SMS",
+        "use": "Usar Códigos SMS",
+        "description": "Reciba códigos de verificación por mensaje de texto.\nRequiere un número de teléfono móvil válido."
+      },
+      "email": {
+        "label": "Verificación por Correo Electrónico",
+        "use": "Usar Códigos por Correo",
+        "description": "Reciba códigos de verificación por correo electrónico.\nBueno como método de respaldo."
+      }
+    },
+    "labels": {
+      "phone": "Número de Teléfono:",
+      "phone_example": "(ej., +34612345678)",
+      "email": "Dirección de Correo Electrónico:",
+      "enter_6_digit_code": "Ingrese el código de 6 dígitos:"
+    },
+    "messages": {
+      "enter_phone": "Por favor ingrese un número de teléfono para la verificación por SMS.",
+      "enter_valid_email": "Por favor ingrese una dirección de correo electrónico válida.",
+      "select_method": "Por favor seleccione al menos un método de autenticación.",
+      "totp_setup_failed": "Error al configurar TOTP: {error}",
+      "enter_6_digit": "Por favor ingrese un código válido de 6 dígitos.",
+      "invalid_code": "Código de verificación inválido. Por favor intente de nuevo.",
+      "totp_success": "¡Aplicación de autenticación verificada exitosamente!",
+      "failed_send_sms": "Error al enviar SMS: {error}",
+      "sms_success": "¡Verificación por SMS configurada exitosamente!",
+      "failed_send_email": "Error al enviar correo: {error}",
+      "email_success": "¡Verificación por correo electrónico configurada exitosamente!",
+      "confirmation_required": "Confirmación Requerida",
+      "confirm_codes_saved": "Por favor confirme que ha guardado sus códigos de recuperación.",
+      "setup_complete": "Configuración Completa",
+      "mfa_enabled": "La Autenticación Multifactor ha sido habilitada para su cuenta.\n\nNecesitará verificar su identidad al iniciar sesión.",
+      "enable_failed": "Error al habilitar MFA: {error}",
+      "nav_error_title": "Error de Navegación",
+      "nav_error": "Por favor complete el paso actual antes de continuar.",
+      "no_mfa_methods": "No hay métodos MFA configurados para este usuario.",
+      "enter_recovery_code": "Por favor ingrese un código de recuperación.",
+      "invalid_recovery_code": "Código de recuperación inválido. Por favor intente de nuevo.",
+      "recovery_codes_warning": "Advertencia: Solo le quedan {count} códigos de recuperación.\n\nPor favor genere nuevos códigos desde la configuración de su cuenta.",
+      "sent": "Código Enviado",
+      "code_sent_phone": "El código de verificación ha sido enviado a su teléfono.",
+      "code_sent_email": "El código de verificación ha sido enviado a su correo electrónico."
+    },
+    "totp_setup": {
+      "title": "Configurar Aplicación de Autenticación",
+      "instructions": "1. Descargue una aplicación de autenticación si aún no lo ha hecho\n   (Google Authenticator, Authy, Microsoft Authenticator)\n2. Escanee el código QR a continuación con su aplicación\n3. Ingrese el código de 6 dígitos que muestra la aplicación",
+      "manual_entry": "¿No puede escanear? Ingrese este código manualmente:",
+      "enter_code": "Ingrese el código de su aplicación de autenticación:"
+    },
+    "sms_setup": {
+      "title": "Configurar Verificación por SMS",
+      "code_sent": "Se ha enviado un código de verificación a: {phone}"
+    },
+    "email_setup": {
+      "title": "Configurar Verificación por Correo Electrónico",
+      "code_sent": "Se ha enviado un código de verificación a: {email}",
+      "enter_code": "Ingrese el código de su correo electrónico:"
+    },
+    "recovery": {
+      "title": "Guarde Sus Códigos de Recuperación",
+      "warning": "IMPORTANTE: ¡Guarde estos códigos de recuperación en un lugar seguro!\n\nSi pierde acceso a sus métodos de autenticación, puede usar estos\ncódigos para recuperar el acceso a su cuenta. Cada código solo puede usarse una vez.",
+      "codes_header": "SUS CÓDIGOS DE RECUPERACIÓN",
+      "codes_note": "Guarde estos códigos de forma segura. Cada código solo puede usarse una vez.",
+      "generate_new": "Puede generar nuevos códigos desde la configuración de su cuenta.",
+      "confirm_saved": "He guardado mis códigos de recuperación en un lugar seguro",
+      "file_header": "Códigos de Recuperación MFA",
+      "file_username": "Nombre de Usuario",
+      "file_generated": "Generado",
+      "security_notes_header": "NOTAS DE SEGURIDAD IMPORTANTES:",
+      "security_note_1": "- Guarde estos códigos en un lugar seguro",
+      "security_note_2": "- No comparta estos códigos con nadie",
+      "security_note_3": "- Cada código solo puede usarse una vez",
+      "security_note_4": "- Genere nuevos códigos si estos se ven comprometidos",
+      "saved_success": "Códigos de recuperación guardados en: {filename}",
+      "save_failed": "Error al guardar códigos de recuperación: {error}"
+    },
+    "verification": {
+      "title": "Verificación MFA",
+      "header": "Verifique Su Identidad",
+      "welcome": "¡Bienvenido de nuevo, {username}!",
+      "verify_identity": "Por favor verifique su identidad para continuar.",
+      "trust_device": "Confiar en este dispositivo por 30 días",
+      "enter_totp_code": "Ingrese el código de 6 dígitos de su aplicación de autenticación:",
+      "send_code_to": "Enviar código de verificación a: {destination}",
+      "your_phone": "su teléfono registrado",
+      "your_email": "su correo electrónico registrado",
+      "lost_access": "¿Perdió acceso a sus métodos de autenticación?\nUse uno de sus códigos de recuperación a continuación:",
+      "format_hint": "Formato: {format}",
+      "recovery_warning": "Nota: Cada código de recuperación solo puede usarse una vez."
+    },
+    "tabs": {
+      "authenticator": "Autenticador",
+      "sms": "SMS",
+      "email": "Correo",
+      "recovery": "Código de Recuperación"
+    }
+  },
+  "mfa_admin": {
+    "title": "Administración de MFA",
+    "header": "Panel de Administración de MFA",
+    "buttons": {
+      "refresh_all": "Actualizar Todo",
+      "close": "Cerrar",
+      "edit_policy": "Editar Política",
+      "view_details": "Ver Detalles",
+      "reset_mfa": "Restablecer MFA",
+      "force_mfa_setup": "Forzar Configuración de MFA",
+      "export_audit_log": "Exportar Registro de Auditoría",
+      "save_settings": "Guardar Configuración",
+      "test_sms": "Probar Proveedor SMS",
+      "test_email": "Probar Proveedor de Correo",
+      "enforce_mfa": "Aplicar MFA"
+    },
+    "tabs": {
+      "overview": "Resumen",
+      "policies": "Políticas",
+      "users": "Usuarios",
+      "audit": "Registro de Auditoría",
+      "settings": "Configuración"
+    },
+    "labels": {
+      "system_overview": "Resumen del Sistema",
+      "recent_activity": "Actividad Reciente",
+      "policies_by_role": "Políticas MFA por Rol",
+      "user_mfa_status": "Estado MFA del Usuario",
+      "filter": "Filtro:",
+      "audit_trail": "Registro de Auditoría de Verificación MFA",
+      "show": "Mostrar:",
+      "system_settings": "Configuración del Sistema",
+      "otp_config": "Configuración OTP",
+      "device_trust": "Configuración de Confianza de Dispositivo",
+      "provider_status": "Estado del Proveedor",
+      "unused_recovery_codes": "Códigos de Recuperación Sin Usar: {count}"
+    },
+    "stats": {
+      "total_users": "Total de Usuarios",
+      "mfa_enabled": "MFA Habilitado",
+      "mfa_required": "MFA Requerido",
+      "totp_users": "Usuarios TOTP",
+      "sms_users": "Usuarios SMS",
+      "email_users": "Usuarios Correo",
+      "verifications_24h": "Verificaciones (24h)",
+      "failed_attempts_24h": "Intentos Fallidass (24h)"
+    },
+    "columns": {
+      "time": "Hora",
+      "user": "Usuario",
+      "method": "Método",
+      "status": "Estado",
+      "role": "Rol",
+      "required": "Requerido",
+      "allowed_methods": "Métodos Permitidos",
+      "min_methods": "Métodos Mín.",
+      "grace_period": "Período de Gracia",
+      "device_trust": "Confianza de Dispositivo",
+      "username": "Nombre de Usuario",
+      "mfa_status": "Estado MFA",
+      "methods": "Métodos",
+      "last_verification": "Última Verificación",
+      "timestamp": "Marca de Tiempo",
+      "failure_reason": "Razón de Fallo",
+      "ip_address": "Dirección IP",
+      "added": "Agregado",
+      "last_used": "Último Uso",
+      "device": "Dispositivo",
+      "expires": "Expira",
+      "result": "Resultado"
+    },
+    "filters": {
+      "all_users": "Todos los Usuarios",
+      "mfa_enabled": "MFA Habilitado",
+      "mfa_disabled": "MFA Deshabilitado",
+      "mfa_required": "MFA Requerido",
+      "all": "Todos",
+      "success": "Éxito",
+      "failed": "Fallidas",
+      "last_24h": "Últimas 24 Horas",
+      "last_7_days": "Últimos 7 Días"
+    },
+    "settings": {
+      "otp_expiry": "Expiración OTP (minutos):",
+      "max_attempts": "Máximo de Intentos de Verificación:",
+      "lockout_duration": "Duración de Bloqueo (minutos):",
+      "trust_duration": "Duración de Confianza de Dispositivo (días):",
+      "max_trusted_devices": "Máximo de Dispositivos de Confianza:"
+    },
+    "provider": {
+      "sms_loading": "Proveedor SMS: Cargando...",
+      "email_loading": "Proveedor de Correo: Cargando..."
+    },
+    "messages": {
+      "no_selection": "Sin Selección",
+      "select_policy": "Por favor seleccione una política para editar.",
+      "select_user": "Por favor seleccione un usuario.",
+      "validation_error": "Error de Validación",
+      "select_role": "Por favor seleccione al menos un rol.",
+      "select_mfa_method": "Por favor seleccione al menos un método MFA.",
+      "policy_updated": "Política actualizada exitosamente.",
+      "policy_error": "Error al actualizar política: {error}",
+      "reset_confirmation": "¿Está seguro de que desea restablecer MFA para el usuario '{username}'?\n\nEsto deshabilitará todos los métodos MFA y el usuario necesitará configurar MFA de nuevo.",
+      "mfa_reset_success": "MFA ha sido restablecido para el usuario '{username}'.",
+      "mfa_reset_error": "Error al restablecer MFA: {error}",
+      "mfa_enforced": "Aplicación de MFA establecida para '{username}'.\n\nFecha límite: {deadline}\nPeríodo de gracia: {grace} días",
+      "enforce_error": "Error al aplicar MFA: {error}",
+      "export_success": "Registro de auditoría exportado exitosamente a:\n{filename}",
+      "export_error": "Error al exportar registro de auditoría: {error}",
+      "settings_saved": "Configuración guardada exitosamente.",
+      "settings_error": "Error al guardar configuración: {error}",
+      "sms_test_success": "¡Prueba de proveedor SMS exitosa!\nProveedor: {provider}",
+      "sms_test_failed": "Prueba de proveedor SMS fallida: {error}",
+      "email_test_success": "¡Prueba de proveedor de correo exitosa!\nProveedor: {provider}",
+      "email_test_failed": "Prueba de proveedor de correo fallida: {error}",
+      "test_failed": "Prueba fallida: {error}",
+      "failed": "Prueba Fallida",
+      "few_codes_warning": "¡Advertencia: El usuario tiene menos de 3 códigos de recuperación restantes!",
+      "error_loading": "Error al cargar datos: {error}"
+    },
+    "dialogs": {
+      "edit_policy_title": "Editar Política MFA",
+      "policy_name": "Nombre de Política:",
+      "apply_to_roles": "Aplicar a Roles:",
+      "allowed_methods": "Métodos MFA Permitidos:",
+      "session_timeout": "Tiempo de Espera de Sesión (minutos):",
+      "enforcement_level": "Nivel de Aplicación:",
+      "mfa_details": "Detalles MFA - {username}",
+      "confirm_reset": "Confirmar Restablecimiento de MFA",
+      "force_mfa_title": "Forzar Configuración MFA - {username}",
+      "force_mfa_for": "Forzar Configuración MFA para: {username}",
+      "grace_period": "Período de Gracia (días):",
+      "required_method": "Método Requerido:",
+      "any_method": "Cualquier Método",
+      "totp_only": "Solo TOTP/Autenticador",
+      "email_otp": "OTP por Correo",
+      "send_notification": "Enviar correo de notificación al usuario"
+    },
+    "details_tabs": {
+      "mfa_methods": "Métodos MFA",
+      "trusted_devices": "Dispositivos de Confianza",
+      "verification_history": "Historial de Verificación",
+      "recovery_codes": "Códigos de Recuperación"
+    }
+  }
+}

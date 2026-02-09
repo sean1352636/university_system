@@ -1,0 +1,161 @@
+{
+  "early_warning": {
+    "title": "Fruhwarnsystem fur Studienerfolg",
+    "window_title": "Fruhwarnsystem fur Studienerfolg",
+    "calculate_all_risk_scores": "Alle Risikobewertungen berechnen",
+    "calculate_risk_selected": "Risiko fur Ausgewahlte berechnen",
+    "create_intervention": "Intervention erstellen",
+    "assign_coach": "Coach zuweisen",
+    "send_alert": "Warnung senden",
+    "risk_level": "Risikostufe:",
+    "coaches": "Coaches",
+    "coach_assignments": "Coach-Zuweisungen",
+    "tabs": {
+      "at_risk_students": "Gefahrdete Studierende",
+      "interventions": "Interventionen",
+      "success_coaching": "Erfolgscoaching",
+      "tutoring_recommendations": "Nachhilfeempfehlungen",
+      "risk_indicators": "Risikoindikatoren"
+    },
+    "buttons": {
+      "add_coach": "Coach hinzufugen",
+      "add_indicator": "Indikator hinzufugen",
+      "assign": "Zuweisen",
+      "assign_coach": "Coach zuweisen",
+      "calculate_all_risks": "Alle Risiken berechnen",
+      "calculate_risk": "Risiko berechnen",
+      "complete_intervention": "Intervention abschliessen",
+      "create_intervention": "Intervention erstellen",
+      "register_coach": "Coach registrieren",
+      "resolve_indicator": "Indikator auflosen",
+      "send_alert": "Warnung senden",
+      "view_details": "Details anzeigen"
+    },
+    "labels": {
+      "assigned_to": "Zugewiesen an:",
+      "intervention_type": "Interventionstyp:",
+      "max_students": "Max. Studierende:",
+      "meeting_frequency": "Besprechungshaufigkeit:",
+      "outcome": "Ergebnis:",
+      "priority": "Prioritat:",
+      "reason": "Grund:",
+      "risk_level": "Risikostufe",
+      "risk_level_filter": "Risikostufe:",
+      "risk_score": "Risikobewertung",
+      "select_coach": "Coach auswahlen:",
+      "specialization": "Spezialisierung:",
+      "student": "Studierende/r",
+      "student_id": "Matrikelnummer",
+      "student_name": "Name des Studierenden",
+      "trigger_type": "Auslosertyp:",
+      "user_id": "Benutzer-ID:"
+    },
+    "columns": {
+      "coach_id": "Coach-ID",
+      "coach_name": "Coach-Name",
+      "department": "Abteilung",
+      "email": "E-Mail",
+      "indicator_type": "Indikatortyp",
+      "intervention_id": "Interventions-ID",
+      "intervention_type": "Interventionstyp",
+      "risk_level": "Risikostufe",
+      "risk_score": "Risikobewertung",
+      "specialty": "Fachgebiet",
+      "status": "Status",
+      "student_id": "Matrikelnummer",
+      "student_name": "Name des Studierenden"
+    },
+    "cli": {
+      "title": "FRUHWARNSYSTEM FUR STUDIENERFOLG",
+      "menu": {
+        "at_risk": "Gefahrdete Studierende anzeigen",
+        "dashboard": "Dashboard zur Risikobewertung",
+        "intervention": "Interventionsplan erstellen",
+        "coach": "Erfolgscoach zuweisen",
+        "progress": "Studienfortschritt verfolgen",
+        "tutoring": "Nachhilfeempfehlungen",
+        "alerts": "Warnbenachrichtigungen senden",
+        "language": "Sprache",
+        "return_main": "Zuruck zum Hauptmenu"
+      },
+      "prompt": {
+        "choice": "Geben Sie Ihre Auswahl ein (1-9)"
+      },
+      "feature_available": "Funktion uber Fruhwarnungs-Manager verfugbar",
+      "returning": "Ruckkehr zum Hauptmenu...",
+      "invalid_choice": "Ungultige Auswahl.",
+      "error": "Fehler: {error}"
+    },
+    "dialogs": {
+      "assign_coach": "Coach zuweisen",
+      "complete_intervention": "Intervention abschliessen",
+      "create_intervention": "Intervention erstellen",
+      "email_not_configured": "E-Mail nicht konfiguriert",
+      "intervention_details": "Interventionsdetails",
+      "no_coaches": "Keine Coaches",
+      "register_coach": "Coach registrieren",
+      "risk_calculated": "Risiko berechnet"
+    },
+    "messages": {
+      "alert_sent": "Warnung an {email} gesendet",
+      "coach_assigned": "Coach erfolgreich zugewiesen",
+      "coach_registered": "Coach erfolgreich registriert",
+      "email_not_available": "E-Mail wurde gesendet (E-Mail-Dienst nicht verfugbar)",
+      "email_would_be_sent": "E-Mail-Dienst nicht verfugbar. Warnung wurde gesendet an: {email}",
+      "intervention_completed": "Intervention als abgeschlossen markiert",
+      "intervention_created": "Intervention erfolgreich erstellt",
+      "risk_calculated_all": "Risikobewertungen fur {count} Studierende berechnet",
+      "risk_result": "Studierende/r {student_id}\nRisikobewertung: {score}\nRisikostufe: {level}"
+    },
+    "errors": {
+      "assign_coach_failed": "Coach-Zuweisung fehlgeschlagen: {error}",
+      "calculate_risk_failed": "Risikoberechnung fehlgeschlagen: {error}",
+      "calculate_risks_failed": "Risikoberechnungen fehlgeschlagen: {error}",
+      "complete_intervention_failed": "Interventionsabschluss fehlgeschlagen: {error}",
+      "create_intervention_failed": "Interventionserstellung fehlgeschlagen: {error}",
+      "db_init_failed": "Datenbankinitialisierung fehlgeschlagen: {error}",
+      "load_coaches_failed": "Laden der Coaches fehlgeschlagen: {error}",
+      "load_interventions_failed": "Laden der Interventionen fehlgeschlagen: {error}",
+      "load_students_failed": "Laden der Studierenden fehlgeschlagen: {error}",
+      "login_required": "Sie mussen angemeldet sein, um auf das Fruhwarnsystem zuzugreifen.",
+      "register_coach_failed": "Coach-Registrierung fehlgeschlagen: {error}",
+      "send_alert_failed": "Senden der Warnung fehlgeschlagen: {error}",
+      "student_not_found": "Studierende/r nicht gefunden"
+    },
+    "warnings": {
+      "no_coaches_available": "Keine aktiven Coaches verfugbar. Bitte registrieren Sie zuerst einen Coach.",
+      "select_coach": "Bitte wahlen Sie einen Coach aus",
+      "select_intervention": "Bitte wahlen Sie eine Intervention aus",
+      "select_student": "Bitte wahlen Sie eine/n Studierende/n aus"
+    },
+    "status": {
+      "loaded_coaches": "{count} Coaches geladen",
+      "loaded_interventions": "{count} Interventionen geladen",
+      "loaded_students": "{count} gefahrdete Studierende geladen"
+    },
+    "risk_factors": {
+      "low_gpa": "Niedriger Notendurchschnitt",
+      "poor_attendance": "Schlechte Anwesenheit",
+      "missing_assignments": "Fehlende Aufgaben",
+      "failed_exams": "Nicht bestandene Prufungen",
+      "withdrawal_risk": "Abbruchrisiko"
+    },
+    "intervention_types": {
+      "academic_support": "Akademische Unterstutzung",
+      "counseling_referral": "Beratungsuberweisung",
+      "tutor_assignment": "Tutorenbetreuung",
+      "advisor_meeting": "Beratungsgesprach",
+      "parent_notification": "Elternbenachrichtigung"
+    },
+    "risk_levels": {
+      "high": "Hohes Risiko",
+      "medium": "Mittleres Risiko",
+      "low": "Niedriges Risiko"
+    },
+    "outcomes": {
+      "improved": "Verbessert",
+      "no_change": "Keine Veranderung",
+      "declined": "Verschlechtert"
+    }
+  }
+}

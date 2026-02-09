@@ -1,0 +1,4 @@
+{
+  "subject": "Event Registration Confirmation - {event_name}",
+  "body": "Dear {username},\n\nYou have successfully registered for the following event:\n\nEvent Details:\n- Name: {event_name}\n- Date: {event_date}\n- Time: {event_time}\n- Location: {location}\n\nWe look forward to seeing you there!\n\nBest regards,\nStudent Union Events Team"
+}

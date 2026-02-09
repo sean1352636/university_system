@@ -1,0 +1,104 @@
+{
+  "category": "Financial",
+  "resources": [
+    {
+      "id": "8",
+      "title": "Financial Aid Office",
+      "type": "article",
+      "content": {
+        "introduction": "The Financial Aid Office helps students understand and access funding options including scholarships, grants, loans, and work-study programs.",
+        "sections": [
+          {
+            "title": "Types of Aid",
+            "content": "Grants (Free Money):\n- Pell Grant: Federal need-based (up to $7,395)\n- SEOG: Supplemental federal grant\n- State grants: Varies by state\n- University grants: Institutional aid\n\nScholarships (Free Money):\n- Merit-based awards\n- Department scholarships\n- External scholarships\n\nLoans (Must Repay):\n- Direct Subsidized: Need-based, no interest while enrolled\n- Direct Unsubsidized: Available regardless of need\n- Parent PLUS: Parents borrow for student\n\nWork-Study:\n- Part-time campus employment\n- Earn money for expenses"
+          },
+          {
+            "title": "Applying for Aid",
+            "content": "FAFSA:\n- Required for all federal aid\n- Opens October 1 each year\n- Priority deadline: March 1\n- Use IRS Data Retrieval Tool\n\nScholarship Applications:\n- University scholarships: March 1 deadline\n- Department scholarships: Contact your major\n- External scholarships: Various deadlines"
+          },
+          {
+            "title": "Understanding Your Award",
+            "content": "Award Letter:\n- Lists all aid offered\n- Shows Cost of Attendance\n- Indicates Expected Family Contribution\n\nAccepting Aid:\n- Log into student portal\n- Accept, reduce, or decline each award\n- Only borrow what you need"
+          },
+          {
+            "title": "Maintaining Eligibility",
+            "content": "Satisfactory Academic Progress:\n- Minimum 2.0 GPA\n- Complete 67% of attempted credits\n- Finish within 150% of program length\n\nEnrollment Requirements:\n- Full-time: 12+ credits\n- Half-time: 6-11 credits (minimum for loans)"
+          },
+          {
+            "title": "Contact Us",
+            "content": "Location: Administration Building, Room 200\nPhone: (555) 123-4540\nEmail: finaid@university.edu\n\nHours:\nMonday-Friday: 8:30 AM - 5:00 PM\nWalk-in hours: 10 AM - 3 PM\nAppointments recommended for complex questions"
+          }
+        ],
+        "conclusion": "Apply for aid early! Many programs have limited funding and are awarded on a first-come, first-served basis."
+      },
+      "tags": ["financial aid", "scholarships", "grants", "loans"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "9",
+      "title": "Student Accounts",
+      "type": "article",
+      "content": {
+        "introduction": "The Student Accounts office (Bursar) handles tuition billing, payments, refunds, and payment plans.",
+        "sections": [
+          {
+            "title": "Viewing Your Bill",
+            "content": "Access Your Account:\n1. Log into the student portal\n2. Navigate to Student Finances\n3. View current balance and charges\n\nBill Components:\n- Tuition and fees\n- Housing and meal plan\n- Health insurance (if applicable)\n- Course fees\n- Less: Financial aid applied"
+          },
+          {
+            "title": "Payment Options",
+            "content": "How to Pay:\n- Online via student portal (ACH or card)\n- By mail (check or money order)\n- In person at Bursar's Office\n- Wire transfer (international)\n\nPayment Methods:\n- E-check (no fee)\n- Credit/debit card (2.75% fee)\n- 529 plan disbursements\n- Third-party billing"
+          },
+          {
+            "title": "Payment Plans",
+            "content": "Monthly Payment Plan:\n- Spread payments over the semester\n- $50 enrollment fee per semester\n- Auto-debit from bank account\n- Enroll by payment deadline\n\nHow to Enroll:\n1. Go to Student Accounts in portal\n2. Select Payment Plan\n3. Choose number of installments\n4. Set up auto-pay"
+          },
+          {
+            "title": "Refunds",
+            "content": "Financial Aid Refunds:\n- Disbursed after aid exceeds charges\n- Direct deposit (fastest - 3-5 days)\n- Paper check (7-10 days)\n\nWithdrawal Refunds:\n- Based on withdrawal date\n- See refund schedule in academic calendar\n- Housing refunds have separate policy"
+          },
+          {
+            "title": "Important Deadlines",
+            "content": "Fall Semester: August 1\nSpring Semester: January 1\nSummer: May 1\n\nLate Fees:\n- 1.5% monthly on unpaid balance\n- Registration hold for past due accounts\n- No transcripts until balance paid"
+          }
+        ],
+        "conclusion": "Set up direct deposit for faster refunds. Contact us before the due date if you're having trouble paying."
+      },
+      "tags": ["billing", "tuition", "payments", "bursar"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "10",
+      "title": "FAFSA Application",
+      "type": "article",
+      "content": {
+        "introduction": "The Free Application for Federal Student Aid (FAFSA) is required for all federal financial aid including grants, loans, and work-study.",
+        "sections": [
+          {
+            "title": "Before You Begin",
+            "content": "Documents Needed:\n- Social Security Number\n- Driver's license (if applicable)\n- Federal tax returns (yours and parents')\n- W-2 forms and income records\n- Bank statements\n- Investment records\n- FSA ID (create at studentaid.gov)\n\nNote: Both student and one parent need FSA IDs for dependent students."
+          },
+          {
+            "title": "Step-by-Step Process",
+            "content": "1. Create FSA ID\n   - Need email and SSN\n   - Parents need separate ID\n\n2. Start FAFSA\n   - Select correct academic year\n   - Enter personal information\n\n3. Answer Dependency Questions\n   - Most undergrads are dependent\n   - Answer honestly\n\n4. Report Financial Information\n   - Use IRS Data Retrieval Tool\n   - Report accurately\n\n5. List Schools\n   - Add our school code\n   - Can list up to 10 schools\n\n6. Sign and Submit\n   - Both student and parent sign\n   - Use FSA IDs"
+          },
+          {
+            "title": "Common Mistakes",
+            "content": "Avoid These Errors:\n- Wrong Social Security Number\n- Incorrect income reporting\n- Forgetting to sign\n- Missing the deadline\n- Not listing all schools\n- Leaving questions blank\n- Using wrong tax year"
+          },
+          {
+            "title": "Important Deadlines",
+            "content": "Federal Deadline: June 30\nState Deadline: Varies (often earlier)\nUniversity Priority: March 1\n\nTip: Apply as early as possible after October 1. Some aid is first-come, first-served."
+          },
+          {
+            "title": "After Submission",
+            "content": "Next Steps:\n1. Review Student Aid Report (SAR)\n2. Check for errors and correct\n3. Note Expected Family Contribution\n4. Wait for award letters from schools\n5. Compare offers\n6. Accept/decline aid in portal\n7. Complete loan counseling if borrowing"
+          }
+        ],
+        "conclusion": "Need help? The Financial Aid Office offers FAFSA completion workshops and one-on-one assistance."
+      },
+      "tags": ["FAFSA", "federal aid", "application", "financial aid"],
+      "last_updated": "2025-01-15"
+    }
+  ]
+}

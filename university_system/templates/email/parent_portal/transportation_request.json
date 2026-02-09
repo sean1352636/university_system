@@ -1,0 +1,20 @@
+{
+  "template_name": "transportation_request",
+  "description": "Email notification sent to admin when a parent requests transportation for a student",
+  "category": "parent_portal",
+  "subject": "New Transportation Request - $student_name",
+  "body": "Dear Transportation Administrator,\n\nA new transportation request has been submitted through the Guardian Portal.\n\nStudent: $student_name (ID: $student_id)\nService Type: $service_type\nRoute Preference: $route_preference\nSpecial Needs: $special_needs\nRequested Start Date: $start_date\n\nSubmitted by: $sender_name\nDate: $request_datetime\n\nPlease review this request and contact the family accordingly.\n\nBest regards,\nUniversity Guardian Portal",
+  "variables": [
+    "student_name",
+    "student_id",
+    "service_type",
+    "route_preference",
+    "special_needs",
+    "start_date",
+    "sender_name",
+    "request_datetime"
+  ],
+  "recipients": ["admin"],
+  "priority": "normal",
+  "active": true
+}

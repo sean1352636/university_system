@@ -1,0 +1,101 @@
+{
+  "dentist": {
+    "title": "Clinique Dentaire Universitaire",
+    "window_title": "Services Dentaires Universitaires",
+    "available_treatments": "Traitements Disponibles",
+    "book_appointment": "Prendre Rendez-vous",
+    "dental_history": "Historique Dentaire",
+    "my_appointments": "Mes Rendez-vous",
+    "my_profile": "Mon Profil",
+    "patient_info": "Informations Patient",
+    "prescriptions": "Ordonnances",
+    "report_output": "Résultat du Rapport",
+    "search_results": "Résultats de Recherche",
+    "todays_appointments": "Rendez-vous du Jour",
+    "treatment_details": "Détails du Traitement",
+    "treatment_history": "Historique des Traitements",
+    "tabs": {
+      "admin": "Administration",
+      "appointments": "Rendez-vous",
+      "records": "Dossiers Patients",
+      "treatments": "Traitements"
+    },
+    "btn": {
+      "book": "Réserver",
+      "cancel": "Annuler",
+      "email_report": "Envoyer le Rapport",
+      "generate_report": "Générer le Rapport",
+      "pay": "Payer",
+      "refresh_today": "Actualiser Aujourd'hui",
+      "register": "S'inscrire",
+      "reschedule": "Reprogrammer",
+      "update_profile": "Modifier le Profil",
+      "view_details": "Voir les Détails",
+      "view_history": "Voir l'Historique",
+      "view_prescriptions": "Voir les Ordonnances"
+    },
+    "labels": {
+      "allergies": "Allergies:",
+      "date": "Date:",
+      "dentist": "Dentiste:",
+      "dob": "Date de Naissance:",
+      "emergency_contact": "Contact d'Urgence:",
+      "phone": "Téléphone:",
+      "report_type": "Type de Rapport:",
+      "time": "Heure:",
+      "treatment_type": "Type de Traitement:"
+    },
+    "confirm": {
+      "cancel_appointment": "Êtes-vous sûr de vouloir annuler ce rendez-vous?"
+    },
+    "errors": {
+      "booking_failed": "Échec de la réservation: {error}",
+      "email_failed": "Échec de l'envoi de l'email: {error}",
+      "fill_required": "Veuillez remplir tous les champs obligatoires",
+      "invalid_treatment": "Type de traitement invalide",
+      "not_registered": "Vous n'êtes pas inscrit comme patient",
+      "patient_not_found": "Patient non trouvé",
+      "permission_denied": "Vous n'avez pas la permission d'effectuer cette action",
+      "registration_failed": "Échec de l'inscription: {error}",
+      "select_appointment": "Veuillez sélectionner un rendez-vous",
+      "select_treatment": "Veuillez sélectionner un traitement"
+    },
+    "messages": {
+      "already_paid": "Ce rendez-vous a déjà été payé",
+      "already_registered": "Vous êtes déjà inscrit comme patient",
+      "appointment_cancelled": "Rendez-vous annulé avec succès",
+      "appointment_rescheduled": "Rendez-vous reprogrammé avec succès",
+      "data_refreshed": "Données actualisées avec succès",
+      "no_patients_found": "Aucun patient trouvé",
+      "no_prescriptions": "Aucune ordonnance trouvée",
+      "not_registered": "Vous n'êtes pas inscrit. Veuillez d'abord vous inscrire.",
+      "payment_processed": "Paiement effectué avec succès",
+      "prescription_created": "Ordonnance créée avec succès",
+      "profile_updated": "Profil mis à jour avec succès",
+      "registered": "Inscription du patient réussie",
+      "reminders_sent": "Rappels de rendez-vous envoyés avec succès",
+      "report_generated": "Rapport généré avec succès",
+      "treatment_recorded": "Traitement enregistré avec succès"
+    },
+    "prompts": {
+      "dosage": "Entrez le dosage:",
+      "duration": "Entrez la durée:",
+      "frequency": "Entrez la fréquence:",
+      "medication": "Entrez le nom du médicament:",
+      "new_date": "Entrez la nouvelle date (AAAA-MM-JJ):",
+      "new_phone": "Entrez le nouveau numéro de téléphone:",
+      "new_time": "Entrez la nouvelle heure (HH:MM):",
+      "patient_number": "Entrez le numéro du patient:",
+      "search_patient": "Rechercher un patient:",
+      "treatment_type": "Sélectionnez le type de traitement:"
+    },
+    "reports": {
+      "title": "Rapports Dentaires"
+    },
+    "warnings": {
+      "db_init": "Avertissement d'initialisation de la base de données",
+      "email_unavailable": "Le service email n'est pas disponible",
+      "generate_report_first": "Veuillez d'abord générer un rapport"
+    }
+  }
+}

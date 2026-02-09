@@ -1,0 +1,4 @@
+{
+    "subject": "$subject",
+    "body": "Dear Recipient,\n            \nPlease find attached the requested student analytics report.\n            \nReport Type: $report_type\nGenerated: $generated_date\n            \nBest regards,\nStudent Analytics System"
+}

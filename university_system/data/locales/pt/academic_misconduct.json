@@ -1,0 +1,246 @@
+{
+  "misconduct": {
+    "window": {
+      "title": "Painel de Conduta Acadmica - Sistema de Gerenciamento de Casos"
+    },
+    "auth": {
+      "required_title": "Autenticacao Necessaria",
+      "required_message": "Voce deve estar conectado para acessar o Painel de Conduta Academica.\n\nPor favor, faca login atraves da interface principal primeiro.",
+      "launch_from_gui": "Voce deve estar conectado para acessar o Painel de Conduta Academica.\n\nPor favor, inicie este modulo a partir da interface principal apos fazer login.",
+      "not_logged_in_title": "Nao Conectado",
+      "not_logged_in_message": "Voce nao esta conectado no momento.\n\nPor favor, faca login atraves da interface principal para acessar este painel.",
+      "access_denied_title": "Acesso Negado",
+      "access_denied_message": "Voce nao tem permissao para acessar o Painel de Conduta Academica.\n\nSua funcao: {role}\nFuncoes necessarias: Administrador, Funcionario ou Instrutor"
+    },
+    "header": {
+      "title": "PAINEL DE CONDUTA ACADEMICA",
+      "subtitle": "Sistema de Gerenciamento de Casos - Escritorio de Integridade Academica"
+    },
+    "stats": {
+      "active_cases": "Casos Ativos",
+      "pending_hearing": "Audiencia Pendente",
+      "resolved": "Resolvidos"
+    },
+    "case_list": {
+      "title": "Registro de Casos",
+      "search_placeholder": "Pesquisar casos..."
+    },
+    "filters": {
+      "all": "Todos",
+      "under_review": "Em Analise",
+      "pending_hearing": "Audiencia Pendente",
+      "resolved": "Resolvido"
+    },
+    "buttons": {
+      "return_home": "Voltar ao Inicio",
+      "create": "Criar",
+      "view": "Visualizar",
+      "update": "Atualizar",
+      "delete": "Excluir",
+      "refresh": "Atualizar",
+      "edit_case": "Editar Caso",
+      "notify_student": "Notificar Estudante",
+      "schedule_hearing": "Agendar Audiencia",
+      "upload_evidence": "Enviar Evidencia",
+      "cancel": "Cancelar",
+      "save_case": "Salvar Caso",
+      "save_changes": "Salvar Alteracoes",
+      "close": "Fechar",
+      "send_email": "Enviar E-mail",
+      "submit_decision": "Submeter Decisao",
+      "lookup": "Consultar",
+      "validate": "Validar",
+      "load_assignments": "Carregar Atividades",
+      "select_files": "Selecionar Arquivos",
+      "upload": "Enviar"
+    },
+    "columns": {
+      "case_id": "ID do Caso",
+      "student": "Estudante",
+      "type": "Tipo",
+      "status": "Status"
+    },
+    "details": {
+      "title": "Detalhes do Caso"
+    },
+    "tabs": {
+      "overview": "  Visao Geral  ",
+      "evidence": "  Evidencias  ",
+      "decision": "  Decisao  ",
+      "history": "  Historico  "
+    },
+    "overview": {
+      "select_case": "Selecione um caso para visualizar os detalhes"
+    },
+    "fields": {
+      "case_id": "ID do Caso",
+      "student_name": "Nome do Estudante",
+      "student_id": "ID do Estudante",
+      "student_email": "E-mail do Estudante",
+      "course": "Disciplina",
+      "course_module": "Codigo da Disciplina/Modulo",
+      "violation_type": "Tipo de Violacao",
+      "date_filed": "Data de Registro",
+      "severity": "Gravidade",
+      "status": "Status",
+      "case_notes": "Notas do Caso:",
+      "notes": "Notas",
+      "initial_notes": "Notas Iniciais",
+      "hearing_date": "Data da Audiencia",
+      "hearing_time": "Horario da Audiencia",
+      "hearing_location": "Local da Audiencia",
+      "ruling": "Decisao"
+    },
+    "evidence": {
+      "title": "Evidencias e Documentacao",
+      "no_evidence": "Nenhuma evidencia enviada ainda",
+      "select_case": "Selecione um caso para visualizar as evidencias",
+      "current_files": "Arquivos de Evidencia Atuais:",
+      "upload_new": "Enviar Nova Evidencia",
+      "file_name": "Nome do Arquivo",
+      "file_size": "Tamanho do Arquivo",
+      "uploaded_date": "Data de Envio",
+      "uploaded_by": "Enviado Por"
+    },
+    "decision": {
+      "title": "Decisao do Painel",
+      "ruling_label": "Decisao:",
+      "rationale_label": "Fundamentacao da Decisao:",
+      "submit_confirm": "Tem certeza de que deseja submeter esta decisao?",
+      "success": "Decisao registrada com sucesso"
+    },
+    "rulings": {
+      "not_responsible": "Nao Responsavel",
+      "warning": "Responsavel - Advertencia",
+      "grade_penalty": "Responsavel - Penalidade na Nota",
+      "course_failure": "Responsavel - Reprovacao na Disciplina",
+      "suspension": "Responsavel - Suspensao",
+      "expulsion": "Responsavel - Expulsao",
+      "academic_probation": "Responsavel - Periodo Probatorio Academico",
+      "resubmission": "Responsavel - Reapresentacao Obrigatoria",
+      "dismissed": "Caso Arquivado - Evidencias Insuficientes",
+      "deferred": "Adiado - Investigacao Pendente"
+    },
+    "history": {
+      "title": "Historico e Linha do Tempo do Caso",
+      "select_case": "Selecione um caso para visualizar seu historico",
+      "no_records": "Nenhum registro de historico encontrado para este caso."
+    },
+    "violations": {
+      "plagiarism": "Plagio",
+      "unauthorized_collaboration": "Colaboracao Nao Autorizada",
+      "contract_cheating": "Contratacao de Terceiros para Trabalhos",
+      "exam_misconduct": "Conduta Inadequada em Prova",
+      "fabrication": "Falsificacao de Dados",
+      "other": "Outro"
+    },
+    "severity_levels": {
+      "minor": "Menor",
+      "major": "Maior",
+      "critical": "Critico"
+    },
+    "status_values": {
+      "under_review": "Em Analise",
+      "pending_hearing": "Audiencia Pendente",
+      "resolved": "Resolvido"
+    },
+    "dialogs": {
+      "new_case": "Novo Caso",
+      "edit_case": "Editar Caso",
+      "new_misconduct_case": "Novo Caso de Conduta Academica",
+      "update_case": "Atualizar Caso {id}",
+      "case_details": "Detalhes do Caso - {id}",
+      "notify_student": "Notificar Estudante",
+      "send_notification": "Enviar Notificacao ao Estudante",
+      "schedule_hearing": "Agendar Audiencia",
+      "upload_evidence": "Enviar Evidencia - {id}",
+      "confirm_delete": "Confirmar Exclusao",
+      "confirm_delete_message": "Tem certeza de que deseja excluir o caso {id}?\n\nEsta acao nao pode ser desfeita.",
+      "confirm_close": "Tem certeza de que deseja fechar o Painel de Conduta Academica?"
+    },
+    "messages": {
+      "success": "Sucesso",
+      "error": "Erro",
+      "warning": "Aviso",
+      "info": "Informacao",
+      "no_selection": "Nenhuma Selecao",
+      "select_case_to_delete": "Por favor, selecione um caso para excluir.",
+      "select_case_to_update": "Por favor, selecione um caso para atualizar.",
+      "select_case_to_view": "Por favor, selecione um caso para visualizar.",
+      "select_case_first": "Por favor, selecione um caso primeiro.",
+      "select_case_for_evidence": "Por favor, selecione um caso para enviar evidencias.",
+      "case_created": "Caso {id} criado com sucesso.",
+      "case_updated": "Caso {id} atualizado com sucesso.",
+      "case_deleted": "Caso excluido com sucesso.",
+      "save_failed": "Falha ao salvar caso no banco de dados.",
+      "update_failed": "Falha ao atualizar caso no banco de dados.",
+      "delete_failed": "Falha ao excluir caso do banco de dados.",
+      "incomplete_fields": "Por favor, preencha todos os campos obrigatorios.",
+      "invalid_course": "Disciplina Invalida",
+      "invalid_course_message": "{message}\n\nPor favor, selecione uma disciplina valida no menu suspenso ou insira um codigo de disciplina valido.",
+      "missing_id": "ID Ausente",
+      "enter_student_id": "Por favor, insira um ID de Estudante para consultar.",
+      "student_found": "Estudante '{name}' encontrado e detalhes preenchidos.",
+      "student_not_found": "Nenhum estudante encontrado com o ID '{id}'.",
+      "lookup_failed": "Falha ao consultar estudante: {error}",
+      "missing_email": "Por favor, insira o endereco de e-mail do estudante.",
+      "email_unavailable": "O sistema de e-mail nao esta disponivel.",
+      "notification_sent": "Notificacao enviada para {email}",
+      "notification_failed": "Falha ao enviar notificacao: {error}",
+      "email_send_failed": "Falha ao enviar e-mail. Por favor, tente novamente.",
+      "hearing_scheduled": "Audiencia agendada com sucesso.",
+      "hearing_scheduled_email": "Audiencia agendada e notificacao enviada para {email}",
+      "hearing_partial_success": "Audiencia agendada, mas a notificacao por e-mail falhou.",
+      "hearing_save_failed": "Falha ao salvar detalhes da audiencia.",
+      "missing_hearing_info": "Por favor, preencha todos os campos.",
+      "notification_email_sent": "\nE-mail de notificacao enviado ao estudante.",
+      "decision_submitted": "Decisao submetida e registrada.",
+      "no_ruling_selected": "Por favor, selecione uma decisao antes de submeter.",
+      "evidence_uploaded": "Evidencia enviada com sucesso.",
+      "evidence_upload_failed": "Falha ao enviar evidencia.",
+      "no_files_selected": "Nenhum arquivo selecionado.",
+      "file_too_large": "O arquivo {name} excede o tamanho maximo de {size}MB.",
+      "related_assignment": "Atividade Relacionada (Opcional)"
+    },
+    "email": {
+      "subject_notification": "Caso de Integridade Academica {id} - Notificacao",
+      "subject_update": "Atualizacao do Caso de Conduta Academica - {id}",
+      "subject_hearing": "Audiencia de Integridade Academica Agendada - Caso {id}",
+      "to_label": "Para: {name} ({id})",
+      "student_email_label": "E-mail do Estudante:",
+      "subject_label": "Assunto:",
+      "message_label": "Mensagem:",
+      "send_notification_checkbox": "Enviar notificacao por e-mail ao estudante"
+    },
+    "hearing": {
+      "date_label": "Data da Audiencia:",
+      "time_label": "Horario da Audiencia:",
+      "location_label": "Local:",
+      "date_format": "(AAAA-MM-DD)",
+      "quick_dates": {
+        "one_week": "1 Semana",
+        "two_weeks": "2 Semanas",
+        "three_weeks": "3 Semanas"
+      },
+      "default_location": "Escritorio de Integridade Academica, Sala 201",
+      "arrival_notice": "Por favor, chegue 10 minutos antes do horario agendado."
+    },
+    "validation": {
+      "course_required": "Por favor, insira um codigo de disciplina",
+      "course_valid": "Disciplina valida: {code}",
+      "course_invalid": "Disciplina '{code}' nao encontrada no sistema",
+      "course_validation_error": "Erro ao validar disciplina: {error}"
+    },
+    "common": {
+      "na": "N/D",
+      "not_provided": "Nao informado",
+      "no_notes": "Nenhuma nota disponivel.",
+      "loading": "Carregando...",
+      "found": "Encontrado",
+      "not_found": "Nao Encontrado",
+      "deleted": "Excluido",
+      "confirm": "Confirmar",
+      "partial_success": "Sucesso Parcial"
+    }
+  }
+}

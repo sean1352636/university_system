@@ -1,0 +1,14 @@
+{
+    "template_id": "course_registration_issue",
+    "name": "Course Registration Issue",
+    "description": "Report problems with course registration, enrollment errors, or waitlist issues",
+    "category": "Academic",
+    "priority": "High",
+    "title_template": "Course Registration Issue - [Course Code]",
+    "description_template": "I am experiencing an issue with course registration.\n\n**Course Information:**\n- Course Code: [Enter course code]\n- Course Name: [Enter course name]\n- Section: [Enter section number]\n\n**Issue Description:**\n[Describe the registration issue you are experiencing]\n\n**Error Message (if any):**\n[Copy any error messages you received]\n\n**Steps Already Tried:**\n- [ ] Checked prerequisites\n- [ ] Verified registration window is open\n- [ ] Cleared browser cache\n- [ ] Tried different browser\n\n**Expected Outcome:**\n[What should happen when issue is resolved]",
+    "required_fields": ["course_code", "course_name", "issue_description"],
+    "tags": ["registration", "enrollment", "courses"],
+    "estimated_response_time": "24 hours",
+    "auto_assign_to": "registrar_team",
+    "is_active": true
+}

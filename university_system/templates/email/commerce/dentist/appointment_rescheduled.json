@@ -1,0 +1,12 @@
+{
+  "subject": "Dental Appointment Rescheduled",
+  "body": "Dear $patient_name,\n\nYour dental appointment has been rescheduled.\n\nPrevious Appointment:\n- Date: $old_date\n- Time: $old_time\n\nNew Appointment:\n- Date: $new_date\n- Time: $new_time\n- Dentist: $dentist_name\n\nIf this change was not requested by you, please contact us immediately.\n\nBest regards,\nUniversity Dental Clinic",
+  "variables": {
+    "patient_name": "Patient's full name",
+    "old_date": "Original appointment date",
+    "old_time": "Original appointment time",
+    "new_date": "New appointment date",
+    "new_time": "New appointment time",
+    "dentist_name": "Name of the dentist"
+  }
+}

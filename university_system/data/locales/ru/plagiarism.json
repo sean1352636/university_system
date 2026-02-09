@@ -1,0 +1,137 @@
+{
+  "plagiarism": {
+    "title": "Система Обнаружения Плагиата",
+    "subtitle": "Проверка академической честности и анализ документов",
+    "welcome": "Добро пожаловать",
+
+    "menu_file": "Файл",
+    "menu_tools": "Инструменты",
+    "menu_help": "Помощь",
+
+    "submit_document": "Отправить Документ",
+    "import_documents": "Импортировать Документы",
+    "export_documents": "Экспортировать Документы",
+    "check_document": "Проверить Документ",
+    "search_repository": "Поиск в Репозитории",
+    "view_my_documents": "Мои Документы",
+    "view_results": "Просмотр Результатов",
+    "advanced_search": "Расширенный Поиск",
+    "bulk_operations": "Массовые Операции",
+    "system_testing": "Тестирование Системы",
+    "generate_reports": "Создать Отчёты",
+    "compare_documents": "Сравнить Документы",
+    "file_converter": "Конвертер Файлов",
+    "document_workflow": "Рабочий Процесс Документов",
+    "repository": "Репозиторий",
+    "delete_document": "Удалить Документ",
+    "check_repository_integrity": "Проверить Целостность Репозитория",
+    "check_integrity": "Проверить Целостность",
+    "backup_restore": "Резервное Копирование и Восстановление",
+    "statistics": "Статистика",
+    "setup_testing": "Настройка и Тестирование",
+    "about": "О Программе",
+
+    "dashboard": "Панель Управления",
+    "quick_actions": "Быстрые Действия",
+    "check_for_plagiarism": "Проверить на Плагиат",
+    "system_statistics": "Системная Статистика",
+
+    "documents_tab": "Документы",
+    "search_documents": "Поиск Документов",
+    "title_label": "Название:",
+
+    "check_results_tab": "Результаты Проверки",
+    "refresh_results": "Обновить Результаты",
+
+    "settings_tab": "Настройки",
+    "detection_settings": "Настройки Обнаружения",
+    "similarity_threshold": "Порог Сходства:",
+    "system_information": "Информация о Системе",
+
+    "repository_integrity_check": "Проверка Целостности Репозитория",
+    "fix_issues": "Исправить Проблемы",
+
+    "system_reports": "Системные Отчёты",
+    "available_reports": "Доступные Отчёты",
+    "report_options": "Параметры Отчёта",
+    "include_charts_graphs": "Включить Диаграммы",
+    "export_format": "Формат Экспорта:",
+    "generate_report": "Создать Отчёт",
+
+    "select_author": "Выбрать Автора",
+    "select_module": "Выбрать Модуль",
+
+    "plagiarism_checks": "Проверки на Плагиат",
+    "check_plagiarism": "Проверить Плагиат",
+
+    "text_files": "Текстовые Файлы (.txt)",
+    "zip_archive": "ZIP Архив",
+    "export_selected": "Экспортировать Выбранное",
+
+    "delete_warning": "Предупреждение: Это действие нельзя отменить!",
+    "select_document_delete": "Выберите документ для удаления",
+
+    "setup_testing_tools": "Инструменты Настройки и Тестирования",
+    "system_setup": "Настройка Системы",
+    "check_requirements": "Проверить Требования",
+    "create_directories": "Создать Директории",
+    "create_sample_documents": "Создать Образцы Документов",
+    "test_repository": "Тестировать Репозиторий",
+    "test_plagiarism_check": "Тестировать Проверку Плагиата",
+    "clear_results": "Очистить Результаты",
+
+    "total_documents": "Всего Документов",
+    "total_checks": "Всего Проверок",
+    "flagged_documents": "Отмеченные Документы",
+    "average_similarity": "Среднее Сходство",
+
+    "document_id": "ID Документа",
+    "author": "Автор",
+    "date_submitted": "Дата Отправки",
+    "status": "Статус",
+    "similarity_score": "Оценка Сходства",
+
+    "no_documents": "Документы не найдены",
+    "no_results": "Результаты не найдены",
+    "loading": "Загрузка...",
+    "processing": "Обработка...",
+
+    "success": "Успех",
+    "error": "Ошибка",
+    "warning": "Предупреждение",
+    "info": "Информация",
+
+    "document_submitted": "Документ успешно отправлен",
+    "document_deleted": "Документ успешно удалён",
+    "check_complete": "Проверка на плагиат завершена",
+    "export_complete": "Экспорт успешно завершён",
+    "import_complete": "Импорт успешно завершён",
+
+    "confirm_delete": "Вы уверены, что хотите удалить этот документ?",
+    "confirm_action": "Подтвердить Действие",
+
+    "select_file": "Выбрать Файл",
+    "select_folder": "Выбрать Папку",
+    "browse": "Обзор...",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "save": "Сохранить",
+    "ok": "ОК",
+
+    "report_types": {
+      "summary": "Сводный Отчёт",
+      "detailed": "Детальный Анализ",
+      "author_report": "Отчёт по Автору",
+      "module_report": "Отчёт по Модулю",
+      "trends": "Отчёт о Тенденциях"
+    },
+
+    "status_types": {
+      "pending": "Ожидает",
+      "in_progress": "В Процессе",
+      "completed": "Завершено",
+      "flagged": "Отмечено",
+      "cleared": "Одобрено"
+    }
+  }
+}

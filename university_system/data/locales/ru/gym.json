@@ -1,0 +1,101 @@
+{
+  "gym": {
+    "title": "Университетский Фитнес-Центр",
+    "window_title": "Услуги Университетского Тренажёрного Зала",
+    "all_members": "Все Участники",
+    "available_classes": "Доступные Занятия",
+    "book_pt_session": "Записаться на Персональную Тренировку",
+    "class_schedule": "Расписание Занятий",
+    "equipment_details": "Информация об Оборудовании",
+    "equipment_list": "Список Оборудования",
+    "membership_options": "Варианты Членства",
+    "membership_stats": "Статистика Членства",
+    "my_bookings": "Мои Бронирования",
+    "my_membership": "Моё Членство",
+    "my_pt_sessions": "Мои PT Сессии",
+    "pt_info": "Информация о Персональных Тренировках",
+    "report_output": "Результат Отчёта",
+    "tabs": {
+      "admin": "Администрирование",
+      "classes": "Занятия",
+      "equipment": "Оборудование",
+      "membership": "Членство",
+      "personal_training": "Персональные Тренировки"
+    },
+    "btn": {
+      "book_class": "Записаться на Занятие",
+      "book_pt": "Записаться на PT",
+      "cancel_booking": "Отменить Бронирование",
+      "cancel_membership": "Отменить Членство",
+      "check_in": "Отметиться",
+      "email_report": "Отправить Отчёт",
+      "filter": "Фильтр",
+      "generate_report": "Создать Отчёт",
+      "join": "Вступить",
+      "refresh_stats": "Обновить Статистику",
+      "renew": "Продлить",
+      "report_issue": "Сообщить о Проблеме",
+      "view_equipment": "Просмотреть Оборудование"
+    },
+    "labels": {
+      "category": "Категория:",
+      "features": "Возможности:",
+      "membership_type": "Тип Членства:",
+      "monthly_fee": "Ежемесячная Плата:",
+      "report_type": "Тип Отчёта:",
+      "session_date": "Дата Сессии:",
+      "session_time": "Время Сессии:",
+      "session_type": "Тип Сессии:",
+      "trainer": "Тренер:"
+    },
+    "confirm": {
+      "cancel_booking": "Вы уверены, что хотите отменить это бронирование?",
+      "cancel_membership": "Вы уверены, что хотите отменить членство?",
+      "cancel_pt": "Вы уверены, что хотите отменить эту PT сессию?"
+    },
+    "errors": {
+      "booking_failed": "Ошибка бронирования: {error}",
+      "email_failed": "Ошибка отправки email: {error}",
+      "fill_required": "Пожалуйста, заполните все обязательные поля",
+      "login_required": "Для доступа к залу необходимо войти в систему",
+      "no_active_membership": "У вас нет активного членства",
+      "select_booking": "Пожалуйста, выберите бронирование",
+      "select_class": "Пожалуйста, выберите занятие",
+      "select_equipment": "Пожалуйста, выберите оборудование",
+      "select_membership": "Пожалуйста, выберите тип членства",
+      "select_session": "Пожалуйста, выберите сессию"
+    },
+    "messages": {
+      "already_member": "У вас уже есть активное членство",
+      "booking_cancelled": "Бронирование успешно отменено",
+      "checked_in": "Отметка успешна! Хорошей тренировки!",
+      "class_booked": "Занятие успешно забронировано",
+      "data_refreshed": "Данные успешно обновлены",
+      "issue_reported": "Проблема успешно зарегистрирована",
+      "membership_cancelled": "Членство успешно отменено",
+      "membership_created": "Членство успешно создано",
+      "membership_renewed": "Членство успешно продлено",
+      "no_membership": "У вас нет членства в зале",
+      "no_membership_info": "Информация о членстве недоступна",
+      "pt_booked": "Персональная тренировка успешно забронирована",
+      "pt_cancelled": "PT сессия успешно отменена",
+      "report_generated": "Отчёт успешно создан"
+    },
+    "prompts": {
+      "booking_date": "Выберите дату бронирования:",
+      "describe_issue": "Опишите проблему:",
+      "emergency_contact": "Имя контакта для экстренной связи:",
+      "emergency_phone": "Телефон контакта для экстренной связи:",
+      "membership_months": "Количество месяцев:",
+      "renewal_months": "Период продления (месяцы):"
+    },
+    "reports": {
+      "title": "Отчёты Зала"
+    },
+    "warnings": {
+      "db_init": "Предупреждение инициализации базы данных",
+      "email_unavailable": "Служба email недоступна",
+      "generate_report_first": "Пожалуйста, сначала создайте отчёт"
+    }
+  }
+}

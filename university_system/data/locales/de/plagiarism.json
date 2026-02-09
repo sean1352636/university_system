@@ -1,0 +1,137 @@
+{
+  "plagiarism": {
+    "title": "Plagiaterkennungssystem",
+    "subtitle": "Überprüfung der akademischen Integrität und Dokumentenanalyse",
+    "welcome": "Willkommen",
+
+    "menu_file": "Datei",
+    "menu_tools": "Werkzeuge",
+    "menu_help": "Hilfe",
+
+    "submit_document": "Dokument Einreichen",
+    "import_documents": "Dokumente Importieren",
+    "export_documents": "Dokumente Exportieren",
+    "check_document": "Dokument Prüfen",
+    "search_repository": "Repository Durchsuchen",
+    "view_my_documents": "Meine Dokumente Anzeigen",
+    "view_results": "Ergebnisse Anzeigen",
+    "advanced_search": "Erweiterte Suche",
+    "bulk_operations": "Massenoperationen",
+    "system_testing": "Systemtests",
+    "generate_reports": "Berichte Erstellen",
+    "compare_documents": "Dokumente Vergleichen",
+    "file_converter": "Dateikonverter",
+    "document_workflow": "Dokumenten-Workflow",
+    "repository": "Repository",
+    "delete_document": "Dokument Löschen",
+    "check_repository_integrity": "Repository-Integrität Prüfen",
+    "check_integrity": "Integrität Prüfen",
+    "backup_restore": "Sicherung & Wiederherstellung",
+    "statistics": "Statistiken",
+    "setup_testing": "Einrichtung & Tests",
+    "about": "Über",
+
+    "dashboard": "Dashboard",
+    "quick_actions": "Schnellaktionen",
+    "check_for_plagiarism": "Auf Plagiat Prüfen",
+    "system_statistics": "Systemstatistiken",
+
+    "documents_tab": "Dokumente",
+    "search_documents": "Dokumente Suchen",
+    "title_label": "Titel:",
+
+    "check_results_tab": "Prüfergebnisse",
+    "refresh_results": "Ergebnisse Aktualisieren",
+
+    "settings_tab": "Einstellungen",
+    "detection_settings": "Erkennungseinstellungen",
+    "similarity_threshold": "Ähnlichkeitsschwelle:",
+    "system_information": "Systeminformationen",
+
+    "repository_integrity_check": "Repository-Integritätsprüfung",
+    "fix_issues": "Probleme Beheben",
+
+    "system_reports": "Systemberichte",
+    "available_reports": "Verfügbare Berichte",
+    "report_options": "Berichtsoptionen",
+    "include_charts_graphs": "Diagramme Einschließen",
+    "export_format": "Exportformat:",
+    "generate_report": "Bericht Erstellen",
+
+    "select_author": "Autor Auswählen",
+    "select_module": "Modul Auswählen",
+
+    "plagiarism_checks": "Plagiatsprüfungen",
+    "check_plagiarism": "Plagiat Prüfen",
+
+    "text_files": "Textdateien (.txt)",
+    "zip_archive": "ZIP-Archiv",
+    "export_selected": "Ausgewählte Exportieren",
+
+    "delete_warning": "Warnung: Diese Aktion kann nicht rückgängig gemacht werden!",
+    "select_document_delete": "Wählen Sie ein Dokument zum Löschen aus",
+
+    "setup_testing_tools": "Einrichtungs- und Testwerkzeuge",
+    "system_setup": "Systemeinrichtung",
+    "check_requirements": "Anforderungen Prüfen",
+    "create_directories": "Verzeichnisse Erstellen",
+    "create_sample_documents": "Beispieldokumente Erstellen",
+    "test_repository": "Repository Testen",
+    "test_plagiarism_check": "Plagiatsprüfung Testen",
+    "clear_results": "Ergebnisse Löschen",
+
+    "total_documents": "Dokumente Gesamt",
+    "total_checks": "Prüfungen Gesamt",
+    "flagged_documents": "Markierte Dokumente",
+    "average_similarity": "Durchschnittliche Ähnlichkeit",
+
+    "document_id": "Dokument-ID",
+    "author": "Autor",
+    "date_submitted": "Einreichungsdatum",
+    "status": "Status",
+    "similarity_score": "Ähnlichkeitswert",
+
+    "no_documents": "Keine Dokumente gefunden",
+    "no_results": "Keine Ergebnisse gefunden",
+    "loading": "Wird geladen...",
+    "processing": "Wird verarbeitet...",
+
+    "success": "Erfolg",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "info": "Information",
+
+    "document_submitted": "Dokument erfolgreich eingereicht",
+    "document_deleted": "Dokument erfolgreich gelöscht",
+    "check_complete": "Plagiatsprüfung abgeschlossen",
+    "export_complete": "Export erfolgreich abgeschlossen",
+    "import_complete": "Import erfolgreich abgeschlossen",
+
+    "confirm_delete": "Sind Sie sicher, dass Sie dieses Dokument löschen möchten?",
+    "confirm_action": "Aktion Bestätigen",
+
+    "select_file": "Datei Auswählen",
+    "select_folder": "Ordner Auswählen",
+    "browse": "Durchsuchen...",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "ok": "OK",
+
+    "report_types": {
+      "summary": "Zusammenfassungsbericht",
+      "detailed": "Detaillierte Analyse",
+      "author_report": "Autorenbericht",
+      "module_report": "Modulbericht",
+      "trends": "Trendbericht"
+    },
+
+    "status_types": {
+      "pending": "Ausstehend",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "flagged": "Markiert",
+      "cleared": "Freigegeben"
+    }
+  }
+}

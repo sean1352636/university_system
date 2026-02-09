@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "大学バンク"
+    },
+    "student": {
+      "default_name": "学生"
+    },
+    "dashboard": {
+      "welcome": "ようこそ、{name}さん",
+      "student_id": "学生ID：{student_id}",
+      "balance_title": "現在の残高",
+      "low_balance_warning": "残高が少なくなっています！チャージをご検討ください。",
+      "account_info_title": "アカウント情報",
+      "account_info_text": "学生財務アカウントは大学IDに紐付けられています。\nこの残高はキャンパスサービス、食堂などで利用できます。"
+    },
+    "buttons": {
+      "refresh": "更新",
+      "top_up": "チャージ",
+      "transaction_history": "取引履歴",
+      "financial_summary": "財務概要",
+      "close": "閉じる",
+      "complete_topup": "チャージを完了",
+      "login": "ログイン",
+      "create_account": "アカウント作成",
+      "back_to_login": "ログインに戻る",
+      "logout": "ログアウト",
+      "deposit": "入金",
+      "withdraw": "出金",
+      "transfer": "振込",
+      "history": "履歴"
+    },
+    "transactions": {
+      "recent_title": "最近の取引",
+      "columns": {
+        "date": "日付",
+        "type": "種類",
+        "amount": "金額",
+        "balance": "残高",
+        "description": "説明"
+      },
+      "no_transactions": "取引が見つかりません"
+    },
+    "topup": {
+      "window_title": "アカウントチャージ",
+      "header": "アカウントにチャージ",
+      "current_balance": "現在の残高：£{balance}",
+      "amount_label": "金額：£",
+      "quick_topup": "クイックチャージ",
+      "payment_method": "支払い方法：",
+      "method_card": "カード",
+      "method_bank_transfer": "銀行振込",
+      "method_cash": "現金",
+      "description": "アカウントチャージ",
+      "success_message": "£{amount} を正常にチャージしました！\n新しい残高：£{balance}"
+    },
+    "error": {
+      "title": "エラー",
+      "positive_amount": "正の金額を入力してください",
+      "max_topup": "最大チャージ金額は £10,000 です",
+      "topup_failed": "チャージに失敗しました。もう一度お試しください。",
+      "valid_amount": "有効な金額を入力してください",
+      "loading_summary": "概要の読み込み中にエラーが発生しました：{error}",
+      "valid_positive_amount": "有効な正の金額を入力してください"
+    },
+    "success": {
+      "title": "成功"
+    },
+    "history": {
+      "window_title": "取引履歴",
+      "header": "全取引履歴"
+    },
+    "summary": {
+      "window_title": "財務概要",
+      "header": "あなたの財務概要",
+      "overview_title": "アカウント概要",
+      "current_balance": "現在の残高：",
+      "total_payments": "総支払回数：",
+      "total_paid": "総支払金額：",
+      "total_refunds": "総返金回数：",
+      "total_refunded": "総返金金額：",
+      "net_spent": "純支出金額：",
+      "spending_by_category": "カテゴリ別支出",
+      "columns": {
+        "category": "カテゴリ",
+        "transactions": "取引回数",
+        "total_spent": "総支出"
+      }
+    },
+    "login": {
+      "title": "大学バンク",
+      "subtitle": "安全な学生バンキング",
+      "student_tip": "ヒント：大学システムからログインしている場合、学生アカウントが自動的に読み込まれます。",
+      "form_title": "アカウントログイン",
+      "account_number": "口座番号：",
+      "pin": "暗証番号：",
+      "new_user": "大学バンクは初めてですか？"
+    },
+    "create_account": {
+      "title": "新規アカウント作成",
+      "form_title": "アカウント詳細",
+      "full_name": "氏名：",
+      "pin_label": "暗証番号（4-6桁）：",
+      "confirm_pin": "暗証番号を確認：",
+      "initial_deposit": "初回入金額（£）："
+    },
+    "standalone": {
+      "account_label": "口座：{account}",
+      "current_balance": "現在の残高"
+    },
+    "deposit": {
+      "window_title": "入金",
+      "header": "入金する",
+      "success": "£{amount} を正常に入金しました"
+    },
+    "withdraw": {
+      "window_title": "出金",
+      "header": "出金する",
+      "available": "利用可能残高：£{balance}",
+      "success": "£{amount} を正常に出金しました",
+      "insufficient_funds": "残高不足"
+    },
+    "transfer": {
+      "window_title": "振込",
+      "header": "振込する",
+      "available": "利用可能残高：£{balance}",
+      "recipient_account": "振込先口座：",
+      "amount_label": "金額：£",
+      "success": "口座 {account} に £{amount} を正常に振り込みました",
+      "self_transfer_error": "自分自身への振込はできません",
+      "recipient_not_found": "振込先口座が見つかりません",
+      "failed": "振込に失敗しました"
+    },
+    "validation": {
+      "enter_credentials": "口座番号と暗証番号を入力してください",
+      "invalid_login": "口座番号または暗証番号が無効です",
+      "enter_name": "氏名を入力してください",
+      "pin_format": "暗証番号は4-6桁の数字である必要があります",
+      "pin_mismatch": "暗証番号が一致しません",
+      "negative_deposit": "初回入金額は負の値にできません"
+    },
+    "account_created": {
+      "title": "アカウント作成完了",
+      "message": "アカウントが作成されました！\n\n口座番号：{account}\n口座番号と暗証番号を覚えておいてください。"
+    }
+  }
+}

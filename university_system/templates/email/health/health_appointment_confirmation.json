@@ -1,0 +1,4 @@
+{
+    "subject": "University Health Portal - Appointment Confirmation",
+    "body": "Dear $first_name $last_name,\n\nYour appointment has been successfully scheduled with the University Health Center.\n\nAppointment Details:\nAppointment ID: $appointment_id\nType: $appointment_type\nDate: $appointment_date\nTime: $appointment_time\nProvider: $provider\n\nPlease arrive 15 minutes before your scheduled appointment time.\n\nIf you need to reschedule or cancel your appointment, please log in to the Health Portal\nor contact the Health Center at health@university.edu or call 555-123-4567.\n\nThank you,\nUniversity Health Center"
+}

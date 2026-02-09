@@ -1,0 +1,4 @@
+{
+    "subject": "Alumni Registration Confirmation",
+    "body": "Dear $alumni_name,\n\nWelcome to the Alumni Network!\n\nYour registration has been successfully processed. You now have access to exclusive alumni benefits and networking opportunities.\n\nThank you for staying connected with us.\n\n$signature"
+}

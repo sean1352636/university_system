@@ -1,0 +1,10 @@
+{
+  "subject": "Dental Appointment Reminder",
+  "body": "Dear $patient_name,\n\nThis is a reminder of your dental appointment:\n\nDate: $appointment_date\nTime: $appointment_time\nDentist: $dentist_name\n\nPlease arrive 10 minutes early.\n\nIf you need to reschedule, please contact us as soon as possible.\n\nBest regards,\nUniversity Dental Clinic",
+  "variables": {
+    "patient_name": "Patient's full name",
+    "appointment_date": "Date of appointment",
+    "appointment_time": "Time of appointment",
+    "dentist_name": "Name of the dentist"
+  }
+}

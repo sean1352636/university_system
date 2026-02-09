@@ -1,0 +1,319 @@
+{
+  "batch_ops": {
+    "title": "Batch Operations Manager",
+    "tabs": {
+      "import": "Import",
+      "export": "Export",
+      "update": "Update",
+      "quality": "Data Quality",
+      "automation": "Automation",
+      "history": "History",
+      "utilities": "Utilities"
+    },
+    "headers": {
+      "import": "Import Operations",
+      "export": "Export Operations",
+      "update": "Update Operations",
+      "quality": "Data Quality Tools",
+      "automation": "Automation & Integration",
+      "history": "Operation History",
+      "utilities": "Utility Tools"
+    },
+    "menu": {
+      "file": "File",
+      "new_import": "New Import...",
+      "open_database": "Open Database...",
+      "create_backup": "Create Backup",
+      "restore_backup": "Restore Backup...",
+      "tools": "Tools",
+      "find_duplicates": "Find Duplicates",
+      "data_quality_check": "Data Quality Check",
+      "generate_template": "Generate Template",
+      "settings": "Settings",
+      "view": "View",
+      "dashboard": "Dashboard",
+      "import_history": "Import History",
+      "system_logs": "System Logs",
+      "system_status": "System Status",
+      "help": "Help",
+      "user_guide": "User Guide",
+      "about": "About",
+      "command_line_mode": "Command Line Mode"
+    },
+    "buttons": {
+      "return_main_menu": "Return to Main Menu",
+      "import_selected": "Import Selected",
+      "select_all": "Select All",
+      "select_none": "Select None",
+      "proceed": "Proceed",
+      "cancel": "Cancel",
+      "ok": "OK",
+      "execute": "Execute",
+      "refresh": "Refresh",
+      "refresh_dashboard": "Refresh Dashboard"
+    },
+    "import": {
+      "csv_title": "Import from CSV",
+      "csv_desc": "Import student records from CSV files",
+      "excel_title": "Import from Excel",
+      "excel_desc": "Import student records from Excel spreadsheets",
+      "multi_file_title": "Multi-File Import",
+      "multi_file_desc": "Import from multiple files at once",
+      "preview_title": "Preview Import",
+      "preview_desc": "Preview data before importing",
+      "duplicate_title": "Duplicate Detection",
+      "duplicate_desc": "Check for duplicate records before import",
+      "resume_title": "Resume Import",
+      "resume_desc": "Resume a previously interrupted import"
+    },
+    "export": {
+      "students_title": "Export Students",
+      "students_desc": "Export student records to CSV/Excel",
+      "reports_title": "Export Reports",
+      "reports_desc": "Generate and export reports",
+      "statistics_title": "Export Statistics",
+      "statistics_desc": "Export system statistics and analytics"
+    },
+    "update": {
+      "batch_title": "Batch Update",
+      "batch_desc": "Update multiple records at once",
+      "grade_title": "Grade Updates",
+      "grade_desc": "Batch update student grades",
+      "module_title": "Module Updates",
+      "module_desc": "Update module enrollments in batch"
+    },
+    "quality": {
+      "find_duplicates": "Find Duplicates",
+      "validate_data": "Validate Data",
+      "clean_data": "Clean Data",
+      "dashboard": "Quality Dashboard",
+      "analysis_tools": "Analysis Tools"
+    },
+    "automation": {
+      "scheduled_tasks": "Scheduled Tasks",
+      "api_integration": "API Integration",
+      "external_db": "External Database",
+      "schedule_daily": "Schedule Daily",
+      "schedule_weekly": "Schedule Weekly",
+      "view_scheduled": "View Scheduled Tasks",
+      "rest_api": "REST API Setup",
+      "start_api": "Start API Server"
+    },
+    "history": {
+      "filter_by": "Filter by:",
+      "all": "All",
+      "imports": "Imports",
+      "exports": "Exports",
+      "updates": "Updates",
+      "date_time": "Date/Time",
+      "operation": "Operation",
+      "records": "Records",
+      "success": "Success",
+      "errors": "Errors",
+      "clear_history": "Clear History",
+      "export_history": "Export History"
+    },
+    "utilities": {
+      "backup_title": "Backup Database",
+      "backup_desc": "Create a backup of the database",
+      "template_title": "Generate Template",
+      "template_desc": "Generate CSV/Excel import templates",
+      "settings_title": "Settings",
+      "settings_desc": "Configure batch operations settings",
+      "undo_title": "Undo Last Operation",
+      "undo_desc": "Undo the most recent batch operation"
+    },
+    "dialogs": {
+      "select_csv": "Select CSV File",
+      "select_excel": "Select Excel File",
+      "select_files": "Select Files",
+      "select_files_prompt": "Select files to import",
+      "select_import_dir": "Select Import Directory",
+      "select_file_preview": "Select a file to preview",
+      "select_file_duplicate": "Select a file to check for duplicates",
+      "select_sheet": "Select Sheet",
+      "select_sheet_prompt": "Select the Excel sheet to import:",
+      "import_preview": "Import Preview",
+      "preview_records": "Preview of {count} records",
+      "sample_records": "Sample records from import file:",
+      "import_summary": "Import Summary",
+      "import_complete": "Import completed successfully",
+      "duplicate_options": "Duplicate Handling Options",
+      "duplicate_records": "Duplicate Records Found",
+      "duplicates_found": "{count} duplicate records found",
+      "found_duplicates": "Found Duplicates",
+      "no_duplicates": "No Duplicates",
+      "no_duplicates_proceed": "No duplicate records found. Proceed with import?",
+      "process_files_confirm": "Process {count} files?",
+      "no_files": "No Files",
+      "confirm": "Confirm",
+      "error": "Error",
+      "complete": "Complete",
+      "system_logs": "System Logs"
+    },
+    "duplicates": {
+      "skip_all": "Skip All Duplicates",
+      "update_existing": "Update Existing Records",
+      "import_anyway": "Import Anyway (Create Duplicates)",
+      "handle_individually": "Handle Individually"
+    },
+    "progress": {
+      "duplicate_detection": "Duplicate Detection",
+      "analyzing_duplicates": "Analyzing for duplicates...",
+      "multi_file_import": "Multi-File Import",
+      "processing_files": "Processing files..."
+    },
+    "messages": {
+      "multi_import_complete": "Multi-file import completed. {success} successful, {failed} failed."
+    },
+    "errors": {
+      "no_valid_records": "No valid records found in the file",
+      "preview_failed": "Failed to preview file: {error}",
+      "excel_read_failed": "Failed to read Excel file: {error}",
+      "no_supported_files": "No supported files found in directory"
+    },
+    "filetypes": {
+      "csv": "CSV Files",
+      "excel": "Excel Files",
+      "all": "All Files"
+    },
+    "status": {
+      "ready": "Ready",
+      "db_connected": "Database Connected"
+    },
+    "logs": {
+      "no_log_file": "No log file found"
+    }
+  },
+  "batch_operations": {
+    "window_title": "拡張学生記録一括操作システム",
+    "tabs": {
+      "import": "📊 インポート操作",
+      "update": "✏️ 更新操作",
+      "export": "📤 エクスポート操作",
+      "quality": "🔍 データ品質",
+      "utilities": "🛠️ ユーティリティ",
+      "automation": "🤖 自動化",
+      "history": "📜 履歴"
+    },
+    "menu": {
+      "file": "ファイル",
+      "new_import": "新規インポート",
+      "open_database": "データベースを開く",
+      "create_backup": "バックアップを作成",
+      "restore_backup": "バックアップを復元",
+      "tools": "ツール",
+      "generate_template": "テンプレートを生成",
+      "data_quality_check": "データ品質チェック",
+      "find_duplicates": "重複を検索",
+      "command_line_mode": "コマンドラインモード",
+      "settings": "設定",
+      "system_status": "システム状態",
+      "view": "表示",
+      "dashboard": "ダッシュボード",
+      "import_history": "インポート履歴",
+      "system_logs": "システムログ",
+      "language": "言語",
+      "change_language": "言語を変更",
+      "help": "ヘルプ",
+      "user_guide": "ユーザーガイド",
+      "about": "について"
+    },
+    "import": {
+      "header": "インポート操作",
+      "from_csv": "CSVからインポート",
+      "from_csv_desc": "CSVファイルから学生データをインポート",
+      "from_excel": "Excelからインポート",
+      "from_excel_desc": "Excelスプレッドシートからインポート",
+      "multi_file": "複数ファイルインポート",
+      "multi_file_desc": "複数ファイルを一度に処理",
+      "with_duplicates": "重複検出付きインポート",
+      "with_duplicates_desc": "スマートな重複処理",
+      "preview": "インポートプレビュー",
+      "preview_desc": "インポート前に変更をプレビュー",
+      "resume": "失敗したインポートを再開",
+      "resume_desc": "中断されたインポートを続行"
+    },
+    "update": {
+      "header": "更新操作",
+      "batch_update": "一括レコード更新",
+      "batch_update_desc": "複数の学生レコードを更新",
+      "bulk_module": "一括モジュール操作",
+      "bulk_module_desc": "モジュール割り当てを管理",
+      "import_grades": "成績データをインポート",
+      "import_grades_desc": "学生の成績をインポート"
+    },
+    "export": {
+      "header": "エクスポート操作",
+      "students": "学生をエクスポート",
+      "students_desc": "学生データをファイルにエクスポート",
+      "statistics": "統計をエクスポート",
+      "statistics_desc": "登録レポートを生成",
+      "reports": "レポートを生成",
+      "reports_desc": "詳細分析レポートを作成"
+    },
+    "quality": {
+      "header": "データ品質ツール",
+      "analysis_tools": "分析ツール",
+      "dashboard": "品質ダッシュボード",
+      "validate": "データを検証",
+      "find_duplicates": "重複を検索",
+      "clean": "データをクリーン",
+      "refresh": "ダッシュボードを更新"
+    },
+    "utilities": {
+      "header": "ユーティリティ機能",
+      "generate_template": "テンプレートを生成",
+      "generate_template_desc": "インポートテンプレートを作成",
+      "create_backup": "バックアップを作成",
+      "create_backup_desc": "データベースをバックアップ",
+      "undo_import": "最後のインポートを元に戻す",
+      "undo_import_desc": "最近の変更をロールバック",
+      "settings": "設定",
+      "settings_desc": "アプリケーション設定を構成"
+    },
+    "automation": {
+      "header": "自動化と統合",
+      "scheduled_tasks": "スケジュールされたタスク",
+      "api_integration": "APIと統合",
+      "schedule_daily": "日次インポートをスケジュール",
+      "schedule_weekly": "週次レポートをスケジュール",
+      "view_scheduled": "スケジュールされたタスクを表示",
+      "start_api": "APIサーバーを開始",
+      "external_db": "外部DB設定",
+      "rest_api": "REST API統合"
+    },
+    "history": {
+      "header": "インポート履歴とレポート",
+      "filter_by": "フィルター：",
+      "filter_all": "すべて",
+      "filter_imports": "インポート",
+      "filter_updates": "更新",
+      "filter_exports": "エクスポート",
+      "refresh": "更新",
+      "export": "履歴をエクスポート",
+      "clear": "履歴をクリア",
+      "col_timestamp": "日時",
+      "col_operation": "操作",
+      "col_records": "レコード",
+      "col_success": "成功",
+      "col_errors": "エラー"
+    },
+    "status": {
+      "ready": "準備完了",
+      "database_connected": "データベース：接続済み",
+      "database_disconnected": "データベース：未接続",
+      "processing": "処理中...",
+      "complete": "完了",
+      "error": "エラー"
+    },
+    "common": {
+      "execute": "実行",
+      "return_main": "🏠 メインメニューに戻る"
+    },
+    "language": {
+      "changed": "言語が変更されました",
+      "restart_required": "一部のテキストはすぐに更新されます。完全に適用するには、アプリケーションを再起動してください。"
+    }
+  }
+}

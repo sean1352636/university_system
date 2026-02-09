@@ -1,0 +1,184 @@
+{
+  "research": {
+    "grants": {
+      "errors": {
+        "add_team_member": "Error adding team member: {error}",
+        "create_milestone": "Error creating milestone: {error}",
+        "create_project": "Error creating research project: {error}",
+        "record_publication": "Error recording publication: {error}",
+        "register_equipment": "Error registering equipment: {error}",
+        "submit_application": "Error submitting grant application: {error}",
+        "submit_ethics_review": "Error submitting ethics review: {error}",
+        "update_decision": "Error updating grant decision: {error}"
+      },
+      "gui": {
+        "cli_instruction": "Use CLI: Research & Grants Management",
+        "description": "Manage research projects, grants, publications, and equipment.\n\nFeatures:\n- Research project tracking\n- Grant applications\n- Publications management\n- Milestone tracking\n- Equipment inventory\n- Ethics review board",
+        "title": "Research & Grants Management"
+      },
+      "menu": {
+        "enter_choice": "Enter your choice (1-8): ",
+        "equipment_inventory": "Equipment Inventory",
+        "error": "Error: {error}",
+        "ethics_review_board": "Ethics Review Board",
+        "feature_available": "Feature available via Research managers",
+        "grant_applications": "Grant Applications",
+        "invalid_choice": "Invalid choice.",
+        "milestone_management": "Milestone Management",
+        "publications_tracking": "Publications Tracking",
+        "research_projects": "Research Projects",
+        "research_reports": "Research Reports",
+        "return_to_main": "Return to Main Menu",
+        "title": "RESEARCH & GRANTS MANAGEMENT",
+        "usage_instruction": "Use: from university_system.modules.domain.research.services import ResearchProjectManager"
+      }
+    }
+  },
+  "research_grants": {
+    "title": "Управление исследованиями и грантами",
+    "window_title": "Research & Grants Management",
+    "submit_proposal": "Submit Proposal",
+    "view_grants": "View Grants",
+    "manage_projects": "Manage Projects",
+    "funding_opportunities": "Funding Opportunities",
+    "grant_applications": "Grant Applications",
+    "active_grants": "Active Grants",
+    "completed_grants": "Completed Grants",
+    "proposal_title": "Proposal Title",
+    "principal_investigator": "Principal Investigator",
+    "co_investigators": "Co-Investigators",
+    "funding_agency": "Funding Agency",
+    "requested_amount": "Requested Amount",
+    "awarded_amount": "Awarded Amount",
+    "project_start": "Project Start Date",
+    "project_end": "Project End Date",
+    "project_status": "Project Status",
+    "budget_allocation": "Budget Allocation",
+    "expenditure_report": "Expenditure Report",
+    "progress_report": "Progress Report",
+    "deliverables": "Deliverables",
+    "publications": "Publications",
+    "submit_report": "Submit Report",
+    "deadline": "Deadline",
+    "header_title": "Управление исследованиями и грантами",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "pi": "PI",
+      "department": "Department",
+      "type": "Type",
+      "start_date": "Start Date",
+      "budget": "Budget",
+      "status": "Status",
+      "grant_name": "Grant Name",
+      "agency": "Agency",
+      "requested": "Requested",
+      "awarded": "Awarded",
+      "deadline": "Deadline",
+      "authors": "Authors",
+      "publication_type": "Publication Type",
+      "journal": "Journal",
+      "year": "Year",
+      "citations": "Citations",
+      "project": "Project",
+      "milestone": "Milestone",
+      "due_date": "Due Date",
+      "completed": "Completed",
+      "equipment_name": "Equipment Name",
+      "purchase_date": "Purchase Date",
+      "cost": "Cost",
+      "location": "Location",
+      "protocol_number": "Protocol Number",
+      "submission_date": "Submission Date",
+      "review_type": "Review Type",
+      "decision": "Decision"
+    },
+    "status": {
+      "not_completed": "Not completed",
+      "pending": "Pending",
+      "under_review": "Under Review"
+    },
+    "tabs": {
+      "research_projects": "Исследовательские проекты",
+      "grant_applications": "Заявки на гранты",
+      "publications": "Публикации",
+      "milestones": "Вехи",
+      "equipment": "Оборудование",
+      "irb_ethics": "Комитет по этике/Этика"
+    },
+    "frames": {
+      "active_projects": "Активные проекты",
+      "grant_applications": "Заявки на гранты",
+      "research_publications": "Исследовательские публикации",
+      "project_milestones": "Вехи проекта",
+      "research_equipment": "Исследовательское оборудование",
+      "irb_applications": "Заявки Комитет по этике/Этика"
+    },
+    "buttons": {
+      "create_project": "Создать проект",
+      "add_team_member": "Добавить члена команды",
+      "submit_application": "Подать заявку",
+      "update_decision": "Обновить решение",
+      "add_publication": "Добавить публикацию",
+      "add_milestone": "Добавить веху",
+      "update_status": "Обновить статус",
+      "add_equipment": "Добавить оборудование",
+      "submit_irb": "Подать заявку Комитет по этике",
+      "change_language": "Язык: {lang}"
+    },
+    "labels": {
+      "user": "Пользователь: {username}"
+    },
+    "fields": {
+      "project_title": "Название проекта:",
+      "pi_id": "ID главного исследователя:",
+      "department": "Кафедра:",
+      "project_type": "Тип проекта:",
+      "start_date": "Дата начала (ГГГГ-ММ-ДД):",
+      "budget": "Бюджет:",
+      "description": "Описание:",
+      "staff_id": "ID сотрудника:",
+      "role": "Роль:"
+    },
+    "dialogs": {
+      "create_project": {
+        "title": "Создать исследовательский проект",
+        "header": "Создать исследовательский проект"
+      },
+      "add_team_member": {
+        "title": "Добавить члена команды",
+        "header": "Добавить члена команды - Проект {project_id}"
+      }
+    },
+    "messages": {
+      "project_created": "Проект создан (ID: {id})",
+      "team_member_added": "Член команды успешно добавлен",
+      "grant_submission_placeholder": "Диалог подачи гранта - реализовать по необходимости",
+      "grant_decision_placeholder": "Диалог обновления решения по гранту - реализовать по необходимости",
+      "add_publication_placeholder": "Диалог добавления публикации - реализовать по необходимости",
+      "add_milestone_placeholder": "Диалог добавления вехи - реализовать по необходимости",
+      "update_milestone_placeholder": "Диалог обновления вехи - реализовать по необходимости",
+      "add_equipment_placeholder": "Диалог добавления оборудования - реализовать по необходимости",
+      "irb_submission_placeholder": "Диалог подачи Комитет по этике - реализовать по необходимости",
+      "irb_decision_placeholder": "Диалог обновления решения Комитет по этике - реализовать по необходимости"
+    },
+    "errors": {
+      "login_required": "Пожалуйста, войдите для доступа к управлению исследованиями и грантами.",
+      "db_init_issue": "Проблемы при инициализации базы данных: {error}. Некоторые функции могут работать некорректно.",
+      "select_project": "Пожалуйста, выберите проект",
+      "load_projects_failed": "Не удалось загрузить проекты: {error}",
+      "load_grants_failed": "Не удалось загрузить гранты: {error}",
+      "load_publications_failed": "Не удалось загрузить публикации: {error}",
+      "load_milestones_failed": "Не удалось загрузить вехи: {error}",
+      "load_equipment_failed": "Не удалось загрузить оборудование: {error}",
+      "load_irb_failed": "Не удалось загрузить заявки Комитет по этике: {error}",
+      "create_project_failed": "Не удалось создать проект: {error}",
+      "add_member_failed": "Не удалось добавить члена команды: {error}",
+      "launch_failed": "Не удалось запустить Графический интерфейс управления исследованиями и грантами: {error}"
+    },
+    "language": {
+      "changed_title": "Язык изменён",
+      "restart_for_full_effect": "Некоторый текст обновится сразу. Для полного эффекта перезапустите модуль."
+    }
+  }
+}

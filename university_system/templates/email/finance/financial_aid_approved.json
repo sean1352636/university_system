@@ -1,0 +1,4 @@
+{
+    "subject": "Financial Aid Approved - $aid_name",
+    "body": "Dear $student_name,\n\nCongratulations! Your application for $aid_name has been approved.\n\nPlease log into your student portal for further details about your financial aid package.\n\n$signature"
+}

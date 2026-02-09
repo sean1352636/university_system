@@ -1,0 +1,101 @@
+{
+  "dentist": {
+    "title": "대학 치과 클리닉",
+    "window_title": "대학 치과 서비스",
+    "available_treatments": "이용 가능한 치료",
+    "book_appointment": "예약하기",
+    "dental_history": "치과 기록",
+    "my_appointments": "내 예약",
+    "my_profile": "내 프로필",
+    "patient_info": "환자 정보",
+    "prescriptions": "처방전",
+    "report_output": "보고서 출력",
+    "search_results": "검색 결과",
+    "todays_appointments": "오늘의 예약",
+    "treatment_details": "치료 세부 정보",
+    "treatment_history": "치료 기록",
+    "tabs": {
+      "admin": "관리",
+      "appointments": "예약",
+      "records": "환자 기록",
+      "treatments": "치료"
+    },
+    "btn": {
+      "book": "예약",
+      "cancel": "취소",
+      "email_report": "보고서 전송",
+      "generate_report": "보고서 생성",
+      "pay": "결제",
+      "refresh_today": "오늘 새로고침",
+      "register": "등록",
+      "reschedule": "일정 변경",
+      "update_profile": "프로필 업데이트",
+      "view_details": "세부 정보 보기",
+      "view_history": "기록 보기",
+      "view_prescriptions": "처방전 보기"
+    },
+    "labels": {
+      "allergies": "알레르기:",
+      "date": "날짜:",
+      "dentist": "치과의사:",
+      "dob": "생년월일:",
+      "emergency_contact": "비상 연락처:",
+      "phone": "전화:",
+      "report_type": "보고서 유형:",
+      "time": "시간:",
+      "treatment_type": "치료 유형:"
+    },
+    "confirm": {
+      "cancel_appointment": "이 예약을 취소하시겠습니까?"
+    },
+    "errors": {
+      "booking_failed": "예약 실패: {error}",
+      "email_failed": "이메일 전송 실패: {error}",
+      "fill_required": "모든 필수 항목을 입력하세요",
+      "invalid_treatment": "잘못된 치료 유형",
+      "not_registered": "환자로 등록되어 있지 않습니다",
+      "patient_not_found": "환자를 찾을 수 없습니다",
+      "permission_denied": "이 작업을 수행할 권한이 없습니다",
+      "registration_failed": "등록 실패: {error}",
+      "select_appointment": "예약을 선택하세요",
+      "select_treatment": "치료를 선택하세요"
+    },
+    "messages": {
+      "already_paid": "이 예약은 이미 결제되었습니다",
+      "already_registered": "이미 환자로 등록되어 있습니다",
+      "appointment_cancelled": "예약이 취소되었습니다",
+      "appointment_rescheduled": "예약 일정이 변경되었습니다",
+      "data_refreshed": "데이터가 새로고침되었습니다",
+      "no_patients_found": "환자를 찾을 수 없습니다",
+      "no_prescriptions": "처방전을 찾을 수 없습니다",
+      "not_registered": "등록되어 있지 않습니다. 먼저 등록하세요.",
+      "payment_processed": "결제가 처리되었습니다",
+      "prescription_created": "처방전이 생성되었습니다",
+      "profile_updated": "프로필이 업데이트되었습니다",
+      "registered": "환자 등록이 완료되었습니다",
+      "reminders_sent": "예약 알림이 전송되었습니다",
+      "report_generated": "보고서가 생성되었습니다",
+      "treatment_recorded": "치료가 기록되었습니다"
+    },
+    "prompts": {
+      "dosage": "용량 입력:",
+      "duration": "기간 입력:",
+      "frequency": "빈도 입력:",
+      "medication": "약 이름 입력:",
+      "new_date": "새 날짜 입력 (YYYY-MM-DD):",
+      "new_phone": "새 전화번호 입력:",
+      "new_time": "새 시간 입력 (HH:MM):",
+      "patient_number": "환자 번호 입력:",
+      "search_patient": "환자 검색:",
+      "treatment_type": "치료 유형 선택:"
+    },
+    "reports": {
+      "title": "치과 보고서"
+    },
+    "warnings": {
+      "db_init": "데이터베이스 초기화 경고",
+      "email_unavailable": "이메일 서비스를 사용할 수 없습니다",
+      "generate_report_first": "먼저 보고서를 생성하세요"
+    }
+  }
+}

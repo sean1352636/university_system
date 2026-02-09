@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "بنك الجامعة"
+    },
+    "student": {
+      "default_name": "طالب"
+    },
+    "dashboard": {
+      "welcome": "مرحباً، {name}",
+      "student_id": "معرف الطالب: {student_id}",
+      "balance_title": "الرصيد الحالي",
+      "low_balance_warning": "رصيد منخفض! يرجى إضافة أموال.",
+      "account_info_title": "معلومات الحساب",
+      "account_info_text": "حسابك المالي الطلابي مرتبط بمعرف الجامعة الخاص بك.\nيمكنك استخدام هذا الرصيد لخدمات الحرم الجامعي والطعام والمزيد."
+    },
+    "buttons": {
+      "refresh": "تحديث",
+      "top_up": "شحن الرصيد",
+      "transaction_history": "سجل المعاملات",
+      "financial_summary": "الملخص المالي",
+      "close": "إغلاق",
+      "complete_topup": "إتمام الشحن",
+      "login": "تسجيل الدخول",
+      "create_account": "إنشاء حساب",
+      "back_to_login": "العودة لتسجيل الدخول",
+      "logout": "تسجيل الخروج",
+      "deposit": "إيداع",
+      "withdraw": "سحب",
+      "transfer": "تحويل",
+      "history": "السجل"
+    },
+    "transactions": {
+      "recent_title": "المعاملات الأخيرة",
+      "columns": {
+        "date": "التاريخ",
+        "type": "النوع",
+        "amount": "المبلغ",
+        "balance": "الرصيد",
+        "description": "الوصف"
+      },
+      "no_transactions": "لم يتم العثور على معاملات"
+    },
+    "topup": {
+      "window_title": "شحن الحساب",
+      "header": "إضافة أموال لحسابك",
+      "current_balance": "الرصيد الحالي: £{balance}",
+      "amount_label": "المبلغ: £",
+      "quick_topup": "شحن سريع",
+      "payment_method": "طريقة الدفع:",
+      "method_card": "بطاقة",
+      "method_bank_transfer": "تحويل بنكي",
+      "method_cash": "نقداً",
+      "description": "شحن الحساب",
+      "success_message": "تم إضافة £{amount} بنجاح!\nالرصيد الجديد: £{balance}"
+    },
+    "error": {
+      "title": "خطأ",
+      "positive_amount": "يرجى إدخال مبلغ موجب",
+      "max_topup": "الحد الأقصى للشحن هو £10,000",
+      "topup_failed": "فشل الشحن. يرجى المحاولة مرة أخرى.",
+      "valid_amount": "يرجى إدخال مبلغ صالح",
+      "loading_summary": "خطأ في تحميل الملخص: {error}",
+      "valid_positive_amount": "يرجى إدخال مبلغ موجب صالح"
+    },
+    "success": {
+      "title": "نجاح"
+    },
+    "history": {
+      "window_title": "سجل المعاملات",
+      "header": "سجل المعاملات الكامل"
+    },
+    "summary": {
+      "window_title": "الملخص المالي",
+      "header": "ملخصك المالي",
+      "overview_title": "نظرة عامة على الحساب",
+      "current_balance": "الرصيد الحالي:",
+      "total_payments": "إجمالي المدفوعات:",
+      "total_paid": "إجمالي المبالغ المدفوعة:",
+      "total_refunds": "إجمالي المبالغ المستردة:",
+      "total_refunded": "إجمالي مبلغ الاسترداد:",
+      "net_spent": "صافي المبلغ المنفق:",
+      "spending_by_category": "الإنفاق حسب الفئة",
+      "columns": {
+        "category": "الفئة",
+        "transactions": "المعاملات",
+        "total_spent": "إجمالي الإنفاق"
+      }
+    },
+    "login": {
+      "title": "بنك الجامعة",
+      "subtitle": "خدمات مصرفية طلابية آمنة",
+      "student_tip": "نصيحة: إذا قمت بتسجيل الدخول عبر نظام الجامعة، سيتم تحميل حسابك الطلابي تلقائياً.",
+      "form_title": "تسجيل الدخول للحساب",
+      "account_number": "رقم الحساب:",
+      "pin": "الرقم السري:",
+      "new_user": "جديد في بنك الجامعة؟"
+    },
+    "create_account": {
+      "title": "إنشاء حساب جديد",
+      "form_title": "تفاصيل الحساب",
+      "full_name": "الاسم الكامل:",
+      "pin_label": "الرقم السري (4-6 أرقام):",
+      "confirm_pin": "تأكيد الرقم السري:",
+      "initial_deposit": "الإيداع الأولي (£):"
+    },
+    "standalone": {
+      "account_label": "الحساب: {account}",
+      "current_balance": "الرصيد الحالي"
+    },
+    "deposit": {
+      "window_title": "إيداع مبلغ",
+      "header": "إيداع أموال",
+      "success": "تم إيداع £{amount} بنجاح"
+    },
+    "withdraw": {
+      "window_title": "سحب مبلغ",
+      "header": "سحب أموال",
+      "available": "المتاح: £{balance}",
+      "success": "تم سحب £{amount} بنجاح",
+      "insufficient_funds": "رصيد غير كافٍ"
+    },
+    "transfer": {
+      "window_title": "تحويل أموال",
+      "header": "تحويل أموال",
+      "available": "المتاح: £{balance}",
+      "recipient_account": "حساب المستلم:",
+      "amount_label": "المبلغ: £",
+      "success": "تم تحويل £{amount} بنجاح إلى الحساب {account}",
+      "self_transfer_error": "لا يمكن التحويل لنفسك",
+      "recipient_not_found": "حساب المستلم غير موجود",
+      "failed": "فشل التحويل"
+    },
+    "validation": {
+      "enter_credentials": "يرجى إدخال رقم الحساب والرقم السري",
+      "invalid_login": "رقم الحساب أو الرقم السري غير صالح",
+      "enter_name": "يرجى إدخال اسمك الكامل",
+      "pin_format": "الرقم السري يجب أن يكون 4-6 أرقام",
+      "pin_mismatch": "الأرقام السرية غير متطابقة",
+      "negative_deposit": "الإيداع الأولي لا يمكن أن يكون سالباً"
+    },
+    "account_created": {
+      "title": "تم إنشاء الحساب",
+      "message": "تم إنشاء حسابك!\n\nرقم الحساب: {account}\nيرجى تذكر رقم الحساب والرقم السري."
+    }
+  }
+}

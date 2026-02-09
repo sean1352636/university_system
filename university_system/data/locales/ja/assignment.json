@@ -1,0 +1,93 @@
+{
+  "assignment": {
+    "title": "課題管理システム",
+    "window_title": "課題管理",
+    "warnings": {
+      "manager_not_initialized": "警告: {manager_name} マネージャーが初期化されていません",
+      "database_validation_failed": "データベース検証に失敗しました: {error}"
+    },
+    "errors": {
+      "get_user_role": "ユーザーロールの取得中にエラーが発生しました: {error}",
+      "launch_feature": "{feature_name} の起動に失敗しました: {error}",
+      "add_permissions": "権限の追加中にエラーが発生しました: {error}",
+      "init_directories": "ディレクトリの初期化中にエラーが発生しました: {error}",
+      "update_tables": "テーブルの更新中にエラーが発生しました: {error}",
+      "get_student_modules": "学生モジュールの取得中にエラーが発生しました: {error}",
+      "calculate_file_hash": "ファイルハッシュの計算中にエラーが発生しました: {error}",
+      "validate_file": "ファイルの検証中にエラーが発生しました: {error}",
+      "log_action": "アクションのログ記録中にエラーが発生しました: {error}",
+      "send_notification": "通知の送信中にエラーが発生しました: {error}",
+      "check_email_preferences": "メール設定の確認中にエラーが発生しました: {error}",
+      "send_email": "メールの送信中にエラーが発生しました: {error}"
+    },
+    "messages": {
+      "permissions_configured": "権限が正常に設定されました"
+    },
+    "validation": {
+      "file_not_exists": "ファイルが存在しません",
+      "file_size_exceeds": "ファイルサイズ ({file_size} MB) が最大値 ({max_size} MB) を超えています",
+      "file_type_not_allowed": "ファイルタイプ {file_ext} は許可されていません。許可されているタイプ: {allowed_types}",
+      "dangerous_pattern": "危険なパターンが検出されました: {pattern}",
+      "file_valid": "ファイルは有効です"
+    },
+    "tabs": {
+      "dashboard": "ダッシュボード",
+      "assignments": "課題",
+      "submissions": "提出物",
+      "grading": "採点",
+      "templates": "テンプレート",
+      "groups": "グループ",
+      "analytics": "分析",
+      "settings": "設定"
+    },
+    "labels": {
+      "assignment_title": "課題タイトル",
+      "description": "説明",
+      "due_date": "提出期限",
+      "module": "モジュール",
+      "status": "ステータス",
+      "grade": "成績",
+      "feedback": "フィードバック",
+      "submitted_at": "提出日時",
+      "student": "学生",
+      "instructor": "講師",
+      "max_score": "最高得点",
+      "weight": "配点 (%)",
+      "file": "ファイル",
+      "rubric": "ルーブリック"
+    },
+    "buttons": {
+      "create": "課題を作成",
+      "submit": "提出",
+      "grade": "採点",
+      "view": "表示",
+      "edit": "編集",
+      "delete": "削除",
+      "download": "ダウンロード",
+      "upload": "アップロード",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "request_extension": "延長を申請",
+      "approve": "承認",
+      "reject": "却下"
+    },
+    "status": {
+      "draft": "下書き",
+      "published": "公開済み",
+      "closed": "締め切り",
+      "submitted": "提出済み",
+      "graded": "採点済み",
+      "late": "遅延",
+      "pending": "保留中",
+      "approved": "承認済み",
+      "rejected": "却下済み"
+    },
+    "notifications": {
+      "new_assignment": "新しい課題が投稿されました: {title}",
+      "submission_received": "{title} の提出を受け取りました",
+      "grade_posted": "{title} の成績が公開されました",
+      "extension_request": "{title} の延長が申請されました",
+      "reminder": "リマインダー: {title} の提出期限が近づいています"
+    }
+  }
+}

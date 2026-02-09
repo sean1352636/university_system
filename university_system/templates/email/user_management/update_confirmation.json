@@ -1,0 +1,4 @@
+{
+    "subject": "Student Record Update Confirmation",
+    "body": "Dear $title $first_name $last_name,\n\nThis email confirms that your student record has been updated.\n\nThe following details were updated:\n$updated_fields\n\nYour current details:\n- Student ID: $student_id\n- Email: $email_address\n- Course: $course\n- Modules: $modules_list\n\nIf you did not request these changes or notice any errors, please contact us immediately.\n$signature"
+}

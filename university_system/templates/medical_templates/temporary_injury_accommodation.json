@@ -1,0 +1,30 @@
+{
+  "template_name": "Temporary Injury Accommodation",
+  "template_id": "MED-004",
+  "description": "Short-term accommodations for students recovering from injuries, surgeries, or acute medical events",
+  "accommodation_type": "Medical",
+  "duration_days": 90,
+  "features": {
+    "flexible_attendance": true,
+    "extended_deadlines": true,
+    "remote_learning_option": true,
+    "accessible_seating": true,
+    "exam_modifications": true
+  },
+  "specific_accommodations": [
+    "Temporary remote attendance during recovery period",
+    "One-time extension of up to 2 weeks on major assignments",
+    "Accessible seating near exits or elevators",
+    "Use of elevator in buildings where typically restricted",
+    "Assistance with heavy textbooks or materials",
+    "Modified physical education requirements",
+    "Excused absences for medical appointments and recovery"
+  ],
+  "documentation_required": [
+    "Doctor's note with estimated recovery timeline",
+    "Medical restriction documentation",
+    "Return-to-activity clearance (when applicable)"
+  ],
+  "review_schedule": "As needed (typically 4-6 weeks)",
+  "notes": "This is a temporary accommodation. Re-evaluation required if recovery extends beyond initial timeline."
+}

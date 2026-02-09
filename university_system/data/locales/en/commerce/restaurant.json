@@ -1,0 +1,208 @@
+{
+  "shifts": {
+    "window_title": "Shifts Management & Scheduling",
+    "init_success": "✓ Shifts tables initialized successfully",
+    "init_error": "✗ Error initializing shifts tables: {error}",
+
+    "tabs": {
+      "shifts": "Shifts",
+      "staff": "Staff",
+      "weekly_schedule": "Weekly Schedule"
+    },
+
+    "shifts_tab": {
+      "header": "Shifts Management",
+      "filters_label": "Filters",
+      "date_range_label": "Date Range:",
+      "to_label": "to",
+      "staff_label": "Staff:",
+      "status_label": "Status:",
+      "all": "All",
+      "search_button": "Search",
+      "add_shift_button": "Add Shift",
+      "clock_in_button": "Clock In",
+      "clock_out_button": "Clock Out",
+      "edit_shift_button": "Edit Shift",
+      "delete_shift_button": "Delete Shift"
+    },
+
+    "staff_tab": {
+      "header": "Staff Members",
+      "add_staff_button": "Add Staff",
+      "edit_staff_button": "Edit Staff",
+      "toggle_status_button": "Toggle Active/Inactive",
+      "delete_button": "Delete"
+    },
+
+    "schedule_tab": {
+      "header": "Weekly Schedule",
+      "previous_week_button": "◄ Previous Week",
+      "next_week_button": "Next Week ►",
+      "week_of_label": "Week of: ",
+      "week_range": "Week of: {start} to {end}",
+      "no_shifts": "No shifts",
+      "in_progress": "In Progress"
+    },
+
+    "columns": {
+      "staff_name": "Staff Name",
+      "date": "Date",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "hours": "Hours",
+      "rate": "Rate/Hr",
+      "total_pay": "Total Pay",
+      "status": "Status",
+      "name": "Name",
+      "position": "Position",
+      "hourly_rate": "Hourly Rate",
+      "email": "Email",
+      "phone": "Phone",
+      "hire_date": "Hire Date",
+      "is_active": "Status"
+    },
+
+    "statuses": {
+      "all": "All",
+      "scheduled": "Scheduled",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+
+    "positions": {
+      "chef": "Chef",
+      "line_cook": "Line Cook",
+      "server": "Server",
+      "bartender": "Bartender",
+      "host": "Host",
+      "dishwasher": "Dishwasher",
+      "manager": "Manager",
+      "assistant_manager": "Assistant Manager"
+    },
+
+    "days_of_week": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+
+    "shift_dialog": {
+      "title_new": "New Shift",
+      "title_edit": "Edit Shift",
+      "staff_member_label": "Staff Member:*",
+      "date_label": "Date:*",
+      "start_time_label": "Start Time:*",
+      "end_time_label": "End Time:",
+      "break_minutes_label": "Break (minutes):",
+      "status_label": "Status:",
+      "notes_label": "Notes:",
+      "save_button": "Save",
+      "cancel_button": "Cancel",
+      "missing_info_title": "Missing Info",
+      "missing_info_message": "Please fill in all required fields",
+      "staff_not_found_title": "Error",
+      "staff_not_found_message": "Staff member not found",
+      "save_success_title": "Success",
+      "save_success_message": "Shift saved successfully",
+      "save_error_title": "Error",
+      "save_error_message": "Failed to save shift: {error}",
+      "load_error_title": "Error",
+      "load_error_message": "Failed to load shift data: {error}",
+      "error_loading_staff": "Error loading staff: {error}"
+    },
+
+    "staff_dialog": {
+      "title_new": "New Staff",
+      "title_edit": "Edit Staff",
+      "name_label": "Name:*",
+      "position_label": "Position:",
+      "hourly_rate_label": "Hourly Rate (£):*",
+      "email_label": "Email:",
+      "phone_label": "Phone:",
+      "hire_date_label": "Hire Date:",
+      "save_button": "Save",
+      "cancel_button": "Cancel",
+      "missing_info_title": "Missing Info",
+      "missing_info_message": "Please enter staff name",
+      "save_success_title": "Success",
+      "save_success_message": "Staff saved successfully",
+      "save_error_title": "Error",
+      "save_error_message": "Failed to save staff: {error}",
+      "load_error_title": "Error",
+      "load_error_message": "Failed to load staff data: {error}"
+    },
+
+    "messages": {
+      "no_selection_title": "No Selection",
+      "no_selection_shift_edit": "Please select a shift to edit",
+      "no_selection_shift_delete": "Please select a shift to delete",
+      "no_selection_shift_clock": "Please select a shift",
+      "no_selection_staff_edit": "Please select a staff member to edit",
+      "no_selection_staff_delete": "Please select a staff member to delete",
+      "no_selection_staff_toggle": "Please select a staff member",
+
+      "invalid_status_title": "Invalid Status",
+      "invalid_status_clock_in": "Can only clock in for scheduled shifts",
+      "invalid_status_clock_out": "Can only clock out from shifts in progress",
+
+      "clock_in_title": "Clock In",
+      "clock_in_confirm": "Clock in for {name} on {date}?",
+      "clock_in_success_title": "Success",
+      "clock_in_success_message": "Clocked in successfully",
+      "clock_in_error_title": "Error",
+      "clock_in_error_message": "Failed to clock in: {error}",
+
+      "clock_out_title": "Clock Out",
+      "clock_out_confirm": "Clock out for {name}?",
+      "clock_out_success_title": "Success",
+      "clock_out_success_message": "Clocked out successfully\n\nHours worked: {hours}\nTotal pay: £{pay}",
+      "clock_out_error_title": "Error",
+      "clock_out_error_message": "Failed to clock out: {error}",
+
+      "delete_shift_title": "Confirm Delete",
+      "delete_shift_confirm": "Delete selected shift?\n\nThis cannot be undone.",
+      "delete_shift_success_title": "Success",
+      "delete_shift_success_message": "Shift deleted",
+      "delete_shift_error_title": "Error",
+      "delete_shift_error_message": "Failed to delete shift: {error}",
+
+      "delete_staff_title": "Confirm Delete",
+      "delete_staff_confirm": "Delete staff member '{name}'?\n\nThis cannot be undone.",
+      "delete_staff_success_title": "Success",
+      "delete_staff_success_message": "Staff member deleted",
+      "delete_staff_error_title": "Error",
+      "delete_staff_error_message": "Failed to delete staff: {error}",
+
+      "load_staff_error_title": "Error",
+      "load_staff_error_message": "Failed to load staff: {error}",
+
+      "load_shifts_error_title": "Error",
+      "load_shifts_error_message": "Failed to load shifts: {error}",
+
+      "load_schedule_error_title": "Error",
+      "load_schedule_error_message": "Failed to load schedule: {error}",
+
+      "load_shift_error_title": "Error",
+      "load_shift_error_message": "Failed to load shift: {error}",
+
+      "update_status_error_title": "Error",
+      "update_status_error_message": "Failed to update status: {error}"
+    },
+
+    "display": {
+      "rate_format": "£{rate}",
+      "pay_format": "£{pay}",
+      "hours_format": "{hours}",
+      "not_available": "N/A"
+    },
+
+    "required_field_indicator": "*"
+  }
+}

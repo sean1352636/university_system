@@ -1,0 +1,54 @@
+{
+  "theme": {
+    "title": "테마 설정",
+    "select_theme": "테마 선택",
+    "dark_mode": "Dark Mode",
+    "light_mode": "Light Mode",
+    "apply": "테마 적용",
+    "preview": "미리보기",
+    "colors": {
+      "primary": "기본 색상",
+      "secondary": "보조 색상",
+      "background": "배경 색상",
+      "foreground": "Foreground",
+      "accent": "강조 색상",
+      "button": "Button",
+      "entry": "Entry Field",
+      "label": "Label",
+      "treeview": "Treeview",
+      "scrollbar": "Scrollbar",
+      "title": "색상 설정",
+      "text": "텍스트 색상",
+      "error": "오류 색상",
+      "warning": "경고 색상",
+      "success": "성공 색상"
+    },
+    "modes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System Default"
+    },
+    "messages": {
+      "theme_applied": "Theme has been applied successfully.",
+      "theme_changed": "Theme changed to {theme}.",
+      "restart_required": "Some changes may require a restart to take full effect."
+    },
+    "errors": {
+      "invalid_theme": "Invalid theme selected.",
+      "apply_failed": "Failed to apply theme: {error}"
+    },
+    "light": "라이트 모드",
+    "dark": "다크 모드",
+    "system": "시스템 설정 따르기",
+    "custom": "사용자 지정",
+    "reset": "기본값으로 재설정",
+    "fonts": {
+      "title": "글꼴 설정",
+      "family": "글꼴",
+      "size": "글꼴 크기",
+      "weight": "글꼴 두께"
+    },
+    "saved": "테마 설정이 저장되었습니다",
+    "save_failed": "테마 설정 저장에 실패했습니다"
+  }
+}

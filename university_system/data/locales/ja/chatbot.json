@@ -1,0 +1,116 @@
+{
+  "chatbot": {
+    "window_title": "大学チャットボット - 学生サポートシステム",
+    "welcome": "大学チャットボットへようこそ",
+    "system": "システム",
+    "university_chatbot": "大学チャットボット",
+
+    "voice_btn": "音声",
+    "settings_btn": "設定",
+    "exit_to_main": "メインに戻る",
+    "send_btn": "送信",
+    "back_to_chat": "チャットに戻る",
+    "send_message_btn": "メッセージを送信",
+
+    "quick_actions": "クイックアクション",
+    "my_courses": "マイコース",
+    "my_grades": "成績",
+    "search_courses": "コース検索",
+    "check_financial_aid": "奨学金を確認",
+    "view_schedule": "スケジュールを見る",
+    "get_help": "ヘルプを取得",
+    "show_available_courses": "登録可能なコースを表示してください",
+    "need_help_msg": "システムについてヘルプが必要です",
+
+    "system_administration": "システム管理",
+    "admin_tab_system_status": "システム状態",
+    "admin_tab_user_management": "ユーザー管理",
+    "admin_tab_analytics": "分析",
+    "admin_tab_system_logs": "システムログ",
+    "system_metrics": "システム指標",
+
+    "no_selection_title": "選択なし",
+    "select_user_to_view": "詳細を表示するユーザーを選択してください。",
+    "select_user_to_message": "メッセージを送信するユーザーを選択してください。",
+    "message_sent_title": "メッセージ送信完了",
+    "message_sent_msg": "{username}に管理メッセージを送信しました",
+
+    "export_complete": "エクスポート完了",
+    "analytics_exported": "分析データを{filename}にエクスポートしました",
+    "export_error": "エクスポートエラー",
+    "analytics_export_failed": "分析のエクスポートに失敗しました: {error}",
+    "conversations_exported": "会話を{filename}にエクスポートしました",
+    "conversations_export_failed": "会話のエクスポートに失敗しました: {error}",
+
+    "clear_cache": "キャッシュをクリア",
+    "clear_cache_confirm": "分析キャッシュをクリアしてもよろしいですか？",
+    "cache_cleared": "キャッシュクリア完了",
+    "cache_cleared_msg": "分析キャッシュがクリアされました。",
+    "clear_cache_failed": "キャッシュのクリアに失敗しました: {error}",
+
+    "clear_logs": "ログをクリア",
+    "clear_logs_confirm": "すべてのシステムログをクリアしてもよろしいですか？",
+    "logs_cleared": "ログクリア完了",
+    "logs_cleared_msg": "すべてのシステムログがクリアされました。",
+    "clear_logs_failed": "ログのクリアに失敗しました: {error}",
+
+    "backup_complete": "バックアップ完了",
+    "backup_created": "システムバックアップを作成しました: {filename}",
+    "backup_error": "バックアップエラー",
+    "backup_failed": "バックアップの作成に失敗しました: {error}",
+    "restore_warning": "復元警告",
+    "restore_warning_msg": "復元すると現在のデータが上書きされます。続行しますか？",
+    "select_backup_file": "バックアップファイルを選択",
+    "restore_complete": "復元完了",
+    "restore_success": "{filename}からシステムを復元しました",
+    "restore_error": "復元エラー",
+    "restore_failed": "バックアップの復元に失敗しました: {error}",
+
+    "clear_chat_title": "チャットをクリア",
+    "clear_chat_confirm": "チャット履歴をクリアしてもよろしいですか？",
+    "chat_history_cleared": "チャット履歴がクリアされました。",
+
+    "user_guide_title": "ユーザーガイド",
+    "keyboard_shortcuts_title": "キーボードショートカット",
+    "about_title": "大学チャットボットについて",
+    "getting_help": "ヘルプを取得",
+    "help_info": "チャットボットの使い方:\n\n1. メッセージボックスに質問を入力\n2. Enterを押すか送信をクリック\n3. 一般的なタスクにはクイックアクションを使用\n4. 音声入力には音声モードを有効化\n5. カスタマイズオプションは設定を確認\n\n追加サポートが必要な場合はITヘルプデスクにお問い合わせください。",
+
+    "settings_preferences": "設定と環境設定",
+    "tab_general": "一般",
+    "tab_voice": "音声",
+    "tab_about": "概要",
+    "appearance": "外観",
+    "chat_font_size": "チャットのフォントサイズ:",
+    "notifications": "通知",
+    "enable_notification_sounds": "通知音を有効にする",
+    "auto_scroll_chat": "チャットの自動スクロール",
+    "app_information": "アプリケーション情報",
+
+    "voice_not_available": "音声インターフェースは利用できません。\nマイクと依存関係を確認してください。",
+    "voice_test": "音声テスト",
+    "test_microphone": "マイクをテスト",
+    "click_test_mic": "'マイクをテスト'をクリックして設定を確認してください",
+    "voice_settings": "音声設定",
+    "recording_duration": "録音時間（秒）:",
+    "enable_tts": "テキスト読み上げ応答を有効にする",
+    "voice_unavailable": "音声利用不可",
+    "voice_unavailable_msg": "音声インターフェースは利用できません。マイクの設定を確認してください。",
+    "voice_error": "音声エラー",
+    "voice_recognition_failed": "音声認識に失敗しました: {error}",
+
+    "about_info": "大学チャットボット v2.0\n\n大学の学生とスタッフのためのインテリジェントアシスタント。\n\n機能:\n- 自然言語処理\n- コースと成績情報\n- 奨学金支援\n- スケジュール管理\n- 音声インターフェースサポート\n\n大学IT部門により開発。",
+
+    "status_ready": "準備完了",
+    "status_connected": "接続済み",
+
+    "auth_required_title": "認証が必要です",
+    "auth_required_msg": "まず大学システムのメインGUIからログインしてください。\n\n実行: python run.py --gui",
+
+    "access_denied_title": "アクセス拒否",
+    "access_denied_admin": "管理パネルにアクセスする権限がありません。",
+
+    "application_error": "アプリケーションエラー",
+    "error_occurred": "エラーが発生しました: {error}"
+  }
+}

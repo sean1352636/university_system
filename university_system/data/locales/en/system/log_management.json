@@ -1,0 +1,492 @@
+{
+  "log_management": {
+    "title": "Log Management System",
+    "window_title": "Log Management System",
+    "return_to_homescreen": "Return to Homescreen",
+
+    "tabs": {
+      "dashboard": "Dashboard",
+      "search": "Search",
+      "analytics": "Analytics",
+      "alerts": "Alerts",
+      "config": "Configuration",
+      "export": "Export",
+      "maintenance": "Maintenance",
+      "api": "API",
+      "student_integration": "Student Integration"
+    },
+
+    "dashboard": {
+      "title": "Dashboard",
+      "recent_logs": "Recent Activity Logs",
+      "refresh": "Refresh",
+      "columns": {
+        "id": "ID",
+        "timestamp": "Timestamp",
+        "user": "User",
+        "action": "Action",
+        "module": "Module",
+        "status": "Status",
+        "entity_type": "Entity Type",
+        "entity_id": "Entity ID",
+        "details": "Details"
+      },
+      "stats": {
+        "total_logs": "Total Logs",
+        "today": "Today",
+        "week": "This Week",
+        "errors": "Errors",
+        "warnings": "Warnings"
+      }
+    },
+
+    "search": {
+      "title": "Search Logs",
+      "filter_criteria": "Filter Criteria",
+      "results": "Search Results",
+      "user": "User",
+      "action": "Action",
+      "entity_type": "Entity Type",
+      "status": "Status",
+      "from_date": "From Date",
+      "to_date": "To Date",
+      "search_text": "Search Text",
+      "buttons": {
+        "search": "Search",
+        "clear": "Clear",
+        "save_search": "Save Search",
+        "load_search": "Load Search"
+      },
+      "messages": {
+        "no_results": "No results found",
+        "search_saved": "Search saved successfully",
+        "search_loaded": "Search loaded successfully"
+      }
+    },
+
+    "analytics": {
+      "title": "Analytics",
+      "analysis_period": "Analysis Period",
+      "days": "Days",
+      "user_id_optional": "User ID (optional)",
+      "results": "Analysis Results",
+      "buttons": {
+        "generate_summary": "Generate Summary",
+        "user_report": "User Activity Report",
+        "create_chart": "Create Chart"
+      },
+      "report_types": {
+        "summary": "Summary Report",
+        "user_activity": "User Activity Report",
+        "action_frequency": "Action Frequency Report",
+        "error_analysis": "Error Analysis",
+        "timeline": "Timeline Analysis"
+      }
+    },
+
+    "alerts": {
+      "title": "Security Alerts",
+      "recent_alerts": "Recent Security Alerts",
+      "alerts_checked": "Alerts checked",
+      "columns": {
+        "time": "Time",
+        "type": "Type",
+        "severity": "Severity",
+        "message": "Message",
+        "status": "Status"
+      },
+      "buttons": {
+        "check_alerts": "Check Alerts",
+        "refresh": "Refresh",
+        "mark_all_read": "Mark All Read"
+      },
+      "types": {
+        "failed_login": "Failed Login",
+        "unusual_hours": "Unusual Hours",
+        "rapid_actions": "Rapid Actions",
+        "admin_actions": "Admin Actions",
+        "security": "Security"
+      },
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      }
+    },
+
+    "alert_status": {
+      "active": "Active",
+      "resolved": "Resolved",
+      "read": "Read",
+      "unread": "Unread"
+    },
+
+    "config": {
+      "title": "Configuration",
+      "general_settings": "General Settings",
+      "feature_settings": "Feature Settings",
+      "email_notifications": "Email Notifications",
+      "api_settings": "API Settings",
+      "retention_days": "Retention Days",
+      "auto_archive": "Auto Archive After (days)",
+      "max_log_size": "Max Log Size (MB)",
+      "enable_realtime": "Enable Real-time Monitoring",
+      "enable_alerts": "Enable Security Alerts",
+      "enable_analytics": "Enable Analytics",
+      "enable_encryption": "Enable Encryption",
+      "enable_api": "Enable API Server",
+      "alert_email": "Alert Email Address",
+      "api_secret_key": "API Secret Key",
+      "buttons": {
+        "save": "Save Config",
+        "load": "Load Config",
+        "reset": "Reset to Defaults",
+        "generate_api_key": "Generate API Key"
+      },
+      "messages": {
+        "saved": "Configuration saved successfully",
+        "loaded": "Configuration loaded successfully",
+        "reset": "Configuration reset to defaults"
+      },
+      "api_key_generated": "New API Key Generated",
+      "api_key_message": "Store this key securely - it won't be shown again!"
+    },
+
+    "export": {
+      "title": "Export Logs",
+      "export_format": "Export Format",
+      "date_range": "Date Range",
+      "from_date": "From Date",
+      "to_date": "To Date",
+      "formats": {
+        "csv": "CSV",
+        "json": "JSON",
+        "xlsx": "Excel (XLSX)",
+        "pdf": "PDF",
+        "txt": "Text"
+      },
+      "buttons": {
+        "export": "Export",
+        "bulk_export": "Bulk Date Export",
+        "custom_format": "Custom Format",
+        "schedule_export": "Schedule Export",
+        "email_report": "Email Report"
+      },
+      "messages": {
+        "success": "Export completed successfully",
+        "error": "Export failed",
+        "no_data": "No data to export",
+        "no_logs_in_range": "No logs found in selected date range"
+      }
+    },
+
+    "bulk_export": {
+      "title": "Bulk Date Export",
+      "title_header": "Export Logs by Date Range",
+      "from_date": "From Date (YYYY-MM-DD)",
+      "to_date": "To Date (YYYY-MM-DD)",
+      "export_format": "Export Format",
+      "export": "Export",
+      "success": "Bulk export completed successfully!",
+      "error": "Error during bulk export",
+      "no_data": "No data to export",
+      "no_logs_in_range": "No logs found in selected date range"
+    },
+
+    "maintenance": {
+      "title": "Maintenance",
+      "database_ops": "Database Operations",
+      "archive_ops": "Archive Operations",
+      "performance": "Performance Testing",
+      "buttons": {
+        "db_info": "DB Info",
+        "optimize": "Optimize",
+        "vacuum": "Vacuum",
+        "integrity_check": "Integrity Check"
+      },
+      "archive_buttons": {
+        "archive_old": "Archive Old Logs",
+        "cleanup_old": "Cleanup Old Logs",
+        "view_archives": "View Archives"
+      },
+      "perf_buttons": {
+        "query_perf": "Query Performance",
+        "insert_perf": "Insert Performance",
+        "system_resources": "System Resources"
+      },
+      "messages": {
+        "db_optimized": "Database optimized successfully",
+        "vacuum_complete": "Vacuum completed successfully",
+        "integrity_ok": "Database integrity check passed",
+        "archived": "Logs archived successfully",
+        "cleanup_complete": "Cleanup completed successfully"
+      }
+    },
+
+    "api_server": {
+      "title": "API Server",
+      "removed": "API server functionality has been removed. Please use the main application API instead.",
+      "status": "API Server Status",
+      "running": "Running",
+      "stopped": "Stopped",
+      "port": "Port",
+      "endpoints": "Available Endpoints",
+      "start": "Start API Server",
+      "stop": "Stop API Server"
+    },
+
+    "dialogs": {
+      "api_stats": "API Statistics",
+      "bulk_import": "Bulk Import Logs",
+      "bulk_cleanup": "Bulk Data Cleanup",
+      "api_key_generated": "New API Key Generated",
+      "api_docs": "API Documentation",
+      "scheduled_tasks": "Scheduled Tasks",
+      "security_alerts_config": "Security Alerts Configuration",
+      "weekly_report_setup": "Weekly Analytics Report Setup",
+      "daily_report_setup": "Daily Email Report Setup",
+      "email_report": "Email Report",
+      "student_system": "Student Management System",
+      "schedule_export": "Schedule Export",
+      "custom_format_export": "Custom Format Export",
+      "bulk_date_export": "Bulk Date Export",
+      "student_logs": "Student Activity Logs",
+      "realtime_monitor": "Real-time Log Monitor",
+      "archive_files": "Archive Files"
+    },
+
+    "api_stats": {
+      "title": "API Usage Statistics",
+      "total_requests": "Total Requests",
+      "successful": "Successful",
+      "failed": "Failed",
+      "avg_response_time": "Average Response Time",
+      "endpoints": "Endpoints",
+      "methods": "HTTP Methods"
+    },
+
+    "bulk_import": {
+      "title": "Bulk Import Log Files",
+      "description": "Import log files in bulk",
+      "select_file": "Select File",
+      "file_path": "File Path",
+      "browse": "Browse",
+      "import": "Start Import",
+      "messages": {
+        "success": "Import completed successfully",
+        "error": "Import failed",
+        "select_file": "Please select a file to import"
+      }
+    },
+
+    "bulk_cleanup": {
+      "title": "Bulk Data Cleanup",
+      "description": "Delete logs based on criteria",
+      "delete_older_than": "Delete logs older than:",
+      "days": "days",
+      "delete_by_status": "Delete logs with status:",
+      "status_all": "All",
+      "status_success": "Success",
+      "status_error": "Error",
+      "status_warning": "Warning",
+      "buttons": {
+        "cleanup": "Start Cleanup",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "confirm": "Are you sure you want to delete these logs? This action cannot be undone.",
+        "success": "Cleanup completed successfully",
+        "deleted": "Deleted {count} log entries",
+        "error": "Cleanup failed"
+      }
+    },
+
+    "scheduled_tasks": {
+      "title": "Scheduled Tasks Overview",
+      "description": "View and manage scheduled tasks",
+      "task_name": "Task Name",
+      "schedule": "Schedule",
+      "last_run": "Last Run",
+      "next_run": "Next Run",
+      "status": "Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+
+    "security_alerts_config": {
+      "title": "Security Alerts Configuration",
+      "description": "Configure security alert settings",
+      "email_address": "Email Address:",
+      "thresholds": "Alert Thresholds",
+      "failed_login_threshold": "Failed Login Threshold:",
+      "rapid_actions_threshold": "Rapid Actions Threshold:",
+      "alert_types": "Alert Types",
+      "alert_failed_logins": "Alert on Failed Logins",
+      "alert_unusual_hours": "Alert on Unusual Hours",
+      "alert_rapid_actions": "Alert on Rapid Actions",
+      "alert_admin_actions": "Alert on Admin Actions",
+      "buttons": {
+        "save": "Save Configuration",
+        "test": "Send Test Alert"
+      }
+    },
+
+    "weekly_report": {
+      "title": "Weekly Analytics Report Setup",
+      "description": "Configure weekly email reports",
+      "email_address": "Email Address:",
+      "schedule": "Report Schedule",
+      "day_of_week": "Day of Week:",
+      "time": "Time:",
+      "content": "Report Content",
+      "include_summary": "Include Summary Statistics",
+      "include_charts": "Include Charts",
+      "include_alerts": "Include Security Alerts",
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "buttons": {
+        "save": "Save Configuration",
+        "send_test": "Send Test Report"
+      }
+    },
+
+    "daily_report": {
+      "title": "Daily Email Report Setup",
+      "description": "Configure daily email reports",
+      "email_address": "Email Address:",
+      "send_time": "Send Time:",
+      "smtp_settings": "SMTP Settings",
+      "smtp_server": "SMTP Server:",
+      "smtp_port": "Port:",
+      "smtp_username": "Username:",
+      "smtp_password": "Password:",
+      "buttons": {
+        "save": "Save Configuration",
+        "test": "Test Email Settings"
+      }
+    },
+
+    "email_report": {
+      "title": "Send Email Report",
+      "description": "Send a log report via email",
+      "report_type": "Report Type:",
+      "email_address": "Email Address:",
+      "buttons": {
+        "send": "Send Report",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "sent": "Email report sent successfully",
+        "error": "Failed to send email report"
+      }
+    },
+
+    "student_integration": {
+      "title": "Student Management System",
+      "description": "View student activity logs",
+      "student_id": "Student ID:",
+      "buttons": {
+        "view_logs": "View Logs",
+        "refresh": "Refresh"
+      }
+    },
+
+    "schedule_export": {
+      "title": "Schedule Automatic Log Export",
+      "description": "Configure automatic log exports",
+      "frequency": "Export Frequency:",
+      "time": "Export Time:",
+      "format": "Export Format:",
+      "destination": "Destination Path:",
+      "frequencies": {
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+      },
+      "buttons": {
+        "save": "Save Schedule",
+        "cancel": "Cancel"
+      }
+    },
+
+    "custom_format": {
+      "title": "Custom Format Export",
+      "description": "Export logs in custom format",
+      "fields": "Select Fields to Export",
+      "format_options": "Format Options",
+      "delimiter": "Delimiter:",
+      "date_format": "Date Format:",
+      "buttons": {
+        "export": "Generate Export",
+        "cancel": "Cancel"
+      }
+    },
+
+    "realtime_monitor": {
+      "title": "Real-time Log Monitor",
+      "description": "Monitor logs in real-time",
+      "auto_refresh": "Auto Refresh",
+      "refresh_interval": "Refresh Interval (seconds):",
+      "buttons": {
+        "start": "Start Monitoring",
+        "stop": "Stop Monitoring",
+        "clear": "Clear Display"
+      }
+    },
+
+    "archive_files": {
+      "title": "Archive Files",
+      "description": "View and manage archived log files",
+      "filename": "Filename",
+      "size": "Size",
+      "date": "Archive Date",
+      "buttons": {
+        "restore": "Restore",
+        "delete": "Delete",
+        "download": "Download",
+        "close": "Close"
+      }
+    },
+
+    "student_logs": {
+      "title": "Student Activity Logs",
+      "description": "View logs for specific student",
+      "no_logs": "No logs found for this student"
+    },
+
+    "messages": {
+      "loading": "Loading...",
+      "processing": "Processing...",
+      "no_data": "No data available",
+      "error": "An error occurred",
+      "success": "Operation completed successfully",
+      "confirm_delete": "Are you sure you want to delete this?",
+      "confirm_action": "Are you sure you want to proceed?"
+    },
+
+    "buttons": {
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "export": "Export",
+      "import": "Import",
+      "refresh": "Refresh",
+      "search": "Search",
+      "clear": "Clear",
+      "apply": "Apply",
+      "reset": "Reset",
+      "ok": "OK",
+      "yes": "Yes",
+      "no": "No",
+      "browse": "Browse"
+    }
+  }
+}

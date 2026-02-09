@@ -1,0 +1,4 @@
+{
+    "subject": "Withdrawal Confirmation - $amount",
+    "body": "Dear $user_name,\n\nThis confirms your withdrawal from your University Betting Shop account.\n\n============================================================\n                    WITHDRAWAL CONFIRMATION\n============================================================\n\nTransaction ID:        $transaction_id\n$withdrawal_ref_line\nDate:                  $withdrawal_date\nAmount:                $amount\nWithdrawal Method:     $method\nBetting Account Balance: $betting_balance\n$student_account_section\n============================================================\n\nYour withdrawal has been processed successfully.\n$method_note\n\nPlease gamble responsibly.\n\nUniversity Betting Shop\n\n---\nThis is an automated message. Please do not reply."
+}

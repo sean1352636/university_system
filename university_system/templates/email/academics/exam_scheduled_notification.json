@@ -1,0 +1,4 @@
+{
+    "subject": "Exam Scheduled: $module_code - $module_name",
+    "body": "Dear Student/Instructor,\n\nAn exam has been scheduled for the following module:\n\nModule: $module_code - $module_name\nDate: $date\nTime: $start_time - $end_time\nRoom: $room\nInstructor: $instructor_name\n\nPlease make note of this date and time. Ensure you arrive at least 15 minutes early.\n\nIf you have any questions, please contact your instructor or the examination office.\n\nBest regards,\nUniversity Examination Office"
+}

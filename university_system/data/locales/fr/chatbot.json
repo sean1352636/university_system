@@ -1,0 +1,116 @@
+{
+  "chatbot": {
+    "window_title": "Chatbot Universitaire - Système de Support Étudiant",
+    "welcome": "Bienvenue sur le Chatbot Universitaire",
+    "system": "Système",
+    "university_chatbot": "Chatbot Universitaire",
+
+    "voice_btn": "Voix",
+    "settings_btn": "Paramètres",
+    "exit_to_main": "Retour au Principal",
+    "send_btn": "Envoyer",
+    "back_to_chat": "Retour au Chat",
+    "send_message_btn": "Envoyer le Message",
+
+    "quick_actions": "Actions Rapides",
+    "my_courses": "Mes Cours",
+    "my_grades": "Mes Notes",
+    "search_courses": "Rechercher des Cours",
+    "check_financial_aid": "Vérifier l'Aide Financière",
+    "view_schedule": "Voir l'Emploi du Temps",
+    "get_help": "Obtenir de l'Aide",
+    "show_available_courses": "Montrez-moi les cours disponibles pour l'inscription",
+    "need_help_msg": "J'ai besoin d'aide avec le système",
+
+    "system_administration": "Administration du Système",
+    "admin_tab_system_status": "État du Système",
+    "admin_tab_user_management": "Gestion des Utilisateurs",
+    "admin_tab_analytics": "Analytiques",
+    "admin_tab_system_logs": "Journaux du Système",
+    "system_metrics": "Métriques du Système",
+
+    "no_selection_title": "Aucune Sélection",
+    "select_user_to_view": "Veuillez sélectionner un utilisateur pour voir les détails.",
+    "select_user_to_message": "Veuillez sélectionner un utilisateur pour envoyer un message.",
+    "message_sent_title": "Message Envoyé",
+    "message_sent_msg": "Message administratif envoyé à {username}",
+
+    "export_complete": "Exportation Terminée",
+    "analytics_exported": "Données analytiques exportées vers {filename}",
+    "export_error": "Erreur d'Exportation",
+    "analytics_export_failed": "Échec de l'exportation des analytiques: {error}",
+    "conversations_exported": "Conversations exportées vers {filename}",
+    "conversations_export_failed": "Échec de l'exportation des conversations: {error}",
+
+    "clear_cache": "Vider le Cache",
+    "clear_cache_confirm": "Êtes-vous sûr de vouloir vider le cache des analytiques?",
+    "cache_cleared": "Cache Vidé",
+    "cache_cleared_msg": "Le cache des analytiques a été vidé.",
+    "clear_cache_failed": "Échec du vidage du cache: {error}",
+
+    "clear_logs": "Effacer les Journaux",
+    "clear_logs_confirm": "Êtes-vous sûr de vouloir effacer tous les journaux du système?",
+    "logs_cleared": "Journaux Effacés",
+    "logs_cleared_msg": "Tous les journaux du système ont été effacés.",
+    "clear_logs_failed": "Échec de l'effacement des journaux: {error}",
+
+    "backup_complete": "Sauvegarde Terminée",
+    "backup_created": "Sauvegarde du système créée: {filename}",
+    "backup_error": "Erreur de Sauvegarde",
+    "backup_failed": "Échec de la création de la sauvegarde: {error}",
+    "restore_warning": "Avertissement de Restauration",
+    "restore_warning_msg": "La restauration écrasera les données actuelles. Continuer?",
+    "select_backup_file": "Sélectionner le Fichier de Sauvegarde",
+    "restore_complete": "Restauration Terminée",
+    "restore_success": "Système restauré depuis: {filename}",
+    "restore_error": "Erreur de Restauration",
+    "restore_failed": "Échec de la restauration de la sauvegarde: {error}",
+
+    "clear_chat_title": "Effacer le Chat",
+    "clear_chat_confirm": "Êtes-vous sûr de vouloir effacer l'historique du chat?",
+    "chat_history_cleared": "Historique du chat effacé.",
+
+    "user_guide_title": "Guide de l'Utilisateur",
+    "keyboard_shortcuts_title": "Raccourcis Clavier",
+    "about_title": "À Propos du Chatbot Universitaire",
+    "getting_help": "Obtenir de l'Aide",
+    "help_info": "Comment utiliser le chatbot:\n\n1. Tapez votre question dans la zone de message\n2. Appuyez sur Entrée ou cliquez sur Envoyer\n3. Utilisez les Actions Rapides pour les tâches courantes\n4. Activez le mode vocal pour la reconnaissance vocale\n5. Consultez les Paramètres pour les options de personnalisation\n\nPour une assistance supplémentaire, contactez le Service d'Aide Informatique.",
+
+    "settings_preferences": "Paramètres et Préférences",
+    "tab_general": "Général",
+    "tab_voice": "Voix",
+    "tab_about": "À Propos",
+    "appearance": "Apparence",
+    "chat_font_size": "Taille de Police du Chat:",
+    "notifications": "Notifications",
+    "enable_notification_sounds": "Activer les sons de notification",
+    "auto_scroll_chat": "Défilement automatique du chat",
+    "app_information": "Informations sur l'Application",
+
+    "voice_not_available": "L'interface vocale n'est pas disponible.\nVeuillez vérifier votre microphone et les dépendances.",
+    "voice_test": "Test Vocal",
+    "test_microphone": "Tester le Microphone",
+    "click_test_mic": "Cliquez sur 'Tester le Microphone' pour vérifier votre configuration",
+    "voice_settings": "Paramètres Vocaux",
+    "recording_duration": "Durée d'Enregistrement (secondes):",
+    "enable_tts": "Activer les réponses texte-parole",
+    "voice_unavailable": "Voix Non Disponible",
+    "voice_unavailable_msg": "L'interface vocale n'est pas disponible. Veuillez vérifier la configuration de votre microphone.",
+    "voice_error": "Erreur Vocale",
+    "voice_recognition_failed": "Échec de la reconnaissance vocale: {error}",
+
+    "about_info": "Chatbot Universitaire v2.0\n\nUn assistant intelligent pour les étudiants et le personnel universitaire.\n\nFonctionnalités:\n- Traitement du langage naturel\n- Informations sur les cours et les notes\n- Assistance à l'aide financière\n- Gestion des emplois du temps\n- Support de l'interface vocale\n\nDéveloppé par le Département Informatique de l'Université.",
+
+    "status_ready": "Prêt",
+    "status_connected": "Connecté",
+
+    "auth_required_title": "Authentification Requise",
+    "auth_required_msg": "Veuillez d'abord vous connecter via l'interface principale du Système Universitaire.\n\nExécutez: python run.py --gui",
+
+    "access_denied_title": "Accès Refusé",
+    "access_denied_admin": "Vous n'avez pas la permission d'accéder au panneau d'administration.",
+
+    "application_error": "Erreur d'Application",
+    "error_occurred": "Une erreur s'est produite: {error}"
+  }
+}

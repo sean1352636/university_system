@@ -1,0 +1,4 @@
+{
+    "subject": "Library Fine Payment Confirmation - University System",
+    "body": "Dear $student_name,\n\nThis email confirms that your library fine payment has been processed successfully.\n\nPayment Details:\n- Student ID: $student_id\n- Amount Paid: £$amount\n\nThank you for your payment.\n\n$signature"
+}

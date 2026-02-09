@@ -1,0 +1,38 @@
+{
+  "category": "Transportation",
+  "resources": [
+    {
+      "id": "22",
+      "title": "Parking Services",
+      "type": "article",
+      "content": {
+        "introduction": "Parking Services manages campus parking permits, regulations, and transportation options.",
+        "sections": [
+          {
+            "title": "Parking Permits",
+            "content": "Permit Types:\n- Residential: $500/year (campus residents)\n- Commuter: $300/year (off-campus students)\n- Evening Only: $150/year (after 4PM)\n- Motorcycle: $100/year\n\nHow to Register:\n1. Log into Parking Portal\n2. Register your vehicle\n3. Select permit type\n4. Pay online\n5. Pick up or print permit"
+          },
+          {
+            "title": "Parking Lots",
+            "content": "Student Lots (Blue Permit):\n- Lot A: North campus\n- Lot B: South campus\n- Lot C: West campus\n\nGarage (Any Permit):\n- Central campus\n- Covered parking\n- 24/7 access\n\nVisitor Parking:\n- Metered lots\n- $2/hour\n- App payment available"
+          },
+          {
+            "title": "Regulations",
+            "content": "Permit Required:\n- Monday-Friday, 7AM-5PM\n- Some lots 24/7\n- Check signs for specific rules\n\nProhibited:\n- Parking without valid permit\n- Parking in fire lanes\n- Blocking accessible spaces\n- Overnight in day lots\n\nCitations:\n- First offense: Warning or $25\n- Subsequent: $50-$200\n- Towing for repeat offenders"
+          },
+          {
+            "title": "Alternative Transportation",
+            "content": "Campus Shuttle:\n- Free with student ID\n- Campus Loop: Every 10 minutes\n- Off-Campus: Every 20 minutes\n- Real-time tracking via app\n\nBike Program:\n- Bike share stations on campus\n- Free short-term rentals\n- Bike repair station at Union\n\nPublic Transit:\n- City bus: Free with student ID\n- Routes connect to campus"
+          },
+          {
+            "title": "Contact",
+            "content": "Location: Parking Services Building\nPhone: (555) 123-4585\n\nHours:\nMonday-Friday: 7:30 AM - 5:00 PM\n\nFor Appeals:\n- Submit within 10 days of citation\n- Include documentation\n- Decision within 2 weeks"
+          }
+        ],
+        "conclusion": "Consider alternative transportation - it's cheaper and better for the environment! Free shuttle and bike options available."
+      },
+      "tags": ["parking", "transportation", "shuttle", "permits"],
+      "last_updated": "2025-01-15"
+    }
+  ]
+}

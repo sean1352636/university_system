@@ -1,0 +1,4 @@
+{
+    "subject": "✅ Support Ticket Resolved - #$ticket_id",
+    "body": "Dear $student_name,\n\nYour support ticket has been resolved.\n\nTicket ID: #$ticket_id\nSubject: $ticket_subject\nResolved: $resolved_date\nResolution: $resolution\n\nIf you have any further questions, please feel free to create a new ticket.\n\n$signature"
+}

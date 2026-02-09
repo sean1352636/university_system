@@ -1,0 +1,331 @@
+{
+  "batch_ops": {
+    "title": "Gestionnaire d'Opérations par Lots",
+    "tabs": {
+      "import": "Importer",
+      "export": "Exporter",
+      "update": "Mettre à jour",
+      "quality": "Qualité des Données",
+      "automation": "Automatisation",
+      "history": "Historique",
+      "utilities": "Utilitaires"
+    },
+    "headers": {
+      "import": "Opérations d'Importation",
+      "export": "Opérations d'Exportation",
+      "update": "Opérations de Mise à Jour",
+      "quality": "Outils de Qualité des Données",
+      "automation": "Automatisation et Intégration",
+      "history": "Historique des Opérations",
+      "utilities": "Outils Utilitaires"
+    },
+    "menu": {
+      "file": "Fichier",
+      "new_import": "Nouvelle Importation...",
+      "open_database": "Ouvrir la Base de Données...",
+      "create_backup": "Créer une Sauvegarde",
+      "restore_backup": "Restaurer une Sauvegarde...",
+      "tools": "Outils",
+      "find_duplicates": "Trouver les Doublons",
+      "data_quality_check": "Vérification de la Qualité des Données",
+      "generate_template": "Générer un Modèle",
+      "settings": "Paramètres",
+      "view": "Vue",
+      "dashboard": "Tableau de Bord",
+      "import_history": "Historique d'Importation",
+      "system_logs": "Journaux Système",
+      "system_status": "État du Système",
+      "help": "Aide",
+      "user_guide": "Guide de l'Utilisateur",
+      "about": "À Propos",
+      "command_line_mode": "Mode Ligne de Commande"
+    },
+    "buttons": {
+      "return_main_menu": "Retour au Menu Principal",
+      "import_selected": "Importer la Sélection",
+      "select_all": "Tout Sélectionner",
+      "select_none": "Tout Désélectionner",
+      "proceed": "Continuer",
+      "cancel": "Annuler",
+      "ok": "OK",
+      "execute": "Exécuter",
+      "refresh": "Actualiser",
+      "refresh_dashboard": "Actualiser le Tableau de Bord"
+    },
+    "import": {
+      "csv_title": "Import from CSV",
+      "csv_desc": "Import student records from CSV files",
+      "excel_title": "Import from Excel",
+      "excel_desc": "Import student records from Excel spreadsheets",
+      "multi_file_title": "Multi-File Import",
+      "multi_file_desc": "Import from multiple files at once",
+      "preview_title": "Preview Import",
+      "preview_desc": "Preview data before importing",
+      "duplicate_title": "Duplicate Detection",
+      "duplicate_desc": "Check for duplicate records before import",
+      "resume_title": "Resume Import",
+      "resume_desc": "Resume a previously interrupted import"
+    },
+    "export": {
+      "students_title": "Export Students",
+      "students_desc": "Export student records to CSV/Excel",
+      "reports_title": "Export Reports",
+      "reports_desc": "Generate and export reports",
+      "statistics_title": "Export Statistics",
+      "statistics_desc": "Export system statistics and analytics"
+    },
+    "update": {
+      "batch_title": "Batch Update",
+      "batch_desc": "Update multiple records at once",
+      "grade_title": "Grade Updates",
+      "grade_desc": "Batch update student grades",
+      "module_title": "Module Updates",
+      "module_desc": "Update module enrollments in batch"
+    },
+    "quality": {
+      "find_duplicates": "Find Duplicates",
+      "validate_data": "Validate Data",
+      "clean_data": "Clean Data",
+      "dashboard": "Quality Dashboard",
+      "analysis_tools": "Analysis Tools"
+    },
+    "automation": {
+      "scheduled_tasks": "Scheduled Tasks",
+      "api_integration": "API Integration",
+      "external_db": "External Database",
+      "schedule_daily": "Schedule Daily",
+      "schedule_weekly": "Schedule Weekly",
+      "view_scheduled": "View Scheduled Tasks",
+      "rest_api": "REST API Setup",
+      "start_api": "Start API Server"
+    },
+    "history": {
+      "filter_by": "Filter by:",
+      "all": "All",
+      "imports": "Imports",
+      "exports": "Exports",
+      "updates": "Updates",
+      "date_time": "Date/Time",
+      "operation": "Operation",
+      "records": "Records",
+      "success": "Success",
+      "errors": "Errors",
+      "clear_history": "Clear History",
+      "export_history": "Export History"
+    },
+    "utilities": {
+      "backup_title": "Backup Database",
+      "backup_desc": "Create a backup of the database",
+      "template_title": "Generate Template",
+      "template_desc": "Generate CSV/Excel import templates",
+      "settings_title": "Settings",
+      "settings_desc": "Configure batch operations settings",
+      "undo_title": "Undo Last Operation",
+      "undo_desc": "Undo the most recent batch operation"
+    },
+    "dialogs": {
+      "select_csv": "Select CSV File",
+      "select_excel": "Select Excel File",
+      "select_files": "Select Files",
+      "select_files_prompt": "Select files to import",
+      "select_import_dir": "Select Import Directory",
+      "select_file_preview": "Select a file to preview",
+      "select_file_duplicate": "Select a file to check for duplicates",
+      "select_sheet": "Select Sheet",
+      "select_sheet_prompt": "Select the Excel sheet to import:",
+      "import_preview": "Import Preview",
+      "preview_records": "Preview of {count} records",
+      "sample_records": "Sample records from import file:",
+      "import_summary": "Import Summary",
+      "import_complete": "Import completed successfully",
+      "duplicate_options": "Duplicate Handling Options",
+      "duplicate_records": "Duplicate Records Found",
+      "duplicates_found": "{count} duplicate records found",
+      "found_duplicates": "Found Duplicates",
+      "no_duplicates": "No Duplicates",
+      "no_duplicates_proceed": "No duplicate records found. Proceed with import?",
+      "process_files_confirm": "Process {count} files?",
+      "no_files": "No Files",
+      "confirm": "Confirm",
+      "error": "Error",
+      "complete": "Complete",
+      "system_logs": "System Logs"
+    },
+    "duplicates": {
+      "skip_all": "Skip All Duplicates",
+      "update_existing": "Update Existing Records",
+      "import_anyway": "Import Anyway (Create Duplicates)",
+      "handle_individually": "Handle Individually"
+    },
+    "progress": {
+      "duplicate_detection": "Duplicate Detection",
+      "analyzing_duplicates": "Analyzing for duplicates...",
+      "multi_file_import": "Multi-File Import",
+      "processing_files": "Processing files..."
+    },
+    "messages": {
+      "multi_import_complete": "Multi-file import completed. {success} successful, {failed} failed."
+    },
+    "errors": {
+      "no_valid_records": "No valid records found in the file",
+      "preview_failed": "Failed to preview file: {error}",
+      "excel_read_failed": "Failed to read Excel file: {error}",
+      "no_supported_files": "No supported files found in directory"
+    },
+    "filetypes": {
+      "csv": "CSV Files",
+      "excel": "Excel Files",
+      "all": "All Files"
+    },
+    "status": {
+      "ready": "Ready",
+      "db_connected": "Database Connected"
+    },
+    "logs": {
+      "no_log_file": "No log file found"
+    }
+  },
+  "batch_operations": {
+    "window_title": "Système Avancé d'Opérations par Lots sur les Dossiers Étudiants",
+    "tabs": {
+      "import": "📊 Opérations d'Importation",
+      "update": "✏️ Opérations de Mise à Jour",
+      "export": "📤 Opérations d'Exportation",
+      "quality": "🔍 Qualité des Données",
+      "utilities": "🛠️ Utilitaires",
+      "automation": "🤖 Automatisation",
+      "history": "📜 Historique"
+    },
+    "menu": {
+      "file": "Fichier",
+      "new_import": "Nouvelle Importation",
+      "open_database": "Ouvrir la Base de Données",
+      "create_backup": "Créer une Sauvegarde",
+      "restore_backup": "Restaurer une Sauvegarde",
+      "tools": "Outils",
+      "generate_template": "Générer un Modèle",
+      "data_quality_check": "Vérification de la Qualité des Données",
+      "find_duplicates": "Trouver les Doublons",
+      "command_line_mode": "Mode Ligne de Commande",
+      "settings": "Paramètres",
+      "system_status": "État du Système",
+      "view": "Affichage",
+      "dashboard": "Tableau de Bord",
+      "import_history": "Historique d'Importation",
+      "system_logs": "Journaux Système",
+      "language": "Langue",
+      "change_language": "Changer de Langue",
+      "help": "Aide",
+      "user_guide": "Guide de l'Utilisateur",
+      "about": "À Propos"
+    },
+    "import": {
+      "header": "Opérations d'Importation",
+      "from_csv": "Importer depuis CSV",
+      "from_csv_desc": "Importer des données étudiantes depuis des fichiers CSV",
+      "from_excel": "Importer depuis Excel",
+      "from_excel_desc": "Importer depuis des feuilles de calcul Excel",
+      "multi_file": "Importation Multi-Fichiers",
+      "multi_file_desc": "Traiter plusieurs fichiers simultanément",
+      "with_duplicates": "Importer avec Détection des Doublons",
+      "with_duplicates_desc": "Gestion intelligente des doublons",
+      "preview": "Aperçu de l'Importation",
+      "preview_desc": "Prévisualiser les changements avant l'importation",
+      "resume": "Reprendre une Importation Échouée",
+      "resume_desc": "Continuer les importations interrompues"
+    },
+    "update": {
+      "header": "Opérations de Mise à Jour",
+      "batch_update": "Mise à Jour par Lots des Enregistrements",
+      "batch_update_desc": "Mettre à jour plusieurs dossiers étudiants",
+      "bulk_module": "Opérations en Masse sur les Modules",
+      "bulk_module_desc": "Gérer les affectations de modules",
+      "import_grades": "Importer les Données de Notes",
+      "import_grades_desc": "Importer les notes des étudiants"
+    },
+    "export": {
+      "header": "Opérations d'Exportation",
+      "students": "Exporter les Étudiants",
+      "students_desc": "Exporter les données étudiantes vers des fichiers",
+      "statistics": "Exporter les Statistiques",
+      "statistics_desc": "Générer des rapports d'inscription",
+      "reports": "Générer des Rapports",
+      "reports_desc": "Créer des rapports d'analyse détaillés"
+    },
+    "quality": {
+      "header": "Outils de Qualité des Données",
+      "analysis_tools": "Outils d'Analyse",
+      "dashboard": "Tableau de Bord Qualité",
+      "validate": "Valider les Données",
+      "find_duplicates": "Trouver les Doublons",
+      "clean": "Nettoyer les Données",
+      "refresh": "Actualiser le Tableau de Bord"
+    },
+    "utilities": {
+      "header": "Fonctions Utilitaires",
+      "generate_template": "Générer un Modèle",
+      "generate_template_desc": "Créer des modèles d'importation",
+      "create_backup": "Créer une Sauvegarde",
+      "create_backup_desc": "Sauvegarder la base de données",
+      "undo_import": "Annuler la Dernière Importation",
+      "undo_import_desc": "Annuler les changements récents",
+      "settings": "Paramètres",
+      "settings_desc": "Configurer les paramètres de l'application"
+    },
+    "automation": {
+      "header": "Automatisation et Intégration",
+      "scheduled_tasks": "Tâches Planifiées",
+      "api_integration": "API et Intégration",
+      "schedule_daily": "Planifier une Importation Quotidienne",
+      "schedule_weekly": "Planifier un Rapport Hebdomadaire",
+      "view_scheduled": "Voir les Tâches Planifiées",
+      "start_api": "Démarrer le Serveur API",
+      "external_db": "Configuration de BD Externe",
+      "rest_api": "Intégration API REST"
+    },
+    "history": {
+      "header": "Historique d'Importation et Rapports",
+      "filter_by": "Filtrer par:",
+      "filter_all": "Tout",
+      "filter_imports": "Importations",
+      "filter_updates": "Mises à Jour",
+      "filter_exports": "Exportations",
+      "refresh": "Actualiser",
+      "export": "Exporter l'Historique",
+      "clear": "Effacer l'Historique",
+      "col_timestamp": "Date/Heure",
+      "col_operation": "Opération",
+      "col_records": "Enregistrements",
+      "col_success": "Succès",
+      "col_errors": "Erreurs"
+    },
+    "status": {
+      "ready": "Prêt",
+      "database_connected": "Base de Données: Connectée",
+      "database_disconnected": "Base de Données: Déconnectée",
+      "processing": "Traitement en cours...",
+      "complete": "Terminé",
+      "error": "Erreur"
+    },
+    "common": {
+      "execute": "Exécuter",
+      "return_main": "🏠 Retour au Menu Principal"
+    },
+    "language": {
+      "changed": "Langue Modifiée",
+      "restart_required": "Certains textes seront mis à jour immédiatement. Pour un effet complet, veuillez redémarrer l'application."
+    }
+  },
+  "bulk": {
+    "import_title": "Importer en Masse de Livres",
+    "export_title": "Exporter en Masse de Livres",
+    "select_format": "Sélectionner le format (CSV/JSON)",
+    "enter_file_path": "Entrez le chemin du fichier",
+    "importing": "Importer en cours...",
+    "import_success": "{count} livres importés avec succès.",
+    "import_errors": "{count} livres n'ont pas pu être importés.",
+    "exporting": "Exporter en cours...",
+    "export_success": "{count} livres exportés vers {filename}.",
+    "error": "Erreur lors de l'opération: {error}"
+  }
+}

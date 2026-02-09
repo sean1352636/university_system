@@ -1,0 +1,164 @@
+{
+  "activity_logger": {
+    "title": "Registrador de Actividad Mejorado - Consola de Gestión",
+    "window_title": "Registrador de Actividad Mejorado - Consola de Gestión",
+    "return_main": "Volver al Menú Principal",
+    "return_home": "Volver al Menú Principal",
+    "status": {
+      "label": "Estado:",
+      "logger": "Registrador:",
+      "queue": "Cola:",
+      "total_logs": "Total de Registros:",
+      "connected": "Conectado",
+      "disconnected": "Desconectado",
+      "demo_mode": "Modo Demo",
+      "error": "Error"
+    },
+    "tabs": {
+      "live_logs": "Registros en Vivo",
+      "analytics": "Análisis",
+      "security": "Seguridad",
+      "configuration": "Configuración",
+      "plugins": "Plugins",
+      "query": "Consulta"
+    },
+    "log_viewer": {
+      "filter_level": "Nivel:",
+      "user": "Usuario:",
+      "action": "Acción:",
+      "auto_refresh": "Actualización automática",
+      "refresh": "Actualizar",
+      "clear": "Limpiar",
+      "export": "Exportar"
+    },
+    "analytics": {
+      "title": "Panel de Análisis",
+      "refresh": "Actualizar",
+      "generate_report": "Generar Informe",
+      "statistics": "Estadísticas",
+      "charts": "Gráficos"
+    },
+    "config": {
+      "title": "Configuración del Registrador",
+      "load": "Cargar",
+      "save": "Guardar",
+      "apply": "Aplicar",
+      "reset": "Restablecer Valores Predeterminados",
+      "general": "General",
+      "security": "Seguridad",
+      "output": "Salida",
+      "cloud": "Nube",
+      "output_formats": "Formatos de Salida",
+      "enabled_services": "Servicios de Nube Habilitados"
+    },
+    "security": {
+      "title": "Monitoreo de Seguridad",
+      "refresh": "Actualizar",
+      "overview": "Resumen de Seguridad",
+      "actions": "Acciones de Seguridad",
+      "ip_management": "Gestión de Direcciones IP",
+      "block_ip": "Bloquear IP",
+      "user_management": "Gestión de Usuarios",
+      "reset_attempts": "Restablecer Intentos",
+      "reports": "Informes de Seguridad",
+      "generate_report": "Generar Informe de Seguridad",
+      "anomaly_detection": "Ejecutar Detección de Anomalías",
+      "not_available": "Datos de monitoreo de seguridad no disponibles.\n\nConéctese al registrador para ver información de seguridad."
+    },
+    "plugins": {
+      "title": "Gestión de Plugins",
+      "refresh": "Actualizar",
+      "installed": "Plugins instaladoss",
+      "details": "Detalles del Plugin",
+      "plugin_name": "Nombre del Plugin",
+      "status": "Estado",
+      "type": "Tipo",
+      "add_default": "Agregar Plugins Predeterminados",
+      "configure": "Configurar Plugin",
+      "toggle": "Habilitar/Deshabilitar",
+      "remove": "Eliminar Plugin"
+    },
+    "query": {
+      "title": "Consulta de Base de Datos",
+      "builder": "Constructor de Consultas",
+      "date_range": "Rango de Fechas",
+      "from": "Desde:",
+      "to": "Hasta:",
+      "today": "Hoy",
+      "last_7_days": "Últimos 7 Días",
+      "last_30_days": "Últimos 30 Días",
+      "last_90_days": "Últimos 90 Días",
+      "user": "Usuario:",
+      "action": "Acción:",
+      "module": "Módulo:",
+      "status": "Estado:",
+      "log_level": "Nivel de Registro:",
+      "security_level": "Seguridad:",
+      "search": "Buscar:",
+      "execute": "Ejecutar Consulta",
+      "clear": "Limpiar",
+      "export": "Exportar Resultados",
+      "save_query": "Guardar Consulta",
+      "load_query": "Cargar Consulta",
+      "results": "Resultados de Consulta",
+      "no_query": "Aún no se ha ejecutado ninguna consulta.",
+      "no_results": "No hay resultados para exportar.",
+      "db_not_available": "Registro de base de datos no disponible. No se pueden consultar registros."
+    },
+    "columns": {
+      "timestamp": "Marca de Tiempo",
+      "level": "Nivel",
+      "user": "Usuario",
+      "action": "Acción",
+      "module": "Módulo",
+      "status": "Estado",
+      "ip_address": "Dirección IP",
+      "details": "Detalles"
+    },
+    "menu": {
+      "file": "Archivo",
+      "new_config": "Nueva Configuración...",
+      "load_config": "Cargar Configuración...",
+      "save_config": "Guardar Configuración...",
+      "import_logs": "Importar Registros...",
+      "export_logs": "Exportar Registros...",
+      "logger": "Registrador",
+      "connect": "Conectar al Registrador",
+      "disconnect": "Desconectar",
+      "restart": "Reiniciar Registrador",
+      "test_log": "Crear Entrada de Registro de Prueba",
+      "flush_logs": "Vaciar Registros",
+      "tools": "herramientas",
+      "health_check": "Verificación de Estado del Sistema",
+      "generate_report": "Generar Informe...",
+      "anomaly_detection": "Ejecutar Detección de Anomalías",
+      "db_maintenance": "Mantenimiento de Base de Datos",
+      "log_cleanup": "Limpieza de Archivos de Registro",
+      "help": "Ayuda",
+      "user_guide": "Guía del Usuario",
+      "api_docs": "Documentación de API",
+      "about": "Acerca de"
+    },
+    "language": {
+      "change": "Cambiar Idioma",
+      "changed_title": "Idioma Cambiado",
+      "changed_message": "La interfaz se actualizará para aplicar el nuevo idioma."
+    },
+    "messages": {
+      "connected": "Conectado al Registrador de Actividad Mejorado",
+      "disconnected": "Desconectado del registrador",
+      "demo_mode": "Ejecutando en modo demo - algunas funciones pueden estar limitadas",
+      "connection_error": "Error de conexión: {error}"
+    },
+    "errors": {
+      "connection": "Error al conectar con el registrador: {error}",
+      "restart": "Error al reiniciar el registrador: {error}"
+    }
+  },
+  "common": {
+    "warning": "Advertencia",
+    "error": "Error",
+    "success": "Éxito",
+    "info": "Información"
+  }
+}

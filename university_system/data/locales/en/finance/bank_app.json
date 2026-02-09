@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "University Bank"
+    },
+    "student": {
+      "default_name": "Student"
+    },
+    "dashboard": {
+      "welcome": "Welcome, {name}",
+      "student_id": "Student ID: {student_id}",
+      "balance_title": "Current Balance",
+      "low_balance_warning": "Low balance! Consider adding funds.",
+      "account_info_title": "Account Information",
+      "account_info_text": "Your student finance account is linked to your university ID.\nYou can use this balance for campus services, dining, and more."
+    },
+    "buttons": {
+      "refresh": "Refresh",
+      "top_up": "Top Up",
+      "transaction_history": "Transaction History",
+      "financial_summary": "Financial Summary",
+      "close": "Close",
+      "complete_topup": "Complete Top-Up",
+      "login": "Login",
+      "create_account": "Create Account",
+      "back_to_login": "Back to Login",
+      "logout": "Logout",
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "transfer": "Transfer",
+      "history": "History"
+    },
+    "transactions": {
+      "recent_title": "Recent Transactions",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "amount": "Amount",
+        "balance": "Balance",
+        "description": "Description"
+      },
+      "no_transactions": "No transactions found"
+    },
+    "topup": {
+      "window_title": "Top Up Account",
+      "header": "Add Funds to Your Account",
+      "current_balance": "Current Balance: £{balance}",
+      "amount_label": "Amount: £",
+      "quick_topup": "Quick Top-Up",
+      "payment_method": "Payment Method:",
+      "method_card": "Card",
+      "method_bank_transfer": "Bank Transfer",
+      "method_cash": "Cash",
+      "description": "Account top-up",
+      "success_message": "Successfully added £{amount}!\nNew balance: £{balance}"
+    },
+    "error": {
+      "title": "Error",
+      "positive_amount": "Please enter a positive amount",
+      "max_topup": "Maximum top-up amount is £10,000",
+      "topup_failed": "Top-up failed. Please try again.",
+      "valid_amount": "Please enter a valid amount",
+      "loading_summary": "Error loading summary: {error}",
+      "valid_positive_amount": "Please enter a valid positive amount"
+    },
+    "success": {
+      "title": "Success"
+    },
+    "history": {
+      "window_title": "Transaction History",
+      "header": "Full Transaction History"
+    },
+    "summary": {
+      "window_title": "Financial Summary",
+      "header": "Your Financial Summary",
+      "overview_title": "Account Overview",
+      "current_balance": "Current Balance:",
+      "total_payments": "Total Payments:",
+      "total_paid": "Total Amount Paid:",
+      "total_refunds": "Total Refunds:",
+      "total_refunded": "Total Amount Refunded:",
+      "net_spent": "Net Amount Spent:",
+      "spending_by_category": "Spending by Category",
+      "columns": {
+        "category": "Category",
+        "transactions": "Transactions",
+        "total_spent": "Total Spent"
+      }
+    },
+    "login": {
+      "title": "University Bank",
+      "subtitle": "Secure Student Banking",
+      "student_tip": "Tip: If logged in via the university system, your student account will load automatically.",
+      "form_title": "Account Login",
+      "account_number": "Account Number:",
+      "pin": "PIN:",
+      "new_user": "New to University Bank?"
+    },
+    "create_account": {
+      "title": "Create New Account",
+      "form_title": "Account Details",
+      "full_name": "Full Name:",
+      "pin_label": "PIN (4-6 digits):",
+      "confirm_pin": "Confirm PIN:",
+      "initial_deposit": "Initial Deposit (£):"
+    },
+    "standalone": {
+      "account_label": "Account: {account}",
+      "current_balance": "Current Balance"
+    },
+    "deposit": {
+      "window_title": "Make a Deposit",
+      "header": "Deposit Funds",
+      "success": "Successfully deposited £{amount}"
+    },
+    "withdraw": {
+      "window_title": "Make a Withdrawal",
+      "header": "Withdraw Funds",
+      "available": "Available: £{balance}",
+      "success": "Successfully withdrew £{amount}",
+      "insufficient_funds": "Insufficient funds"
+    },
+    "transfer": {
+      "window_title": "Transfer Funds",
+      "header": "Transfer Funds",
+      "available": "Available: £{balance}",
+      "recipient_account": "Recipient Account:",
+      "amount_label": "Amount: £",
+      "success": "Successfully transferred £{amount} to account {account}",
+      "self_transfer_error": "Cannot transfer to yourself",
+      "recipient_not_found": "Recipient account not found",
+      "failed": "Transfer failed"
+    },
+    "validation": {
+      "enter_credentials": "Please enter account number and PIN",
+      "invalid_login": "Invalid account number or PIN",
+      "enter_name": "Please enter your full name",
+      "pin_format": "PIN must be 4-6 digits",
+      "pin_mismatch": "PINs do not match",
+      "negative_deposit": "Initial deposit cannot be negative"
+    },
+    "account_created": {
+      "title": "Account Created",
+      "message": "Your account has been created!\n\nAccount Number: {account}\nPlease remember your account number and PIN."
+    }
+  }
+}

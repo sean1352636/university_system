@@ -1,0 +1,4 @@
+{
+  "subject": "Restaurant Order Confirmation - Order #{order_id}",
+  "body": "Dear {customer_name},\n\nThank you for your order! Here are your order details:\n\nORDER CONFIRMATION\n==================\nOrder Number: #{order_id}\nDate: {order_date}\nStatus: {status_text}\n\nORDER ITEMS\n-----------\n{items_text}\n\nORDER SUMMARY\n-------------\nSubtotal: £{subtotal}\nTax (20% VAT): £{tax}\nTotal: £{total}\n\n{payment_method_text}\n\nThank you for dining with us!\n\nUniversity Restaurant"
+}

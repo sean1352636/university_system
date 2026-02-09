@@ -1,0 +1,4 @@
+{
+    "subject": "🤖 AI Detection Report - $document_name",
+    "body": "Dear $student_name,\n\nAn AI detection analysis has been completed for your document.\n\nDocument: $document_name\nAI Probability: $ai_probability%\nDate: $analysis_date\n\nYou can view the full report in your portal.\n\n$signature"
+}

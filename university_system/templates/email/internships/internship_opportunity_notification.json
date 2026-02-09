@@ -1,0 +1,4 @@
+{
+    "subject": "New Internship Opportunity: $internship_title at $company_name",
+    "body": "Dear $first_name $last_name,\n\nWe're excited to announce a new internship opportunity that might interest you!\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNEW INTERNSHIP OPPORTUNITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPosition: $internship_title\nCompany: $company_name\nInternship ID: $internship_id\n\nDescription:\n$description\n\nRequirements:\n$requirements\n\nThis is a fantastic opportunity to gain valuable industry experience and enhance your career prospects. Don't miss out!\n\nBest regards,\nCareers Service"
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "📚 Book Return Confirmation - University Library",
+    "body": "Dear $student_name,\n\nThank you for returning your book(s) to the library.\n\nBook Title: $book_title\nAuthor: $author\nReturned: $return_date\n\n$signature"
+}

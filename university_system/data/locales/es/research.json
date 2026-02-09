@@ -1,0 +1,184 @@
+{
+  "research": {
+    "grants": {
+      "errors": {
+        "add_team_member": "Error adding team member: {error}",
+        "create_milestone": "Error creating milestone: {error}",
+        "create_project": "Error creating research project: {error}",
+        "record_publication": "Error recording publication: {error}",
+        "register_equipment": "Error registering equipment: {error}",
+        "submit_application": "Error submitting grant application: {error}",
+        "submit_ethics_review": "Error submitting ethics review: {error}",
+        "update_decision": "Error updating grant decision: {error}"
+      },
+      "gui": {
+        "cli_instruction": "Use CLI: Research & Grants Management",
+        "description": "Manage research projects, grants, publications, and equipment.\n\nFeatures:\n- Research project tracking\n- Grant applications\n- Publications management\n- Milestone tracking\n- Equipment inventory\n- Ethics review board",
+        "title": "Research & Grants Management"
+      },
+      "menu": {
+        "enter_choice": "Enter your choice (1-8): ",
+        "equipment_inventory": "Equipment Inventory",
+        "error": "Error: {error}",
+        "ethics_review_board": "Ethics Review Board",
+        "feature_available": "Feature available via Research managers",
+        "grant_applications": "Grant Applications",
+        "invalid_choice": "Invalid choice.",
+        "milestone_management": "Milestone Management",
+        "publications_tracking": "Publications Tracking",
+        "research_projects": "Research Projects",
+        "research_reports": "Research Reports",
+        "return_to_main": "Return to Main Menu",
+        "title": "RESEARCH & GRANTS MANAGEMENT",
+        "usage_instruction": "Use: from university_system.modules.domain.research.services import ResearchProjectManager"
+      }
+    }
+  },
+  "research_grants": {
+    "title": "Investigación & Subvenciones Gestión",
+    "window_title": "Research & Grants Management",
+    "submit_proposal": "Submit Proposal",
+    "view_grants": "View Grants",
+    "manage_projects": "Manage Projects",
+    "funding_opportunities": "Funding Opportunities",
+    "grant_applications": "Grant Applications",
+    "active_grants": "Active Grants",
+    "completed_grants": "Completed Grants",
+    "proposal_title": "Proposal Title",
+    "principal_investigator": "Principal Investigator",
+    "co_investigators": "Co-Investigators",
+    "funding_agency": "Funding Agency",
+    "requested_amount": "Requested Amount",
+    "awarded_amount": "Awarded Amount",
+    "project_start": "Project Start Date",
+    "project_end": "Project End Date",
+    "project_status": "Project Status",
+    "budget_allocation": "Budget Allocation",
+    "expenditure_report": "Expenditure Report",
+    "progress_report": "Progress Report",
+    "deliverables": "Deliverables",
+    "publications": "Publications",
+    "submit_report": "Submit Report",
+    "deadline": "Deadline",
+    "header_title": "Investigación & Subvenciones Gestión",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "pi": "PI",
+      "department": "Department",
+      "type": "Type",
+      "start_date": "Start Date",
+      "budget": "Budget",
+      "status": "Status",
+      "grant_name": "Grant Name",
+      "agency": "Agency",
+      "requested": "Requested",
+      "awarded": "Awarded",
+      "deadline": "Deadline",
+      "authors": "Authors",
+      "publication_type": "Publication Type",
+      "journal": "Journal",
+      "year": "Year",
+      "citations": "Citations",
+      "project": "Project",
+      "milestone": "Milestone",
+      "due_date": "Due Date",
+      "completed": "Completed",
+      "equipment_name": "Equipment Name",
+      "purchase_date": "Purchase Date",
+      "cost": "Cost",
+      "location": "Location",
+      "protocol_number": "Protocol Number",
+      "submission_date": "Submission Date",
+      "review_type": "Review Type",
+      "decision": "Decision"
+    },
+    "status": {
+      "not_completed": "Not completed",
+      "pending": "Pending",
+      "under_review": "Under Review"
+    },
+    "tabs": {
+      "research_projects": "Investigación Proyectos",
+      "grant_applications": "Subvencion Aplicaciones",
+      "publications": "Publications",
+      "milestones": "Hitos",
+      "equipment": "Equipo",
+      "irb_ethics": "Junta de revisión institucional/Ética"
+    },
+    "frames": {
+      "active_projects": "Activo Proyectos",
+      "grant_applications": "Subvencion Aplicaciones",
+      "research_publications": "Investigación Publications",
+      "project_milestones": "Proyecto Hitos",
+      "research_equipment": "Investigación Equipo",
+      "irb_applications": "Junta de revisión institucional/Ética Aplicaciones"
+    },
+    "buttons": {
+      "create_project": "Crear Proyecto",
+      "add_team_member": "Agregar miembro del equipo",
+      "submit_application": "Enviar Aplicacion",
+      "update_decision": "Actualizacion Decisión",
+      "add_publication": "Agregar Publication",
+      "add_milestone": "Agregar Hito",
+      "update_status": "Actualizacion Estado",
+      "add_equipment": "Agregar Equipo",
+      "submit_irb": "Enviar Junta de revisión institucional Aplicacion",
+      "change_language": "Language: {lang}"
+    },
+    "labels": {
+      "user": "Usuario: {Usuario}"
+    },
+    "fields": {
+      "project_title": "Proyecto Titulo:",
+      "pi_id": "PI ID:",
+      "department": "Departamento:",
+      "project_type": "Proyecto Tipo:",
+      "start_date": "Fecha de Inicio (YYYY-MM-DD):",
+      "budget": "Presupuesto:",
+      "description": "Descripcion:",
+      "staff_id": "Personal ID:",
+      "role": "Rol:"
+    },
+    "dialogs": {
+      "create_project": {
+        "title": "Crear Investigación Proyecto",
+        "header": "Crear Investigación Proyecto"
+      },
+      "add_team_member": {
+        "title": "Agregar miembro del equipo",
+        "header": "Agregar miembro del equipo - Proyecto {project_id}"
+      }
+    },
+    "messages": {
+      "project_created": "Proyecto Creado (ID: {id})",
+      "team_member_added": "miembro del equipo Agregado exitosamente",
+      "grant_submission_placeholder": "Subvencion submission Dialogo - implement as needed",
+      "grant_decision_placeholder": "Subvencion Decisión Actualizacion Dialogo - implement as needed",
+      "add_publication_placeholder": "Agregar publication Dialogo - implement as needed",
+      "add_milestone_placeholder": "Agregar milestone Dialogo - implement as needed",
+      "update_milestone_placeholder": "Actualizacion milestone Dialogo - implement as needed",
+      "add_equipment_placeholder": "Agregar equipo Dialogo - implement as needed",
+      "irb_submission_placeholder": "Junta de revisión institucional submission Dialogo - implement as needed",
+      "irb_decision_placeholder": "Junta de revisión institucional Decisión Actualizacion Dialogo - implement as needed"
+    },
+    "errors": {
+      "login_required": "Por favor inicie sesion a Acceso Investigación & Subvenciones Gestión.",
+      "db_init_issue": "Base de datos initialization tuvo issues: {error}. algunos funcións puede no work correctly.",
+      "select_project": "por favor Seleccione un project",
+      "load_projects_failed": "Fallidas a load projects: {error}",
+      "load_grants_failed": "Fallidas a load Subvenciones: {error}",
+      "load_publications_failed": "Fallidas a load publications: {error}",
+      "load_milestones_failed": "Fallidas a load hitos: {error}",
+      "load_equipment_failed": "Fallidas a load equipo: {error}",
+      "load_irb_failed": "Fallidas a load Junta de revisión institucional Aplicaciones: {error}",
+      "create_project_failed": "Fallidas a Crear project: {error}",
+      "add_member_failed": "Fallidas a Agregar miembro del equipo: {error}",
+      "launch_failed": "Fallidas a lanzar Investigación & Subvenciones Interfaz gráfica: {error}"
+    },
+    "language": {
+      "changed_title": "Language Cambiado",
+      "restart_for_full_effect": "algunos Texto sera Actualizacion immediately. para Completo Efecto, por favor restart el Modulo."
+    }
+  }
+}

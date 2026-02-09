@@ -1,0 +1,71 @@
+{
+  "category": "Health",
+  "resources": [
+    {
+      "id": "15",
+      "title": "Health Center",
+      "type": "article",
+      "content": {
+        "introduction": "The Student Health Center provides comprehensive medical care to all enrolled students. Most services are covered by the student health fee.",
+        "sections": [
+          {
+            "title": "Services",
+            "content": "Medical Services:\n- Primary care visits\n- Illness and injury treatment\n- Physical examinations\n- Immunizations\n- Allergy injections\n- Lab tests and screenings\n- X-rays\n- Minor procedures\n\nSpecialty Services:\n- Women's health\n- Men's health\n- Sports medicine\n- Travel health\n- Nutrition counseling"
+          },
+          {
+            "title": "Hours and Location",
+            "content": "Location: Health Services Building\n\nRegular Hours:\nMonday-Friday: 8:00 AM - 5:00 PM\nSaturday: 9:00 AM - 12:00 PM (urgent care)\n\nSummer/Break Hours:\nMonday-Friday: 9:00 AM - 4:00 PM\n\nAfter-Hours Nurse Line: (555) 123-4567\nAvailable 24/7 for medical advice"
+          },
+          {
+            "title": "Appointments",
+            "content": "Schedule Online:\n1. Log into Student Health Portal\n2. Select 'Schedule Appointment'\n3. Choose appointment type\n4. Select available time\n5. Confirm booking\n\nBy Phone: (555) 123-4560\n\nWalk-In Clinic:\n- For urgent issues\n- First-come, first-served\n- Wait times vary"
+          },
+          {
+            "title": "What to Bring",
+            "content": "Required:\n- Student ID\n- Insurance card (if applicable)\n- List of current medications\n\nHelpful:\n- Medical history summary\n- Vaccination records\n- Previous test results\n- List of questions"
+          },
+          {
+            "title": "Costs",
+            "content": "Student Health Fee Covers:\n- Office visits\n- Basic lab work\n- Nurse consultations\n\nAdditional Costs:\n- Prescriptions\n- Specialty referrals\n- Extensive lab work\n- X-rays and imaging\n\nWe accept most insurance. Uninsured students can discuss payment options."
+          }
+        ],
+        "conclusion": "Your health matters. Don't wait until a small problem becomes big - come in when you're not feeling well."
+      },
+      "tags": ["health", "medical", "clinic", "doctor"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "16",
+      "title": "Counseling Services",
+      "type": "article",
+      "content": {
+        "introduction": "The Counseling Center provides confidential mental health services to help students navigate the challenges of college life. All services are free.",
+        "sections": [
+          {
+            "title": "Services Available",
+            "content": "Individual Counseling:\n- Personal issues\n- Academic concerns\n- Relationship difficulties\n- Anxiety and depression\n- Grief and loss\n- Identity exploration\n- Trauma support\n\nGroup Therapy:\n- Anxiety management\n- Depression support\n- Grief groups\n- LGBTQ+ support\n- International student adjustment"
+          },
+          {
+            "title": "Getting Started",
+            "content": "Initial Consultation:\n1. Call or walk in to schedule\n2. Complete intake forms\n3. Meet with a counselor (30-45 min)\n4. Discuss your needs and options\n5. Schedule follow-up as needed\n\nPhone: (555) 123-4575\nLocation: Wellness Center, Suite 200"
+          },
+          {
+            "title": "What to Expect",
+            "content": "Confidentiality:\n- Sessions are private\n- Information not shared without consent\n- Limited exceptions for safety\n- FERPA and HIPAA protected\n\nTypical Session:\n- 50 minutes\n- Individual or group format\n- Collaborative goal-setting\n- Coping skill development"
+          },
+          {
+            "title": "Crisis Resources",
+            "content": "If you or someone you know is in crisis:\n\nCampus Resources:\n- Counseling Center: (555) 123-4575\n- Campus Police: (555) 123-4500\n- After-Hours Crisis: (555) 123-4576\n\nNational Resources:\n- 988 Suicide & Crisis Lifeline: Call or text 988\n- Crisis Text Line: Text HOME to 741741\n\nIn immediate danger? Call 911"
+          },
+          {
+            "title": "Self-Help Resources",
+            "content": "Wellness Programs:\n- Mindfulness Mondays (12pm)\n- Stress Busters Fridays (3pm)\n- Anxiety workshops (monthly)\n- Meditation room (Library 3rd floor)\n\nApps Available:\n- Headspace (free student subscription)\n- Calm\n- Sanvello"
+          }
+        ],
+        "conclusion": "Taking care of your mental health is just as important as physical health. Reaching out is a sign of strength."
+      },
+      "tags": ["counseling", "mental health", "therapy", "wellness"],
+      "last_updated": "2025-01-15"
+    }
+  ]
+}

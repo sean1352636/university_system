@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "Universitätsbank"
+    },
+    "student": {
+      "default_name": "Student"
+    },
+    "dashboard": {
+      "welcome": "Willkommen, {name}",
+      "student_id": "Studenten-ID: {student_id}",
+      "balance_title": "Aktueller Kontostand",
+      "low_balance_warning": "Niedriger Kontostand! Bitte laden Sie Guthaben auf.",
+      "account_info_title": "Kontoinformationen",
+      "account_info_text": "Ihr studentisches Finanzkonto ist mit Ihrer Universitäts-ID verknüpft.\nSie können dieses Guthaben für Campus-Dienste, Mensa und mehr verwenden."
+    },
+    "buttons": {
+      "refresh": "Aktualisieren",
+      "top_up": "Aufladen",
+      "transaction_history": "Transaktionsverlauf",
+      "financial_summary": "Finanzübersicht",
+      "close": "Schließen",
+      "complete_topup": "Aufladung Abschließen",
+      "login": "Anmelden",
+      "create_account": "Konto Erstellen",
+      "back_to_login": "Zurück zur Anmeldung",
+      "logout": "Abmelden",
+      "deposit": "Einzahlen",
+      "withdraw": "Abheben",
+      "transfer": "Überweisen",
+      "history": "Verlauf"
+    },
+    "transactions": {
+      "recent_title": "Letzte Transaktionen",
+      "columns": {
+        "date": "Datum",
+        "type": "Typ",
+        "amount": "Betrag",
+        "balance": "Kontostand",
+        "description": "Beschreibung"
+      },
+      "no_transactions": "Keine Transaktionen gefunden"
+    },
+    "topup": {
+      "window_title": "Konto Aufladen",
+      "header": "Guthaben Aufladen",
+      "current_balance": "Aktueller Kontostand: £{balance}",
+      "amount_label": "Betrag: £",
+      "quick_topup": "Schnellaufladung",
+      "payment_method": "Zahlungsmethode:",
+      "method_card": "Karte",
+      "method_bank_transfer": "Banküberweisung",
+      "method_cash": "Bargeld",
+      "description": "Kontoaufladung",
+      "success_message": "£{amount} erfolgreich hinzugefügt!\nNeuer Kontostand: £{balance}"
+    },
+    "error": {
+      "title": "Fehler",
+      "positive_amount": "Bitte geben Sie einen positiven Betrag ein",
+      "max_topup": "Der maximale Aufladebetrag beträgt £10.000",
+      "topup_failed": "Aufladung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "valid_amount": "Bitte geben Sie einen gültigen Betrag ein",
+      "loading_summary": "Fehler beim Laden der Übersicht: {error}",
+      "valid_positive_amount": "Bitte geben Sie einen gültigen positiven Betrag ein"
+    },
+    "success": {
+      "title": "Erfolg"
+    },
+    "history": {
+      "window_title": "Transaktionsverlauf",
+      "header": "Vollständiger Transaktionsverlauf"
+    },
+    "summary": {
+      "window_title": "Finanzübersicht",
+      "header": "Ihre Finanzübersicht",
+      "overview_title": "Kontoübersicht",
+      "current_balance": "Aktueller Kontostand:",
+      "total_payments": "Gesamtzahlungen:",
+      "total_paid": "Gesamtbetrag Bezahlt:",
+      "total_refunds": "Gesamtrückerstattungen:",
+      "total_refunded": "Gesamtbetrag Erstattet:",
+      "net_spent": "Nettobetrag Ausgegeben:",
+      "spending_by_category": "Ausgaben nach Kategorie",
+      "columns": {
+        "category": "Kategorie",
+        "transactions": "Transaktionen",
+        "total_spent": "Gesamt Ausgegeben"
+      }
+    },
+    "login": {
+      "title": "Universitätsbank",
+      "subtitle": "Sicheres Studentenbanking",
+      "student_tip": "Tipp: Wenn Sie über das Universitätssystem angemeldet sind, wird Ihr Studentenkonto automatisch geladen.",
+      "form_title": "Kontoanmeldung",
+      "account_number": "Kontonummer:",
+      "pin": "PIN:",
+      "new_user": "Neu bei der Universitätsbank?"
+    },
+    "create_account": {
+      "title": "Neues Konto Erstellen",
+      "form_title": "Kontodaten",
+      "full_name": "Vollständiger Name:",
+      "pin_label": "PIN (4-6 Ziffern):",
+      "confirm_pin": "PIN Bestätigen:",
+      "initial_deposit": "Ersteinzahlung (£):"
+    },
+    "standalone": {
+      "account_label": "Konto: {account}",
+      "current_balance": "Aktueller Kontostand"
+    },
+    "deposit": {
+      "window_title": "Einzahlung Vornehmen",
+      "header": "Geld Einzahlen",
+      "success": "£{amount} erfolgreich eingezahlt"
+    },
+    "withdraw": {
+      "window_title": "Abhebung Vornehmen",
+      "header": "Geld Abheben",
+      "available": "Verfügbar: £{balance}",
+      "success": "£{amount} erfolgreich abgehoben",
+      "insufficient_funds": "Unzureichendes Guthaben"
+    },
+    "transfer": {
+      "window_title": "Geld Überweisen",
+      "header": "Geld Überweisen",
+      "available": "Verfügbar: £{balance}",
+      "recipient_account": "Empfängerkonto:",
+      "amount_label": "Betrag: £",
+      "success": "£{amount} erfolgreich auf Konto {account} überwiesen",
+      "self_transfer_error": "Überweisung an sich selbst nicht möglich",
+      "recipient_not_found": "Empfängerkonto nicht gefunden",
+      "failed": "Überweisung fehlgeschlagen"
+    },
+    "validation": {
+      "enter_credentials": "Bitte geben Sie Kontonummer und PIN ein",
+      "invalid_login": "Ungültige Kontonummer oder PIN",
+      "enter_name": "Bitte geben Sie Ihren vollständigen Namen ein",
+      "pin_format": "Die PIN muss 4-6 Ziffern haben",
+      "pin_mismatch": "Die PINs stimmen nicht überein",
+      "negative_deposit": "Die Ersteinzahlung darf nicht negativ sein"
+    },
+    "account_created": {
+      "title": "Konto Erstellt",
+      "message": "Ihr Konto wurde erstellt!\n\nKontonummer: {account}\nBitte merken Sie sich Ihre Kontonummer und PIN."
+    }
+  }
+}

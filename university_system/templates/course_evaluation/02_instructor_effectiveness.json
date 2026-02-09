@@ -1,0 +1,28 @@
+{
+  "template_name": "Instructor Effectiveness",
+  "template_type": "Instructor",
+  "description": "Assess instructor teaching methods, communication, and support",
+  "questions": [
+    {
+      "question_text": "How effective was the instructor in explaining complex concepts?",
+      "question_type": "Rating",
+      "question_category": "Instructor",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Did the instructor provide timely and helpful feedback on your work?",
+      "question_type": "Yes/No",
+      "question_category": "Instructor",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What is one thing the instructor did well that helped your learning?",
+      "question_type": "Text",
+      "question_category": "Instructor",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

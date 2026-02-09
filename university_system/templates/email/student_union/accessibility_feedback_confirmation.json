@@ -1,0 +1,4 @@
+{
+  "subject": "Accessibility Feedback Received",
+  "body": "Dear {username},\n\nThank you for submitting your accessibility feedback/complaint.\n\nYour feedback has been received and will be reviewed by our team.\n\nIssue Type: {issue_type}\nSubmitted: {submitted_date}\n\nWe take accessibility seriously and will respond to your feedback as soon as possible.\n\nBest regards,\nStudent Union Elections Committee"
+}

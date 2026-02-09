@@ -1,0 +1,9 @@
+{
+  "subject": "Course Analytics Report - {report_date}",
+  "body": "{analytics_content}\n\nGenerated: {generated_timestamp}",
+  "variables": {
+    "report_date": "Date when report was generated (YYYY-MM-DD format)",
+    "analytics_content": "Full analytics report content",
+    "generated_timestamp": "Full timestamp when report was generated"
+  }
+}

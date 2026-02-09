@@ -1,0 +1,4 @@
+{
+  "subject": "Restaurant Refund Confirmation - Order #{order_id}",
+  "body": "Dear {customer_name},\n\nYour refund has been processed successfully.\n\nREFUND CONFIRMATION\n===================\nOrder Number: #{order_id}\nOriginal Order Date: {order_time}\nOriginal Total: £{original_total}\n\nREFUND DETAILS\n--------------\nRefund Type: {refund_type}\nRefund Amount: £{refund_amount}\nRefund Method: {payment_method}\nReason: {reason}\nRefund Date: {refund_date}\n\nThe refund will be credited to your original payment method ({payment_method}).\nPlease allow 3-5 business days for the refund to appear in your account.\n\nIf you have any questions about this refund, please contact us.\n\nThank you for your understanding.\n\nUniversity Restaurant"
+}

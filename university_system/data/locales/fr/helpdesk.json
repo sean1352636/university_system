@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "Systeme de Support Ameliore",
+    "auth": {
+      "required_title": "Authentification Requise",
+      "not_available": "Systeme d'authentification non disponible. L'interface du support ne peut pas demarrer.",
+      "login_required": "Veuillez vous connecter via l'interface principale du Systeme Universitaire.\n\nExecutez : python run.py --gui\n\nLe support est accessible uniquement apres connexion au systeme principal."
+    },
+    "menu": {
+      "file": "Fichier",
+      "new_ticket": "Nouveau Ticket",
+      "export_data": "Exporter les Donnees",
+      "import_data": "Importer les Donnees",
+      "tickets": "Tickets",
+      "my_tickets": "Mes Tickets",
+      "all_tickets": "Tous les Tickets",
+      "search_tickets": "Rechercher des Tickets",
+      "knowledge_base": "Base de Connaissances",
+      "browse_articles": "Parcourir les Articles",
+      "create_article": "Creer un Article",
+      "reports": "Rapports",
+      "analytics_dashboard": "Tableau de Bord Analytique",
+      "generate_reports": "Generer des Rapports",
+      "admin": "Administration",
+      "system_management": "Gestion du Systeme",
+      "user_management": "Gestion des Utilisateurs",
+      "settings": "Parametres",
+      "help": "Aide",
+      "user_guide": "Guide Utilisateur",
+      "about": "A Propos"
+    },
+    "dashboard": {
+      "title": "Tableau de Bord du Support",
+      "welcome": "Bienvenue, {username} !",
+      "stats": {
+        "open_tickets": "Tickets Ouverts",
+        "in_progress": "En Cours",
+        "pending": "En Attente",
+        "resolved_today": "Resolus Aujourd'hui",
+        "avg_response_time": "Temps de Reponse Moyen",
+        "satisfaction_rate": "Taux de Satisfaction"
+      },
+      "recent_tickets": "Tickets Recents",
+      "quick_actions": "Actions Rapides",
+      "my_assigned": "Mes Tickets Assignes",
+      "unassigned": "Tickets Non Assignes"
+    },
+    "tickets": {
+      "title": "Tickets de Support",
+      "create": "Creer un Ticket",
+      "view": "Voir le Ticket",
+      "edit": "Modifier le Ticket",
+      "delete": "Supprimer le Ticket",
+      "assign": "Assigner le Ticket",
+      "escalate": "Escalader le Ticket",
+      "close": "Fermer le Ticket",
+      "reopen": "Rouvrir le Ticket",
+      "fields": {
+        "ticket_id": "ID du Ticket",
+        "subject": "Sujet",
+        "description": "Description",
+        "category": "Categorie",
+        "subcategory": "Sous-categorie",
+        "priority": "Priorite",
+        "impact": "Impact",
+        "urgency": "Urgence",
+        "status": "Statut",
+        "source": "Source",
+        "department": "Departement",
+        "assigned_to": "Assigne a",
+        "created_by": "Cree par",
+        "created_at": "Cree le",
+        "updated_at": "Mis a jour le",
+        "due_date": "Date d'echeance",
+        "resolution": "Resolution",
+        "tags": "Etiquettes"
+      },
+      "status": {
+        "open": "Ouvert",
+        "in_progress": "En Cours",
+        "pending": "En Attente",
+        "on_hold": "En Pause",
+        "resolved": "Resolu",
+        "closed": "Ferme"
+      },
+      "priority": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute",
+        "urgent": "Urgente",
+        "critical": "Critique"
+      },
+      "categories": {
+        "technical": "Technique",
+        "account": "Compte",
+        "billing": "Facturation",
+        "general": "General",
+        "feedback": "Commentaires",
+        "bug": "Rapport de Bug",
+        "feature": "Demande de Fonctionnalite"
+      },
+      "actions": {
+        "add_reply": "Ajouter une Reponse",
+        "add_note": "Ajouter une Note Interne",
+        "attach_file": "Joindre un Fichier",
+        "link_ticket": "Lier un Ticket",
+        "merge_tickets": "Fusionner les Tickets",
+        "split_ticket": "Diviser le Ticket",
+        "change_status": "Changer le Statut",
+        "change_priority": "Changer la Priorite",
+        "bulk_update": "Mise a Jour en Masse"
+      },
+      "messages": {
+        "created": "Ticket cree avec succes",
+        "updated": "Ticket mis a jour avec succes",
+        "assigned": "Ticket assigne avec succes",
+        "escalated": "Ticket escalade avec succes",
+        "closed": "Ticket ferme avec succes",
+        "reopened": "Ticket rouvert avec succes",
+        "reply_added": "Reponse ajoutee avec succes",
+        "no_tickets": "Aucun ticket trouve",
+        "select_ticket": "Veuillez selectionner un ticket"
+      }
+    },
+    "knowledge_base": {
+      "title": "Base de Connaissances",
+      "articles": "Articles",
+      "create_article": "Creer un Article",
+      "edit_article": "Modifier l'Article",
+      "search_placeholder": "Rechercher dans la base de connaissances...",
+      "categories": "Categories",
+      "popular": "Articles Populaires",
+      "recent": "Articles Recents",
+      "fields": {
+        "title": "Titre",
+        "content": "Contenu",
+        "category": "Categorie",
+        "tags": "Etiquettes",
+        "author": "Auteur",
+        "views": "Vues",
+        "helpful": "Utile",
+        "status": "Statut"
+      },
+      "messages": {
+        "created": "Article cree avec succes",
+        "updated": "Article mis a jour avec succes",
+        "deleted": "Article supprime avec succes",
+        "no_articles": "Aucun article trouve"
+      }
+    },
+    "search": {
+      "title": "Rechercher des Tickets",
+      "placeholder": "Entrez les termes de recherche...",
+      "filters": "Filtres",
+      "advanced": "Recherche Avancee",
+      "saved_searches": "Recherches Enregistrees",
+      "save_search": "Enregistrer la Recherche",
+      "clear": "Effacer",
+      "results": "Resultats de Recherche",
+      "no_results": "Aucun resultat trouve"
+    },
+    "reports": {
+      "title": "Rapports",
+      "analytics": "Tableau de Bord Analytique",
+      "generate": "Generer un Rapport",
+      "export": "Exporter le Rapport",
+      "types": {
+        "ticket_summary": "Resume des Tickets",
+        "response_times": "Temps de Reponse",
+        "resolution_rates": "Taux de Resolution",
+        "agent_performance": "Performance des Agents",
+        "customer_satisfaction": "Satisfaction Client",
+        "sla_compliance": "Conformite SLA"
+      },
+      "period": {
+        "today": "Aujourd'hui",
+        "this_week": "Cette Semaine",
+        "this_month": "Ce Mois",
+        "this_quarter": "Ce Trimestre",
+        "this_year": "Cette Annee",
+        "custom": "Plage Personnalisee"
+      }
+    },
+    "admin": {
+      "title": "Administration",
+      "system_management": "Gestion du Systeme",
+      "user_management": "Gestion des Utilisateurs",
+      "departments": "Departements",
+      "organizations": "Organisations",
+      "sla_policies": "Politiques SLA",
+      "workflows": "Flux de Travail",
+      "templates": "Modeles",
+      "settings": "Parametres",
+      "backup": "Sauvegarder la Base de Donnees",
+      "audit_log": "Journal d'Audit"
+    },
+    "sla": {
+      "title": "Politiques SLA",
+      "create": "Creer une Politique SLA",
+      "edit": "Modifier la Politique SLA",
+      "fields": {
+        "name": "Nom de la Politique",
+        "description": "Description",
+        "first_response": "Temps de Premiere Reponse",
+        "resolution": "Temps de Resolution",
+        "escalation": "Temps d'Escalade",
+        "priority": "Priorite",
+        "business_hours": "Heures Ouvrables Uniquement"
+      },
+      "status": {
+        "within_sla": "Dans les Limites SLA",
+        "approaching": "Proche de la Violation",
+        "breached": "SLA Viole"
+      }
+    },
+    "departments": {
+      "title": "Departements",
+      "create": "Creer un Departement",
+      "edit": "Modifier le Departement",
+      "fields": {
+        "name": "Nom du Departement",
+        "description": "Description",
+        "manager": "Responsable",
+        "email": "Email",
+        "sla_policy": "Politique SLA"
+      }
+    },
+    "common": {
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "view": "Voir",
+      "create": "Creer",
+      "update": "Mettre a jour",
+      "search": "Rechercher",
+      "filter": "Filtrer",
+      "refresh": "Actualiser",
+      "export": "Exporter",
+      "import": "Importer",
+      "loading": "Chargement...",
+      "success": "Succes",
+      "error": "Erreur",
+      "warning": "Avertissement",
+      "confirm": "Confirmer",
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "errors": {
+      "load_failed": "Echec du chargement des donnees",
+      "save_failed": "Echec de l'enregistrement des donnees",
+      "delete_failed": "Echec de la suppression",
+      "permission_denied": "Vous n'avez pas la permission d'effectuer cette action",
+      "not_found": "Element non trouve",
+      "validation_error": "Erreur de Validation",
+      "required_field": "Ce champ est obligatoire",
+      "invalid_format": "Format invalide"
+    }
+  }
+}

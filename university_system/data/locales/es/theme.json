@@ -1,0 +1,36 @@
+{
+  "theme": {
+    "title": "Configuración de Tema",
+    "select_theme": "Seleccionar Tema",
+    "dark_mode": "Modo Oscuro",
+    "light_mode": "Modo Claro",
+    "apply": "Aplicar Tema",
+    "preview": "Vista Previa del Tema",
+    "colors": {
+      "primary": "Color Primario",
+      "secondary": "Color Secundario",
+      "background": "Fondo",
+      "foreground": "Primer Plano",
+      "accent": "Color de Acento",
+      "button": "Botón",
+      "entry": "Campo de Entrada",
+      "label": "Etiqueta",
+      "treeview": "Vista de Árbol",
+      "scrollbar": "Barra de Desplazamiento"
+    },
+    "modes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Predeterminado del Sistema"
+    },
+    "messages": {
+      "theme_applied": "El tema ha sido aplicado exitosamente.",
+      "theme_changed": "Tema cambiado a {theme}.",
+      "restart_required": "Algunos cambios pueden requerir un reinicio para tener efecto completo."
+    },
+    "errors": {
+      "invalid_theme": "Tema seleccionado inválido.",
+      "apply_failed": "Error al aplicar tema: {error}"
+    }
+  }
+}

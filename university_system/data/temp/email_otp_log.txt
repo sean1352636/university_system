@@ -1,0 +1,180 @@
+
+================================================================================
+[2025-11-19 08:46:01]
+To: user@example.com
+Subject: Your Verification Code - University System
+
+Hello John Doe,
+
+Your verification code is: 123456
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2025-11-19 08:46:01]
+To: student@university.edu
+Subject: Your Verification Code - University System
+
+Hello Jane Student,
+
+Your verification code is: 111111
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2025-11-19 08:46:01]
+To: admin@university.edu
+Subject: Your Verification Code - University System
+
+Hello Admin User,
+
+Your verification code is: 999999
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-30 13:11:47]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 790406
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-30 14:22:20]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 143463
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-30 14:26:01]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 017833
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-30 14:31:02]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 691848
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-30 15:19:08]
+To: test@example.com
+Subject: Your Verification Code - University System
+
+Hello TestUser,
+
+Your verification code is: 123456
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-01-31 22:32:42]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 633497
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-01 08:51:28]
+To: seanthelegoguy@gmail.com
+Subject: Your Verification Code - University System
+
+Hello staff,
+
+Your verification code is: 359223
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-01 09:01:19]
+To: seanthelegoguy@gmail.com
+Subject: Your Verification Code - University System
+
+Hello staff,
+
+Your verification code is: 636539
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-01 19:58:39]
+To: test@example.com
+Subject: Your Verification Code - University System
+
+Hello Test User,
+
+Your verification code is: 123456
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-04 15:55:42]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 013581
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-05 15:15:43]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 530860
+
+This code expires in 10 minutes.
+================================================================================
+
+================================================================================
+[2026-02-05 15:36:16]
+To: seancatchpole989@gmail.com
+Subject: Your Verification Code - University System
+
+Hello admin,
+
+Your verification code is: 390643
+
+This code expires in 10 minutes.
+================================================================================

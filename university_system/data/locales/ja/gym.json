@@ -1,0 +1,101 @@
+{
+  "gym": {
+    "title": "大学フィットネスセンター",
+    "window_title": "大学ジムサービス",
+    "all_members": "全会員",
+    "available_classes": "利用可能なクラス",
+    "book_pt_session": "パーソナルトレーニング予約",
+    "class_schedule": "クラススケジュール",
+    "equipment_details": "器具詳細",
+    "equipment_list": "器具リスト",
+    "membership_options": "会員オプション",
+    "membership_stats": "会員統計",
+    "my_bookings": "予約一覧",
+    "my_membership": "マイ会員",
+    "my_pt_sessions": "マイPTセッション",
+    "pt_info": "パーソナルトレーニング情報",
+    "report_output": "レポート出力",
+    "tabs": {
+      "admin": "管理",
+      "classes": "クラス",
+      "equipment": "器具",
+      "membership": "会員",
+      "personal_training": "パーソナルトレーニング"
+    },
+    "btn": {
+      "book_class": "クラス予約",
+      "book_pt": "PTセッション予約",
+      "cancel_booking": "予約キャンセル",
+      "cancel_membership": "会員キャンセル",
+      "check_in": "チェックイン",
+      "email_report": "レポート送信",
+      "filter": "フィルター",
+      "generate_report": "レポート生成",
+      "join": "入会",
+      "refresh_stats": "統計更新",
+      "renew": "更新",
+      "report_issue": "問題報告",
+      "view_equipment": "器具を見る"
+    },
+    "labels": {
+      "category": "カテゴリ：",
+      "features": "特徴：",
+      "membership_type": "会員タイプ：",
+      "monthly_fee": "月会費：",
+      "report_type": "レポートタイプ：",
+      "session_date": "セッション日：",
+      "session_time": "セッション時間：",
+      "session_type": "セッションタイプ：",
+      "trainer": "トレーナー："
+    },
+    "confirm": {
+      "cancel_booking": "この予約をキャンセルしてもよろしいですか？",
+      "cancel_membership": "会員をキャンセルしてもよろしいですか？",
+      "cancel_pt": "このPTセッションをキャンセルしてもよろしいですか？"
+    },
+    "errors": {
+      "booking_failed": "予約失敗：{error}",
+      "email_failed": "メール送信失敗：{error}",
+      "fill_required": "すべての必須項目を入力してください",
+      "login_required": "ジムにアクセスするにはログインが必要です",
+      "no_active_membership": "有効な会員資格がありません",
+      "select_booking": "予約を選択してください",
+      "select_class": "クラスを選択してください",
+      "select_equipment": "器具を選択してください",
+      "select_membership": "会員タイプを選択してください",
+      "select_session": "セッションを選択してください"
+    },
+    "messages": {
+      "already_member": "すでに有効な会員資格があります",
+      "booking_cancelled": "予約がキャンセルされました",
+      "checked_in": "チェックイン完了！良いトレーニングを！",
+      "class_booked": "クラスが予約されました",
+      "data_refreshed": "データが更新されました",
+      "issue_reported": "問題が報告されました",
+      "membership_cancelled": "会員がキャンセルされました",
+      "membership_created": "会員が作成されました",
+      "membership_renewed": "会員が更新されました",
+      "no_membership": "ジム会員資格がありません",
+      "no_membership_info": "会員情報がありません",
+      "pt_booked": "パーソナルトレーニングが予約されました",
+      "pt_cancelled": "PTセッションがキャンセルされました",
+      "report_generated": "レポートが生成されました"
+    },
+    "prompts": {
+      "booking_date": "予約日を選択：",
+      "describe_issue": "問題を説明：",
+      "emergency_contact": "緊急連絡先の名前：",
+      "emergency_phone": "緊急連絡先の電話：",
+      "membership_months": "月数：",
+      "renewal_months": "更新期間（月）："
+    },
+    "reports": {
+      "title": "ジムレポート"
+    },
+    "warnings": {
+      "db_init": "データベース初期化警告",
+      "email_unavailable": "メールサービスは利用できません",
+      "generate_report_first": "まずレポートを生成してください"
+    }
+  }
+}

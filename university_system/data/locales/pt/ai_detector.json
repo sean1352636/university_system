@@ -1,0 +1,9 @@
+{
+  "ai_detector": {
+    "tab_title": "Detector de conteúdo IA",
+    "header_title": "Sistema de detecção de conteúdo IA",
+    "launch_full_detector": "Iniciar detector IA completo",
+    "about_title": "Sobre o detector de conteúdo IA",
+    "info_text": "O detector de conteúdo IA ajuda a identificar conteúdo gerado por IA nos trabalhos dos estudantes.\n\nRecursos:\n• Detecção de texto gerado por IA\n• Análise multi-modelo\n• Pontuação de confiança\n• Relatórios detalhados\n• Suporte a processamento em lote\n• Suporte a múltiplos formatos de arquivo (TXT, DOCX, PDF)\n• Rastreamento histórico de análises\n• Comparação com padrões de IA conhecidos\n\nCapacidades de detecção:\n✓ Detecção de conteúdo baseado em GPT\n✓ Análise estatística\n✓ Reconhecimento de padrões\n✓ Análise de estilo de escrita\n✓ Marcadores linguísticos\n✓ Padrões de coerência\n✓ Análise de vocabulário\n✓ Análise de estrutura de frases\n\nA interface completa do detector IA fornece:\n→ Algoritmos de detecção avançados\n→ Relatórios de análise detalhados\n→ Indicadores visuais de confiança\n→ Histórico de submissões\n→ Capacidades de exportação\n→ Processamento em massa\n\nClique no botão 'Iniciar detector IA completo' acima para acessar o sistema de detecção completo."
+  }
+}

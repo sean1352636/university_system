@@ -1,0 +1,13 @@
+{
+  "subject": "Fitness Class Booking Confirmation",
+  "body": "Dear $member_name,\n\nYour fitness class has been booked successfully.\n\nCLASS DETAILS\n================================================================================\nBooking Reference: $booking_ref\nClass: $class_name\nInstructor: $instructor_name\nDate: $class_date\nTime: $class_time\nLocation: $location\n================================================================================\n\nPlease arrive 5 minutes before class starts.\n\nBest regards,\nUniversity Gym & Fitness Center",
+  "variables": {
+    "member_name": "Member's full name",
+    "booking_ref": "Booking reference number",
+    "class_name": "Name of the fitness class",
+    "instructor_name": "Name of the instructor",
+    "class_date": "Date of the class",
+    "class_time": "Time of the class",
+    "location": "Class location"
+  }
+}

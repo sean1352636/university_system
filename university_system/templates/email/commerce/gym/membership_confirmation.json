@@ -1,0 +1,12 @@
+{
+  "subject": "Gym Membership Confirmation",
+  "body": "Dear $member_name,\n\nWelcome to the University Gym! Your membership has been confirmed.\n\nMEMBERSHIP DETAILS\n================================================================================\nMember Number: $member_number\nMembership Type: $membership_type\nStart Date: $start_date\nEnd Date: $end_date\nAmount Paid: $amount_paid\n================================================================================\n\nYour membership includes access to all gym facilities during operating hours.\n\nPlease bring your student/staff ID on your first visit.\n\nBest regards,\nUniversity Gym & Fitness Center",
+  "variables": {
+    "member_name": "Member's full name",
+    "member_number": "Membership number",
+    "membership_type": "Type of membership",
+    "start_date": "Membership start date",
+    "end_date": "Membership end date",
+    "amount_paid": "Amount paid"
+  }
+}

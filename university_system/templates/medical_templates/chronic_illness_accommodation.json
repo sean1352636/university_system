@@ -1,0 +1,28 @@
+{
+  "template_name": "Chronic Illness Accommodation",
+  "template_id": "MED-001",
+  "description": "Standard accommodation for students with chronic illnesses requiring flexible attendance and assignment deadlines",
+  "accommodation_type": "Medical",
+  "duration_days": 365,
+  "features": {
+    "flexible_attendance": true,
+    "extended_deadlines": true,
+    "remote_learning_option": true,
+    "priority_registration": true,
+    "reduced_course_load": false
+  },
+  "specific_accommodations": [
+    "Permission to miss classes due to medical appointments or illness flare-ups",
+    "Automatic 48-hour extension on all assignments",
+    "Access to recorded lectures and class materials",
+    "Option to attend classes remotely when physically unable to be on campus",
+    "Ability to reschedule exams within a 7-day window"
+  ],
+  "documentation_required": [
+    "Letter from treating physician",
+    "Medical records summary",
+    "Treatment plan documentation"
+  ],
+  "review_schedule": "Semester",
+  "notes": "Requires periodic health status updates. Student should notify instructors at the beginning of each semester."
+}

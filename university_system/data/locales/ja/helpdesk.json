@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "拡張ヘルプデスクシステム",
+    "auth": {
+      "required_title": "認証が必要です",
+      "not_available": "認証システムが利用できません。ヘルプデスクGUIを起動できません。",
+      "login_required": "大学システムのメインGUIからログインしてください。\n\n実行: python run.py --gui\n\nヘルプデスクはメインシステムにログイン後のみアクセスできます。"
+    },
+    "menu": {
+      "file": "ファイル",
+      "new_ticket": "新規チケット",
+      "export_data": "データのエクスポート",
+      "import_data": "データのインポート",
+      "tickets": "チケット",
+      "my_tickets": "マイチケット",
+      "all_tickets": "すべてのチケット",
+      "search_tickets": "チケット検索",
+      "knowledge_base": "ナレッジベース",
+      "browse_articles": "記事を閲覧",
+      "create_article": "記事を作成",
+      "reports": "レポート",
+      "analytics_dashboard": "分析ダッシュボード",
+      "generate_reports": "レポート生成",
+      "admin": "管理",
+      "system_management": "システム管理",
+      "user_management": "ユーザー管理",
+      "settings": "設定",
+      "help": "ヘルプ",
+      "user_guide": "ユーザーガイド",
+      "about": "概要"
+    },
+    "dashboard": {
+      "title": "ヘルプデスクダッシュボード",
+      "welcome": "ようこそ、{username}さん！",
+      "stats": {
+        "open_tickets": "未対応チケット",
+        "in_progress": "対応中",
+        "pending": "保留中",
+        "resolved_today": "本日解決済み",
+        "avg_response_time": "平均応答時間",
+        "satisfaction_rate": "満足度"
+      },
+      "recent_tickets": "最近のチケット",
+      "quick_actions": "クイックアクション",
+      "my_assigned": "担当チケット",
+      "unassigned": "未割り当てチケット"
+    },
+    "tickets": {
+      "title": "サポートチケット",
+      "create": "チケット作成",
+      "view": "チケット表示",
+      "edit": "チケット編集",
+      "delete": "チケット削除",
+      "assign": "チケット割り当て",
+      "escalate": "チケットエスカレーション",
+      "close": "チケットをクローズ",
+      "reopen": "チケットを再開",
+      "fields": {
+        "ticket_id": "チケットID",
+        "subject": "件名",
+        "description": "説明",
+        "category": "カテゴリ",
+        "subcategory": "サブカテゴリ",
+        "priority": "優先度",
+        "impact": "影響度",
+        "urgency": "緊急度",
+        "status": "ステータス",
+        "source": "ソース",
+        "department": "部門",
+        "assigned_to": "担当者",
+        "created_by": "作成者",
+        "created_at": "作成日時",
+        "updated_at": "更新日時",
+        "due_date": "期限",
+        "resolution": "解決方法",
+        "tags": "タグ"
+      },
+      "status": {
+        "open": "未対応",
+        "in_progress": "対応中",
+        "pending": "保留中",
+        "on_hold": "一時停止",
+        "resolved": "解決済み",
+        "closed": "クローズ"
+      },
+      "priority": {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "urgent": "緊急",
+        "critical": "重大"
+      },
+      "categories": {
+        "technical": "技術的",
+        "account": "アカウント",
+        "billing": "請求",
+        "general": "一般",
+        "feedback": "フィードバック",
+        "bug": "バグ報告",
+        "feature": "機能リクエスト"
+      },
+      "actions": {
+        "add_reply": "返信を追加",
+        "add_note": "内部メモを追加",
+        "attach_file": "ファイルを添付",
+        "link_ticket": "チケットをリンク",
+        "merge_tickets": "チケットを統合",
+        "split_ticket": "チケットを分割",
+        "change_status": "ステータス変更",
+        "change_priority": "優先度変更",
+        "bulk_update": "一括更新"
+      },
+      "messages": {
+        "created": "チケットが正常に作成されました",
+        "updated": "チケットが正常に更新されました",
+        "assigned": "チケットが正常に割り当てられました",
+        "escalated": "チケットが正常にエスカレーションされました",
+        "closed": "チケットが正常にクローズされました",
+        "reopened": "チケットが正常に再開されました",
+        "reply_added": "返信が正常に追加されました",
+        "no_tickets": "チケットが見つかりません",
+        "select_ticket": "チケットを選択してください"
+      }
+    },
+    "knowledge_base": {
+      "title": "ナレッジベース",
+      "articles": "記事",
+      "create_article": "記事を作成",
+      "edit_article": "記事を編集",
+      "search_placeholder": "ナレッジベースを検索...",
+      "categories": "カテゴリ",
+      "popular": "人気の記事",
+      "recent": "最近の記事",
+      "fields": {
+        "title": "タイトル",
+        "content": "内容",
+        "category": "カテゴリ",
+        "tags": "タグ",
+        "author": "著者",
+        "views": "閲覧数",
+        "helpful": "役に立った",
+        "status": "ステータス"
+      },
+      "messages": {
+        "created": "記事が正常に作成されました",
+        "updated": "記事が正常に更新されました",
+        "deleted": "記事が正常に削除されました",
+        "no_articles": "記事が見つかりません"
+      }
+    },
+    "search": {
+      "title": "チケット検索",
+      "placeholder": "検索語を入力...",
+      "filters": "フィルター",
+      "advanced": "詳細検索",
+      "saved_searches": "保存された検索",
+      "save_search": "検索を保存",
+      "clear": "クリア",
+      "results": "検索結果",
+      "no_results": "結果が見つかりません"
+    },
+    "reports": {
+      "title": "レポート",
+      "analytics": "分析ダッシュボード",
+      "generate": "レポート生成",
+      "export": "レポートのエクスポート",
+      "types": {
+        "ticket_summary": "チケットサマリー",
+        "response_times": "応答時間",
+        "resolution_rates": "解決率",
+        "agent_performance": "エージェントパフォーマンス",
+        "customer_satisfaction": "顧客満足度",
+        "sla_compliance": "SLA準拠"
+      },
+      "period": {
+        "today": "今日",
+        "this_week": "今週",
+        "this_month": "今月",
+        "this_quarter": "今四半期",
+        "this_year": "今年",
+        "custom": "カスタム範囲"
+      }
+    },
+    "admin": {
+      "title": "管理",
+      "system_management": "システム管理",
+      "user_management": "ユーザー管理",
+      "departments": "部門",
+      "organizations": "組織",
+      "sla_policies": "SLAポリシー",
+      "workflows": "ワークフロー",
+      "templates": "テンプレート",
+      "settings": "設定",
+      "backup": "データベースバックアップ",
+      "audit_log": "監査ログ"
+    },
+    "sla": {
+      "title": "SLAポリシー",
+      "create": "SLAポリシー作成",
+      "edit": "SLAポリシー編集",
+      "fields": {
+        "name": "ポリシー名",
+        "description": "説明",
+        "first_response": "初回応答時間",
+        "resolution": "解決時間",
+        "escalation": "エスカレーション時間",
+        "priority": "優先度",
+        "business_hours": "営業時間のみ"
+      },
+      "status": {
+        "within_sla": "SLA内",
+        "approaching": "違反間近",
+        "breached": "SLA違反"
+      }
+    },
+    "departments": {
+      "title": "部門",
+      "create": "部門を作成",
+      "edit": "部門を編集",
+      "fields": {
+        "name": "部門名",
+        "description": "説明",
+        "manager": "マネージャー",
+        "email": "メールアドレス",
+        "sla_policy": "SLAポリシー"
+      }
+    },
+    "common": {
+      "save": "保存",
+      "cancel": "キャンセル",
+      "delete": "削除",
+      "edit": "編集",
+      "view": "表示",
+      "create": "作成",
+      "update": "更新",
+      "search": "検索",
+      "filter": "フィルター",
+      "refresh": "更新",
+      "export": "エクスポート",
+      "import": "インポート",
+      "loading": "読み込み中...",
+      "success": "成功",
+      "error": "エラー",
+      "warning": "警告",
+      "confirm": "確認",
+      "yes": "はい",
+      "no": "いいえ"
+    },
+    "errors": {
+      "load_failed": "データの読み込みに失敗しました",
+      "save_failed": "データの保存に失敗しました",
+      "delete_failed": "削除に失敗しました",
+      "permission_denied": "この操作を実行する権限がありません",
+      "not_found": "項目が見つかりません",
+      "validation_error": "検証エラー",
+      "required_field": "このフィールドは必須です",
+      "invalid_format": "無効な形式"
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "대학 은행"
+    },
+    "student": {
+      "default_name": "학생"
+    },
+    "dashboard": {
+      "welcome": "환영합니다, {name}님",
+      "student_id": "학생 ID: {student_id}",
+      "balance_title": "현재 잔액",
+      "low_balance_warning": "잔액이 부족합니다! 충전을 고려해 주세요.",
+      "account_info_title": "계정 정보",
+      "account_info_text": "학생 재정 계정은 대학 ID에 연결되어 있습니다.\n이 잔액으로 캠퍼스 서비스, 식당 등을 이용할 수 있습니다."
+    },
+    "buttons": {
+      "refresh": "새로고침",
+      "top_up": "충전",
+      "transaction_history": "거래 내역",
+      "financial_summary": "재정 요약",
+      "close": "닫기",
+      "complete_topup": "충전 완료",
+      "login": "로그인",
+      "create_account": "계정 만들기",
+      "back_to_login": "로그인으로 돌아가기",
+      "logout": "로그아웃",
+      "deposit": "입금",
+      "withdraw": "출금",
+      "transfer": "송금",
+      "history": "내역"
+    },
+    "transactions": {
+      "recent_title": "최근 거래",
+      "columns": {
+        "date": "날짜",
+        "type": "유형",
+        "amount": "금액",
+        "balance": "잔액",
+        "description": "설명"
+      },
+      "no_transactions": "거래 내역이 없습니다"
+    },
+    "topup": {
+      "window_title": "계정 충전",
+      "header": "계정에 금액 추가",
+      "current_balance": "현재 잔액: £{balance}",
+      "amount_label": "금액: £",
+      "quick_topup": "빠른 충전",
+      "payment_method": "결제 방법:",
+      "method_card": "카드",
+      "method_bank_transfer": "은행 송금",
+      "method_cash": "현금",
+      "description": "계정 충전",
+      "success_message": "£{amount}이(가) 성공적으로 추가되었습니다!\n새 잔액: £{balance}"
+    },
+    "error": {
+      "title": "오류",
+      "positive_amount": "양수 금액을 입력해 주세요",
+      "max_topup": "최대 충전 금액은 £10,000입니다",
+      "topup_failed": "충전에 실패했습니다. 다시 시도해 주세요.",
+      "valid_amount": "유효한 금액을 입력해 주세요",
+      "loading_summary": "요약 로드 중 오류 발생: {error}",
+      "valid_positive_amount": "유효한 양수 금액을 입력해 주세요"
+    },
+    "success": {
+      "title": "성공"
+    },
+    "history": {
+      "window_title": "거래 내역",
+      "header": "전체 거래 내역"
+    },
+    "summary": {
+      "window_title": "재정 요약",
+      "header": "귀하의 재정 요약",
+      "overview_title": "계정 개요",
+      "current_balance": "현재 잔액:",
+      "total_payments": "총 결제 건수:",
+      "total_paid": "총 결제 금액:",
+      "total_refunds": "총 환불 건수:",
+      "total_refunded": "총 환불 금액:",
+      "net_spent": "순 지출 금액:",
+      "spending_by_category": "카테고리별 지출",
+      "columns": {
+        "category": "카테고리",
+        "transactions": "거래 건수",
+        "total_spent": "총 지출"
+      }
+    },
+    "login": {
+      "title": "대학 은행",
+      "subtitle": "안전한 학생 뱅킹",
+      "student_tip": "팁: 대학 시스템을 통해 로그인한 경우 학생 계정이 자동으로 로드됩니다.",
+      "form_title": "계정 로그인",
+      "account_number": "계좌 번호:",
+      "pin": "비밀번호:",
+      "new_user": "대학 은행이 처음이신가요?"
+    },
+    "create_account": {
+      "title": "새 계정 만들기",
+      "form_title": "계정 정보",
+      "full_name": "성명:",
+      "pin_label": "비밀번호 (4-6자리):",
+      "confirm_pin": "비밀번호 확인:",
+      "initial_deposit": "초기 입금액 (£):"
+    },
+    "standalone": {
+      "account_label": "계좌: {account}",
+      "current_balance": "현재 잔액"
+    },
+    "deposit": {
+      "window_title": "입금하기",
+      "header": "자금 입금",
+      "success": "£{amount}이(가) 성공적으로 입금되었습니다"
+    },
+    "withdraw": {
+      "window_title": "출금하기",
+      "header": "자금 출금",
+      "available": "사용 가능: £{balance}",
+      "success": "£{amount}이(가) 성공적으로 출금되었습니다",
+      "insufficient_funds": "잔액 부족"
+    },
+    "transfer": {
+      "window_title": "송금하기",
+      "header": "자금 송금",
+      "available": "사용 가능: £{balance}",
+      "recipient_account": "받는 계좌:",
+      "amount_label": "금액: £",
+      "success": "계좌 {account}로 £{amount}이(가) 성공적으로 송금되었습니다",
+      "self_transfer_error": "자신에게 송금할 수 없습니다",
+      "recipient_not_found": "받는 계좌를 찾을 수 없습니다",
+      "failed": "송금 실패"
+    },
+    "validation": {
+      "enter_credentials": "계좌 번호와 비밀번호를 입력해 주세요",
+      "invalid_login": "계좌 번호 또는 비밀번호가 잘못되었습니다",
+      "enter_name": "성명을 입력해 주세요",
+      "pin_format": "비밀번호는 4-6자리 숫자여야 합니다",
+      "pin_mismatch": "비밀번호가 일치하지 않습니다",
+      "negative_deposit": "초기 입금액은 음수가 될 수 없습니다"
+    },
+    "account_created": {
+      "title": "계정 생성 완료",
+      "message": "계정이 생성되었습니다!\n\n계좌 번호: {account}\n계좌 번호와 비밀번호를 기억해 주세요."
+    }
+  }
+}

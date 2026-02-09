@@ -1,0 +1,4 @@
+{
+  "subject": "Ranked Choice Voting - Ballot Receipt",
+  "body": "Dear {username},\n\nThank you for participating in the Student Union election!\n\nYour ranked choice ballot has been successfully submitted.\n\nYOUR RANKINGS:\n{rankings}\nPosition: {position}\nSubmission Time: {submission_time}\n\nYour vote has been securely recorded and will be counted in the election results.\n\nFor questions about the election, please contact the Elections Committee.\n\nBest regards,\nStudent Union Elections Committee"
+}

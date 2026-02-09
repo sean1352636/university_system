@@ -1,0 +1,4 @@
+{
+    "subject": "📧 Application Update: $internship_title at $company_name",
+    "body": "Dear $student_name,\n\nThere has been an update to your internship application.\n\nPosition: $internship_title\nCompany: $company_name\nStatus: $status\nUpdate: $update_message\n\n$signature"
+}

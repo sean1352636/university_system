@@ -1,0 +1,319 @@
+{
+  "batch_ops": {
+    "title": "Менеджер пакетных операций",
+    "tabs": {
+      "import": "Импорт",
+      "export": "Экспорт",
+      "update": "Обновление",
+      "quality": "Качество данных",
+      "automation": "Автоматизация",
+      "history": "История",
+      "utilities": "Утилиты"
+    },
+    "headers": {
+      "import": "Операции импорта",
+      "export": "Операции экспорта",
+      "update": "Операции обновления",
+      "quality": "Инструменты качества данных",
+      "automation": "Автоматизация и интеграция",
+      "history": "История операций",
+      "utilities": "Служебные инструменты"
+    },
+    "menu": {
+      "file": "Файл",
+      "new_import": "Новый импорт...",
+      "open_database": "Открыть базу данных...",
+      "create_backup": "Создать резервную копию",
+      "restore_backup": "Восстановить резервную копию...",
+      "tools": "Инструменты",
+      "find_duplicates": "Найти дубликаты",
+      "data_quality_check": "Проверка качества данных",
+      "generate_template": "Создать шаблон",
+      "settings": "Настройки",
+      "view": "Просмотр",
+      "dashboard": "Панель управления",
+      "import_history": "История импорта",
+      "system_logs": "Системные журналы",
+      "system_status": "Состояние системы",
+      "help": "Справка",
+      "user_guide": "Руководство пользователя",
+      "about": "О программе",
+      "command_line_mode": "Режим командной строки"
+    },
+    "buttons": {
+      "return_main_menu": "Вернуться в главное меню",
+      "import_selected": "Импортировать выбранное",
+      "select_all": "Выбрать все",
+      "select_none": "Снять выделение",
+      "proceed": "Продолжить",
+      "cancel": "Отмена",
+      "ok": "ОК",
+      "execute": "Выполнить",
+      "refresh": "Обновить",
+      "refresh_dashboard": "Обновить панель"
+    },
+    "import": {
+      "csv_title": "Импорт из CSV",
+      "csv_desc": "Импорт записей студентов из CSV файлов",
+      "excel_title": "Импорт из Excel",
+      "excel_desc": "Импорт записей студентов из таблиц Excel",
+      "multi_file_title": "Многофайловый импорт",
+      "multi_file_desc": "Импорт из нескольких файлов одновременно",
+      "preview_title": "Предпросмотр импорта",
+      "preview_desc": "Предпросмотр данных перед импортом",
+      "duplicate_title": "Обнаружение дубликатов",
+      "duplicate_desc": "Проверка на дублирующиеся записи перед импортом",
+      "resume_title": "Продолжить импорт",
+      "resume_desc": "Продолжить ранее прерванный импорт"
+    },
+    "export": {
+      "students_title": "Экспорт студентов",
+      "students_desc": "Экспорт записей студентов в CSV/Excel",
+      "reports_title": "Экспорт отчетов",
+      "reports_desc": "Генерация и экспорт отчетов",
+      "statistics_title": "Экспорт статистики",
+      "statistics_desc": "Экспорт системной статистики и аналитики"
+    },
+    "update": {
+      "batch_title": "Пакетное обновление",
+      "batch_desc": "Обновление нескольких записей одновременно",
+      "grade_title": "Обновление оценок",
+      "grade_desc": "Пакетное обновление оценок студентов",
+      "module_title": "Обновление модулей",
+      "module_desc": "Пакетное обновление зачислений на модули"
+    },
+    "quality": {
+      "find_duplicates": "Найти дубликаты",
+      "validate_data": "Проверить данные",
+      "clean_data": "Очистить данные",
+      "dashboard": "Панель качества",
+      "analysis_tools": "Инструменты анализа"
+    },
+    "automation": {
+      "scheduled_tasks": "Запланированные задачи",
+      "api_integration": "Интеграция API",
+      "external_db": "Внешняя база данных",
+      "schedule_daily": "Запланировать ежедневно",
+      "schedule_weekly": "Запланировать еженедельно",
+      "view_scheduled": "Просмотр запланированных задач",
+      "rest_api": "Настройка REST API",
+      "start_api": "Запустить API сервер"
+    },
+    "history": {
+      "filter_by": "Фильтр по:",
+      "all": "Все",
+      "imports": "Импорт",
+      "exports": "Экспорт",
+      "updates": "Обновления",
+      "date_time": "Дата/Время",
+      "operation": "Операция",
+      "records": "Записи",
+      "success": "Успешно",
+      "errors": "Ошибки",
+      "clear_history": "Очистить историю",
+      "export_history": "Экспорт истории"
+    },
+    "utilities": {
+      "backup_title": "Резервное копирование базы данных",
+      "backup_desc": "Создание резервной копии базы данных",
+      "template_title": "Создать шаблон",
+      "template_desc": "Создание шаблонов импорта CSV/Excel",
+      "settings_title": "Настройки",
+      "settings_desc": "Настройка параметров пакетных операций",
+      "undo_title": "Отменить последнюю операцию",
+      "undo_desc": "Откат последней пакетной операции"
+    },
+    "dialogs": {
+      "select_csv": "Выберите CSV файл",
+      "select_excel": "Выберите Excel файл",
+      "select_files": "Выберите файлы",
+      "select_files_prompt": "Выберите файлы для импорта",
+      "select_import_dir": "Выберите директорию импорта",
+      "select_file_preview": "Выберите файл для предпросмотра",
+      "select_file_duplicate": "Выберите файл для проверки на дубликаты",
+      "select_sheet": "Выберите лист",
+      "select_sheet_prompt": "Выберите лист Excel для импорта:",
+      "import_preview": "Предпросмотр импорта",
+      "preview_records": "Предпросмотр {count} записей",
+      "sample_records": "Примеры записей из файла импорта:",
+      "import_summary": "Сводка импорта",
+      "import_complete": "Импорт успешно завершен",
+      "duplicate_options": "Параметры обработки дубликатов",
+      "duplicate_records": "Найдены дублирующиеся записи",
+      "duplicates_found": "Найдено {count} дублирующихся записей",
+      "found_duplicates": "Найдены дубликаты",
+      "no_duplicates": "Дубликатов нет",
+      "no_duplicates_proceed": "Дублирующихся записей не найдено. Продолжить импорт?",
+      "process_files_confirm": "Обработать {count} файлов?",
+      "no_files": "Нет файлов",
+      "confirm": "Подтверждение",
+      "error": "Ошибка",
+      "complete": "Завершено",
+      "system_logs": "Системные журналы"
+    },
+    "duplicates": {
+      "skip_all": "Пропустить все дубликаты",
+      "update_existing": "Обновить существующие записи",
+      "import_anyway": "Импортировать все равно (создать дубликаты)",
+      "handle_individually": "Обрабатывать индивидуально"
+    },
+    "progress": {
+      "duplicate_detection": "Обнаружение дубликатов",
+      "analyzing_duplicates": "Анализ на наличие дубликатов...",
+      "multi_file_import": "Многофайловый импорт",
+      "processing_files": "Обработка файлов..."
+    },
+    "messages": {
+      "multi_import_complete": "Многофайловый импорт завершен. {success} успешно, {failed} с ошибками."
+    },
+    "errors": {
+      "no_valid_records": "В файле не найдено действительных записей",
+      "preview_failed": "Не удалось выполнить предпросмотр файла: {error}",
+      "excel_read_failed": "Не удалось прочитать Excel файл: {error}",
+      "no_supported_files": "В директории не найдено поддерживаемых файлов"
+    },
+    "filetypes": {
+      "csv": "CSV файлы",
+      "excel": "Excel файлы",
+      "all": "Все файлы"
+    },
+    "status": {
+      "ready": "Готово",
+      "db_connected": "База данных подключена"
+    },
+    "logs": {
+      "no_log_file": "Файл журнала не найден"
+    }
+  },
+  "batch_operations": {
+    "window_title": "Расширенная система пакетных операций с записями студентов",
+    "tabs": {
+      "import": "Операции импорта",
+      "update": "Операции обновления",
+      "export": "Операции экспорта",
+      "quality": "Качество данных",
+      "utilities": "Утилиты",
+      "automation": "Автоматизация",
+      "history": "История"
+    },
+    "menu": {
+      "file": "Файл",
+      "new_import": "Новый импорт",
+      "open_database": "Открыть базу данных",
+      "create_backup": "Создать резервную копию",
+      "restore_backup": "Восстановить резервную копию",
+      "tools": "Инструменты",
+      "generate_template": "Создать шаблон",
+      "data_quality_check": "Проверка качества данных",
+      "find_duplicates": "Найти дубликаты",
+      "command_line_mode": "Режим командной строки",
+      "settings": "Настройки",
+      "system_status": "Состояние системы",
+      "view": "Просмотр",
+      "dashboard": "Панель управления",
+      "import_history": "История импорта",
+      "system_logs": "Системные журналы",
+      "language": "Язык",
+      "change_language": "Сменить язык",
+      "help": "Помощь",
+      "user_guide": "Руководство пользователя",
+      "about": "О программе"
+    },
+    "import": {
+      "header": "Операции импорта",
+      "from_csv": "Импорт из CSV",
+      "from_csv_desc": "Импорт данных студентов из CSV файлов",
+      "from_excel": "Импорт из Excel",
+      "from_excel_desc": "Импорт из таблиц Excel",
+      "multi_file": "Многофайловый импорт",
+      "multi_file_desc": "Обработка нескольких файлов одновременно",
+      "with_duplicates": "Импорт с обнаружением дубликатов",
+      "with_duplicates_desc": "Умная обработка дубликатов",
+      "preview": "Предпросмотр импорта",
+      "preview_desc": "Предпросмотр изменений перед импортом",
+      "resume": "Продолжить неудачный импорт",
+      "resume_desc": "Продолжить прерванный импорт"
+    },
+    "update": {
+      "header": "Операции обновления",
+      "batch_update": "Пакетное обновление записей",
+      "batch_update_desc": "Обновление нескольких записей студентов",
+      "bulk_module": "Массовые операции с модулями",
+      "bulk_module_desc": "Управление назначениями модулей",
+      "import_grades": "Импорт данных оценок",
+      "import_grades_desc": "Импорт оценок студентов"
+    },
+    "export": {
+      "header": "Операции экспорта",
+      "students": "Экспорт студентов",
+      "students_desc": "Экспорт данных студентов в файлы",
+      "statistics": "Экспорт статистики",
+      "statistics_desc": "Создание отчётов о зачислении",
+      "reports": "Создание отчётов",
+      "reports_desc": "Создание подробных аналитических отчётов"
+    },
+    "quality": {
+      "header": "Инструменты качества данных",
+      "analysis_tools": "Инструменты анализа",
+      "dashboard": "Панель качества",
+      "validate": "Проверить данные",
+      "find_duplicates": "Найти дубликаты",
+      "clean": "Очистить данные",
+      "refresh": "Обновить панель"
+    },
+    "utilities": {
+      "header": "Служебные функции",
+      "generate_template": "Создать шаблон",
+      "generate_template_desc": "Создание шаблонов импорта",
+      "create_backup": "Создать резервную копию",
+      "create_backup_desc": "Резервное копирование базы данных",
+      "undo_import": "Отменить последний импорт",
+      "undo_import_desc": "Откат последних изменений",
+      "settings": "Настройки",
+      "settings_desc": "Настройка параметров приложения"
+    },
+    "automation": {
+      "header": "Автоматизация и интеграция",
+      "scheduled_tasks": "Запланированные задачи",
+      "api_integration": "API и интеграция",
+      "schedule_daily": "Запланировать ежедневный импорт",
+      "schedule_weekly": "Запланировать еженедельный отчёт",
+      "view_scheduled": "Просмотр запланированных задач",
+      "start_api": "Запустить API сервер",
+      "external_db": "Настройка внешней БД",
+      "rest_api": "Интеграция REST API"
+    },
+    "history": {
+      "header": "История импорта и отчёты",
+      "filter_by": "Фильтр по:",
+      "filter_all": "Все",
+      "filter_imports": "Импорт",
+      "filter_updates": "Обновления",
+      "filter_exports": "Экспорт",
+      "refresh": "Обновить",
+      "export": "Экспорт истории",
+      "clear": "Очистить историю",
+      "col_timestamp": "Дата/Время",
+      "col_operation": "Операция",
+      "col_records": "Записей",
+      "col_success": "Успешно",
+      "col_errors": "Ошибок"
+    },
+    "status": {
+      "ready": "Готово",
+      "database_connected": "База данных: Подключена",
+      "database_disconnected": "База данных: Отключена",
+      "processing": "Обработка...",
+      "complete": "Завершено",
+      "error": "Ошибка"
+    },
+    "common": {
+      "execute": "Выполнить",
+      "return_main": "Вернуться в главное меню"
+    },
+    "language": {
+      "changed": "Язык изменён",
+      "restart_required": "Некоторый текст обновится сразу. Для полного эффекта перезапустите приложение."
+    }
+  }
+}

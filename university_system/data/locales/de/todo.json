@@ -1,0 +1,106 @@
+{
+  "todo": {
+    "title": "Aufgabenliste",
+    "header": {
+      "title": "Meine Aufgabenliste",
+      "shortcuts": "Strg+N: Neu  |  Strg+F: Suchen  |  Strg+E: Exportieren"
+    },
+    "date_picker": {
+      "title": "Datum auswählen"
+    },
+    "dialog": {
+      "add_task": "Aufgabe hinzufügen",
+      "edit_task": "Aufgabe bearbeiten"
+    },
+    "fields": {
+      "task_title": "Aufgabentitel *",
+      "priority": "Priorität",
+      "due_date": "Fälligkeitsdatum",
+      "category": "Kategorie",
+      "notes": "Notizen"
+    },
+    "buttons": {
+      "clear": "Löschen",
+      "today": "Heute",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "pick": "Auswählen",
+      "new_task": "+ Neue Aufgabe",
+      "export_csv": "Als CSV exportieren",
+      "clear_completed": "Erledigte löschen"
+    },
+    "filters": {
+      "status": "Status:",
+      "priority": "Priorität:",
+      "category": "Kategorie:",
+      "sort": "Sortierung:",
+      "all": "Alle",
+      "active": "Aktiv",
+      "completed": "Erledigt"
+    },
+    "priority": {
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig",
+      "none": "Keine"
+    },
+    "sort": {
+      "created": "Erstellt",
+      "priority": "Priorität",
+      "due_date": "Fälligkeitsdatum",
+      "az": "A-Z"
+    },
+    "date": {
+      "no_date_set": "Kein Datum festgelegt",
+      "today": "Heute ({date})",
+      "tomorrow": "Morgen ({date})"
+    },
+    "due": {
+      "overdue": "Überfällig: {date}",
+      "today": "Heute fällig",
+      "date": "{date}"
+    },
+    "task": {
+      "has_notes": "Hat Notizen"
+    },
+    "messages": {
+      "no_tasks_match": "Keine Aufgaben entsprechen Ihren Filtern.",
+      "no_tasks_yet": "Noch keine Aufgaben!\nKlicken Sie auf '+ Neue Aufgabe' oder drücken Sie Strg+N, um eine hinzuzufügen."
+    },
+    "stats": {
+      "showing_filtered": "Zeige {showing} von {total} Aufgaben  |  {completed} erledigt",
+      "completed": "{completed} von {total} Aufgaben erledigt"
+    },
+    "confirm": {
+      "title": "Bestätigen",
+      "delete_title": "Löschen bestätigen",
+      "delete_message": "Aufgabe löschen: {task}...?",
+      "clear_completed": "{count} erledigte Aufgabe(n) löschen?"
+    },
+    "info": {
+      "title": "Info",
+      "no_completed_tasks": "Keine erledigten Aufgaben zum Löschen",
+      "no_tasks_to_export": "Keine Aufgaben zum Exportieren"
+    },
+    "success": {
+      "title": "Erfolg",
+      "export": "{count} Aufgaben exportiert nach:\n{path}"
+    },
+    "errors": {
+      "title": "Fehler",
+      "task_title_required": "Aufgabentitel ist erforderlich",
+      "export_failed": "Exportieren fehlgeschlagen: {error}"
+    },
+    "export": {
+      "task": "Aufgabe",
+      "priority": "Priorität",
+      "due_date": "Fälligkeitsdatum",
+      "category": "Kategorie",
+      "notes": "Notizen",
+      "completed": "Erledigt",
+      "created": "Erstellt",
+      "yes": "Ja",
+      "no": "Nein"
+    }
+  }
+}

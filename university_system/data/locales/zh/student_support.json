@@ -1,0 +1,151 @@
+{
+  "student_support": {
+    "title": "Student Support Center",
+    "window_title": "Student Support",
+    "nav": {
+      "dashboard": "仪表板",
+      "search": "搜索",
+      "faqs": "FAQs",
+      "knowledge_base": "Knowledge Base",
+      "resources": "资源",
+      "create_ticket": "Create Ticket",
+      "my_tickets": "My Tickets",
+      "templates": "Templates",
+      "submit_rating": "Submit Rating",
+      "all_tickets": "All Tickets",
+      "reports": "报告",
+      "manage_templates": "Manage Templates",
+      "manage_kb": "Manage Knowledge Base",
+      "bulk_operations": "批量操作",
+      "export_data": "Export Data",
+      "user_management": "User Management",
+      "preferences": "偏好设置",
+      "notifications": "通知",
+      "it_helpdesk": "IT Helpdesk"
+    },
+    "menu": {
+      "new_ticket": "New Ticket",
+      "export_data": "Export Data",
+      "dashboard": "仪表板",
+      "all_tickets": "All Tickets",
+      "search": "搜索",
+      "preferences": "偏好设置",
+      "refresh_data": "Refresh Data",
+      "user_guide": "用户指南",
+      "about": "关于"
+    },
+    "dashboard": {
+      "tab_title": "仪表板",
+      "title": "Support Dashboard",
+      "welcome": "Welcome, {username}!",
+      "open_tickets": "Open Tickets",
+      "pending_tickets": "Pending Tickets",
+      "resolved_tickets": "Resolved Tickets",
+      "avg_response_time": "Avg. Response Time",
+      "recent_activity": "Recent Activity",
+      "quick_actions": "Quick Actions"
+    },
+    "tickets": {
+      "title": "Support Tickets",
+      "create_new": "Create New Ticket",
+      "my_tickets": "My Tickets",
+      "all_tickets": "All Tickets",
+      "ticket_id": "Ticket ID",
+      "subject": "Subject",
+      "description": "描述",
+      "category": "类别",
+      "priority": "优先级",
+      "status": "状态",
+      "created_at": "Created At",
+      "updated_at": "Updated At",
+      "assigned_to": "Assigned To",
+      "requester": "Requester",
+      "attachments": "Attachments",
+      "comments": "评论",
+      "add_comment": "Add Comment",
+      "close_ticket": "Close Ticket",
+      "reopen_ticket": "Reopen Ticket",
+      "escalate": "Escalate",
+      "assign": "Assign"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "紧急",
+      "critical": "关键"
+    },
+    "status": {
+      "open": "打开",
+      "in_progress": "进行中",
+      "pending": "待处理",
+      "on_hold": "On Hold",
+      "resolved": "Resolved",
+      "closed": "已关闭"
+    },
+    "categories": {
+      "academic": "Academic",
+      "financial": "财务",
+      "housing": "住宿",
+      "technical": "Technical",
+      "administrative": "Administrative",
+      "health": "Health",
+      "career": "Career",
+      "other": "其他"
+    },
+    "faqs": {
+      "title": "Frequently Asked Questions",
+      "search_placeholder": "Search FAQs...",
+      "no_results": "No FAQs found"
+    },
+    "knowledge_base": {
+      "title": "Knowledge Base",
+      "articles": "Articles",
+      "categories": "类别",
+      "search_placeholder": "Search articles...",
+      "no_results": "No articles found"
+    },
+    "resources": {
+      "title": "Student Resources",
+      "helpful_links": "Helpful Links",
+      "documents": "Documents",
+      "contacts": "Important Contacts"
+    },
+    "satisfaction": {
+      "title": "Satisfaction Rating",
+      "rate_service": "Rate our service",
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "平均",
+      "poor": "Poor",
+      "very_poor": "Very Poor",
+      "feedback": "Additional Feedback",
+      "submit": "Submit Rating",
+      "thank_you": "Thank you for your feedback!"
+    },
+    "reports": {
+      "title": "Support Reports",
+      "ticket_summary": "Ticket Summary",
+      "response_times": "Response Times",
+      "satisfaction_scores": "Satisfaction Scores",
+      "agent_performance": "Agent Performance",
+      "generate": "Generate Report",
+      "export": "Export Report"
+    },
+    "messages": {
+      "ticket_created": "Ticket created successfully",
+      "ticket_updated": "Ticket updated successfully",
+      "ticket_closed": "Ticket closed successfully",
+      "comment_added": "Comment added successfully",
+      "rating_submitted": "Thank you for your feedback!",
+      "no_tickets": "No tickets found",
+      "loading": "加载中..."
+    },
+    "errors": {
+      "create_failed": "Failed to create ticket",
+      "update_failed": "Failed to update ticket",
+      "load_failed": "Failed to load data",
+      "submit_failed": "Failed to submit"
+    }
+  }
+}

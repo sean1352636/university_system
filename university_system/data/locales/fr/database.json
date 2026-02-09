@@ -1,0 +1,45 @@
+{
+  "database": {
+    "init_success": "Base de données initialisée avec succès !",
+    "init_error": "Une erreur s'est produite lors de l'initialisation de la base de données",
+    "users_table_not_found": "Tableau des utilisateurs non trouvée. Sera créée par le système principal.",
+    "parking_lots_created": "Parkings par défaut créés !",
+    "errors": {
+      "connection_failed": "Échec de la connexion à la base de données",
+      "query_failed": "Échec de la requête de base de données",
+      "transaction_failed": "Échec de la transaction de base de données",
+      "locked": "Base de données verrouillée",
+      "integrity_error": "Erreur d'intégrité de base de données",
+      "not_found": "Enregistrement non trouvé dans la base de données"
+    },
+    "messages": {
+      "backup_complete": "Sauvegarde de la base de données terminée",
+      "backup_failed": "Échec de la sauvegarde de la base de données",
+      "restore_complete": "Base de données restaurée avec succès",
+      "restore_failed": "Échec de la restauration de la base de données",
+      "migration_complete": "Migration de la base de données terminée",
+      "migration_failed": "Échec de la migration de la base de données",
+      "tables_created": "Tables de base de données créées avec succès",
+      "schema_updated": "Schéma de base de données mis à jour",
+      "connection_established": "Connexion à la base de données établie",
+      "connection_closed": "Connexion à la base de données fermée"
+    },
+    "labels": {
+      "database": "Base de Données",
+      "table": "Tableau",
+      "record": "Enregistrement",
+      "query": "Requête",
+      "backup": "Sauvegarde",
+      "restore": "Restaurer",
+      "connection": "Connexion"
+    }
+  },
+  "sync": {
+    "title": "Synchronisation des Données Utilisateur",
+    "syncing": "Synchronisation des données utilisateur...",
+    "completed": "Synchronisation des données utilisateur terminée :",
+    "new_users": "Préférences créées pour {count} nouveaux utilisateurs",
+    "levels_updated": "Niveaux de lecture mis à jour pour {count} utilisateurs",
+    "error": "Erreur pendant la synchronisation : {error}"
+  }
+}

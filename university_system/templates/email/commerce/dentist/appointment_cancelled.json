@@ -1,0 +1,11 @@
+{
+  "subject": "Dental Appointment Cancelled",
+  "body": "Dear $patient_name,\n\nYour dental appointment has been cancelled.\n\nCancelled Appointment Details:\n- Reference: $appointment_ref\n- Date: $appointment_date\n- Time: $appointment_time\n- Treatment: $treatment_type\n\nIf you did not request this cancellation, please contact us immediately.\n\nTo reschedule, please visit our online booking system or call the clinic.\n\nBest regards,\nUniversity Dental Clinic",
+  "variables": {
+    "patient_name": "Patient's full name",
+    "appointment_ref": "Appointment reference number",
+    "appointment_date": "Date of cancelled appointment",
+    "appointment_time": "Time of cancelled appointment",
+    "treatment_type": "Type of dental treatment"
+  }
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Invitation: $event_name - $event_type",
+    "body": "Dear $first_name,\n\nYou are cordially invited to our upcoming alumni event!\n\nEvent Details:\n--------------\nEvent: $event_name\nType: $event_type\nDate: $event_date\nLocation: $event_location\n\n$payment_section\n\n$virtual_section\n\nTo RSVP or register for this event, please log in to the Alumni Portal.\n\nWe hope to see you there!\n\nBest regards,\nThe Alumni Relations Team\nUniversity Alumni Network"
+}

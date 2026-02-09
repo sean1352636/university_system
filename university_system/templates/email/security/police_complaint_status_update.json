@@ -1,0 +1,4 @@
+{
+    "subject": "Complaint Status Update - $complaint_id",
+    "body": "Dear $complainant,\n\nYour complaint status has been updated.\n\nComplaint ID: $complaint_id\nPrevious Status: $old_status\nNew Status: $new_status\n\nIf you have any questions, please contact the Campus Public Safety.\n\nBest regards,\nCampus Public Safety"
+}

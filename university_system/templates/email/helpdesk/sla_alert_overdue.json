@@ -1,0 +1,4 @@
+{
+    "subject": "OVERDUE TICKET ALERT: #$ticket_id - $subject",
+    "body": "URGENT: Ticket #$ticket_id is now OVERDUE\n\nTicket Details:\n- Subject: $subject\n- Priority: $priority\n- Due Date: $due_date\n- Submitted by: $submitter ($submitter_email)\n- Assigned to: $assignee\n- Department: $department\n- Created: $created_at\n\nThis ticket has exceeded its SLA deadline and requires immediate attention.\n\nPlease take action to resolve this ticket as soon as possible.\n\nThis is an automated alert from the Support Ticket System."
+}

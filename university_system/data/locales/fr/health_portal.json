@@ -1,0 +1,258 @@
+{
+  "health_portal": {
+    "title": "Portail de Santé Universitaire",
+    "window_title": "Services du Portail de Santé",
+    "header_title": "Portail de Santé Universitaire",
+
+    "nav": {
+      "title": "Navigation",
+      "health_records": "Dossiers Médicaux",
+      "manage_records": "Gérer les Dossiers",
+      "view_records": "Voir les Dossiers",
+      "view_history": "Voir l'Historique Médical",
+      "generate_reports": "Générer des Rapports",
+      "appointments": "Rendez-vous",
+      "schedule_appt": "Planifier un Rendez-vous",
+      "view_appts": "Voir les Rendez-vous",
+      "vaccinations": "Vaccinations",
+      "record_vaccine": "Enregistrer une Vaccination",
+      "view_vaccines": "Voir les Vaccinations",
+      "emergency_contacts": "Contacts d'Urgence",
+      "manage_contacts": "Gérer les Contacts",
+      "reports_analytics": "Rapports et Analyses",
+      "health_reports": "Rapports de Santé",
+      "integration": "Intégration",
+      "email_manager": "Gestionnaire d'E-mails",
+      "send_report_email": "Envoyer un Rapport par E-mail",
+      "send_record_email": "Envoyer un Dossier par E-mail",
+      "accessibility": "Accessibilité",
+      "accessibility_tools": "Outils d'Accessibilité",
+      "medical_accommodations": "Aménagements Médicaux",
+      "administration": "Administration",
+      "security_audit": "Audit de Sécurité",
+      "data_management": "Gestion des Données"
+    },
+
+    "btn": {
+      "return_main": "Retour au Menu Principal",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "update": "Mettre à jour",
+      "delete": "Supprimer",
+      "search": "Rechercher",
+      "clear": "Effacer",
+      "refresh": "Actualiser"
+    },
+
+    "buttons": {
+      "open_email_manager": "Ouvrir le Gestionnaire d'E-mails",
+      "send_health_report_email": "Envoyer le Rapport de Santé",
+      "send_health_record_email": "Envoyer le Dossier de Santé",
+      "save_record": "Enregistrer le Dossier",
+      "clear_form": "Effacer le Formulaire",
+      "view_details": "Voir les Détails",
+      "update": "Mettre à jour",
+      "delete": "Supprimer",
+      "search": "Rechercher",
+      "record_vaccination": "Enregistrer la Vaccination",
+      "schedule_appointment": "Planifier un Rendez-vous",
+      "cancel_appointment": "Annuler le Rendez-vous",
+      "add_contact": "Ajouter un Contact",
+      "remove_contact": "Supprimer le Contact",
+      "generate_report": "Générer un Rapport",
+      "export_data": "Exporter les Données",
+      "print": "Imprimer"
+    },
+
+    "labels": {
+      "email_manager": "Gestionnaire d'E-mails",
+      "send_report_title": "Envoyer un Rapport de Santé",
+      "email_health_report": "E-mail de Rapport de Santé",
+      "student_id": "ID Étudiant:",
+      "report_title": "Titre du Rapport:",
+      "report_type": "Type de Rapport:",
+      "report_summary": "Résumé du Rapport:",
+      "send_record_email_title": "Envoyer un Dossier de Santé",
+      "email_health_record_form": "E-mail de Dossier de Santé",
+      "record_type": "Type de Dossier:",
+      "date_range": "Plage de Dates:",
+      "all_dates": "Toutes les Dates",
+      "summary": "Résumé:",
+      "records_management": "Gestion des Dossiers Médicaux",
+      "record_date": "Date du Dossier:",
+      "provider": "Prestataire:",
+      "description": "Description:",
+      "confidential": "Confidentiel:",
+      "search_filters": "Filtres de Recherche",
+      "date_from": "Date Début:",
+      "date_to": "Date Fin:",
+      "health_record_details": "Détails du Dossier de Santé",
+      "record_type_required": "Type de Dossier *:",
+      "record_date_required": "Date du Dossier *:",
+      "vaccination_management": "Gestion des Vaccinations",
+      "vaccine": "Vaccin:",
+      "administered_date": "Date d'Administration:",
+      "lot_number": "Numéro de Lot:",
+      "manufacturer": "Fabricant:",
+      "administered_by": "Administré Par:",
+      "location": "Emplacement:",
+      "adverse_reaction_reported": "Réaction Indésirable Signalée",
+      "reaction_description": "Description de la Réaction:",
+      "appointment_management": "Gestion des Rendez-vous",
+      "appointment_date": "Date du Rendez-vous:",
+      "appointment_time": "Heure du Rendez-vous:",
+      "appointment_type": "Type de Rendez-vous:",
+      "reason": "Motif:",
+      "notes": "Notes:",
+      "emergency_contact_management": "Gestion des Contacts d'Urgence",
+      "contact_name": "Nom du Contact:",
+      "relationship": "Relation:",
+      "phone_number": "Numéro de Téléphone:",
+      "email": "E-mail:",
+      "is_primary": "Contact Principal"
+    },
+
+    "tabs": {
+      "add_record": "Ajouter un Dossier",
+      "view_records": "Voir les Dossiers",
+      "record_vaccination": "Enregistrer une Vaccination",
+      "view_vaccinations": "Voir les Vaccinations",
+      "schedule": "Planifier",
+      "view_appointments": "Voir les Rendez-vous",
+      "add_contact": "Ajouter un Contact",
+      "view_contacts": "Voir les Contacts"
+    },
+
+    "fields": {
+      "record_id": "ID du Dossier:",
+      "student_id": "ID Étudiant:",
+      "student_name": "Nom de l'Étudiant:",
+      "record_type": "Type de Dossier:",
+      "date": "Date:",
+      "provider": "Prestataire:",
+      "confidential": "Confidentiel:",
+      "created": "Créé:",
+      "description": "Description:",
+      "status": "Statut:",
+      "vaccination_id": "ID de Vaccination:",
+      "vaccine_name": "Nom du Vaccin:",
+      "lot_number": "Numéro de Lot:",
+      "manufacturer": "Fabricant:",
+      "administered_by": "Administré Par:",
+      "administered_date": "Date d'Administration:",
+      "location": "Emplacement:",
+      "adverse_reaction": "Réaction Indésirable:"
+    },
+
+    "record_types": {
+      "complete_history": "Historique Complet",
+      "vaccination": "Vaccination",
+      "visit_summary": "Résumé de Visite",
+      "emergency_info": "Infos d'Urgence",
+      "checkup": "Examen",
+      "emergency": "Urgence",
+      "prescription": "Ordonnance",
+      "lab_result": "Résultat de Laboratoire",
+      "consultation": "Consultation",
+      "treatment": "Traitement",
+      "other": "Autre"
+    },
+
+    "appointment_types": {
+      "general_checkup": "Examen Général",
+      "vaccination": "Vaccination",
+      "consultation": "Consultation",
+      "follow_up": "Suivi",
+      "emergency": "Urgence",
+      "lab_test": "Test de Laboratoire",
+      "physical_exam": "Examen Physique",
+      "mental_health": "Santé Mentale",
+      "other": "Autre"
+    },
+
+    "dialogs": {
+      "update_health_record": "Mettre à jour le Dossier de Santé",
+      "view_record_details": "Voir les Détails du Dossier",
+      "confirm_delete": "Confirmer la Suppression",
+      "confirm_cancel": "Confirmer l'Annulation"
+    },
+
+    "status": {
+      "ready": "Prêt",
+      "loading": "Chargement...",
+      "saving": "Enregistrement...",
+      "saved": "Enregistré",
+      "error": "Erreur",
+      "appointment_scheduled": "Planifié",
+      "appointment_completed": "Terminé",
+      "appointment_cancelled": "Annulé",
+      "appointment_no_show": "Absent"
+    },
+
+    "defaults": {
+      "left_arm": "Bras Gauche",
+      "right_arm": "Bras Droit",
+      "left_thigh": "Cuisse Gauche",
+      "right_thigh": "Cuisse Droite"
+    },
+
+    "content": {
+      "title": "Contenu",
+      "welcome": "Bienvenue sur le Portail de Santé Universitaire. Sélectionnez une option dans le menu de navigation pour commencer."
+    },
+
+    "messages": {
+      "auth_required": "Authentification Requise",
+      "auth_required_detail": "Veuillez vous connecter pour accéder au Portail de Santé.",
+      "enter_student_id": "Veuillez entrer un ID Étudiant",
+      "student_not_found": "Étudiant non trouvé",
+      "record_email_sent": "E-mail du dossier de santé envoyé à {name}",
+      "no_description": "Aucune description disponible",
+      "no_selection": "Aucune Sélection",
+      "select_record_to_update": "Veuillez sélectionner un dossier à mettre à jour",
+      "record_not_found": "Dossier non trouvé",
+      "record_updated": "Dossier mis à jour avec succès",
+      "record_created": "Dossier créé avec succès",
+      "record_deleted": "Dossier supprimé avec succès",
+      "vaccination_recorded": "Vaccination enregistrée avec succès",
+      "appointment_scheduled": "Rendez-vous planifié avec succès",
+      "appointment_cancelled": "Rendez-vous annulé avec succès",
+      "contact_added": "Contact d'urgence ajouté avec succès",
+      "contact_removed": "Contact d'urgence supprimé avec succès",
+      "report_generated": "Rapport généré avec succès",
+      "fill_required_fields": "Veuillez remplir tous les champs obligatoires",
+      "invalid_date": "Format de date invalide",
+      "confirm_delete_record": "Êtes-vous sûr de vouloir supprimer ce dossier?",
+      "confirm_cancel_appointment": "Êtes-vous sûr de vouloir annuler ce rendez-vous?",
+      "no_records_found": "Aucun dossier trouvé",
+      "no_appointments_found": "Aucun rendez-vous trouvé",
+      "no_vaccinations_found": "Aucun dossier de vaccination trouvé",
+      "select_record": "Veuillez sélectionner un dossier",
+      "select_appointment": "Veuillez sélectionner un rendez-vous",
+      "select_contact": "Veuillez sélectionner un contact"
+    },
+
+    "errors": {
+      "load_failed": "Échec du chargement des données: {error}",
+      "save_failed": "Échec de l'enregistrement: {error}",
+      "delete_failed": "Échec de la suppression: {error}",
+      "email_failed": "Échec de l'envoi de l'e-mail: {error}",
+      "invalid_student_id": "ID Étudiant invalide",
+      "database_error": "Erreur de base de données: {error}",
+      "permission_denied": "Permission refusée"
+    },
+
+    "reports": {
+      "title": "Rapports de Santé",
+      "summary_report": "Rapport Résumé",
+      "vaccination_report": "Rapport de Vaccination",
+      "appointment_report": "Rapport de Rendez-vous",
+      "generated_on": "Généré le:",
+      "generated_by": "Généré par:",
+      "date_range": "Plage de Dates:",
+      "total_records": "Total des Dossiers:",
+      "total_patients": "Total des Patients:"
+    }
+  }
+}

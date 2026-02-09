@@ -1,0 +1,20 @@
+# University Management System - Docker Compose
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: university-system
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - DEBUG=${DEBUG:-False}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  data:
+  logs:

@@ -1,0 +1,4 @@
+{
+    "subject": "Welcome to University Restaurant!",
+    "body": "Dear $name,\n\nWelcome to our restaurant family! Your customer ID is $customer_id.\n\nBest regards,\nUniversity Restaurant Team"
+}

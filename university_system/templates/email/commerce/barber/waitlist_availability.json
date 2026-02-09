@@ -1,0 +1,11 @@
+{
+  "subject": "Barber Shop - Appointment Slot Available!",
+  "body": "Dear $customer_name,\n\nGreat news! An appointment slot has become available!\n\nAvailable Slot:\n- Date: $available_date\n- Time: $available_time\n- Barber: $barber_name\n- Service: $service_name\n\nTo book this slot, please visit the barber shop or book online as soon as possible.\n\nThis slot is available on a first-come, first-served basis, so please respond as soon as possible to secure it.\n\nBest regards,\nUniversity Barber Shop",
+  "variables": {
+    "customer_name": "Customer's full name",
+    "available_date": "Date of available slot",
+    "available_time": "Time of available slot",
+    "barber_name": "Name of the barber",
+    "service_name": "Requested service"
+  }
+}

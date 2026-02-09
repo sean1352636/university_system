@@ -1,0 +1,15 @@
+{
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "sender_email": "noreply@university.edu",
+    "sender_name": "Teesside University",
+    "use_tls": true,
+    "use_authentication": true,
+    "username": "",
+    "password": "",
+    "email_signature": "\n\nRegards,\nTees University",
+    "send_delay": 1.0,
+    "max_threads": 1,
+    "templates_dir": "email_templates",
+    "database_only_mode": true
+}

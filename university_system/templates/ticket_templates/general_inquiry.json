@@ -1,0 +1,14 @@
+{
+    "template_id": "general_inquiry",
+    "name": "General Inquiry",
+    "description": "General questions that don't fit other categories",
+    "category": "Other",
+    "priority": "Medium",
+    "title_template": "General Inquiry - [Brief Topic]",
+    "description_template": "I have a general question or request.\n\n**Topic/Subject:**\n[Brief description of what this is about]\n\n**Detailed Question/Request:**\n[Provide as much detail as possible about your inquiry]\n\n**Relevant Information:**\n- Student ID: [Your student ID]\n- Department/Office Related To: [If known]\n- Semester/Term: [If applicable]\n\n**What I've Already Tried:**\n- [ ] Searched FAQs\n- [ ] Reviewed Knowledge Base\n- [ ] Contacted specific department\n- [ ] Other: ___________\n\n**Previous Ticket Numbers:**\n[If this is related to a previous inquiry, list ticket numbers]\n\n**Urgency:**\n- [ ] Time-sensitive (deadline: [Date])\n- [ ] General question (no specific deadline)\n\n**Preferred Response Method:**\n- [ ] Email response is fine\n- [ ] Phone call preferred: [Your phone number]\n- [ ] Need to schedule a meeting\n\n**Best Time to Reach You:**\n[Your availability]",
+    "required_fields": ["topic", "detailed_question"],
+    "tags": ["general", "inquiry", "question", "help"],
+    "estimated_response_time": "48 hours",
+    "auto_assign_to": null,
+    "is_active": true
+}

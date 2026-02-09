@@ -1,0 +1,93 @@
+{
+  "assignment": {
+    "title": "Система управления заданиями",
+    "window_title": "Управление заданиями",
+    "warnings": {
+      "manager_not_initialized": "Предупреждение: менеджер {manager_name} не инициализирован",
+      "database_validation_failed": "Ошибка валидации базы данных: {error}"
+    },
+    "errors": {
+      "get_user_role": "Ошибка получения роли пользователя: {error}",
+      "launch_feature": "Не удалось запустить {feature_name}: {error}",
+      "add_permissions": "Ошибка добавления разрешений: {error}",
+      "init_directories": "Ошибка инициализации директорий: {error}",
+      "update_tables": "Ошибка обновления таблиц: {error}",
+      "get_student_modules": "Ошибка получения модулей студента: {error}",
+      "calculate_file_hash": "Ошибка вычисления хэша файла: {error}",
+      "validate_file": "Ошибка валидации файла: {error}",
+      "log_action": "Ошибка записи действия в журнал: {error}",
+      "send_notification": "Ошибка отправки уведомления: {error}",
+      "check_email_preferences": "Ошибка проверки настроек электронной почты: {error}",
+      "send_email": "Ошибка отправки электронной почты: {error}"
+    },
+    "messages": {
+      "permissions_configured": "Разрешения успешно настроены"
+    },
+    "validation": {
+      "file_not_exists": "Файл не существует",
+      "file_size_exceeds": "Размер файла ({file_size} МБ) превышает максимальный ({max_size} МБ)",
+      "file_type_not_allowed": "Тип файла {file_ext} не разрешён. Допустимые типы: {allowed_types}",
+      "dangerous_pattern": "Обнаружен опасный шаблон: {pattern}",
+      "file_valid": "Файл валиден"
+    },
+    "tabs": {
+      "dashboard": "Панель управления",
+      "assignments": "Задания",
+      "submissions": "Работы",
+      "grading": "Оценивание",
+      "templates": "Шаблоны",
+      "groups": "Группы",
+      "analytics": "Аналитика",
+      "settings": "Настройки"
+    },
+    "labels": {
+      "assignment_title": "Название задания",
+      "description": "Описание",
+      "due_date": "Срок сдачи",
+      "module": "Модуль",
+      "status": "Статус",
+      "grade": "Оценка",
+      "feedback": "Отзыв",
+      "submitted_at": "Дата сдачи",
+      "student": "Студент",
+      "instructor": "Преподаватель",
+      "max_score": "Максимальный балл",
+      "weight": "Вес (%)",
+      "file": "Файл",
+      "rubric": "Рубрика"
+    },
+    "buttons": {
+      "create": "Создать задание",
+      "submit": "Отправить",
+      "grade": "Оценить",
+      "view": "Просмотр",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "download": "Скачать",
+      "upload": "Загрузить",
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "request_extension": "Запросить продление",
+      "approve": "Одобрить",
+      "reject": "Отклонить"
+    },
+    "status": {
+      "draft": "Черновик",
+      "published": "Опубликовано",
+      "closed": "Закрыто",
+      "submitted": "Отправлено",
+      "graded": "Оценено",
+      "late": "Просрочено",
+      "pending": "Ожидает",
+      "approved": "Одобрено",
+      "rejected": "Отклонено"
+    },
+    "notifications": {
+      "new_assignment": "Опубликовано новое задание: {title}",
+      "submission_received": "Получена работа по заданию {title}",
+      "grade_posted": "Выставлена оценка за {title}",
+      "extension_request": "Запрошено продление для {title}",
+      "reminder": "Напоминание: срок сдачи {title} скоро истекает"
+    }
+  }
+}

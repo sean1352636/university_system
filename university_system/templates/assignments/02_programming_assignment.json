@@ -1,0 +1,39 @@
+{
+  "template_name": "Programming Assignment",
+  "template_type": "programming",
+  "title": "Programming Project",
+  "description": "Develop a software application according to specifications",
+  "instructions": "Create a working application that meets all requirements.\n\nDeliverables:\n- Source code (properly commented)\n- README file with setup instructions\n- Test cases and results\n- Brief documentation\n\nSubmit as a ZIP file containing all project files.",
+  "max_marks": 100,
+  "assignment_type": "individual",
+  "file_types_allowed": ".zip",
+  "max_file_size_mb": 50,
+  "allow_late_submission": true,
+  "late_penalty_per_day": 10,
+  "rubric_criteria": [
+    {
+      "name": "Functionality",
+      "description": "Code works as specified",
+      "points": 40,
+      "weight": 40
+    },
+    {
+      "name": "Code Quality",
+      "description": "Clean, well-structured, commented code",
+      "points": 30,
+      "weight": 30
+    },
+    {
+      "name": "Documentation",
+      "description": "README and inline comments",
+      "points": 15,
+      "weight": 15
+    },
+    {
+      "name": "Testing",
+      "description": "Adequate test coverage",
+      "points": 15,
+      "weight": 15
+    }
+  ]
+}

@@ -1,0 +1,423 @@
+{
+  "admin_windows": {
+    "messages": {
+      "no_selection": "No Selection",
+      "export_complete": "Export Complete"
+    },
+    "filetypes": {
+      "json": "JSON Files",
+      "csv": "CSV Files",
+      "pdf": "PDF Files",
+      "txt": "Text Files",
+      "sql": "SQL Files",
+      "sql_compressed": "Compressed SQL Files",
+      "all": "All Files"
+    },
+    "api": {
+      "title": "API Management",
+      "center_title": "API Management Center",
+      "tabs": {
+        "api_keys": "API Keys",
+        "endpoints": "Endpoints",
+        "analytics": "Usage Analytics",
+        "security": "Security"
+      },
+      "keys": {
+        "active_keys": "Active API Keys",
+        "columns": {
+          "key_id": "Key ID",
+          "name": "Name",
+          "type": "Type",
+          "created": "Created",
+          "last_used": "Last Used",
+          "status": "Status",
+          "requests": "Requests"
+        },
+        "sample": {
+          "student_portal": "Student Portal",
+          "mobile_app": "Mobile App",
+          "third_party": "Third Party Integration",
+          "analytics": "Analytics Dashboard",
+          "backup_service": "Backup Service"
+        },
+        "types": {
+          "read_write": "Read/Write",
+          "read_only": "Read Only",
+          "limited": "Limited",
+          "admin": "Admin"
+        },
+        "status": {
+          "active": "Active",
+          "suspended": "Suspended"
+        },
+        "buttons": {
+          "generate": "Generate New Key",
+          "revoke": "Revoke Key",
+          "view_details": "View Details",
+          "export": "Export Keys"
+        }
+      },
+      "endpoints": {
+        "available": "Available API Endpoints",
+        "columns": {
+          "method": "Method",
+          "endpoint": "Endpoint",
+          "description": "Description",
+          "auth_required": "Auth Required",
+          "rate_limit": "Rate Limit",
+          "status": "Status"
+        },
+        "desc": {
+          "list_students": "List all students",
+          "create_student": "Create new student",
+          "get_student": "Get student by ID",
+          "update_student": "Update student record",
+          "delete_student": "Delete student",
+          "list_modules": "List all modules",
+          "record_attendance": "Record attendance",
+          "generate_reports": "Generate reports",
+          "user_auth": "User authentication",
+          "health_check": "System health check"
+        },
+        "unlimited": "Unlimited",
+        "buttons": {
+          "test": "Test Endpoint",
+          "view_docs": "View Documentation",
+          "configure_rate": "Configure Rate Limits"
+        }
+      },
+      "analytics": {
+        "usage": "API Usage Analytics",
+        "total_requests": "Total Requests (24h)",
+        "active_keys": "Active API Keys",
+        "error_rate": "Error Rate",
+        "avg_response": "Avg Response Time"
+      },
+      "security": {
+        "config": "Security Configuration",
+        "rate_limiting": "Rate Limiting",
+        "global_rate_limit": "Global Rate Limit:",
+        "rate_value": "100 requests/hour",
+        "authentication": "Authentication Methods",
+        "auth_api_key": "API Key",
+        "auth_oauth": "OAuth 2.0",
+        "auth_jwt": "JWT Token",
+        "auth_basic": "Basic Auth",
+        "event_log": "Security Event Log"
+      },
+      "messages": {
+        "key_generated_title": "API Key Generated",
+        "key_generated_body": "New API Key:\n\n{key}\n\nPlease save this key securely. It will not be shown again.",
+        "select_key_revoke": "Please select an API key to revoke.",
+        "confirm_revoke_title": "Confirm Revocation",
+        "confirm_revoke_body": "Are you sure you want to revoke API key '{key_id}'?\n\nThis action cannot be undone.",
+        "key_revoked_title": "Key Revoked",
+        "key_revoked_body": "API key '{key_id}' has been revoked.",
+        "select_key_details": "Please select an API key to view details.",
+        "key_details_title": "API Key Details",
+        "key_details_body": "API Key Details:\n\nKey ID: {key_id}\nName: {name}\nType: {type}\nCreated: {created}\nLast Used: {last_used}\nStatus: {status}\nTotal Requests: {total_requests}",
+        "export_keys_title": "Export API Keys Configuration",
+        "keys_exported": "API keys configuration exported to:\n{filename}",
+        "select_endpoint_test": "Please select an endpoint to test.",
+        "endpoint_test_title": "Endpoint Test",
+        "endpoint_test_body": "Testing endpoint:\n\n{method} {endpoint}\n\nResult: 200 OK\nResponse Time: 45ms",
+        "docs_title": "API Documentation",
+        "docs_body": "API documentation would be displayed here.\n\nFor detailed API documentation, visit:\nhttps://docs.university-system.example.com/api",
+        "rate_config_title": "Rate Limit Configuration",
+        "rate_config_body": "Rate limit configuration dialog would appear here.\n\nThis allows setting custom rate limits per endpoint."
+      }
+    },
+    "audit": {
+      "title": "Audit Logs Viewer",
+      "center_title": "Audit Log Center",
+      "filters": "Search & Filters",
+      "date_range": "Date Range:",
+      "date_options": {
+        "last_24_hours": "Last 24 Hours",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "custom": "Custom Range"
+      },
+      "log_level": "Log Level:",
+      "level_options": {
+        "all": "All Levels"
+      },
+      "category": "Category:",
+      "category_options": {
+        "all": "All Categories",
+        "authentication": "Authentication",
+        "database": "Database",
+        "api": "API",
+        "user_actions": "User Actions",
+        "system": "System"
+      },
+      "log_entries": "Log Entries",
+      "columns": {
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "category": "Category",
+        "user": "User",
+        "action": "Action",
+        "ip_address": "IP Address",
+        "details": "Details"
+      },
+      "buttons": {
+        "apply_filters": "Apply Filters",
+        "export_logs": "Export Logs",
+        "clear_logs": "Clear Old Logs"
+      },
+      "messages": {
+        "filters_applied_title": "Filters Applied",
+        "filters_applied_body": "Filters applied:\n• Date Range: {date_range}\n• Log Level: {log_level}\n• Category: {category}\n• Search: {search}",
+        "export_title": "Export Audit Logs",
+        "logs_exported": "Audit logs exported to:\n{filename}",
+        "confirm_clear_title": "Clear Old Logs",
+        "confirm_clear_body": "Are you sure you want to clear log entries older than 90 days?\n\nThis action cannot be undone.",
+        "logs_cleared_title": "Logs Cleared",
+        "logs_cleared_body": "Old log entries have been cleared from the database."
+      },
+      "details": {
+        "title": "Log Entry Details",
+        "body": "LOG ENTRY DETAILS\n================\n\nTimestamp: {timestamp}\nLevel: {level}\nCategory: {category}\nUser: {user}\nAction: {action}\nIP Address: {ip}\nDetails: {details}\n\nAdditional Context:\n- Session ID: sess_abc123\n- Request ID: req_xyz789\n- User Agent: Mozilla/5.0..."
+      }
+    },
+    "diagnostics": {
+      "title": "System Diagnostics",
+      "center_title": "System Diagnostics Center",
+      "tabs": {
+        "health": "System Health",
+        "performance": "Performance",
+        "network": "Network",
+        "storage": "Storage"
+      },
+      "health": {
+        "overview": "Health Overview",
+        "overall": "Overall Health",
+        "cpu_usage": "CPU Usage",
+        "memory_usage": "Memory Usage",
+        "disk_usage": "Disk Usage",
+        "network": "Network",
+        "database": "Database",
+        "status": {
+          "excellent": "Excellent",
+          "online": "Online",
+          "connected": "Connected"
+        },
+        "detailed_report": "Detailed Health Report",
+        "buttons": {
+          "run_diagnostic": "Run Full Diagnostic",
+          "generate_report": "Generate Report",
+          "view_logs": "View System Logs"
+        }
+      },
+      "performance": {
+        "metrics": "Performance Metrics",
+        "buttons": {
+          "run_test": "Run Performance Test",
+          "optimize": "Optimize System",
+          "live_metrics": "View Live Metrics"
+        }
+      },
+      "network": {
+        "title": "Network Status",
+        "buttons": {
+          "test_connectivity": "Test Connectivity",
+          "speed_test": "Run Speed Test",
+          "port_scanner": "Port Scanner"
+        }
+      },
+      "storage": {
+        "title": "Storage Analysis",
+        "buttons": {
+          "disk_cleanup": "Run Disk Cleanup",
+          "check_health": "Check Disk Health",
+          "optimize": "Optimize Storage"
+        }
+      },
+      "messages": {
+        "full_diagnostic_title": "Running Diagnostics",
+        "full_diagnostic_body": "Full system diagnostic is running...\n\nThis may take a few minutes. Results will be displayed when complete.",
+        "save_report_title": "Save Health Report",
+        "report_generated_title": "Report Generated",
+        "report_generated_body": "Health report saved to:\n{filename}",
+        "system_logs_title": "System Logs",
+        "system_logs_body": "System logs viewer would open here.\n\nThis would show detailed system event logs.",
+        "perf_test_title": "Performance Test",
+        "perf_test_body": "Running performance benchmark...\n\nResults:\n- CPU Benchmark: 95/100\n- Memory Test: Passed\n- I/O Test: 850 MB/s\n- Database Query: 45ms avg",
+        "sys_optimize_title": "System Optimization",
+        "sys_optimize_body": "Run system optimization?\n\nThis will:\n- Clear temporary files\n- Optimize database\n- Refresh caches\n- Compact logs",
+        "optimize_complete_title": "Optimization Complete",
+        "optimize_complete_body": "System optimization completed successfully!\n\n- Temp files cleared: 234 MB\n- Database optimized\n- Caches refreshed",
+        "live_metrics_title": "Live Metrics",
+        "live_metrics_body": "Live performance metrics dashboard would open here.\n\nThis shows real-time CPU, memory, and network usage.",
+        "connectivity_title": "Connectivity Test",
+        "connectivity_body": "Connectivity Test Results:\n\n- Local Network: OK (1ms)\n- Internet Gateway: OK (12ms)\n- DNS Resolution: OK (8ms)\n- External API: OK (45ms)\n\nAll systems connected successfully!",
+        "speed_test_title": "Network Speed Test",
+        "speed_test_body": "Speed Test Results:\n\n- Download: 245.7 Mbps\n- Upload: 98.3 Mbps\n- Latency: 12ms\n- Jitter: 2ms\n\nNetwork performance: Excellent",
+        "port_scan_title": "Port Scanner",
+        "port_scan_body": "Port scan results would be displayed here.\n\nThis shows open ports and services running on the system.",
+        "disk_cleanup_title": "Disk Cleanup",
+        "disk_cleanup_body": "Run disk cleanup to remove:\n\n- Temporary files (12 GB)\n- Old log files (8 GB)\n- Cache files (6 GB)\n- Duplicate files (3 GB)\n\nTotal: 29 GB can be freed",
+        "cleanup_complete_title": "Cleanup Complete",
+        "cleanup_complete_body": "Disk cleanup completed!\n\nFreed 29 GB of disk space.",
+        "disk_health_title": "Disk Health Status",
+        "disk_health_body": "Disk Health Report:\n\n- Drive Health: Excellent\n- Bad Sectors: 0\n- Temperature: 35C\n- S.M.A.R.T. Status: Passed\n- Wear Level: 12% (Low)\n\nNo issues detected.",
+        "storage_optimize_title": "Storage Optimization",
+        "storage_optimize_body": "Optimize storage?\n\nThis will:\n- Defragment files\n- Optimize database storage\n- Compact backup files\n- Reorganize file structures",
+        "storage_complete_title": "Optimization Complete",
+        "storage_complete_body": "Storage optimization completed!\n\n- Files reorganized\n- Database compacted\n- Fragmentation reduced to 1%"
+      }
+    },
+    "database": {
+      "title": "Database Maintenance",
+      "center_title": "Database Maintenance Center",
+      "tabs": {
+        "status": "Status",
+        "backup": "Backup & Restore",
+        "optimization": "Optimization",
+        "monitoring": "Monitoring"
+      },
+      "status": {
+        "overview": "Database Status Overview",
+        "connection": "Connection",
+        "health": "Health",
+        "size": "Size",
+        "tables": "Tables",
+        "connections": "Active Connections",
+        "uptime": "Uptime",
+        "values": {
+          "connected": "Connected"
+        },
+        "detailed_info": "Detailed Information",
+        "buttons": {
+          "refresh": "Refresh Status",
+          "test_connection": "Test Connection",
+          "export": "Export Report"
+        }
+      },
+      "backup": {
+        "operations": "Backup Operations",
+        "type": "Backup Type:",
+        "types": {
+          "full": "Full Backup",
+          "incremental": "Incremental",
+          "schema": "Schema Only",
+          "data": "Data Only"
+        },
+        "compression": "Compression:",
+        "enable": "Enable",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "history": "Backup History",
+        "columns": {
+          "type": "Type",
+          "size": "Size",
+          "duration": "Duration",
+          "location": "Location"
+        },
+        "buttons": {
+          "create": "Create Backup Now",
+          "schedule": "Schedule Backups",
+          "verify": "Verify Integrity",
+          "restore": "Restore Selected",
+          "download": "Download",
+          "delete": "Delete Backup",
+          "restore_file": "Restore from File"
+        }
+      },
+      "optimization": {
+        "title": "Optimization Tasks",
+        "vacuum": "VACUUM (reclaim space)",
+        "analyze": "ANALYZE (update statistics)",
+        "reindex": "REINDEX (rebuild indexes)",
+        "cleanup": "Cleanup (remove temp data)",
+        "results": "Optimization Results",
+        "buttons": {
+          "run": "Run Optimization",
+          "schedule": "Schedule Maintenance",
+          "integrity": "Check Integrity"
+        }
+      },
+      "monitoring": {
+        "title": "Real-time Monitoring",
+        "interval": "Monitor Interval:",
+        "intervals": {
+          "30sec": "30 Seconds",
+          "1min": "1 Minute",
+          "5min": "5 Minutes",
+          "15min": "15 Minutes",
+          "1hour": "1 Hour"
+        },
+        "enable_alerts": "Enable Alerts",
+        "realtime": "Real-time Database Metrics",
+        "buttons": {
+          "start": "Start Monitoring",
+          "stop": "Stop Monitoring",
+          "configure": "Configure Alerts",
+          "live_stats": "View Live Stats"
+        }
+      },
+      "messages": {
+        "status_refreshed_title": "Status Refreshed",
+        "status_refreshed_body": "Database status has been refreshed.",
+        "connection_test_title": "Connection Test",
+        "connection_test_body": "Database connection test successful!\n\nResponse time: 12ms\nConnection pool: 8/20\nStatus: Healthy",
+        "export_status_title": "Export Database Status",
+        "status_exported": "Database status report exported to:\n{filename}",
+        "backup_started_title": "Backup Started",
+        "backup_started_body": "Creating {backup_type} backup...\n\nCompression: {compression}\n\nThis may take several minutes.",
+        "backup_schedule_title": "Backup Schedule",
+        "backup_schedule_body": "Backup scheduling configuration dialog would appear here.\n\nAllows setting daily/weekly/monthly backup schedules.",
+        "select_backup_verify": "Please select a backup to verify.",
+        "backup_verify_title": "Backup Verification",
+        "backup_verify_body": "Backup integrity verified successfully!\n\n- Checksum: Valid\n- File integrity: OK\n- Can be restored: Yes",
+        "select_backup_restore": "Please select a backup to restore.",
+        "confirm_restore_title": "Confirm Restore",
+        "confirm_restore_body": "Are you sure you want to restore from backup:\n{backup_date}?\n\nWARNING: This will overwrite the current database!",
+        "restore_started_title": "Restore Started",
+        "restore_started_body": "Database restore in progress...\n\nPlease do not close the application.",
+        "select_backup_download": "Please select a backup to download.",
+        "save_backup_title": "Save Backup File",
+        "download_complete_title": "Download Complete",
+        "download_complete_body": "Backup file downloaded to:\n{filename}",
+        "select_backup_delete": "Please select a backup to delete.",
+        "confirm_delete_title": "Confirm Delete",
+        "confirm_delete_body": "Are you sure you want to delete backup from:\n{backup_date}?\n\nThis action cannot be undone.",
+        "backup_deleted_title": "Backup Deleted",
+        "backup_deleted_body": "Backup has been deleted successfully.",
+        "select_backup_file": "Select Backup File to Restore",
+        "confirm_restore_file": "Are you sure you want to restore from:\n{filename}?\n\nWARNING: This will overwrite the current database!",
+        "restore_from_file": "Restoring from:\n{filename}\n\nPlease do not close the application.",
+        "no_operations_title": "No Operations Selected",
+        "no_operations_body": "Please select at least one optimization operation to run.",
+        "confirm_optimize_title": "Confirm Optimization",
+        "confirm_optimize_body": "Run the following optimization operations?\n\n{operations}\n\nThis may take several minutes.",
+        "optimize_started_title": "Optimization Started",
+        "optimize_started_body": "Running optimization: {operations}\n\nPlease wait...",
+        "maintenance_schedule_title": "Maintenance Schedule",
+        "maintenance_schedule_body": "Maintenance scheduling configuration dialog would appear here.\n\nAllows setting regular maintenance windows.",
+        "integrity_title": "Integrity Check",
+        "integrity_body": "Database integrity check completed!\n\nResult: PASSED\n- All tables: OK\n- All indexes: OK\n- Foreign keys: OK\n- Constraints: OK",
+        "monitoring_started_title": "Monitoring Started",
+        "monitoring_started_body": "Database monitoring started.\n\nInterval: {interval}\nAlerts: {alerts}",
+        "stop_monitoring_title": "Stop Monitoring",
+        "stop_monitoring_body": "Are you sure you want to stop database monitoring?",
+        "monitoring_stopped_title": "Monitoring Stopped",
+        "monitoring_stopped_body": "Database monitoring has been stopped.",
+        "alert_config_title": "Alert Configuration",
+        "alert_config_body": "Alert configuration dialog would appear here.\n\nAllows setting thresholds for:\n- Connection limits\n- Query response time\n- Disk space\n- Memory usage",
+        "live_stats_title": "Live Statistics",
+        "live_stats_body": "Live statistics dashboard would open here.\n\nShows real-time:\n- Queries per second\n- Active connections\n- Cache hit ratio\n- Buffer usage"
+      }
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "search": "Search:",
+    "date": "Date",
+    "status": "Status",
+    "user": "User"
+  }
+}

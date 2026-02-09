@@ -1,0 +1,4 @@
+{
+    "subject": "Attendance Alert - $alert_type",
+    "body": "$message"
+}

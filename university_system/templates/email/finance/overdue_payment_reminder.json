@@ -1,0 +1,11 @@
+{
+  "subject": "Overdue Payment Reminder",
+  "body": "Dear $first_name $last_name,\n\nThis is a reminder that you have $overdue_count overdue fee(s) totaling £$total_amount.\n\nStudent ID: $student_id\n\nPlease make payment as soon as possible to avoid any service disruptions or holds on your account.\n\nYou can pay through:\n• Your student portal online\n• The Finance Office during business hours\n• Bank transfer to the university account\n\nIf you have already made this payment, please disregard this notice.\n\nFor questions or payment arrangements, please contact:\nFinance Office\nEmail: finance@university.edu\nPhone: (555) 123-4567\n\nThank you,\nUniversity Finance Department",
+  "variables": {
+    "first_name": "Student's first name",
+    "last_name": "Student's last name",
+    "overdue_count": "Number of overdue fees",
+    "total_amount": "Total amount owed (formatted with 2 decimals)",
+    "student_id": "Student ID number"
+  }
+}

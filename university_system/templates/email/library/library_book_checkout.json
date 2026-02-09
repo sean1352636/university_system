@@ -1,0 +1,4 @@
+{
+    "subject": "📚 Book Checkout Confirmation - University Library",
+    "body": "Dear $first_name $last_name,\n\nThis email confirms that you have successfully checked out a book from the library.\n\nBook Details:\n- Book ID: $book_id\n- Title: $book_title\n- Author: $author\n- Due Date: $due_date\n\nPlease return the book by the due date to avoid late fees.\n\n$signature"
+}

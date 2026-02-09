@@ -1,0 +1,146 @@
+{
+  "todo": {
+    "title": "ToDoリスト",
+    "header": {
+      "title": "My To-Do List",
+      "shortcuts": "Ctrl+N: New  |  Ctrl+F: Search  |  Ctrl+E: Export"
+    },
+    "date_picker": {
+      "title": "Select Date"
+    },
+    "dialog": {
+      "add_task": "Add Task",
+      "edit_task": "Edit Task"
+    },
+    "fields": {
+      "task_title": "Task Title *",
+      "priority": "Priority",
+      "due_date": "Due Date",
+      "category": "Category",
+      "notes": "Notes"
+    },
+    "buttons": {
+      "clear": "Clear",
+      "today": "Today",
+      "cancel": "Cancel",
+      "save": "Save",
+      "pick": "Pick",
+      "new_task": "+ New Task",
+      "export_csv": "Export CSV",
+      "clear_completed": "Clear Completed"
+    },
+    "filters": {
+      "status": "Status:",
+      "priority": "Priority:",
+      "category": "Category:",
+      "sort": "Sort:",
+      "all": "すべて",
+      "active": "アクティブ",
+      "completed": "完了済み",
+      "overdue": "期限超過"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "none": "None"
+    },
+    "sort": {
+      "created": "作成日順",
+      "priority": "優先度順",
+      "due_date": "期限順",
+      "az": "A-Z",
+      "title": "タイトル順"
+    },
+    "date": {
+      "no_date_set": "No date set",
+      "today": "Today ({date})",
+      "tomorrow": "Tomorrow ({date})"
+    },
+    "due": {
+      "overdue": "Overdue: {date}",
+      "today": "Due Today",
+      "date": "{date}"
+    },
+    "task": {
+      "has_notes": "Has notes"
+    },
+    "messages": {
+      "no_tasks_match": "No tasks match your filters.",
+      "no_tasks_yet": "No tasks yet!\nClick '+ New Task' or press Ctrl+N to add one.",
+      "task_added": "タスクが追加されました",
+      "task_updated": "タスクが更新されました",
+      "task_deleted": "タスクが削除されました",
+      "task_completed": "タスクが完了しました",
+      "no_tasks": "タスクがありません",
+      "confirm_delete": "このタスクを削除してもよろしいですか？"
+    },
+    "stats": {
+      "showing_filtered": "Showing {showing} of {total} tasks  |  {completed} completed",
+      "completed": "{completed} of {total} tasks completed"
+    },
+    "confirm": {
+      "title": "Confirm",
+      "delete_title": "Confirm Delete",
+      "delete_message": "Delete task: {task}...?",
+      "clear_completed": "Delete {count} completed task(s)?"
+    },
+    "info": {
+      "title": "Info",
+      "no_completed_tasks": "No completed tasks to clear",
+      "no_tasks_to_export": "No tasks to export"
+    },
+    "success": {
+      "title": "Success",
+      "export": "Exported {count} tasks to:\n{path}"
+    },
+    "errors": {
+      "title": "Error",
+      "task_title_required": "Task title is required",
+      "export_failed": "Failed to export: {error}"
+    },
+    "export": {
+      "task": "Task",
+      "priority": "Priority",
+      "due_date": "Due Date",
+      "category": "Category",
+      "notes": "Notes",
+      "completed": "Completed",
+      "created": "Created",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "add_task": "タスクを追加",
+    "edit_task": "タスクを編集",
+    "delete_task": "タスクを削除",
+    "task_title": "タスクのタイトル",
+    "task_description": "説明",
+    "due_date": "期限",
+    "status": "ステータス",
+    "category": "カテゴリー",
+    "priorities": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "緊急"
+    },
+    "statuses": {
+      "pending": "保留中",
+      "in_progress": "進行中",
+      "completed": "完了",
+      "cancelled": "キャンセル"
+    },
+    "categories": {
+      "academic": "学業",
+      "personal": "個人",
+      "work": "仕事",
+      "health": "健康",
+      "finance": "財務",
+      "other": "その他"
+    },
+    "validation": {
+      "title_required": "タスクのタイトルは必須です",
+      "invalid_date": "無効な期限です"
+    }
+  }
+}

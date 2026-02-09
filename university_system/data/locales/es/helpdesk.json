@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "Sistema de Soporte Mejorado",
+    "auth": {
+      "required_title": "Autenticacion Requerida",
+      "not_available": "Sistema de autenticacion no disponible. La interfaz del soporte no puede iniciarse.",
+      "login_required": "Por favor, inicie sesion a traves de la interfaz principal del Sistema Universitario.\n\nEjecute: python run.py --gui\n\nEl soporte solo es accesible despues de iniciar sesion en el sistema principal."
+    },
+    "menu": {
+      "file": "Archivo",
+      "new_ticket": "Nuevo Ticket",
+      "export_data": "Exportar Datos",
+      "import_data": "Importar Datos",
+      "tickets": "Tickets",
+      "my_tickets": "Mis Tickets",
+      "all_tickets": "Todos los Tickets",
+      "search_tickets": "Buscar Tickets",
+      "knowledge_base": "Base de Conocimientos",
+      "browse_articles": "Explorar Articulos",
+      "create_article": "Crear Articulo",
+      "reports": "Informes",
+      "analytics_dashboard": "Panel de Analisis",
+      "generate_reports": "Generar Informes",
+      "admin": "Administracion",
+      "system_management": "Gestion del Sistema",
+      "user_management": "Gestion de Usuarios",
+      "settings": "Configuracion",
+      "help": "Ayuda",
+      "user_guide": "Guia del Usuario",
+      "about": "Acerca de"
+    },
+    "dashboard": {
+      "title": "Panel de Soporte",
+      "welcome": "Bienvenido, {username}!",
+      "stats": {
+        "open_tickets": "Tickets Abiertos",
+        "in_progress": "En Progreso",
+        "pending": "Pendiente",
+        "resolved_today": "Resueltos Hoy",
+        "avg_response_time": "Tiempo de Respuesta Promedio",
+        "satisfaction_rate": "Tasa de Satisfaccion"
+      },
+      "recent_tickets": "Tickets Recientes",
+      "quick_actions": "Acciones Rapidas",
+      "my_assigned": "Mis Tickets Asignados",
+      "unassigned": "Tickets Sin Asignar"
+    },
+    "tickets": {
+      "title": "Tickets de Soporte",
+      "create": "Crear Ticket",
+      "view": "Ver Ticket",
+      "edit": "Editar Ticket",
+      "delete": "Eliminar Ticket",
+      "assign": "Asignar Ticket",
+      "escalate": "Escalar Ticket",
+      "close": "Cerrar Ticket",
+      "reopen": "Reabrir Ticket",
+      "fields": {
+        "ticket_id": "ID del Ticket",
+        "subject": "Asunto",
+        "description": "Descripcion",
+        "category": "Categoria",
+        "subcategory": "Subcategoria",
+        "priority": "Prioridad",
+        "impact": "Impacto",
+        "urgency": "Urgencia",
+        "status": "Estado",
+        "source": "Fuente",
+        "department": "Departamento",
+        "assigned_to": "Asignado a",
+        "created_by": "Creado por",
+        "created_at": "Creado el",
+        "updated_at": "Actualizado el",
+        "due_date": "Fecha de Vencimiento",
+        "resolution": "Resolucion",
+        "tags": "Etiquetas"
+      },
+      "status": {
+        "open": "Abierto",
+        "in_progress": "En Progreso",
+        "pending": "Pendiente",
+        "on_hold": "En Espera",
+        "resolved": "Resuelto",
+        "closed": "Cerrado"
+      },
+      "priority": {
+        "low": "Baja",
+        "medium": "Media",
+        "high": "Alta",
+        "urgent": "Urgente",
+        "critical": "Critica"
+      },
+      "categories": {
+        "technical": "Tecnico",
+        "account": "Cuenta",
+        "billing": "Facturacion",
+        "general": "General",
+        "feedback": "Comentarios",
+        "bug": "Reporte de Error",
+        "feature": "Solicitud de Funcionalidad"
+      },
+      "actions": {
+        "add_reply": "Agregar Respuesta",
+        "add_note": "Agregar Nota Interna",
+        "attach_file": "Adjuntar Archivo",
+        "link_ticket": "Vincular Ticket",
+        "merge_tickets": "Fusionar Tickets",
+        "split_ticket": "Dividir Ticket",
+        "change_status": "Cambiar Estado",
+        "change_priority": "Cambiar Prioridad",
+        "bulk_update": "Actualizacion Masiva"
+      },
+      "messages": {
+        "created": "Ticket creado exitosamente",
+        "updated": "Ticket actualizado exitosamente",
+        "assigned": "Ticket asignado exitosamente",
+        "escalated": "Ticket escalado exitosamente",
+        "closed": "Ticket cerrado exitosamente",
+        "reopened": "Ticket reabierto exitosamente",
+        "reply_added": "Respuesta agregada exitosamente",
+        "no_tickets": "No se encontraron tickets",
+        "select_ticket": "Por favor seleccione un ticket"
+      }
+    },
+    "knowledge_base": {
+      "title": "Base de Conocimientos",
+      "articles": "Articulos",
+      "create_article": "Crear Articulo",
+      "edit_article": "Editar Articulo",
+      "search_placeholder": "Buscar en la base de conocimientos...",
+      "categories": "Categorias",
+      "popular": "Articulos Populares",
+      "recent": "Articulos Recientes",
+      "fields": {
+        "title": "Titulo",
+        "content": "Contenido",
+        "category": "Categoria",
+        "tags": "Etiquetas",
+        "author": "Autor",
+        "views": "Vistas",
+        "helpful": "Util",
+        "status": "Estado"
+      },
+      "messages": {
+        "created": "Articulo creado exitosamente",
+        "updated": "Articulo actualizado exitosamente",
+        "deleted": "Articulo eliminado exitosamente",
+        "no_articles": "No se encontraron articulos"
+      }
+    },
+    "search": {
+      "title": "Buscar Tickets",
+      "placeholder": "Ingrese terminos de busqueda...",
+      "filters": "Filtros",
+      "advanced": "Busqueda Avanzada",
+      "saved_searches": "Busquedas Guardadas",
+      "save_search": "Guardar Busqueda",
+      "clear": "Limpiar",
+      "results": "Resultados de Busqueda",
+      "no_results": "No se encontraron resultados"
+    },
+    "reports": {
+      "title": "Informes",
+      "analytics": "Panel de Analisis",
+      "generate": "Generar Informe",
+      "export": "Exportar Informe",
+      "types": {
+        "ticket_summary": "Resumen de Tickets",
+        "response_times": "Tiempos de Respuesta",
+        "resolution_rates": "Tasas de Resolucion",
+        "agent_performance": "Rendimiento de Agentes",
+        "customer_satisfaction": "Satisfaccion del Cliente",
+        "sla_compliance": "Cumplimiento de SLA"
+      },
+      "period": {
+        "today": "Hoy",
+        "this_week": "Esta Semana",
+        "this_month": "Este Mes",
+        "this_quarter": "Este Trimestre",
+        "this_year": "Este Ano",
+        "custom": "Rango Personalizado"
+      }
+    },
+    "admin": {
+      "title": "Administracion",
+      "system_management": "Gestion del Sistema",
+      "user_management": "Gestion de Usuarios",
+      "departments": "Departamentos",
+      "organizations": "Organizaciones",
+      "sla_policies": "Politicas de SLA",
+      "workflows": "Flujos de Trabajo",
+      "templates": "Plantillas",
+      "settings": "Configuracion",
+      "backup": "Respaldar Base de Datos",
+      "audit_log": "Registro de Auditoria"
+    },
+    "sla": {
+      "title": "Politicas de SLA",
+      "create": "Crear Politica de SLA",
+      "edit": "Editar Politica de SLA",
+      "fields": {
+        "name": "Nombre de la Politica",
+        "description": "Descripcion",
+        "first_response": "Tiempo de Primera Respuesta",
+        "resolution": "Tiempo de Resolucion",
+        "escalation": "Tiempo de Escalacion",
+        "priority": "Prioridad",
+        "business_hours": "Solo Horario Laboral"
+      },
+      "status": {
+        "within_sla": "Dentro del SLA",
+        "approaching": "Cerca de Incumplimiento",
+        "breached": "SLA Incumplido"
+      }
+    },
+    "departments": {
+      "title": "Departamentos",
+      "create": "Crear Departamento",
+      "edit": "Editar Departamento",
+      "fields": {
+        "name": "Nombre del Departamento",
+        "description": "Descripcion",
+        "manager": "Gerente",
+        "email": "Correo Electronico",
+        "sla_policy": "Politica de SLA"
+      }
+    },
+    "common": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "view": "Ver",
+      "create": "Crear",
+      "update": "Actualizar",
+      "search": "Buscar",
+      "filter": "Filtrar",
+      "refresh": "Actualizar",
+      "export": "Exportar",
+      "import": "Importar",
+      "loading": "Cargando...",
+      "success": "Exito",
+      "error": "Error",
+      "warning": "Advertencia",
+      "confirm": "Confirmar",
+      "yes": "Si",
+      "no": "No"
+    },
+    "errors": {
+      "load_failed": "Error al cargar los datos",
+      "save_failed": "Error al guardar los datos",
+      "delete_failed": "Error al eliminar",
+      "permission_denied": "No tiene permiso para realizar esta accion",
+      "not_found": "Elemento no encontrado",
+      "validation_error": "Error de Validacion",
+      "required_field": "Este campo es obligatorio",
+      "invalid_format": "Formato invalido"
+    }
+  }
+}

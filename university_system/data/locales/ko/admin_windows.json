@@ -1,0 +1,430 @@
+{
+  "admin_windows": {
+    "messages": {
+      "no_selection": "아니오 Selection",
+      "export_complete": "Naebonaegi Complete"
+    },
+    "filetypes": {
+      "json": "JSON files",
+      "csv": "CSV files",
+      "pdf": "PDF files",
+      "txt": "Text files",
+      "sql": "SQL files",
+      "sql_compressed": "Compressed SQL",
+      "all": "모두 files"
+    },
+    "api": {
+      "title": "API 관리",
+      "center_title": "API 관리 Center",
+      "tabs": {
+        "api_keys": "API Keys",
+        "endpoints": "Endpoints",
+        "analytics": "Analytics",
+        "security": "Boanseong"
+      },
+      "keys": {
+        "active_keys": "Hwalseonghwa API Keys",
+        "columns": {
+          "key_id": "Key ID",
+          "name": "Ireum",
+          "type": "유형",
+          "created": "Created",
+          "last_used": "Last Used",
+          "status": "Sangtae",
+          "requests": "Requests"
+        },
+        "sample": {
+          "student_portal": "Haksaeng 포털",
+          "mobile_app": "Mobile App",
+          "third_party": "Third Party",
+          "analytics": "Analytics",
+          "backup_service": "백업 Service"
+        },
+        "types": {
+          "read_write": "Read/Write",
+          "read_only": "Read Only",
+          "limited": "Limited",
+          "admin": "Admin"
+        },
+        "status": {
+          "active": "Hwalseonghwa",
+          "suspended": "Suspended",
+          "revoked": "Revoked"
+        },
+        "buttons": {
+          "generate": "생성 New Key",
+          "revoke": "Revoke Key",
+          "view_details": "Bogi Sangse",
+          "export": "Naebonaegi Keys"
+        }
+      },
+      "endpoints": {
+        "available": "Available Endpoints",
+        "columns": {
+          "method": "Method",
+          "endpoint": "Endpoint",
+          "description": "Seolmyeong",
+          "auth_required": "Auth Required",
+          "rate_limit": "Rate Limit",
+          "status": "Sangtae"
+        },
+        "desc": {
+          "list_students": "List all Haksaengdeul",
+          "create_student": "Saengsong new Haksaeng",
+          "get_student": "Get Haksaeng Sangse",
+          "update_student": "Eopdeitu Haksaeng",
+          "delete_student": "Sakje Haksaeng",
+          "list_modules": "List all modules",
+          "record_attendance": "Record Chulseok",
+          "generate_reports": "생성 reports",
+          "user_auth": "사용자 authentication",
+          "health_check": "Siseutem health check"
+        },
+        "unlimited": "Unlimited",
+        "buttons": {
+          "test": "Test Endpoint",
+          "view_docs": "Bogi Documentation",
+          "configure_rate": "Configure Rate Limits"
+        }
+      },
+      "analytics": {
+        "usage": "API Usage Analytics",
+        "total_requests": "Chonghab Requests Today",
+        "active_keys": "Hwalseonghwa API Keys",
+        "error_rate": "Olyu Rate",
+        "avg_response": "Avg Response Sigan"
+      },
+      "security": {
+        "config": "API Boanseong Configuration",
+        "rate_limiting": "Rate Limiting",
+        "global_rate_limit": "Global Rate Limit:",
+        "rate_value": "1000 requests/hour",
+        "authentication": "Authentication",
+        "auth_api_key": "API Key",
+        "auth_oauth": "OAuth 2.0",
+        "auth_jwt": "JWT Token",
+        "auth_basic": "Basic Auth",
+        "event_log": "Boanseong Ibenteu 로그"
+      },
+      "messages": {
+        "key_generated_title": "New API Key Generated",
+        "key_generated_body": "New API Key: {key}\n\nIMPORTANT: Jeojang this key securely!\nThis is the only Sigan it will be displayed.",
+        "select_key_revoke": "제발 Seontaek an API key to revoke.",
+        "confirm_revoke_title": "Hwakinn Revocation",
+        "confirm_revoke_body": "Are you sure you want to revoke API key {key_id}?\nThis action cannot be undone.",
+        "key_revoked_title": "Key Revoked",
+        "key_revoked_body": "API key {key_id} has been revoked.",
+        "select_key_details": "제발 Seontaek an API key to Bogi Sangse.",
+        "key_details_title": "API Key Sangse",
+        "key_details_body": "API KEY Sangse\n==============\n\nKey ID: {key_id}\nIreum: {Ireum}\n유형: {type}\nCreated: {created}\nLast Used: {last_used}\nSangtae: {Sangtae}\nChonghab Requests: {total_requests}",
+        "export_keys_title": "Naebonaegi API Keys",
+        "keys_exported": "API keys exported to {filename}",
+        "select_endpoint_test": "제발 Seontaek an endpoint to test.",
+        "endpoint_test_title": "Endpoint Test",
+        "endpoint_test_body": "Testing {method} {endpoint}...\n\nResponse: 200 OK\nResponse Sigan: 45ms\nData Size: 2.3KB\nAuthentication: Valid",
+        "docs_title": "API Documentation",
+        "docs_body": "This would Yeolgi the comprehensive API documentation\nincluding request/response examples, parameters,\nand authentication requirements.",
+        "rate_config_title": "Rate Limit Configuration",
+        "rate_config_body": "This would Yeolgi a dialog to configure\ncustom rate limits for specific endpoints."
+      }
+    },
+    "audit": {
+      "title": "Siseutem Audit Logs",
+      "center_title": "Siseutem Audit Logs",
+      "filters": "로그 Filters",
+      "date_range": "Naljja Range:",
+      "date_options": {
+        "last_24_hours": "Last 24 Hours",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "custom": "Custom Range"
+      },
+      "log_level": "로그 Level:",
+      "level_options": {
+        "all": "모두 Levels"
+      },
+      "category": "Category:",
+      "category_options": {
+        "all": "모두 Categories",
+        "authentication": "Authentication",
+        "database": "Deiteobeis",
+        "api": "API",
+        "user_actions": "사용자 Haengdong",
+        "system": "Siseutem"
+      },
+      "log_entries": "Audit 로그 Entries",
+      "columns": {
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "category": "Category",
+        "user": "사용자",
+        "action": "Action",
+        "ip_address": "IP Juso",
+        "details": "Sangse"
+      },
+      "buttons": {
+        "apply_filters": "Jeogyong Filters",
+        "export_logs": "Naebonaegi Logs",
+        "clear_logs": "Jiugi Logs"
+      },
+      "messages": {
+        "filters_applied_title": "Filters Applied",
+        "filters_applied_body": "Applying filters:\nNaljja Range: {date_range}\n로그 Level: {log_level}\nCategory: {category}\nGeomseag: {Geomseag}",
+        "export_title": "Naebonaegi Audit Logs",
+        "logs_exported": "Audit logs exported to {filename}",
+        "confirm_clear_title": "Hwakinn Jiugi Logs",
+        "confirm_clear_body": "Are you sure you want to Jiugi old log entries?\nThis action cannot be undone.\n\nLogs older than 90 days will be archived and removed.",
+        "logs_cleared_title": "Logs Cleared",
+        "logs_cleared_body": "Old log entries have been archived and cleared."
+      },
+      "details": {
+        "title": "로그 Entry Sangse",
+        "body": "LOG ENTRY Sangse\n================\n\nTimestamp: {timestamp}\n로그 Level: {level}\nCategory: {category}\n사용자: {user}\nAction: {action}\nIP Juso: {ip}\nSangse: {Sangse}"
+      }
+    },
+    "diagnostics": {
+      "title": "Siseutem Diagnostics",
+      "center_title": "Siseutem Diagnostics",
+      "tabs": {
+        "health": "Siseutem 건강",
+        "performance": "Performance",
+        "network": "Network",
+        "storage": "Storage"
+      },
+      "health": {
+        "overview": "Siseutem 건강 개요",
+        "overall": "Overall 건강",
+        "cpu_usage": "CPU Usage",
+        "memory_usage": "Memory Usage",
+        "disk_usage": "Disk Usage",
+        "network": "Network",
+        "database": "Deiteobeis",
+        "status": {
+          "excellent": "Excellent",
+          "online": "Onrain",
+          "connected": "Connected",
+          "good": "Good",
+          "warning": "Gyeonggo",
+          "critical": "Critical",
+          "offline": "Opeurain",
+          "disconnected": "Disconnected"
+        },
+        "detailed_report": "Detailed 건강 Bogoseo",
+        "buttons": {
+          "run_diagnostic": "Run Full Diagnostic",
+          "generate_report": "생성 건강 Bogoseo",
+          "view_logs": "Bogi Siseutem Logs"
+        }
+      },
+      "performance": {
+        "metrics": "Performance Metrics",
+        "buttons": {
+          "run_test": "Run Performance Test",
+          "optimize": "Optimize Siseutem",
+          "live_metrics": "Bogi Live Metrics"
+        }
+      },
+      "network": {
+        "title": "Network Diagnostics",
+        "buttons": {
+          "test_connectivity": "Test Connectivity",
+          "speed_test": "Speed Test",
+          "port_scanner": "Port Scanner"
+        }
+      },
+      "storage": {
+        "title": "Storage Analysis",
+        "buttons": {
+          "disk_cleanup": "Disk Cleanup",
+          "check_health": "Check Disk 건강",
+          "optimize": "Optimize Storage"
+        }
+      },
+      "messages": {
+        "full_diagnostic_title": "Full Diagnostic",
+        "full_diagnostic_body": "Running comprehensive Siseutem diagnostic...\n\nThis will check all Siseutem components including:\n- Hardware health\n- Software integrity\n- Network connectivity\n- Deiteobeis Sangtae\n- Boanseong configuration\n\nEstimated Sigan: 3-5 minutes",
+        "save_report_title": "Jeojang 건강 Bogoseo",
+        "report_generated_title": "Bogoseo Generated",
+        "report_generated_body": "건강 Bogoseo saved to {filename}",
+        "system_logs_title": "Siseutem Logs",
+        "system_logs_body": "This would Yeolgi the Siseutem logs viewer",
+        "perf_test_title": "Performance Test",
+        "perf_test_body": "Running performance benchmark...\n\nTesting:\n- CPU performance\n- Memory throughput\n- Disk I/O speed\n- Network latency\n- Deiteobeis queries\n\nThis may take several minutes.",
+        "sys_optimize_title": "Siseutem Optimization",
+        "sys_optimize_body": "This will perform Siseutem optimization including:\n\n- Jiugi temporary files\n- Optimize Deiteobeis\n- Rebuild cache\n- Defragment logs\n\nGyesok with optimization?",
+        "optimize_complete_title": "Optimization Complete",
+        "optimize_complete_body": "Siseutem optimization completed successfully!",
+        "live_metrics_title": "Live Metrics",
+        "live_metrics_body": "This would Yeolgi the live metrics Daesibodue",
+        "connectivity_title": "Connectivity Test",
+        "connectivity_body": "Testing network connectivity...\n\nGateway: Onrain (1ms)\nDNS: Working (8ms)\nInternet: Available (12ms)\nExternal APIs: Accessible\nDeiteobeis: Connected\n\n모두 network tests passed!",
+        "speed_test_title": "Speed Test",
+        "speed_test_body": "Running network speed test...\n\n다운로드 Speed: 967 Mbps\n업로드 Speed: 923 Mbps\nLatency: 12ms\nJitter: 2ms\n\nNetwork performance is excellent!",
+        "port_scan_title": "Port Scan",
+        "port_scan_body": "This would run a comprehensive port scan",
+        "disk_cleanup_title": "Disk Cleanup",
+        "disk_cleanup_body": "Disk cleanup will Sakje:\n\n- Temporary files (12 GB)\n- Old log files (8 GB)\n- Cache files (6 GB)\n- Empty directories (247)\n\nChonghab space to be freed: 26 GB\n\nGyesok with cleanup?",
+        "cleanup_complete_title": "Cleanup Complete",
+        "cleanup_complete_body": "Disk cleanup completed! 26 GB freed.",
+        "disk_health_title": "Disk 건강 Check",
+        "disk_health_body": "Disk 건강 Bogoseo:\n\n아니오 bad sectors detected\nTemperature normal (35C)\nWear level low (12%)\n아니오 SMART errors\nPail Siseutem healthy\n\nDisk is in excellent condition!",
+        "storage_optimize_title": "Storage Optimization",
+        "storage_optimize_body": "Storage optimization will:\n\n- Defragment Pail Siseutem\n- Rebuild Deiteobeis indexes\n- Optimize Pail allocation\n- Clean registry entries\n\nThis may take 15-30 minutes.\nGyesok with optimization?",
+        "storage_complete_title": "Optimization Complete",
+        "storage_complete_body": "Storage optimization completed successfully!"
+      }
+    },
+    "database": {
+      "title": "Deiteobeis Maintenance",
+      "center_title": "Deiteobeis Maintenance Center",
+      "tabs": {
+        "status": "Sangtae",
+        "backup": "백업 & Restore",
+        "optimization": "Optimization",
+        "monitoring": "Monitoring"
+      },
+      "status": {
+        "overview": "Deiteobeis Sangtae 개요",
+        "connection": "Connection",
+        "health": "건강",
+        "size": "Size",
+        "tables": "Tables",
+        "connections": "Connections",
+        "uptime": "Uptime",
+        "values": {
+          "connected": "Connected",
+          "disconnected": "Disconnected"
+        },
+        "detailed_info": "Detailed Deiteobeis Jeongbo",
+        "buttons": {
+          "refresh": "Saerogochim Sangtae",
+          "test_connection": "Connection Test",
+          "export": "Naebonaegi Sangtae"
+        }
+      },
+      "backup": {
+        "operations": "백업 Operations",
+        "type": "백업 유형:",
+        "types": {
+          "full": "Full 백업",
+          "incremental": "Incremental 백업",
+          "schema": "Schema Only",
+          "data": "Data Only"
+        },
+        "compression": "Compression:",
+        "enable": "Hwalseonghwa",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "history": "백업 기록",
+        "columns": {
+          "type": "유형",
+          "size": "Size",
+          "duration": "Duration",
+          "location": "Location"
+        },
+        "buttons": {
+          "create": "Saengsong 백업 Now",
+          "schedule": "Siganpyo 백업",
+          "verify": "Verify 백업",
+          "restore": "Restore Selected",
+          "download": "다운로드 백업",
+          "delete": "Sakje 백업",
+          "restore_file": "Restore from Pail"
+        }
+      },
+      "optimization": {
+        "title": "Deiteobeis Optimization",
+        "vacuum": "VACUUM (reclaim storage)",
+        "analyze": "ANALYZE (Eopdeitu statistics)",
+        "reindex": "REINDEX (rebuild indexes)",
+        "cleanup": "Cleanup (Sakje old logs)",
+        "results": "Optimization Results",
+        "buttons": {
+          "run": "Run Optimization",
+          "schedule": "Siganpyo Maintenance",
+          "integrity": "Check Integrity"
+        }
+      },
+      "monitoring": {
+        "title": "Deiteobeis Monitoring",
+        "interval": "Monitor Interval:",
+        "intervals": {
+          "30sec": "30 seconds",
+          "1min": "1 minute",
+          "5min": "5 minutes",
+          "15min": "15 minutes",
+          "1hour": "1 hour"
+        },
+        "enable_alerts": "Hwalseonghwa Alerts",
+        "realtime": "Real-Sigan Monitoring",
+        "buttons": {
+          "start": "Sijak Monitoring",
+          "stop": "Jeongji Monitoring",
+          "configure": "Configure Alerts",
+          "live_stats": "Bogi Live Stats"
+        }
+      },
+      "messages": {
+        "status_refreshed_title": "Sangtae Refreshed",
+        "status_refreshed_body": "Deiteobeis Sangtae has been refreshed with latest Jeongbo.",
+        "connection_test_title": "Connection Test",
+        "connection_test_body": "Deiteobeis Connection Test Results:\n\nConnection established successfully\nAuthentication passed\nResponse Sigan: 8ms\nDeiteobeis accessible\n모두 systems operational",
+        "export_status_title": "Naebonaegi Deiteobeis Sangtae",
+        "status_exported": "Sangtae Bogoseo exported to {filename}",
+        "backup_started_title": "백업 Started",
+        "backup_started_body": "Starting backup...\n\n유형: {backup_type}\nCompression: {compression}\nEstimated Sigan: 5-15 minutes\n\nYou will be notified when the backup is complete.",
+        "backup_schedule_title": "백업 Scheduling",
+        "backup_schedule_body": "This would Yeolgi the backup scheduling interface\nwhere you can configure:\n\n- 백업 frequency\n- 백업 times\n- Retention policies\n- 알림 Seoljeong",
+        "select_backup_verify": "제발 Seontaek a backup to verify.",
+        "backup_verify_title": "백업 Verification",
+        "backup_verify_body": "Verifying backup integrity...\n\nPail integrity check passed\nChecksum validation successful\nData consistency verified\n백업 is valid and restorable",
+        "select_backup_restore": "제발 Seontaek a backup to restore.",
+        "confirm_restore_title": "Hwakinn Restore",
+        "confirm_restore_body": "Gyeonggo: This will restore the Deiteobeis to:\n{backup_date}\n\nALL CURRENT DATA WILL BE REPLACED!\n\nAre you sure you want to Gyesok?",
+        "restore_started_title": "Restore Started",
+        "restore_started_body": "Deiteobeis restore has been initiated.",
+        "select_backup_download": "제발 Seontaek a backup to download.",
+        "save_backup_title": "Jeojang 백업 Pail",
+        "download_complete_title": "다운로드 Complete",
+        "download_complete_body": "백업 downloaded to {filename}",
+        "select_backup_delete": "제발 Seontaek a backup to Sakje.",
+        "confirm_delete_title": "Hwakinn Sakje",
+        "confirm_delete_body": "Are you sure you want to Sakje the backup from:\n{backup_date}\n\nThis action cannot be undone.",
+        "backup_deleted_title": "백업 Deleted",
+        "backup_deleted_body": "Selected backup has been deleted.",
+        "select_backup_file": "Seontaek 백업 Pail",
+        "confirm_restore_file": "Gyeonggo: This will restore the Deiteobeis from:\n{filename}\n\nALL CURRENT DATA WILL BE REPLACED!\n\nAre you sure you want to Gyesok?",
+        "restore_from_file": "Restoring Deiteobeis from {filename}",
+        "no_operations_title": "아니오 Operations",
+        "no_operations_body": "제발 Seontaek at least one optimization operation.",
+        "confirm_optimize_title": "Hwakinn Optimization",
+        "confirm_optimize_body": "The following operations will be performed:\n{operations}\n\nThis may take 10-30 minutes and may impact performance.\nGyesok with optimization?",
+        "optimize_started_title": "Optimization Started",
+        "optimize_started_body": "Deiteobeis optimization started.\n\nOperations: {operations}\nYou will be notified when complete.",
+        "maintenance_schedule_title": "Maintenance Scheduling",
+        "maintenance_schedule_body": "This would Yeolgi the maintenance scheduling interface\nwhere you can configure:\n\n- Maintenance windows\n- Optimization schedules\n- 알림 Seoljeong\n- Automated tasks",
+        "integrity_title": "Integrity Check",
+        "integrity_body": "Running Deiteobeis integrity check...\n\nTable structure validation passed\nIndex consistency verified\nForeign key constraints valid\nData type consistency confirmed\n아니오 corruption detected\n\nDeiteobeis integrity is excellent!",
+        "monitoring_started_title": "Monitoring Started",
+        "monitoring_started_body": "Deiteobeis monitoring has been started.\n\nMonitor Interval: {interval}\nAlerts: {alerts}\n\nReal-Sigan metrics will be collected and displayed.",
+        "stop_monitoring_title": "Jeongji Monitoring",
+        "stop_monitoring_body": "Are you sure you want to Jeongji Deiteobeis monitoring?\n\nReal-Sigan metrics collection will be paused.",
+        "monitoring_stopped_title": "Monitoring Stopped",
+        "monitoring_stopped_body": "Deiteobeis monitoring has been stopped.",
+        "alert_config_title": "Alert Configuration",
+        "alert_config_body": "This would Yeolgi the alert configuration interface\nwhere you can set thresholds for:\n\n- Response Sigan alerts\n- Connection limit warnings\n- Storage space alerts\n- Olyu rate notifications\n- Performance degradation alerts",
+        "live_stats_title": "Live Statistics",
+        "live_stats_body": "This would Yeolgi a real-Sigan Daesibodue showing:\n\n- Live query performance\n- Connection activity\n- Resource utilization\n- Siseutem health metrics\n- Performance graphs"
+      }
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "search": "Search:",
+    "date": "Date",
+    "status": "Status",
+    "user": "User"
+  }
+}

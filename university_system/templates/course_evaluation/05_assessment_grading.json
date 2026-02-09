@@ -1,0 +1,28 @@
+{
+  "template_name": "Assessment & Grading",
+  "template_type": "Course",
+  "description": "Evaluate fairness, clarity, and effectiveness of assessments",
+  "questions": [
+    {
+      "question_text": "How fair and appropriate were the course assessments (exams, assignments, projects)?",
+      "question_type": "Rating",
+      "question_category": "Assessment",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Were the grading criteria clearly explained before each assessment?",
+      "question_type": "Yes/No",
+      "question_category": "Assessment",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "How could the assessment methods be improved?",
+      "question_type": "Text",
+      "question_category": "Assessment",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

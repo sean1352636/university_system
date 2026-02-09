@@ -1,0 +1,147 @@
+{
+  "bank_app": {
+    "window": {
+      "title": "Banco Universitario"
+    },
+    "student": {
+      "default_name": "Estudiante"
+    },
+    "dashboard": {
+      "welcome": "Bienvenido/a, {name}",
+      "student_id": "ID de Estudiante: {student_id}",
+      "balance_title": "Saldo Actual",
+      "low_balance_warning": "¡Saldo bajo! Considere agregar fondos.",
+      "account_info_title": "Información de la Cuenta",
+      "account_info_text": "Su cuenta financiera estudiantil está vinculada a su ID universitario.\nPuede usar este saldo para servicios del campus, comedor y más."
+    },
+    "buttons": {
+      "refresh": "Actualizar",
+      "top_up": "Recargar",
+      "transaction_history": "Historial de Transacciones",
+      "financial_summary": "Resumen Financiero",
+      "close": "Cerrar",
+      "complete_topup": "Completar Recarga",
+      "login": "Iniciar Sesión",
+      "create_account": "Crear Cuenta",
+      "back_to_login": "Volver al Inicio de Sesión",
+      "logout": "Cerrar Sesión",
+      "deposit": "Depositar",
+      "withdraw": "Retirar",
+      "transfer": "Transferir",
+      "history": "Historial"
+    },
+    "transactions": {
+      "recent_title": "Transacciones Recientes",
+      "columns": {
+        "date": "Fecha",
+        "type": "Tipo",
+        "amount": "Monto",
+        "balance": "Saldo",
+        "description": "Descripción"
+      },
+      "no_transactions": "No se encontraron transacciones"
+    },
+    "topup": {
+      "window_title": "Recargar Cuenta",
+      "header": "Agregar Fondos a Su Cuenta",
+      "current_balance": "Saldo Actual: £{balance}",
+      "amount_label": "Monto: £",
+      "quick_topup": "Recarga Rápida",
+      "payment_method": "Método de Pago:",
+      "method_card": "Tarjeta",
+      "method_bank_transfer": "Transferencia Bancaria",
+      "method_cash": "Efectivo",
+      "description": "Recarga de cuenta",
+      "success_message": "¡Se agregaron £{amount} exitosamente!\nNuevo saldo: £{balance}"
+    },
+    "error": {
+      "title": "Error",
+      "positive_amount": "Por favor ingrese un monto positivo",
+      "max_topup": "El monto máximo de recarga es £10,000",
+      "topup_failed": "La recarga falló. Por favor intente de nuevo.",
+      "valid_amount": "Por favor ingrese un monto válido",
+      "loading_summary": "Error al cargar el resumen: {error}",
+      "valid_positive_amount": "Por favor ingrese un monto positivo válido"
+    },
+    "success": {
+      "title": "Éxito"
+    },
+    "history": {
+      "window_title": "Historial de Transacciones",
+      "header": "Historial Completo de Transacciones"
+    },
+    "summary": {
+      "window_title": "Resumen Financiero",
+      "header": "Su Resumen Financiero",
+      "overview_title": "Resumen de la Cuenta",
+      "current_balance": "Saldo Actual:",
+      "total_payments": "Total de Pagos:",
+      "total_paid": "Monto Total Pagado:",
+      "total_refunds": "Total de Reembolsos:",
+      "total_refunded": "Monto Total Reembolsado:",
+      "net_spent": "Monto Neto Gastado:",
+      "spending_by_category": "Gastos por Categoría",
+      "columns": {
+        "category": "Categoría",
+        "transactions": "Transacciones",
+        "total_spent": "Total Gastado"
+      }
+    },
+    "login": {
+      "title": "Banco Universitario",
+      "subtitle": "Banca Estudiantil Segura",
+      "student_tip": "Consejo: Si inició sesión a través del sistema universitario, su cuenta de estudiante se cargará automáticamente.",
+      "form_title": "Inicio de Sesión",
+      "account_number": "Número de Cuenta:",
+      "pin": "PIN:",
+      "new_user": "¿Nuevo en el Banco Universitario?"
+    },
+    "create_account": {
+      "title": "Crear Nueva Cuenta",
+      "form_title": "Detalles de la Cuenta",
+      "full_name": "Nombre Completo:",
+      "pin_label": "PIN (4-6 dígitos):",
+      "confirm_pin": "Confirmar PIN:",
+      "initial_deposit": "Depósito Inicial (£):"
+    },
+    "standalone": {
+      "account_label": "Cuenta: {account}",
+      "current_balance": "Saldo Actual"
+    },
+    "deposit": {
+      "window_title": "Realizar un Depósito",
+      "header": "Depositar Fondos",
+      "success": "Se depositaron £{amount} exitosamente"
+    },
+    "withdraw": {
+      "window_title": "Realizar un Retiro",
+      "header": "Retirar Fondos",
+      "available": "Disponible: £{balance}",
+      "success": "Se retiraron £{amount} exitosamente",
+      "insufficient_funds": "Fondos insuficientes"
+    },
+    "transfer": {
+      "window_title": "Transferir Fondos",
+      "header": "Transferir Fondos",
+      "available": "Disponible: £{balance}",
+      "recipient_account": "Cuenta del Destinatario:",
+      "amount_label": "Monto: £",
+      "success": "Se transfirieron £{amount} exitosamente a la cuenta {account}",
+      "self_transfer_error": "No puede transferir a usted mismo",
+      "recipient_not_found": "Cuenta del destinatario no encontrada",
+      "failed": "Transferencia fallida"
+    },
+    "validation": {
+      "enter_credentials": "Por favor ingrese el número de cuenta y el PIN",
+      "invalid_login": "Número de cuenta o PIN inválido",
+      "enter_name": "Por favor ingrese su nombre completo",
+      "pin_format": "El PIN debe tener 4-6 dígitos",
+      "pin_mismatch": "Los PIN no coinciden",
+      "negative_deposit": "El depósito inicial no puede ser negativo"
+    },
+    "account_created": {
+      "title": "Cuenta Creada",
+      "message": "¡Su cuenta ha sido creada!\n\nNúmero de Cuenta: {account}\nPor favor recuerde su número de cuenta y PIN."
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "chatbot": {
+    "window_title": "روبوت المحادثة الجامعي - نظام دعم الطلاب",
+    "welcome": "مرحباً بك في روبوت المحادثة الجامعي",
+    "system": "النظام",
+    "university_chatbot": "روبوت المحادثة الجامعي",
+
+    "voice_btn": "صوت",
+    "settings_btn": "الإعدادات",
+    "exit_to_main": "العودة للرئيسية",
+    "send_btn": "إرسال",
+    "back_to_chat": "العودة للمحادثة",
+    "send_message_btn": "إرسال الرسالة",
+
+    "quick_actions": "إجراءات سريعة",
+    "my_courses": "مقرراتي",
+    "my_grades": "درجاتي",
+    "search_courses": "البحث عن مقررات",
+    "check_financial_aid": "التحقق من المساعدة المالية",
+    "view_schedule": "عرض الجدول",
+    "get_help": "الحصول على مساعدة",
+    "show_available_courses": "أظهر لي المقررات المتاحة للتسجيل",
+    "need_help_msg": "أحتاج مساعدة مع النظام",
+
+    "system_administration": "إدارة النظام",
+    "admin_tab_system_status": "حالة النظام",
+    "admin_tab_user_management": "إدارة المستخدمين",
+    "admin_tab_analytics": "التحليلات",
+    "admin_tab_system_logs": "سجلات النظام",
+    "system_metrics": "مقاييس النظام",
+
+    "no_selection_title": "لا يوجد تحديد",
+    "select_user_to_view": "يرجى تحديد مستخدم لعرض التفاصيل.",
+    "select_user_to_message": "يرجى تحديد مستخدم لإرسال رسالة.",
+    "message_sent_title": "تم إرسال الرسالة",
+    "message_sent_msg": "تم إرسال رسالة إدارية إلى {username}",
+
+    "export_complete": "اكتمل التصدير",
+    "analytics_exported": "تم تصدير بيانات التحليلات إلى {filename}",
+    "export_error": "خطأ في التصدير",
+    "analytics_export_failed": "فشل تصدير التحليلات: {error}",
+    "conversations_exported": "تم تصدير المحادثات إلى {filename}",
+    "conversations_export_failed": "فشل تصدير المحادثات: {error}",
+
+    "clear_cache": "مسح الذاكرة المؤقتة",
+    "clear_cache_confirm": "هل أنت متأكد أنك تريد مسح ذاكرة التحليلات المؤقتة؟",
+    "cache_cleared": "تم مسح الذاكرة المؤقتة",
+    "cache_cleared_msg": "تم مسح ذاكرة التحليلات المؤقتة.",
+    "clear_cache_failed": "فشل مسح الذاكرة المؤقتة: {error}",
+
+    "clear_logs": "مسح السجلات",
+    "clear_logs_confirm": "هل أنت متأكد أنك تريد مسح جميع سجلات النظام؟",
+    "logs_cleared": "تم مسح السجلات",
+    "logs_cleared_msg": "تم مسح جميع سجلات النظام.",
+    "clear_logs_failed": "فشل مسح السجلات: {error}",
+
+    "backup_complete": "اكتمل النسخ الاحتياطي",
+    "backup_created": "تم إنشاء نسخة احتياطية للنظام: {filename}",
+    "backup_error": "خطأ في النسخ الاحتياطي",
+    "backup_failed": "فشل إنشاء النسخة الاحتياطية: {error}",
+    "restore_warning": "تحذير الاستعادة",
+    "restore_warning_msg": "ستؤدي الاستعادة إلى الكتابة فوق البيانات الحالية. هل تريد المتابعة؟",
+    "select_backup_file": "اختر ملف النسخة الاحتياطية",
+    "restore_complete": "اكتملت الاستعادة",
+    "restore_success": "تمت استعادة النظام من: {filename}",
+    "restore_error": "خطأ في الاستعادة",
+    "restore_failed": "فشل استعادة النسخة الاحتياطية: {error}",
+
+    "clear_chat_title": "مسح المحادثة",
+    "clear_chat_confirm": "هل أنت متأكد أنك تريد مسح سجل المحادثة؟",
+    "chat_history_cleared": "تم مسح سجل المحادثة.",
+
+    "user_guide_title": "دليل المستخدم",
+    "keyboard_shortcuts_title": "اختصارات لوحة المفاتيح",
+    "about_title": "حول روبوت المحادثة الجامعي",
+    "getting_help": "الحصول على مساعدة",
+    "help_info": "كيفية استخدام روبوت المحادثة:\n\n1. اكتب سؤالك في مربع الرسالة\n2. اضغط Enter أو انقر على إرسال\n3. استخدم الإجراءات السريعة للمهام الشائعة\n4. فعّل وضع الصوت للإدخال الصوتي\n5. راجع الإعدادات لخيارات التخصيص\n\nللحصول على دعم إضافي، اتصل بمكتب المساعدة التقنية.",
+
+    "settings_preferences": "الإعدادات والتفضيلات",
+    "tab_general": "عام",
+    "tab_voice": "الصوت",
+    "tab_about": "حول",
+    "appearance": "المظهر",
+    "chat_font_size": "حجم خط المحادثة:",
+    "notifications": "الإشعارات",
+    "enable_notification_sounds": "تفعيل أصوات الإشعارات",
+    "auto_scroll_chat": "التمرير التلقائي للمحادثة",
+    "app_information": "معلومات التطبيق",
+
+    "voice_not_available": "واجهة الصوت غير متاحة.\nيرجى التحقق من الميكروفون والمتطلبات.",
+    "voice_test": "اختبار الصوت",
+    "test_microphone": "اختبار الميكروفون",
+    "click_test_mic": "انقر على 'اختبار الميكروفون' للتحقق من إعداداتك",
+    "voice_settings": "إعدادات الصوت",
+    "recording_duration": "مدة التسجيل (ثوان):",
+    "enable_tts": "تفعيل ردود تحويل النص إلى كلام",
+    "voice_unavailable": "الصوت غير متاح",
+    "voice_unavailable_msg": "واجهة الصوت غير متاحة. يرجى التحقق من إعداد الميكروفون.",
+    "voice_error": "خطأ صوتي",
+    "voice_recognition_failed": "فشل التعرف على الصوت: {error}",
+
+    "about_info": "روبوت المحادثة الجامعي الإصدار 2.0\n\nمساعد ذكي لطلاب الجامعة وموظفيها.\n\nالميزات:\n- معالجة اللغة الطبيعية\n- معلومات المقررات والدرجات\n- مساعدة المساعدات المالية\n- إدارة الجداول\n- دعم واجهة الصوت\n\nتم التطوير بواسطة قسم تقنية المعلومات بالجامعة.",
+
+    "status_ready": "جاهز",
+    "status_connected": "متصل",
+
+    "auth_required_title": "المصادقة مطلوبة",
+    "auth_required_msg": "يرجى تسجيل الدخول من خلال واجهة النظام الجامعي الرئيسية أولاً.\n\nتشغيل: python run.py --gui",
+
+    "access_denied_title": "تم رفض الوصول",
+    "access_denied_admin": "ليس لديك إذن للوصول إلى لوحة الإدارة.",
+
+    "application_error": "خطأ في التطبيق",
+    "error_occurred": "حدث خطأ: {error}"
+  }
+}

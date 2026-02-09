@@ -1,0 +1,4 @@
+{
+    "subject": "Extension Request Approved: $assignment_title",
+    "body": "Dear $student_name,\n\nYour extension request has been approved for:\n\nAssignment: $assignment_title\nModule: $module_code\nNew Due Date: $new_due_date\nExtension Days: $extension_days\n\nPlease ensure you submit your work by the new deadline.\n\n$signature"
+}

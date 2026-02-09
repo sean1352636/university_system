@@ -1,0 +1,73 @@
+# System/personal files (home directory)
+.Xauthority
+.bash_history
+.bash_logout
+.bashrc
+.claude.json
+.claude.json.backup
+.claude/
+.codex/
+.config/
+.dockerignore
+.gitconfig
+.idlerc/
+.local/
+.npm/
+.profile
+.sommelierrc
+.ssh/
+.sudo_as_admin_successful
+.todo_data.json
+.todo_data_v2.json
+.viminfo
+.cache/
+.pytest_cache/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# Environment variables (secrets)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# mypy/coverage
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Claude
+CLAUDE.md
+.claude.json.backup*
+
+# Database files and backups
+*.db
+university_system/data/db_files/
+university_system/backups/
+university_system/data/backups/
+university_system/logs/*.db
+
+# Encryption keys
+*.key
+university_system/data/health_encryption.key

@@ -1,0 +1,12 @@
+{
+    "security": {
+        "session_timeout": 3600,
+        "max_login_attempts": 5,
+        "require_2fa": false
+    },
+    "performance": {
+        "enable_caching": true,
+        "max_concurrent_reports": 5,
+        "report_timeout": 1800
+    }
+}

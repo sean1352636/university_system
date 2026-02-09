@@ -1,0 +1,4 @@
+{
+    "subject": "Parking Management Report: $title",
+    "body": "Dear $admin_name,\n\nPlease find the attached parking management report below.\n\nReport: $title\nGenerated: $generated_date\nSubmitted by: $submitted_by\n\n================================================================================\n\n$content\n\n================================================================================\n\nThis is an automated email from the University Parking Management System.\n\nBest regards,\nParking Management System"
+}

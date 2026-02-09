@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "Integriertes System-Dashboard",
+    "tabs": {
+      "overview": "Systemubersicht",
+      "statistics": "Schnellstatistiken",
+      "activity": "Letzte Aktivitaten",
+      "health": "Systemzustand"
+    },
+    "errors": {
+      "login_required": "Sie mussen angemeldet sein, um auf das Dashboard zuzugreifen.",
+      "no_analytics_permission": "Sie haben keine Berechtigung fur den Zugriff auf Analysen",
+      "analytics_not_available": "Studenten-Analyse-GUI ist nicht verfugbar",
+      "analytics_launch_failed": "Analyse-GUI konnte nicht gestartet werden: {error}",
+      "analytics_error": "Fehler beim Starten der Analysen: {error}",
+      "chatbot_login_required": "Sie mussen angemeldet sein, um auf den Chatbot zuzugreifen.",
+      "no_chatbot_permission": "Sie haben keine Berechtigung fur den Zugriff auf den Chatbot.",
+      "chatbot_init_failed": "Chatbot-System konnte nicht initialisiert werden.",
+      "chatbot_open_failed": "Universitats-Chatbot konnte nicht geoffnet werden: {error}"
+    },
+    "messages": {
+      "opened_successfully": "Integriertes Dashboard erfolgreich geoffnet",
+      "chatbot_opened": "Universitats-Chatbot-GUI erfolgreich geoffnet",
+      "chatbot_launched": "Universitats-Chatbot-GUI erfolgreich gestartet",
+      "analytics_not_available_cli": "Analyse-GUI nicht verfugbar, CLI-Version wird verwendet"
+    },
+    "overview": {
+      "welcome": "Willkommen zuruck, {username}!",
+      "quick_access": "Schnellzugriff",
+      "system_status": "Systemstatus",
+      "current_time": "Aktuelle Zeit: {time}",
+      "user_role": "Benutzerrolle: {role}",
+      "database_connected": "Datenbankstatus: Verbunden",
+      "buttons": {
+        "student_records": "Studentenakten",
+        "grade_tracking": "Notenverfolgung",
+        "attendance": "Anwesenheit",
+        "course_management": "Kursverwaltung",
+        "finance_management": "Finanzverwaltung",
+        "reports": "Berichte"
+      }
+    },
+    "statistics": {
+      "title": "Systemstatistiken",
+      "database_stats": "Datenbankstatistiken:",
+      "total_students": "Studenten gesamt:",
+      "active_courses": "Aktive Kurse:",
+      "pending_assignments": "Ausstehende Aufgaben:",
+      "system_uptime": "Systembetriebszeit:",
+      "recent_logins": "Letzte Anmeldungen:",
+      "performance_metrics": "Leistungskennzahlen:",
+      "db_response_time": "Datenbank-Antwortzeit:",
+      "system_load": "Systemauslastung:",
+      "memory_usage": "Speicherauslastung:",
+      "active_sessions": "Aktive Sitzungen:",
+      "normal": "Normal",
+      "optimal": "Optimal",
+      "load_error": "Statistiken konnten nicht geladen werden: {error}"
+    },
+    "activity": {
+      "title": "Letzte Systemaktivitaten",
+      "log_header": "Aktivitatsprotokoll:",
+      "user_logged_in": "Benutzer {username} hat sich angemeldet",
+      "dashboard_accessed": "Dashboard aufgerufen",
+      "system_initialized": "System initialisiert",
+      "previous_sessions": "Vorherige Sitzungen:",
+      "last_login": "Letzte Anmeldung:",
+      "today": "Heute",
+      "recent_actions": "Letzte Aktionen:",
+      "actions_list": "Dashboard anzeigen, Studentenakten aufrufen",
+      "system_health": "Systemzustand:",
+      "all_operational": "Alle Systeme betriebsbereit"
+    },
+    "health": {
+      "title": "Systemzustandsuberwachung",
+      "not_available": "Zustandsuberwachungs-GUI nicht verfugbar"
+    },
+    "chatbot": {
+      "title": "Universitats-Chatbot"
+    },
+    "log": {
+      "gui_prefix": "GUI",
+      "gui_activity": "GUI-Aktivitat",
+      "logging_error": "Protokollierungssystemfehler"
+    }
+  }
+}

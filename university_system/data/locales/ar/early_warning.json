@@ -1,0 +1,161 @@
+{
+  "early_warning": {
+    "title": "نظام الإنذار المبكر لنجاح الطلاب",
+    "window_title": "نظام الإنذار المبكر لنجاح الطلاب",
+    "calculate_all_risk_scores": "حساب جميع درجات المخاطر",
+    "calculate_risk_selected": "حساب المخاطر للمحدد",
+    "create_intervention": "إنشاء تدخل",
+    "assign_coach": "تعيين مدرب",
+    "send_alert": "إرسال تنبيه",
+    "risk_level": "مستوى المخاطر:",
+    "coaches": "المدربون",
+    "coach_assignments": "تعيينات المدربين",
+    "tabs": {
+      "at_risk_students": "الطلاب المعرضون للخطر",
+      "interventions": "التدخلات",
+      "success_coaching": "التدريب على النجاح",
+      "tutoring_recommendations": "توصيات الدروس الخصوصية",
+      "risk_indicators": "مؤشرات المخاطر"
+    },
+    "buttons": {
+      "add_coach": "إضافة مدرب",
+      "add_indicator": "إضافة مؤشر",
+      "assign": "تعيين",
+      "assign_coach": "تعيين مدرب",
+      "calculate_all_risks": "حساب جميع المخاطر",
+      "calculate_risk": "حساب المخاطر",
+      "complete_intervention": "إكمال التدخل",
+      "create_intervention": "إنشاء تدخل",
+      "register_coach": "تسجيل مدرب",
+      "resolve_indicator": "حل المؤشر",
+      "send_alert": "إرسال تنبيه",
+      "view_details": "عرض التفاصيل"
+    },
+    "labels": {
+      "assigned_to": "معين إلى:",
+      "intervention_type": "نوع التدخل:",
+      "max_students": "الحد الأقصى للطلاب:",
+      "meeting_frequency": "تكرار الاجتماعات:",
+      "outcome": "النتيجة:",
+      "priority": "الأولوية:",
+      "reason": "السبب:",
+      "risk_level": "مستوى المخاطر",
+      "risk_level_filter": "مستوى المخاطر:",
+      "risk_score": "درجة المخاطر",
+      "select_coach": "اختر المدرب:",
+      "specialization": "التخصص:",
+      "student": "الطالب",
+      "student_id": "رقم الطالب",
+      "student_name": "اسم الطالب",
+      "trigger_type": "نوع المحفز:",
+      "user_id": "رقم المستخدم:"
+    },
+    "columns": {
+      "coach_id": "رقم المدرب",
+      "coach_name": "اسم المدرب",
+      "department": "القسم",
+      "email": "البريد الإلكتروني",
+      "indicator_type": "نوع المؤشر",
+      "intervention_id": "رقم التدخل",
+      "intervention_type": "نوع التدخل",
+      "risk_level": "مستوى المخاطر",
+      "risk_score": "درجة المخاطر",
+      "specialty": "التخصص",
+      "status": "الحالة",
+      "student_id": "رقم الطالب",
+      "student_name": "اسم الطالب"
+    },
+    "cli": {
+      "title": "نظام الإنذار المبكر لنجاح الطلاب",
+      "menu": {
+        "at_risk": "عرض الطلاب المعرضين للخطر",
+        "dashboard": "لوحة تقييم المخاطر",
+        "intervention": "إنشاء خطة تدخل",
+        "coach": "تعيين مدرب النجاح",
+        "progress": "تتبع تقدم الطالب",
+        "tutoring": "توصيات الدروس الخصوصية",
+        "alerts": "إرسال إشعارات التنبيه",
+        "language": "اللغة",
+        "return_main": "العودة إلى القائمة الرئيسية"
+      },
+      "prompt": {
+        "choice": "أدخل اختيارك (1-9)"
+      },
+      "feature_available": "الميزة متاحة عبر مديري الإنذار المبكر",
+      "returning": "جارٍ العودة إلى القائمة الرئيسية...",
+      "invalid_choice": "اختيار غير صالح.",
+      "error": "خطأ: {error}"
+    },
+    "dialogs": {
+      "assign_coach": "تعيين مدرب",
+      "complete_intervention": "إكمال التدخل",
+      "create_intervention": "إنشاء تدخل",
+      "email_not_configured": "البريد الإلكتروني غير مهيأ",
+      "intervention_details": "تفاصيل التدخل",
+      "no_coaches": "لا يوجد مدربون",
+      "register_coach": "تسجيل مدرب",
+      "risk_calculated": "تم حساب المخاطر"
+    },
+    "messages": {
+      "alert_sent": "تم إرسال التنبيه إلى {email}",
+      "coach_assigned": "تم تعيين المدرب بنجاح",
+      "coach_registered": "تم تسجيل المدرب بنجاح",
+      "email_not_available": "سيتم إرسال البريد الإلكتروني (خدمة البريد غير متاحة)",
+      "email_would_be_sent": "خدمة البريد الإلكتروني غير متاحة. سيتم إرسال التنبيه إلى: {email}",
+      "intervention_completed": "تم وضع علامة اكتمال على التدخل",
+      "intervention_created": "تم إنشاء التدخل بنجاح",
+      "risk_calculated_all": "تم حساب درجات المخاطر لـ {count} طالب",
+      "risk_result": "الطالب {student_id}\nدرجة المخاطر: {score}\nمستوى المخاطر: {level}"
+    },
+    "errors": {
+      "assign_coach_failed": "فشل تعيين المدرب: {error}",
+      "calculate_risk_failed": "فشل حساب المخاطر: {error}",
+      "calculate_risks_failed": "فشل حساب المخاطر: {error}",
+      "complete_intervention_failed": "فشل إكمال التدخل: {error}",
+      "create_intervention_failed": "فشل إنشاء التدخل: {error}",
+      "db_init_failed": "فشل تهيئة قاعدة البيانات: {error}",
+      "load_coaches_failed": "فشل تحميل المدربين: {error}",
+      "load_interventions_failed": "فشل تحميل التدخلات: {error}",
+      "load_students_failed": "فشل تحميل الطلاب: {error}",
+      "login_required": "يجب تسجيل الدخول للوصول إلى نظام الإنذار المبكر.",
+      "register_coach_failed": "فشل تسجيل المدرب: {error}",
+      "send_alert_failed": "فشل إرسال التنبيه: {error}",
+      "student_not_found": "لم يتم العثور على الطالب"
+    },
+    "warnings": {
+      "no_coaches_available": "لا يوجد مدربون نشطون متاحون. يرجى تسجيل مدرب أولاً.",
+      "select_coach": "يرجى اختيار مدرب",
+      "select_intervention": "يرجى اختيار تدخل",
+      "select_student": "يرجى اختيار طالب"
+    },
+    "status": {
+      "loaded_coaches": "تم تحميل {count} مدرب",
+      "loaded_interventions": "تم تحميل {count} تدخل",
+      "loaded_students": "تم تحميل {count} طالب معرض للخطر"
+    },
+    "risk_factors": {
+      "low_gpa": "معدل تراكمي منخفض",
+      "poor_attendance": "حضور ضعيف",
+      "missing_assignments": "واجبات مفقودة",
+      "failed_exams": "اختبارات راسبة",
+      "withdrawal_risk": "خطر الانسحاب"
+    },
+    "intervention_types": {
+      "academic_support": "الدعم الأكاديمي",
+      "counseling_referral": "إحالة للإرشاد",
+      "tutor_assignment": "تعيين مدرس خصوصي",
+      "advisor_meeting": "اجتماع مع المرشد",
+      "parent_notification": "إشعار ولي الأمر"
+    },
+    "risk_levels": {
+      "high": "خطر مرتفع",
+      "medium": "خطر متوسط",
+      "low": "خطر منخفض"
+    },
+    "outcomes": {
+      "improved": "تحسن",
+      "no_change": "بدون تغيير",
+      "declined": "تراجع"
+    }
+  }
+}

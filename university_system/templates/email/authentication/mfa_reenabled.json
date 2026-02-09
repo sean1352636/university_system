@@ -1,0 +1,4 @@
+{
+    "subject": "MFA Re-enabled for Your Account",
+    "body": "Dear $username,\n\nMulti-Factor Authentication (MFA) has been successfully re-enabled for your account using your previously saved settings.\n\nAccount Details:\n- Username: $username\n- Email: $email\n- MFA Methods Restored: $methods_count\n\nYour account is now protected with two-factor authentication. You will be required to verify your identity when logging in.\n\nIf you did not make this change, please contact support immediately as your account may have been compromised.\n\nSecurity Tips:\n- Never share your MFA codes with anyone\n- Keep your authentication device secure\n- Report any suspicious activity immediately\n\nThank you for keeping your account secure.\n\nBest regards,\nUniversity System Security Team\n\n---\nThis is an automated security notification. Please do not reply to this email."
+}

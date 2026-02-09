@@ -1,0 +1,36 @@
+{
+  "theme": {
+    "title": "Paramètres du Thème",
+    "select_theme": "Sélectionner le Thème",
+    "dark_mode": "Mode Sombre",
+    "light_mode": "Mode Clair",
+    "apply": "Appliquer le Thème",
+    "preview": "Aperçu du Thème",
+    "colors": {
+      "primary": "Couleur Primaire",
+      "secondary": "Couleur Secondaire",
+      "background": "Arrière-plan",
+      "foreground": "Premier Plan",
+      "accent": "Couleur d'Accent",
+      "button": "Bouton",
+      "entry": "Champ de Saisie",
+      "label": "Étiquette",
+      "treeview": "Arborescence",
+      "scrollbar": "Barre de Défilement"
+    },
+    "modes": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Par Défaut du Système"
+    },
+    "messages": {
+      "theme_applied": "Le thème a été appliqué avec succès.",
+      "theme_changed": "Thème changé en {theme}.",
+      "restart_required": "Certains changements peuvent nécessiter un redémarrage pour prendre pleinement effet."
+    },
+    "errors": {
+      "invalid_theme": "Thème sélectionné invalide.",
+      "apply_failed": "Échec de l'application du thème : {error}"
+    }
+  }
+}

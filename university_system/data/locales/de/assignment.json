@@ -1,0 +1,93 @@
+{
+  "assignment": {
+    "title": "Aufgabenverwaltungssystem",
+    "window_title": "Aufgabenverwaltung",
+    "warnings": {
+      "manager_not_initialized": "Warnung: {manager_name}-Manager nicht initialisiert",
+      "database_validation_failed": "Datenbankvalidierung fehlgeschlagen: {error}"
+    },
+    "errors": {
+      "get_user_role": "Fehler beim Abrufen der Benutzerrolle: {error}",
+      "launch_feature": "Fehler beim Starten von {feature_name}: {error}",
+      "add_permissions": "Fehler beim Hinzufügen von Berechtigungen: {error}",
+      "init_directories": "Fehler beim Initialisieren der Verzeichnisse: {error}",
+      "update_tables": "Fehler beim Aktualisieren der Tabellen: {error}",
+      "get_student_modules": "Fehler beim Abrufen der Studentenmodule: {error}",
+      "calculate_file_hash": "Fehler beim Berechnen des Datei-Hashs: {error}",
+      "validate_file": "Fehler bei der Dateivalidierung: {error}",
+      "log_action": "Fehler beim Protokollieren der Aktion: {error}",
+      "send_notification": "Fehler beim Senden der Benachrichtigung: {error}",
+      "check_email_preferences": "Fehler beim Prüfen der E-Mail-Einstellungen: {error}",
+      "send_email": "Fehler beim Senden der E-Mail: {error}"
+    },
+    "messages": {
+      "permissions_configured": "Berechtigungen erfolgreich konfiguriert"
+    },
+    "validation": {
+      "file_not_exists": "Datei existiert nicht",
+      "file_size_exceeds": "Dateigröße ({file_size} MB) überschreitet das Maximum ({max_size} MB)",
+      "file_type_not_allowed": "Dateityp {file_ext} nicht erlaubt. Erlaubte Typen: {allowed_types}",
+      "dangerous_pattern": "Gefährliches Muster erkannt: {pattern}",
+      "file_valid": "Datei ist gültig"
+    },
+    "tabs": {
+      "dashboard": "Übersicht",
+      "assignments": "Aufgaben",
+      "submissions": "Abgaben",
+      "grading": "Bewertung",
+      "templates": "Vorlagen",
+      "groups": "Gruppen",
+      "analytics": "Analysen",
+      "settings": "Einstellungen"
+    },
+    "labels": {
+      "assignment_title": "Aufgabentitel",
+      "description": "Beschreibung",
+      "due_date": "Fälligkeitsdatum",
+      "module": "Modul",
+      "status": "Status",
+      "grade": "Note",
+      "feedback": "Rückmeldung",
+      "submitted_at": "Eingereicht am",
+      "student": "Student",
+      "instructor": "Dozent",
+      "max_score": "Maximale Punktzahl",
+      "weight": "Gewichtung (%)",
+      "file": "Datei",
+      "rubric": "Bewertungsraster"
+    },
+    "buttons": {
+      "create": "Aufgabe erstellen",
+      "submit": "Einreichen",
+      "grade": "Bewerten",
+      "view": "Anzeigen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "download": "Herunterladen",
+      "upload": "Hochladen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "request_extension": "Verlängerung beantragen",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "published": "Veröffentlicht",
+      "closed": "Geschlossen",
+      "submitted": "Eingereicht",
+      "graded": "Bewertet",
+      "late": "Verspätet",
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "notifications": {
+      "new_assignment": "Neue Aufgabe veröffentlicht: {title}",
+      "submission_received": "Abgabe erhalten für {title}",
+      "grade_posted": "Note veröffentlicht für {title}",
+      "extension_request": "Verlängerung beantragt für {title}",
+      "reminder": "Erinnerung: {title} ist bald fällig"
+    }
+  }
+}

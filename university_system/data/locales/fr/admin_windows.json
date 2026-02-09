@@ -1,0 +1,430 @@
+{
+  "admin_windows": {
+    "messages": {
+      "no_selection": "Non Selection",
+      "export_complete": "Exporter Complete"
+    },
+    "filetypes": {
+      "json": "JSON Fichiers",
+      "csv": "CSV Fichiers",
+      "pdf": "PDF Fichiers",
+      "txt": "Texte Fichiers",
+      "sql": "SQL Fichiers",
+      "sql_compressed": "Compressed SQL",
+      "all": "tout Fichiers"
+    },
+    "api": {
+      "title": "API Gestion",
+      "center_title": "API Gestion Centre",
+      "tabs": {
+        "api_keys": "API Keys",
+        "endpoints": "Endpoints",
+        "analytics": "Analyses",
+        "security": "Securite"
+      },
+      "keys": {
+        "active_keys": "Actif API Keys",
+        "columns": {
+          "key_id": "Clé ID",
+          "name": "Nom",
+          "type": "Type",
+          "created": "Created",
+          "last_used": "dernier Used",
+          "status": "Statut",
+          "requests": "Requests"
+        },
+        "sample": {
+          "student_portal": "Etudiant Portail",
+          "mobile_app": "Mobile App",
+          "third_party": "Third Party",
+          "analytics": "Analyses",
+          "backup_service": "Sauvegarde Service"
+        },
+        "types": {
+          "read_write": "Read/Write",
+          "read_only": "Read Only",
+          "limited": "Limited",
+          "admin": "Administrateur"
+        },
+        "status": {
+          "active": "Actif",
+          "suspended": "Suspended",
+          "revoked": "Revoked"
+        },
+        "buttons": {
+          "generate": "Generer nouveau Clé",
+          "revoke": "Revoke Clé",
+          "view_details": "Voir Détails",
+          "export": "Exporter Keys"
+        }
+      },
+      "endpoints": {
+        "available": "Disponible Endpoints",
+        "columns": {
+          "method": "Method",
+          "endpoint": "Endpoint",
+          "description": "Description",
+          "auth_required": "Auth Requis",
+          "rate_limit": "Rate Limite",
+          "status": "Statut"
+        },
+        "desc": {
+          "list_students": "Liste tout Etudiants",
+          "create_student": "Creer nouveau Etudiant",
+          "get_student": "Get Etudiant Détails",
+          "update_student": "Mettre a jour Etudiant",
+          "delete_student": "Supprimer Etudiant",
+          "list_modules": "Liste tout Modules",
+          "record_attendance": "Enregistrement Presence",
+          "generate_reports": "Generer Rapports",
+          "user_auth": "Utilisateur Authentification",
+          "health_check": "Système health check"
+        },
+        "unlimited": "Unlimited",
+        "buttons": {
+          "test": "Tester Endpoint",
+          "view_docs": "Voir Documentation",
+          "configure_rate": "Configurer Rate Limits"
+        }
+      },
+      "analytics": {
+        "usage": "API Usage Analyses",
+        "total_requests": "Total Requests Aujourd'hui",
+        "active_keys": "Actif API Keys",
+        "error_rate": "Erreur Rate",
+        "avg_response": "Avg Response Heure"
+      },
+      "security": {
+        "config": "API Securite Configuration",
+        "rate_limiting": "Rate Limiting",
+        "global_rate_limit": "Global Rate Limite:",
+        "rate_value": "1000 requests/Heure",
+        "authentication": "Authentification",
+        "auth_api_key": "API Clé",
+        "auth_oauth": "OAuth 2.0",
+        "auth_jwt": "JWT Jeton",
+        "auth_basic": "Basique Auth",
+        "event_log": "Securite Evenement Journal"
+      },
+      "messages": {
+        "key_generated_title": "nouveau API Clé Généré",
+        "key_generated_body": "Nouvelle clé API : {key}\n\nIMPORTANT : Enregistrez cette clé en sécurité !\nC'est la seule fois qu'elle sera affichée.",
+        "select_key_revoke": "Veuillez sélectionner une clé API pour révoquer.",
+        "confirm_revoke_title": "Confirmer Revocation",
+        "confirm_revoke_body": "Êtes-vous sûr de vouloir révoquer la clé API {key_id} ?\nCette action ne peut pas être annulée.",
+        "key_revoked_title": "Clé Revoked",
+        "key_revoked_body": "API key {key_id} a été revoked.",
+        "select_key_details": "Veuillez sélectionner une clé API pour afficher Détails.",
+        "key_details_title": "API Clé Détails",
+        "key_details_body": "API KEY Détails\n==============\n\nClé ID: {key_id}\nNom: {Nom}\nType: {type}\nCreated: {created}\ndernier Used: {last_used}\nStatut: {Statut}\nTotal Requests: {total_requests}",
+        "export_keys_title": "Exporter API Keys",
+        "keys_exported": "API keys exported à {filename}",
+        "select_endpoint_test": "Veuillez sélectionner an endpoint à Tester.",
+        "endpoint_test_title": "Endpoint Tester",
+        "endpoint_test_body": "Testing {method} {endpoint}...\n\nResponse: 200 OK\nResponse Heure: 45ms\nDonnées Taille: 2.3KB\nAuthentification: valide",
+        "docs_title": "API Documentation",
+        "docs_body": "This serait Ouvrir le comprehensive API Documentation\nincluding request/response examples, parameters,\net Authentification requirements.",
+        "rate_config_title": "Rate Limite Configuration",
+        "rate_config_body": "Cela ouvrira une boîte de dialogue pour configurer\ndes limites de débit personnalisées pour des points de terminaison spécifiques."
+      }
+    },
+    "audit": {
+      "title": "Système Audit Journaux",
+      "center_title": "Système Audit Journaux",
+      "filters": "Journal Filtres",
+      "date_range": "Date Plage:",
+      "date_options": {
+        "last_24_hours": "dernier 24 Hours",
+        "last_7_days": "dernier 7 Days",
+        "last_30_days": "dernier 30 Days",
+        "custom": "Personnalisé Plage"
+      },
+      "log_level": "Journal Level:",
+      "level_options": {
+        "all": "tout Levels"
+      },
+      "category": "Catégorie:",
+      "category_options": {
+        "all": "tout Catégories",
+        "authentication": "Authentification",
+        "database": "Base de données",
+        "api": "API",
+        "user_actions": "Utilisateur Actions",
+        "system": "Système"
+      },
+      "log_entries": "Audit Journal Entrées",
+      "columns": {
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "category": "Catégorie",
+        "user": "Utilisateur",
+        "action": "Action",
+        "ip_address": "Adresse IP",
+        "details": "Détails"
+      },
+      "buttons": {
+        "apply_filters": "Appliquer Filtres",
+        "export_logs": "Exporter Journaux",
+        "clear_logs": "Effacer Journaux"
+      },
+      "messages": {
+        "filters_applied_title": "Filtres Applied",
+        "filters_applied_body": "Applying filters:\nDate Plage: {date_range}\nJournal Level: {log_level}\nCatégorie: {category}\nRecherche: {Recherche}",
+        "export_title": "Exporter Audit Journaux",
+        "logs_exported": "Audit Journaux exported à {filename}",
+        "confirm_clear_title": "Confirmer Effacer Journaux",
+        "confirm_clear_body": "Êtes-vous sûr de vouloir effacer les anciennes entrées de journal ?\nCette action ne peut pas être annulée.\n\nLes journaux de plus de 90 jours seront archivés et supprimés.",
+        "logs_cleared_title": "Journaux Cleared",
+        "logs_cleared_body": "Ancien Journal entries avoir been Archives et cleared."
+      },
+      "details": {
+        "title": "Journal Entrée Détails",
+        "body": "Journal ENTRY Détails\n================\n\nTimestamp: {timestamp}\nJournal Level: {level}\nCatégorie: {category}\nUtilisateur: {Utilisateur}\nAction: {action}\nAdresse IP: {ip}\nDétails: {Details}"
+      }
+    },
+    "diagnostics": {
+      "title": "Système Diagnostics",
+      "center_title": "Système Diagnostics",
+      "tabs": {
+        "health": "État du Système",
+        "performance": "Performance",
+        "network": "Reseau",
+        "storage": "Storage"
+      },
+      "health": {
+        "overview": "État du Système Aperçu",
+        "overall": "Overall Santé",
+        "cpu_usage": "CPU Usage",
+        "memory_usage": "Memory Usage",
+        "disk_usage": "Disk Usage",
+        "network": "Reseau",
+        "database": "Base de données",
+        "status": {
+          "excellent": "Excellent",
+          "online": "En ligne",
+          "connected": "Connecté",
+          "good": "bon",
+          "warning": "Avertissement",
+          "critical": "Critical",
+          "offline": "Hors ligne",
+          "disconnected": "Disconnected"
+        },
+        "detailed_report": "Detailed Santé Rapport",
+        "buttons": {
+          "run_diagnostic": "Run Plein Diagnostic",
+          "generate_report": "Generer Santé Rapport",
+          "view_logs": "Voir Système Journaux"
+        }
+      },
+      "performance": {
+        "metrics": "Performance Metrics",
+        "buttons": {
+          "run_test": "Run Performance Tester",
+          "optimize": "Optimize Système",
+          "live_metrics": "Voir Live Metrics"
+        }
+      },
+      "network": {
+        "title": "Reseau Diagnostics",
+        "buttons": {
+          "test_connectivity": "Tester Connectivity",
+          "speed_test": "Speed Tester",
+          "port_scanner": "Port Scanner"
+        }
+      },
+      "storage": {
+        "title": "Storage Analysis",
+        "buttons": {
+          "disk_cleanup": "Disk Nettoyage",
+          "check_health": "Check Disk Santé",
+          "optimize": "Optimize Storage"
+        }
+      },
+      "messages": {
+        "full_diagnostic_title": "Plein Diagnostic",
+        "full_diagnostic_body": "Running comprehensive Système diagnostic...\n\nThis sera check tout Système components including:\n- Hardware health\n- Software integrity\n- Reseau connectivity\n- Base de données Statut\n- Securite Configuration\n\nEstimated Heure: 3-5 minutes",
+        "save_report_title": "Enregistrer Santé Rapport",
+        "report_generated_title": "Rapport Généré",
+        "report_generated_body": "Santé Rapport saved à {filename}",
+        "system_logs_title": "Système Journaux",
+        "system_logs_body": "This serait Ouvrir le Système Journaux viewer",
+        "perf_test_title": "Performance Tester",
+        "perf_test_body": "Running Performance benchmark...\n\nTesting:\n- CPU Performance\n- Memory throughput\n- Disk I/O speed\n- Reseau latency\n- Base de données queries\n\nThis may take several minutes.",
+        "sys_optimize_title": "Système Optimization",
+        "sys_optimize_body": "This sera perform Système optimization including:\n\n- Effacer temporary Fichiers\n- Optimize Base de données\n- Rebuild cache\n- Defragment Journaux\n\nContinuer avec optimization?",
+        "optimize_complete_title": "Optimization Complete",
+        "optimize_complete_body": "Système optimization Termine avec succès!",
+        "live_metrics_title": "Live Metrics",
+        "live_metrics_body": "This serait Ouvrir le live metrics Tableau de bord",
+        "connectivity_title": "Connectivity Tester",
+        "connectivity_body": "Testing Reseau connectivity...\n\nGateway: En ligne (1ms)\nDNS: Working (8ms)\nInternet: Disponible (12ms)\nExternal APIs: Accessible\nBase de données: Connecté\n\ntout Reseau tests passed!",
+        "speed_test_title": "Speed Tester",
+        "speed_test_body": "Running Reseau speed Tester...\n\nTelecharger Speed: 967 Mbps\nTelecharger Speed: 923 Mbps\nLatency: 12ms\nJitter: 2ms\n\nReseau Performance is excellent!",
+        "port_scan_title": "Port Scan",
+        "port_scan_body": "Cela exécutera une analyse complète des ports",
+        "disk_cleanup_title": "Disk Nettoyage",
+        "disk_cleanup_body": "Disk cleanup sera Retirer:\n\n- Temporary Fichiers (12 GB)\n- Ancien Journal Fichiers (8 GB)\n- Cache Fichiers (6 GB)\n- Vide directories (247)\n\nTotal space à be freed: 26 GB\n\nContinuer avec cleanup?",
+        "cleanup_complete_title": "Nettoyage Complete",
+        "cleanup_complete_body": "Disk cleanup Termine! 26 GB freed.",
+        "disk_health_title": "Disk Santé Check",
+        "disk_health_body": "Disk Santé Rapport:\n\nNon mauvais sectors detected\nTemperature normal (35C)\nWear level low (12%)\nNon SMART errors\nFichier Système healthy\n\nDisk is in excellent condition!",
+        "storage_optimize_title": "Storage Optimization",
+        "storage_optimize_body": "Storage optimization sera:\n\n- Defragment Fichier Système\n- Rebuild Base de données indexes\n- Optimize Fichier allocation\n- Clean registry entries\n\nThis may take 15-30 minutes.\nContinuer avec optimization?",
+        "storage_complete_title": "Optimization Complete",
+        "storage_complete_body": "Storage optimization Termine avec succès!"
+      }
+    },
+    "database": {
+      "title": "Base de données Maintenance",
+      "center_title": "Base de données Maintenance Centre",
+      "tabs": {
+        "status": "Statut",
+        "backup": "Sauvegarde & Restaurer",
+        "optimization": "Optimization",
+        "monitoring": "Monitoring"
+      },
+      "status": {
+        "overview": "Base de données Statut Aperçu",
+        "connection": "Connexion",
+        "health": "Santé",
+        "size": "Taille",
+        "tables": "Tables",
+        "connections": "Connections",
+        "uptime": "Uptime",
+        "values": {
+          "connected": "Connecté",
+          "disconnected": "Disconnected"
+        },
+        "detailed_info": "Detailed Base de données Information",
+        "buttons": {
+          "refresh": "Actualiser Statut",
+          "test_connection": "Connexion Tester",
+          "export": "Exporter Statut"
+        }
+      },
+      "backup": {
+        "operations": "Sauvegarde Operations",
+        "type": "Sauvegarde Type:",
+        "types": {
+          "full": "Plein Sauvegarde",
+          "incremental": "Incremental Sauvegarde",
+          "schema": "Schema Only",
+          "data": "Données Only"
+        },
+        "compression": "Compression:",
+        "enable": "Activer",
+        "enabled": "Actif",
+        "disabled": "Desactive",
+        "history": "Sauvegarde Historique",
+        "columns": {
+          "type": "Type",
+          "size": "Taille",
+          "duration": "Durée",
+          "location": "Location"
+        },
+        "buttons": {
+          "create": "Creer Sauvegarde Maintenant",
+          "schedule": "Emploi du temps Sauvegarde",
+          "verify": "Verifier Sauvegarde",
+          "restore": "Restaurer Sélectionné",
+          "download": "Telecharger Sauvegarde",
+          "delete": "Supprimer Sauvegarde",
+          "restore_file": "Restaurer de Fichier"
+        }
+      },
+      "optimization": {
+        "title": "Base de données Optimization",
+        "vacuum": "VACUUM (reclaim storage)",
+        "analyze": "ANALYZE (Mettre a jour statistics)",
+        "reindex": "REINDEX (rebuild indexes)",
+        "cleanup": "Nettoyage (Retirer Ancien Journaux)",
+        "results": "Optimization Résultats",
+        "buttons": {
+          "run": "Run Optimization",
+          "schedule": "Emploi du temps Maintenance",
+          "integrity": "Check Integrity"
+        }
+      },
+      "monitoring": {
+        "title": "Base de données Monitoring",
+        "interval": "Monitor Interval:",
+        "intervals": {
+          "30sec": "30 seconds",
+          "1min": "1 Minute",
+          "5min": "5 minutes",
+          "15min": "15 minutes",
+          "1hour": "1 Heure"
+        },
+        "enable_alerts": "Activer Alertes",
+        "realtime": "Real-Heure Monitoring",
+        "buttons": {
+          "start": "Demarrer Monitoring",
+          "stop": "Arreter Monitoring",
+          "configure": "Configurer Alertes",
+          "live_stats": "Voir Live Statistiques"
+        }
+      },
+      "messages": {
+        "status_refreshed_title": "Statut Refreshed",
+        "status_refreshed_body": "Base de données Statut a été refreshed avec latest Information.",
+        "connection_test_title": "Connexion Tester",
+        "connection_test_body": "Base de données Connexion Tester Résultats:\n\nConnexion established avec succès\nAuthentification passed\nResponse Heure: 8ms\nBase de données accessible\ntout systems operational",
+        "export_status_title": "Exporter Base de données Statut",
+        "status_exported": "Statut Rapport exported à {filename}",
+        "backup_started_title": "Sauvegarde Started",
+        "backup_started_body": "Démarrage de la sauvegarde...\n\nType : {backup_type}\nCompression : {compression}\nDurée estimée : 5-15 minutes\n\nVous serez notifié lorsque la sauvegarde sera terminée.",
+        "backup_schedule_title": "Sauvegarde Scheduling",
+        "backup_schedule_body": "Cela ouvrira l'interface de planification des sauvegardes\noù vous pouvez configurer :\n\n- Fréquence des sauvegardes\n- Horaires des sauvegardes\n- Politiques de rétention\n- Paramètres de notification",
+        "select_backup_verify": "Veuillez sélectionner a Sauvegarde à Verifier.",
+        "backup_verify_title": "Sauvegarde Verification",
+        "backup_verify_body": "Verifying Sauvegarde integrity...\n\nFichier integrity check passed\nChecksum validation successful\nDonnées consistency verified\nSauvegarde is valide et restorable",
+        "select_backup_restore": "Veuillez sélectionner a Sauvegarde à Restaurer.",
+        "confirm_restore_title": "Confirmer Restaurer",
+        "confirm_restore_body": "Avertissement : Cela restaurera la base de données à :\n{backup_date}\n\nTOUTES LES DONNÉES ACTUELLES SERONT REMPLACÉES !\n\nÊtes-vous sûr de vouloir continuer ?",
+        "restore_started_title": "Restaurer Started",
+        "restore_started_body": "Base de données Restaurer a été initiated.",
+        "select_backup_download": "Veuillez sélectionner a Sauvegarde à Telecharger.",
+        "save_backup_title": "Enregistrer Sauvegarde Fichier",
+        "download_complete_title": "Telecharger Complete",
+        "download_complete_body": "Sauvegarde downloaded à {filename}",
+        "select_backup_delete": "Veuillez sélectionner a Sauvegarde pour supprimer.",
+        "confirm_delete_title": "Confirmer Supprimer",
+        "confirm_delete_body": "Êtes-vous sûr de vouloir supprimer la sauvegarde du :\n{backup_date}\n\nCette action ne peut pas être annulée.",
+        "backup_deleted_title": "Sauvegarde Deleted",
+        "backup_deleted_body": "Sélectionné Sauvegarde a été deleted.",
+        "select_backup_file": "Selectionner Sauvegarde Fichier",
+        "confirm_restore_file": "Avertissement : Cela restaurera la base de données depuis :\n{filename}\n\nTOUTES LES DONNÉES ACTUELLES SERONT REMPLACÉES !\n\nÊtes-vous sûr de vouloir continuer ?",
+        "restore_from_file": "Restoring Base de données de {filename}",
+        "no_operations_title": "Non Operations",
+        "no_operations_body": "Veuillez sélectionner at least one optimization operation.",
+        "confirm_optimize_title": "Confirmer Optimization",
+        "confirm_optimize_body": "le following operations sera performed:\n{operations}\n\nThis may take 10-30 minutes et may impact Performance.\nContinuer avec optimization?",
+        "optimize_started_title": "Optimization Started",
+        "optimize_started_body": "Base de données optimization started.\n\nOperations: {operations}\nYou sera notified when complete.",
+        "maintenance_schedule_title": "Maintenance Scheduling",
+        "maintenance_schedule_body": "Cela ouvrira l'interface de planification de maintenance\noù vous pouvez configurer :\n\n- Fenêtres de maintenance\n- Calendriers d'optimisation\n- Paramètres de notification\n- Tâches automatisées",
+        "integrity_title": "Integrity Check",
+        "integrity_body": "Running Base de données integrity check...\n\nTableau structure validation passed\nIndex consistency verified\nForeign key constraints valide\nDonnées type consistency confirmed\nNon corruption detected\n\nBase de données integrity is excellent!",
+        "monitoring_started_title": "Monitoring Started",
+        "monitoring_started_body": "Base de données monitoring a été started.\n\nMonitor Interval: {interval}\nAlertes: {Alertes}\n\nReal-Heure metrics sera collected et displayed.",
+        "stop_monitoring_title": "Arreter Monitoring",
+        "stop_monitoring_body": "sont you sure you want à Arreter Base de données monitoring?\n\nReal-Heure metrics collection sera paused.",
+        "monitoring_stopped_title": "Monitoring Stopped",
+        "monitoring_stopped_body": "Base de données monitoring a été stopped.",
+        "alert_config_title": "Alerte Configuration",
+        "alert_config_body": "Cela ouvrira l'interface de Configuration des alertes\noù vous pouvez définir des seuils pour :\n\n- Alertes de temps de réponse\n- Avertissements de limite de connexion\n- Alertes d'espace de stockage\n- Notifications de taux d'erreur\n- Alertes de dégradation des performances",
+        "live_stats_title": "Live Statistics",
+        "live_stats_body": "This serait Ouvrir a real-Heure Tableau de bord showing:\n\n- Live la requête Performance\n- Connexion activity\n- Resource utilization\n- Système health metrics\n- Performance graphs"
+      }
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "search": "Search:",
+    "date": "Date",
+    "status": "Status",
+    "user": "User"
+  }
+}

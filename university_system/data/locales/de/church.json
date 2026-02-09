@@ -1,0 +1,367 @@
+{
+  "church": {
+    "window_title": "Grace Community Church Management System",
+    "church_name": "Grace Community Church",
+    "footer_text": "Grace Community Church Management System | \"Serving with Love\" | Contact: info@gracechurch.org",
+    "errors": {
+      "access_denied": "Access Denied",
+      "login_required": "You must be logged in to access the Church Management System.\n\nPlease log in through the main application.",
+      "name_required": "Name is required!",
+      "event_required": "Event name and date are required!",
+      "title_required": "Title is required!",
+      "prayer_required": "Please enter your prayer request!",
+      "fill_all_fields": "Please fill in all fields!",
+      "valid_amount": "Please enter a valid amount!",
+      "valid_numbers": "Please enter valid numbers!",
+      "select_member": "Please select a member to edit!",
+      "select_member_delete": "Please select a member to delete!",
+      "select_prayer": "Please select a prayer request!"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "members": "Members",
+      "donations": "Donations",
+      "events": "Events",
+      "prayer_requests": "Prayer Requests",
+      "sermons": "Sermons",
+      "announcements": "Announcements",
+      "volunteers": "Volunteers",
+      "attendance": "Attendance",
+      "small_groups": "Small Groups",
+      "expenses": "Expenses",
+      "reports": "Reports"
+    },
+    "dashboard": {
+      "title": "Church Dashboard",
+      "total_members": "Total Members",
+      "total_donations": "Total Donations",
+      "upcoming_events": "Upcoming Events",
+      "prayer_requests": "Prayer Requests",
+      "active_volunteers": "Active Volunteers",
+      "small_groups": "Small Groups",
+      "verse_of_the_day": "Verse of the Day"
+    },
+    "members": {
+      "title": "Member Management",
+      "add_member": "Add Member",
+      "edit_member": "Edit Member",
+      "delete_member": "Delete Member",
+      "add_new_member": "Add New Member",
+      "edit_member_title": "Edit Member",
+      "columns": {
+        "id": "ID",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "join_date": "Join Date",
+        "status": "Status"
+      },
+      "fields": {
+        "name": "Name:",
+        "email": "Email:",
+        "phone": "Phone:",
+        "address": "Address:",
+        "status": "Status:"
+      },
+      "status_options": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "visitor": "Visitor"
+      },
+      "success_added": "Member '{name}' added successfully!",
+      "success_updated": "Member updated successfully!",
+      "success_deleted": "Member deleted successfully!",
+      "confirm_delete": "Are you sure you want to delete '{name}'?"
+    },
+    "donations": {
+      "title": "Donation Management",
+      "total_donations": "Total Donations: {amount}",
+      "record_donation": "Record Donation",
+      "record_title": "Record Donation",
+      "continue_payment": "Continue to Payment",
+      "columns": {
+        "id": "ID",
+        "donor": "Donor",
+        "amount": "Amount",
+        "date": "Date",
+        "type": "Type",
+        "payment_method": "Payment Method"
+      },
+      "fields": {
+        "donor": "Donor:",
+        "email": "Email:",
+        "amount": "Amount (£):",
+        "type": "Type:",
+        "notes": "Notes:"
+      },
+      "types": {
+        "tithe": "Tithe",
+        "offering": "Offering",
+        "building_fund": "Building Fund",
+        "missions": "Missions",
+        "other": "Other"
+      },
+      "success_recorded": "Donation of {amount} recorded successfully!\n\nReceipt: {receipt}",
+      "new_balance": "\n\nNew Student Account Balance: {balance}"
+    },
+    "events": {
+      "title": "Church Events",
+      "add_event": "Add Event",
+      "add_new_event": "Add New Event",
+      "columns": {
+        "id": "ID",
+        "event_name": "Event Name",
+        "date": "Date",
+        "time": "Time",
+        "location": "Location",
+        "description": "Description"
+      },
+      "fields": {
+        "event_name": "Event Name:",
+        "date": "Date (YYYY-MM-DD):",
+        "time": "Time:",
+        "location": "Location:",
+        "description": "Description:"
+      },
+      "success_added": "Event added successfully!"
+    },
+    "prayer_requests": {
+      "title": "Prayer Requests",
+      "add_request": "Add Prayer Request",
+      "mark_answered": "Mark Answered",
+      "add_title": "Add Prayer Request",
+      "columns": {
+        "id": "ID",
+        "requested_by": "Requested By",
+        "request": "Request",
+        "date": "Date",
+        "status": "Status"
+      },
+      "fields": {
+        "requested_by": "Requested By:",
+        "prayer_request": "Prayer Request:"
+      },
+      "submit_request": "Submit Request",
+      "success_added": "Prayer request added. We will be praying!",
+      "success_answered": "Prayer marked as answered!",
+      "praise_god": "Praise God!"
+    },
+    "sermons": {
+      "title": "Sermon Archive",
+      "add_sermon": "Add Sermon",
+      "add_title": "Add Sermon",
+      "columns": {
+        "id": "ID",
+        "title": "Title",
+        "speaker": "Speaker",
+        "date": "Date",
+        "scripture": "Scripture",
+        "series": "Series"
+      },
+      "fields": {
+        "title": "Title:",
+        "speaker": "Speaker:",
+        "date": "Date (YYYY-MM-DD):",
+        "scripture": "Scripture:",
+        "series": "Series:"
+      },
+      "success_added": "Sermon added to archive!"
+    },
+    "announcements": {
+      "title": "Church Announcements",
+      "add_announcement": "Add Announcement",
+      "add_title": "Add Announcement",
+      "post_announcement": "Post Announcement",
+      "fields": {
+        "title": "Title:",
+        "content": "Content:"
+      },
+      "posted_by": "Posted: {date} by {author}",
+      "success_posted": "Announcement posted!"
+    },
+    "volunteers": {
+      "title": "Volunteer Management",
+      "add_volunteer": "Add Volunteer",
+      "add_title": "Add Volunteer",
+      "columns": {
+        "id": "ID",
+        "name": "Name",
+        "ministry": "Ministry",
+        "role": "Role",
+        "phone": "Phone",
+        "email": "Email",
+        "availability": "Availability"
+      },
+      "fields": {
+        "name": "Name:",
+        "ministry": "Ministry:",
+        "role": "Role:",
+        "phone": "Phone:",
+        "email": "Email:",
+        "availability": "Availability:"
+      },
+      "ministries": {
+        "worship": "Worship",
+        "children": "Children's",
+        "youth": "Youth",
+        "hospitality": "Hospitality",
+        "tech": "Tech",
+        "missions": "Missions",
+        "other": "Other"
+      },
+      "availability_options": {
+        "sundays": "Sundays",
+        "weekdays": "Weekdays",
+        "weekends": "Weekends",
+        "flexible": "Flexible"
+      },
+      "success_added": "Volunteer added! Thank you for serving!"
+    },
+    "attendance": {
+      "title": "Attendance Tracking",
+      "description": "Record weekly attendance for services and events.",
+      "record_attendance": "Record Attendance",
+      "record_title": "Record Attendance",
+      "columns": {
+        "date": "Date",
+        "service": "Service",
+        "adults": "Adults",
+        "children": "Children",
+        "total": "Total",
+        "notes": "Notes"
+      },
+      "fields": {
+        "service": "Service:",
+        "adults": "Adults:",
+        "children": "Children:",
+        "notes": "Notes:"
+      },
+      "service_types": {
+        "sunday_morning": "Sunday Morning",
+        "sunday_evening": "Sunday Evening",
+        "wednesday": "Wednesday",
+        "special_event": "Special Event"
+      },
+      "success_recorded": "Attendance recorded!"
+    },
+    "small_groups": {
+      "title": "Small Groups",
+      "add_group": "Add Small Group",
+      "add_title": "Add Small Group",
+      "columns": {
+        "id": "ID",
+        "group_name": "Group Name",
+        "leader": "Leader",
+        "meeting_day": "Meeting Day",
+        "location": "Location",
+        "members": "Members"
+      },
+      "fields": {
+        "group_name": "Group Name:",
+        "leader": "Leader:",
+        "meeting_day": "Meeting Day:",
+        "location": "Location:",
+        "member_count": "Member Count:"
+      },
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "success_added": "Small group added!"
+    },
+    "expenses": {
+      "title": "Church Expenses",
+      "total_expenses": "Total Expenses: {amount}",
+      "add_expense": "Add Expense",
+      "add_title": "Add Expense",
+      "columns": {
+        "id": "ID",
+        "description": "Description",
+        "amount": "Amount",
+        "category": "Category",
+        "date": "Date",
+        "approved_by": "Approved By"
+      },
+      "fields": {
+        "description": "Description:",
+        "amount": "Amount (£):",
+        "category": "Category:",
+        "approved_by": "Approved By:"
+      },
+      "categories": {
+        "utilities": "Utilities",
+        "supplies": "Supplies",
+        "salaries": "Salaries",
+        "maintenance": "Maintenance",
+        "missions": "Missions",
+        "events": "Events",
+        "other": "Other"
+      },
+      "success_recorded": "Expense recorded!"
+    },
+    "reports": {
+      "title": "Kirchenberichte",
+      "window_title": "Kirchenbericht - Vollständige Ansicht",
+      "financial_summary": "Finanzübersicht",
+      "membership_summary": "Mitgliederübersicht",
+      "ministry_summary": "Dienstübersicht",
+      "export_report": "Bericht Exportieren",
+      "view_full_report": "Vollständigen Bericht Anzeigen",
+      "view_full_description": "Klicken Sie auf die Schaltfläche unten, um den vollständigen Bericht in einem neuen Fenster mit Optionen zum Speichern oder Senden an den Administrator anzuzeigen.",
+      "save_as_txt": "Als TXT Speichern",
+      "send_to_admin": "An Admin Senden",
+      "admin_email_title": "Admin E-Mail",
+      "admin_email_prompt": "Administrator-E-Mail-Adresse eingeben:",
+      "send_success": "Bericht erfolgreich gesendet an {email}",
+      "send_failed": "Bericht konnte nicht gesendet werden. Überprüfen Sie die E-Mail-Konfiguration.",
+      "total_donations": "Gesamtspenden: {amount}",
+      "total_expenses": "Gesamtausgaben: {amount}",
+      "net_balance": "Nettobilanz: {amount}",
+      "donation_breakdown": "Spendenaufschlüsselung nach Typ:",
+      "total_members": "Gesamtmitglieder: {count}",
+      "active": "Aktiv: {count}",
+      "inactive": "Inaktiv: {count}",
+      "visitors": "Besucher: {count}",
+      "active_volunteers": "Aktive Freiwillige: {count}",
+      "small_groups": "Kleingruppen: {count}",
+      "prayer_requests_count": "Gebetsanliegen: {total} ({answered} erhört)",
+      "sermons_archived": "Archivierte Predigten: {count}",
+      "export_success": "Bericht exportiert nach:\n{filename}",
+      "report_header": "GRACE COMMUNITY CHURCH - BERICHT",
+      "generated": "Erstellt: {datetime}",
+      "generated_by": "Erstellt von: {user}"
+    },
+    "payment": {
+      "title": "Zahlungsoptionen",
+      "select_method": "Zahlungsmethode Wählen",
+      "amount_due": "Fälliger Betrag:",
+      "cash": "Bargeld",
+      "card": "Kredit-/Debitkarte",
+      "student_account": "Studentenkonto",
+      "balance": "Kontostand: {amount}",
+      "insufficient": "Unzureichend",
+      "no_account": "Kein Konto",
+      "cancel": "Abbrechen",
+      "pay_now": "Jetzt Bezahlen",
+      "payment_failed": "Zahlung Fehlgeschlagen"
+    },
+    "common": {
+      "save": "Save",
+      "save_changes": "Save Changes",
+      "cancel": "Cancel",
+      "close": "Close",
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "confirm": "Confirm",
+      "confirm_delete": "Confirm Delete",
+      "welcome": "Welcome, {name}",
+      "not_provided": "Not provided"
+    }
+  }
+}

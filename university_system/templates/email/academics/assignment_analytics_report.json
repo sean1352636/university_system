@@ -1,0 +1,64 @@
+{
+  "template_id": "assignment_analytics_report",
+  "category": "academics",
+  "name": "Assignment Analytics Report",
+  "description": "Email template for sending assignment system analytics reports to administrators",
+  "version": "1.0.0",
+  "subject": "[Assignment System] {report_title}",
+  "body_text": "=== {report_title} ===\nGenerated: {generated_at}\n\n{column_headers}\n{separator}\n{report_rows}\n\n{row_count_info}\n\nTotal Records: {total_records}",
+  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Analytics Report</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #fd7e14; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">📊 {report_title}</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p><strong>Generated:</strong> {generated_at}</p><div style=\"overflow-x: auto; margin: 20px 0;\"><table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\"><thead style=\"background-color: #f8f9fa;\"><tr>{html_headers}</tr></thead><tbody>{html_rows}</tbody></table></div><div style=\"background-color: #fff3cd; padding: 10px; border-left: 3px solid #ffc107; margin: 15px 0;\">{row_count_info}</div><p style=\"font-weight: bold; margin-top: 20px;\">Total Records: {total_records}</p></div></body></html>",
+  "variables": {
+    "report_title": {
+      "type": "string",
+      "required": true,
+      "description": "Title of the analytics report"
+    },
+    "generated_at": {
+      "type": "string",
+      "required": true,
+      "description": "Timestamp when report was generated"
+    },
+    "column_headers": {
+      "type": "string",
+      "required": true,
+      "description": "Column headers (pipe-separated for text)"
+    },
+    "html_headers": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "HTML table headers"
+    },
+    "separator": {
+      "type": "string",
+      "required": false,
+      "default": "----------------------------------------",
+      "description": "Separator line for text format"
+    },
+    "report_rows": {
+      "type": "string",
+      "required": true,
+      "description": "Report data rows (text format)"
+    },
+    "html_rows": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "HTML table rows"
+    },
+    "row_count_info": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "Information about row count limits"
+    },
+    "total_records": {
+      "type": "string",
+      "required": true,
+      "description": "Total number of records"
+    }
+  },
+  "tags": ["academics", "assignment", "analytics", "report", "admin"],
+  "created_at": "2026-01-29T00:00:00Z",
+  "updated_at": "2026-01-29T00:00:00Z"
+}

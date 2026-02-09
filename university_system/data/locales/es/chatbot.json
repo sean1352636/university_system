@@ -1,0 +1,116 @@
+{
+  "chatbot": {
+    "window_title": "Chatbot Universitario - Sistema de Apoyo Estudiantil",
+    "welcome": "Bienvenido al Chatbot Universitario",
+    "system": "Sistema",
+    "university_chatbot": "Chatbot Universitario",
+
+    "voice_btn": "Voz",
+    "settings_btn": "Configuraciones",
+    "exit_to_main": "Salir al Principal",
+    "send_btn": "Enviar",
+    "back_to_chat": "Volver al Chat",
+    "send_message_btn": "Enviar Mensaje",
+
+    "quick_actions": "Acciones Rápidas",
+    "my_courses": "Mis Cursos",
+    "my_grades": "Mis Calificaciones",
+    "search_courses": "Buscar Cursos",
+    "check_financial_aid": "Verificar Ayuda Financiera",
+    "view_schedule": "Ver Horario",
+    "get_help": "Obtener Ayuda",
+    "show_available_courses": "Muéstrame los cursos disponibles para inscripción",
+    "need_help_msg": "Necesito ayuda con el sistema",
+
+    "system_administration": "Administración del Sistema",
+    "admin_tab_system_status": "Estado del Sistema",
+    "admin_tab_user_management": "Gestión de Usuarios",
+    "admin_tab_analytics": "Analíticas",
+    "admin_tab_system_logs": "Registros del Sistema",
+    "system_metrics": "Métricas del Sistema",
+
+    "no_selection_title": "Sin Selección",
+    "select_user_to_view": "Por favor seleccione un usuario para ver los detalles.",
+    "select_user_to_message": "Por favor seleccione un usuario para enviar un mensaje.",
+    "message_sent_title": "Mensaje Enviado",
+    "message_sent_msg": "Mensaje administrativo enviado a {username}",
+
+    "export_complete": "Exportación Completa",
+    "analytics_exported": "Datos analíticos exportados a {filename}",
+    "export_error": "Error de Exportación",
+    "analytics_export_failed": "Error al exportar analíticas: {error}",
+    "conversations_exported": "Conversaciones exportadas a {filename}",
+    "conversations_export_failed": "Error al exportar conversaciones: {error}",
+
+    "clear_cache": "Limpiar Caché",
+    "clear_cache_confirm": "¿Está seguro de que desea limpiar el caché de analíticas?",
+    "cache_cleared": "Caché Limpiado",
+    "cache_cleared_msg": "El caché de analíticas ha sido limpiado.",
+    "clear_cache_failed": "Error al limpiar caché: {error}",
+
+    "clear_logs": "Limpiar Registros",
+    "clear_logs_confirm": "¿Está seguro de que desea limpiar todos los registros del sistema?",
+    "logs_cleared": "Registros Limpiados",
+    "logs_cleared_msg": "Todos los registros del sistema han sido limpiados.",
+    "clear_logs_failed": "Error al limpiar registros: {error}",
+
+    "backup_complete": "Respaldo Completo",
+    "backup_created": "Respaldo del sistema creado: {filename}",
+    "backup_error": "Error de Respaldo",
+    "backup_failed": "Error al crear respaldo: {error}",
+    "restore_warning": "Advertencia de Restauración",
+    "restore_warning_msg": "Restaurar sobrescribirá los datos actuales. ¿Continuar?",
+    "select_backup_file": "Seleccionar Archivo de Respaldo",
+    "restore_complete": "Restauración Completa",
+    "restore_success": "Sistema restaurado desde: {filename}",
+    "restore_error": "Error de Restauración",
+    "restore_failed": "Error al restaurar respaldo: {error}",
+
+    "clear_chat_title": "Limpiar Chat",
+    "clear_chat_confirm": "¿Está seguro de que desea limpiar el historial del chat?",
+    "chat_history_cleared": "Historial del chat limpiado.",
+
+    "user_guide_title": "Guía de Usuario",
+    "keyboard_shortcuts_title": "Atajos de Teclado",
+    "about_title": "Acerca del Chatbot Universitario",
+    "getting_help": "Obtener Ayuda",
+    "help_info": "Cómo usar el chatbot:\n\n1. Escriba su pregunta en el cuadro de mensaje\n2. Presione Enter o haga clic en Enviar\n3. Use Acciones Rápidas para tareas comunes\n4. Active el modo de voz para voz a texto\n5. Revise Configuraciones para opciones de personalización\n\nPara soporte adicional, contacte al Centro de Ayuda TI.",
+
+    "settings_preferences": "Configuraciones y Preferencias",
+    "tab_general": "General",
+    "tab_voice": "Voz",
+    "tab_about": "Acerca de",
+    "appearance": "Apariencia",
+    "chat_font_size": "Tamaño de Fuente del Chat:",
+    "notifications": "Notificaciones",
+    "enable_notification_sounds": "Habilitar sonidos de notificación",
+    "auto_scroll_chat": "Desplazamiento automático del chat",
+    "app_information": "Información de la Aplicación",
+
+    "voice_not_available": "La interfaz de voz no está disponible.\nPor favor verifique su micrófono y dependencias.",
+    "voice_test": "Prueba de Voz",
+    "test_microphone": "Probar Micrófono",
+    "click_test_mic": "Haga clic en 'Probar Micrófono' para verificar su configuración",
+    "voice_settings": "Configuración de Voz",
+    "recording_duration": "Duración de Grabación (segundos):",
+    "enable_tts": "Habilitar respuestas de texto a voz",
+    "voice_unavailable": "Voz No Disponible",
+    "voice_unavailable_msg": "La interfaz de voz no está disponible. Por favor verifique la configuración de su micrófono.",
+    "voice_error": "Error de Voz",
+    "voice_recognition_failed": "Reconocimiento de voz fallido: {error}",
+
+    "about_info": "Chatbot Universitario v2.0\n\nUn asistente inteligente para estudiantes y personal universitario.\n\nCaracterísticas:\n- Procesamiento de lenguaje natural\n- Información de cursos y calificaciones\n- Asistencia de ayuda financiera\n- Gestión de horarios\n- Soporte de interfaz de voz\n\nDesarrollado por el Departamento de TI de la Universidad.",
+
+    "status_ready": "Listo",
+    "status_connected": "Conectado",
+
+    "auth_required_title": "Autenticación Requerida",
+    "auth_required_msg": "Por favor inicie sesión a través de la GUI principal del Sistema Universitario primero.\n\nEjecute: python run.py --gui",
+
+    "access_denied_title": "Acceso Denegado",
+    "access_denied_admin": "No tiene permiso para acceder al panel de administración.",
+
+    "application_error": "Error de Aplicación",
+    "error_occurred": "Ocurrió un error: {error}"
+  }
+}

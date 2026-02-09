@@ -1,0 +1,4 @@
+{
+    "subject": "📚 Book Checkout Confirmation - University Library",
+    "body": "Dear $student_name,\n\nYour book has been successfully checked out from the University Library.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCHECKOUT DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBook Title: $book_title\nBook ID: $book_id\nCheckout Date: $checkout_date\nDue Date: $due_date\nLoan Period: $loan_period days\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIMPORTANT REMINDERS:\n• Please return the book by the due date to avoid late fees\n• Late fee: £$late_fee per day after the due date\n• You can renew the book online if no one else has reserved it\n• Report any damage immediately to avoid being charged\n\nNeed to extend your loan?\nLog into the library portal to renew online or contact us at library@university.edu\n\nThank you for using our library services!\n\nBest regards,\nUniversity Library Team"
+}

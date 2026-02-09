@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "Tableau de bord du systeme integre",
+    "tabs": {
+      "overview": "Apercu du systeme",
+      "statistics": "Statistiques rapides",
+      "activity": "Activite recente",
+      "health": "Sante du systeme"
+    },
+    "errors": {
+      "login_required": "Vous devez etre connecte pour acceder au tableau de bord.",
+      "no_analytics_permission": "Vous n'avez pas la permission d'acceder aux analyses",
+      "analytics_not_available": "L'interface graphique d'analyse etudiante n'est pas disponible",
+      "analytics_launch_failed": "Echec du lancement de l'interface d'analyse : {error}",
+      "analytics_error": "Erreur lors du lancement des analyses : {error}",
+      "chatbot_login_required": "Vous devez etre connecte pour acceder au chatbot.",
+      "no_chatbot_permission": "Vous n'avez pas la permission d'acceder au chatbot.",
+      "chatbot_init_failed": "Echec de l'initialisation du systeme de chatbot.",
+      "chatbot_open_failed": "Echec de l'ouverture du chatbot universitaire : {error}"
+    },
+    "messages": {
+      "opened_successfully": "Tableau de bord integre ouvert avec succes",
+      "chatbot_opened": "Interface graphique du chatbot universitaire ouverte avec succes",
+      "chatbot_launched": "Interface graphique du chatbot universitaire lancee avec succes",
+      "analytics_not_available_cli": "Interface graphique d'analyse non disponible, utilisation de la version CLI"
+    },
+    "overview": {
+      "welcome": "Bon retour, {username} !",
+      "quick_access": "Acces rapide",
+      "system_status": "Statut du systeme",
+      "current_time": "Heure actuelle : {time}",
+      "user_role": "Role de l'utilisateur : {role}",
+      "database_connected": "Statut de la base de donnees : Connectee",
+      "buttons": {
+        "student_records": "Dossiers etudiants",
+        "grade_tracking": "Suivi des notes",
+        "attendance": "Presence",
+        "course_management": "Gestion des cours",
+        "finance_management": "Gestion financiere",
+        "reports": "Rapports"
+      }
+    },
+    "statistics": {
+      "title": "Statistiques du systeme",
+      "database_stats": "Statistiques de la base de donnees :",
+      "total_students": "Total des etudiants :",
+      "active_courses": "Cours actifs :",
+      "pending_assignments": "Devoirs en attente :",
+      "system_uptime": "Temps de fonctionnement du systeme :",
+      "recent_logins": "Connexions recentes :",
+      "performance_metrics": "Metriques de performance :",
+      "db_response_time": "Temps de reponse de la base de donnees :",
+      "system_load": "Charge du systeme :",
+      "memory_usage": "Utilisation de la memoire :",
+      "active_sessions": "Sessions actives :",
+      "normal": "Normal",
+      "optimal": "Optimal",
+      "load_error": "Impossible de charger les statistiques : {error}"
+    },
+    "activity": {
+      "title": "Activite recente du systeme",
+      "log_header": "Journal d'activite recente :",
+      "user_logged_in": "L'utilisateur {username} s'est connecte",
+      "dashboard_accessed": "Tableau de bord accede",
+      "system_initialized": "Systeme initialise",
+      "previous_sessions": "Sessions precedentes :",
+      "last_login": "Derniere connexion :",
+      "today": "Aujourd'hui",
+      "recent_actions": "Actions recentes :",
+      "actions_list": "Voir le tableau de bord, Acceder aux dossiers etudiants",
+      "system_health": "Sante du systeme :",
+      "all_operational": "Tous les systemes sont operationnels"
+    },
+    "health": {
+      "title": "Surveillance de la sante du systeme",
+      "not_available": "Interface graphique de surveillance de la sante non disponible"
+    },
+    "chatbot": {
+      "title": "Chatbot universitaire"
+    },
+    "log": {
+      "gui_prefix": "GUI",
+      "gui_activity": "Activite GUI",
+      "logging_error": "Erreur du systeme de journalisation"
+    }
+  }
+}

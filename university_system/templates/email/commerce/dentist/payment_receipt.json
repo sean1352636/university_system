@@ -1,0 +1,12 @@
+{
+  "subject": "Dental Payment Receipt",
+  "body": "Dear $patient_name,\n\nThank you for your payment to the University Dental Clinic.\n\nPAYMENT RECEIPT\n================================================================================\nReceipt Number: $receipt_number\nDate: $payment_date\nTreatment: $treatment_type\nAmount: $amount_paid\nPayment Method: $payment_method\n================================================================================\n\nThank you for choosing our dental services.\n\nBest regards,\nUniversity Dental Clinic",
+  "variables": {
+    "patient_name": "Patient's full name",
+    "receipt_number": "Receipt/transaction number",
+    "payment_date": "Date of payment",
+    "treatment_type": "Type of dental treatment",
+    "amount_paid": "Amount paid",
+    "payment_method": "Payment method used"
+  }
+}

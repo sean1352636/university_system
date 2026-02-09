@@ -1,0 +1,93 @@
+{
+  "assignment": {
+    "title": "نظام إدارة الواجبات",
+    "window_title": "إدارة الواجبات",
+    "warnings": {
+      "manager_not_initialized": "تحذير: مدير {manager_name} غير مهيأ",
+      "database_validation_failed": "فشل التحقق من قاعدة البيانات: {error}"
+    },
+    "errors": {
+      "get_user_role": "خطأ في الحصول على دور المستخدم: {error}",
+      "launch_feature": "فشل في تشغيل {feature_name}: {error}",
+      "add_permissions": "خطأ في إضافة الصلاحيات: {error}",
+      "init_directories": "خطأ في تهيئة المجلدات: {error}",
+      "update_tables": "خطأ في تحديث الجداول: {error}",
+      "get_student_modules": "خطأ في الحصول على وحدات الطالب: {error}",
+      "calculate_file_hash": "خطأ في حساب تجزئة الملف: {error}",
+      "validate_file": "خطأ في التحقق من صحة الملف: {error}",
+      "log_action": "خطأ في تسجيل الإجراء: {error}",
+      "send_notification": "خطأ في إرسال الإشعار: {error}",
+      "check_email_preferences": "خطأ في التحقق من تفضيلات البريد الإلكتروني: {error}",
+      "send_email": "خطأ في إرسال البريد الإلكتروني: {error}"
+    },
+    "messages": {
+      "permissions_configured": "تم تكوين الصلاحيات بنجاح"
+    },
+    "validation": {
+      "file_not_exists": "الملف غير موجود",
+      "file_size_exceeds": "حجم الملف ({file_size} ميجابايت) يتجاوز الحد الأقصى ({max_size} ميجابايت)",
+      "file_type_not_allowed": "نوع الملف {file_ext} غير مسموح به. الأنواع المسموح بها: {allowed_types}",
+      "dangerous_pattern": "تم اكتشاف نمط خطير: {pattern}",
+      "file_valid": "الملف صالح"
+    },
+    "tabs": {
+      "dashboard": "لوحة التحكم",
+      "assignments": "الواجبات",
+      "submissions": "التسليمات",
+      "grading": "التقييم",
+      "templates": "القوالب",
+      "groups": "المجموعات",
+      "analytics": "التحليلات",
+      "settings": "الإعدادات"
+    },
+    "labels": {
+      "assignment_title": "عنوان الواجب",
+      "description": "الوصف",
+      "due_date": "تاريخ الاستحقاق",
+      "module": "الوحدة",
+      "status": "الحالة",
+      "grade": "الدرجة",
+      "feedback": "التعليقات",
+      "submitted_at": "تاريخ التسليم",
+      "student": "الطالب",
+      "instructor": "المدرس",
+      "max_score": "الدرجة القصوى",
+      "weight": "الوزن (%)",
+      "file": "الملف",
+      "rubric": "معايير التقييم"
+    },
+    "buttons": {
+      "create": "إنشاء واجب",
+      "submit": "تسليم",
+      "grade": "تقييم",
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "download": "تحميل",
+      "upload": "رفع",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "request_extension": "طلب تمديد",
+      "approve": "موافقة",
+      "reject": "رفض"
+    },
+    "status": {
+      "draft": "مسودة",
+      "published": "منشور",
+      "closed": "مغلق",
+      "submitted": "مُسلَّم",
+      "graded": "مُقيَّم",
+      "late": "متأخر",
+      "pending": "قيد الانتظار",
+      "approved": "موافق عليه",
+      "rejected": "مرفوض"
+    },
+    "notifications": {
+      "new_assignment": "تم نشر واجب جديد: {title}",
+      "submission_received": "تم استلام تسليم لـ {title}",
+      "grade_posted": "تم نشر الدرجة لـ {title}",
+      "extension_request": "تم طلب تمديد لـ {title}",
+      "reminder": "تذكير: موعد تسليم {title} قريب"
+    }
+  }
+}

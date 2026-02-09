@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "Enhanced Helpdesk System",
+    "auth": {
+      "required_title": "Authentication Required",
+      "not_available": "Authentication system not available. Helpdesk GUI cannot start.",
+      "login_required": "Please log in through the main University System GUI.\n\nRun: python run.py --gui\n\nHelpdesk can only be accessed after logging in through the main system."
+    },
+    "menu": {
+      "file": "File",
+      "new_ticket": "New Ticket",
+      "export_data": "Export Data",
+      "import_data": "Import Data",
+      "tickets": "Tickets",
+      "my_tickets": "My Tickets",
+      "all_tickets": "All Tickets",
+      "search_tickets": "Search Tickets",
+      "knowledge_base": "Knowledge Base",
+      "browse_articles": "Browse Articles",
+      "create_article": "Create Article",
+      "reports": "Reports",
+      "analytics_dashboard": "Analytics Dashboard",
+      "generate_reports": "Generate Reports",
+      "admin": "Admin",
+      "system_management": "System Management",
+      "user_management": "User Management",
+      "settings": "Settings",
+      "help": "Help",
+      "user_guide": "User Guide",
+      "about": "About"
+    },
+    "dashboard": {
+      "title": "Helpdesk Dashboard",
+      "welcome": "Welcome, {username}!",
+      "stats": {
+        "open_tickets": "Open Tickets",
+        "in_progress": "In Progress",
+        "pending": "Pending",
+        "resolved_today": "Resolved Today",
+        "avg_response_time": "Avg. Response Time",
+        "satisfaction_rate": "Satisfaction Rate"
+      },
+      "recent_tickets": "Recent Tickets",
+      "quick_actions": "Quick Actions",
+      "my_assigned": "My Assigned Tickets",
+      "unassigned": "Unassigned Tickets"
+    },
+    "tickets": {
+      "title": "Support Tickets",
+      "create": "Create Ticket",
+      "view": "View Ticket",
+      "edit": "Edit Ticket",
+      "delete": "Delete Ticket",
+      "assign": "Assign Ticket",
+      "escalate": "Escalate Ticket",
+      "close": "Close Ticket",
+      "reopen": "Reopen Ticket",
+      "fields": {
+        "ticket_id": "Ticket ID",
+        "subject": "Subject",
+        "description": "Description",
+        "category": "Category",
+        "subcategory": "Subcategory",
+        "priority": "Priority",
+        "impact": "Impact",
+        "urgency": "Urgency",
+        "status": "Status",
+        "source": "Source",
+        "department": "Department",
+        "assigned_to": "Assigned To",
+        "created_by": "Created By",
+        "created_at": "Created At",
+        "updated_at": "Updated At",
+        "due_date": "Due Date",
+        "resolution": "Resolution",
+        "tags": "Tags"
+      },
+      "status": {
+        "open": "Open",
+        "in_progress": "In Progress",
+        "pending": "Pending",
+        "on_hold": "On Hold",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      },
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent",
+        "critical": "Critical"
+      },
+      "categories": {
+        "technical": "Technical",
+        "account": "Account",
+        "billing": "Billing",
+        "general": "General",
+        "feedback": "Feedback",
+        "bug": "Bug Report",
+        "feature": "Feature Request"
+      },
+      "actions": {
+        "add_reply": "Add Reply",
+        "add_note": "Add Internal Note",
+        "attach_file": "Attach File",
+        "link_ticket": "Link Ticket",
+        "merge_tickets": "Merge Tickets",
+        "split_ticket": "Split Ticket",
+        "change_status": "Change Status",
+        "change_priority": "Change Priority",
+        "bulk_update": "Bulk Update"
+      },
+      "messages": {
+        "created": "Ticket created successfully",
+        "updated": "Ticket updated successfully",
+        "assigned": "Ticket assigned successfully",
+        "escalated": "Ticket escalated successfully",
+        "closed": "Ticket closed successfully",
+        "reopened": "Ticket reopened successfully",
+        "reply_added": "Reply added successfully",
+        "no_tickets": "No tickets found",
+        "select_ticket": "Please select a ticket"
+      }
+    },
+    "knowledge_base": {
+      "title": "Knowledge Base",
+      "articles": "Articles",
+      "create_article": "Create Article",
+      "edit_article": "Edit Article",
+      "search_placeholder": "Search knowledge base...",
+      "categories": "Categories",
+      "popular": "Popular Articles",
+      "recent": "Recent Articles",
+      "fields": {
+        "title": "Title",
+        "content": "Content",
+        "category": "Category",
+        "tags": "Tags",
+        "author": "Author",
+        "views": "Views",
+        "helpful": "Helpful",
+        "status": "Status"
+      },
+      "messages": {
+        "created": "Article created successfully",
+        "updated": "Article updated successfully",
+        "deleted": "Article deleted successfully",
+        "no_articles": "No articles found"
+      }
+    },
+    "search": {
+      "title": "Search Tickets",
+      "placeholder": "Enter search terms...",
+      "filters": "Filters",
+      "advanced": "Advanced Search",
+      "saved_searches": "Saved Searches",
+      "save_search": "Save Search",
+      "clear": "Clear",
+      "results": "Search Results",
+      "no_results": "No results found"
+    },
+    "reports": {
+      "title": "Reports",
+      "analytics": "Analytics Dashboard",
+      "generate": "Generate Report",
+      "export": "Export Report",
+      "types": {
+        "ticket_summary": "Ticket Summary",
+        "response_times": "Response Times",
+        "resolution_rates": "Resolution Rates",
+        "agent_performance": "Agent Performance",
+        "customer_satisfaction": "Customer Satisfaction",
+        "sla_compliance": "SLA Compliance"
+      },
+      "period": {
+        "today": "Today",
+        "this_week": "This Week",
+        "this_month": "This Month",
+        "this_quarter": "This Quarter",
+        "this_year": "This Year",
+        "custom": "Custom Range"
+      }
+    },
+    "admin": {
+      "title": "Administration",
+      "system_management": "System Management",
+      "user_management": "User Management",
+      "departments": "Departments",
+      "organizations": "Organizations",
+      "sla_policies": "SLA Policies",
+      "workflows": "Workflows",
+      "templates": "Templates",
+      "settings": "Settings",
+      "backup": "Backup Database",
+      "audit_log": "Audit Log"
+    },
+    "sla": {
+      "title": "SLA Policies",
+      "create": "Create SLA Policy",
+      "edit": "Edit SLA Policy",
+      "fields": {
+        "name": "Policy Name",
+        "description": "Description",
+        "first_response": "First Response Time",
+        "resolution": "Resolution Time",
+        "escalation": "Escalation Time",
+        "priority": "Priority",
+        "business_hours": "Business Hours Only"
+      },
+      "status": {
+        "within_sla": "Within SLA",
+        "approaching": "Approaching Breach",
+        "breached": "SLA Breached"
+      }
+    },
+    "departments": {
+      "title": "Departments",
+      "create": "Create Department",
+      "edit": "Edit Department",
+      "fields": {
+        "name": "Department Name",
+        "description": "Description",
+        "manager": "Manager",
+        "email": "Email",
+        "sla_policy": "SLA Policy"
+      }
+    },
+    "common": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "view": "View",
+      "create": "Create",
+      "update": "Update",
+      "search": "Search",
+      "filter": "Filter",
+      "refresh": "Refresh",
+      "export": "Export",
+      "import": "Import",
+      "loading": "Loading...",
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "confirm": "Confirm",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "errors": {
+      "load_failed": "Failed to load data",
+      "save_failed": "Failed to save data",
+      "delete_failed": "Failed to delete",
+      "permission_denied": "You do not have permission to perform this action",
+      "not_found": "Item not found",
+      "validation_error": "Validation Error",
+      "required_field": "This field is required",
+      "invalid_format": "Invalid format"
+    }
+  }
+}

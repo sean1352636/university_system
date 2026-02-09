@@ -1,0 +1,101 @@
+{
+  "gym": {
+    "title": "대학 피트니스 센터",
+    "window_title": "대학 헬스장 서비스",
+    "all_members": "전체 회원",
+    "available_classes": "이용 가능한 수업",
+    "book_pt_session": "PT 세션 예약",
+    "class_schedule": "수업 일정",
+    "equipment_details": "장비 세부 정보",
+    "equipment_list": "장비 목록",
+    "membership_options": "회원 옵션",
+    "membership_stats": "회원 통계",
+    "my_bookings": "내 예약",
+    "my_membership": "내 회원권",
+    "my_pt_sessions": "내 PT 세션",
+    "pt_info": "퍼스널 트레이닝 정보",
+    "report_output": "보고서 출력",
+    "tabs": {
+      "admin": "관리",
+      "classes": "수업",
+      "equipment": "장비",
+      "membership": "회원",
+      "personal_training": "퍼스널 트레이닝"
+    },
+    "btn": {
+      "book_class": "수업 예약",
+      "book_pt": "PT 세션 예약",
+      "cancel_booking": "예약 취소",
+      "cancel_membership": "회원 취소",
+      "check_in": "체크인",
+      "email_report": "보고서 전송",
+      "filter": "필터",
+      "generate_report": "보고서 생성",
+      "join": "가입",
+      "refresh_stats": "통계 새로고침",
+      "renew": "갱신",
+      "report_issue": "문제 신고",
+      "view_equipment": "장비 보기"
+    },
+    "labels": {
+      "category": "카테고리:",
+      "features": "특징:",
+      "membership_type": "회원 유형:",
+      "monthly_fee": "월회비:",
+      "report_type": "보고서 유형:",
+      "session_date": "세션 날짜:",
+      "session_time": "세션 시간:",
+      "session_type": "세션 유형:",
+      "trainer": "트레이너:"
+    },
+    "confirm": {
+      "cancel_booking": "이 예약을 취소하시겠습니까?",
+      "cancel_membership": "회원권을 취소하시겠습니까?",
+      "cancel_pt": "이 PT 세션을 취소하시겠습니까?"
+    },
+    "errors": {
+      "booking_failed": "예약 실패: {error}",
+      "email_failed": "이메일 전송 실패: {error}",
+      "fill_required": "모든 필수 항목을 입력하세요",
+      "login_required": "헬스장에 접근하려면 로그인이 필요합니다",
+      "no_active_membership": "활성 회원권이 없습니다",
+      "select_booking": "예약을 선택하세요",
+      "select_class": "수업을 선택하세요",
+      "select_equipment": "장비를 선택하세요",
+      "select_membership": "회원 유형을 선택하세요",
+      "select_session": "세션을 선택하세요"
+    },
+    "messages": {
+      "already_member": "이미 활성 회원권이 있습니다",
+      "booking_cancelled": "예약이 취소되었습니다",
+      "checked_in": "체크인 완료! 좋은 운동 되세요!",
+      "class_booked": "수업이 예약되었습니다",
+      "data_refreshed": "데이터가 새로고침되었습니다",
+      "issue_reported": "문제가 신고되었습니다",
+      "membership_cancelled": "회원권이 취소되었습니다",
+      "membership_created": "회원권이 생성되었습니다",
+      "membership_renewed": "회원권이 갱신되었습니다",
+      "no_membership": "헬스장 회원권이 없습니다",
+      "no_membership_info": "회원 정보가 없습니다",
+      "pt_booked": "퍼스널 트레이닝이 예약되었습니다",
+      "pt_cancelled": "PT 세션이 취소되었습니다",
+      "report_generated": "보고서가 생성되었습니다"
+    },
+    "prompts": {
+      "booking_date": "예약 날짜 선택:",
+      "describe_issue": "문제 설명:",
+      "emergency_contact": "비상 연락처 이름:",
+      "emergency_phone": "비상 연락처 전화:",
+      "membership_months": "개월 수:",
+      "renewal_months": "갱신 기간(개월):"
+    },
+    "reports": {
+      "title": "헬스장 보고서"
+    },
+    "warnings": {
+      "db_init": "데이터베이스 초기화 경고",
+      "email_unavailable": "이메일 서비스를 사용할 수 없습니다",
+      "generate_report_first": "먼저 보고서를 생성하세요"
+    }
+  }
+}

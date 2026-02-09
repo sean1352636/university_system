@@ -1,0 +1,985 @@
+{
+  "timestamp": "2025-09-17 08:36:07.998",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'collect_dashboard_data' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6e4878bf-de1f-4a31-8300-b3f9931938f3",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 190.79302620887756,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e79201e0-41e7-4cf6-a5c8-d840e1fea34f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 190.79302620887756,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 399, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 568, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 258, in generate_performance_dashboard\n    dashboard_data = collect_dashboard_data(cursor)\n                     ^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'collect_dashboard_data' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 08:40:41.077",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'analyze_overall_distribution' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c669c5f6-0bc6-4d21-96ce-d7edbb14852c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 60.31732773780823,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "3e5c56a2-3913-46fe-89c3-2b2c2c3c9af0",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 60.31732773780823,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 399, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 560, in performance_analysis_menu\n    grade_distribution_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 3313, in grade_distribution_analysis\n    analyze_overall_distribution(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'analyze_overall_distribution' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 09:08:43.172",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'select_student' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "5864f41e-13e2-4c55-8b15-6730467f3135",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 121.35421562194824,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "c3796853-7f04-4ebb-8081-4cb798349cc0",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 121.35421562194824,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 394, in display_enhanced_grade_menu\n    learning_outcome_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 454, in learning_outcome_menu\n    record_outcome_achievement()\n  File \"/home/seancatchpole989/refactored/students/grade_learning_outcomes.py\", line 288, in record_outcome_achievement\n    student_id = select_student(cursor)\n                 ^^^^^^^^^^^^^^\nNameError: name 'select_student' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 09:10:12.545",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'select_student' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "078ef030-ad1f-4058-b85a-5efa614b43fa",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 41.38240051269531,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "8f0f93e6-8654-4fd1-abe6-41d1b4c923bd",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 41.38240051269531,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 394, in display_enhanced_grade_menu\n    learning_outcome_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 454, in learning_outcome_menu\n    record_outcome_achievement()\n  File \"/home/seancatchpole989/refactored/students/grade_learning_outcomes.py\", line 287, in record_outcome_achievement\n    student_id = select_student(cursor)\n                 ^^^^^^^^^^^^^^\nNameError: name 'select_student' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 10:46:14.579",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'add_competency_levels' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "5bcf7952-78e2-4d81-ac02-57dc53a70fef",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 103.41608572006226,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2aaf6ea3-4b56-4fad-b8d2-3c6b4db518a8",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 103.41608572006226,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 396, in display_enhanced_grade_menu\n    competency_assessment_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 480, in competency_assessment_menu\n    manage_competencies()\n  File \"/home/seancatchpole989/refactored/students/grade_misc.py\", line 2050, in manage_competencies\n    add_competency_levels(cursor, competency_id, name)\n    ^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'add_competency_levels' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 10:56:43.403",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'build_gpa_prediction_model' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "4d48f0a0-8ebe-4ebd-8d0f-81fcec49cfa9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 315.0417890548706,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d84943fb-916d-4dc8-ba14-fa1503217fa4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 315.0417890548706,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 517, in predictive_analytics_menu\n    performance_prediction_models()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 675, in performance_prediction_models\n    build_gpa_prediction_model(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'build_gpa_prediction_model' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 11:36:35.016",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'identify_high_dropout_risk' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "a3fee7ee-24e7-4c11-b84f-df4a9bd4571f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 93.68459606170654,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "7123adfd-b85d-4831-918f-308b4bcb47d3",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 93.68459606170654,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 525, in predictive_analytics_menu\n    dropout_risk_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_curve_analysis.py\", line 472, in dropout_risk_analysis\n    identify_high_dropout_risk(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'identify_high_dropout_risk' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 11:48:29.454",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'forecast_overall_performance' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "704f137f-e1d2-4bc8-9982-11bd9e97bfad",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 115.05023264884949,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "28c380a8-2e29-4073-9c89-9e65c4dfb7fa",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 115.05023264884949,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 529, in predictive_analytics_menu\n    trend_forecasting()\n  File \"/home/seancatchpole989/refactored/students/grade_misc.py\", line 4691, in trend_forecasting\n    forecast_overall_performance(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'forecast_overall_performance' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 13:25:44.037",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: 'overview'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "ea2ef44a-ad1c-4e0c-98e9-f83f20478a31",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 62.5709502696991,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f1c1c4b7-1043-48a1-ba12-7f55cfa5be0c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 62.5709502696991,
+    "error_type": "KeyError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 569, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 498, in generate_performance_dashboard\n    display_performance_dashboard(dashboard_data)\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 518, in display_performance_dashboard\n    overview = dashboard_data['overview']\n               ~~~~~~~~~~~~~~^^^^^^^^^^^^\nKeyError: 'overview'\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 13:29:27.209",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'generate_dashboard_report' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "bc003fbc-8d56-41b1-9eb2-ae3dba430718",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 52.50355362892151,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0ca2f7a8-a89d-4b2f-a320-6038c8cc0c73",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 52.50355362892151,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 569, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 501, in generate_performance_dashboard\n    generate_dashboard_report(dashboard_data)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'generate_dashboard_report' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 13:36:17.803",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: unsupported operand type(s) for +: 'int' and 'NoneType'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d6d45aad-9ecd-4f32-b14f-04eeaa4911f5",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 41.55733013153076,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "23679b94-3dd8-472b-af8e-1e56a5219529",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 41.55733013153076,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 569, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 498, in generate_performance_dashboard\n    display_performance_dashboard(dashboard_data)\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 574, in display_performance_dashboard\n    dashboard_data = _normalize_dashboard_data(dict(dashboard_data))\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 531, in _normalize_dashboard_data\n    total = bag.get('total_grades', sum(distribution.values()) if distribution else 0) or 0\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: unsupported operand type(s) for +: 'int' and 'NoneType'\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 13:45:20.075",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: division by zero",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "be90f4a1-2351-492c-9061-a87a3587a7cc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 435.6965765953064,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "31808bb1-7b1a-4fd9-8983-7e2b5a54c138",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 435.6965765953064,
+    "error_type": "ZeroDivisionError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 569, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 498, in generate_performance_dashboard\n    display_performance_dashboard(dashboard_data)\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 691, in display_performance_dashboard\n    percentage = (count / grade_data['total_grades']) * 100\n                  ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~\nZeroDivisionError: division by zero\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 13:51:15.466",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'generate_dashboard_alerts' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "049664f7-01d9-4950-bb4b-227e76d626ab",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 21.322386741638184,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "cd5193bc-6296-4f78-9367-f98dbfc03483",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 21.322386741638184,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 569, in performance_analysis_menu\n    generate_performance_dashboard()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 498, in generate_performance_dashboard\n    display_performance_dashboard(dashboard_data)\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 716, in display_performance_dashboard\n    generate_dashboard_alerts(dashboard_data)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'generate_dashboard_alerts' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 14:45:09.614",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'analyze_distribution_by_course' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "2edb574b-bbef-4b70-a51c-fb626185a590",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 31.55860686302185,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "1a2599ae-f9c9-41f0-9012-6833ef17e136",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 31.55860686302185,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 561, in performance_analysis_menu\n    grade_distribution_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 3307, in grade_distribution_analysis\n    analyze_distribution_by_course(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'analyze_distribution_by_course' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 14:46:28.022",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'analyze_overall_grade_trends' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "e5342589-8b67-49b9-ae8e-ee92ccb486ba",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 56.17149257659912,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "8fe2c947-875d-420c-81e3-593ab7f082f8",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 56.17149257659912,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 567, in performance_analysis_menu\n    performance_trends_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_curve_analysis.py\", line 343, in performance_trends_analysis\n    analyze_overall_grade_trends(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'analyze_overall_grade_trends' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:00:50.818",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'analyze_distribution_by_course' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "39758dc5-2253-4e4b-b689-31e310905ffc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 45.086700439453125,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0f10f304-364a-4e00-8e0b-4b18d0549137",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 45.086700439453125,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 561, in performance_analysis_menu\n    grade_distribution_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 3307, in grade_distribution_analysis\n    analyze_distribution_by_course(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'analyze_distribution_by_course' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:07:08.987",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'compare_by_assessment_type' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "63ef9bf9-136b-4acf-bacc-1f39bede948f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 113.5578076839447,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "3c3e0c53-4258-4e4e-a2bd-7853415e73ec",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 113.5578076839447,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 565, in performance_analysis_menu\n    comparative_performance_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_curve_analysis.py\", line 310, in comparative_performance_analysis\n    compare_by_assessment_type(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'compare_by_assessment_type' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:14:52.925",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'compare_by_assessment_type' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "15f5de0d-d578-429a-afa4-d27bce2bd43b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 53.26559066772461,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0878e72a-a60c-4818-b059-578853e82379",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 53.26559066772461,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 565, in performance_analysis_menu\n    comparative_performance_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_curve_analysis.py\", line 310, in comparative_performance_analysis\n    compare_by_assessment_type(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'compare_by_assessment_type' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:22:03.262",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'compare_by_grade_threshold' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "12c9840f-9c78-44b6-9a5d-3970913a5cfe",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 136.85214567184448,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "1f951729-dba8-40e8-9ea6-0b9be613055e",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 136.85214567184448,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 400, in display_enhanced_grade_menu\n    performance_analysis_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 565, in performance_analysis_menu\n    comparative_performance_analysis()\n  File \"/home/seancatchpole989/refactored/students/grade_curve_analysis.py\", line 315, in comparative_performance_analysis\n    custom_group_comparison(cursor)\n  File \"/home/seancatchpole989/refactored/students/grade_misc.py\", line 3456, in custom_group_comparison\n    compare_by_grade_threshold(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'compare_by_grade_threshold' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:35:12.181",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'predict_final_module_grade' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "038729a3-6f5d-42c4-9911-5e9fbd6f2894",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 193.58840608596802,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2025496a-f7e5-474f-9998-32eacaabf5e1",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 193.58840608596802,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 517, in predictive_analytics_menu\n    performance_prediction_models()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 753, in performance_prediction_models\n    grade_prediction()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 4386, in grade_prediction\n    predict_final_module_grade(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'predict_final_module_grade' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 15:49:51.489",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "student_records",
+  "details": "Creating new student record",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "981979ec-fb6b-40df-be56-c91ea55cfd0e",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 134.38301396369934,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e0d81165-3770-48aa-8484-2e0fb25fc700",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_student_record",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 134.38301396369934,
+    "memory_usage": 369905664
+  }
+}
+{
+  "timestamp": "2025-09-17 18:20:29.377",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: predict_end_term_gpa() missing 1 required positional argument: 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "bdca3654-7a18-4b46-8c2b-e6725a09b1f4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 503.7216305732727,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "57b33eac-bdc4-477d-8938-c03782b902a2",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 503.7216305732727,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 527, in predictive_analytics_menu\n    grade_prediction()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 4388, in grade_prediction\n    predict_end_term_gpa(cursor)\nTypeError: predict_end_term_gpa() missing 1 required positional argument: 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 18:28:51.597",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'forecast_overall_performance' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "ee303b7b-932f-490d-b5f0-43e47afc03b3",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 82.49147963523865,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "ba4897cd-c002-4d0b-84f3-f204edbb21a2",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 82.49147963523865,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 529, in predictive_analytics_menu\n    trend_forecasting()\n  File \"/home/seancatchpole989/refactored/students/grade_misc.py\", line 4796, in trend_forecasting\n    forecast_overall_performance(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'forecast_overall_performance' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 18:33:31.992",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'generate_system_recommendations' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d1d8b23b-7586-49d3-96f4-98140248f40c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 92.96440768241882,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "036b95d6-cf42-4577-a33e-bfa0e19f93d6",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 92.96440768241882,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 531, in predictive_analytics_menu\n    generate_risk_report()\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 891, in generate_risk_report\n    risk_data = collect_comprehensive_risk_data(cursor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 950, in collect_comprehensive_risk_data\n    risk_data['recommendations'] = generate_system_recommendations(risk_data)\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'generate_system_recommendations' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 20:59:12.311",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: 'risk_distribution'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "fe444d1c-27d3-4647-855b-8a5f91d17bd6",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 32.476494789123535,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "62988c18-7027-441f-8440-8a0edd17e338",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 32.476494789123535,
+    "error_type": "KeyError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 531, in predictive_analytics_menu\n    generate_risk_report()\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 899, in generate_risk_report\n    generate_comprehensive_risk_report(risk_data)\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 989, in generate_comprehensive_risk_report\n    risk_dist = summary_stats['risk_distribution']\n                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'risk_distribution'\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 21:02:34.346",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: division by zero",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "59e1c835-d070-4c5a-88a5-a77bfdf1844d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 56.01289701461792,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b4d9c39f-6912-429b-a935-e6957458f0b4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 56.01289701461792,
+    "error_type": "ZeroDivisionError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 531, in predictive_analytics_menu\n    generate_risk_report()\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 899, in generate_risk_report\n    generate_comprehensive_risk_report(risk_data)\n  File \"/home/seancatchpole989/refactored/students/grade_predictive_analytics.py\", line 1010, in generate_comprehensive_risk_report\n    ['High Risk Students:', f\"{risk_dist['High']} ({risk_dist['High']/total_students*100:.1f}%)\"],\n                                                    ~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~\nZeroDivisionError: division by zero\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 21:07:56.995",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'predict_final_module_grade' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "de36bc57-d877-400a-9b23-9b5811eaa82e",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 130.6295838356018,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "370c5dcf-a0d2-435f-bcfd-c28ca2a7dcc7",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 130.6295838356018,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 517, in predictive_analytics_menu\n    performance_prediction_models()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 753, in performance_prediction_models\n    grade_prediction()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 4386, in grade_prediction\n    predict_final_module_grade(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'predict_final_module_grade' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 21:15:41.460",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'build_module_success_model' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "e968fb04-395c-4a35-950b-812b3483203c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 88.93839764595032,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f7e63644-2f60-4044-9fb4-0e7f7a08f5fb",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 88.93839764595032,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6614, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 398, in display_enhanced_grade_menu\n    predictive_analytics_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 517, in predictive_analytics_menu\n    performance_prediction_models()\n  File \"/home/seancatchpole989/refactored/students/grade_performance_analysis.py\", line 757, in performance_prediction_models\n    build_module_success_model(cursor)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'build_module_success_model' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-17 21:54:45.246",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: PermissionError(PERMISSION_ERROR_GENERAL): Insufficient permissions to sync calendars",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "035a7ca3-db36-4ed2-9041-2dc25a41019d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 253.93446111679077,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "022611ad-6fee-4642-9de2-167084b0ef20",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 253.93446111679077,
+    "error_type": "PermissionError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6650, in display_menu\n    display_student_union_menu()\n  File \"/home/seancatchpole989/refactored/services/student_union.py\", line 809, in display_student_union_menu\n    manager.calendar_sync(ical_url)\n  File \"/home/seancatchpole989/refactored/services/academic_calendar.py\", line 4718, in calendar_sync\n    raise PermissionError(\"Insufficient permissions to sync calendars\")\nrefactored.services.academic_calendar.PermissionError: PermissionError(PERMISSION_ERROR_GENERAL): Insufficient permissions to sync calendars\n"
+  }
+}

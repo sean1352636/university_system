@@ -1,0 +1,661 @@
+# Auto-generated main entry
+import tkinter as tk
+from tkinter import ttk
+import logging
+from datetime import datetime
+
+# Import authentication
+from university_system.infrastructure.auth import UserAuth, set_auth_instance
+from university_system.infrastructure.shared_context import set_auth as set_shared_auth, get_auth
+from university_system.modules.shared.gui.main.imports.gui_imports import safe_auth_check, HAS_AUTH
+
+# Import i18n
+from university_system.modules.shared.utils.i18n import get_text as _t
+
+logger = logging.getLogger(__name__)
+
+# Initialize global auth variable
+auth = None
+
+def set_auth(auth_instance):
+    global auth
+    auth = auth_instance
+    # Also set it in the global auth instance if available
+    if HAS_AUTH:
+        set_auth_instance(auth_instance)
+    # Set in shared_context as well
+    try:
+        set_shared_auth(auth_instance)
+    except Exception as e:
+        logger.warning(f"Failed to set auth in shared_context: {e}")
+
+
+def init_gui(session_user=None):
+    """
+    Centralized GUI initialization function.
+
+    Args:
+        session_user: User object from an existing session (e.g., from CLI login).
+                     If None, GUI starts at login page.
+                     If provided, GUI bypasses login and goes directly to main interface.
+
+    Returns:
+        UnifiedManagementGUI instance
+    """
+    global auth
+
+    # Initialize auth manager if needed
+    if auth is None:
+        if UserAuth is None:
+            raise ImportError(
+                "UserAuth is not available. Please ensure the authentication module is properly installed.\n"
+                "Path: university_system/infrastructure/auth/user_authentication.py"
+            )
+
+        # Get centralized auth or create new one
+        auth = get_auth()
+        if auth is None:
+            auth = UserAuth()
+            set_auth(auth)
+        safe_auth_check(auth)
+
+    # If session_user is provided, set it as the current user
+    if session_user is not None:
+        auth.current_user = session_user
+        if hasattr(auth, 'last_activity'):
+            from datetime import datetime
+            auth.last_activity = datetime.now()
+
+    # Create and return the GUI with the configured auth
+    app = UnifiedManagementGUI(auth)
+    return app
+
+
+class UnifiedManagementGUI:
+    def __init__(self, auth_manager):
+        try:
+            self.auth = auth_manager
+
+            # Initialize content_frame to None first
+            self.content_frame = None
+
+            # Initialize modular GUI managers
+            self.finance_gui = None
+            self.student_union_gui = None
+            self.health_portal_gui = None
+            self.grade_tracking_gui = None
+            self.restaurant_gui = None
+            self.cafe_gui = None
+            self.email_manager_gui = None
+
+            # Initialize student management components
+            self.student_tree = None
+
+            # Initialize timer IDs for cleanup
+            self._session_timer_id = None
+
+            # Initialize Tkinter
+            self.root = tk.Tk()
+            self.root.title(_t("gui.window_title"))
+            self.root.geometry("1200x800")
+            self.root.minsize(1000, 700)
+
+            # Configure style and theme
+            self.style = ttk.Style()
+            self.style.theme_use('clam')
+
+            # Variables
+            self.current_user_var = tk.StringVar()
+            self.status_var = tk.StringVar(value=_t("gui.not_logged_in_status"))
+
+            # Initialize GUI
+            self.setup_gui()
+
+            # Register window close handler to cancel timers
+            self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+            # Initialize modular GUI managers after root is set up
+            self.init_gui_managers()
+
+            # Update status
+            self.update_status()
+
+            # Start periodic updates
+            self.check_session_timer()
+
+            # Show login if not authenticated
+            if not self.auth.current_user:
+                self.show_login_screen()
+            else:
+                self.show_main_interface()
+
+        except Exception as e:
+            print(f"Error initializing GUI: {e}")
+            self.create_fallback_interface()
+
+    def _on_closing(self):
+        """Handle window close - cancel timers before destroying"""
+        try:
+            self._cancel_timers()
+        except Exception:
+            pass
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
+
+    def run(self):
+        """Start the Tkinter main loop."""
+        try:
+            self.root.mainloop()
+        except Exception as e:
+            logger.error(f"Error running main loop: {e}")
+
+from .core.gui_setup import (
+    create_fallback_interface,
+    init_gui_managers,
+    create_themed_toplevel,
+    setup_gui,
+    create_header,
+    create_navigation_panel,
+    rebuild_navigation_panel,
+    create_content_area,
+    get_visible_buttons_for_role,
+    clear_content,
+    show_welcome,
+    show_main_interface,
+    _deferred_navigation_rebuild,
+    update_status,
+    restart_gui,
+    _cancel_timers
+)
+from .auth_gui import (
+    show_login_screen,
+    show_login,
+    perform_login,
+    _perform_login_thread,
+    _handle_login_error,
+    _complete_login_success,
+    _handle_email_otp_fallback,
+    _handle_email_otp_verification,
+    _handle_password_reset_required,
+    _handle_mfa_setup_skipped,
+    logout_user,
+    toggle_login_logout,
+    update_login_logout_button,
+    show_change_password,
+    check_session_timer,
+    switch_to_cli,
+    shutdown_system,
+    show_language_selector,
+    show_mfa_setup,
+    _open_mfa_wizard,
+    _reenable_mfa_with_confirmation,
+    toggle_login_verification,
+    _do_pin_verification,
+    _verify_login_pin,
+    _verify_email_otp,
+    _verify_email_otp_via_service,
+    _save_remember_token,
+    _load_remember_token,
+    _clear_remember_token,
+    _check_remember_me_token
+)
+from .students.student_records_gui import (
+    show_student_records,
+    create_student_treeview,
+    view_students,
+    view_students_in_window,
+    on_student_double_click,
+    on_student_double_click_window,
+    show_student_details,
+    search_students_dialog
+)
+from .students.student_crud_gui import (
+    create_student_dialog,
+    update_student_dialog,
+    delete_student_dialog,
+    select_student_for_deletion,
+    manage_student_grades,
+    view_student_attendance,
+    view_student_timetable,
+    reassign_modules
+)
+from .students.student_export_gui import (
+    export_student_data,
+    export_individual_student_data,
+    export_data_dialog,
+    _export_to_csv,
+    _export_to_excel,
+    _export_to_pdf,
+    _export_to_txt,
+    _export_comprehensive_csv,
+    _export_comprehensive_excel,
+    _export_comprehensive_pdf,
+    _export_comprehensive_txt
+)
+from .staff.staff_crud_gui import (
+    create_staff_dialog,
+    update_staff_dialog,
+    view_staff,
+    delete_staff_dialog,
+    search_staff_dialog
+)
+from .admin.user_management_gui import (
+    show_user_management,
+    refresh_user_list,
+    show_create_user,
+    show_user_details,
+    show_edit_user,
+    reset_user_password,
+    view_all_users,
+    add_new_user,
+    manage_permissions
+)
+from .admin.system_admin_gui import (
+    show_system_admin,
+    show_system_administration_gui,
+    create_database_admin_tab,
+    create_user_admin_tab,
+    create_monitoring_tab,
+    create_config_tab,
+    view_active_sessions,
+    view_system_logs,
+    view_error_logs
+)
+from .admin.database_admin_gui import (
+    show_backup,
+    show_data_backup_gui,
+    show_batch_operations_gui,
+    fix_duplicates,
+    optimize_database,
+    run_integrity_check,
+    show_db_statistics,
+    show_db_performance,
+    show_active_connections
+)
+from .admin.config_gui import (
+    edit_system_settings,
+    configure_email,
+    configure_backup,
+    configure_security,
+    show_security_dashboard,
+    show_audit_log_viewer,
+    show_activity_logger,
+    show_activity_log
+)
+from .features.academic_launchers_gui import (
+    show_library_management,
+    show_academic_calendar,
+    show_course_management,
+    show_module_management,
+    show_module_scheduling,
+    show_grades,
+    show_grade_tracking_gui,
+    show_assignments,
+    show_plagiarism_checker,
+    show_ai_detector,
+    open_ai_detector_window,
+    open_attendance_gui,
+    show_virtual_classroom_gui
+)
+from .features.student_affairs_gui import (
+    show_student_union_portal,
+    open_student_union_portal_gui,
+    open_parent_portal_gui,
+    open_alumni_portal_gui,
+    open_student_support_portal_gui,
+    open_health_portal_gui,
+    open_helpdesk_gui,
+    show_mental_health_gui,
+    show_early_warning_gui,
+    show_career_services_gui,
+    open_internship_portal_gui,
+    show_trip_management_gui,
+    open_trip_management_gui,
+    show_legal_services_gui,
+    show_betting_shop_gui,
+    show_mail_post_gui,
+    show_staff_hr_gui
+)
+from .features.finance_gui import (
+    show_finance_management,
+    show_finance_reporting_dashboard,
+    show_student_finance_account,
+    show_financial_aid,
+    show_club_payment_management,
+    _create_payment_overview_tab_finance,
+    _create_record_payment_tab_finance,
+    _create_payment_history_tab_finance
+)
+from .features.commerce_facilities_gui import (
+    show_university_shop,
+    show_charity_shop,
+    show_restaurant_management,
+    show_cafe_system,
+    show_takeaway_system,
+    show_grocery_shop,
+    show_bar,
+    show_parking_management,
+    show_housing_accommodations,
+    show_medical_accommodations,
+    show_campus_events_gui,
+    show_facilities_management_gui,
+    show_transportation_parking_gui,
+    show_gym_gui,
+    show_dentist_gui,
+    show_butcher_gui,
+    show_barber_gui,
+    show_nailbar_gui,
+    show_carrental_gui,
+    show_equipment_gui,
+    show_phoneshop_gui,
+    show_musicshop_gui,
+    show_taxi_booking_gui,
+    show_train_station_gui,
+    show_cinema_gui
+)
+from .features.extras_gui import (
+    show_document_manager,
+    show_enhanced_reporting_dashboard,
+    show_pdf_export_gui,
+    show_advanced_search_gui,
+    refresh_advanced_search,
+    show_communication_dashboard_gui,
+    show_email_sms_gui,
+    show_admissions_crm_gui,
+    show_predictive_analytics_gui,
+    show_business_intelligence_gui,
+    show_ai_features_gui,
+    show_integration_marketplace_gui,
+    show_mobile_app_pwa_gui,
+    show_accessibility_tools_gui,
+    show_blockchain_credentials_gui,
+    show_extras_launcher,
+    _show_feature_gui,
+    show_police_station_gui,
+    show_security_desk_gui,
+    show_academic_misconduct_gui,
+    show_todo_app_gui,
+    show_church_management_gui,
+    show_bank_app_gui,
+    show_exam_scheduler_gui
+)
+from .features.student_success_gui import (
+    show_academic_progress_gui,
+    show_ai_study_gui,
+    show_budget_tracker_gui,
+    show_student_jobs_gui,
+    show_scholarship_finder_gui,
+    show_study_matching_gui,
+    show_course_planning_gui,
+    show_roommate_finder_gui,
+    show_campus_navigation_gui,
+    show_lost_found_gui,
+    show_marketplace_gui,
+    show_wellness_hub_gui,
+    show_accessibility_portal_gui,
+    show_events_discovery_gui,
+    show_social_matching_gui,
+    show_portfolio_system_gui,
+    show_notifications_hub_gui,
+    show_feedback_system_gui
+)
+from .email.email_helpers_gui import (
+    compose_email,
+    send_email_to_student,
+    show_email_manager,
+    _send_welcome_email_to_student,
+    _send_email_via_gui,
+    _show_welcome_email_fallback,
+    _send_student_update_email,
+    _show_update_email_fallback
+)
+from .dashboard.dashboard_gui import (
+    show_integrated_dashboard,
+    create_overview_tab,
+    create_stats_tab,
+    create_activity_tab,
+    create_health_tab,
+    show_analytics,
+    show_chatbot,
+    log_activity,
+    launch_analytics_gui_standalone
+)
+
+UnifiedManagementGUI.create_fallback_interface = create_fallback_interface
+UnifiedManagementGUI.init_gui_managers = init_gui_managers
+UnifiedManagementGUI.create_themed_toplevel = create_themed_toplevel
+UnifiedManagementGUI.setup_gui = setup_gui
+UnifiedManagementGUI.create_header = create_header
+UnifiedManagementGUI.create_navigation_panel = create_navigation_panel
+UnifiedManagementGUI.rebuild_navigation_panel = rebuild_navigation_panel
+UnifiedManagementGUI.create_content_area = create_content_area
+UnifiedManagementGUI.get_visible_buttons_for_role = get_visible_buttons_for_role
+UnifiedManagementGUI.clear_content = clear_content
+UnifiedManagementGUI.show_welcome = show_welcome
+UnifiedManagementGUI.show_main_interface = show_main_interface
+UnifiedManagementGUI._deferred_navigation_rebuild = _deferred_navigation_rebuild
+UnifiedManagementGUI.update_status = update_status
+UnifiedManagementGUI.restart_gui = restart_gui
+UnifiedManagementGUI._cancel_timers = _cancel_timers
+UnifiedManagementGUI.show_login_screen = show_login_screen
+UnifiedManagementGUI.show_login = show_login
+UnifiedManagementGUI.perform_login = perform_login
+UnifiedManagementGUI._perform_login_thread = _perform_login_thread
+UnifiedManagementGUI._handle_login_error = _handle_login_error
+UnifiedManagementGUI._complete_login_success = _complete_login_success
+UnifiedManagementGUI._handle_email_otp_fallback = _handle_email_otp_fallback
+UnifiedManagementGUI._handle_email_otp_verification = _handle_email_otp_verification
+UnifiedManagementGUI._handle_password_reset_required = _handle_password_reset_required
+UnifiedManagementGUI._handle_mfa_setup_skipped = _handle_mfa_setup_skipped
+UnifiedManagementGUI.logout_user = logout_user
+UnifiedManagementGUI.toggle_login_logout = toggle_login_logout
+UnifiedManagementGUI.update_login_logout_button = update_login_logout_button
+UnifiedManagementGUI.show_change_password = show_change_password
+UnifiedManagementGUI.show_mfa_setup = show_mfa_setup
+UnifiedManagementGUI._open_mfa_wizard = _open_mfa_wizard
+UnifiedManagementGUI._reenable_mfa_with_confirmation = _reenable_mfa_with_confirmation
+UnifiedManagementGUI.toggle_login_verification = toggle_login_verification
+UnifiedManagementGUI._do_pin_verification = _do_pin_verification
+UnifiedManagementGUI._verify_login_pin = _verify_login_pin
+UnifiedManagementGUI._verify_email_otp = _verify_email_otp
+UnifiedManagementGUI._verify_email_otp_via_service = _verify_email_otp_via_service
+UnifiedManagementGUI._save_remember_token = _save_remember_token
+UnifiedManagementGUI._load_remember_token = _load_remember_token
+UnifiedManagementGUI._clear_remember_token = _clear_remember_token
+UnifiedManagementGUI._check_remember_me_token = _check_remember_me_token
+UnifiedManagementGUI.check_session_timer = check_session_timer
+UnifiedManagementGUI.switch_to_cli = switch_to_cli
+UnifiedManagementGUI.shutdown_system = shutdown_system
+UnifiedManagementGUI.show_language_selector = show_language_selector
+UnifiedManagementGUI.show_student_records = show_student_records
+UnifiedManagementGUI.create_student_treeview = create_student_treeview
+UnifiedManagementGUI.view_students = view_students
+UnifiedManagementGUI.view_students_in_window = view_students_in_window
+UnifiedManagementGUI.on_student_double_click = on_student_double_click
+UnifiedManagementGUI.on_student_double_click_window = on_student_double_click_window
+UnifiedManagementGUI.show_student_details = show_student_details
+UnifiedManagementGUI.search_students_dialog = search_students_dialog
+UnifiedManagementGUI.create_student_dialog = create_student_dialog
+UnifiedManagementGUI.update_student_dialog = update_student_dialog
+UnifiedManagementGUI.delete_student_dialog = delete_student_dialog
+UnifiedManagementGUI.select_student_for_deletion = select_student_for_deletion
+UnifiedManagementGUI.manage_student_grades = manage_student_grades
+UnifiedManagementGUI.view_student_attendance = view_student_attendance
+UnifiedManagementGUI.view_student_timetable = view_student_timetable
+UnifiedManagementGUI.reassign_modules = reassign_modules
+UnifiedManagementGUI.export_student_data = export_student_data
+UnifiedManagementGUI.export_individual_student_data = export_individual_student_data
+UnifiedManagementGUI.export_data_dialog = export_data_dialog
+UnifiedManagementGUI._export_to_csv = _export_to_csv
+UnifiedManagementGUI._export_to_excel = _export_to_excel
+UnifiedManagementGUI._export_to_pdf = _export_to_pdf
+UnifiedManagementGUI._export_to_txt = _export_to_txt
+UnifiedManagementGUI._export_comprehensive_csv = _export_comprehensive_csv
+UnifiedManagementGUI._export_comprehensive_excel = _export_comprehensive_excel
+UnifiedManagementGUI._export_comprehensive_pdf = _export_comprehensive_pdf
+UnifiedManagementGUI._export_comprehensive_txt = _export_comprehensive_txt
+UnifiedManagementGUI.create_staff_dialog = create_staff_dialog
+UnifiedManagementGUI.update_staff_dialog = update_staff_dialog
+UnifiedManagementGUI.view_staff = view_staff
+UnifiedManagementGUI.delete_staff_dialog = delete_staff_dialog
+UnifiedManagementGUI.search_staff_dialog = search_staff_dialog
+UnifiedManagementGUI.show_user_management = show_user_management
+UnifiedManagementGUI.refresh_user_list = refresh_user_list
+UnifiedManagementGUI.show_create_user = show_create_user
+UnifiedManagementGUI.show_user_details = show_user_details
+UnifiedManagementGUI.show_edit_user = show_edit_user
+UnifiedManagementGUI.reset_user_password = reset_user_password
+UnifiedManagementGUI.view_all_users = view_all_users
+UnifiedManagementGUI.add_new_user = add_new_user
+UnifiedManagementGUI.manage_permissions = manage_permissions
+UnifiedManagementGUI.show_system_admin = show_system_admin
+UnifiedManagementGUI.show_system_administration_gui = show_system_administration_gui
+UnifiedManagementGUI.create_database_admin_tab = create_database_admin_tab
+UnifiedManagementGUI.create_user_admin_tab = create_user_admin_tab
+UnifiedManagementGUI.create_monitoring_tab = create_monitoring_tab
+UnifiedManagementGUI.create_config_tab = create_config_tab
+UnifiedManagementGUI.view_active_sessions = view_active_sessions
+UnifiedManagementGUI.view_system_logs = view_system_logs
+UnifiedManagementGUI.view_error_logs = view_error_logs
+UnifiedManagementGUI.show_backup = show_backup
+UnifiedManagementGUI.show_data_backup_gui = show_data_backup_gui
+UnifiedManagementGUI.show_batch_operations_gui = show_batch_operations_gui
+UnifiedManagementGUI.fix_duplicates = fix_duplicates
+UnifiedManagementGUI.optimize_database = optimize_database
+UnifiedManagementGUI.run_integrity_check = run_integrity_check
+UnifiedManagementGUI.show_db_statistics = show_db_statistics
+UnifiedManagementGUI.show_db_performance = show_db_performance
+UnifiedManagementGUI.show_active_connections = show_active_connections
+UnifiedManagementGUI.edit_system_settings = edit_system_settings
+UnifiedManagementGUI.configure_email = configure_email
+UnifiedManagementGUI.configure_backup = configure_backup
+UnifiedManagementGUI.configure_security = configure_security
+UnifiedManagementGUI.show_security_dashboard = show_security_dashboard
+UnifiedManagementGUI.show_audit_log_viewer = show_audit_log_viewer
+UnifiedManagementGUI.show_activity_logger = show_activity_logger
+UnifiedManagementGUI.show_activity_log = show_activity_log
+UnifiedManagementGUI.show_library_management = show_library_management
+UnifiedManagementGUI.show_academic_calendar = show_academic_calendar
+UnifiedManagementGUI.show_course_management = show_course_management
+UnifiedManagementGUI.show_module_management = show_module_management
+UnifiedManagementGUI.show_module_scheduling = show_module_scheduling
+UnifiedManagementGUI.show_grades = show_grades
+UnifiedManagementGUI.show_grade_tracking_gui = show_grade_tracking_gui
+UnifiedManagementGUI.show_assignments = show_assignments
+UnifiedManagementGUI.show_plagiarism_checker = show_plagiarism_checker
+UnifiedManagementGUI.show_ai_detector = show_ai_detector
+UnifiedManagementGUI.open_ai_detector_window = open_ai_detector_window
+UnifiedManagementGUI.open_attendance_gui = open_attendance_gui
+UnifiedManagementGUI.show_virtual_classroom_gui = show_virtual_classroom_gui
+UnifiedManagementGUI.show_student_union_portal = show_student_union_portal
+UnifiedManagementGUI.open_student_union_portal_gui = open_student_union_portal_gui
+UnifiedManagementGUI.open_parent_portal_gui = open_parent_portal_gui
+UnifiedManagementGUI.open_alumni_portal_gui = open_alumni_portal_gui
+UnifiedManagementGUI.open_student_support_portal_gui = open_student_support_portal_gui
+UnifiedManagementGUI.open_health_portal_gui = open_health_portal_gui
+UnifiedManagementGUI.open_helpdesk_gui = open_helpdesk_gui
+UnifiedManagementGUI.show_mental_health_gui = show_mental_health_gui
+UnifiedManagementGUI.show_early_warning_gui = show_early_warning_gui
+UnifiedManagementGUI.show_career_services_gui = show_career_services_gui
+UnifiedManagementGUI.open_internship_portal_gui = open_internship_portal_gui
+UnifiedManagementGUI.show_trip_management_gui = show_trip_management_gui
+UnifiedManagementGUI.open_trip_management_gui = open_trip_management_gui
+UnifiedManagementGUI.show_legal_services_gui = show_legal_services_gui
+UnifiedManagementGUI.show_betting_shop_gui = show_betting_shop_gui
+UnifiedManagementGUI.show_mail_post_gui = show_mail_post_gui
+UnifiedManagementGUI.show_staff_hr_gui = show_staff_hr_gui
+UnifiedManagementGUI.show_finance_management = show_finance_management
+UnifiedManagementGUI.show_finance_reporting_dashboard = show_finance_reporting_dashboard
+UnifiedManagementGUI.show_student_finance_account = show_student_finance_account
+UnifiedManagementGUI.show_financial_aid = show_financial_aid
+UnifiedManagementGUI.show_club_payment_management = show_club_payment_management
+UnifiedManagementGUI._create_payment_overview_tab_finance = _create_payment_overview_tab_finance
+UnifiedManagementGUI._create_record_payment_tab_finance = _create_record_payment_tab_finance
+UnifiedManagementGUI._create_payment_history_tab_finance = _create_payment_history_tab_finance
+UnifiedManagementGUI.show_university_shop = show_university_shop
+UnifiedManagementGUI.show_charity_shop = show_charity_shop
+UnifiedManagementGUI.show_restaurant_management = show_restaurant_management
+UnifiedManagementGUI.show_cafe_system = show_cafe_system
+UnifiedManagementGUI.show_takeaway_system = show_takeaway_system
+UnifiedManagementGUI.show_grocery_shop = show_grocery_shop
+UnifiedManagementGUI.show_bar = show_bar
+UnifiedManagementGUI.show_parking_management = show_parking_management
+UnifiedManagementGUI.show_housing_accommodations = show_housing_accommodations
+UnifiedManagementGUI.show_medical_accommodations = show_medical_accommodations
+UnifiedManagementGUI.show_campus_events_gui = show_campus_events_gui
+UnifiedManagementGUI.show_facilities_management_gui = show_facilities_management_gui
+UnifiedManagementGUI.show_transportation_parking_gui = show_transportation_parking_gui
+UnifiedManagementGUI.show_gym_gui = show_gym_gui
+UnifiedManagementGUI.show_dentist_gui = show_dentist_gui
+UnifiedManagementGUI.show_butcher_gui = show_butcher_gui
+UnifiedManagementGUI.show_barber_gui = show_barber_gui
+UnifiedManagementGUI.show_nailbar_gui = show_nailbar_gui
+UnifiedManagementGUI.show_carrental_gui = show_carrental_gui
+UnifiedManagementGUI.show_equipment_gui = show_equipment_gui
+UnifiedManagementGUI.show_phoneshop_gui = show_phoneshop_gui
+UnifiedManagementGUI.show_musicshop_gui = show_musicshop_gui
+UnifiedManagementGUI.show_taxi_booking_gui = show_taxi_booking_gui
+UnifiedManagementGUI.show_train_station_gui = show_train_station_gui
+UnifiedManagementGUI.show_cinema_gui = show_cinema_gui
+UnifiedManagementGUI.show_document_manager = show_document_manager
+UnifiedManagementGUI.show_enhanced_reporting_dashboard = show_enhanced_reporting_dashboard
+UnifiedManagementGUI.show_pdf_export_gui = show_pdf_export_gui
+UnifiedManagementGUI.show_advanced_search_gui = show_advanced_search_gui
+UnifiedManagementGUI.refresh_advanced_search = refresh_advanced_search
+UnifiedManagementGUI.show_communication_dashboard_gui = show_communication_dashboard_gui
+UnifiedManagementGUI.show_email_sms_gui = show_email_sms_gui
+UnifiedManagementGUI.show_admissions_crm_gui = show_admissions_crm_gui
+UnifiedManagementGUI.show_predictive_analytics_gui = show_predictive_analytics_gui
+UnifiedManagementGUI.show_business_intelligence_gui = show_business_intelligence_gui
+UnifiedManagementGUI.show_ai_features_gui = show_ai_features_gui
+UnifiedManagementGUI.show_integration_marketplace_gui = show_integration_marketplace_gui
+UnifiedManagementGUI.show_mobile_app_pwa_gui = show_mobile_app_pwa_gui
+UnifiedManagementGUI.show_accessibility_tools_gui = show_accessibility_tools_gui
+UnifiedManagementGUI.show_blockchain_credentials_gui = show_blockchain_credentials_gui
+UnifiedManagementGUI.show_extras_launcher = show_extras_launcher
+UnifiedManagementGUI._show_feature_gui = _show_feature_gui
+UnifiedManagementGUI.show_police_station_gui = show_police_station_gui
+UnifiedManagementGUI.show_security_desk_gui = show_security_desk_gui
+UnifiedManagementGUI.show_academic_misconduct_gui = show_academic_misconduct_gui
+UnifiedManagementGUI.show_todo_app_gui = show_todo_app_gui
+UnifiedManagementGUI.show_church_management_gui = show_church_management_gui
+UnifiedManagementGUI.show_bank_app_gui = show_bank_app_gui
+UnifiedManagementGUI.show_exam_scheduler_gui = show_exam_scheduler_gui
+UnifiedManagementGUI.compose_email = compose_email
+UnifiedManagementGUI.send_email_to_student = send_email_to_student
+UnifiedManagementGUI.show_email_manager = show_email_manager
+UnifiedManagementGUI._send_welcome_email_to_student = _send_welcome_email_to_student
+UnifiedManagementGUI._send_email_via_gui = _send_email_via_gui
+UnifiedManagementGUI._show_welcome_email_fallback = _show_welcome_email_fallback
+UnifiedManagementGUI._send_student_update_email = _send_student_update_email
+UnifiedManagementGUI._show_update_email_fallback = _show_update_email_fallback
+UnifiedManagementGUI.show_integrated_dashboard = show_integrated_dashboard
+UnifiedManagementGUI.create_overview_tab = create_overview_tab
+UnifiedManagementGUI.create_stats_tab = create_stats_tab
+UnifiedManagementGUI.create_activity_tab = create_activity_tab
+UnifiedManagementGUI.create_health_tab = create_health_tab
+UnifiedManagementGUI.show_analytics = show_analytics
+UnifiedManagementGUI.show_chatbot = show_chatbot
+UnifiedManagementGUI.log_activity = log_activity
+UnifiedManagementGUI.launch_analytics_gui_standalone = launch_analytics_gui_standalone
+UnifiedManagementGUI.show_academic_progress_gui = show_academic_progress_gui
+UnifiedManagementGUI.show_ai_study_gui = show_ai_study_gui
+UnifiedManagementGUI.show_budget_tracker_gui = show_budget_tracker_gui
+UnifiedManagementGUI.show_student_jobs_gui = show_student_jobs_gui
+UnifiedManagementGUI.show_scholarship_finder_gui = show_scholarship_finder_gui
+UnifiedManagementGUI.show_study_matching_gui = show_study_matching_gui
+UnifiedManagementGUI.show_course_planning_gui = show_course_planning_gui
+UnifiedManagementGUI.show_roommate_finder_gui = show_roommate_finder_gui
+UnifiedManagementGUI.show_campus_navigation_gui = show_campus_navigation_gui
+UnifiedManagementGUI.show_lost_found_gui = show_lost_found_gui
+UnifiedManagementGUI.show_marketplace_gui = show_marketplace_gui
+UnifiedManagementGUI.show_wellness_hub_gui = show_wellness_hub_gui
+UnifiedManagementGUI.show_accessibility_portal_gui = show_accessibility_portal_gui
+UnifiedManagementGUI.show_events_discovery_gui = show_events_discovery_gui
+UnifiedManagementGUI.show_social_matching_gui = show_social_matching_gui
+UnifiedManagementGUI.show_portfolio_system_gui = show_portfolio_system_gui
+UnifiedManagementGUI.show_notifications_hub_gui = show_notifications_hub_gui
+UnifiedManagementGUI.show_feedback_system_gui = show_feedback_system_gui
+

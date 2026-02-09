@@ -1,0 +1,367 @@
+{
+  "church": {
+    "window_title": "恩典社区教会管理系统",
+    "church_name": "恩典社区教会",
+    "footer_text": "恩典社区教会管理系统 | \"以爱服务\" | 联系: info@gracechurch.org",
+    "errors": {
+      "access_denied": "访问被拒绝",
+      "login_required": "您必须登录才能访问教会管理系统。\n\n请通过主应用程序登录。",
+      "name_required": "姓名为必填项！",
+      "event_required": "活动名称和日期为必填项！",
+      "title_required": "标题为必填项！",
+      "prayer_required": "请输入您的祷告请求！",
+      "fill_all_fields": "请填写所有字段！",
+      "valid_amount": "请输入有效金额！",
+      "valid_numbers": "请输入有效数字！",
+      "select_member": "请选择要编辑的成员！",
+      "select_member_delete": "请选择要删除的成员！",
+      "select_prayer": "请选择一个祷告请求！"
+    },
+    "nav": {
+      "dashboard": "仪表板",
+      "members": "成员",
+      "donations": "捐赠",
+      "events": "活动",
+      "prayer_requests": "祷告请求",
+      "sermons": "讲道",
+      "announcements": "公告",
+      "volunteers": "志愿者",
+      "attendance": "出勤",
+      "small_groups": "小组",
+      "expenses": "支出",
+      "reports": "报告"
+    },
+    "dashboard": {
+      "title": "教会仪表板",
+      "total_members": "成员总数",
+      "total_donations": "捐赠总额",
+      "upcoming_events": "即将举行的活动",
+      "prayer_requests": "祷告请求",
+      "active_volunteers": "活跃志愿者",
+      "small_groups": "小组",
+      "verse_of_the_day": "每日经文"
+    },
+    "members": {
+      "title": "成员管理",
+      "add_member": "添加成员",
+      "edit_member": "编辑成员",
+      "delete_member": "删除成员",
+      "add_new_member": "添加新成员",
+      "edit_member_title": "编辑成员",
+      "columns": {
+        "id": "编号",
+        "name": "姓名",
+        "email": "电子邮件",
+        "phone": "电话",
+        "join_date": "加入日期",
+        "status": "状态"
+      },
+      "fields": {
+        "name": "姓名：",
+        "email": "电子邮件：",
+        "phone": "电话：",
+        "address": "地址：",
+        "status": "状态："
+      },
+      "status_options": {
+        "active": "活跃",
+        "inactive": "不活跃",
+        "visitor": "访客"
+      },
+      "success_added": "成员 '{name}' 添加成功！",
+      "success_updated": "成员更新成功！",
+      "success_deleted": "成员删除成功！",
+      "confirm_delete": "确定要删除 '{name}' 吗？"
+    },
+    "donations": {
+      "title": "捐赠管理",
+      "total_donations": "捐赠总额：{amount}",
+      "record_donation": "记录捐赠",
+      "record_title": "记录捐赠",
+      "continue_payment": "继续支付",
+      "columns": {
+        "id": "编号",
+        "donor": "捐赠者",
+        "amount": "金额",
+        "date": "日期",
+        "type": "类型",
+        "payment_method": "支付方式"
+      },
+      "fields": {
+        "donor": "捐赠者：",
+        "email": "电子邮件：",
+        "amount": "金额 (£)：",
+        "type": "类型：",
+        "notes": "备注："
+      },
+      "types": {
+        "tithe": "什一奉献",
+        "offering": "奉献",
+        "building_fund": "建堂基金",
+        "missions": "宣教",
+        "other": "其他"
+      },
+      "success_recorded": "已成功记录 {amount} 的捐赠！\n\n收据：{receipt}",
+      "new_balance": "\n\n新学生账户余额：{balance}"
+    },
+    "events": {
+      "title": "教会活动",
+      "add_event": "添加活动",
+      "add_new_event": "添加新活动",
+      "columns": {
+        "id": "编号",
+        "event_name": "活动名称",
+        "date": "日期",
+        "time": "时间",
+        "location": "地点",
+        "description": "描述"
+      },
+      "fields": {
+        "event_name": "活动名称：",
+        "date": "日期 (年-月-日)：",
+        "time": "时间：",
+        "location": "地点：",
+        "description": "描述："
+      },
+      "success_added": "活动添加成功！"
+    },
+    "prayer_requests": {
+      "title": "祷告请求",
+      "add_request": "添加祷告请求",
+      "mark_answered": "标记为已应答",
+      "add_title": "添加祷告请求",
+      "columns": {
+        "id": "编号",
+        "requested_by": "请求者",
+        "request": "请求",
+        "date": "日期",
+        "status": "状态"
+      },
+      "fields": {
+        "requested_by": "请求者：",
+        "prayer_request": "祷告请求："
+      },
+      "submit_request": "提交请求",
+      "success_added": "祷告请求已添加。我们会为您祷告！",
+      "success_answered": "祷告已标记为已应答！",
+      "praise_god": "赞美主！"
+    },
+    "sermons": {
+      "title": "讲道档案",
+      "add_sermon": "添加讲道",
+      "add_title": "添加讲道",
+      "columns": {
+        "id": "编号",
+        "title": "标题",
+        "speaker": "讲员",
+        "date": "日期",
+        "scripture": "经文",
+        "series": "系列"
+      },
+      "fields": {
+        "title": "标题：",
+        "speaker": "讲员：",
+        "date": "日期 (年-月-日)：",
+        "scripture": "经文：",
+        "series": "系列："
+      },
+      "success_added": "讲道已添加到档案！"
+    },
+    "announcements": {
+      "title": "教会公告",
+      "add_announcement": "添加公告",
+      "add_title": "添加公告",
+      "post_announcement": "发布公告",
+      "fields": {
+        "title": "标题：",
+        "content": "内容："
+      },
+      "posted_by": "发布于：{date}，作者：{author}",
+      "success_posted": "公告已发布！"
+    },
+    "volunteers": {
+      "title": "志愿者管理",
+      "add_volunteer": "添加志愿者",
+      "add_title": "添加志愿者",
+      "columns": {
+        "id": "编号",
+        "name": "姓名",
+        "ministry": "事工",
+        "role": "角色",
+        "phone": "电话",
+        "email": "电子邮件",
+        "availability": "可用时间"
+      },
+      "fields": {
+        "name": "姓名：",
+        "ministry": "事工：",
+        "role": "角色：",
+        "phone": "电话：",
+        "email": "电子邮件：",
+        "availability": "可用时间："
+      },
+      "ministries": {
+        "worship": "敬拜",
+        "children": "儿童",
+        "youth": "青年",
+        "hospitality": "接待",
+        "tech": "技术",
+        "missions": "宣教",
+        "other": "其他"
+      },
+      "availability_options": {
+        "sundays": "周日",
+        "weekdays": "工作日",
+        "weekends": "周末",
+        "flexible": "灵活"
+      },
+      "success_added": "志愿者已添加！感谢您的服务！"
+    },
+    "attendance": {
+      "title": "出勤跟踪",
+      "description": "记录礼拜和活动的每周出勤情况。",
+      "record_attendance": "记录出勤",
+      "record_title": "记录出勤",
+      "columns": {
+        "date": "日期",
+        "service": "服务",
+        "adults": "成人",
+        "children": "儿童",
+        "total": "总计",
+        "notes": "备注"
+      },
+      "fields": {
+        "service": "礼拜：",
+        "adults": "成人：",
+        "children": "儿童：",
+        "notes": "备注："
+      },
+      "service_types": {
+        "sunday_morning": "周日上午",
+        "sunday_evening": "周日晚上",
+        "wednesday": "周三",
+        "special_event": "特别活动"
+      },
+      "success_recorded": "出勤已记录！"
+    },
+    "small_groups": {
+      "title": "小组",
+      "add_group": "添加小组",
+      "add_title": "添加小组",
+      "columns": {
+        "id": "编号",
+        "group_name": "小组名称",
+        "leader": "组长",
+        "meeting_day": "聚会日期",
+        "location": "地点",
+        "members": "成员"
+      },
+      "fields": {
+        "group_name": "小组名称：",
+        "leader": "组长：",
+        "meeting_day": "聚会日期：",
+        "location": "地点：",
+        "member_count": "成员人数："
+      },
+      "days": {
+        "monday": "星期一",
+        "tuesday": "星期二",
+        "wednesday": "周三",
+        "thursday": "星期四",
+        "friday": "星期五",
+        "saturday": "星期六",
+        "sunday": "星期日"
+      },
+      "success_added": "小组已添加！"
+    },
+    "expenses": {
+      "title": "教会支出",
+      "total_expenses": "支出总额：{amount}",
+      "add_expense": "添加支出",
+      "add_title": "添加支出",
+      "columns": {
+        "id": "编号",
+        "description": "描述",
+        "amount": "金额",
+        "category": "类别",
+        "date": "日期",
+        "approved_by": "批准人"
+      },
+      "fields": {
+        "description": "描述：",
+        "amount": "金额 (£)：",
+        "category": "类别：",
+        "approved_by": "批准人："
+      },
+      "categories": {
+        "utilities": "公用事业",
+        "supplies": "用品",
+        "salaries": "工资",
+        "maintenance": "维护",
+        "missions": "宣教",
+        "events": "活动",
+        "other": "其他"
+      },
+      "success_recorded": "支出已记录！"
+    },
+    "reports": {
+      "title": "教会报告",
+      "window_title": "教会报告 - 完整视图",
+      "financial_summary": "财务摘要",
+      "membership_summary": "会员摘要",
+      "ministry_summary": "事工摘要",
+      "export_report": "导出报告到文件",
+      "view_full_report": "查看完整报告",
+      "view_full_description": "点击下方按钮在新窗口中查看完整报告，可选择保存或发送给管理员。",
+      "save_as_txt": "保存为TXT",
+      "send_to_admin": "发送给管理员",
+      "admin_email_title": "管理员邮箱",
+      "admin_email_prompt": "输入管理员邮箱地址：",
+      "send_success": "报告已成功发送至 {email}",
+      "send_failed": "发送报告失败。请检查邮件配置。",
+      "total_donations": "捐赠总额：{amount}",
+      "total_expenses": "支出总额：{amount}",
+      "net_balance": "净余额：{amount}",
+      "donation_breakdown": "按类型划分的捐赠明细：",
+      "total_members": "成员总数：{count}",
+      "active": "活跃：{count}",
+      "inactive": "不活跃：{count}",
+      "visitors": "访客：{count}",
+      "active_volunteers": "活跃志愿者：{count}",
+      "small_groups": "小组：{count}",
+      "prayer_requests_count": "祷告请求：{total}（{answered} 已应答）",
+      "sermons_archived": "已归档讲道：{count}",
+      "export_success": "报告已导出至：\n{filename}",
+      "report_header": "恩典社区教会 - 报告",
+      "generated": "生成时间：{datetime}",
+      "generated_by": "生成者：{user}"
+    },
+    "payment": {
+      "title": "支付选项",
+      "select_method": "选择支付方式",
+      "amount_due": "应付金额：",
+      "cash": "现金",
+      "card": "信用卡/借记卡",
+      "student_account": "学生账户",
+      "balance": "余额：{amount}",
+      "insufficient": "余额不足",
+      "no_account": "无账户",
+      "cancel": "取消",
+      "pay_now": "立即支付",
+      "payment_failed": "支付失败"
+    },
+    "common": {
+      "save": "保存",
+      "save_changes": "保存更改",
+      "cancel": "取消",
+      "close": "关闭",
+      "success": "成功",
+      "error": "错误",
+      "warning": "警告",
+      "confirm": "确认",
+      "confirm_delete": "确认删除",
+      "welcome": "欢迎，{name}",
+      "not_provided": "未提供"
+    }
+  }
+}

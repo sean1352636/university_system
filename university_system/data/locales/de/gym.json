@@ -1,0 +1,101 @@
+{
+  "gym": {
+    "title": "Universitäts-Fitnesscenter",
+    "window_title": "Universitäts-Fitnessstudio Dienste",
+    "all_members": "Alle Mitglieder",
+    "available_classes": "Verfügbare Kurse",
+    "book_pt_session": "Personal Training Buchen",
+    "class_schedule": "Kursplan",
+    "equipment_details": "Gerätedetails",
+    "equipment_list": "Geräteliste",
+    "membership_options": "Mitgliedschaftsoptionen",
+    "membership_stats": "Mitgliedschaftsstatistiken",
+    "my_bookings": "Meine Buchungen",
+    "my_membership": "Meine Mitgliedschaft",
+    "my_pt_sessions": "Meine PT-Einheiten",
+    "pt_info": "Personal Training Informationen",
+    "report_output": "Berichtsausgabe",
+    "tabs": {
+      "admin": "Administration",
+      "classes": "Kurse",
+      "equipment": "Geräte",
+      "membership": "Mitgliedschaft",
+      "personal_training": "Personal Training"
+    },
+    "btn": {
+      "book_class": "Kurs Buchen",
+      "book_pt": "PT-Einheit Buchen",
+      "cancel_booking": "Buchung Stornieren",
+      "cancel_membership": "Mitgliedschaft Kündigen",
+      "check_in": "Einchecken",
+      "email_report": "Bericht Senden",
+      "filter": "Filtern",
+      "generate_report": "Bericht Erstellen",
+      "join": "Beitreten",
+      "refresh_stats": "Stats Aktualisieren",
+      "renew": "Verlängern",
+      "report_issue": "Problem Melden",
+      "view_equipment": "Gerät Anzeigen"
+    },
+    "labels": {
+      "category": "Kategorie:",
+      "features": "Funktionen:",
+      "membership_type": "Mitgliedschaftstyp:",
+      "monthly_fee": "Monatsbeitrag:",
+      "report_type": "Berichtstyp:",
+      "session_date": "Einheitsdatum:",
+      "session_time": "Einheitszeit:",
+      "session_type": "Einheitstyp:",
+      "trainer": "Trainer:"
+    },
+    "confirm": {
+      "cancel_booking": "Sind Sie sicher, dass Sie diese Buchung stornieren möchten?",
+      "cancel_membership": "Sind Sie sicher, dass Sie Ihre Mitgliedschaft kündigen möchten?",
+      "cancel_pt": "Sind Sie sicher, dass Sie diese PT-Einheit stornieren möchten?"
+    },
+    "errors": {
+      "booking_failed": "Buchung fehlgeschlagen: {error}",
+      "email_failed": "E-Mail-Versand fehlgeschlagen: {error}",
+      "fill_required": "Bitte füllen Sie alle Pflichtfelder aus",
+      "login_required": "Sie müssen angemeldet sein, um das Fitnessstudio zu nutzen",
+      "no_active_membership": "Sie haben keine aktive Mitgliedschaft",
+      "select_booking": "Bitte wählen Sie eine Buchung",
+      "select_class": "Bitte wählen Sie einen Kurs",
+      "select_equipment": "Bitte wählen Sie ein Gerät",
+      "select_membership": "Bitte wählen Sie einen Mitgliedschaftstyp",
+      "select_session": "Bitte wählen Sie eine Einheit"
+    },
+    "messages": {
+      "already_member": "Sie haben bereits eine aktive Mitgliedschaft",
+      "booking_cancelled": "Buchung erfolgreich storniert",
+      "checked_in": "Einchecken erfolgreich! Viel Spaß beim Training!",
+      "class_booked": "Kurs erfolgreich gebucht",
+      "data_refreshed": "Daten erfolgreich aktualisiert",
+      "issue_reported": "Problem erfolgreich gemeldet",
+      "membership_cancelled": "Mitgliedschaft erfolgreich gekündigt",
+      "membership_created": "Mitgliedschaft erfolgreich erstellt",
+      "membership_renewed": "Mitgliedschaft erfolgreich verlängert",
+      "no_membership": "Sie haben keine Fitnessstudio-Mitgliedschaft",
+      "no_membership_info": "Keine Mitgliedschaftsinformationen verfügbar",
+      "pt_booked": "Personal Training erfolgreich gebucht",
+      "pt_cancelled": "PT-Einheit erfolgreich storniert",
+      "report_generated": "Bericht erfolgreich erstellt"
+    },
+    "prompts": {
+      "booking_date": "Buchungsdatum wählen:",
+      "describe_issue": "Beschreiben Sie das Problem:",
+      "emergency_contact": "Notfallkontakt Name:",
+      "emergency_phone": "Notfallkontakt Telefon:",
+      "membership_months": "Anzahl der Monate:",
+      "renewal_months": "Verlängerungszeitraum (Monate):"
+    },
+    "reports": {
+      "title": "Fitnessstudio-Berichte"
+    },
+    "warnings": {
+      "db_init": "Datenbank-Initialisierungswarnung",
+      "email_unavailable": "E-Mail-Dienst nicht verfügbar",
+      "generate_report_first": "Bitte erstellen Sie zuerst einen Bericht"
+    }
+  }
+}

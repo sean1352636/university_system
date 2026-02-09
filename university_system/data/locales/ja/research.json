@@ -1,0 +1,184 @@
+{
+  "research": {
+    "grants": {
+      "errors": {
+        "add_team_member": "Error adding team member: {error}",
+        "create_milestone": "Error creating milestone: {error}",
+        "create_project": "Error creating research project: {error}",
+        "record_publication": "Error recording publication: {error}",
+        "register_equipment": "Error registering equipment: {error}",
+        "submit_application": "Error submitting grant application: {error}",
+        "submit_ethics_review": "Error submitting ethics review: {error}",
+        "update_decision": "Error updating grant decision: {error}"
+      },
+      "gui": {
+        "cli_instruction": "Use CLI: Research & Grants Management",
+        "description": "Manage research projects, grants, publications, and equipment.\n\nFeatures:\n- Research project tracking\n- Grant applications\n- Publications management\n- Milestone tracking\n- Equipment inventory\n- Ethics review board",
+        "title": "Research & Grants Management"
+      },
+      "menu": {
+        "enter_choice": "Enter your choice (1-8): ",
+        "equipment_inventory": "Equipment Inventory",
+        "error": "Error: {error}",
+        "ethics_review_board": "Ethics Review Board",
+        "feature_available": "Feature available via Research managers",
+        "grant_applications": "Grant Applications",
+        "invalid_choice": "Invalid choice.",
+        "milestone_management": "Milestone Management",
+        "publications_tracking": "Publications Tracking",
+        "research_projects": "Research Projects",
+        "research_reports": "Research Reports",
+        "return_to_main": "Return to Main Menu",
+        "title": "RESEARCH & GRANTS MANAGEMENT",
+        "usage_instruction": "Use: from university_system.modules.domain.research.services import ResearchProjectManager"
+      }
+    }
+  },
+  "research_grants": {
+    "title": "研究・助成金管理",
+    "window_title": "Research & Grants Management",
+    "submit_proposal": "Submit Proposal",
+    "view_grants": "View Grants",
+    "manage_projects": "Manage Projects",
+    "funding_opportunities": "Funding Opportunities",
+    "grant_applications": "Grant Applications",
+    "active_grants": "Active Grants",
+    "completed_grants": "Completed Grants",
+    "proposal_title": "Proposal Title",
+    "principal_investigator": "Principal Investigator",
+    "co_investigators": "Co-Investigators",
+    "funding_agency": "Funding Agency",
+    "requested_amount": "Requested Amount",
+    "awarded_amount": "Awarded Amount",
+    "project_start": "Project Start Date",
+    "project_end": "Project End Date",
+    "project_status": "Project Status",
+    "budget_allocation": "Budget Allocation",
+    "expenditure_report": "Expenditure Report",
+    "progress_report": "Progress Report",
+    "deliverables": "Deliverables",
+    "publications": "Publications",
+    "submit_report": "Submit Report",
+    "deadline": "Deadline",
+    "header_title": "研究・助成金管理",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "pi": "PI",
+      "department": "Department",
+      "type": "Type",
+      "start_date": "Start Date",
+      "budget": "Budget",
+      "status": "Status",
+      "grant_name": "Grant Name",
+      "agency": "Agency",
+      "requested": "Requested",
+      "awarded": "Awarded",
+      "deadline": "Deadline",
+      "authors": "Authors",
+      "publication_type": "Publication Type",
+      "journal": "Journal",
+      "year": "Year",
+      "citations": "Citations",
+      "project": "Project",
+      "milestone": "Milestone",
+      "due_date": "Due Date",
+      "completed": "Completed",
+      "equipment_name": "Equipment Name",
+      "purchase_date": "Purchase Date",
+      "cost": "Cost",
+      "location": "Location",
+      "protocol_number": "Protocol Number",
+      "submission_date": "Submission Date",
+      "review_type": "Review Type",
+      "decision": "Decision"
+    },
+    "status": {
+      "not_completed": "Not completed",
+      "pending": "Pending",
+      "under_review": "Under Review"
+    },
+    "tabs": {
+      "research_projects": "研究プロジェクト",
+      "grant_applications": "助成金申請",
+      "publications": "出版物",
+      "milestones": "マイルストーン",
+      "equipment": "機器",
+      "irb_ethics": "倫理委員会/倫理"
+    },
+    "frames": {
+      "active_projects": "アクティブなプロジェクト",
+      "grant_applications": "助成金申請",
+      "research_publications": "研究出版物",
+      "project_milestones": "プロジェクトマイルストーン",
+      "research_equipment": "研究機器",
+      "irb_applications": "倫理委員会/倫理申請"
+    },
+    "buttons": {
+      "create_project": "プロジェクトを作成",
+      "add_team_member": "チームメンバーを追加",
+      "submit_application": "申請を提出",
+      "update_decision": "決定を更新",
+      "add_publication": "出版物を追加",
+      "add_milestone": "マイルストーンを追加",
+      "update_status": "状態を更新",
+      "add_equipment": "機器を追加",
+      "submit_irb": "IRB申請を提出",
+      "change_language": "言語：{lang}"
+    },
+    "labels": {
+      "user": "ユーザー：{username}"
+    },
+    "fields": {
+      "project_title": "プロジェクトタイトル：",
+      "pi_id": "主任研究者ID：",
+      "department": "学部：",
+      "project_type": "プロジェクトタイプ：",
+      "start_date": "開始日（YYYY-MM-DD）：",
+      "budget": "予算：",
+      "description": "説明：",
+      "staff_id": "スタッフID：",
+      "role": "役割："
+    },
+    "dialogs": {
+      "create_project": {
+        "title": "研究プロジェクトを作成",
+        "header": "研究プロジェクトを作成"
+      },
+      "add_team_member": {
+        "title": "チームメンバーを追加",
+        "header": "チームメンバーを追加 - プロジェクト {project_id}"
+      }
+    },
+    "messages": {
+      "project_created": "プロジェクトが作成されました（ID：{id}）",
+      "team_member_added": "チームメンバーが正常に追加されました",
+      "grant_submission_placeholder": "助成金提出ダイアログ - 必要に応じて実装してください",
+      "grant_decision_placeholder": "助成金決定更新ダイアログ - 必要に応じて実装してください",
+      "add_publication_placeholder": "出版物追加ダイアログ - 必要に応じて実装してください",
+      "add_milestone_placeholder": "マイルストーン追加ダイアログ - 必要に応じて実装してください",
+      "update_milestone_placeholder": "マイルストーン更新ダイアログ - 必要に応じて実装してください",
+      "add_equipment_placeholder": "機器追加ダイアログ - 必要に応じて実装してください",
+      "irb_submission_placeholder": "IRB提出ダイアログ - 必要に応じて実装してください",
+      "irb_decision_placeholder": "IRB決定更新ダイアログ - 必要に応じて実装してください"
+    },
+    "errors": {
+      "login_required": "研究・助成金管理にアクセスするにはログインしてください。",
+      "db_init_issue": "データベースの初期化に問題がありました：{error}。一部の機能が正しく動作しない場合があります。",
+      "select_project": "プロジェクトを選択してください",
+      "load_projects_failed": "プロジェクトの読み込みに失敗しました：{error}",
+      "load_grants_failed": "助成金の読み込みに失敗しました：{error}",
+      "load_publications_failed": "出版物の読み込みに失敗しました：{error}",
+      "load_milestones_failed": "マイルストーンの読み込みに失敗しました：{error}",
+      "load_equipment_failed": "機器の読み込みに失敗しました：{error}",
+      "load_irb_failed": "IRB申請の読み込みに失敗しました：{error}",
+      "create_project_failed": "プロジェクトの作成に失敗しました：{error}",
+      "add_member_failed": "チームメンバーの追加に失敗しました：{error}",
+      "launch_failed": "研究・助成金GUIの起動に失敗しました：{error}"
+    },
+    "language": {
+      "changed_title": "言語が変更されました",
+      "restart_for_full_effect": "一部のテキストはすぐに更新されます。完全に適用するには、モジュールを再起動してください。"
+    }
+  }
+}

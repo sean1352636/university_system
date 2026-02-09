@@ -1,0 +1,258 @@
+{
+  "health_portal": {
+    "title": "Universitäts-Gesundheitsportal",
+    "window_title": "Gesundheitsportal-Dienste",
+    "header_title": "Universitäts-Gesundheitsportal",
+
+    "nav": {
+      "title": "Navigation",
+      "health_records": "Gesundheitsakten",
+      "manage_records": "Akten Verwalten",
+      "view_records": "Akten Anzeigen",
+      "view_history": "Krankengeschichte Anzeigen",
+      "generate_reports": "Berichte Erstellen",
+      "appointments": "Termine",
+      "schedule_appt": "Termin Planen",
+      "view_appts": "Termine Anzeigen",
+      "vaccinations": "Impfungen",
+      "record_vaccine": "Impfung Erfassen",
+      "view_vaccines": "Impfungen Anzeigen",
+      "emergency_contacts": "Notfallkontakte",
+      "manage_contacts": "Kontakte Verwalten",
+      "reports_analytics": "Berichte & Analysen",
+      "health_reports": "Gesundheitsberichte",
+      "integration": "Integration",
+      "email_manager": "E-Mail-Manager",
+      "send_report_email": "Bericht per E-Mail Senden",
+      "send_record_email": "Akte per E-Mail Senden",
+      "accessibility": "Barrierefreiheit",
+      "accessibility_tools": "Barrierefreiheits-Tools",
+      "medical_accommodations": "Medizinische Anpassungen",
+      "administration": "Verwaltung",
+      "security_audit": "Sicherheitsprüfung",
+      "data_management": "Datenverwaltung"
+    },
+
+    "btn": {
+      "return_main": "Zurück zum Hauptmenü",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "update": "Aktualisieren",
+      "delete": "Löschen",
+      "search": "Suchen",
+      "clear": "Löschen",
+      "refresh": "Aktualisieren"
+    },
+
+    "buttons": {
+      "open_email_manager": "E-Mail-Manager Öffnen",
+      "send_health_report_email": "Gesundheitsbericht Senden",
+      "send_health_record_email": "Gesundheitsakte Senden",
+      "save_record": "Akte Speichern",
+      "clear_form": "Formular Löschen",
+      "view_details": "Details Anzeigen",
+      "update": "Aktualisieren",
+      "delete": "Löschen",
+      "search": "Suchen",
+      "record_vaccination": "Impfung Erfassen",
+      "schedule_appointment": "Termin Planen",
+      "cancel_appointment": "Termin Absagen",
+      "add_contact": "Kontakt Hinzufügen",
+      "remove_contact": "Kontakt Entfernen",
+      "generate_report": "Bericht Erstellen",
+      "export_data": "Daten Exportieren",
+      "print": "Drucken"
+    },
+
+    "labels": {
+      "email_manager": "E-Mail-Manager",
+      "send_report_title": "Gesundheitsbericht Senden",
+      "email_health_report": "Gesundheitsbericht-E-Mail",
+      "student_id": "Studenten-ID:",
+      "report_title": "Berichtstitel:",
+      "report_type": "Berichtstyp:",
+      "report_summary": "Berichtszusammenfassung:",
+      "send_record_email_title": "Gesundheitsakte Senden",
+      "email_health_record_form": "Gesundheitsakte-E-Mail",
+      "record_type": "Aktentyp:",
+      "date_range": "Datumsbereich:",
+      "all_dates": "Alle Daten",
+      "summary": "Zusammenfassung:",
+      "records_management": "Verwaltung der Gesundheitsakten",
+      "record_date": "Aktendatum:",
+      "provider": "Anbieter:",
+      "description": "Beschreibung:",
+      "confidential": "Vertraulich:",
+      "search_filters": "Suchfilter",
+      "date_from": "Datum Von:",
+      "date_to": "Datum Bis:",
+      "health_record_details": "Details der Gesundheitsakte",
+      "record_type_required": "Aktentyp *:",
+      "record_date_required": "Aktendatum *:",
+      "vaccination_management": "Impfungsverwaltung",
+      "vaccine": "Impfstoff:",
+      "administered_date": "Verabreichungsdatum:",
+      "lot_number": "Chargennummer:",
+      "manufacturer": "Hersteller:",
+      "administered_by": "Verabreicht Von:",
+      "location": "Ort:",
+      "adverse_reaction_reported": "Nebenwirkung Gemeldet",
+      "reaction_description": "Beschreibung der Reaktion:",
+      "appointment_management": "Terminverwaltung",
+      "appointment_date": "Termindatum:",
+      "appointment_time": "Terminzeit:",
+      "appointment_type": "Termintyp:",
+      "reason": "Grund:",
+      "notes": "Notizen:",
+      "emergency_contact_management": "Notfallkontaktverwaltung",
+      "contact_name": "Kontaktname:",
+      "relationship": "Beziehung:",
+      "phone_number": "Telefonnummer:",
+      "email": "E-Mail:",
+      "is_primary": "Hauptkontakt"
+    },
+
+    "tabs": {
+      "add_record": "Akte Hinzufügen",
+      "view_records": "Akten Anzeigen",
+      "record_vaccination": "Impfung Erfassen",
+      "view_vaccinations": "Impfungen Anzeigen",
+      "schedule": "Planen",
+      "view_appointments": "Termine Anzeigen",
+      "add_contact": "Kontakt Hinzufügen",
+      "view_contacts": "Kontakte Anzeigen"
+    },
+
+    "fields": {
+      "record_id": "Akten-ID:",
+      "student_id": "Studenten-ID:",
+      "student_name": "Studentenname:",
+      "record_type": "Aktentyp:",
+      "date": "Datum:",
+      "provider": "Anbieter:",
+      "confidential": "Vertraulich:",
+      "created": "Erstellt:",
+      "description": "Beschreibung:",
+      "status": "Status:",
+      "vaccination_id": "Impfungs-ID:",
+      "vaccine_name": "Impfstoffname:",
+      "lot_number": "Chargennummer:",
+      "manufacturer": "Hersteller:",
+      "administered_by": "Verabreicht Von:",
+      "administered_date": "Verabreichungsdatum:",
+      "location": "Ort:",
+      "adverse_reaction": "Nebenwirkung:"
+    },
+
+    "record_types": {
+      "complete_history": "Vollständige Geschichte",
+      "vaccination": "Impfung",
+      "visit_summary": "Besuchszusammenfassung",
+      "emergency_info": "Notfallinformationen",
+      "checkup": "Untersuchung",
+      "emergency": "Notfall",
+      "prescription": "Rezept",
+      "lab_result": "Laborergebnis",
+      "consultation": "Beratung",
+      "treatment": "Behandlung",
+      "other": "Sonstiges"
+    },
+
+    "appointment_types": {
+      "general_checkup": "Allgemeine Untersuchung",
+      "vaccination": "Impfung",
+      "consultation": "Beratung",
+      "follow_up": "Nachsorge",
+      "emergency": "Notfall",
+      "lab_test": "Labortest",
+      "physical_exam": "Körperliche Untersuchung",
+      "mental_health": "Psychische Gesundheit",
+      "other": "Sonstiges"
+    },
+
+    "dialogs": {
+      "update_health_record": "Gesundheitsakte Aktualisieren",
+      "view_record_details": "Aktendetails Anzeigen",
+      "confirm_delete": "Löschen Bestätigen",
+      "confirm_cancel": "Abbruch Bestätigen"
+    },
+
+    "status": {
+      "ready": "Bereit",
+      "loading": "Laden...",
+      "saving": "Speichern...",
+      "saved": "Gespeichert",
+      "error": "Fehler",
+      "appointment_scheduled": "Geplant",
+      "appointment_completed": "Abgeschlossen",
+      "appointment_cancelled": "Abgesagt",
+      "appointment_no_show": "Nicht Erschienen"
+    },
+
+    "defaults": {
+      "left_arm": "Linker Arm",
+      "right_arm": "Rechter Arm",
+      "left_thigh": "Linker Oberschenkel",
+      "right_thigh": "Rechter Oberschenkel"
+    },
+
+    "content": {
+      "title": "Inhalt",
+      "welcome": "Willkommen im Universitäts-Gesundheitsportal. Wählen Sie eine Option aus dem Navigationsmenü, um zu beginnen."
+    },
+
+    "messages": {
+      "auth_required": "Authentifizierung Erforderlich",
+      "auth_required_detail": "Bitte melden Sie sich an, um auf das Gesundheitsportal zuzugreifen.",
+      "enter_student_id": "Bitte geben Sie eine Studenten-ID ein",
+      "student_not_found": "Student nicht gefunden",
+      "record_email_sent": "Gesundheitsakte-E-Mail an {name} gesendet",
+      "no_description": "Keine Beschreibung verfügbar",
+      "no_selection": "Keine Auswahl",
+      "select_record_to_update": "Bitte wählen Sie eine Akte zum Aktualisieren",
+      "record_not_found": "Akte nicht gefunden",
+      "record_updated": "Akte erfolgreich aktualisiert",
+      "record_created": "Akte erfolgreich erstellt",
+      "record_deleted": "Akte erfolgreich gelöscht",
+      "vaccination_recorded": "Impfung erfolgreich erfasst",
+      "appointment_scheduled": "Termin erfolgreich geplant",
+      "appointment_cancelled": "Termin erfolgreich abgesagt",
+      "contact_added": "Notfallkontakt erfolgreich hinzugefügt",
+      "contact_removed": "Notfallkontakt erfolgreich entfernt",
+      "report_generated": "Bericht erfolgreich erstellt",
+      "fill_required_fields": "Bitte füllen Sie alle Pflichtfelder aus",
+      "invalid_date": "Ungültiges Datumsformat",
+      "confirm_delete_record": "Sind Sie sicher, dass Sie diese Akte löschen möchten?",
+      "confirm_cancel_appointment": "Sind Sie sicher, dass Sie diesen Termin absagen möchten?",
+      "no_records_found": "Keine Akten gefunden",
+      "no_appointments_found": "Keine Termine gefunden",
+      "no_vaccinations_found": "Keine Impfakten gefunden",
+      "select_record": "Bitte wählen Sie eine Akte",
+      "select_appointment": "Bitte wählen Sie einen Termin",
+      "select_contact": "Bitte wählen Sie einen Kontakt"
+    },
+
+    "errors": {
+      "load_failed": "Fehler beim Laden der Daten: {error}",
+      "save_failed": "Fehler beim Speichern: {error}",
+      "delete_failed": "Fehler beim Löschen: {error}",
+      "email_failed": "Fehler beim Senden der E-Mail: {error}",
+      "invalid_student_id": "Ungültige Studenten-ID",
+      "database_error": "Datenbankfehler: {error}",
+      "permission_denied": "Berechtigung verweigert"
+    },
+
+    "reports": {
+      "title": "Gesundheitsberichte",
+      "summary_report": "Zusammenfassender Bericht",
+      "vaccination_report": "Impfbericht",
+      "appointment_report": "Terminbericht",
+      "generated_on": "Erstellt am:",
+      "generated_by": "Erstellt von:",
+      "date_range": "Datumsbereich:",
+      "total_records": "Gesamtzahl der Akten:",
+      "total_patients": "Gesamtzahl der Patienten:"
+    }
+  }
+}

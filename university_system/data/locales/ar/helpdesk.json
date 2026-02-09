@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "نظام مكتب المساعدة المحسن",
+    "auth": {
+      "required_title": "المصادقة مطلوبة",
+      "not_available": "نظام المصادقة غير متوفر. لا يمكن بدء واجهة مكتب المساعدة.",
+      "login_required": "يرجى تسجيل الدخول من خلال واجهة نظام الجامعة الرئيسية.\n\nتشغيل: python run.py --gui\n\nمكتب المساعدة متاح فقط بعد تسجيل الدخول إلى النظام الرئيسي."
+    },
+    "menu": {
+      "file": "ملف",
+      "new_ticket": "تذكرة جديدة",
+      "export_data": "تصدير البيانات",
+      "import_data": "استيراد البيانات",
+      "tickets": "التذاكر",
+      "my_tickets": "تذاكري",
+      "all_tickets": "جميع التذاكر",
+      "search_tickets": "البحث عن تذاكر",
+      "knowledge_base": "قاعدة المعرفة",
+      "browse_articles": "تصفح المقالات",
+      "create_article": "إنشاء مقال",
+      "reports": "التقارير",
+      "analytics_dashboard": "لوحة التحليلات",
+      "generate_reports": "إنشاء التقارير",
+      "admin": "الإدارة",
+      "system_management": "إدارة النظام",
+      "user_management": "إدارة المستخدمين",
+      "settings": "الإعدادات",
+      "help": "المساعدة",
+      "user_guide": "دليل المستخدم",
+      "about": "حول"
+    },
+    "dashboard": {
+      "title": "لوحة تحكم مكتب المساعدة",
+      "welcome": "مرحباً، {username}!",
+      "stats": {
+        "open_tickets": "التذاكر المفتوحة",
+        "in_progress": "قيد التنفيذ",
+        "pending": "معلقة",
+        "resolved_today": "تم حلها اليوم",
+        "avg_response_time": "متوسط وقت الاستجابة",
+        "satisfaction_rate": "معدل الرضا"
+      },
+      "recent_tickets": "التذاكر الأخيرة",
+      "quick_actions": "إجراءات سريعة",
+      "my_assigned": "التذاكر المعينة لي",
+      "unassigned": "التذاكر غير المعينة"
+    },
+    "tickets": {
+      "title": "تذاكر الدعم",
+      "create": "إنشاء تذكرة",
+      "view": "عرض التذكرة",
+      "edit": "تعديل التذكرة",
+      "delete": "حذف التذكرة",
+      "assign": "تعيين التذكرة",
+      "escalate": "تصعيد التذكرة",
+      "close": "إغلاق التذكرة",
+      "reopen": "إعادة فتح التذكرة",
+      "fields": {
+        "ticket_id": "معرف التذكرة",
+        "subject": "الموضوع",
+        "description": "الوصف",
+        "category": "الفئة",
+        "subcategory": "الفئة الفرعية",
+        "priority": "الأولوية",
+        "impact": "التأثير",
+        "urgency": "الإلحاح",
+        "status": "الحالة",
+        "source": "المصدر",
+        "department": "القسم",
+        "assigned_to": "معين إلى",
+        "created_by": "أنشأه",
+        "created_at": "تاريخ الإنشاء",
+        "updated_at": "تاريخ التحديث",
+        "due_date": "تاريخ الاستحقاق",
+        "resolution": "الحل",
+        "tags": "الوسوم"
+      },
+      "status": {
+        "open": "مفتوح",
+        "in_progress": "قيد التنفيذ",
+        "pending": "معلق",
+        "on_hold": "في الانتظار",
+        "resolved": "تم الحل",
+        "closed": "مغلق"
+      },
+      "priority": {
+        "low": "منخفض",
+        "medium": "متوسط",
+        "high": "عالي",
+        "urgent": "عاجل",
+        "critical": "حرج"
+      },
+      "categories": {
+        "technical": "تقني",
+        "account": "الحساب",
+        "billing": "الفواتير",
+        "general": "عام",
+        "feedback": "ملاحظات",
+        "bug": "تقرير خطأ",
+        "feature": "طلب ميزة"
+      },
+      "actions": {
+        "add_reply": "إضافة رد",
+        "add_note": "إضافة ملاحظة داخلية",
+        "attach_file": "إرفاق ملف",
+        "link_ticket": "ربط تذكرة",
+        "merge_tickets": "دمج التذاكر",
+        "split_ticket": "تقسيم التذكرة",
+        "change_status": "تغيير الحالة",
+        "change_priority": "تغيير الأولوية",
+        "bulk_update": "تحديث جماعي"
+      },
+      "messages": {
+        "created": "تم إنشاء التذكرة بنجاح",
+        "updated": "تم تحديث التذكرة بنجاح",
+        "assigned": "تم تعيين التذكرة بنجاح",
+        "escalated": "تم تصعيد التذكرة بنجاح",
+        "closed": "تم إغلاق التذكرة بنجاح",
+        "reopened": "تم إعادة فتح التذكرة بنجاح",
+        "reply_added": "تمت إضافة الرد بنجاح",
+        "no_tickets": "لم يتم العثور على تذاكر",
+        "select_ticket": "يرجى اختيار تذكرة"
+      }
+    },
+    "knowledge_base": {
+      "title": "قاعدة المعرفة",
+      "articles": "المقالات",
+      "create_article": "إنشاء مقال",
+      "edit_article": "تعديل المقال",
+      "search_placeholder": "البحث في قاعدة المعرفة...",
+      "categories": "الفئات",
+      "popular": "المقالات الشائعة",
+      "recent": "المقالات الأخيرة",
+      "fields": {
+        "title": "العنوان",
+        "content": "المحتوى",
+        "category": "الفئة",
+        "tags": "الوسوم",
+        "author": "المؤلف",
+        "views": "المشاهدات",
+        "helpful": "مفيد",
+        "status": "الحالة"
+      },
+      "messages": {
+        "created": "تم إنشاء المقال بنجاح",
+        "updated": "تم تحديث المقال بنجاح",
+        "deleted": "تم حذف المقال بنجاح",
+        "no_articles": "لم يتم العثور على مقالات"
+      }
+    },
+    "search": {
+      "title": "البحث عن تذاكر",
+      "placeholder": "أدخل مصطلحات البحث...",
+      "filters": "المرشحات",
+      "advanced": "بحث متقدم",
+      "saved_searches": "عمليات البحث المحفوظة",
+      "save_search": "حفظ البحث",
+      "clear": "مسح",
+      "results": "نتائج البحث",
+      "no_results": "لم يتم العثور على نتائج"
+    },
+    "reports": {
+      "title": "التقارير",
+      "analytics": "لوحة التحليلات",
+      "generate": "إنشاء تقرير",
+      "export": "تصدير التقرير",
+      "types": {
+        "ticket_summary": "ملخص التذاكر",
+        "response_times": "أوقات الاستجابة",
+        "resolution_rates": "معدلات الحل",
+        "agent_performance": "أداء الوكيل",
+        "customer_satisfaction": "رضا العملاء",
+        "sla_compliance": "الامتثال لاتفاقية مستوى الخدمة"
+      },
+      "period": {
+        "today": "اليوم",
+        "this_week": "هذا الأسبوع",
+        "this_month": "هذا الشهر",
+        "this_quarter": "هذا الربع",
+        "this_year": "هذا العام",
+        "custom": "نطاق مخصص"
+      }
+    },
+    "admin": {
+      "title": "الإدارة",
+      "system_management": "إدارة النظام",
+      "user_management": "إدارة المستخدمين",
+      "departments": "الأقسام",
+      "organizations": "المنظمات",
+      "sla_policies": "سياسات اتفاقية مستوى الخدمة",
+      "workflows": "سير العمل",
+      "templates": "القوالب",
+      "settings": "الإعدادات",
+      "backup": "نسخ احتياطي لقاعدة البيانات",
+      "audit_log": "سجل التدقيق"
+    },
+    "sla": {
+      "title": "سياسات اتفاقية مستوى الخدمة",
+      "create": "إنشاء سياسة SLA",
+      "edit": "تعديل سياسة SLA",
+      "fields": {
+        "name": "اسم السياسة",
+        "description": "الوصف",
+        "first_response": "وقت الاستجابة الأولى",
+        "resolution": "وقت الحل",
+        "escalation": "وقت التصعيد",
+        "priority": "الأولوية",
+        "business_hours": "ساعات العمل فقط"
+      },
+      "status": {
+        "within_sla": "ضمن SLA",
+        "approaching": "اقتراب الانتهاك",
+        "breached": "تم انتهاك SLA"
+      }
+    },
+    "departments": {
+      "title": "الأقسام",
+      "create": "إنشاء قسم",
+      "edit": "تعديل القسم",
+      "fields": {
+        "name": "اسم القسم",
+        "description": "الوصف",
+        "manager": "المدير",
+        "email": "البريد الإلكتروني",
+        "sla_policy": "سياسة SLA"
+      }
+    },
+    "common": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "view": "عرض",
+      "create": "إنشاء",
+      "update": "تحديث",
+      "search": "بحث",
+      "filter": "تصفية",
+      "refresh": "تحديث",
+      "export": "تصدير",
+      "import": "استيراد",
+      "loading": "جار التحميل...",
+      "success": "نجاح",
+      "error": "خطأ",
+      "warning": "تحذير",
+      "confirm": "تأكيد",
+      "yes": "نعم",
+      "no": "لا"
+    },
+    "errors": {
+      "load_failed": "فشل في تحميل البيانات",
+      "save_failed": "فشل في حفظ البيانات",
+      "delete_failed": "فشل في الحذف",
+      "permission_denied": "ليس لديك إذن لتنفيذ هذا الإجراء",
+      "not_found": "العنصر غير موجود",
+      "validation_error": "خطأ في التحقق",
+      "required_field": "هذا الحقل مطلوب",
+      "invalid_format": "تنسيق غير صالح"
+    }
+  }
+}

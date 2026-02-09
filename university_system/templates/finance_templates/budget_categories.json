@@ -1,0 +1,214 @@
+{
+  "budget_categories": [
+    {
+      "category_name": "Tuition Revenue",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Undergraduate Tuition",
+      "category_type": "revenue",
+      "parent_category_name": "Tuition Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "Graduate Tuition",
+      "category_type": "revenue",
+      "parent_category_name": "Tuition Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "International Tuition",
+      "category_type": "revenue",
+      "parent_category_name": "Tuition Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "Fee Revenue",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Registration Fees",
+      "category_type": "revenue",
+      "parent_category_name": "Fee Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "Laboratory Fees",
+      "category_type": "revenue",
+      "parent_category_name": "Fee Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "Technology Fees",
+      "category_type": "revenue",
+      "parent_category_name": "Fee Revenue",
+      "is_active": true
+    },
+    {
+      "category_name": "Housing Revenue",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Dining Revenue",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Grants and Contracts",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Endowment Income",
+      "category_type": "revenue",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Personnel Expenses",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Faculty Salaries",
+      "category_type": "expense",
+      "parent_category_name": "Personnel Expenses",
+      "is_active": true
+    },
+    {
+      "category_name": "Staff Salaries",
+      "category_type": "expense",
+      "parent_category_name": "Personnel Expenses",
+      "is_active": true
+    },
+    {
+      "category_name": "Benefits",
+      "category_type": "expense",
+      "parent_category_name": "Personnel Expenses",
+      "is_active": true
+    },
+    {
+      "category_name": "Facilities and Operations",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Utilities",
+      "category_type": "expense",
+      "parent_category_name": "Facilities and Operations",
+      "is_active": true
+    },
+    {
+      "category_name": "Maintenance",
+      "category_type": "expense",
+      "parent_category_name": "Facilities and Operations",
+      "is_active": true
+    },
+    {
+      "category_name": "Security",
+      "category_type": "expense",
+      "parent_category_name": "Facilities and Operations",
+      "is_active": true
+    },
+    {
+      "category_name": "Academic Programs",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Instructional Supplies",
+      "category_type": "expense",
+      "parent_category_name": "Academic Programs",
+      "is_active": true
+    },
+    {
+      "category_name": "Library Resources",
+      "category_type": "expense",
+      "parent_category_name": "Academic Programs",
+      "is_active": true
+    },
+    {
+      "category_name": "Research Support",
+      "category_type": "expense",
+      "parent_category_name": "Academic Programs",
+      "is_active": true
+    },
+    {
+      "category_name": "Student Services",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Financial Aid Administration",
+      "category_type": "expense",
+      "parent_category_name": "Student Services",
+      "is_active": true
+    },
+    {
+      "category_name": "Counseling Services",
+      "category_type": "expense",
+      "parent_category_name": "Student Services",
+      "is_active": true
+    },
+    {
+      "category_name": "Career Services",
+      "category_type": "expense",
+      "parent_category_name": "Student Services",
+      "is_active": true
+    },
+    {
+      "category_name": "Technology",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "IT Infrastructure",
+      "category_type": "expense",
+      "parent_category_name": "Technology",
+      "is_active": true
+    },
+    {
+      "category_name": "Software Licenses",
+      "category_type": "expense",
+      "parent_category_name": "Technology",
+      "is_active": true
+    },
+    {
+      "category_name": "Institutional Support",
+      "category_type": "expense",
+      "parent_category_id": null,
+      "is_active": true
+    },
+    {
+      "category_name": "Administration",
+      "category_type": "expense",
+      "parent_category_name": "Institutional Support",
+      "is_active": true
+    },
+    {
+      "category_name": "Legal Services",
+      "category_type": "expense",
+      "parent_category_name": "Institutional Support",
+      "is_active": true
+    },
+    {
+      "category_name": "Marketing and Communications",
+      "category_type": "expense",
+      "parent_category_name": "Institutional Support",
+      "is_active": true
+    }
+  ]
+}

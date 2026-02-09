@@ -1,0 +1,121 @@
+{
+  "staff": {
+    "create_staff_title": "Create New Staff Member",
+    "update_staff_title": "Update Staff Member: {username}",
+    "staff_management_title": "Staff Management",
+    "delete_staff_title": "Delete Staff Member",
+    "search_staff_title": "Search Staff Members",
+    "staff_details_title": "Staff Details",
+    "no_results_title": "No Results",
+    "confirm_delete_title": "Confirm Delete",
+
+    "personal_info": "Personal Information",
+    "update_personal_info": "Update Personal Information",
+    "account_info": "Account Information",
+    "update_account_info": "Update Account Information",
+    "current_info": "Current Information",
+    "search_staff": "Search Staff",
+    "search_staff_member": "Search Staff Member",
+    "search_criteria": "Search Criteria",
+    "search_results": "Search Results",
+
+    "first_name_required": "First Name: *",
+    "last_name_required": "Last Name: *",
+    "email_required": "Email: *",
+    "username_required": "Username: *",
+    "password_required": "Password: *",
+    "confirm_password_required": "Confirm Password: *",
+    "role_required": "Role: *",
+    "status_required": "Status: *",
+
+    "show_passwords": "Show Passwords",
+    "show_password": "Show Password",
+    "reset_password_optional": "Reset Password (Optional)",
+    "new_password_label": "New Password:",
+    "leave_blank_keep_password": "(Leave blank to keep current password)",
+    "username_or_email_label": "Username or Email:",
+    "search_by_label": "Search by:",
+    "search_term_label": "Search term:",
+
+    "delete_warning": "⚠️ WARNING: This action cannot be undone!",
+    "no_staff_found": "No staff members found matching your search",
+
+    "validation": {
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "email_required": "Email is required",
+      "invalid_email_format": "Invalid email format",
+      "username_required": "Username is required",
+      "username_min_length": "Username must be at least 3 characters",
+      "password_required": "Password is required",
+      "password_min_length": "Password must be at least 6 characters",
+      "passwords_no_match": "Passwords do not match",
+      "role_required": "Role is required",
+      "username_exists": "Username already exists",
+      "email_exists": "Email already exists",
+      "email_exists_other_user": "Email already exists for another user"
+    },
+
+    "messages": {
+      "staff_created_success": "Staff member '{username}' created successfully!\n\nUsername: {username}\nEmail: {email}\nRole: {role}",
+      "staff_updated_success": "Staff member '{username}' updated successfully!",
+      "staff_deleted_success": "Staff member '{username}' deleted successfully"
+    },
+
+    "errors": {
+      "failed_create_staff": "Failed to create staff member: {error}",
+      "failed_update_staff": "Failed to update staff member: {error}",
+      "failed_delete_staff": "Failed to delete staff member: {error}",
+      "failed_load_staff": "Error loading staff data: {error}",
+      "failed_load_staff_data": "Failed to load staff data: {error}",
+      "staff_not_found": "Staff member not found",
+      "search_failed": "Search failed: {error}",
+      "failed_to_delete": "Failed to delete: {error}"
+    },
+
+    "warnings": {
+      "no_selection": "No Selection",
+      "select_staff_to_edit": "Please select a staff member to edit",
+      "select_staff_to_delete": "Please select a staff member to delete",
+      "select_staff_to_view": "Please select a staff member to view",
+      "select_from_results": "Please select a staff member from the results",
+      "empty_search": "Empty Search",
+      "enter_username_email": "Please enter a username or email",
+      "enter_search_term": "Please enter a search term"
+    },
+
+    "buttons": {
+      "create_staff_member": "Create Staff Member",
+      "update_staff_member": "Update Staff Member",
+      "clear_form": "Clear Form",
+      "create_new_staff": "Create New Staff",
+      "refresh_list": "Refresh List",
+      "edit_selected": "Edit Selected",
+      "delete_selected": "Delete Selected",
+      "view_details": "View Details"
+    },
+
+    "columns": {
+      "id": "ID",
+      "username": "Username",
+      "email": "Email",
+      "full_name": "Full Name",
+      "role": "Role",
+      "status": "Status",
+      "created_date": "Created Date"
+    },
+
+    "context_menu": {
+      "edit_staff_member": "Edit Staff Member",
+      "delete_staff_member": "Delete Staff Member",
+      "view_details": "View Details"
+    },
+
+    "search_options": {
+      "username": "Username",
+      "email": "Email",
+      "name": "Name",
+      "role": "Role"
+    }
+  }
+}

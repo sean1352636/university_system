@@ -1,0 +1,246 @@
+{
+  "misconduct": {
+    "window": {
+      "title": "Academic Misconduct Panel - Case Management System"
+    },
+    "auth": {
+      "required_title": "Authentication Required",
+      "required_message": "You must be logged in to access the Academic Misconduct Panel.\n\nPlease log in through the main GUI first.",
+      "launch_from_gui": "You must be logged in to access the Academic Misconduct Panel.\n\nPlease launch this module from the main GUI after logging in.",
+      "not_logged_in_title": "Not Logged In",
+      "not_logged_in_message": "You are not currently logged in.\n\nPlease log in through the main GUI to access this panel.",
+      "access_denied_title": "Access Denied",
+      "access_denied_message": "You do not have permission to access the Academic Misconduct Panel.\n\nYour role: {role}\nRequired roles: Admin, Staff, or Instructor"
+    },
+    "header": {
+      "title": "ACADEMIC MISCONDUCT PANEL",
+      "subtitle": "Case Management System - Office of Academic Integrity"
+    },
+    "stats": {
+      "active_cases": "Active Cases",
+      "pending_hearing": "Pending Hearing",
+      "resolved": "Resolved"
+    },
+    "case_list": {
+      "title": "Case Registry",
+      "search_placeholder": "Search cases..."
+    },
+    "filters": {
+      "all": "All",
+      "under_review": "Under Review",
+      "pending_hearing": "Pending Hearing",
+      "resolved": "Resolved"
+    },
+    "buttons": {
+      "return_home": "Return to Home",
+      "create": "Create",
+      "view": "View",
+      "update": "Update",
+      "delete": "Delete",
+      "refresh": "Refresh",
+      "edit_case": "Edit Case",
+      "notify_student": "Notify Student",
+      "schedule_hearing": "Schedule Hearing",
+      "upload_evidence": "Upload Evidence",
+      "cancel": "Cancel",
+      "save_case": "Save Case",
+      "save_changes": "Save Changes",
+      "close": "Close",
+      "send_email": "Send Email",
+      "submit_decision": "Submit Decision",
+      "lookup": "Lookup",
+      "validate": "Validate",
+      "load_assignments": "Load Assignments",
+      "select_files": "Select Files",
+      "upload": "Upload"
+    },
+    "columns": {
+      "case_id": "Case ID",
+      "student": "Student",
+      "type": "Type",
+      "status": "Status"
+    },
+    "details": {
+      "title": "Case Details"
+    },
+    "tabs": {
+      "overview": "  Overview  ",
+      "evidence": "  Evidence  ",
+      "decision": "  Decision  ",
+      "history": "  History  "
+    },
+    "overview": {
+      "select_case": "Select a case to view details"
+    },
+    "fields": {
+      "case_id": "Case ID",
+      "student_name": "Student Name",
+      "student_id": "Student ID",
+      "student_email": "Student Email",
+      "course": "Course",
+      "course_module": "Course/Module Code",
+      "violation_type": "Violation Type",
+      "date_filed": "Date Filed",
+      "severity": "Severity",
+      "status": "Status",
+      "case_notes": "Case Notes:",
+      "notes": "Notes",
+      "initial_notes": "Initial Notes",
+      "hearing_date": "Hearing Date",
+      "hearing_time": "Hearing Time",
+      "hearing_location": "Hearing Location",
+      "ruling": "Ruling"
+    },
+    "evidence": {
+      "title": "Evidence & Documentation",
+      "no_evidence": "No evidence uploaded yet",
+      "select_case": "Select a case to view evidence",
+      "current_files": "Current Evidence Files:",
+      "upload_new": "Upload New Evidence",
+      "file_name": "File Name",
+      "file_size": "File Size",
+      "uploaded_date": "Upload Date",
+      "uploaded_by": "Uploaded By"
+    },
+    "decision": {
+      "title": "Panel Decision",
+      "ruling_label": "Ruling:",
+      "rationale_label": "Decision Rationale:",
+      "submit_confirm": "Are you sure you want to submit this decision?",
+      "success": "Decision recorded successfully"
+    },
+    "rulings": {
+      "not_responsible": "Not Responsible",
+      "warning": "Responsible - Warning",
+      "grade_penalty": "Responsible - Grade Penalty",
+      "course_failure": "Responsible - Course Failure",
+      "suspension": "Responsible - Suspension",
+      "expulsion": "Responsible - Expulsion",
+      "academic_probation": "Responsible - Academic Probation",
+      "resubmission": "Responsible - Resubmission Required",
+      "dismissed": "Case Dismissed - Insufficient Evidence",
+      "deferred": "Deferred - Pending Investigation"
+    },
+    "history": {
+      "title": "Case History & Timeline",
+      "select_case": "Select a case to view its history",
+      "no_records": "No history records found for this case."
+    },
+    "violations": {
+      "plagiarism": "Plagiarism",
+      "unauthorized_collaboration": "Unauthorized Collaboration",
+      "contract_cheating": "Contract Cheating",
+      "exam_misconduct": "Exam Misconduct",
+      "fabrication": "Fabrication",
+      "other": "Other"
+    },
+    "severity_levels": {
+      "minor": "Minor",
+      "major": "Major",
+      "critical": "Critical"
+    },
+    "status_values": {
+      "under_review": "Under Review",
+      "pending_hearing": "Pending Hearing",
+      "resolved": "Resolved"
+    },
+    "dialogs": {
+      "new_case": "New Case",
+      "edit_case": "Edit Case",
+      "new_misconduct_case": "New Misconduct Case",
+      "update_case": "Update Case {id}",
+      "case_details": "Case Details - {id}",
+      "notify_student": "Notify Student",
+      "send_notification": "Send Notification to Student",
+      "schedule_hearing": "Schedule Hearing",
+      "upload_evidence": "Upload Evidence - {id}",
+      "confirm_delete": "Confirm Delete",
+      "confirm_delete_message": "Are you sure you want to delete case {id}?\n\nThis action cannot be undone.",
+      "confirm_close": "Are you sure you want to close the Academic Misconduct Panel?"
+    },
+    "messages": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info",
+      "no_selection": "No Selection",
+      "select_case_to_delete": "Please select a case to delete.",
+      "select_case_to_update": "Please select a case to update.",
+      "select_case_to_view": "Please select a case to view.",
+      "select_case_first": "Please select a case first.",
+      "select_case_for_evidence": "Please select a case to upload evidence for.",
+      "case_created": "Case {id} created successfully.",
+      "case_updated": "Case {id} updated successfully.",
+      "case_deleted": "Case deleted successfully.",
+      "save_failed": "Failed to save case to database.",
+      "update_failed": "Failed to update case in database.",
+      "delete_failed": "Failed to delete case from database.",
+      "incomplete_fields": "Please fill in all required fields.",
+      "invalid_course": "Invalid Course",
+      "invalid_course_message": "{message}\n\nPlease select a valid course from the dropdown or enter a valid course code.",
+      "missing_id": "Missing ID",
+      "enter_student_id": "Please enter a Student ID to look up.",
+      "student_found": "Student '{name}' found and details filled.",
+      "student_not_found": "No student found with ID '{id}'.",
+      "lookup_failed": "Failed to look up student: {error}",
+      "missing_email": "Please enter the student's email address.",
+      "email_unavailable": "Email system is not available.",
+      "notification_sent": "Notification sent to {email}",
+      "notification_failed": "Failed to send notification: {error}",
+      "email_send_failed": "Failed to send email. Please try again.",
+      "hearing_scheduled": "Hearing scheduled successfully.",
+      "hearing_scheduled_email": "Hearing scheduled and notification sent to {email}",
+      "hearing_partial_success": "Hearing scheduled, but email notification failed.",
+      "hearing_save_failed": "Failed to save hearing details.",
+      "missing_hearing_info": "Please fill in all fields.",
+      "notification_email_sent": "\nNotification email sent to student.",
+      "decision_submitted": "Decision submitted and recorded.",
+      "no_ruling_selected": "Please select a ruling before submitting.",
+      "evidence_uploaded": "Evidence uploaded successfully.",
+      "evidence_upload_failed": "Failed to upload evidence.",
+      "no_files_selected": "No files selected.",
+      "file_too_large": "File {name} exceeds maximum size of {size}MB.",
+      "related_assignment": "Related Assignment (Optional)"
+    },
+    "email": {
+      "subject_notification": "Academic Integrity Case {id} - Notification",
+      "subject_update": "Academic Misconduct Case Update - {id}",
+      "subject_hearing": "Academic Integrity Hearing Scheduled - Case {id}",
+      "to_label": "To: {name} ({id})",
+      "student_email_label": "Student Email:",
+      "subject_label": "Subject:",
+      "message_label": "Message:",
+      "send_notification_checkbox": "Send email notification to student"
+    },
+    "hearing": {
+      "date_label": "Hearing Date:",
+      "time_label": "Hearing Time:",
+      "location_label": "Location:",
+      "date_format": "(YYYY-MM-DD)",
+      "quick_dates": {
+        "one_week": "1 Week",
+        "two_weeks": "2 Weeks",
+        "three_weeks": "3 Weeks"
+      },
+      "default_location": "Academic Integrity Office, Room 201",
+      "arrival_notice": "Please arrive 10 minutes before the scheduled time."
+    },
+    "validation": {
+      "course_required": "Please enter a course code",
+      "course_valid": "Valid course: {code}",
+      "course_invalid": "Course '{code}' not found in the system",
+      "course_validation_error": "Error validating course: {error}"
+    },
+    "common": {
+      "na": "N/A",
+      "not_provided": "Not provided",
+      "no_notes": "No notes available.",
+      "loading": "Loading...",
+      "found": "Found",
+      "not_found": "Not Found",
+      "deleted": "Deleted",
+      "confirm": "Confirm",
+      "partial_success": "Partial Success"
+    }
+  }
+}

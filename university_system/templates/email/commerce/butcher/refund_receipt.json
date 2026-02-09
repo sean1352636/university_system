@@ -1,0 +1,13 @@
+{
+  "subject": "Butcher Shop Payment Refund Receipt",
+  "body": "Dear $customer_name,\n\nYour butcher shop payment refund has been processed successfully.\n\nREFUND RECEIPT\n================================================================================\nRefund Reference: $refund_ref\nOriginal Order: $original_order\nRefund Amount: $refund_amount\nRefund Method: $refund_method\nProcessed: $refund_date\n================================================================================\n\n$balance_text\n\nIf you have any questions, please contact us.\n\nBest regards,\nUniversity Butcher Shop",
+  "variables": {
+    "customer_name": "Customer's full name",
+    "refund_ref": "Refund reference number",
+    "original_order": "Original order number",
+    "refund_amount": "Amount refunded",
+    "refund_method": "Method of refund",
+    "refund_date": "Date refund was processed",
+    "balance_text": "Optional balance update text"
+  }
+}

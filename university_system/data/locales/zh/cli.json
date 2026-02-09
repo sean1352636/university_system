@@ -1,0 +1,76 @@
+{
+  "cli": {
+    "logged_in_as": "Logged in as: {user} ({role})",
+    "returning_to_menu": "Returning to main menu...",
+    "try_again_or_return": "Please try again or return to main menu.",
+    "chatbot": {
+      "title": "University Chatbot",
+      "login_required": "You must be logged in to access the chatbot.",
+      "no_permission": "You don't have permission to access the chatbot.",
+      "not_available": "Chatbot is not available at this time.",
+      "start_session": "Start Chat Session",
+      "view_history": "View Conversation History",
+      "view_all_admin": "View All Conversations (Admin)",
+      "administration": "Chatbot Administration",
+      "session_started": "Chatbot Session Started",
+      "type_exit": "Type 'exit' to end the session",
+      "goodbye": "Chatbot: Goodbye! Have a great day!"
+    },
+    "ai_detector": {
+      "login_required": "You must be logged in to access the AI detector.",
+      "initializing": "Initializing AI detector...",
+      "menu_title": "AI Content Detector Menu:",
+      "minimal_mode": "Running in MINIMAL MODE - limited functionality",
+      "status_check_failed": "Status check failed - proceeding with caution",
+      "analyze_text": "Analyze text for AI-generated content",
+      "view_history": "View submission history",
+      "view_stats": "View system statistics",
+      "demo": "Demo AI detector"
+    },
+    "system": {
+      "security_init_success": "Security modules initialized successfully!",
+      "initializing": "Initializing Student Record Management System...",
+      "already_initialized": "System already initialized, skipping...",
+      "failed_init_db": "Critical: Failed to initialize databases.",
+      "checking_integrity": "Checking database integrity...",
+      "init_success": "System initialized successfully!",
+      "validating_integrity": "Validating database integrity with admin context...",
+      "users_table_pending": "Users table not created yet, skipping integrity validation."
+    },
+    "dashboard": {
+      "login_required": "You must be logged in to view the dashboard.",
+      "title": "INTEGRATED SYSTEM DASHBOARD",
+      "user_info": "User: {user} ({role})",
+      "date_info": "Date: {date}",
+      "unable_to_load": "Unable to load dashboard data."
+    }
+  },
+  "scripts": {
+    "fix_logging": {
+      "title": "SYSTEMATIC LOGGING MIGRATION TOOL",
+      "processing_files": "\nProcessing {count} files...\n",
+      "file_updated": "✓ {name}: {message}",
+      "file_error": "✗ {name}: {message}",
+      "file_skipped": "- {name}: {message}",
+      "file_not_found": "File not found",
+      "skipped_test_file": "Skipped test file",
+      "updated": "Updated",
+      "no_changes_needed": "No changes needed",
+      "error": "Error: {error}",
+      "summary_title": "SUMMARY",
+      "updated_count": "Updated: {count} files",
+      "skipped_count": "Skipped: {count} files",
+      "errors_count": "Errors: {count} files",
+      "updated_files_header": "\nUpdated files:",
+      "errors_header": "\nErrors:"
+    },
+    "update_email_templates": {
+      "already_has_import": "✓ {filename}: Already has import",
+      "import_added": "✓ {filename}: Added import statement",
+      "error": "✗ {filename}: Error - {error}",
+      "updating_files": "Updating files to add template_utils import...\n",
+      "file_not_found": "✗ {filename}: File not found",
+      "completion_message": "\nImport statements added. Manual template conversion still required for each email send location."
+    }
+  }
+}

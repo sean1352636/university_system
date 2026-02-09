@@ -1,0 +1,306 @@
+{
+  "batch_ops": {
+    "title": "مدير العمليات المجمعة",
+    "tabs": {
+      "import": "استيراد",
+      "export": "تصدير",
+      "update": "تحديث",
+      "quality": "جودة البيانات",
+      "automation": "الأتمتة",
+      "history": "السجل",
+      "utilities": "الأدوات المساعدة"
+    },
+    "headers": {
+      "import": "عمليات الاستيراد",
+      "export": "عمليات التصدير",
+      "update": "عمليات التحديث",
+      "quality": "أدوات جودة البيانات",
+      "automation": "الأتمتة والتكامل",
+      "history": "سجل العمليات",
+      "utilities": "الأدوات المساعدة"
+    },
+    "menu": {
+      "file": "ملف",
+      "new_import": "استيراد جديد...",
+      "open_database": "فتح قاعدة البيانات...",
+      "create_backup": "إنشاء نسخة احتياطية",
+      "restore_backup": "استعادة نسخة احتياطية...",
+      "tools": "أدوات",
+      "find_duplicates": "البحث عن التكرارات",
+      "data_quality_check": "فحص جودة البيانات",
+      "generate_template": "إنشاء قالب",
+      "settings": "الإعدادات",
+      "view": "عرض",
+      "dashboard": "لوحة التحكم",
+      "import_history": "سجل الاستيراد",
+      "system_logs": "سجلات النظام",
+      "system_status": "حالة النظام",
+      "help": "مساعدة",
+      "user_guide": "دليل المستخدم",
+      "about": "حول",
+      "command_line_mode": "وضع سطر الأوامر"
+    },
+    "buttons": {
+      "return_main_menu": "العودة إلى القائمة الرئيسية",
+      "import_selected": "استيراد المحدد",
+      "select_all": "تحديد الكل",
+      "select_none": "إلغاء التحديد",
+      "proceed": "متابعة",
+      "cancel": "إلغاء",
+      "ok": "موافق",
+      "execute": "تنفيذ",
+      "refresh": "تحديث",
+      "refresh_dashboard": "تحديث لوحة التحكم"
+    },
+    "import": {
+      "csv_title": "Import from CSV",
+      "csv_desc": "Import student records from CSV files",
+      "excel_title": "Import from Excel",
+      "excel_desc": "Import student records from Excel spreadsheets",
+      "multi_file_title": "Multi-File Import",
+      "multi_file_desc": "Import from multiple files at once",
+      "preview_title": "Preview Import",
+      "preview_desc": "Preview data before importing",
+      "duplicate_title": "Duplicate Detection",
+      "duplicate_desc": "Check for duplicate records before import",
+      "resume_title": "Resume Import",
+      "resume_desc": "Resume a previously interrupted import"
+    },
+    "export": {
+      "students_title": "Export Students",
+      "students_desc": "Export student records to CSV/Excel",
+      "reports_title": "Export Reports",
+      "reports_desc": "Generate and export reports",
+      "statistics_title": "Export Statistics",
+      "statistics_desc": "Export system statistics and analytics"
+    },
+    "update": {
+      "batch_title": "Batch Update",
+      "batch_desc": "Update multiple records at once",
+      "grade_title": "Grade Updates",
+      "grade_desc": "Batch update student grades",
+      "module_title": "Module Updates",
+      "module_desc": "Update module enrollments in batch"
+    },
+    "quality": {
+      "find_duplicates": "Find Duplicates",
+      "validate_data": "Validate Data",
+      "clean_data": "Clean Data",
+      "dashboard": "Quality Dashboard",
+      "analysis_tools": "Analysis Tools"
+    },
+    "automation": {
+      "scheduled_tasks": "Scheduled Tasks",
+      "api_integration": "API Integration",
+      "external_db": "External Database",
+      "schedule_daily": "Schedule Daily",
+      "schedule_weekly": "Schedule Weekly",
+      "view_scheduled": "View Scheduled Tasks",
+      "rest_api": "REST API Setup",
+      "start_api": "Start API Server"
+    },
+    "history": {
+      "filter_by": "Filter by:",
+      "all": "All",
+      "imports": "Imports",
+      "exports": "Exports",
+      "updates": "Updates",
+      "date_time": "Date/Time",
+      "operation": "Operation",
+      "records": "Records",
+      "success": "Success",
+      "errors": "Errors",
+      "clear_history": "Clear History",
+      "export_history": "Export History"
+    },
+    "utilities": {
+      "backup_title": "Backup Database",
+      "backup_desc": "Create a backup of the database",
+      "template_title": "Generate Template",
+      "template_desc": "Generate CSV/Excel import templates",
+      "settings_title": "Settings",
+      "settings_desc": "Configure batch operations settings",
+      "undo_title": "Undo Last Operation",
+      "undo_desc": "Undo the most recent batch operation"
+    },
+    "dialogs": {
+      "select_csv": "Select CSV File",
+      "select_excel": "Select Excel File",
+      "select_files": "Select Files",
+      "select_files_prompt": "Select files to import",
+      "select_import_dir": "Select Import Directory",
+      "select_file_preview": "Select a file to preview",
+      "select_file_duplicate": "Select a file to check for duplicates",
+      "select_sheet": "Select Sheet",
+      "select_sheet_prompt": "Select the Excel sheet to import:",
+      "import_preview": "Import Preview",
+      "preview_records": "Preview of {count} records",
+      "sample_records": "Sample records from import file:",
+      "import_summary": "Import Summary",
+      "import_complete": "Import completed successfully",
+      "duplicate_options": "Duplicate Handling Options",
+      "duplicate_records": "Duplicate Records Found",
+      "duplicates_found": "{count} duplicate records found",
+      "found_duplicates": "Found Duplicates",
+      "no_duplicates": "No Duplicates",
+      "no_duplicates_proceed": "No duplicate records found. Proceed with import?",
+      "process_files_confirm": "Process {count} files?",
+      "no_files": "No Files",
+      "confirm": "Confirm",
+      "error": "Error",
+      "complete": "Complete",
+      "system_logs": "System Logs"
+    },
+    "duplicates": {
+      "skip_all": "Skip All Duplicates",
+      "update_existing": "Update Existing Records",
+      "import_anyway": "Import Anyway (Create Duplicates)",
+      "handle_individually": "Handle Individually"
+    },
+    "progress": {
+      "duplicate_detection": "Duplicate Detection",
+      "analyzing_duplicates": "Analyzing for duplicates...",
+      "multi_file_import": "Multi-File Import",
+      "processing_files": "Processing files..."
+    },
+    "messages": {
+      "multi_import_complete": "Multi-file import completed. {success} successful, {failed} failed."
+    },
+    "errors": {
+      "no_valid_records": "No valid records found in the file",
+      "preview_failed": "Failed to preview file: {error}",
+      "excel_read_failed": "Failed to read Excel file: {error}",
+      "no_supported_files": "No supported files found in directory"
+    },
+    "filetypes": {
+      "csv": "CSV Files",
+      "excel": "Excel Files",
+      "all": "All Files"
+    },
+    "status": {
+      "ready": "Ready",
+      "db_connected": "Database Connected"
+    },
+    "logs": {
+      "no_log_file": "No log file found"
+    }
+  },
+  "batch_operations": {
+    "window_title": "نظام العمليات الجماعية لسجلات الطلاب",
+    "tabs": {
+      "import": "📊 استيراد Operations",
+      "update": "✏️ تحديث Operations",
+      "export": "📤 تصدير Operations",
+      "quality": "🔍 البيانات الجودة",
+      "utilities": "🛠️ Utilities",
+      "automation": "🤖 Automation",
+      "history": "📜 التاريخ"
+    },
+    "menu": {
+      "file": "ملف",
+      "new_import": "جديد استيراد",
+      "open_database": "فتح قاعدة البيانات",
+      "create_backup": "إنشاء نسخ احتياطي",
+      "restore_backup": "استعادة نسخ احتياطي",
+      "tools": "الأدوات",
+      "generate_template": "إنشاء القالب",
+      "data_quality_check": "البيانات الجودة فحص",
+      "find_duplicates": "إيجاد Duplicates",
+      "command_line_mode": "Command Line الوضع",
+      "settings": "إعدادات",
+      "system_status": "النظام الحالة",
+      "view": "عرض",
+      "dashboard": "لوحة التحكم",
+      "import_history": "استيراد التاريخ",
+      "system_logs": "النظام السجلات",
+      "language": "اللغة",
+      "change_language": "التغيير اللغة",
+      "help": "المساعدة",
+      "user_guide": "دليل المستخدم",
+      "about": "حول"
+    },
+    "import": "استيراد",
+    "update": "تحديث",
+    "export": "تصدير",
+    "quality": {
+      "header": "البيانات الجودة الأدوات",
+      "analysis_tools": "التحليل الأدوات",
+      "dashboard": "الجودة لوحة التحكم",
+      "validate": "التحقق من الصحة البيانات",
+      "find_duplicates": "إيجاد Duplicates",
+      "clean": "Clean البيانات",
+      "refresh": "تحديث لوحة التحكم"
+    },
+    "utilities": {
+      "header": "Utility الوظائف",
+      "generate_template": "إنشاء القالب",
+      "generate_template_desc": "إنشاء استيراد القوالب",
+      "create_backup": "إنشاء نسخ احتياطي",
+      "create_backup_desc": "نسخ احتياطي قاعدة البيانات",
+      "undo_import": "تراجع الأخير استيراد",
+      "undo_import_desc": "Rollback recent changes",
+      "settings": "إعدادات",
+      "settings_desc": "تكوين التطبيق إعدادات"
+    },
+    "automation": {
+      "header": "Automation & التكامل",
+      "scheduled_tasks": "مجدول المهام",
+      "api_integration": "واجهة برمجة التطبيقات & التكامل",
+      "schedule_daily": "جدولة يومي استيراد",
+      "schedule_weekly": "جدولة أسبوعي تقرير",
+      "view_scheduled": "عرض مجدول المهام",
+      "start_api": "البداية واجهة برمجة التطبيقات الخادم",
+      "external_db": "External DB إعداد",
+      "rest_api": "REST واجهة برمجة التطبيقات التكامل"
+    },
+    "history": {
+      "header": "استيراد التاريخ & التقارير",
+      "filter_by": "تصفية by:",
+      "filter_all": "الكل",
+      "filter_imports": "Imports",
+      "filter_updates": "Updates",
+      "filter_exports": "Exports",
+      "refresh": "تحديث",
+      "export": "تصدير التاريخ",
+      "clear": "مسح التاريخ",
+      "col_timestamp": "التاريخ/الوقت",
+      "col_operation": "Operation",
+      "col_records": "السجلات",
+      "col_success": "نجاح",
+      "col_errors": "Errors"
+    },
+    "status": {
+      "ready": "جاهز",
+      "database_connected": "قاعدة البيانات: متصل",
+      "database_disconnected": "قاعدة البيانات: غير متصل",
+      "processing": "جاري المعالجة...",
+      "complete": "إكمال",
+      "error": "خطأ"
+    },
+    "common": {
+      "execute": "تنفيذ",
+      "return_main": "🏠 العودة إلى القائمة الرئيسية"
+    },
+    "language": {
+      "changed": "اللغة Changed",
+      "restart_required": "سيتم تحديث بعض النصوص فوراً. للتأثير الكامل، يرجى إعادة تشغيل التطبيق."
+    },
+    "title": "العمليات الجماعية",
+    "delete": "حذف",
+    "select_all": "تحديد الكل",
+    "deselect_all": "إلغاء تحديد الكل",
+    "process": "معالجة"
+  },
+  "bulk": {
+    "import_title": "استيراد جماعي للكتب",
+    "export_title": "تصدير جماعي للكتب",
+    "select_format": "اختر التنسيق (CSV/JSON)",
+    "enter_file_path": "أدخل مسار الملف",
+    "importing": "جارٍ استيراد الكتب...",
+    "import_success": "تم استيراد {count} كتاب بنجاح.",
+    "import_errors": "فشل استيراد {count} كتاب.",
+    "exporting": "جارٍ تصدير الكتب...",
+    "export_success": "تم تصدير {count} كتاب إلى {filename}.",
+    "error": "خطأ أثناء العملية الجماعية: {error}"
+  }
+}

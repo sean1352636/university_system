@@ -1,0 +1,447 @@
+{
+  "cinema": {
+    "window_title": "Система бронирования кинотеатра",
+    "sidebar_title": "Кинотеатр",
+    "status_ready": "Готово",
+    "nav": {
+      "categories": {
+        "main": "Главная",
+        "booking": "Бронирование",
+        "features": "Возможности",
+        "events": "Мероприятия",
+        "management": "Управление",
+        "analytics": "Аналитика",
+        "customers": "Клиенты"
+      },
+      "items": {
+        "dashboard": "Панель управления",
+        "now_showing": "Сейчас в прокате",
+        "coming_soon": "Скоро на экранах",
+        "my_bookings": "Мои бронирования",
+        "book_now": "Забронировать",
+        "manage_bookings": "Управление бронированиями",
+        "screenings": "Сеансы",
+        "gift_cards": "Подарочные карты",
+        "season_passes": "Сезонные абонементы",
+        "snacks_drinks": "Закуски и напитки",
+        "members_club": "Клуб участников",
+        "reviews": "Отзывы",
+        "waitlist": "Лист ожидания",
+        "polls_voting": "Опросы и голосования",
+        "special_events": "Специальные мероприятия",
+        "private_rentals": "Частная аренда",
+        "corporate_bookings": "Корпоративные бронирования",
+        "movie_management": "Управление фильмами",
+        "promo_codes": "Промокоды",
+        "staff": "Персонал",
+        "inventory": "Инвентарь",
+        "maintenance": "Обслуживание",
+        "theatre_layout": "Схема зала",
+        "reports": "Отчёты",
+        "analytics": "Аналитика",
+        "seat_heatmap": "Тепловая карта мест",
+        "audit_log": "Журнал аудита",
+        "customer_profiles": "Профили клиентов",
+        "referrals": "Реферальная программа",
+        "movie_series": "Серии фильмов",
+        "accessible_seating": "Доступные места"
+      }
+    },
+    "dashboard": {
+      "title": "Панель управления",
+      "todays_bookings": "Бронирования сегодня",
+      "todays_revenue": "Выручка сегодня",
+      "todays_screenings": "Сеансы сегодня",
+      "active_movies": "Фильмы в прокате",
+      "quick_stats": "Краткая статистика",
+      "recent_activity": "Последняя активность"
+    },
+    "movies": {
+      "title": "Управление фильмами",
+      "now_showing": "Сейчас в прокате",
+      "coming_soon": "Скоро на экранах",
+      "add_movie": "Добавить фильм",
+      "add_new_movie": "Добавить новый фильм",
+      "edit_movie": "Редактировать фильм",
+      "delete_movie": "Удалить фильм",
+      "view_screenings": "Просмотр сеансов",
+      "columns": {
+        "id": "ID",
+        "title": "Название",
+        "duration": "Продолжительность",
+        "genre": "Жанр",
+        "rating": "Рейтинг",
+        "director": "Режиссёр",
+        "release_date": "Дата выхода",
+        "status": "Статус"
+      },
+      "fields": {
+        "title": "Название:",
+        "duration": "Продолжительность (мин):",
+        "genre": "Жанр:",
+        "rating": "Рейтинг:",
+        "description": "Описание:",
+        "director": "Режиссёр:",
+        "release_date": "Дата выхода:",
+        "poster_url": "URL постера:",
+        "trailer_url": "URL трейлера:"
+      }
+    },
+    "screenings": {
+      "title": "Управление сеансами",
+      "add_screening": "Добавить сеанс",
+      "add_new_screening": "Добавить новый сеанс",
+      "edit_screening": "Редактировать сеанс",
+      "cancel_screening": "Отменить сеанс",
+      "columns": {
+        "id": "ID",
+        "movie": "Фильм",
+        "screen": "Зал",
+        "time": "Время",
+        "price": "Цена",
+        "seats_available": "Свободных мест",
+        "status": "Статус"
+      },
+      "fields": {
+        "movie": "Фильм:",
+        "screen": "Зал:",
+        "date": "Дата:",
+        "time": "Время:",
+        "price": "Цена (£):"
+      }
+    },
+    "booking": {
+      "title": "Бронирование билетов",
+      "new_booking": "Новое бронирование",
+      "select_screening": "Выберите сеанс",
+      "select_seats": "Выберите места",
+      "add_snacks": "Добавить закуски и напитки (необязательно)",
+      "complete_booking": "Завершить бронирование",
+      "booking_ref": "Номер бронирования",
+      "customer_name": "Имя клиента:",
+      "customer_email": "Email клиента:",
+      "student_id": "ID студента:",
+      "proceed_to_snacks": "Перейти к закускам и оплате",
+      "skip_snacks": "Пропустить закуски",
+      "continue_to_payment": "Перейти к оплате",
+      "complete_payment": "Завершить оплату",
+      "back_to_seats": "Назад к выбору мест",
+      "back_to_movies": "Назад к фильмам",
+      "back": "Назад",
+      "filter": "Фильтр",
+      "select_seats_btn": "Выбрать места",
+      "apply_promo": "Применить",
+      "promo_placeholder": "Введите промокод"
+    },
+    "tickets": {
+      "title": "Управление билетами",
+      "search_tickets": "Поиск билетов",
+      "print_ticket": "Печать билета",
+      "save_ticket": "Сохранить билет",
+      "edit_ticket": "Редактировать билет",
+      "cancel_ticket": "Отменить билет",
+      "delete_ticket": "Удалить билет",
+      "reactivate_ticket": "Восстановить билет",
+      "columns": {
+        "ref": "Номер",
+        "customer": "Клиент",
+        "movie": "Фильм",
+        "time": "Время",
+        "seats": "Места",
+        "total": "Итого",
+        "status": "Статус"
+      }
+    },
+    "snacks": {
+      "title": "Закуски и продукция",
+      "add_snacks": "Добавить закуски и напитки",
+      "combo_deals": "Комбо-предложения",
+      "dietary_info": "Диетическая информация",
+      "categories": {
+        "popcorn": "Попкорн",
+        "drinks": "Напитки",
+        "candy": "Сладости",
+        "combos": "Комбо"
+      }
+    },
+    "members": {
+      "title": "Членство и программа лояльности",
+      "join_club": "Вступить в клуб",
+      "member_benefits": "Преимущества членства",
+      "points_balance": "Баланс баллов",
+      "tier": "Уровень членства",
+      "tiers": {
+        "bronze": "Бронзовый",
+        "silver": "Серебряный",
+        "gold": "Золотой",
+        "platinum": "Платиновый"
+      }
+    },
+    "gift_cards": {
+      "title": "Подарочные карты",
+      "purchase": "Купить подарочную карту",
+      "redeem": "Активировать подарочную карту",
+      "check_balance": "Проверить баланс",
+      "columns": {
+        "code": "Код",
+        "value": "Номинал",
+        "balance": "Баланс",
+        "status": "Статус",
+        "expires": "Срок действия"
+      }
+    },
+    "season_passes": {
+      "title": "Сезонные абонементы",
+      "purchase": "Купить сезонный абонемент",
+      "types": {
+        "monthly": "Месячный абонемент",
+        "quarterly": "Квартальный абонемент",
+        "annual": "Годовой абонемент"
+      }
+    },
+    "waitlist": {
+      "title": "Управление листом ожидания",
+      "join_waitlist": "Записаться в лист ожидания",
+      "notify_customer": "Уведомить клиента"
+    },
+    "reviews": {
+      "title": "Отзывы о фильмах",
+      "write_review": "Написать отзыв",
+      "average_rating": "Средний рейтинг"
+    },
+    "promo": {
+      "title": "Управление промокодами",
+      "add_promo": "Добавить новый промокод",
+      "edit_promo": "Редактировать промокод",
+      "deactivate_promo": "Деактивировать промокод",
+      "columns": {
+        "code": "Код",
+        "discount": "Скидка",
+        "type": "Тип",
+        "uses": "Использований",
+        "max_uses": "Макс. использований",
+        "expires": "Срок действия",
+        "status": "Статус"
+      }
+    },
+    "reports": {
+      "title": "Отчёты и аналитика",
+      "generate_report": "Сформировать отчёт",
+      "export_report": "Экспортировать отчёт",
+      "types": {
+        "daily": "Ежедневный отчёт",
+        "weekly": "Еженедельный отчёт",
+        "monthly": "Ежемесячный отчёт",
+        "revenue": "Отчёт о выручке",
+        "attendance": "Отчёт о посещаемости"
+      }
+    },
+    "analytics": {
+      "title": "Расширенная аналитика",
+      "revenue_chart": "График выручки",
+      "attendance_chart": "График посещаемости",
+      "popular_movies": "Популярные фильмы"
+    },
+    "staff": {
+      "title": "Управление персоналом",
+      "add_staff": "Добавить сотрудника",
+      "edit_staff": "Редактировать сотрудника",
+      "roles": {
+        "admin": "Администратор",
+        "manager": "Менеджер",
+        "cashier": "Кассир",
+        "concessions": "Работник буфета",
+        "usher": "Билетёр"
+      }
+    },
+    "inventory": {
+      "title": "Инвентарь",
+      "add_item": "Добавить товар",
+      "restock": "Пополнить запас",
+      "low_stock": "Предупреждение о низком запасе"
+    },
+    "maintenance": {
+      "title": "Обслуживание залов",
+      "schedule_maintenance": "Запланировать обслуживание",
+      "equipment_status": "Состояние оборудования"
+    },
+    "theatre_layout": {
+      "title": "Настройка схемы зала",
+      "edit_layout": "Редактировать схему",
+      "seat_types": "Типы мест"
+    },
+    "events": {
+      "title": "Специальные мероприятия",
+      "add_event": "Добавить мероприятие",
+      "premieres": "Премьеры",
+      "marathons": "Киномарафоны"
+    },
+    "rentals": {
+      "title": "Частная аренда кинозала",
+      "book_rental": "Забронировать частную аренду",
+      "rental_packages": "Пакеты аренды"
+    },
+    "corporate": {
+      "title": "Корпоративные клиенты",
+      "add_account": "Добавить корпоративный аккаунт",
+      "view_invoices": "Просмотр счетов"
+    },
+    "polls": {
+      "title": "Опросы и голосования",
+      "create_poll": "Создать опрос",
+      "active_polls": "Активные опросы"
+    },
+    "heatmap": {
+      "title": "Тепловая карта популярности мест"
+    },
+    "audit": {
+      "title": "Журнал аудита"
+    },
+    "profiles": {
+      "title": "Профили клиентов",
+      "view_profile": "Просмотр профиля",
+      "booking_history": "История бронирований"
+    },
+    "referrals": {
+      "title": "Реферальная программа",
+      "invite_friend": "Пригласить друга",
+      "referral_rewards": "Реферальные награды"
+    },
+    "series": {
+      "title": "Серии фильмов и франшизы",
+      "movies_in_series": "Фильмы в серии"
+    },
+    "accessible": {
+      "title": "Управление доступными местами",
+      "wheelchair_spaces": "Места для инвалидных колясок",
+      "companion_seats": "Места для сопровождающих"
+    },
+    "shift_scheduling": {
+      "title": "Планирование смен"
+    },
+    "equipment": {
+      "title": "Управление оборудованием"
+    },
+    "occupancy": {
+      "title": "Панель заполняемости в реальном времени"
+    },
+    "lost_found": {
+      "title": "Бюро находок"
+    },
+    "incidents": {
+      "title": "Отчёты об инцидентах"
+    },
+    "payment": {
+      "title": "Оплата",
+      "methods": {
+        "cash": "Наличные",
+        "card": "Банковская карта",
+        "student_account": "Студенческий счёт"
+      },
+      "split_payment": "Разделить оплату",
+      "configure_split": "Настроить разделение оплаты",
+      "confirm_split": "Подтвердить разделение оплаты"
+    },
+    "ticket_types": {
+      "adult": "Взрослый",
+      "child": "Детский",
+      "senior": "Пенсионер",
+      "student": "Студент"
+    },
+    "seat_types": {
+      "standard": "Стандартное",
+      "vip": "VIP",
+      "couple": "Парное",
+      "wheelchair": "Для инвалидной коляски",
+      "companion": "Для сопровождающего"
+    },
+    "buttons": {
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "close": "Закрыть",
+      "refresh": "Обновить",
+      "search": "Поиск",
+      "show_all": "Показать все",
+      "filter": "Фильтр",
+      "edit_selected": "Редактировать выбранное",
+      "delete_selected": "Удалить выбранное",
+      "cancel_selected": "Отменить выбранное",
+      "reactivate_selected": "Восстановить выбранное",
+      "print": "Печать",
+      "export": "Экспорт"
+    },
+    "messages": {
+      "success": {
+        "booking_confirmed": "Бронирование подтверждено",
+        "booking_created": "Бронирование успешно создано!",
+        "booking_updated": "Бронирование успешно обновлено!",
+        "booking_cancelled": "Бронирование успешно отменено!",
+        "screening_added": "Сеанс успешно добавлен!",
+        "screening_updated": "Сеанс обновлён!",
+        "screening_cancelled": "Сеанс отменён",
+        "movie_saved": "Фильм сохранён!",
+        "movie_deleted": "Фильм успешно удалён!",
+        "promo_created": "Промокод создан!",
+        "promo_deactivated": "Промокод деактивирован",
+        "ticket_printed": "Билет отправлен на печать!",
+        "ticket_saved": "Билет сохранён в {filename}",
+        "split_configured": "Разделение оплаты настроено"
+      },
+      "errors": {
+        "booking_failed": "Ошибка бронирования: {error}",
+        "booking_not_found": "Бронирование не найдено",
+        "invalid_price": "Пожалуйста, введите корректную цену",
+        "invalid_values": "Некорректные значения",
+        "code_exists": "Код уже существует",
+        "save_failed": "Не удалось сохранить: {error}",
+        "add_failed": "Не удалось добавить: {error}",
+        "update_failed": "Не удалось обновить: {error}",
+        "insufficient_balance": "Недостаточный баланс",
+        "payment_failed": "Ошибка оплаты: {error}",
+        "student_not_found": "Студенческий аккаунт не найден",
+        "payment_not_available": "Оплата со студенческого счёта недоступна"
+      },
+      "warnings": {
+        "select_screening": "Пожалуйста, выберите сеанс из списка",
+        "select_seat": "Пожалуйста, выберите хотя бы одно место",
+        "select_movie": "Пожалуйста, выберите фильм",
+        "select_ticket": "Пожалуйста, выберите билет",
+        "select_promo": "Пожалуйста, выберите промокод",
+        "enter_name": "Пожалуйста, введите ваше имя",
+        "enter_code": "Пожалуйста, введите код",
+        "enter_title": "Пожалуйста, введите название",
+        "enter_student_id": "Для оплаты со студенческого счёта требуется ID студента",
+        "invalid_duration": "Некорректная продолжительность",
+        "total_mismatch": "Сумма должна равняться £{amount}",
+        "split_min_methods": "Для разделения оплаты требуется минимум 2 способа оплаты",
+        "already_cancelled": "Это бронирование уже отменено"
+      },
+      "confirm": {
+        "cancel_screening": "Отменить этот сеанс? Все забронированные места будут освобождены.",
+        "delete_movie": "Удалить этот фильм и все его сеансы?",
+        "cancel_booking": "Вы уверены, что хотите отменить это бронирование?",
+        "print_confirmation": "Хотите просмотреть ваш билет?",
+        "deactivate_promo": "Деактивировать этот промокод?"
+      },
+      "info": {
+        "print_simulation": "Билет отправлен на печать!\n(В реальной системе это приведёт к печати)",
+        "edit_note": "Функция редактирования - пока изменяйте значения напрямую в базе данных"
+      }
+    },
+    "common": {
+      "success": "Успешно",
+      "error": "Ошибка",
+      "warning": "Предупреждение",
+      "info": "Информация",
+      "confirm": "Подтвердить",
+      "saved": "Сохранено",
+      "print": "Печать",
+      "available": "Доступно",
+      "booked": "Забронировано",
+      "selected": "Выбрано",
+      "active": "Активно",
+      "cancelled": "Отменено",
+      "pending": "Ожидание"
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "misconduct": {
+    "window": {
+      "title": "Commission de Discipline Academique - Systeme de Gestion des Dossiers"
+    },
+    "auth": {
+      "required_title": "Authentification Requise",
+      "required_message": "Vous devez etre connecte pour acceder a la Commission de Discipline Academique.\n\nVeuillez vous connecter via l'interface principale.",
+      "launch_from_gui": "Vous devez etre connecte pour acceder a la Commission de Discipline Academique.\n\nVeuillez lancer ce module depuis l'interface principale apres vous etre connecte.",
+      "not_logged_in_title": "Non Connecte",
+      "not_logged_in_message": "Vous n'etes pas actuellement connecte.\n\nVeuillez vous connecter via l'interface principale pour acceder a ce panneau.",
+      "access_denied_title": "Acces Refuse",
+      "access_denied_message": "Vous n'avez pas la permission d'acceder a la Commission de Discipline Academique.\n\nVotre role : {role}\nRoles requis : Administrateur, Personnel ou Enseignant"
+    },
+    "header": {
+      "title": "COMMISSION DE DISCIPLINE ACADEMIQUE",
+      "subtitle": "Systeme de Gestion des Dossiers - Bureau de l'Integrite Academique"
+    },
+    "stats": {
+      "active_cases": "Dossiers Actifs",
+      "pending_hearing": "En Attente d'Audience",
+      "resolved": "Resolus"
+    },
+    "case_list": {
+      "title": "Registre des Dossiers",
+      "search_placeholder": "Rechercher des dossiers..."
+    },
+    "filters": {
+      "all": "Tous",
+      "under_review": "En Cours d'Examen",
+      "pending_hearing": "En Attente d'Audience",
+      "resolved": "Resolus"
+    },
+    "buttons": {
+      "return_home": "Retour a l'Accueil",
+      "create": "Creer",
+      "view": "Consulter",
+      "update": "Modifier",
+      "delete": "Supprimer",
+      "refresh": "Actualiser",
+      "edit_case": "Modifier le Dossier",
+      "notify_student": "Notifier l'Etudiant",
+      "schedule_hearing": "Planifier une Audience",
+      "upload_evidence": "Telecharger des Preuves",
+      "cancel": "Annuler",
+      "save_case": "Enregistrer le Dossier",
+      "save_changes": "Enregistrer les Modifications",
+      "close": "Fermer",
+      "send_email": "Envoyer un Courriel",
+      "submit_decision": "Soumettre la Decision",
+      "lookup": "Rechercher",
+      "validate": "Valider",
+      "load_assignments": "Charger les Devoirs",
+      "select_files": "Selectionner des Fichiers",
+      "upload": "Telecharger"
+    },
+    "columns": {
+      "case_id": "Numero de Dossier",
+      "student": "Etudiant",
+      "type": "Type",
+      "status": "Statut"
+    },
+    "details": {
+      "title": "Details du Dossier"
+    },
+    "tabs": {
+      "overview": "  Apercu  ",
+      "evidence": "  Preuves  ",
+      "decision": "  Decision  ",
+      "history": "  Historique  "
+    },
+    "overview": {
+      "select_case": "Selectionnez un dossier pour afficher les details"
+    },
+    "fields": {
+      "case_id": "Numero de Dossier",
+      "student_name": "Nom de l'Etudiant",
+      "student_id": "Numero Etudiant",
+      "student_email": "Courriel de l'Etudiant",
+      "course": "Cours",
+      "course_module": "Code du Cours/Module",
+      "violation_type": "Type d'Infraction",
+      "date_filed": "Date de Depot",
+      "severity": "Gravite",
+      "status": "Statut",
+      "case_notes": "Notes du Dossier :",
+      "notes": "Notes",
+      "initial_notes": "Notes Initiales",
+      "hearing_date": "Date d'Audience",
+      "hearing_time": "Heure d'Audience",
+      "hearing_location": "Lieu d'Audience",
+      "ruling": "Decision"
+    },
+    "evidence": {
+      "title": "Preuves et Documentation",
+      "no_evidence": "Aucune preuve telechargee pour le moment",
+      "select_case": "Selectionnez un dossier pour consulter les preuves",
+      "current_files": "Fichiers de Preuves Actuels :",
+      "upload_new": "Telecharger de Nouvelles Preuves",
+      "file_name": "Nom du Fichier",
+      "file_size": "Taille du Fichier",
+      "uploaded_date": "Date de Telechargement",
+      "uploaded_by": "Telecharge Par"
+    },
+    "decision": {
+      "title": "Decision de la Commission",
+      "ruling_label": "Decision :",
+      "rationale_label": "Motivation de la Decision :",
+      "submit_confirm": "Etes-vous sur de vouloir soumettre cette decision ?",
+      "success": "Decision enregistree avec succes"
+    },
+    "rulings": {
+      "not_responsible": "Non Responsable",
+      "warning": "Responsable - Avertissement",
+      "grade_penalty": "Responsable - Penalite de Note",
+      "course_failure": "Responsable - Echec au Cours",
+      "suspension": "Responsable - Suspension",
+      "expulsion": "Responsable - Exclusion",
+      "academic_probation": "Responsable - Mise a l'Epreuve Academique",
+      "resubmission": "Responsable - Nouvelle Soumission Requise",
+      "dismissed": "Dossier Classe - Preuves Insuffisantes",
+      "deferred": "Differe - Enquete en Cours"
+    },
+    "history": {
+      "title": "Historique et Chronologie du Dossier",
+      "select_case": "Selectionnez un dossier pour consulter son historique",
+      "no_records": "Aucun enregistrement historique trouve pour ce dossier."
+    },
+    "violations": {
+      "plagiarism": "Plagiat",
+      "unauthorized_collaboration": "Collaboration Non Autorisee",
+      "contract_cheating": "Fraude Contractuelle",
+      "exam_misconduct": "Fraude a l'Examen",
+      "fabrication": "Falsification",
+      "other": "Autre"
+    },
+    "severity_levels": {
+      "minor": "Mineure",
+      "major": "Majeure",
+      "critical": "Critique"
+    },
+    "status_values": {
+      "under_review": "En Cours d'Examen",
+      "pending_hearing": "En Attente d'Audience",
+      "resolved": "Resolu"
+    },
+    "dialogs": {
+      "new_case": "Nouveau Dossier",
+      "edit_case": "Modifier le Dossier",
+      "new_misconduct_case": "Nouveau Dossier de Faute Academique",
+      "update_case": "Modifier le Dossier {id}",
+      "case_details": "Details du Dossier - {id}",
+      "notify_student": "Notifier l'Etudiant",
+      "send_notification": "Envoyer une Notification a l'Etudiant",
+      "schedule_hearing": "Planifier une Audience",
+      "upload_evidence": "Telecharger des Preuves - {id}",
+      "confirm_delete": "Confirmer la Suppression",
+      "confirm_delete_message": "Etes-vous sur de vouloir supprimer le dossier {id} ?\n\nCette action est irreversible.",
+      "confirm_close": "Etes-vous sur de vouloir fermer la Commission de Discipline Academique ?"
+    },
+    "messages": {
+      "success": "Succes",
+      "error": "Erreur",
+      "warning": "Avertissement",
+      "info": "Information",
+      "no_selection": "Aucune Selection",
+      "select_case_to_delete": "Veuillez selectionner un dossier a supprimer.",
+      "select_case_to_update": "Veuillez selectionner un dossier a modifier.",
+      "select_case_to_view": "Veuillez selectionner un dossier a consulter.",
+      "select_case_first": "Veuillez d'abord selectionner un dossier.",
+      "select_case_for_evidence": "Veuillez selectionner un dossier pour telecharger des preuves.",
+      "case_created": "Dossier {id} cree avec succes.",
+      "case_updated": "Dossier {id} modifie avec succes.",
+      "case_deleted": "Dossier supprime avec succes.",
+      "save_failed": "Echec de l'enregistrement du dossier dans la base de donnees.",
+      "update_failed": "Echec de la mise a jour du dossier dans la base de donnees.",
+      "delete_failed": "Echec de la suppression du dossier dans la base de donnees.",
+      "incomplete_fields": "Veuillez remplir tous les champs obligatoires.",
+      "invalid_course": "Cours Invalide",
+      "invalid_course_message": "{message}\n\nVeuillez selectionner un cours valide dans la liste deroulante ou entrer un code de cours valide.",
+      "missing_id": "Identifiant Manquant",
+      "enter_student_id": "Veuillez entrer un numero etudiant pour effectuer la recherche.",
+      "student_found": "Etudiant '{name}' trouve et informations renseignees.",
+      "student_not_found": "Aucun etudiant trouve avec le numero '{id}'.",
+      "lookup_failed": "Echec de la recherche de l'etudiant : {error}",
+      "missing_email": "Veuillez entrer l'adresse courriel de l'etudiant.",
+      "email_unavailable": "Le systeme de messagerie n'est pas disponible.",
+      "notification_sent": "Notification envoyee a {email}",
+      "notification_failed": "Echec de l'envoi de la notification : {error}",
+      "email_send_failed": "Echec de l'envoi du courriel. Veuillez reessayer.",
+      "hearing_scheduled": "Audience planifiee avec succes.",
+      "hearing_scheduled_email": "Audience planifiee et notification envoyee a {email}",
+      "hearing_partial_success": "Audience planifiee, mais echec de l'envoi de la notification par courriel.",
+      "hearing_save_failed": "Echec de l'enregistrement des details de l'audience.",
+      "missing_hearing_info": "Veuillez remplir tous les champs.",
+      "notification_email_sent": "\nCourriel de notification envoye a l'etudiant.",
+      "decision_submitted": "Decision soumise et enregistree.",
+      "no_ruling_selected": "Veuillez selectionner une decision avant de soumettre.",
+      "evidence_uploaded": "Preuves telechargees avec succes.",
+      "evidence_upload_failed": "Echec du telechargement des preuves.",
+      "no_files_selected": "Aucun fichier selectionne.",
+      "file_too_large": "Le fichier {name} depasse la taille maximale de {size} Mo.",
+      "related_assignment": "Devoir Associe (Facultatif)"
+    },
+    "email": {
+      "subject_notification": "Dossier d'Integrite Academique {id} - Notification",
+      "subject_update": "Mise a Jour du Dossier de Faute Academique - {id}",
+      "subject_hearing": "Audience d'Integrite Academique Planifiee - Dossier {id}",
+      "to_label": "A : {name} ({id})",
+      "student_email_label": "Courriel de l'Etudiant :",
+      "subject_label": "Objet :",
+      "message_label": "Message :",
+      "send_notification_checkbox": "Envoyer une notification par courriel a l'etudiant"
+    },
+    "hearing": {
+      "date_label": "Date de l'Audience :",
+      "time_label": "Heure de l'Audience :",
+      "location_label": "Lieu :",
+      "date_format": "(AAAA-MM-JJ)",
+      "quick_dates": {
+        "one_week": "1 Semaine",
+        "two_weeks": "2 Semaines",
+        "three_weeks": "3 Semaines"
+      },
+      "default_location": "Bureau de l'Integrite Academique, Salle 201",
+      "arrival_notice": "Veuillez arriver 10 minutes avant l'heure prevue."
+    },
+    "validation": {
+      "course_required": "Veuillez entrer un code de cours",
+      "course_valid": "Cours valide : {code}",
+      "course_invalid": "Le cours '{code}' n'a pas ete trouve dans le systeme",
+      "course_validation_error": "Erreur lors de la validation du cours : {error}"
+    },
+    "common": {
+      "na": "N/D",
+      "not_provided": "Non fourni",
+      "no_notes": "Aucune note disponible.",
+      "loading": "Chargement...",
+      "found": "Trouve",
+      "not_found": "Non Trouve",
+      "deleted": "Supprime",
+      "confirm": "Confirmer",
+      "partial_success": "Succes Partiel"
+    }
+  }
+}

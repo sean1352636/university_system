@@ -1,0 +1,11 @@
+{
+  "subject": "Library Fine Notice - Overdue Book",
+  "body": "Dear $student_name,\n\nThis is to notify you that a library fine has been assessed on your account.\n\nFINE DETAILS:\n═══════════════════════════════════════════════\nBook Title:      $book_title\nDue Date:        $due_date\nDays Overdue:    $days_overdue\nFine Amount:     £$fine_amount\n═══════════════════════════════════════════════\n\nPlease return the book and pay the fine at your earliest convenience. You can:\n• Visit the library circulation desk\n• Pay online through your student portal\n• Contact the library for payment arrangements\n\nIf you have already returned this book, please contact the library immediately.\n\nFor questions or assistance, please contact:\nUniversity Library - Circulation Desk\nEmail: library@university.edu\nPhone: (555) 123-4567\n\nThank you,\nUniversity Library System",
+  "variables": {
+    "student_name": "Full name of the student",
+    "book_title": "Title of the overdue book",
+    "due_date": "Original due date of the book",
+    "days_overdue": "Number of days the book is overdue",
+    "fine_amount": "Amount of fine (formatted with 2 decimals)"
+  }
+}

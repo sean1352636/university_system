@@ -1,0 +1,4 @@
+{
+    "subject": "Test Email from Student Records System",
+    "body": "This is a test email from the Student Records System.\n\nMode: Database Only (stored in database)\nSender: $sender_email\nDate: $date\n\nThis email was stored in the database instead of being sent.\n$signature"
+}

@@ -1,0 +1,9 @@
+{
+  "ai_detector": {
+    "tab_title": "KI-Inhaltsdetektor",
+    "header_title": "KI-Inhaltserkennungssystem",
+    "launch_full_detector": "Vollständigen KI-Detektor starten",
+    "about_title": "Über den KI-Inhaltsdetektor",
+    "info_text": "Der KI-Inhaltsdetektor hilft bei der Identifizierung von KI-generierten Inhalten in Studentenarbeiten.\n\nFunktionen:\n• Erkennung von KI-generiertem Text\n• Multi-Modell-Analyse\n• Konfidenz-Bewertung\n• Detaillierte Berichte\n• Stapelverarbeitungsunterstützung\n• Unterstützung mehrerer Dateiformate (TXT, DOCX, PDF)\n• Historische Analyseverfolgung\n• Vergleich mit bekannten KI-Mustern\n\nErkennungsfähigkeiten:\n✓ GPT-basierte Inhaltserkennung\n✓ Statistische Analyse\n✓ Mustererkennung\n✓ Schreibstilanalyse\n✓ Linguistische Marker\n✓ Kohärenzmuster\n✓ Vokabularanalyse\n✓ Satzstrukturanalyse\n\nDie vollständige KI-Detektor-Oberfläche bietet:\n→ Erweiterte Erkennungsalgorithmen\n→ Detaillierte Analyseberichte\n→ Visuelle Konfidenzindikatoren\n→ Einreichungsverlauf\n→ Exportfunktionen\n→ Massenverarbeitung\n\nKlicken Sie oben auf die Schaltfläche 'Vollständigen KI-Detektor starten', um auf das vollständige Erkennungssystem zuzugreifen."
+  }
+}

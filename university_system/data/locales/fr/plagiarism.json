@@ -1,0 +1,137 @@
+{
+  "plagiarism": {
+    "title": "Système de Détection de Plagiat",
+    "subtitle": "Vérification de l'intégrité académique et analyse de documents",
+    "welcome": "Bienvenue",
+
+    "menu_file": "Fichier",
+    "menu_tools": "Outils",
+    "menu_help": "Aide",
+
+    "submit_document": "Soumettre un Document",
+    "import_documents": "Importer des Documents",
+    "export_documents": "Exporter des Documents",
+    "check_document": "Vérifier un Document",
+    "search_repository": "Rechercher dans le Référentiel",
+    "view_my_documents": "Voir Mes Documents",
+    "view_results": "Voir les Résultats",
+    "advanced_search": "Recherche Avancée",
+    "bulk_operations": "Opérations en Masse",
+    "system_testing": "Tests du Système",
+    "generate_reports": "Générer des Rapports",
+    "compare_documents": "Comparer des Documents",
+    "file_converter": "Convertisseur de Fichiers",
+    "document_workflow": "Flux de Documents",
+    "repository": "Référentiel",
+    "delete_document": "Supprimer un Document",
+    "check_repository_integrity": "Vérifier l'Intégrité du Référentiel",
+    "check_integrity": "Vérifier l'Intégrité",
+    "backup_restore": "Sauvegarde et Restauration",
+    "statistics": "Statistiques",
+    "setup_testing": "Configuration et Tests",
+    "about": "À Propos",
+
+    "dashboard": "Tableau de Bord",
+    "quick_actions": "Actions Rapides",
+    "check_for_plagiarism": "Vérifier le Plagiat",
+    "system_statistics": "Statistiques du Système",
+
+    "documents_tab": "Documents",
+    "search_documents": "Rechercher des Documents",
+    "title_label": "Titre:",
+
+    "check_results_tab": "Résultats de Vérification",
+    "refresh_results": "Actualiser les Résultats",
+
+    "settings_tab": "Paramètres",
+    "detection_settings": "Paramètres de Détection",
+    "similarity_threshold": "Seuil de Similarité:",
+    "system_information": "Informations Système",
+
+    "repository_integrity_check": "Vérification de l'Intégrité du Référentiel",
+    "fix_issues": "Corriger les Problèmes",
+
+    "system_reports": "Rapports Système",
+    "available_reports": "Rapports Disponibles",
+    "report_options": "Options de Rapport",
+    "include_charts_graphs": "Inclure des Graphiques",
+    "export_format": "Format d'Exportation:",
+    "generate_report": "Générer le Rapport",
+
+    "select_author": "Sélectionner un Auteur",
+    "select_module": "Sélectionner un Module",
+
+    "plagiarism_checks": "Vérifications de Plagiat",
+    "check_plagiarism": "Vérifier le Plagiat",
+
+    "text_files": "Fichiers Texte (.txt)",
+    "zip_archive": "Archive ZIP",
+    "export_selected": "Exporter la Sélection",
+
+    "delete_warning": "Attention: Cette action est irréversible!",
+    "select_document_delete": "Sélectionnez un document à supprimer",
+
+    "setup_testing_tools": "Outils de Configuration et de Tests",
+    "system_setup": "Configuration du Système",
+    "check_requirements": "Vérifier les Prérequis",
+    "create_directories": "Créer des Répertoires",
+    "create_sample_documents": "Créer des Documents Exemples",
+    "test_repository": "Tester le Référentiel",
+    "test_plagiarism_check": "Tester la Vérification de Plagiat",
+    "clear_results": "Effacer les Résultats",
+
+    "total_documents": "Total des Documents",
+    "total_checks": "Total des Vérifications",
+    "flagged_documents": "Documents Signalés",
+    "average_similarity": "Similarité Moyenne",
+
+    "document_id": "ID du Document",
+    "author": "Auteur",
+    "date_submitted": "Date de Soumission",
+    "status": "Statut",
+    "similarity_score": "Score de Similarité",
+
+    "no_documents": "Aucun document trouvé",
+    "no_results": "Aucun résultat trouvé",
+    "loading": "Chargement...",
+    "processing": "Traitement...",
+
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "info": "Information",
+
+    "document_submitted": "Document soumis avec succès",
+    "document_deleted": "Document supprimé avec succès",
+    "check_complete": "Vérification de plagiat terminée",
+    "export_complete": "Exportation terminée avec succès",
+    "import_complete": "Importation terminée avec succès",
+
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer ce document?",
+    "confirm_action": "Confirmer l'Action",
+
+    "select_file": "Sélectionner un Fichier",
+    "select_folder": "Sélectionner un Dossier",
+    "browse": "Parcourir...",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "ok": "OK",
+
+    "report_types": {
+      "summary": "Rapport de Synthèse",
+      "detailed": "Analyse Détaillée",
+      "author_report": "Rapport par Auteur",
+      "module_report": "Rapport par Module",
+      "trends": "Rapport de Tendances"
+    },
+
+    "status_types": {
+      "pending": "En Attente",
+      "in_progress": "En Cours",
+      "completed": "Terminé",
+      "flagged": "Signalé",
+      "cleared": "Validé"
+    }
+  }
+}

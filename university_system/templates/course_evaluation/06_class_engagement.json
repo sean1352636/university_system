@@ -1,0 +1,28 @@
+{
+  "template_name": "Class Environment & Engagement",
+  "template_type": "Course",
+  "description": "Assess classroom atmosphere, participation, and student engagement",
+  "questions": [
+    {
+      "question_text": "Rate the level of student engagement and participation in this course",
+      "question_type": "Rating",
+      "question_category": "General",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Did you feel comfortable asking questions and participating in discussions?",
+      "question_type": "Yes/No",
+      "question_category": "General",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What teaching methods were most effective in keeping you engaged?",
+      "question_type": "Text",
+      "question_category": "General",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

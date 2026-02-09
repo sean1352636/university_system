@@ -1,0 +1,4 @@
+{
+    "subject": "Overdue Library Book",
+    "body": "Your book '$book_title' is $days_overdue days overdue. Please return it as soon as possible."
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Internship Application Update: $internship_title at $company",
+    "body": "Dear $first_name $last_name,\n\nThank you for your interest in the '$internship_title' internship at $company.\n        \nWe regret to inform you that your application has not been successful on this occasion.\n\nBest regards,\nUniversity Internship Team"
+}

@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "Integrated System Dashboard",
+    "tabs": {
+      "overview": "System Overview",
+      "statistics": "Quick Statistics",
+      "activity": "Recent Activity",
+      "health": "System Health"
+    },
+    "errors": {
+      "login_required": "You must be logged in to access the dashboard.",
+      "no_analytics_permission": "You don't have permission to access analytics",
+      "analytics_not_available": "Student Analytics GUI is not available",
+      "analytics_launch_failed": "Failed to launch analytics GUI: {error}",
+      "analytics_error": "Error launching analytics: {error}",
+      "chatbot_login_required": "You must be logged in to access the chatbot.",
+      "no_chatbot_permission": "You don't have permission to access the chatbot.",
+      "chatbot_init_failed": "Failed to initialize chatbot system.",
+      "chatbot_open_failed": "Failed to open University Chatbot: {error}"
+    },
+    "messages": {
+      "opened_successfully": "Integrated Dashboard opened successfully",
+      "chatbot_opened": "University Chatbot GUI opened successfully",
+      "chatbot_launched": "University Chatbot GUI launched successfully",
+      "analytics_not_available_cli": "Analytics GUI not available, using CLI version"
+    },
+    "overview": {
+      "welcome": "Welcome back, {username}!",
+      "quick_access": "Quick Access",
+      "system_status": "System Status",
+      "current_time": "Current Time: {time}",
+      "user_role": "User Role: {role}",
+      "database_connected": "Database Status: Connected",
+      "buttons": {
+        "student_records": "Student Records",
+        "grade_tracking": "Grade Tracking",
+        "attendance": "出勤",
+        "course_management": "Course Management",
+        "finance_management": "Finance Management",
+        "reports": "报告"
+      }
+    },
+    "statistics": {
+      "title": "System Statistics",
+      "database_stats": "Database Statistics:",
+      "total_students": "Total Students:",
+      "active_courses": "Active Courses:",
+      "pending_assignments": "Pending Assignments:",
+      "system_uptime": "System Uptime:",
+      "recent_logins": "Recent Logins:",
+      "performance_metrics": "Performance Metrics:",
+      "db_response_time": "Database Response Time:",
+      "system_load": "System Load:",
+      "memory_usage": "Memory Usage:",
+      "active_sessions": "Active Sessions:",
+      "normal": "正常",
+      "optimal": "Optimal",
+      "load_error": "Unable to load statistics: {error}"
+    },
+    "activity": {
+      "title": "Recent System Activity",
+      "log_header": "Recent Activity Log:",
+      "user_logged_in": "User {username} logged in",
+      "dashboard_accessed": "Dashboard accessed",
+      "system_initialized": "System initialized",
+      "previous_sessions": "Previous Sessions:",
+      "last_login": "Last login:",
+      "today": "今天",
+      "recent_actions": "Recent actions:",
+      "actions_list": "View dashboard, Access student records",
+      "system_health": "System health:",
+      "all_operational": "All systems operational"
+    },
+    "health": {
+      "title": "System Health Monitoring",
+      "not_available": "Health monitoring GUI not available"
+    },
+    "chatbot": {
+      "title": "University Chatbot"
+    },
+    "log": {
+      "gui_prefix": "GUI",
+      "gui_activity": "GUI Activity",
+      "logging_error": "Logging system error"
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "plagiarism": {
+    "title": "표절 검출 시스템",
+    "subtitle": "학문적 무결성 검증 및 문서 분석",
+    "welcome": "환영합니다",
+
+    "menu_file": "파일",
+    "menu_tools": "도구",
+    "menu_help": "도움말",
+
+    "submit_document": "문서 제출",
+    "import_documents": "문서 가져오기",
+    "export_documents": "문서 내보내기",
+    "check_document": "문서 검사",
+    "search_repository": "저장소 검색",
+    "view_my_documents": "내 문서 보기",
+    "view_results": "결과 보기",
+    "advanced_search": "고급 검색",
+    "bulk_operations": "일괄 작업",
+    "system_testing": "시스템 테스트",
+    "generate_reports": "보고서 생성",
+    "compare_documents": "문서 비교",
+    "file_converter": "파일 변환기",
+    "document_workflow": "문서 워크플로우",
+    "repository": "저장소",
+    "delete_document": "문서 삭제",
+    "check_repository_integrity": "저장소 무결성 검사",
+    "check_integrity": "무결성 검사",
+    "backup_restore": "백업 및 복원",
+    "statistics": "통계",
+    "setup_testing": "설정 및 테스트",
+    "about": "정보",
+
+    "dashboard": "대시보드",
+    "quick_actions": "빠른 작업",
+    "check_for_plagiarism": "표절 검사",
+    "system_statistics": "시스템 통계",
+
+    "documents_tab": "문서",
+    "search_documents": "문서 검색",
+    "title_label": "제목:",
+
+    "check_results_tab": "검사 결과",
+    "refresh_results": "결과 새로고침",
+
+    "settings_tab": "설정",
+    "detection_settings": "검출 설정",
+    "similarity_threshold": "유사도 임계값:",
+    "system_information": "시스템 정보",
+
+    "repository_integrity_check": "저장소 무결성 검사",
+    "fix_issues": "문제 수정",
+
+    "system_reports": "시스템 보고서",
+    "available_reports": "사용 가능한 보고서",
+    "report_options": "보고서 옵션",
+    "include_charts_graphs": "차트 포함",
+    "export_format": "내보내기 형식:",
+    "generate_report": "보고서 생성",
+
+    "select_author": "저자 선택",
+    "select_module": "모듈 선택",
+
+    "plagiarism_checks": "표절 검사",
+    "check_plagiarism": "표절 검사",
+
+    "text_files": "텍스트 파일 (.txt)",
+    "zip_archive": "ZIP 아카이브",
+    "export_selected": "선택 항목 내보내기",
+
+    "delete_warning": "경고: 이 작업은 취소할 수 없습니다!",
+    "select_document_delete": "삭제할 문서를 선택하세요",
+
+    "setup_testing_tools": "설정 및 테스트 도구",
+    "system_setup": "시스템 설정",
+    "check_requirements": "요구 사항 확인",
+    "create_directories": "디렉토리 생성",
+    "create_sample_documents": "샘플 문서 생성",
+    "test_repository": "저장소 테스트",
+    "test_plagiarism_check": "표절 검사 테스트",
+    "clear_results": "결과 지우기",
+
+    "total_documents": "총 문서 수",
+    "total_checks": "총 검사 수",
+    "flagged_documents": "플래그된 문서",
+    "average_similarity": "평균 유사도",
+
+    "document_id": "문서 ID",
+    "author": "저자",
+    "date_submitted": "제출일",
+    "status": "상태",
+    "similarity_score": "유사도 점수",
+
+    "no_documents": "문서를 찾을 수 없습니다",
+    "no_results": "결과를 찾을 수 없습니다",
+    "loading": "로딩 중...",
+    "processing": "처리 중...",
+
+    "success": "성공",
+    "error": "오류",
+    "warning": "경고",
+    "info": "정보",
+
+    "document_submitted": "문서가 성공적으로 제출되었습니다",
+    "document_deleted": "문서가 성공적으로 삭제되었습니다",
+    "check_complete": "표절 검사가 완료되었습니다",
+    "export_complete": "내보내기가 성공적으로 완료되었습니다",
+    "import_complete": "가져오기가 성공적으로 완료되었습니다",
+
+    "confirm_delete": "이 문서를 삭제하시겠습니까?",
+    "confirm_action": "작업 확인",
+
+    "select_file": "파일 선택",
+    "select_folder": "폴더 선택",
+    "browse": "찾아보기...",
+    "cancel": "취소",
+    "close": "닫기",
+    "save": "저장",
+    "ok": "확인",
+
+    "report_types": {
+      "summary": "요약 보고서",
+      "detailed": "상세 분석",
+      "author_report": "저자 보고서",
+      "module_report": "모듈 보고서",
+      "trends": "트렌드 보고서"
+    },
+
+    "status_types": {
+      "pending": "대기 중",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "flagged": "플래그됨",
+      "cleared": "승인됨"
+    }
+  }
+}

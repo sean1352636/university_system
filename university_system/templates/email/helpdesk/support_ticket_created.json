@@ -1,0 +1,4 @@
+{
+    "subject": "🎫 Support Ticket Created - #$ticket_id",
+    "body": "Dear $student_name,\n\nYour support ticket has been created.\n\nTicket ID: #$ticket_id\nSubject: $ticket_subject\nPriority: $priority\nCreated: $created_date\n\nOur support team will respond to your request shortly.\n\n$signature"
+}

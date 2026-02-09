@@ -1,0 +1,86 @@
+{
+  "database": {
+    "init_success": "Database initialized successfully!",
+    "init_error": "An error occurred while initializing the database",
+    "users_table_not_found": "Users table not found. Will be created by main system.",
+    "parking_lots_created": "Default parking lots created!",
+    "errors": {
+      "connection_failed": "Failed to connect to database",
+      "query_failed": "Database query failed",
+      "transaction_failed": "Database transaction failed",
+      "locked": "Database is locked",
+      "integrity_error": "Database integrity error",
+      "not_found": "Record not found in database",
+      "constraint_violation": "제약 조건 위반: {constraint}",
+      "unique_violation": "고유 제약 조건 위반: {field}이(가) 이미 존재합니다",
+      "foreign_key_violation": "외래 키 제약 조건 위반: {reference}",
+      "not_null_violation": "NOT NULL 제약 조건 위반: {field}은(는) 필수입니다",
+      "check_violation": "체크 제약 조건 위반: {constraint}",
+      "table_not_found": "테이블을 찾을 수 없습니다: {table}",
+      "column_not_found": "열을 찾을 수 없습니다: {column}"
+    },
+    "messages": {
+      "backup_complete": "Database backup completed successfully",
+      "backup_failed": "Database backup failed",
+      "restore_complete": "Database restored successfully",
+      "restore_failed": "Database restore failed",
+      "migration_complete": "Database migration completed",
+      "migration_failed": "Database migration failed",
+      "tables_created": "Database tables created successfully",
+      "schema_updated": "Database schema updated",
+      "connection_established": "Database connection established",
+      "connection_closed": "Database connection closed"
+    },
+    "labels": {
+      "database": "Database",
+      "table": "Table",
+      "record": "Record",
+      "query": "Query",
+      "backup": "Backup",
+      "restore": "Restore",
+      "connection": "Connection"
+    },
+    "connection": {
+      "success": "데이터베이스에 성공적으로 연결되었습니다",
+      "failed": "데이터베이스 연결 실패: {error}",
+      "closed": "데이터베이스 연결이 종료되었습니다",
+      "timeout": "데이터베이스 연결 시간 초과",
+      "pool_exhausted": "데이터베이스 연결 풀이 소진되었습니다"
+    },
+    "operations": {
+      "insert_success": "레코드가 성공적으로 삽입되었습니다",
+      "insert_failed": "레코드 삽입 실패: {error}",
+      "update_success": "레코드가 성공적으로 업데이트되었습니다",
+      "update_failed": "레코드 업데이트 실패: {error}",
+      "delete_success": "레코드가 성공적으로 삭제되었습니다",
+      "delete_failed": "레코드 삭제 실패: {error}",
+      "query_failed": "쿼리 실행 실패: {error}",
+      "transaction_started": "트랜잭션이 시작되었습니다",
+      "transaction_committed": "트랜잭션이 커밋되었습니다",
+      "transaction_rolled_back": "트랜잭션이 롤백되었습니다"
+    },
+    "backup": {
+      "title": "데이터베이스 백업",
+      "create": "백업 생성",
+      "restore": "백업 복원",
+      "success": "백업이 성공적으로 생성되었습니다: {filename}",
+      "failed": "백업 생성 실패: {error}",
+      "restore_success": "백업이 성공적으로 복원되었습니다",
+      "restore_failed": "백업 복원 실패: {error}",
+      "restore_confirm": "데이터베이스를 복원하시겠습니까? 현재 데이터가 덮어쓰여집니다.",
+      "no_backups": "사용 가능한 백업이 없습니다",
+      "select_backup": "복원할 백업을 선택하세요",
+      "in_progress": "백업 진행 중..."
+    },
+    "maintenance": {
+      "title": "데이터베이스 유지 관리",
+      "vacuum": "데이터베이스 최적화",
+      "vacuum_success": "데이터베이스 최적화가 완료되었습니다",
+      "analyze": "통계 분석",
+      "analyze_success": "데이터베이스 분석이 완료되었습니다",
+      "integrity_check": "무결성 검사",
+      "integrity_ok": "데이터베이스 무결성이 정상입니다",
+      "integrity_failed": "데이터베이스 무결성 오류가 발견되었습니다"
+    }
+  }
+}

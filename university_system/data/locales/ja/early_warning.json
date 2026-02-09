@@ -1,0 +1,161 @@
+{
+  "early_warning": {
+    "title": "学生成功早期警告システム",
+    "window_title": "学生成功早期警告システム",
+    "calculate_all_risk_scores": "全てのリスクスコアを計算",
+    "calculate_risk_selected": "選択した学生のリスクを計算",
+    "create_intervention": "介入を作成",
+    "assign_coach": "コーチを割り当て",
+    "send_alert": "アラートを送信",
+    "risk_level": "リスクレベル：",
+    "coaches": "コーチ",
+    "coach_assignments": "コーチ割り当て",
+    "tabs": {
+      "at_risk_students": "リスクのある学生",
+      "interventions": "介入",
+      "success_coaching": "成功コーチング",
+      "tutoring_recommendations": "個別指導の推奨",
+      "risk_indicators": "リスク指標"
+    },
+    "buttons": {
+      "add_coach": "コーチを追加",
+      "add_indicator": "指標を追加",
+      "assign": "割り当て",
+      "assign_coach": "コーチを割り当て",
+      "calculate_all_risks": "全リスクを計算",
+      "calculate_risk": "リスクを計算",
+      "complete_intervention": "介入を完了",
+      "create_intervention": "介入を作成",
+      "register_coach": "コーチを登録",
+      "resolve_indicator": "指標を解決",
+      "send_alert": "アラートを送信",
+      "view_details": "詳細を表示"
+    },
+    "labels": {
+      "assigned_to": "担当者：",
+      "intervention_type": "介入タイプ：",
+      "max_students": "最大学生数：",
+      "meeting_frequency": "面談頻度：",
+      "outcome": "結果：",
+      "priority": "優先度：",
+      "reason": "理由：",
+      "risk_level": "リスクレベル",
+      "risk_level_filter": "リスクレベル：",
+      "risk_score": "リスクスコア",
+      "select_coach": "コーチを選択：",
+      "specialization": "専門分野：",
+      "student": "学生",
+      "student_id": "学生ID",
+      "student_name": "学生名",
+      "trigger_type": "トリガータイプ：",
+      "user_id": "ユーザーID："
+    },
+    "columns": {
+      "coach_id": "コーチID",
+      "coach_name": "コーチ名",
+      "department": "学部",
+      "email": "メールアドレス",
+      "indicator_type": "指標タイプ",
+      "intervention_id": "介入ID",
+      "intervention_type": "介入タイプ",
+      "risk_level": "リスクレベル",
+      "risk_score": "リスクスコア",
+      "specialty": "専門",
+      "status": "ステータス",
+      "student_id": "学生ID",
+      "student_name": "学生名"
+    },
+    "cli": {
+      "title": "学生成功早期警告システム",
+      "menu": {
+        "at_risk": "リスクのある学生を表示",
+        "dashboard": "リスク評価ダッシュボード",
+        "intervention": "介入計画を作成",
+        "coach": "成功コーチを割り当て",
+        "progress": "学生の進捗を追跡",
+        "tutoring": "個別指導の推奨",
+        "alerts": "アラート通知を送信",
+        "language": "言語",
+        "return_main": "メインメニューに戻る"
+      },
+      "prompt": {
+        "choice": "選択してください (1-9)"
+      },
+      "feature_available": "早期警告マネージャーで機能が利用可能",
+      "returning": "メインメニューに戻ります...",
+      "invalid_choice": "無効な選択です。",
+      "error": "エラー: {error}"
+    },
+    "dialogs": {
+      "assign_coach": "コーチを割り当て",
+      "complete_intervention": "介入を完了",
+      "create_intervention": "介入を作成",
+      "email_not_configured": "メールが設定されていません",
+      "intervention_details": "介入の詳細",
+      "no_coaches": "コーチがいません",
+      "register_coach": "コーチを登録",
+      "risk_calculated": "リスクが計算されました"
+    },
+    "messages": {
+      "alert_sent": "{email} にアラートを送信しました",
+      "coach_assigned": "コーチが正常に割り当てられました",
+      "coach_registered": "コーチが正常に登録されました",
+      "email_not_available": "メールが送信されます（メールサービスが利用できません）",
+      "email_would_be_sent": "メールサービスが利用できません。アラートの送信先: {email}",
+      "intervention_completed": "介入が完了としてマークされました",
+      "intervention_created": "介入が正常に作成されました",
+      "risk_calculated_all": "{count} 人の学生のリスクスコアを計算しました",
+      "risk_result": "学生 {student_id}\nリスクスコア: {score}\nリスクレベル: {level}"
+    },
+    "errors": {
+      "assign_coach_failed": "コーチの割り当てに失敗しました: {error}",
+      "calculate_risk_failed": "リスクの計算に失敗しました: {error}",
+      "calculate_risks_failed": "リスクの計算に失敗しました: {error}",
+      "complete_intervention_failed": "介入の完了に失敗しました: {error}",
+      "create_intervention_failed": "介入の作成に失敗しました: {error}",
+      "db_init_failed": "データベースの初期化に失敗しました: {error}",
+      "load_coaches_failed": "コーチの読み込みに失敗しました: {error}",
+      "load_interventions_failed": "介入の読み込みに失敗しました: {error}",
+      "load_students_failed": "学生の読み込みに失敗しました: {error}",
+      "login_required": "早期警告システムにアクセスするにはログインが必要です。",
+      "register_coach_failed": "コーチの登録に失敗しました: {error}",
+      "send_alert_failed": "アラートの送信に失敗しました: {error}",
+      "student_not_found": "学生が見つかりません"
+    },
+    "warnings": {
+      "no_coaches_available": "アクティブなコーチがいません。最初にコーチを登録してください。",
+      "select_coach": "コーチを選択してください",
+      "select_intervention": "介入を選択してください",
+      "select_student": "学生を選択してください"
+    },
+    "status": {
+      "loaded_coaches": "{count} 人のコーチを読み込みました",
+      "loaded_interventions": "{count} 件の介入を読み込みました",
+      "loaded_students": "{count} 人のリスクのある学生を読み込みました"
+    },
+    "risk_factors": {
+      "low_gpa": "低いGPA",
+      "poor_attendance": "出席率の低下",
+      "missing_assignments": "未提出の課題",
+      "failed_exams": "不合格の試験",
+      "withdrawal_risk": "退学リスク"
+    },
+    "intervention_types": {
+      "academic_support": "学業支援",
+      "counseling_referral": "カウンセリング紹介",
+      "tutor_assignment": "チューター割り当て",
+      "advisor_meeting": "アドバイザー面談",
+      "parent_notification": "保護者への通知"
+    },
+    "risk_levels": {
+      "high": "高リスク",
+      "medium": "中リスク",
+      "low": "低リスク"
+    },
+    "outcomes": {
+      "improved": "改善",
+      "no_change": "変化なし",
+      "declined": "悪化"
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "misconduct": {
+    "window": {
+      "title": "Akademisches Fehlverhalten - Fallverwaltungssystem"
+    },
+    "auth": {
+      "required_title": "Authentifizierung erforderlich",
+      "required_message": "Sie muessen angemeldet sein, um auf das Panel fuer akademisches Fehlverhalten zuzugreifen.\n\nBitte melden Sie sich zuerst ueber die Hauptoberflaeche an.",
+      "launch_from_gui": "Sie muessen angemeldet sein, um auf das Panel fuer akademisches Fehlverhalten zuzugreifen.\n\nBitte starten Sie dieses Modul nach der Anmeldung ueber die Hauptoberflaeche.",
+      "not_logged_in_title": "Nicht angemeldet",
+      "not_logged_in_message": "Sie sind derzeit nicht angemeldet.\n\nBitte melden Sie sich ueber die Hauptoberflaeche an, um auf dieses Panel zuzugreifen.",
+      "access_denied_title": "Zugriff verweigert",
+      "access_denied_message": "Sie haben keine Berechtigung, auf das Panel fuer akademisches Fehlverhalten zuzugreifen.\n\nIhre Rolle: {role}\nErforderliche Rollen: Administrator, Mitarbeiter oder Dozent"
+    },
+    "header": {
+      "title": "AKADEMISCHES FEHLVERHALTEN",
+      "subtitle": "Fallverwaltungssystem - Buero fuer akademische Integritaet"
+    },
+    "stats": {
+      "active_cases": "Aktive Faelle",
+      "pending_hearing": "Anhoerung ausstehend",
+      "resolved": "Abgeschlossen"
+    },
+    "case_list": {
+      "title": "Fallregister",
+      "search_placeholder": "Faelle suchen..."
+    },
+    "filters": {
+      "all": "Alle",
+      "under_review": "In Pruefung",
+      "pending_hearing": "Anhoerung ausstehend",
+      "resolved": "Abgeschlossen"
+    },
+    "buttons": {
+      "return_home": "Zur Startseite",
+      "create": "Erstellen",
+      "view": "Anzeigen",
+      "update": "Aktualisieren",
+      "delete": "Loeschen",
+      "refresh": "Aktualisieren",
+      "edit_case": "Fall bearbeiten",
+      "notify_student": "Studierenden benachrichtigen",
+      "schedule_hearing": "Anhoerung planen",
+      "upload_evidence": "Beweise hochladen",
+      "cancel": "Abbrechen",
+      "save_case": "Fall speichern",
+      "save_changes": "Aenderungen speichern",
+      "close": "Schliessen",
+      "send_email": "E-Mail senden",
+      "submit_decision": "Entscheidung einreichen",
+      "lookup": "Nachschlagen",
+      "validate": "Validieren",
+      "load_assignments": "Aufgaben laden",
+      "select_files": "Dateien auswaehlen",
+      "upload": "Hochladen"
+    },
+    "columns": {
+      "case_id": "Fall-ID",
+      "student": "Studierende/r",
+      "type": "Art",
+      "status": "Status"
+    },
+    "details": {
+      "title": "Falldetails"
+    },
+    "tabs": {
+      "overview": "  Uebersicht  ",
+      "evidence": "  Beweise  ",
+      "decision": "  Entscheidung  ",
+      "history": "  Verlauf  "
+    },
+    "overview": {
+      "select_case": "Waehlen Sie einen Fall aus, um Details anzuzeigen"
+    },
+    "fields": {
+      "case_id": "Fall-ID",
+      "student_name": "Name des Studierenden",
+      "student_id": "Studierenden-ID",
+      "student_email": "E-Mail des Studierenden",
+      "course": "Kurs",
+      "course_module": "Kurs-/Modulcode",
+      "violation_type": "Art des Verstosses",
+      "date_filed": "Eingangsdatum",
+      "severity": "Schweregrad",
+      "status": "Status",
+      "case_notes": "Fallnotizen:",
+      "notes": "Notizen",
+      "initial_notes": "Erste Notizen",
+      "hearing_date": "Anhoerungsdatum",
+      "hearing_time": "Anhoerungszeit",
+      "hearing_location": "Anhoerungsort",
+      "ruling": "Entscheidung"
+    },
+    "evidence": {
+      "title": "Beweise und Dokumentation",
+      "no_evidence": "Noch keine Beweise hochgeladen",
+      "select_case": "Waehlen Sie einen Fall aus, um Beweise anzuzeigen",
+      "current_files": "Aktuelle Beweisdateien:",
+      "upload_new": "Neue Beweise hochladen",
+      "file_name": "Dateiname",
+      "file_size": "Dateigroesse",
+      "uploaded_date": "Hochladedatum",
+      "uploaded_by": "Hochgeladen von"
+    },
+    "decision": {
+      "title": "Entscheidung des Gremiums",
+      "ruling_label": "Entscheidung:",
+      "rationale_label": "Entscheidungsbegruendung:",
+      "submit_confirm": "Sind Sie sicher, dass Sie diese Entscheidung einreichen moechten?",
+      "success": "Entscheidung erfolgreich erfasst"
+    },
+    "rulings": {
+      "not_responsible": "Nicht verantwortlich",
+      "warning": "Verantwortlich - Verwarnung",
+      "grade_penalty": "Verantwortlich - Notenabzug",
+      "course_failure": "Verantwortlich - Kurs nicht bestanden",
+      "suspension": "Verantwortlich - Suspendierung",
+      "expulsion": "Verantwortlich - Exmatrikulation",
+      "academic_probation": "Verantwortlich - Akademische Bewaehrung",
+      "resubmission": "Verantwortlich - Erneute Einreichung erforderlich",
+      "dismissed": "Fall abgewiesen - Unzureichende Beweise",
+      "deferred": "Aufgeschoben - Untersuchung laeuft"
+    },
+    "history": {
+      "title": "Fallverlauf und Zeitachse",
+      "select_case": "Waehlen Sie einen Fall aus, um den Verlauf anzuzeigen",
+      "no_records": "Keine Verlaufseintraege fuer diesen Fall gefunden."
+    },
+    "violations": {
+      "plagiarism": "Plagiat",
+      "unauthorized_collaboration": "Unerlaubte Zusammenarbeit",
+      "contract_cheating": "Auftragsarbeit",
+      "exam_misconduct": "Pruefungsbetrug",
+      "fabrication": "Faelschung",
+      "other": "Sonstiges"
+    },
+    "severity_levels": {
+      "minor": "Geringfuegig",
+      "major": "Schwerwiegend",
+      "critical": "Kritisch"
+    },
+    "status_values": {
+      "under_review": "In Pruefung",
+      "pending_hearing": "Anhoerung ausstehend",
+      "resolved": "Abgeschlossen"
+    },
+    "dialogs": {
+      "new_case": "Neuer Fall",
+      "edit_case": "Fall bearbeiten",
+      "new_misconduct_case": "Neuer Fall akademischen Fehlverhaltens",
+      "update_case": "Fall {id} aktualisieren",
+      "case_details": "Falldetails - {id}",
+      "notify_student": "Studierenden benachrichtigen",
+      "send_notification": "Benachrichtigung an Studierenden senden",
+      "schedule_hearing": "Anhoerung planen",
+      "upload_evidence": "Beweise hochladen - {id}",
+      "confirm_delete": "Loeschen bestaetigen",
+      "confirm_delete_message": "Sind Sie sicher, dass Sie Fall {id} loeschen moechten?\n\nDiese Aktion kann nicht rueckgaengig gemacht werden.",
+      "confirm_close": "Sind Sie sicher, dass Sie das Panel fuer akademisches Fehlverhalten schliessen moechten?"
+    },
+    "messages": {
+      "success": "Erfolg",
+      "error": "Fehler",
+      "warning": "Warnung",
+      "info": "Information",
+      "no_selection": "Keine Auswahl",
+      "select_case_to_delete": "Bitte waehlen Sie einen Fall zum Loeschen aus.",
+      "select_case_to_update": "Bitte waehlen Sie einen Fall zum Aktualisieren aus.",
+      "select_case_to_view": "Bitte waehlen Sie einen Fall zum Anzeigen aus.",
+      "select_case_first": "Bitte waehlen Sie zuerst einen Fall aus.",
+      "select_case_for_evidence": "Bitte waehlen Sie einen Fall aus, fuer den Sie Beweise hochladen moechten.",
+      "case_created": "Fall {id} erfolgreich erstellt.",
+      "case_updated": "Fall {id} erfolgreich aktualisiert.",
+      "case_deleted": "Fall erfolgreich geloescht.",
+      "save_failed": "Fehler beim Speichern des Falls in der Datenbank.",
+      "update_failed": "Fehler beim Aktualisieren des Falls in der Datenbank.",
+      "delete_failed": "Fehler beim Loeschen des Falls aus der Datenbank.",
+      "incomplete_fields": "Bitte fuellen Sie alle erforderlichen Felder aus.",
+      "invalid_course": "Ungueltiger Kurs",
+      "invalid_course_message": "{message}\n\nBitte waehlen Sie einen gueltigen Kurs aus der Dropdown-Liste oder geben Sie einen gueltigen Kurscode ein.",
+      "missing_id": "Fehlende ID",
+      "enter_student_id": "Bitte geben Sie eine Studierenden-ID zum Nachschlagen ein.",
+      "student_found": "Studierende/r '{name}' gefunden und Details ausgefuellt.",
+      "student_not_found": "Kein/e Studierende/r mit der ID '{id}' gefunden.",
+      "lookup_failed": "Fehler bei der Suche nach Studierenden: {error}",
+      "missing_email": "Bitte geben Sie die E-Mail-Adresse des Studierenden ein.",
+      "email_unavailable": "E-Mail-System ist nicht verfuegbar.",
+      "notification_sent": "Benachrichtigung an {email} gesendet",
+      "notification_failed": "Fehler beim Senden der Benachrichtigung: {error}",
+      "email_send_failed": "Fehler beim Senden der E-Mail. Bitte versuchen Sie es erneut.",
+      "hearing_scheduled": "Anhoerung erfolgreich geplant.",
+      "hearing_scheduled_email": "Anhoerung geplant und Benachrichtigung an {email} gesendet",
+      "hearing_partial_success": "Anhoerung geplant, aber E-Mail-Benachrichtigung fehlgeschlagen.",
+      "hearing_save_failed": "Fehler beim Speichern der Anhoerungsdetails.",
+      "missing_hearing_info": "Bitte fuellen Sie alle Felder aus.",
+      "notification_email_sent": "\nBenachrichtigungs-E-Mail an Studierenden gesendet.",
+      "decision_submitted": "Entscheidung eingereicht und erfasst.",
+      "no_ruling_selected": "Bitte waehlen Sie eine Entscheidung aus, bevor Sie einreichen.",
+      "evidence_uploaded": "Beweise erfolgreich hochgeladen.",
+      "evidence_upload_failed": "Fehler beim Hochladen der Beweise.",
+      "no_files_selected": "Keine Dateien ausgewaehlt.",
+      "file_too_large": "Datei {name} ueberschreitet die maximale Groesse von {size}MB.",
+      "related_assignment": "Zugehoerige Aufgabe (optional)"
+    },
+    "email": {
+      "subject_notification": "Akademischer Integritaetsfall {id} - Benachrichtigung",
+      "subject_update": "Aktualisierung zum Fall akademischen Fehlverhaltens - {id}",
+      "subject_hearing": "Akademische Integritaetsanhoerung geplant - Fall {id}",
+      "to_label": "An: {name} ({id})",
+      "student_email_label": "E-Mail des Studierenden:",
+      "subject_label": "Betreff:",
+      "message_label": "Nachricht:",
+      "send_notification_checkbox": "E-Mail-Benachrichtigung an Studierenden senden"
+    },
+    "hearing": {
+      "date_label": "Anhoerungsdatum:",
+      "time_label": "Anhoerungszeit:",
+      "location_label": "Ort:",
+      "date_format": "(JJJJ-MM-TT)",
+      "quick_dates": {
+        "one_week": "1 Woche",
+        "two_weeks": "2 Wochen",
+        "three_weeks": "3 Wochen"
+      },
+      "default_location": "Buero fuer akademische Integritaet, Raum 201",
+      "arrival_notice": "Bitte erscheinen Sie 10 Minuten vor der geplanten Zeit."
+    },
+    "validation": {
+      "course_required": "Bitte geben Sie einen Kurscode ein",
+      "course_valid": "Gueltiger Kurs: {code}",
+      "course_invalid": "Kurs '{code}' nicht im System gefunden",
+      "course_validation_error": "Fehler bei der Kursvalidierung: {error}"
+    },
+    "common": {
+      "na": "k.A.",
+      "not_provided": "Nicht angegeben",
+      "no_notes": "Keine Notizen verfuegbar.",
+      "loading": "Laden...",
+      "found": "Gefunden",
+      "not_found": "Nicht gefunden",
+      "deleted": "Geloescht",
+      "confirm": "Bestaetigen",
+      "partial_success": "Teilerfolg"
+    }
+  }
+}

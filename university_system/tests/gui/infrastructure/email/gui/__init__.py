@@ -1,0 +1,1 @@
+# Email GUI tests package

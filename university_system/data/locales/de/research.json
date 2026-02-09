@@ -1,0 +1,184 @@
+{
+  "research": {
+    "grants": {
+      "errors": {
+        "add_team_member": "Error adding team member: {error}",
+        "create_milestone": "Error creating milestone: {error}",
+        "create_project": "Error creating research project: {error}",
+        "record_publication": "Error recording publication: {error}",
+        "register_equipment": "Error registering equipment: {error}",
+        "submit_application": "Error submitting grant application: {error}",
+        "submit_ethics_review": "Error submitting ethics review: {error}",
+        "update_decision": "Error updating grant decision: {error}"
+      },
+      "gui": {
+        "cli_instruction": "Use CLI: Research & Grants Management",
+        "description": "Manage research projects, grants, publications, and equipment.\n\nFeatures:\n- Research project tracking\n- Grant applications\n- Publications management\n- Milestone tracking\n- Equipment inventory\n- Ethics review board",
+        "title": "Research & Grants Management"
+      },
+      "menu": {
+        "enter_choice": "Enter your choice (1-8): ",
+        "equipment_inventory": "Equipment Inventory",
+        "error": "Error: {error}",
+        "ethics_review_board": "Ethics Review Board",
+        "feature_available": "Feature available via Research managers",
+        "grant_applications": "Grant Applications",
+        "invalid_choice": "Invalid choice.",
+        "milestone_management": "Milestone Management",
+        "publications_tracking": "Publications Tracking",
+        "research_projects": "Research Projects",
+        "research_reports": "Research Reports",
+        "return_to_main": "Return to Main Menu",
+        "title": "RESEARCH & GRANTS MANAGEMENT",
+        "usage_instruction": "Use: from university_system.modules.domain.research.services import ResearchProjectManager"
+      }
+    }
+  },
+  "research_grants": {
+    "title": "Forschung & Stipendien Verwaltung",
+    "window_title": "Research & Grants Management",
+    "submit_proposal": "Submit Proposal",
+    "view_grants": "View Grants",
+    "manage_projects": "Manage Projects",
+    "funding_opportunities": "Funding Opportunities",
+    "grant_applications": "Grant Applications",
+    "active_grants": "Active Grants",
+    "completed_grants": "Completed Grants",
+    "proposal_title": "Proposal Title",
+    "principal_investigator": "Principal Investigator",
+    "co_investigators": "Co-Investigators",
+    "funding_agency": "Funding Agency",
+    "requested_amount": "Requested Amount",
+    "awarded_amount": "Awarded Amount",
+    "project_start": "Project Start Date",
+    "project_end": "Project End Date",
+    "project_status": "Project Status",
+    "budget_allocation": "Budget Allocation",
+    "expenditure_report": "Expenditure Report",
+    "progress_report": "Progress Report",
+    "deliverables": "Deliverables",
+    "publications": "Publications",
+    "submit_report": "Submit Report",
+    "deadline": "Deadline",
+    "header_title": "Forschung & Stipendien Verwaltung",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "pi": "PI",
+      "department": "Department",
+      "type": "Type",
+      "start_date": "Start Date",
+      "budget": "Budget",
+      "status": "Status",
+      "grant_name": "Grant Name",
+      "agency": "Agency",
+      "requested": "Requested",
+      "awarded": "Awarded",
+      "deadline": "Deadline",
+      "authors": "Authors",
+      "publication_type": "Publication Type",
+      "journal": "Journal",
+      "year": "Year",
+      "citations": "Citations",
+      "project": "Project",
+      "milestone": "Milestone",
+      "due_date": "Due Date",
+      "completed": "Completed",
+      "equipment_name": "Equipment Name",
+      "purchase_date": "Purchase Date",
+      "cost": "Cost",
+      "location": "Location",
+      "protocol_number": "Protocol Number",
+      "submission_date": "Submission Date",
+      "review_type": "Review Type",
+      "decision": "Decision"
+    },
+    "status": {
+      "not_completed": "Not completed",
+      "pending": "Pending",
+      "under_review": "Under Review"
+    },
+    "tabs": {
+      "research_projects": "Forschung Projekte",
+      "grant_applications": "Stipendium Anwendungen",
+      "publications": "Veröffentlichungen",
+      "milestones": "Meilensteine",
+      "equipment": "Ausrüstung",
+      "irb_ethics": "IRB/Ethik"
+    },
+    "frames": {
+      "active_projects": "Aktiv Projekte",
+      "grant_applications": "Stipendium Anwendungen",
+      "research_publications": "Forschung Veröffentlichungen",
+      "project_milestones": "Projekt Meilensteine",
+      "research_equipment": "Forschung Ausrüstung",
+      "irb_applications": "IRB/Ethik Anwendungen"
+    },
+    "buttons": {
+      "create_project": "Erstellen Projekt",
+      "add_team_member": "Hinzufugen Team Mitglied",
+      "submit_application": "Absenden Anwendung",
+      "update_decision": "Aktualisieren Entscheidung",
+      "add_publication": "Hinzufugen Veröffentlichung",
+      "add_milestone": "Hinzufugen Meilenstein",
+      "update_status": "Aktualisieren Status",
+      "add_equipment": "Hinzufugen Ausrüstung",
+      "submit_irb": "Absenden IRB Anwendung",
+      "change_language": "Sprache: {lang}"
+    },
+    "labels": {
+      "user": "Benutzer: {Benutzername}"
+    },
+    "fields": {
+      "project_title": "Projekt Titel:",
+      "pi_id": "PI ID:",
+      "department": "Abteilung:",
+      "project_type": "Projekt Typ:",
+      "start_date": "Starten Datum (YYYY-MM-DD):",
+      "budget": "Budget:",
+      "description": "Beschreibung:",
+      "staff_id": "Staff ID:",
+      "role": "Role:"
+    },
+    "dialogs": {
+      "create_project": {
+        "title": "Erstellen Forschung Projekt",
+        "header": "Erstellen Forschung Projekt"
+      },
+      "add_team_member": {
+        "title": "Hinzufugen Team Mitglied",
+        "header": "Hinzufugen Team Mitglied - Projekt {project_id}"
+      }
+    },
+    "messages": {
+      "project_created": "Projekt created (ID: {id})",
+      "team_member_added": "Teammitglied added successfully",
+      "grant_submission_placeholder": "Stipendium submission dialog - implement as needed",
+      "grant_decision_placeholder": "Stipendium Entscheidung Aktualisieren dialog - implement as needed",
+      "add_publication_placeholder": "Hinzufugen publication dialog - implement as needed",
+      "add_milestone_placeholder": "Hinzufugen milestone dialog - implement as needed",
+      "update_milestone_placeholder": "Aktualisieren milestone dialog - implement as needed",
+      "add_equipment_placeholder": "Hinzufugen Ausrüstung dialog - implement as needed",
+      "irb_submission_placeholder": "IRB submission dialog - implement as needed",
+      "irb_decision_placeholder": "IRB Entscheidung Aktualisieren dialog - implement as needed"
+    },
+    "errors": {
+      "login_required": "Bitte Protokoll in Zugriff Forschung & Stipendien Verwaltung.",
+      "db_init_issue": "Datenbank initialization hatte Probleme: {error}. Einige Funktionen funktionieren möglicherweise nicht korrekt.",
+      "select_project": "Bitte Auswahlen a project",
+      "load_projects_failed": "Fehler beim Laden von projects: {error}",
+      "load_grants_failed": "Fehler beim Laden von grants: {error}",
+      "load_publications_failed": "Fehler beim Laden von publications: {error}",
+      "load_milestones_failed": "Fehler beim Laden von Meilensteine: {error}",
+      "load_equipment_failed": "Fehler beim Laden von Ausrüstung: {error}",
+      "load_irb_failed": "Fehler beim Laden von IRB Anwendungen: {error}",
+      "create_project_failed": "Fehler beim Erstellen von project: {error}",
+      "add_member_failed": "Fehler beim Hinzufügen von Teammitglied: {error}",
+      "launch_failed": "Fehler beim Starten von Forschung & Stipendien GUI: {error}"
+    },
+    "language": {
+      "changed_title": "Sprache Changed",
+      "restart_for_full_effect": "Some text will Aktualisieren immediately. For full effect, please restart the Modul."
+    }
+  }
+}

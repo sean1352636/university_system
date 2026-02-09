@@ -1,0 +1,258 @@
+{
+  "health_portal": {
+    "title": "Портал Здоровья Университета",
+    "window_title": "Службы Портала Здоровья",
+    "header_title": "Портал Здоровья Университета",
+
+    "nav": {
+      "title": "Навигация",
+      "health_records": "Медицинские Записи",
+      "manage_records": "Управление Записями",
+      "view_records": "Просмотр Записей",
+      "view_history": "Просмотр Истории Болезни",
+      "generate_reports": "Создание Отчётов",
+      "appointments": "Приёмы",
+      "schedule_appt": "Записаться на Приём",
+      "view_appts": "Просмотр Приёмов",
+      "vaccinations": "Вакцинации",
+      "record_vaccine": "Записать Вакцинацию",
+      "view_vaccines": "Просмотр Вакцинаций",
+      "emergency_contacts": "Экстренные Контакты",
+      "manage_contacts": "Управление Контактами",
+      "reports_analytics": "Отчёты и Аналитика",
+      "health_reports": "Отчёты о Здоровье",
+      "integration": "Интеграция",
+      "email_manager": "Менеджер Email",
+      "send_report_email": "Отправить Отчёт по Email",
+      "send_record_email": "Отправить Запись по Email",
+      "accessibility": "Доступность",
+      "accessibility_tools": "Инструменты Доступности",
+      "medical_accommodations": "Медицинские Приспособления",
+      "administration": "Администрирование",
+      "security_audit": "Аудит Безопасности",
+      "data_management": "Управление Данными"
+    },
+
+    "btn": {
+      "return_main": "Вернуться в Главное Меню",
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "close": "Закрыть",
+      "update": "Обновить",
+      "delete": "Удалить",
+      "search": "Поиск",
+      "clear": "Очистить",
+      "refresh": "Обновить"
+    },
+
+    "buttons": {
+      "open_email_manager": "Открыть Менеджер Email",
+      "send_health_report_email": "Отправить Отчёт о Здоровье",
+      "send_health_record_email": "Отправить Медицинскую Запись",
+      "save_record": "Сохранить Запись",
+      "clear_form": "Очистить Форму",
+      "view_details": "Просмотр Деталей",
+      "update": "Обновить",
+      "delete": "Удалить",
+      "search": "Поиск",
+      "record_vaccination": "Записать Вакцинацию",
+      "schedule_appointment": "Записаться на Приём",
+      "cancel_appointment": "Отменить Приём",
+      "add_contact": "Добавить Контакт",
+      "remove_contact": "Удалить Контакт",
+      "generate_report": "Создать Отчёт",
+      "export_data": "Экспорт Данных",
+      "print": "Печать"
+    },
+
+    "labels": {
+      "email_manager": "Менеджер Email",
+      "send_report_title": "Отправить Отчёт о Здоровье",
+      "email_health_report": "Email Отчёта о Здоровье",
+      "student_id": "ID Студента:",
+      "report_title": "Название Отчёта:",
+      "report_type": "Тип Отчёта:",
+      "report_summary": "Краткое Содержание Отчёта:",
+      "send_record_email_title": "Отправить Медицинскую Запись",
+      "email_health_record_form": "Форма Email Медицинской Записи",
+      "record_type": "Тип Записи:",
+      "date_range": "Диапазон Дат:",
+      "all_dates": "Все Даты",
+      "summary": "Краткое Содержание:",
+      "records_management": "Управление Медицинскими Записями",
+      "record_date": "Дата Записи:",
+      "provider": "Поставщик:",
+      "description": "Описание:",
+      "confidential": "Конфиденциально:",
+      "search_filters": "Фильтры Поиска",
+      "date_from": "Дата С:",
+      "date_to": "Дата По:",
+      "health_record_details": "Детали Медицинской Записи",
+      "record_type_required": "Тип Записи *:",
+      "record_date_required": "Дата Записи *:",
+      "vaccination_management": "Управление Вакцинациями",
+      "vaccine": "Вакцина:",
+      "administered_date": "Дата Введения:",
+      "lot_number": "Номер Партии:",
+      "manufacturer": "Производитель:",
+      "administered_by": "Введено:",
+      "location": "Место:",
+      "adverse_reaction_reported": "Сообщено о Побочной Реакции",
+      "reaction_description": "Описание Реакции:",
+      "appointment_management": "Управление Приёмами",
+      "appointment_date": "Дата Приёма:",
+      "appointment_time": "Время Приёма:",
+      "appointment_type": "Тип Приёма:",
+      "reason": "Причина:",
+      "notes": "Заметки:",
+      "emergency_contact_management": "Управление Экстренными Контактами",
+      "contact_name": "Имя Контакта:",
+      "relationship": "Отношение:",
+      "phone_number": "Номер Телефона:",
+      "email": "Email:",
+      "is_primary": "Основной Контакт"
+    },
+
+    "tabs": {
+      "add_record": "Добавить Запись",
+      "view_records": "Просмотр Записей",
+      "record_vaccination": "Записать Вакцинацию",
+      "view_vaccinations": "Просмотр Вакцинаций",
+      "schedule": "Запись",
+      "view_appointments": "Просмотр Приёмов",
+      "add_contact": "Добавить Контакт",
+      "view_contacts": "Просмотр Контактов"
+    },
+
+    "fields": {
+      "record_id": "ID Записи:",
+      "student_id": "ID Студента:",
+      "student_name": "Имя Студента:",
+      "record_type": "Тип Записи:",
+      "date": "Дата:",
+      "provider": "Поставщик:",
+      "confidential": "Конфиденциально:",
+      "created": "Создано:",
+      "description": "Описание:",
+      "status": "Статус:",
+      "vaccination_id": "ID Вакцинации:",
+      "vaccine_name": "Название Вакцины:",
+      "lot_number": "Номер Партии:",
+      "manufacturer": "Производитель:",
+      "administered_by": "Введено:",
+      "administered_date": "Дата Введения:",
+      "location": "Место:",
+      "adverse_reaction": "Побочная Реакция:"
+    },
+
+    "record_types": {
+      "complete_history": "Полная История",
+      "vaccination": "Вакцинация",
+      "visit_summary": "Краткое Содержание Визита",
+      "emergency_info": "Экстренная Информация",
+      "checkup": "Осмотр",
+      "emergency": "Экстренный",
+      "prescription": "Рецепт",
+      "lab_result": "Результат Анализа",
+      "consultation": "Консультация",
+      "treatment": "Лечение",
+      "other": "Другое"
+    },
+
+    "appointment_types": {
+      "general_checkup": "Общий Осмотр",
+      "vaccination": "Вакцинация",
+      "consultation": "Консультация",
+      "follow_up": "Повторный Приём",
+      "emergency": "Экстренный",
+      "lab_test": "Лабораторный Тест",
+      "physical_exam": "Физический Осмотр",
+      "mental_health": "Психическое Здоровье",
+      "other": "Другое"
+    },
+
+    "dialogs": {
+      "update_health_record": "Обновить Медицинскую Запись",
+      "view_record_details": "Просмотр Деталей Записи",
+      "confirm_delete": "Подтвердить Удаление",
+      "confirm_cancel": "Подтвердить Отмену"
+    },
+
+    "status": {
+      "ready": "Готово",
+      "loading": "Загрузка...",
+      "saving": "Сохранение...",
+      "saved": "Сохранено",
+      "error": "Ошибка",
+      "appointment_scheduled": "Запланировано",
+      "appointment_completed": "Завершено",
+      "appointment_cancelled": "Отменено",
+      "appointment_no_show": "Неявка"
+    },
+
+    "defaults": {
+      "left_arm": "Левая Рука",
+      "right_arm": "Правая Рука",
+      "left_thigh": "Левое Бедро",
+      "right_thigh": "Правое Бедро"
+    },
+
+    "content": {
+      "title": "Содержание",
+      "welcome": "Добро пожаловать в Портал Здоровья Университета. Выберите опцию в меню навигации, чтобы начать."
+    },
+
+    "messages": {
+      "auth_required": "Требуется Аутентификация",
+      "auth_required_detail": "Пожалуйста, войдите для доступа к Порталу Здоровья.",
+      "enter_student_id": "Пожалуйста, введите ID Студента",
+      "student_not_found": "Студент не найден",
+      "record_email_sent": "Email медицинской записи отправлен {name}",
+      "no_description": "Описание недоступно",
+      "no_selection": "Нет Выбора",
+      "select_record_to_update": "Пожалуйста, выберите запись для обновления",
+      "record_not_found": "Запись не найдена",
+      "record_updated": "Запись успешно обновлена",
+      "record_created": "Запись успешно создана",
+      "record_deleted": "Запись успешно удалена",
+      "vaccination_recorded": "Вакцинация успешно записана",
+      "appointment_scheduled": "Приём успешно запланирован",
+      "appointment_cancelled": "Приём успешно отменён",
+      "contact_added": "Экстренный контакт успешно добавлен",
+      "contact_removed": "Экстренный контакт успешно удалён",
+      "report_generated": "Отчёт успешно создан",
+      "fill_required_fields": "Пожалуйста, заполните все обязательные поля",
+      "invalid_date": "Неверный формат даты",
+      "confirm_delete_record": "Вы уверены, что хотите удалить эту запись?",
+      "confirm_cancel_appointment": "Вы уверены, что хотите отменить этот приём?",
+      "no_records_found": "Записи не найдены",
+      "no_appointments_found": "Приёмы не найдены",
+      "no_vaccinations_found": "Записи о вакцинации не найдены",
+      "select_record": "Пожалуйста, выберите запись",
+      "select_appointment": "Пожалуйста, выберите приём",
+      "select_contact": "Пожалуйста, выберите контакт"
+    },
+
+    "errors": {
+      "load_failed": "Не удалось загрузить данные: {error}",
+      "save_failed": "Не удалось сохранить: {error}",
+      "delete_failed": "Не удалось удалить: {error}",
+      "email_failed": "Не удалось отправить email: {error}",
+      "invalid_student_id": "Неверный ID студента",
+      "database_error": "Ошибка базы данных: {error}",
+      "permission_denied": "Доступ запрещён"
+    },
+
+    "reports": {
+      "title": "Отчёты о Здоровье",
+      "summary_report": "Сводный Отчёт",
+      "vaccination_report": "Отчёт о Вакцинации",
+      "appointment_report": "Отчёт о Приёмах",
+      "generated_on": "Создано:",
+      "generated_by": "Создал:",
+      "date_range": "Диапазон Дат:",
+      "total_records": "Всего Записей:",
+      "total_patients": "Всего Пациентов:"
+    }
+  }
+}

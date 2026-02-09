@@ -1,0 +1,258 @@
+{
+  "health_portal": {
+    "title": "Portal de Saúde Universitário",
+    "window_title": "Serviços do Portal de Saúde",
+    "header_title": "Portal de Saúde Universitário",
+
+    "nav": {
+      "title": "Navegação",
+      "health_records": "Registros de Saúde",
+      "manage_records": "Gerenciar Registros",
+      "view_records": "Ver Registros",
+      "view_history": "Ver Histórico Médico",
+      "generate_reports": "Gerar Relatórios",
+      "appointments": "Consultas",
+      "schedule_appt": "Agendar Consulta",
+      "view_appts": "Ver Consultas",
+      "vaccinations": "Vacinações",
+      "record_vaccine": "Registrar Vacina",
+      "view_vaccines": "Ver Vacinações",
+      "emergency_contacts": "Contatos de Emergência",
+      "manage_contacts": "Gerenciar Contatos",
+      "reports_analytics": "Relatórios e Análises",
+      "health_reports": "Relatórios de Saúde",
+      "integration": "Integração",
+      "email_manager": "Gerenciador de E-mail",
+      "send_report_email": "Enviar Relatório por E-mail",
+      "send_record_email": "Enviar Registro por E-mail",
+      "accessibility": "Acessibilidade",
+      "accessibility_tools": "Ferramentas de Acessibilidade",
+      "medical_accommodations": "Acomodações Médicas",
+      "administration": "Administração",
+      "security_audit": "Auditoria de Segurança",
+      "data_management": "Gerenciamento de Dados"
+    },
+
+    "btn": {
+      "return_main": "Voltar ao Menu Principal",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "close": "Fechar",
+      "update": "Atualizar",
+      "delete": "Excluir",
+      "search": "Pesquisar",
+      "clear": "Limpar",
+      "refresh": "Atualizar"
+    },
+
+    "buttons": {
+      "open_email_manager": "Abrir Gerenciador de E-mail",
+      "send_health_report_email": "Enviar Relatório de Saúde",
+      "send_health_record_email": "Enviar Registro de Saúde",
+      "save_record": "Salvar Registro",
+      "clear_form": "Limpar Formulário",
+      "view_details": "Ver Detalhes",
+      "update": "Atualizar",
+      "delete": "Excluir",
+      "search": "Pesquisar",
+      "record_vaccination": "Registrar Vacinação",
+      "schedule_appointment": "Agendar Consulta",
+      "cancel_appointment": "Cancelar Consulta",
+      "add_contact": "Adicionar Contato",
+      "remove_contact": "Remover Contato",
+      "generate_report": "Gerar Relatório",
+      "export_data": "Exportar Dados",
+      "print": "Imprimir"
+    },
+
+    "labels": {
+      "email_manager": "Gerenciador de E-mail",
+      "send_report_title": "Enviar Relatório de Saúde",
+      "email_health_report": "E-mail de Relatório de Saúde",
+      "student_id": "ID do Estudante:",
+      "report_title": "Título do Relatório:",
+      "report_type": "Tipo de Relatório:",
+      "report_summary": "Resumo do Relatório:",
+      "send_record_email_title": "Enviar Registro de Saúde",
+      "email_health_record_form": "E-mail de Registro de Saúde",
+      "record_type": "Tipo de Registro:",
+      "date_range": "Intervalo de Datas:",
+      "all_dates": "Todas as Datas",
+      "summary": "Resumo:",
+      "records_management": "Gerenciamento de Registros de Saúde",
+      "record_date": "Data do Registro:",
+      "provider": "Provedor:",
+      "description": "Descrição:",
+      "confidential": "Confidencial:",
+      "search_filters": "Filtros de Pesquisa",
+      "date_from": "Data Inicial:",
+      "date_to": "Data Final:",
+      "health_record_details": "Detalhes do Registro de Saúde",
+      "record_type_required": "Tipo de Registro *:",
+      "record_date_required": "Data do Registro *:",
+      "vaccination_management": "Gerenciamento de Vacinação",
+      "vaccine": "Vacina:",
+      "administered_date": "Data de Administração:",
+      "lot_number": "Número do Lote:",
+      "manufacturer": "Fabricante:",
+      "administered_by": "Administrado Por:",
+      "location": "Local:",
+      "adverse_reaction_reported": "Reação Adversa Reportada",
+      "reaction_description": "Descrição da Reação:",
+      "appointment_management": "Gerenciamento de Consultas",
+      "appointment_date": "Data da Consulta:",
+      "appointment_time": "Hora da Consulta:",
+      "appointment_type": "Tipo de Consulta:",
+      "reason": "Motivo:",
+      "notes": "Notas:",
+      "emergency_contact_management": "Gerenciamento de Contatos de Emergência",
+      "contact_name": "Nome do Contato:",
+      "relationship": "Relacionamento:",
+      "phone_number": "Número de Telefone:",
+      "email": "E-mail:",
+      "is_primary": "Contato Principal"
+    },
+
+    "tabs": {
+      "add_record": "Adicionar Registro",
+      "view_records": "Ver Registros",
+      "record_vaccination": "Registrar Vacinação",
+      "view_vaccinations": "Ver Vacinações",
+      "schedule": "Agendar",
+      "view_appointments": "Ver Consultas",
+      "add_contact": "Adicionar Contato",
+      "view_contacts": "Ver Contatos"
+    },
+
+    "fields": {
+      "record_id": "ID do Registro:",
+      "student_id": "ID do Estudante:",
+      "student_name": "Nome do Estudante:",
+      "record_type": "Tipo de Registro:",
+      "date": "Data:",
+      "provider": "Provedor:",
+      "confidential": "Confidencial:",
+      "created": "Criado:",
+      "description": "Descrição:",
+      "status": "Status:",
+      "vaccination_id": "ID da Vacinação:",
+      "vaccine_name": "Nome da Vacina:",
+      "lot_number": "Número do Lote:",
+      "manufacturer": "Fabricante:",
+      "administered_by": "Administrado Por:",
+      "administered_date": "Data de Administração:",
+      "location": "Local:",
+      "adverse_reaction": "Reação Adversa:"
+    },
+
+    "record_types": {
+      "complete_history": "Histórico Completo",
+      "vaccination": "Vacinação",
+      "visit_summary": "Resumo da Visita",
+      "emergency_info": "Informações de Emergência",
+      "checkup": "Check-up",
+      "emergency": "Emergência",
+      "prescription": "Prescrição",
+      "lab_result": "Resultado de Laboratório",
+      "consultation": "Consulta",
+      "treatment": "Tratamento",
+      "other": "Outro"
+    },
+
+    "appointment_types": {
+      "general_checkup": "Check-up Geral",
+      "vaccination": "Vacinação",
+      "consultation": "Consulta",
+      "follow_up": "Acompanhamento",
+      "emergency": "Emergência",
+      "lab_test": "Exame Laboratorial",
+      "physical_exam": "Exame Físico",
+      "mental_health": "Saúde Mental",
+      "other": "Outro"
+    },
+
+    "dialogs": {
+      "update_health_record": "Atualizar Registro de Saúde",
+      "view_record_details": "Ver Detalhes do Registro",
+      "confirm_delete": "Confirmar Exclusão",
+      "confirm_cancel": "Confirmar Cancelamento"
+    },
+
+    "status": {
+      "ready": "Pronto",
+      "loading": "Carregando...",
+      "saving": "Salvando...",
+      "saved": "Salvo",
+      "error": "Erro",
+      "appointment_scheduled": "Agendado",
+      "appointment_completed": "Concluído",
+      "appointment_cancelled": "Cancelado",
+      "appointment_no_show": "Não Compareceu"
+    },
+
+    "defaults": {
+      "left_arm": "Braço Esquerdo",
+      "right_arm": "Braço Direito",
+      "left_thigh": "Coxa Esquerda",
+      "right_thigh": "Coxa Direita"
+    },
+
+    "content": {
+      "title": "Conteúdo",
+      "welcome": "Bem-vindo ao Portal de Saúde Universitário. Selecione uma opção no menu de navegação para começar."
+    },
+
+    "messages": {
+      "auth_required": "Autenticação Necessária",
+      "auth_required_detail": "Por favor, faça login para acessar o Portal de Saúde.",
+      "enter_student_id": "Por favor, insira um ID de Estudante",
+      "student_not_found": "Estudante não encontrado",
+      "record_email_sent": "E-mail do registro de saúde enviado para {name}",
+      "no_description": "Nenhuma descrição disponível",
+      "no_selection": "Nenhuma Seleção",
+      "select_record_to_update": "Por favor, selecione um registro para atualizar",
+      "record_not_found": "Registro não encontrado",
+      "record_updated": "Registro atualizado com sucesso",
+      "record_created": "Registro criado com sucesso",
+      "record_deleted": "Registro excluído com sucesso",
+      "vaccination_recorded": "Vacinação registrada com sucesso",
+      "appointment_scheduled": "Consulta agendada com sucesso",
+      "appointment_cancelled": "Consulta cancelada com sucesso",
+      "contact_added": "Contato de emergência adicionado com sucesso",
+      "contact_removed": "Contato de emergência removido com sucesso",
+      "report_generated": "Relatório gerado com sucesso",
+      "fill_required_fields": "Por favor, preencha todos os campos obrigatórios",
+      "invalid_date": "Formato de data inválido",
+      "confirm_delete_record": "Tem certeza de que deseja excluir este registro?",
+      "confirm_cancel_appointment": "Tem certeza de que deseja cancelar esta consulta?",
+      "no_records_found": "Nenhum registro encontrado",
+      "no_appointments_found": "Nenhuma consulta encontrada",
+      "no_vaccinations_found": "Nenhum registro de vacinação encontrado",
+      "select_record": "Por favor, selecione um registro",
+      "select_appointment": "Por favor, selecione uma consulta",
+      "select_contact": "Por favor, selecione um contato"
+    },
+
+    "errors": {
+      "load_failed": "Falha ao carregar dados: {error}",
+      "save_failed": "Falha ao salvar: {error}",
+      "delete_failed": "Falha ao excluir: {error}",
+      "email_failed": "Falha ao enviar e-mail: {error}",
+      "invalid_student_id": "ID de estudante inválido",
+      "database_error": "Erro de banco de dados: {error}",
+      "permission_denied": "Permissão negada"
+    },
+
+    "reports": {
+      "title": "Relatórios de Saúde",
+      "summary_report": "Relatório Resumido",
+      "vaccination_report": "Relatório de Vacinação",
+      "appointment_report": "Relatório de Consultas",
+      "generated_on": "Gerado em:",
+      "generated_by": "Gerado por:",
+      "date_range": "Intervalo de Datas:",
+      "total_records": "Total de Registros:",
+      "total_patients": "Total de Pacientes:"
+    }
+  }
+}

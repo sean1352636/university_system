@@ -1,0 +1,46 @@
+{
+  "template_id": "assignment_system_message",
+  "category": "academics",
+  "name": "Assignment System Message",
+  "description": "Email notification for messages sent through the assignment system",
+  "version": "1.0.0",
+  "subject": "[Assignment System] {subject}",
+  "body_text": "Hello {recipient_name},\n\nYou have received a new message from {sender_name}:\n\nSubject: {subject}\n\n{message}\n\n{assignment_note}\n\nPlease log in to the Assignment System to view and respond to this message.\n\nSent: {timestamp}",
+  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Assignment System Message</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #20c997; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">💬 Assignment System Message</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Hello {recipient_name},</p><p>You have received a new message from <strong>{sender_name}</strong>:</p><div style=\"background-color: #d1f2eb; padding: 15px; border-left: 4px solid #20c997; margin: 20px 0;\"><p style=\"margin: 0 0 10px 0; font-weight: bold;\">Subject: {subject}</p><div style=\"background-color: white; padding: 15px; border-radius: 3px; margin-top: 10px;\"><p style=\"margin: 0; white-space: pre-wrap;\">{message}</p></div></div>{assignment_note}<p><strong>Please log in to the Assignment System to view and respond to this message.</strong></p><p style=\"color: #6c757d; font-size: 14px; margin-top: 20px;\">Sent: {timestamp}</p></div></body></html>",
+  "variables": {
+    "recipient_name": {
+      "type": "string",
+      "required": true,
+      "description": "Recipient's first name"
+    },
+    "sender_name": {
+      "type": "string",
+      "required": true,
+      "description": "Sender's full name"
+    },
+    "subject": {
+      "type": "string",
+      "required": true,
+      "description": "Message subject"
+    },
+    "message": {
+      "type": "string",
+      "required": true,
+      "description": "Message body"
+    },
+    "assignment_note": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "Note about related assignment (if applicable)"
+    },
+    "timestamp": {
+      "type": "string",
+      "required": true,
+      "description": "Message timestamp"
+    }
+  },
+  "tags": ["academics", "assignment", "message", "notification", "communication"],
+  "created_at": "2026-01-29T00:00:00Z",
+  "updated_at": "2026-01-29T00:00:00Z"
+}

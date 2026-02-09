@@ -1,0 +1,151 @@
+{
+  "student_support": {
+    "title": "مركز دعم الطلاب",
+    "window_title": "دعم الطلاب",
+    "nav": {
+      "dashboard": "لوحة التحكم",
+      "search": "بحث",
+      "faqs": "الأسئلة الشائعة",
+      "knowledge_base": "قاعدة المعرفة",
+      "resources": "الموارد",
+      "create_ticket": "إنشاء تذكرة",
+      "my_tickets": "تذاكري",
+      "templates": "القوالب",
+      "submit_rating": "إرسال التقييم",
+      "all_tickets": "جميع التذاكر",
+      "reports": "التقارير",
+      "manage_templates": "إدارة القوالب",
+      "manage_kb": "إدارة قاعدة المعرفة",
+      "bulk_operations": "العمليات المجمعة",
+      "export_data": "تصدير البيانات",
+      "user_management": "إدارة المستخدمين",
+      "preferences": "التفضيلات",
+      "notifications": "الإشعارات",
+      "it_helpdesk": "مكتب مساعدة تكنولوجيا المعلومات"
+    },
+    "menu": {
+      "new_ticket": "تذكرة جديدة",
+      "export_data": "تصدير البيانات",
+      "dashboard": "لوحة التحكم",
+      "all_tickets": "جميع التذاكر",
+      "search": "بحث",
+      "preferences": "التفضيلات",
+      "refresh_data": "تحديث البيانات",
+      "user_guide": "دليل المستخدم",
+      "about": "حول"
+    },
+    "dashboard": {
+      "tab_title": "لوحة التحكم",
+      "title": "لوحة تحكم الدعم",
+      "welcome": "مرحباً، {username}!",
+      "open_tickets": "التذاكر المفتوحة",
+      "pending_tickets": "التذاكر المعلقة",
+      "resolved_tickets": "التذاكر المحلولة",
+      "avg_response_time": "متوسط وقت الاستجابة",
+      "recent_activity": "النشاط الأخير",
+      "quick_actions": "إجراءات سريعة"
+    },
+    "tickets": {
+      "title": "تذاكر الدعم",
+      "create_new": "إنشاء تذكرة جديدة",
+      "my_tickets": "تذاكري",
+      "all_tickets": "جميع التذاكر",
+      "ticket_id": "رقم التذكرة",
+      "subject": "الموضوع",
+      "description": "الوصف",
+      "category": "الفئة",
+      "priority": "الأولوية",
+      "status": "الحالة",
+      "created_at": "تاريخ الإنشاء",
+      "updated_at": "تاريخ التحديث",
+      "assigned_to": "مسند إلى",
+      "requester": "مقدم الطلب",
+      "attachments": "المرفقات",
+      "comments": "التعليقات",
+      "add_comment": "إضافة تعليق",
+      "close_ticket": "إغلاق التذكرة",
+      "reopen_ticket": "إعادة فتح التذكرة",
+      "escalate": "تصعيد",
+      "assign": "تعيين"
+    },
+    "priority": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "urgent": "عاجلة",
+      "critical": "حرجة"
+    },
+    "status": {
+      "open": "مفتوحة",
+      "in_progress": "قيد التنفيذ",
+      "pending": "معلقة",
+      "on_hold": "في الانتظار",
+      "resolved": "محلولة",
+      "closed": "مغلقة"
+    },
+    "categories": {
+      "academic": "أكاديمي",
+      "financial": "مالي",
+      "housing": "السكن",
+      "technical": "تقني",
+      "administrative": "إداري",
+      "health": "صحي",
+      "career": "مهني",
+      "other": "أخرى"
+    },
+    "faqs": {
+      "title": "الأسئلة الشائعة",
+      "search_placeholder": "البحث في الأسئلة الشائعة...",
+      "no_results": "لم يتم العثور على أسئلة شائعة"
+    },
+    "knowledge_base": {
+      "title": "قاعدة المعرفة",
+      "articles": "المقالات",
+      "categories": "الفئات",
+      "search_placeholder": "البحث في المقالات...",
+      "no_results": "لم يتم العثور على مقالات"
+    },
+    "resources": {
+      "title": "موارد الطلاب",
+      "helpful_links": "روابط مفيدة",
+      "documents": "المستندات",
+      "contacts": "جهات الاتصال المهمة"
+    },
+    "satisfaction": {
+      "title": "تقييم الرضا",
+      "rate_service": "قيّم خدمتنا",
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "average": "متوسط",
+      "poor": "ضعيف",
+      "very_poor": "ضعيف جداً",
+      "feedback": "ملاحظات إضافية",
+      "submit": "إرسال التقييم",
+      "thank_you": "شكراً لملاحظاتك!"
+    },
+    "reports": {
+      "title": "تقارير الدعم",
+      "ticket_summary": "ملخص التذاكر",
+      "response_times": "أوقات الاستجابة",
+      "satisfaction_scores": "درجات الرضا",
+      "agent_performance": "أداء الموظفين",
+      "generate": "إنشاء تقرير",
+      "export": "تصدير التقرير"
+    },
+    "messages": {
+      "ticket_created": "تم إنشاء التذكرة بنجاح",
+      "ticket_updated": "تم تحديث التذكرة بنجاح",
+      "ticket_closed": "تم إغلاق التذكرة بنجاح",
+      "comment_added": "تمت إضافة التعليق بنجاح",
+      "rating_submitted": "شكراً لملاحظاتك!",
+      "no_tickets": "لم يتم العثور على تذاكر",
+      "loading": "جاري التحميل..."
+    },
+    "errors": {
+      "create_failed": "فشل في إنشاء التذكرة",
+      "update_failed": "فشل في تحديث التذكرة",
+      "load_failed": "فشل في تحميل البيانات",
+      "submit_failed": "فشل في الإرسال"
+    }
+  }
+}

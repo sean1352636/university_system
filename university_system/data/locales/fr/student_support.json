@@ -1,0 +1,151 @@
+{
+  "student_support": {
+    "title": "Centre d'aide aux etudiants",
+    "window_title": "Aide aux etudiants",
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "search": "Rechercher",
+      "faqs": "FAQ",
+      "knowledge_base": "Base de connaissances",
+      "resources": "Ressources",
+      "create_ticket": "Creer un ticket",
+      "my_tickets": "Mes tickets",
+      "templates": "Modeles",
+      "submit_rating": "Soumettre une evaluation",
+      "all_tickets": "Tous les tickets",
+      "reports": "Rapports",
+      "manage_templates": "Gerer les modeles",
+      "manage_kb": "Gerer la base de connaissances",
+      "bulk_operations": "Operations en masse",
+      "export_data": "Exporter les donnees",
+      "user_management": "Gestion des utilisateurs",
+      "preferences": "Preferences",
+      "notifications": "Notifications",
+      "it_helpdesk": "Support informatique"
+    },
+    "menu": {
+      "new_ticket": "Nouveau ticket",
+      "export_data": "Exporter les donnees",
+      "dashboard": "Tableau de bord",
+      "all_tickets": "Tous les tickets",
+      "search": "Rechercher",
+      "preferences": "Preferences",
+      "refresh_data": "Actualiser les donnees",
+      "user_guide": "Guide de l'utilisateur",
+      "about": "A propos"
+    },
+    "dashboard": {
+      "tab_title": "Tableau de bord",
+      "title": "Tableau de bord du support",
+      "welcome": "Bienvenue, {username} !",
+      "open_tickets": "Tickets ouverts",
+      "pending_tickets": "Tickets en attente",
+      "resolved_tickets": "Tickets resolus",
+      "avg_response_time": "Temps de reponse moyen",
+      "recent_activity": "Activite recente",
+      "quick_actions": "Actions rapides"
+    },
+    "tickets": {
+      "title": "Tickets de support",
+      "create_new": "Creer un nouveau ticket",
+      "my_tickets": "Mes tickets",
+      "all_tickets": "Tous les tickets",
+      "ticket_id": "ID du ticket",
+      "subject": "Sujet",
+      "description": "Description",
+      "category": "Categorie",
+      "priority": "Priorite",
+      "status": "Statut",
+      "created_at": "Cree le",
+      "updated_at": "Mis a jour le",
+      "assigned_to": "Assigne a",
+      "requester": "Demandeur",
+      "attachments": "Pieces jointes",
+      "comments": "Commentaires",
+      "add_comment": "Ajouter un commentaire",
+      "close_ticket": "Fermer le ticket",
+      "reopen_ticket": "Rouvrir le ticket",
+      "escalate": "Escalader",
+      "assign": "Assigner"
+    },
+    "priority": {
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Eleve",
+      "urgent": "Urgent",
+      "critical": "Critique"
+    },
+    "status": {
+      "open": "Ouvert",
+      "in_progress": "En cours",
+      "pending": "En attente",
+      "on_hold": "En pause",
+      "resolved": "Resolu",
+      "closed": "Ferme"
+    },
+    "categories": {
+      "academic": "Academique",
+      "financial": "Financier",
+      "housing": "Logement",
+      "technical": "Technique",
+      "administrative": "Administratif",
+      "health": "Sante",
+      "career": "Carriere",
+      "other": "Autre"
+    },
+    "faqs": {
+      "title": "Questions frequemment posees",
+      "search_placeholder": "Rechercher dans les FAQ...",
+      "no_results": "Aucune FAQ trouvee"
+    },
+    "knowledge_base": {
+      "title": "Base de connaissances",
+      "articles": "Articles",
+      "categories": "Categories",
+      "search_placeholder": "Rechercher des articles...",
+      "no_results": "Aucun article trouve"
+    },
+    "resources": {
+      "title": "Ressources pour les etudiants",
+      "helpful_links": "Liens utiles",
+      "documents": "Documents",
+      "contacts": "Contacts importants"
+    },
+    "satisfaction": {
+      "title": "Evaluation de satisfaction",
+      "rate_service": "Evaluez notre service",
+      "excellent": "Excellent",
+      "good": "Bon",
+      "average": "Moyen",
+      "poor": "Mediocre",
+      "very_poor": "Tres mediocre",
+      "feedback": "Commentaires supplementaires",
+      "submit": "Soumettre l'evaluation",
+      "thank_you": "Merci pour votre retour !"
+    },
+    "reports": {
+      "title": "Rapports de support",
+      "ticket_summary": "Resume des tickets",
+      "response_times": "Temps de reponse",
+      "satisfaction_scores": "Scores de satisfaction",
+      "agent_performance": "Performance des agents",
+      "generate": "Generer le rapport",
+      "export": "Exporter le rapport"
+    },
+    "messages": {
+      "ticket_created": "Ticket cree avec succes",
+      "ticket_updated": "Ticket mis a jour avec succes",
+      "ticket_closed": "Ticket ferme avec succes",
+      "comment_added": "Commentaire ajoute avec succes",
+      "rating_submitted": "Merci pour votre retour !",
+      "no_tickets": "Aucun ticket trouve",
+      "loading": "Chargement..."
+    },
+    "errors": {
+      "create_failed": "Echec de la creation du ticket",
+      "update_failed": "Echec de la mise a jour du ticket",
+      "load_failed": "Echec du chargement des donnees",
+      "submit_failed": "Echec de la soumission"
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "dentist": {
+    "title": "Universitatszahnklinik",
+    "window_title": "Zahnmedizinische Dienste der Universitat",
+    "available_treatments": "Verfugbare Behandlungen",
+    "book_appointment": "Termin buchen",
+    "dental_history": "Zahnmedizinische Vorgeschichte",
+    "my_appointments": "Meine Termine",
+    "my_profile": "Mein Profil",
+    "patient_info": "Patienteninformationen",
+    "prescriptions": "Rezepte",
+    "report_output": "Berichtsausgabe",
+    "search_results": "Suchergebnisse",
+    "todays_appointments": "Heutige Termine",
+    "treatment_details": "Behandlungsdetails",
+    "treatment_history": "Behandlungsverlauf",
+    "tabs": {
+      "admin": "Verwaltung",
+      "appointments": "Termine",
+      "records": "Patientenakten",
+      "treatments": "Behandlungen"
+    },
+    "btn": {
+      "book": "Buchen",
+      "cancel": "Abbrechen",
+      "email_report": "Bericht per E-Mail senden",
+      "generate_report": "Bericht erstellen",
+      "pay": "Bezahlen",
+      "refresh_today": "Heutige aktualisieren",
+      "register": "Registrieren",
+      "reschedule": "Termin verschieben",
+      "update_profile": "Profil aktualisieren",
+      "view_details": "Details anzeigen",
+      "view_history": "Verlauf anzeigen",
+      "view_prescriptions": "Rezepte anzeigen"
+    },
+    "labels": {
+      "allergies": "Allergien:",
+      "date": "Datum:",
+      "dentist": "Zahnarzt:",
+      "dob": "Geburtsdatum:",
+      "emergency_contact": "Notfallkontakt:",
+      "phone": "Telefon:",
+      "report_type": "Berichtsart:",
+      "time": "Uhrzeit:",
+      "treatment_type": "Behandlungsart:"
+    },
+    "confirm": {
+      "cancel_appointment": "Mochten Sie diesen Termin wirklich absagen?"
+    },
+    "errors": {
+      "booking_failed": "Terminbuchung fehlgeschlagen: {error}",
+      "email_failed": "E-Mail-Versand fehlgeschlagen: {error}",
+      "fill_required": "Bitte fullen Sie alle Pflichtfelder aus",
+      "invalid_treatment": "Ungultige Behandlungsart ausgewahlt",
+      "not_registered": "Sie sind nicht als Patient registriert",
+      "patient_not_found": "Patient nicht gefunden",
+      "permission_denied": "Sie haben keine Berechtigung fur diese Aktion",
+      "registration_failed": "Registrierung fehlgeschlagen: {error}",
+      "select_appointment": "Bitte wahlen Sie einen Termin aus",
+      "select_treatment": "Bitte wahlen Sie eine Behandlung aus"
+    },
+    "messages": {
+      "already_paid": "Dieser Termin wurde bereits bezahlt",
+      "already_registered": "Sie sind bereits als Patient registriert",
+      "appointment_cancelled": "Termin erfolgreich abgesagt",
+      "appointment_rescheduled": "Termin erfolgreich verschoben",
+      "data_refreshed": "Daten erfolgreich aktualisiert",
+      "no_patients_found": "Keine Patienten gefunden, die Ihrer Suche entsprechen",
+      "no_prescriptions": "Keine Rezepte gefunden",
+      "not_registered": "Sie sind nicht registriert. Bitte registrieren Sie sich zuerst.",
+      "payment_processed": "Zahlung erfolgreich verarbeitet",
+      "prescription_created": "Rezept erfolgreich erstellt",
+      "profile_updated": "Profil erfolgreich aktualisiert",
+      "registered": "Patientenregistrierung erfolgreich",
+      "reminders_sent": "Terminerinnerungen erfolgreich versendet",
+      "report_generated": "Bericht erfolgreich erstellt",
+      "treatment_recorded": "Behandlung erfolgreich erfasst"
+    },
+    "prompts": {
+      "dosage": "Dosierung eingeben:",
+      "duration": "Dauer eingeben:",
+      "frequency": "Haufigkeit eingeben:",
+      "medication": "Medikamentenname eingeben:",
+      "new_date": "Neues Datum eingeben (JJJJ-MM-TT):",
+      "new_phone": "Neue Telefonnummer eingeben:",
+      "new_time": "Neue Uhrzeit eingeben (HH:MM):",
+      "patient_number": "Patientennummer eingeben:",
+      "search_patient": "Patient suchen:",
+      "treatment_type": "Behandlungsart auswahlen:"
+    },
+    "reports": {
+      "title": "Zahnmedizinische Berichte"
+    },
+    "warnings": {
+      "db_init": "Warnung bei Datenbankinitialisierung",
+      "email_unavailable": "E-Mail-Dienst ist nicht verfugbar",
+      "generate_report_first": "Bitte erstellen Sie zuerst einen Bericht"
+    }
+  }
+}

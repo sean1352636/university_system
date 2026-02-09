@@ -1,0 +1,199 @@
+{
+  "research": {
+    "grants": {
+      "errors": {
+        "add_team_member": "Error adding team member: {error}",
+        "create_milestone": "Error creating milestone: {error}",
+        "create_project": "Error creating research project: {error}",
+        "record_publication": "Error recording publication: {error}",
+        "register_equipment": "Error registering equipment: {error}",
+        "submit_application": "Error submitting grant application: {error}",
+        "submit_ethics_review": "Error submitting ethics review: {error}",
+        "update_decision": "Error updating grant decision: {error}"
+      },
+      "gui": {
+        "cli_instruction": "Use CLI: Research & Grants Management",
+        "description": "Manage research projects, grants, publications, and equipment.\n\nFeatures:\n- Research project tracking\n- Grant applications\n- Publications management\n- Milestone tracking\n- Equipment inventory\n- Ethics review board",
+        "title": "Research & Grants Management"
+      },
+      "menu": {
+        "enter_choice": "Enter your choice (1-8): ",
+        "equipment_inventory": "Equipment Inventory",
+        "error": "Error: {error}",
+        "ethics_review_board": "Ethics Review Board",
+        "feature_available": "Feature available via Research managers",
+        "grant_applications": "Grant Applications",
+        "invalid_choice": "Invalid choice.",
+        "milestone_management": "Milestone Management",
+        "publications_tracking": "Publications Tracking",
+        "research_projects": "Research Projects",
+        "research_reports": "Research Reports",
+        "return_to_main": "Return to Main Menu",
+        "title": "RESEARCH & GRANTS MANAGEMENT",
+        "usage_instruction": "Use: from university_system.modules.domain.research.services import ResearchProjectManager"
+      }
+    },
+    "title": "إدارة البحث",
+    "projects": "المشاريع",
+    "publications": "المنشورات",
+    "collaborators": "المتعاونون"
+  },
+  "research_grants": {
+    "title": "منح البحث",
+    "window_title": "إدارة منح البحث",
+    "submit_proposal": "Submit Proposal",
+    "view_grants": "View Grants",
+    "manage_projects": "Manage Projects",
+    "funding_opportunities": "Funding Opportunities",
+    "grant_applications": "Grant Applications",
+    "active_grants": "Active Grants",
+    "completed_grants": "Completed Grants",
+    "proposal_title": "Proposal Title",
+    "principal_investigator": "Principal Investigator",
+    "co_investigators": "Co-Investigators",
+    "funding_agency": "Funding Agency",
+    "requested_amount": "Requested Amount",
+    "awarded_amount": "Awarded Amount",
+    "project_start": "Project Start Date",
+    "project_end": "Project End Date",
+    "project_status": "Project Status",
+    "budget_allocation": "Budget Allocation",
+    "expenditure_report": "Expenditure Report",
+    "progress_report": "Progress Report",
+    "deliverables": "Deliverables",
+    "publications": "Publications",
+    "submit_report": "Submit Report",
+    "deadline": "الموعد النهائي",
+    "header_title": "البحث & المنح الإدارة",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "pi": "PI",
+      "department": "Department",
+      "type": "Type",
+      "start_date": "Start Date",
+      "budget": "Budget",
+      "status": "Status",
+      "grant_name": "Grant Name",
+      "agency": "Agency",
+      "requested": "Requested",
+      "awarded": "Awarded",
+      "deadline": "Deadline",
+      "authors": "Authors",
+      "publication_type": "Publication Type",
+      "journal": "Journal",
+      "year": "Year",
+      "citations": "Citations",
+      "project": "Project",
+      "milestone": "Milestone",
+      "due_date": "Due Date",
+      "completed": "Completed",
+      "equipment_name": "Equipment Name",
+      "purchase_date": "Purchase Date",
+      "cost": "Cost",
+      "location": "Location",
+      "protocol_number": "Protocol Number",
+      "submission_date": "Submission Date",
+      "review_type": "Review Type",
+      "decision": "Decision"
+    },
+    "status": {
+      "not_completed": "Not completed",
+      "pending": "Pending",
+      "under_review": "Under Review"
+    },
+    "tabs": {
+      "research_projects": "البحث المشاريع",
+      "grant_applications": "منحة الطلبات",
+      "publications": "المنشورات",
+      "milestones": "المعالم",
+      "equipment": "المعدات",
+      "irb_ethics": "مجلس المراجعة المؤسسية/الأخلاقيات"
+    },
+    "frames": {
+      "active_projects": "نشط المشاريع",
+      "grant_applications": "منحة الطلبات",
+      "research_publications": "البحث المنشورات",
+      "project_milestones": "مشروع المعالم",
+      "research_equipment": "البحث المعدات",
+      "irb_applications": "مجلس المراجعة المؤسسية/الأخلاقيات الطلبات"
+    },
+    "buttons": {
+      "create_project": "إنشاء مشروع",
+      "add_team_member": "إضافة الفريق عضو",
+      "submit_application": "إرسال التطبيق",
+      "update_decision": "تحديث القرار",
+      "add_publication": "إضافة نشر",
+      "add_milestone": "إضافة المعلم",
+      "update_status": "تحديث الحالة",
+      "add_equipment": "إضافة المعدات",
+      "submit_irb": "إرسال مجلس المراجعة المؤسسية التطبيق",
+      "change_language": "اللغة: {lang}"
+    },
+    "labels": {
+      "user": "المستخدم: {username}"
+    },
+    "fields": {
+      "project_title": "مشروع العنوان:",
+      "pi_id": "PI المعرف:",
+      "department": "Qism:",
+      "project_type": "مشروع النوع:",
+      "start_date": "البداية التاريخ (YYYY-MM-DD):",
+      "budget": "الميزانية:",
+      "description": "الوصف:",
+      "staff_id": "Staff المعرف:",
+      "role": "الدور:"
+    },
+    "dialogs": {
+      "create_project": {
+        "title": "إنشاء البحث مشروع",
+        "header": "إنشاء البحث مشروع"
+      },
+      "add_team_member": {
+        "title": "إضافة الفريق عضو",
+        "header": "إضافة الفريق عضو - مشروع {project_id}"
+      }
+    },
+    "messages": {
+      "project_created": "مشروع تم إنشاؤه (المعرف: {id})",
+      "team_member_added": "الفريق عضو added بنجاح",
+      "grant_submission_placeholder": "منحة submission حوار - implement as needed",
+      "grant_decision_placeholder": "منحة القرار تحديث حوار - implement as needed",
+      "add_publication_placeholder": "إضافة نشر حوار - implement as needed",
+      "add_milestone_placeholder": "إضافة milestone حوار - implement as needed",
+      "update_milestone_placeholder": "تحديث milestone حوار - implement as needed",
+      "add_equipment_placeholder": "حوار إضافة المعدات - التنفيذ حسب الحاجة",
+      "irb_submission_placeholder": "مجلس المراجعة المؤسسية submission حوار - implement as needed",
+      "irb_decision_placeholder": "مجلس المراجعة المؤسسية القرار تحديث حوار - implement as needed"
+    },
+    "errors": {
+      "login_required": "يرجى تسجيل الدخول للوصول إلى إدارة البحث والمنح.",
+      "db_init_issue": "قاعدة البيانات التهيئة واجه مشاكل: {error}. قد لا تعمل بعض الميزات بشكل صحيح.",
+      "select_project": "يرجى اختيار مشروع",
+      "load_projects_failed": "فشل في تحميل المشاريع: {error}",
+      "load_grants_failed": "فشل في تحميل المنح: {error}",
+      "load_publications_failed": "فشل في تحميل المنشورات: {error}",
+      "load_milestones_failed": "فشل في تحميل المعالم: {error}",
+      "load_equipment_failed": "فشل في تحميل المعدات: {error}",
+      "load_irb_failed": "فشل في تحميل مجلس المراجعة المؤسسية الطلبات: {error}",
+      "create_project_failed": "فشل في إنشاء مشروع: {error}",
+      "add_member_failed": "فشل في إضافة عضو الفريق: {error}",
+      "launch_failed": "فشل في تشغيل البحث & المنح واجهة المستخدم الرسومية: {error}"
+    },
+    "language": {
+      "changed_title": "اللغة Changed",
+      "restart_for_full_effect": "سيتم تحديث بعض النصوص فوراً. للتأثير الكامل، يرجى إعادة تشغيل الوحدة."
+    },
+    "available": "المتاحة",
+    "my_grants": "منحي",
+    "applications": "الطلبات",
+    "grant_name": "اسم المنحة",
+    "amount": "المبلغ",
+    "apply": "تقديم",
+    "funded": "ممول",
+    "pending": "قيد الانتظار",
+    "rejected": "مرفوض",
+    "reports": "التقارير",
+    "milestones": "المراحل"
+  }
+}

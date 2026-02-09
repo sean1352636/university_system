@@ -1,0 +1,4 @@
+{
+    "subject": "Room Change Notification - $module_code",
+    "body": "Dear $first_name $last_name,\n\nPlease be advised that there has been a room change for one of your classes.\n\nClass Details:\n- Module: $module_code\n- Day: $day\n- Time: $start_time - $end_time\n- Old Room: $old_room\n- New Room: $new_room\n\nPlease make note of this change.\n\n$signature"
+}

@@ -1,0 +1,38 @@
+{
+  "template_id": "device_registration_notification",
+  "category": "mobility",
+  "name": "Device Registration Notification",
+  "description": "Notification email sent when a new mobile device is registered",
+  "version": "1.0.0",
+  "subject": "New Device Registered - {device_type}",
+  "body_text": "Dear User,\n\nA new device has been registered to your account.\n\nDevice Details:\n- Device Type: {device_type}\n- Device Name: {device_name}\n- Operating System: {os_version}\n- App Version: {app_version}\n- Registration Time: {registration_time}\n\nIf you did not register this device, please contact our support team immediately.\n\nBest regards,\nMobile App Team",
+  "body_html": "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 600px; margin: 0 auto; padding: 20px;'><h2 style='color: #2c5282; border-bottom: 2px solid #2c5282; padding-bottom: 10px;'>New Device Registered</h2><p>Dear User,</p><p>A new device has been registered to your account.</p><div style='background-color: #f7fafc; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0;'><h3 style='color: #2c5282; margin-top: 0;'>Device Details</h3><table style='width: 100%; border-collapse: collapse;'><tr><td style='padding: 8px 0;'><strong>Device Type:</strong></td><td style='padding: 8px 0;'>{device_type}</td></tr><tr><td style='padding: 8px 0;'><strong>Device Name:</strong></td><td style='padding: 8px 0;'>{device_name}</td></tr><tr><td style='padding: 8px 0;'><strong>Operating System:</strong></td><td style='padding: 8px 0;'>{os_version}</td></tr><tr><td style='padding: 8px 0;'><strong>App Version:</strong></td><td style='padding: 8px 0;'>{app_version}</td></tr><tr><td style='padding: 8px 0;'><strong>Registration Time:</strong></td><td style='padding: 8px 0;'>{registration_time}</td></tr></table></div><p style='background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 10px; margin: 15px 0;'><strong>Security Notice:</strong> If you did not register this device, please contact our support team immediately.</p><p style='margin-top: 30px;'>Best regards,<br><strong>Mobile App Team</strong></p></div></body></html>",
+  "variables": {
+    "device_type": {
+      "type": "string",
+      "description": "Type of device (e.g., Android, iOS, Web)",
+      "required": true
+    },
+    "device_name": {
+      "type": "string",
+      "description": "Name of the device",
+      "required": true
+    },
+    "os_version": {
+      "type": "string",
+      "description": "Operating system version",
+      "required": true
+    },
+    "app_version": {
+      "type": "string",
+      "description": "Mobile app version",
+      "required": true
+    },
+    "registration_time": {
+      "type": "string",
+      "description": "Time when the device was registered (formatted)",
+      "required": true
+    }
+  },
+  "tags": ["mobile", "device", "registration", "security"]
+}

@@ -1,0 +1,164 @@
+{
+  "activity_logger": {
+    "title": "Enhanced Activity Logger - Management Console",
+    "window_title": "Enhanced Activity Logger - Management Console",
+    "return_main": "返回主菜单",
+    "return_home": "返回主菜单",
+    "status": {
+      "label": "状态：",
+      "logger": "Logger:",
+      "queue": "Queue:",
+      "total_logs": "Total Logs:",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "demo_mode": "Demo Mode",
+      "error": "错误"
+    },
+    "tabs": {
+      "live_logs": "Live Logs",
+      "analytics": "Analytics",
+      "security": "Security",
+      "configuration": "Configuration",
+      "plugins": "Plugins",
+      "query": "查询"
+    },
+    "log_viewer": {
+      "filter_level": "Level:",
+      "user": "User:",
+      "action": "Action:",
+      "auto_refresh": "Auto-refresh",
+      "refresh": "刷新",
+      "clear": "清除",
+      "export": "导出"
+    },
+    "analytics": {
+      "title": "Analytics Dashboard",
+      "refresh": "刷新",
+      "generate_report": "Generate Report",
+      "statistics": "Statistics",
+      "charts": "Charts"
+    },
+    "config": {
+      "title": "Logger Configuration",
+      "load": "Load",
+      "save": "保存",
+      "apply": "应用",
+      "reset": "Reset to Defaults",
+      "general": "一般",
+      "security": "Security",
+      "output": "输出",
+      "cloud": "Cloud",
+      "output_formats": "Output Formats",
+      "enabled_services": "Enabled Cloud Services"
+    },
+    "security": {
+      "title": "Security Monitoring",
+      "refresh": "刷新",
+      "overview": "Security Overview",
+      "actions": "Security Actions",
+      "ip_management": "IP Address Management",
+      "block_ip": "Block IP",
+      "user_management": "User Management",
+      "reset_attempts": "Reset Attempts",
+      "reports": "Security Reports",
+      "generate_report": "Generate Security Report",
+      "anomaly_detection": "Run Anomaly Detection",
+      "not_available": "Security monitoring data not available.\n\nConnect to the logger to view security information."
+    },
+    "plugins": {
+      "title": "Plugin Management",
+      "refresh": "刷新",
+      "installed": "Installed Plugins",
+      "details": "Plugin Details",
+      "plugin_name": "Plugin Name",
+      "status": "状态",
+      "type": "类型",
+      "add_default": "Add Default Plugins",
+      "configure": "Configure Plugin",
+      "toggle": "Enable/Disable",
+      "remove": "Remove Plugin"
+    },
+    "query": {
+      "title": "Database Query",
+      "builder": "Query Builder",
+      "date_range": "Date Range",
+      "from": "From:",
+      "to": "To:",
+      "today": "今天",
+      "last_7_days": "Last 7 Days",
+      "last_30_days": "Last 30 Days",
+      "last_90_days": "Last 90 Days",
+      "user": "User:",
+      "action": "Action:",
+      "module": "Module:",
+      "status": "状态：",
+      "log_level": "Log Level:",
+      "security_level": "Security:",
+      "search": "Search:",
+      "execute": "Execute Query",
+      "clear": "清除",
+      "export": "Export Results",
+      "save_query": "Save Query",
+      "load_query": "Load Query",
+      "results": "Query Results",
+      "no_query": "No query executed yet.",
+      "no_results": "No results to export.",
+      "db_not_available": "Database logging not available. Unable to query logs."
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "level": "级别",
+      "user": "用户",
+      "action": "操作",
+      "module": "模块",
+      "status": "状态",
+      "ip_address": "IP Address",
+      "details": "详情"
+    },
+    "menu": {
+      "file": "文件",
+      "new_config": "New Configuration...",
+      "load_config": "Load Configuration...",
+      "save_config": "Save Configuration...",
+      "import_logs": "Import Logs...",
+      "export_logs": "Export Logs...",
+      "logger": "Logger",
+      "connect": "Connect to Logger",
+      "disconnect": "Disconnect",
+      "restart": "Restart Logger",
+      "test_log": "Create Test Log Entry",
+      "flush_logs": "Flush Logs",
+      "tools": "工具",
+      "health_check": "System Health Check",
+      "generate_report": "Generate Report...",
+      "anomaly_detection": "Run Anomaly Detection",
+      "db_maintenance": "Database Maintenance",
+      "log_cleanup": "Log File Cleanup",
+      "help": "帮助",
+      "user_guide": "用户指南",
+      "api_docs": "API Documentation",
+      "about": "关于"
+    },
+    "language": {
+      "change": "更改语言",
+      "changed_title": "Language Changed",
+      "changed_message": "The interface will refresh to apply the new language."
+    },
+    "messages": {
+      "connected": "Connected to Enhanced Activity Logger",
+      "disconnected": "Disconnected from logger",
+      "demo_mode": "Running in demo mode - some features may be limited",
+      "connection_error": "Connection error: {error}"
+    },
+    "errors": {
+      "connection": "Failed to connect to logger: {error}",
+      "restart": "Failed to restart logger: {error}"
+    }
+  },
+  "common": {
+    "warning": "警告",
+    "error": "错误",
+    "success": "成功",
+    "info": "Information"
+  }
+}

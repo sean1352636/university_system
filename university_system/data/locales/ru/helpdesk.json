@@ -1,0 +1,260 @@
+{
+  "helpdesk": {
+    "window_title": "Расширенная система службы поддержки",
+    "auth": {
+      "required_title": "Требуется аутентификация",
+      "not_available": "Система аутентификации недоступна. Интерфейс службы поддержки не может быть запущен.",
+      "login_required": "Пожалуйста, войдите через главный интерфейс университетской системы.\n\nВыполните: python run.py --gui\n\nСлужба поддержки доступна только после входа в основную систему."
+    },
+    "menu": {
+      "file": "Файл",
+      "new_ticket": "Новая заявка",
+      "export_data": "Экспорт данных",
+      "import_data": "Импорт данных",
+      "tickets": "Заявки",
+      "my_tickets": "Мои заявки",
+      "all_tickets": "Все заявки",
+      "search_tickets": "Поиск заявок",
+      "knowledge_base": "База знаний",
+      "browse_articles": "Просмотр статей",
+      "create_article": "Создать статью",
+      "reports": "Отчеты",
+      "analytics_dashboard": "Панель аналитики",
+      "generate_reports": "Создать отчеты",
+      "admin": "Администрирование",
+      "system_management": "Управление системой",
+      "user_management": "Управление пользователями",
+      "settings": "Настройки",
+      "help": "Помощь",
+      "user_guide": "Руководство пользователя",
+      "about": "О программе"
+    },
+    "dashboard": {
+      "title": "Панель управления службы поддержки",
+      "welcome": "Добро пожаловать, {username}!",
+      "stats": {
+        "open_tickets": "Открытые заявки",
+        "in_progress": "В работе",
+        "pending": "Ожидающие",
+        "resolved_today": "Решено сегодня",
+        "avg_response_time": "Среднее время ответа",
+        "satisfaction_rate": "Уровень удовлетворенности"
+      },
+      "recent_tickets": "Последние заявки",
+      "quick_actions": "Быстрые действия",
+      "my_assigned": "Назначенные мне заявки",
+      "unassigned": "Неназначенные заявки"
+    },
+    "tickets": {
+      "title": "Заявки в поддержку",
+      "create": "Создать заявку",
+      "view": "Просмотр заявки",
+      "edit": "Редактировать заявку",
+      "delete": "Удалить заявку",
+      "assign": "Назначить заявку",
+      "escalate": "Эскалировать заявку",
+      "close": "Закрыть заявку",
+      "reopen": "Открыть заявку повторно",
+      "fields": {
+        "ticket_id": "ID заявки",
+        "subject": "Тема",
+        "description": "Описание",
+        "category": "Категория",
+        "subcategory": "Подкатегория",
+        "priority": "Приоритет",
+        "impact": "Влияние",
+        "urgency": "Срочность",
+        "status": "Статус",
+        "source": "Источник",
+        "department": "Отдел",
+        "assigned_to": "Назначено",
+        "created_by": "Создано",
+        "created_at": "Дата создания",
+        "updated_at": "Дата обновления",
+        "due_date": "Срок выполнения",
+        "resolution": "Решение",
+        "tags": "Теги"
+      },
+      "status": {
+        "open": "Открыта",
+        "in_progress": "В работе",
+        "pending": "Ожидает",
+        "on_hold": "Приостановлена",
+        "resolved": "Решена",
+        "closed": "Закрыта"
+      },
+      "priority": {
+        "low": "Низкий",
+        "medium": "Средний",
+        "high": "Высокий",
+        "urgent": "Срочный",
+        "critical": "Критический"
+      },
+      "categories": {
+        "technical": "Технический",
+        "account": "Учетная запись",
+        "billing": "Оплата",
+        "general": "Общий",
+        "feedback": "Обратная связь",
+        "bug": "Отчет об ошибке",
+        "feature": "Запрос функции"
+      },
+      "actions": {
+        "add_reply": "Добавить ответ",
+        "add_note": "Добавить внутреннюю заметку",
+        "attach_file": "Прикрепить файл",
+        "link_ticket": "Связать заявку",
+        "merge_tickets": "Объединить заявки",
+        "split_ticket": "Разделить заявку",
+        "change_status": "Изменить статус",
+        "change_priority": "Изменить приоритет",
+        "bulk_update": "Массовое обновление"
+      },
+      "messages": {
+        "created": "Заявка успешно создана",
+        "updated": "Заявка успешно обновлена",
+        "assigned": "Заявка успешно назначена",
+        "escalated": "Заявка успешно эскалирована",
+        "closed": "Заявка успешно закрыта",
+        "reopened": "Заявка успешно открыта повторно",
+        "reply_added": "Ответ успешно добавлен",
+        "no_tickets": "Заявки не найдены",
+        "select_ticket": "Пожалуйста, выберите заявку"
+      }
+    },
+    "knowledge_base": {
+      "title": "База знаний",
+      "articles": "Статьи",
+      "create_article": "Создать статью",
+      "edit_article": "Редактировать статью",
+      "search_placeholder": "Поиск в базе знаний...",
+      "categories": "Категории",
+      "popular": "Популярные статьи",
+      "recent": "Последние статьи",
+      "fields": {
+        "title": "Заголовок",
+        "content": "Содержание",
+        "category": "Категория",
+        "tags": "Теги",
+        "author": "Автор",
+        "views": "Просмотры",
+        "helpful": "Полезно",
+        "status": "Статус"
+      },
+      "messages": {
+        "created": "Статья успешно создана",
+        "updated": "Статья успешно обновлена",
+        "deleted": "Статья успешно удалена",
+        "no_articles": "Статьи не найдены"
+      }
+    },
+    "search": {
+      "title": "Поиск заявок",
+      "placeholder": "Введите поисковый запрос...",
+      "filters": "Фильтры",
+      "advanced": "Расширенный поиск",
+      "saved_searches": "Сохраненные поиски",
+      "save_search": "Сохранить поиск",
+      "clear": "Очистить",
+      "results": "Результаты поиска",
+      "no_results": "Результаты не найдены"
+    },
+    "reports": {
+      "title": "Отчеты",
+      "analytics": "Панель аналитики",
+      "generate": "Создать отчет",
+      "export": "Экспорт отчета",
+      "types": {
+        "ticket_summary": "Сводка по заявкам",
+        "response_times": "Время ответа",
+        "resolution_rates": "Показатели решения",
+        "agent_performance": "Производительность агентов",
+        "customer_satisfaction": "Удовлетворенность клиентов",
+        "sla_compliance": "Соответствие SLA"
+      },
+      "period": {
+        "today": "Сегодня",
+        "this_week": "Эта неделя",
+        "this_month": "Этот месяц",
+        "this_quarter": "Этот квартал",
+        "this_year": "Этот год",
+        "custom": "Произвольный период"
+      }
+    },
+    "admin": {
+      "title": "Администрирование",
+      "system_management": "Управление системой",
+      "user_management": "Управление пользователями",
+      "departments": "Отделы",
+      "organizations": "Организации",
+      "sla_policies": "Политики SLA",
+      "workflows": "Рабочие процессы",
+      "templates": "Шаблоны",
+      "settings": "Настройки",
+      "backup": "Резервное копирование базы данных",
+      "audit_log": "Журнал аудита"
+    },
+    "sla": {
+      "title": "Политики SLA",
+      "create": "Создать политику SLA",
+      "edit": "Редактировать политику SLA",
+      "fields": {
+        "name": "Название политики",
+        "description": "Описание",
+        "first_response": "Время первого ответа",
+        "resolution": "Время решения",
+        "escalation": "Время эскалации",
+        "priority": "Приоритет",
+        "business_hours": "Только рабочие часы"
+      },
+      "status": {
+        "within_sla": "В рамках SLA",
+        "approaching": "Приближается нарушение",
+        "breached": "SLA нарушен"
+      }
+    },
+    "departments": {
+      "title": "Отделы",
+      "create": "Создать отдел",
+      "edit": "Редактировать отдел",
+      "fields": {
+        "name": "Название отдела",
+        "description": "Описание",
+        "manager": "Руководитель",
+        "email": "Электронная почта",
+        "sla_policy": "Политика SLA"
+      }
+    },
+    "common": {
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "edit": "Редактировать",
+      "view": "Просмотр",
+      "create": "Создать",
+      "update": "Обновить",
+      "search": "Поиск",
+      "filter": "Фильтр",
+      "refresh": "Обновить",
+      "export": "Экспорт",
+      "import": "Импорт",
+      "loading": "Загрузка...",
+      "success": "Успешно",
+      "error": "Ошибка",
+      "warning": "Предупреждение",
+      "confirm": "Подтвердить",
+      "yes": "Да",
+      "no": "Нет"
+    },
+    "errors": {
+      "load_failed": "Не удалось загрузить данные",
+      "save_failed": "Не удалось сохранить данные",
+      "delete_failed": "Не удалось удалить",
+      "permission_denied": "У вас нет разрешения на выполнение этого действия",
+      "not_found": "Элемент не найден",
+      "validation_error": "Ошибка валидации",
+      "required_field": "Это поле обязательно",
+      "invalid_format": "Неверный формат"
+    }
+  }
+}

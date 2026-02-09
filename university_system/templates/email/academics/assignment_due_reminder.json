@@ -1,0 +1,15 @@
+{
+  "template_name": "Assignment Due Date Reminder",
+  "template_id": "assignment_due_reminder",
+  "subject": "Reminder: {{assignment_title}} due {{days_until_due}}",
+  "body_html": "<html><body><h2>Assignment Reminder</h2><p>Dear {{student_name}},</p><p>This is a friendly reminder that the following assignment is due soon:</p><ul><li><strong>Assignment:</strong> {{assignment_title}}</li><li><strong>Module:</strong> {{module_code}} - {{module_name}}</li><li><strong>Due Date:</strong> {{due_date}}</li><li><strong>Time Remaining:</strong> {{days_until_due}}</li></ul><p>Please ensure you submit your work before the deadline to avoid late penalties.</p><p>If you need an extension, please contact your instructor as soon as possible.</p><p>Good luck!</p><p><em>This is an automated message from the University Assignment Management System.</em></p></body></html>",
+  "body_text": "Assignment Reminder\n\nDear {{student_name}},\n\nThis is a friendly reminder that the following assignment is due soon:\n\n- Assignment: {{assignment_title}}\n- Module: {{module_code}} - {{module_name}}\n- Due Date: {{due_date}}\n- Time Remaining: {{days_until_due}}\n\nPlease ensure you submit your work before the deadline to avoid late penalties.\n\nIf you need an extension, please contact your instructor as soon as possible.\n\nGood luck!\n\nThis is an automated message from the University Assignment Management System.",
+  "variables": [
+    "student_name",
+    "assignment_title",
+    "module_code",
+    "module_name",
+    "due_date",
+    "days_until_due"
+  ]
+}

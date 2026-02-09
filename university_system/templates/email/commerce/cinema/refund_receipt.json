@@ -1,0 +1,14 @@
+{
+  "subject": "Cinema Refund Receipt - $refund_ref",
+  "body": "Dear $customer_name,\n\nYour cinema refund has been processed successfully.\n\nREFUND DETAILS\n================================================================================\nRefund Reference: $refund_ref\nOriginal Booking: $booking_ref\nMovie: $movie_title\n\nRefund Amount: $refund_amount\nRefund Method: $refund_method\nProcessed: $refund_date\n================================================================================\n\n$balance_text\n\nWe hope to see you again soon!\n\nBest regards,\nUniversity Cinema",
+  "variables": {
+    "customer_name": "Customer's full name",
+    "refund_ref": "Refund reference number",
+    "booking_ref": "Original booking reference",
+    "movie_title": "Movie title",
+    "refund_amount": "Amount refunded",
+    "refund_method": "Method of refund",
+    "refund_date": "Date refund was processed",
+    "balance_text": "Optional balance update text"
+  }
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Payment Plan Confirmation",
+    "body": "Dear $student_name,\n\nYour payment plan has been set up successfully. Your next payment of £$amount is due on $next_due_date.\n\nIf you have any questions, please contact the Finance Office.\n\n$signature"
+}

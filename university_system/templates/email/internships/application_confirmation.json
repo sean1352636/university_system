@@ -1,0 +1,4 @@
+{
+  "subject": "Application Confirmation: {title}",
+  "body": "Dear {first_name},\n\nYour application to {title} at {company} has been received.\n\nBest regards,\nInternship Office"
+}

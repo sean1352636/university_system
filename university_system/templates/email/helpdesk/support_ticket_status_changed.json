@@ -1,0 +1,4 @@
+{
+    "subject": "Support Ticket #$ticket_id Status Changed",
+    "body": "Dear $username,\n\nYour support ticket status has been updated.\n\nTicket ID: #$ticket_id\nSubject: $subject\nOld Status: $old_status\nNew Status: $new_status\n\nYou can view your ticket details by logging into the support portal.\n\nThank you,\nIT Support Team"
+}

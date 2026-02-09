@@ -1,0 +1,10 @@
+"""Music Shop Services Module"""
+from university_system.modules.domain.musicshop.services.musicshop_core import (
+    ProductManager, OrderManager, TransactionManager, ReportManager, WishlistManager,
+    init_musicshop_db, MUSIC_CATEGORIES, GENRES, ORDER_STATUSES, CONDITION_TYPES
+)
+
+__all__ = [
+    'ProductManager', 'OrderManager', 'TransactionManager', 'ReportManager', 'WishlistManager',
+    'init_musicshop_db', 'MUSIC_CATEGORIES', 'GENRES', 'ORDER_STATUSES', 'CONDITION_TYPES'
+]

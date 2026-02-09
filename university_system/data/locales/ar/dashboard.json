@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "لوحة تحكم النظام المتكامل",
+    "tabs": {
+      "overview": "نظرة عامة على النظام",
+      "statistics": "احصائيات سريعة",
+      "activity": "النشاط الاخير",
+      "health": "صحة النظام"
+    },
+    "errors": {
+      "login_required": "يجب تسجيل الدخول للوصول الى لوحة التحكم.",
+      "no_analytics_permission": "ليس لديك اذن للوصول الى التحليلات",
+      "analytics_not_available": "واجهة تحليلات الطلاب غير متوفرة",
+      "analytics_launch_failed": "فشل في تشغيل واجهة التحليلات: {error}",
+      "analytics_error": "خطا في تشغيل التحليلات: {error}",
+      "chatbot_login_required": "يجب تسجيل الدخول للوصول الى روبوت المحادثة.",
+      "no_chatbot_permission": "ليس لديك اذن للوصول الى روبوت المحادثة.",
+      "chatbot_init_failed": "فشل في تهيئة نظام روبوت المحادثة.",
+      "chatbot_open_failed": "فشل في فتح روبوت محادثة الجامعة: {error}"
+    },
+    "messages": {
+      "opened_successfully": "تم فتح لوحة التحكم المتكاملة بنجاح",
+      "chatbot_opened": "تم فتح واجهة روبوت محادثة الجامعة بنجاح",
+      "chatbot_launched": "تم تشغيل واجهة روبوت محادثة الجامعة بنجاح",
+      "analytics_not_available_cli": "واجهة التحليلات غير متوفرة، يتم استخدام نسخة سطر الاوامر"
+    },
+    "overview": {
+      "welcome": "مرحبا بعودتك، {username}!",
+      "quick_access": "وصول سريع",
+      "system_status": "حالة النظام",
+      "current_time": "الوقت الحالي: {time}",
+      "user_role": "دور المستخدم: {role}",
+      "database_connected": "حالة قاعدة البيانات: متصلة",
+      "buttons": {
+        "student_records": "سجلات الطلاب",
+        "grade_tracking": "تتبع الدرجات",
+        "attendance": "الحضور",
+        "course_management": "ادارة المقررات",
+        "finance_management": "الادارة المالية",
+        "reports": "التقارير"
+      }
+    },
+    "statistics": {
+      "title": "احصائيات النظام",
+      "database_stats": "احصائيات قاعدة البيانات:",
+      "total_students": "اجمالي الطلاب:",
+      "active_courses": "المقررات النشطة:",
+      "pending_assignments": "الواجبات المعلقة:",
+      "system_uptime": "وقت تشغيل النظام:",
+      "recent_logins": "عمليات تسجيل الدخول الاخيرة:",
+      "performance_metrics": "مقاييس الاداء:",
+      "db_response_time": "وقت استجابة قاعدة البيانات:",
+      "system_load": "حمل النظام:",
+      "memory_usage": "استخدام الذاكرة:",
+      "active_sessions": "الجلسات النشطة:",
+      "normal": "عادي",
+      "optimal": "مثالي",
+      "load_error": "تعذر تحميل الاحصائيات: {error}"
+    },
+    "activity": {
+      "title": "نشاط النظام الاخير",
+      "log_header": "سجل النشاط الاخير:",
+      "user_logged_in": "قام المستخدم {username} بتسجيل الدخول",
+      "dashboard_accessed": "تم الوصول الى لوحة التحكم",
+      "system_initialized": "تمت تهيئة النظام",
+      "previous_sessions": "الجلسات السابقة:",
+      "last_login": "اخر تسجيل دخول:",
+      "today": "اليوم",
+      "recent_actions": "الاجراءات الاخيرة:",
+      "actions_list": "عرض لوحة التحكم، الوصول الى سجلات الطلاب",
+      "system_health": "صحة النظام:",
+      "all_operational": "جميع الانظمة تعمل"
+    },
+    "health": {
+      "title": "مراقبة صحة النظام",
+      "not_available": "واجهة مراقبة الصحة غير متوفرة"
+    },
+    "chatbot": {
+      "title": "روبوت محادثة الجامعة"
+    },
+    "log": {
+      "gui_prefix": "واجهة رسومية",
+      "gui_activity": "نشاط الواجهة الرسومية",
+      "logging_error": "خطا في نظام التسجيل"
+    }
+  }
+}

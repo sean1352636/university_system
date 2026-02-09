@@ -1,0 +1,110 @@
+{
+  "todo": {
+    "title": "Liste de Tâches",
+    "header": {
+      "title": "My To-Do List",
+      "shortcuts": "Ctrl+N: New  |  Ctrl+F: Search  |  Ctrl+E: Export"
+    },
+    "date_picker": {
+      "title": "Select Date"
+    },
+    "dialog": {
+      "add_task": "Add Task",
+      "edit_task": "Edit Task"
+    },
+    "fields": {
+      "task_title": "Task Title *",
+      "priority": "Priority",
+      "due_date": "Due Date",
+      "category": "Category",
+      "notes": "Notes"
+    },
+    "buttons": {
+      "clear": "Clear",
+      "today": "Today",
+      "cancel": "Cancel",
+      "save": "Save",
+      "pick": "Pick",
+      "new_task": "+ New Task",
+      "export_csv": "Export CSV",
+      "clear_completed": "Clear Completed"
+    },
+    "filters": {
+      "status": "Status:",
+      "priority": "Priority:",
+      "category": "Category:",
+      "sort": "Sort:",
+      "all": "All",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "none": "None"
+    },
+    "sort": {
+      "created": "Created",
+      "priority": "Priority",
+      "due_date": "Due Date",
+      "az": "A-Z"
+    },
+    "date": {
+      "no_date_set": "No date set",
+      "today": "Today ({date})",
+      "tomorrow": "Tomorrow ({date})"
+    },
+    "due": {
+      "overdue": "Overdue: {date}",
+      "today": "Due Today",
+      "date": "{date}"
+    },
+    "task": {
+      "has_notes": "Has notes"
+    },
+    "messages": {
+      "no_tasks_match": "No tasks match your filters.",
+      "no_tasks_yet": "No tasks yet!\nClick '+ New Task' or press Ctrl+N to add one."
+    },
+    "stats": {
+      "showing_filtered": "Showing {showing} of {total} tasks  |  {completed} completed",
+      "completed": "{completed} of {total} tasks completed"
+    },
+    "confirm": {
+      "title": "Confirm",
+      "delete_title": "Confirm Delete",
+      "delete_message": "Delete task: {task}...?",
+      "clear_completed": "Delete {count} completed task(s)?"
+    },
+    "info": {
+      "title": "Info",
+      "no_completed_tasks": "No completed tasks to clear",
+      "no_tasks_to_export": "No tasks to export"
+    },
+    "success": {
+      "title": "Success",
+      "export": "Exported {count} tasks to:\n{path}"
+    },
+    "errors": {
+      "title": "Error",
+      "task_title_required": "Task title is required",
+      "export_failed": "Failed to export: {error}"
+    },
+    "export": {
+      "task": "Task",
+      "priority": "Priority",
+      "due_date": "Due Date",
+      "category": "Category",
+      "notes": "Notes",
+      "completed": "Completed",
+      "created": "Created",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "add_task": "Ajouter une Tâche",
+    "completed": "Terminées",
+    "pending": "En Attente",
+    "due_date": "Date d'Échéance"
+  }
+}

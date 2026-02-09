@@ -1,0 +1,4 @@
+{
+    "subject": "Appointment Cancellation",
+    "body": "Dear $patient_name,\n\nYour appointment has been cancelled.\n\nOriginal Appointment:\n- Date: $appointment_date\n- Time: $appointment_time\n- Practitioner: $appointment_practitioner\n- Department: $appointment_department\n\nReason: $cancellation_reason\n\nPlease contact us to reschedule if needed.\n\n$signature"
+}

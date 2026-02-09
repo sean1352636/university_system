@@ -1,0 +1,137 @@
+{
+  "plagiarism": {
+    "title": "نظام كشف الانتحال",
+    "subtitle": "التحقق من النزاهة الأكاديمية وتحليل المستندات",
+    "welcome": "مرحباً",
+
+    "menu_file": "ملف",
+    "menu_tools": "أدوات",
+    "menu_help": "مساعدة",
+
+    "submit_document": "تقديم مستند",
+    "import_documents": "استيراد مستندات",
+    "export_documents": "تصدير مستندات",
+    "check_document": "فحص مستند",
+    "search_repository": "البحث في المستودع",
+    "view_my_documents": "عرض مستنداتي",
+    "view_results": "عرض النتائج",
+    "advanced_search": "بحث متقدم",
+    "bulk_operations": "عمليات جماعية",
+    "system_testing": "اختبار النظام",
+    "generate_reports": "إنشاء تقارير",
+    "compare_documents": "مقارنة المستندات",
+    "file_converter": "محول الملفات",
+    "document_workflow": "سير عمل المستندات",
+    "repository": "المستودع",
+    "delete_document": "حذف مستند",
+    "check_repository_integrity": "فحص سلامة المستودع",
+    "check_integrity": "فحص السلامة",
+    "backup_restore": "النسخ الاحتياطي والاستعادة",
+    "statistics": "الإحصائيات",
+    "setup_testing": "الإعداد والاختبار",
+    "about": "حول",
+
+    "dashboard": "لوحة التحكم",
+    "quick_actions": "إجراءات سريعة",
+    "check_for_plagiarism": "فحص الانتحال",
+    "system_statistics": "إحصائيات النظام",
+
+    "documents_tab": "المستندات",
+    "search_documents": "البحث في المستندات",
+    "title_label": "العنوان:",
+
+    "check_results_tab": "نتائج الفحص",
+    "refresh_results": "تحديث النتائج",
+
+    "settings_tab": "الإعدادات",
+    "detection_settings": "إعدادات الكشف",
+    "similarity_threshold": "عتبة التشابه:",
+    "system_information": "معلومات النظام",
+
+    "repository_integrity_check": "فحص سلامة المستودع",
+    "fix_issues": "إصلاح المشاكل",
+
+    "system_reports": "تقارير النظام",
+    "available_reports": "التقارير المتاحة",
+    "report_options": "خيارات التقرير",
+    "include_charts_graphs": "تضمين الرسوم البيانية",
+    "export_format": "صيغة التصدير:",
+    "generate_report": "إنشاء التقرير",
+
+    "select_author": "اختيار المؤلف",
+    "select_module": "اختيار الوحدة",
+
+    "plagiarism_checks": "فحوصات الانتحال",
+    "check_plagiarism": "فحص الانتحال",
+
+    "text_files": "ملفات نصية (.txt)",
+    "zip_archive": "أرشيف ZIP",
+    "export_selected": "تصدير المحدد",
+
+    "delete_warning": "تحذير: لا يمكن التراجع عن هذا الإجراء!",
+    "select_document_delete": "اختر مستنداً للحذف",
+
+    "setup_testing_tools": "أدوات الإعداد والاختبار",
+    "system_setup": "إعداد النظام",
+    "check_requirements": "فحص المتطلبات",
+    "create_directories": "إنشاء المجلدات",
+    "create_sample_documents": "إنشاء مستندات نموذجية",
+    "test_repository": "اختبار المستودع",
+    "test_plagiarism_check": "اختبار فحص الانتحال",
+    "clear_results": "مسح النتائج",
+
+    "total_documents": "إجمالي المستندات",
+    "total_checks": "إجمالي الفحوصات",
+    "flagged_documents": "المستندات المُعلَّمة",
+    "average_similarity": "متوسط التشابه",
+
+    "document_id": "معرف المستند",
+    "author": "المؤلف",
+    "date_submitted": "تاريخ التقديم",
+    "status": "الحالة",
+    "similarity_score": "درجة التشابه",
+
+    "no_documents": "لم يتم العثور على مستندات",
+    "no_results": "لم يتم العثور على نتائج",
+    "loading": "جاري التحميل...",
+    "processing": "جاري المعالجة...",
+
+    "success": "نجاح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات",
+
+    "document_submitted": "تم تقديم المستند بنجاح",
+    "document_deleted": "تم حذف المستند بنجاح",
+    "check_complete": "اكتمل فحص الانتحال",
+    "export_complete": "اكتمل التصدير بنجاح",
+    "import_complete": "اكتمل الاستيراد بنجاح",
+
+    "confirm_delete": "هل أنت متأكد من حذف هذا المستند؟",
+    "confirm_action": "تأكيد الإجراء",
+
+    "select_file": "اختيار ملف",
+    "select_folder": "اختيار مجلد",
+    "browse": "استعراض...",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "ok": "موافق",
+
+    "report_types": {
+      "summary": "تقرير ملخص",
+      "detailed": "تحليل مفصل",
+      "author_report": "تقرير المؤلف",
+      "module_report": "تقرير الوحدة",
+      "trends": "تقرير الاتجاهات"
+    },
+
+    "status_types": {
+      "pending": "قيد الانتظار",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "flagged": "مُعلَّم",
+      "cleared": "تمت الموافقة"
+    }
+  }
+}

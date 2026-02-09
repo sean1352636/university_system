@@ -1,0 +1,19 @@
+{
+  "template_name": "Case Study Analysis",
+  "template_type": "case_study",
+  "title": "Case Study Analysis",
+  "description": "Analyze a real-world case study",
+  "instructions": "Analyze the provided case study and prepare a detailed report.\n\nYour analysis should include:\n- Problem identification\n- Stakeholder analysis\n- Alternative solutions\n- Recommended approach with justification\n- Implementation plan\n\nWord limit: 1500-2000 words",
+  "max_marks": 100,
+  "assignment_type": "individual",
+  "file_types_allowed": ".pdf,.docx",
+  "max_file_size_mb": 10,
+  "allow_late_submission": true,
+  "late_penalty_per_day": 5,
+  "rubric_criteria": [
+    {"name": "Problem Analysis", "description": "Identification and analysis of key issues", "points": 30, "weight": 30},
+    {"name": "Solution Development", "description": "Quality of proposed solutions", "points": 35, "weight": 35},
+    {"name": "Critical Thinking", "description": "Depth of analysis", "points": 20, "weight": 20},
+    {"name": "Presentation", "description": "Clarity and professionalism", "points": 15, "weight": 15}
+  ]
+}
