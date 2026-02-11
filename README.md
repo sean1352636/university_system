@@ -1,11 +1,11 @@
 # University Management System
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-5.17.0-brightgreen)](https://github.com/sean1352636/university_system)
+[![Version](https://img.shields.io/badge/version-5.39.5-brightgreen)](https://github.com/sean1352636/university_system)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A comprehensive, enterprise-grade university management system designed to handle all aspects of higher education administration. This modular platform integrates academic, financial, student affairs, health services, and administrative operations into a unified, scalable solution with multiple interface options (CLI, GUI, Web).
+A comprehensive, enterprise-grade university management system designed to handle all aspects of higher education administration. This modular platform integrates academic, financial, student affairs, health services, and administrative operations into a unified, scalable solution with multiple interface options (CLI, GUI, REST API).
 
 ---
 
@@ -48,6 +48,7 @@ pip install -r requirements.txt
 python run.py              # Interactive menu (recommended)
 python run.py --cli        # Command-line interface
 python run.py --gui        # Graphical interface
+python run.py --api        # REST API server
 python run.py --test       # Run tests
 
 # Common operations
@@ -63,26 +64,27 @@ make db-backup             # Backup database
 
 ## What's New
 
-### Version 5.17.0 (February 7, 2026)
+### Version 5.39.5 (February 11, 2026)
 
-**Major Refactoring - Document Manager, AI Detector, Cinema, Plagiarism GUIs**
+**Flask REST API, Security Audit, Role-Based Dashboards, Student Self-Service**
 
-Continued large-scale modularization of monolithic files into well-organized packages:
+Major platform expansion since v5.17.0 with 20+ feature releases:
 
-- **Document Manager GUI**: Split 18,953-line monolith into 26-file package using `__getattr__` delegation pattern (92% reduction)
-- **AI Detector**: Split 10,864-line monolith into 49-file package with mixin-based architecture (88% reduction)
-- **Cinema GUI**: Split 11,086-line monolith into 52-file package across 8 subdirectories (91% reduction)
-- **Plagiarism GUI**: Split 7,132-line monolith into 20-file package (73% reduction)
-- **Housing Accommodation GUI** and **Shop Management GUI**: Converted to modular packages
-- All refactorings maintain 100% backward compatibility via `__init__.py` re-exports
+- **Flask REST API** (v5.22.0-v5.26.0): Production-ready API server with JWT authentication, 60 route files covering 57+ endpoint groups (students, modules, enrollments, grades, finance, attendance, housing, library, health, career, HR, helpdesk, LMS, and more), pagination, input validation, rate limiting, CORS, and activity logging. Start with `python run.py --api`
+- **Major Security Audit** (v5.28.0): 25+ critical/high/medium fixes including removal of `eval()` and unsafe `pickle`, SQL injection parameterization, dummy auth bypass removal, hardcoded secret elimination, command injection fixes, CORS hardening, secure cookie configuration, and login rate limiting
+- **Role-Based Dashboards** (v5.29.0-v5.39.0): Admin, instructor, and student dashboards with live data — at-risk students, grading backlog, announcements, GPA tracking, enrolled modules, quick action buttons, system health monitoring, login analytics, and operational metrics
+- **Student Self-Service GUIs** (v5.39.0): 13 new student-facing features — Profile Center, Account Security, Notification Preferences, Grades Breakdown, Degree Progress Tracker, Course Catalog with self-registration, GPA Calculator, Messaging Hub, Discussion Forums, Student Finance Dashboard, Help Center, and Document Center
+- **Office Hours & TA Management** (v5.29.0): Full CRUD for instructor office hours with student booking, TA assignment with per-module permissions, workload tracking, CLI + GUI + REST API
+- **Admin Tools** (v5.36.0): Alert & notification configuration, department management with org hierarchy, institution branding & customization
+- **Instructor Tools** (v5.37.0): Class roster viewer with export, bulk grade import, course messaging, attendance-grade integration, course health dashboard, semester analytics, TA evaluation
+- **Seed Demo Data** (v5.38.0): Script populating 30 tables with 310+ realistic demo records across attendance, financial aid, housing, alumni, and health services
 
-**Recent Highlights (v5.12-v5.17):**
+**Earlier Highlights (v5.12-v5.17):**
 - Observability & monitoring infrastructure (metrics, health checks, alerts)
 - Automated backup scheduling with retention policies
 - LRU cache with TTL for performance optimization
 - Remember Me authentication with 30-day persistent tokens
 - Quiet startup mode (verbose output moved to logs)
-- Improved student record update UX with multi-field sessions
 - 10-language internationalization support (ar, de, en, es, fr, ja, ko, pt, ru, zh)
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history.
@@ -94,7 +96,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 The University Management System is a full-featured platform built with Python that provides:
 
 - **Modular Architecture**: Domain-driven design with clearly separated concerns across infrastructure, domain, service, and interface layers
-- **Multiple Interfaces**: Command-line (CLI) and graphical (Tkinter) interfaces for diverse user preferences
+- **Multiple Interfaces**: Command-line (CLI), graphical (Tkinter), and REST API (Flask) interfaces for diverse user preferences
 - **Comprehensive Coverage**: Academic management, financial services, health services, housing, student affairs, and commerce domains
 - **Scalable Design**: Thread-safe database connection pooling, Write-Ahead Logging (WAL), and infrastructure-agnostic architecture
 - **Secure by Default**: PBKDF2-SHA256 password hashing (1M iterations), multi-factor authentication, role-based access control, and comprehensive audit logging
@@ -109,16 +111,18 @@ The University Management System is a full-featured platform built with Python t
 
 ### Statistics
 
-- **Version**: 5.17.0 (February 7, 2026)
-- **Lines of Code**: 1,180,000+ across all modules
-- **Python Files**: 2,130+ files
-- **Core System**: 1,160,000+ lines across ~2,010 files
-- **Extras Module**: 19,678 lines across ~120 files
+- **Version**: 5.39.5 (February 11, 2026)
+- **Lines of Code**: 1,218,000+ across all modules
+- **Python Files**: 2,310+ files
+- **Core System**: 1,198,000+ lines across ~2,190 files
+- **Extras Module**: 19,710 lines across ~122 files
 - **Python Version**: 3.8+ (tested on 3.8-3.12)
-- **Modules**: 53+ major functional domains (18 student success modules)
+- **Modules**: 55+ major functional domains (18 student success modules)
 - **Test Coverage**: 85%+ for core functionality
-- **Database Tables**: 120+ normalized tables (including 23 Staff HR + 40 Student Success tables)
-- **Permissions**: 320+ fine-grained RBAC permissions
+- **Database Tables**: 160+ normalized tables (including 23 Staff HR + 40 Student Success tables)
+- **Permissions**: 330+ fine-grained RBAC permissions
+- **REST API Endpoints**: 57+ endpoint groups across 60 route files with JWT authentication
+- **Email Templates**: 358 templates in 40 categories
 - **Staff HR Managers**: 15 specialized manager classes (7,199 lines)
 - **Student Success Modules**: 18 comprehensive student-focused services
 - **Internationalization**: 10 supported languages (ar, de, en, es, fr, ja, ko, pt, ru, zh)
@@ -145,7 +149,7 @@ The University Management System is a full-featured platform built with Python t
 - **Collections**: Automated reminder system for overdue payments
 - **Financial Reporting**: Revenue forecasts, financial analytics, and comprehensive reports
 
-### Student Success & Engagement (NEW in v5.5.0)
+### Student Success & Engagement
 
 A comprehensive suite of AI-powered and student-focused tools designed to enhance academic success, financial wellness, career readiness, and campus life:
 
@@ -315,10 +319,10 @@ A comprehensive suite of AI-powered and student-focused tools designed to enhanc
 - **Medical Accommodations**: Integration with accessibility tools for students with special needs
 - **Analytics**: Health service utilization reports and trend analysis
 
-### Staff HR Management (Enhanced in v5.0.79)
+### Staff HR Management
 A comprehensive human resources management system with 15 specialized managers + Staff CRUD:
 
-- **Staff CRUD Management** ⭐ **NEW in v5.0.79**: Complete staff account management
+- **Staff CRUD Management**: Complete staff account management
   - Create new staff members with secure authentication (PBKDF2, 1M iterations)
   - View all staff in searchable tree view with filtering
   - Update staff information, roles (staff/instructor/admin), and active/inactive status
@@ -398,16 +402,18 @@ A comprehensive human resources management system with 15 specialized managers +
 - **Authorization**: Role-based access control (RBAC) with fine-grained permissions
 - **Database**: SQLite (default) with connection pooling, WAL mode, and support for PostgreSQL/MySQL
 - **Backup System**: Comprehensive backup management with 6 pre-configured templates (daily, encrypted, incremental, cloud, selective, remote)
-- **Email Service**: Asynchronous email queue with SMTP integration, template rendering, and automated scheduling
+- **Email Service**: Asynchronous email queue with SMTP integration, 358 templates in 40 categories, and automated scheduling
   - **Email Scheduler**: Background service with scheduled tasks:
     - Satisfaction surveys: Daily at 09:00
     - Book return reminders: Daily at 08:00
     - Overdue book notices: Daily at 10:00
     - SLA breach alerts: Every 30 minutes
 - **Console Output**: Professional terminal formatting with ANSI colors, progress bars, tables, and interactive prompts
+- **REST API**: Production-ready Flask API server with JWT authentication, 57+ endpoint groups, pagination, rate limiting, and CORS support
 - **AI Integration**: Chatbot capabilities, plagiarism detection, and predictive analytics
 - **Activity Logging**: Comprehensive audit trails for compliance and security monitoring
 - **PDF Database Export**: Comprehensive PDF report generation with charts, tables, and visualizations for full database export
+- **Role-Based Dashboards**: Admin, instructor, and student dashboards with live data, system health monitoring, login analytics, and operational metrics
 
 ---
 
@@ -462,8 +468,9 @@ A comprehensive human resources management system with 15 specialized managers +
 |----------|-------------|
 | **Language** | Python 3.8+ (tested on 3.8-3.12) |
 | **GUI Framework** | Tkinter (ttk widgets, clam theme) |
+| **Web Framework** | Flask (REST API), flask-cors |
 | **Database** | SQLite (default), PostgreSQL, MySQL |
-| **Authentication** | PBKDF2-SHA256 (1M iterations), pyotp (TOTP), cryptography |
+| **Authentication** | PBKDF2-SHA256 (1M iterations), PyJWT, pyotp (TOTP), cryptography |
 
 ### Data & Analytics
 
@@ -632,6 +639,46 @@ Choose from:
 1. **CLI Interface** - Full-featured command-line interface
 2. **GUI Interface** - Tkinter-based graphical interface
 3. **Run Tests** - Execute test suite
+4. **Change Language** - Switch between 10 supported languages
+
+### REST API Server
+
+```bash
+# Start the API server
+python run.py --api
+
+# Or run directly
+python -m university_system.api.api_server
+```
+
+The REST API provides:
+- **JWT Authentication**: Login, logout, token refresh, and current-user endpoints
+- **57+ Endpoint Groups**: Full CRUD for students, modules, courses, enrollments, grades, finance, attendance, assignments, timetable, housing, library, health, career, research, admissions, alumni, events, dining, HR, helpdesk, LMS, chat, and more
+- **Pagination & Filtering**: Paginated responses with search, sort, and filter query parameters
+- **Rate Limiting**: Per-IP sliding-window rate limiter
+- **Input Validation**: Request payload validation for all mutation endpoints
+- **Activity Logging**: All mutations logged for audit compliance
+
+**API Endpoints Overview:**
+```
+/api/auth/*          - Authentication (login, logout, refresh, me)
+/api/students/*      - Student CRUD
+/api/modules/*       - Module CRUD
+/api/courses/*       - Course CRUD
+/api/enrollments/*   - Enrollment management
+/api/grades/*        - Grade management
+/api/finance/*       - Financial services
+/api/attendance/*    - Attendance tracking
+/api/assignments/*   - Assignment management
+/api/housing/*       - Housing management
+/api/health-services/* - Health services
+/api/hr/*            - Staff HR management
+/api/helpdesk/*      - Support tickets
+/api/lms/*           - Learning management
+/api/dashboard/stats - Aggregate statistics
+/api/health          - System health check
+...and 40+ more endpoint groups
+```
 
 ### Command-Line Interface (CLI)
 
@@ -663,8 +710,6 @@ python -m university_system.modules.shared.gui.main_gui
 python -m university_system.modules.domain.academics.gui.assignment_system.assignment_gui
 python -m university_system.modules.domain.finance.gui.finance_management_gui
 ```
-
-- Custom exception handling
 
 ### Email Scheduler
 
@@ -779,6 +824,21 @@ confirmed = console.confirm("Are you sure?")
 ```
 university_system/
 │
+├── api/                               # REST API server (Flask)
+│   ├── api_server.py                  # App factory & runner
+│   ├── auth.py                        # JWT authentication (token_required, admin_required)
+│   ├── config.py                      # API configuration loader
+│   ├── errors.py                      # Exception-to-HTTP status mapping
+│   ├── pagination.py                  # Pagination helpers
+│   ├── validators.py                  # Input validation (35+ validators)
+│   └── routes/                        # 60 route files (blueprint per domain)
+│       ├── auth_routes.py             # Login, logout, refresh, me
+│       ├── student_routes.py          # Student CRUD
+│       ├── finance_routes.py          # Financial services
+│       ├── hr_routes.py               # Staff HR management
+│       ├── helpdesk_routes.py         # Support tickets
+│       └── ...                        # 55 more route files
+│
 ├── infrastructure/                     # Core infrastructure layer
 │   ├── ai/                            # AI/ML services (chatbot, analytics)
 │   ├── analytics/                     # Analytics and reporting engine
@@ -821,24 +881,40 @@ university_system/
 │   ├── core/                          # Core business entities
 │   │   └── services/                  # Core services
 │   │
-│   ├── domain/                        # Domain layer (50+ business domains)
+│   ├── domain/                        # Domain layer (55+ business domains)
 │   │   │
 │   │   │  ── ACADEMIC DOMAINS ──
 │   │   │
 │   │   ├── academics/                 # Core academic module
+│   │   │   ├── cli/                   # Academic CLI modules
+│   │   │   │   ├── office_hours_cli.py # Office hours CLI
+│   │   │   │   └── ta_management_cli.py # TA management CLI
 │   │   │   ├── grading/               # Grading services (20 files)
 │   │   │   ├── gui/
 │   │   │   │   ├── academic_calendar/  # Calendar GUI (10+ files)
 │   │   │   │   ├── ai_detector/        # AI detection GUI (16 views)
 │   │   │   │   ├── assignment_system/  # Assignment GUI (19 managers)
+│   │   │   │   ├── attendance_grade/   # Attendance-grade integration
 │   │   │   │   ├── attendance_tracker/ # Attendance GUI (11 files)
+│   │   │   │   ├── bulk_grade_import/  # Bulk grade import from CSV
+│   │   │   │   ├── course_catalog/     # Course catalog & self-registration
+│   │   │   │   ├── course_forums/      # Course discussion forums
+│   │   │   │   ├── course_health/      # Course health dashboard
 │   │   │   │   ├── course_management_gui/ # Course mgmt (14 submodules)
+│   │   │   │   ├── course_messaging/   # Course-targeted messaging
+│   │   │   │   ├── degree_progress/    # Degree progress tracker
+│   │   │   │   ├── gpa_calculator/     # What-if GPA calculator
 │   │   │   │   ├── grade_tracking/     # Grade tracking (24 files)
+│   │   │   │   ├── grades_breakdown/   # Grades breakdown by module
 │   │   │   │   ├── library/            # Library GUI (17 components)
 │   │   │   │   ├── misconduct/         # Academic misconduct
 │   │   │   │   ├── module_scheduling/  # Scheduling (8 tabs)
+│   │   │   │   ├── office_hours/       # Office hours management
 │   │   │   │   ├── parent_portal/      # Parent portal (20+ files)
 │   │   │   │   ├── plagiarism_main_gui/ # Plagiarism GUI (20 files)
+│   │   │   │   ├── roster_viewer/      # Class roster viewer & export
+│   │   │   │   ├── semester_analytics/ # Semester comparison analytics
+│   │   │   │   ├── ta_management/      # TA management & evaluation
 │   │   │   │   ├── blockchain_credentials_gui.py
 │   │   │   │   ├── course_evaluation_gui.py
 │   │   │   │   ├── degree_audit_gui.py
@@ -847,16 +923,18 @@ university_system/
 │   │   │   │   ├── lms_gui.py
 │   │   │   │   └── virtual_classroom_gui.py
 │   │   │   └── services/
+│   │   │       ├── academic_calendar/  # Calendar services (23 files)
 │   │   │       ├── assignments/        # Assignment services
 │   │   │       ├── attendance/         # Attendance services
 │   │   │       ├── degree_audit/       # Degree audit
 │   │   │       ├── evaluation/         # Course evaluation
 │   │   │       ├── library/            # Library services
 │   │   │       ├── lms/                # Learning management
+│   │   │       ├── office_hours/       # Office hours services
 │   │   │       ├── plagiarism/         # Plagiarism detection
+│   │   │       ├── ta_management/      # TA management services
 │   │   │       ├── timetable/          # Timetable services
 │   │   │       ├── virtual_classroom/  # Virtual classroom
-│   │   │       ├── academic_calendar.py
 │   │   │       ├── course_management.py
 │   │   │       └── module_scheduling.py
 │   │   │
@@ -876,7 +954,8 @@ university_system/
 │   │   │   ├── gui/
 │   │   │   │   ├── finance/           # Finance mgmt GUI (13 managers)
 │   │   │   │   ├── finance_reporting/ # Reporting GUI (16 files)
-│   │   │   │   └── financial_aid/     # Aid portal GUI
+│   │   │   │   ├── financial_aid/     # Aid portal GUI
+│   │   │   │   └── student_finance/   # Student financial dashboard
 │   │   │   ├── reporting/             # Budget, revenue, reports
 │   │   │   ├── scholarships/          # Scholarship programs
 │   │   │   └── services/              # Financial aid services
@@ -885,8 +964,14 @@ university_system/
 │   │   │
 │   │   ├── student_affairs/           # Student affairs
 │   │   │   ├── gui/
+│   │   │   │   ├── account_security/  # Account security dashboard
 │   │   │   │   ├── alumni/            # Alumni GUI (13 components)
+│   │   │   │   ├── document_center/   # Personal document center
+│   │   │   │   ├── help_center/       # Integrated help center
 │   │   │   │   ├── helpdesk/          # Helpdesk GUI
+│   │   │   │   ├── messaging_hub/     # Student messaging hub
+│   │   │   │   ├── notification_prefs/ # Notification preferences
+│   │   │   │   ├── student_profile/   # Student profile center
 │   │   │   │   ├── student_support/   # Support GUI (8 files)
 │   │   │   │   └── student_union_gui/ # Union GUI (26 subdirectories)
 │   │   │   ├── services/
@@ -1031,12 +1116,24 @@ university_system/
 │       │   │   ├── main_gui.py        # Main GUI application
 │       │   │   ├── admin/             # Admin management GUIs
 │       │   │   ├── core/              # Core GUI setup
-│       │   │   ├── dashboard/         # Dashboard components
+│       │   │   ├── dashboard/         # Role-based dashboards
+│       │   │   │   ├── admin_dashboard.py       # Admin dashboard
+│       │   │   │   ├── instructor_dashboard.py  # Instructor dashboard
+│       │   │   │   ├── student_dashboard.py     # Student dashboard
+│       │   │   │   ├── student_widgets.py       # Student summary widgets
+│       │   │   │   ├── login_analytics_dashboard.py # Login analytics
+│       │   │   │   ├── operations_dashboard.py  # Operational metrics
+│       │   │   │   ├── system_health_dashboard.py # System health (live)
+│       │   │   │   └── dashboard_gui.py         # Dashboard framework
 │       │   │   ├── email/             # Email GUI components
 │       │   │   ├── features/          # Feature-specific GUIs
 │       │   │   ├── imports/           # Import management
 │       │   │   ├── staff/             # Staff management GUIs
 │       │   │   └── students/          # Student management GUIs
+│       │   ├── admin/                 # Admin configuration GUIs
+│       │   │   ├── alert_config_gui.py          # Alert & notification config
+│       │   │   ├── branding_config_gui.py       # Institution branding
+│       │   │   └── department_management_gui.py # Department & org management
 │       │   ├── auth/                  # Authentication GUIs (MFA wizard)
 │       │   ├── advanced_search/       # Advanced search interface
 │       │   ├── batch_operations/      # Batch operations GUI
@@ -1051,6 +1148,7 @@ university_system/
 │       │   ├── analytics/             # Analytics & advanced search
 │       │   ├── business_intelligence/ # BI services
 │       │   ├── communication/         # Communication services
+│       │   ├── dashboard/             # Dashboard data services
 │       │   ├── integrations/          # Integration services
 │       │   └── pdf_export/            # PDF export (4 files)
 │       └── utils/                     # Utility functions
@@ -1115,14 +1213,14 @@ university_system/
 │   ├── assignments/                   # Assignment templates
 │   ├── backup_templates/              # 6 pre-configured backup templates
 │   ├── course_evaluation/             # Evaluation templates
-│   ├── email/                         # 227 email templates in 30 categories
+│   ├── email/                         # 358 email templates in 40 categories
 │   │   ├── academics/
 │   │   ├── authentication/
 │   │   ├── finance/
 │   │   ├── health/
 │   │   ├── housing/
 │   │   ├── security/
-│   │   └── ...                        # 24 more category directories
+│   │   └── ...                        # 34 more category directories
 │   ├── finance_templates/
 │   ├── medical_templates/
 │   ├── reports_templates/
@@ -1164,7 +1262,7 @@ university_system/
 └── run.py                             # Main entry point
 ```
 
-### Directory Consolidation Notes (January 2026)
+### Directory Consolidation Notes (January-February 2026)
 
 **Recent architectural improvements** have consolidated and reorganized the entire codebase:
 
@@ -1246,7 +1344,9 @@ This ensures consistency across all modules and prevents path-related errors.
 
 #### Web & Networking
 - **requests** (≥2.27.0) - HTTP library for external service integration
-- **flask** (≥2.0.0) - Web framework (legacy support)
+- **flask** (≥2.0.0) - Web framework for REST API server (57+ endpoint groups)
+- **flask-cors** (≥3.0.0) - Cross-Origin Resource Sharing for API
+- **PyJWT** (≥2.0.0) - JSON Web Token authentication for API
 - **urllib3** (≥1.26.0) - HTTP client library for reliable network operations
 
 #### Security & Authentication
@@ -1622,12 +1722,12 @@ with transaction() as conn:
 
 ### Access Control
 - **Role-Based Access Control (RBAC)**: Admin, Instructor, Student, Staff, Parent roles
-- **Fine-grained permissions**: Over 200 distinct permissions across all modules
+- **Fine-grained permissions**: Over 330 distinct permissions across all modules
 - **Permission decorators**: `@require_permission('permission_name')`
 - **Global auth context**: Shared authentication state across modules
 - **UI-Level Access Control**: Dynamic interface filtering based on user roles
 
-#### Role-Based UI Access Control (2025 Update)
+#### Role-Based UI Access Control
 
 All GUI modules implement comprehensive role-based navigation and menu filtering, ensuring users only see features appropriate for their role:
 
@@ -1793,10 +1893,10 @@ pip install -r requirements.txt
 # 3. Configure production database (PostgreSQL/MySQL recommended)
 # Edit .env with production database credentials
 
-# 4. Run the application (CLI or GUI)
-# Note: Web interface is being refactored - use CLI/GUI for now
+# 4. Run the application
 python run.py --gui  # For GUI
 python run.py --cli  # For CLI
+python run.py --api  # For REST API server
 ```
 
 ### Backup & Recovery
@@ -2147,7 +2247,7 @@ The following limitations should be considered when deploying this system:
 
 | Limitation | Details |
 |------------|---------|
-| **Web Interface** | Currently being refactored - use CLI or GUI for production |
+| **Web Interface** | REST API available (57+ endpoints with JWT auth); full web UI planned for v6.0 |
 | **Multi-tenancy** | Single-tenant design; multi-institution hosting planned for v6.0 |
 | **SQLite Concurrency** | May have performance limits with high concurrent writes; use PostgreSQL for high-traffic deployments |
 | **i18n Coverage** | Some GUI modules have incomplete internationalization coverage |
@@ -2186,15 +2286,18 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| **5.17.0** | Feb 7, 2026 | Document Manager, AI Detector, Cinema, Plagiarism GUI modularization (26-52 files each) |
-| **5.15.0** | Feb 7, 2026 | Housing & Shop management GUI packages, Cinema GUI 52-file refactor |
-| **5.14.x** | Feb 6, 2026 | Quiet startup mode, improved student record UX, auth fixes |
+| **5.39.x** | Feb 11, 2026 | Student self-service GUIs (13 features), seed demo data, role-based dashboards with live data |
+| **5.36.0** | Feb 11, 2026 | Admin tools (alerts, departments, branding), batch user operations, compliance reporting |
+| **5.35.0** | Feb 11, 2026 | Login analytics, operations dashboards, real-time system health monitoring |
+| **5.34.0** | Feb 10, 2026 | Virtual classroom CLI, financial aid CLI, helpdesk ticket actions |
+| **5.29.0** | Feb 10, 2026 | Office Hours & TA Management (CLI + GUI + API), role-based dashboards |
+| **5.28.0** | Feb 10, 2026 | Major security audit: 25+ critical/high/medium fixes across 30+ files |
+| **5.22.0** | Feb 9, 2026 | Flask REST API server (JWT auth, 57+ endpoint groups, 60 route files) |
+| **5.17.0** | Feb 7, 2026 | Document Manager, AI Detector, Cinema, Plagiarism GUI modularization |
 | **5.12.0** | Feb 1, 2026 | Observability, automated backups, LRU caching, Remember Me auth |
 | **5.5.0** | Jan 2026 | Student Success Platform (18 modules, 40+ tables) |
 | **5.4.0** | Jan 2026 | Staff HR Management (15 managers, 23 tables, CLI + GUI) |
-| **5.3.0** | Jan 2026 | Mobility i18n, taxi/train payment integration |
 | **5.2.0** | Dec 2025 | Extras & Tools (90+ games, utilities, mini-projects) |
-| **5.1.0** | Dec 2025 | Charity Shop, Research Grants, enhanced Finance GUI |
 | **5.0.0** | Oct 2024 | Major modularization (91% reduction in max file size) |
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history with detailed release notes.
@@ -2203,48 +2306,42 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history with detailed rele
 
 ## Roadmap
 
-### Version 5.17.0 (February 7, 2026) - CURRENT
+### Version 5.39.5 (February 11, 2026) - CURRENT
+- [x] **Flask REST API** (v5.22.0): 60 route files, JWT auth, 57+ endpoint groups, pagination, rate limiting
+- [x] **Major Security Audit** (v5.28.0): 25+ critical/high/medium fixes across 30+ files
+- [x] **Office Hours & TA Management** (v5.29.0): Full CRUD with CLI, GUI, and API
+- [x] **Role-Based Dashboards** (v5.29.0-v5.39.0): Admin, instructor, student dashboards with live data
+- [x] **Admin Tools** (v5.36.0): Alert config, department management, institution branding
+- [x] **Instructor Tools** (v5.37.0): Roster viewer, bulk grade import, course messaging, semester analytics
+- [x] **Student Self-Service** (v5.39.0): 13 new features (profile, security, notifications, grades, degree progress, catalog, GPA calculator, messaging, forums, finance, help center, documents)
+- [x] **Seed Demo Data** (v5.38.0): 310+ records across 30 tables
+- [x] 200+ bug fixes and quality improvements
+
+### Version 5.17.0 (February 7, 2026) - COMPLETED
 - [x] **Document Manager GUI**: 26-file modular package (from 18,953-line monolith)
 - [x] **AI Detector**: 49-file modular package (from 10,864-line monolith)
 - [x] **Cinema GUI**: 52-file modular package (from 11,086-line monolith)
 - [x] **Plagiarism GUI**: 20-file modular package (from 7,132-line monolith)
 - [x] **Housing & Shop GUIs**: Converted to modular packages
-- [x] Quiet startup mode (verbose output moved to log files)
-- [x] Improved student record update UX
-- [x] Python 3.8-3.11 f-string compatibility fixes
 
 ### Version 5.12.0 (February 2026) - COMPLETED
 - [x] **Observability & Monitoring** - Metrics, health checks, alerts
 - [x] **Automated Data Management** - Backup scheduler with retention
 - [x] **Performance Optimization** - LRU cache with TTL
 - [x] **Remember Me Authentication** - 30-day persistent tokens
-- [x] Admin CLI monitoring integration (8 features)
 
 ### Version 5.5.0 (January 2026) - COMPLETED
 - [x] **Student Success & Engagement Platform** - 18 comprehensive modules
-- [x] AI Study Companion, Peer Study Matching, Academic Progress Dashboard
-- [x] Course Planning, Student Job Board, Budget Tracker, Scholarship Finder
-- [x] Roommate Finder, Campus Navigation, Lost & Found, Marketplace
-- [x] Wellness Hub, Accessibility Portal, Event Discovery, Social Matching
-- [x] Portfolio System, Notifications Hub, Feedback System
 - [x] 40+ new database tables, full CLI and GUI interfaces
 
-### Version 5.4.0-5.4.1 (January 2026) - COMPLETED
+### Version 5.4.0 (January 2026) - COMPLETED
 - [x] **Staff HR Management System** - 15 specialized managers
 - [x] 23 new database tables, 14 CLI menus + 14 GUI interfaces
-- [x] Integration tests and input validation for all HR modules
-
-### Version 5.0.x (January 2026) - COMPLETED
-- [x] Entertainment & Commerce CLIs (betting, cinema, barber, butcher, nail bar)
-- [x] Flexible login verification system (email OTP, PIN, password-only)
-- [x] Staff CRUD management, 68+ bug fixes
-- [x] Email template organization (227 templates in 30 categories)
 
 ### Version 6.0 (Q2-Q3 2026)
 - [ ] Mobile application (React Native)
-- [ ] Advanced analytics dashboard with real-time data
+- [ ] Full web UI frontend for the REST API
 - [ ] Integration with external LMS systems (Canvas, Blackboard, Moodle)
-- [ ] Web interface completion (FastAPI refactoring)
 - [ ] Complete i18n support for all remaining GUI modules
 
 ### Version 7.0 (Q4 2026)
@@ -2287,14 +2384,15 @@ When reporting issues, please include:
 
 ## Project Status
 
-- **Version**: 5.17.0
+- **Version**: 5.39.5
 - **Status**: Active Development & Maintenance
-- **Total Lines of Code**: 1,180,000+
-- **Total Python Files**: 2,130+
-- **Core System**: 1,160,000+ lines across ~2,010 files
-- **Extras Module**: 19,678 lines across ~120 files
+- **Total Lines of Code**: 1,218,000+
+- **Total Python Files**: 2,310+
+- **Core System**: 1,198,000+ lines across ~2,190 files
+- **Extras Module**: 19,710 lines across ~122 files
+- **REST API**: 57+ endpoint groups across 60 route files
 - **Python**: 3.8+ (tested on 3.8, 3.9, 3.10, 3.11, 3.12)
-- **Last Updated**: February 7, 2026
+- **Last Updated**: February 11, 2026
 - **Actively Maintained**: Yes
 - **Production Ready**: Yes (with appropriate security configuration)
 - **Test Coverage**: 85%+ for core functionality (Staff HR: 90%+, Student Success: 80%+)
