@@ -1,0 +1,1 @@
+"""Comparative Semester Analytics package."""

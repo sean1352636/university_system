@@ -8,8 +8,8 @@ import os
 import json
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
-from university_system.modules.shared.constants import paths
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core import paths
+from university_system.core.i18n import get_text, _
 
 
 class SMSProvider(ABC):

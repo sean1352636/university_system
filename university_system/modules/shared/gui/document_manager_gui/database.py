@@ -26,7 +26,7 @@ except ImportError:
     get_current_language = lambda: "en"
 
 
-class DatabaseManager:
+class DocumentDatabaseManager:
     def __init__(self, gui):
         self.gui = gui
         self.root = gui.root
@@ -244,9 +244,8 @@ class DatabaseManager:
         cursor.execute('SELECT COUNT(*) FROM users')
         if cursor.fetchone()[0] == 0:
             # Create default admin user using centralized authentication
-            # WARNING: Change DEFAULT_ADMIN_PASSWORD environment variable in production!
-            # Load admin password from environment variable for security
-            admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')
+            from university_system.core.defaults import DEFAULT_ADMIN_PASSWORD
+            admin_password = DEFAULT_ADMIN_PASSWORD
             try:
                 from university_system.infrastructure.auth import UserAuth
                 auth_system = UserAuth()

@@ -4,11 +4,10 @@ Tests advanced analytics and reporting functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import analytics
-
 
 @pytest.fixture
 def mock_cursor():
@@ -19,7 +18,6 @@ def mock_cursor():
     cursor.execute = Mock()
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -27,7 +25,6 @@ def mock_conn():
     conn.cursor = Mock()
     conn.close = Mock()
     return conn
-
 
 class TestActivityCorrelationAnalysis:
     """Tests for activity_correlation_analysis function."""
@@ -59,7 +56,6 @@ class TestActivityCorrelationAnalysis:
         
         # Should handle gracefully
         mock_cursor.execute.assert_called()
-
 
 class TestGenerateAdvancedAnalytics:
     """Tests for generate_advanced_analytics function."""
@@ -107,7 +103,6 @@ class TestGenerateAdvancedAnalytics:
         
         # Verify permission denied
         assert any("don't have permission" in str(call).lower() for call in mock_print.call_args_list)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -9,6 +9,7 @@ import threading
 from functools import partial
 import webbrowser
 from university_system.infrastructure.email.template_utils import render_template
+from university_system.core.sql_safety import validate_identifier
 
 # Import authentication - REQUIRED (no fallback for security)
 from university_system.infrastructure.auth import UserAuth, get_global_auth
@@ -457,7 +458,7 @@ def export_tickets_csv(self):
             columns = [row[1] for row in cursor.fetchall()]
 
             # Get all tickets
-            cursor.execute(f"SELECT * FROM support_tickets ORDER BY ticket_id DESC")
+            cursor.execute("SELECT * FROM support_tickets ORDER BY ticket_id DESC")
             tickets = cursor.fetchall()
             conn.close()
 
@@ -499,7 +500,8 @@ def export_users_csv(self):
             columns = [c for c in all_columns if c not in ('password', 'password_hash', 'salt', 'totp_secret')]
 
             # Get all users (excluding sensitive data)
-            cursor.execute(f"SELECT {', '.join(columns)} FROM users ORDER BY id")
+            safe_columns = [validate_identifier(c, "column") for c in columns]
+            cursor.execute("SELECT " + ', '.join(safe_columns) + " FROM users ORDER BY id")
             users = cursor.fetchall()
             conn.close()
 

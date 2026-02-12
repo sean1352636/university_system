@@ -5,13 +5,12 @@ Tests module scheduling system including rooms, instructors, schedules, and anal
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.academics.services.module_scheduling import ModuleScheduler
-
 
 class TestModuleScheduler:
     """Test suite for ModuleScheduler class"""
@@ -163,7 +162,6 @@ class TestModuleScheduler:
         # With no schedules, slot should be available
         assert available is True
 
-
 class TestModuleSchedulerRoomManagement:
     """Test suite for room management"""
 
@@ -216,7 +214,6 @@ class TestModuleSchedulerRoomManagement:
 
         assert isinstance(free_rooms, list)
 
-
 class TestModuleSchedulerInstructorManagement:
     """Test suite for instructor management"""
 
@@ -250,7 +247,6 @@ class TestModuleSchedulerInstructorManagement:
 
         assert expected_columns.issubset(columns)
         conn.close()
-
 
 class TestModuleSchedulerBackup:
     """Test suite for backup functionality"""
@@ -288,7 +284,6 @@ class TestModuleSchedulerBackup:
         # Should return True or not raise error
         assert result is not False or result is True or result is None
 
-
 class TestModuleSchedulerConflictDetection:
     """Test suite for conflict detection"""
 
@@ -320,7 +315,6 @@ class TestModuleSchedulerConflictDetection:
         assert isinstance(conflicts, list)
         assert len(conflicts) == 0
 
-
 class TestModuleSchedulerDataValidation:
     """Test suite for data validation"""
 
@@ -351,7 +345,6 @@ class TestModuleSchedulerDataValidation:
 
         # Should complete without errors
         assert result is not False or result is None or isinstance(result, dict)
-
 
 class TestModuleSchedulerTemplates:
     """Test suite for schedule templates"""
@@ -409,7 +402,6 @@ class TestModuleSchedulerTemplates:
         # Should succeed
         assert result is not False
 
-
 class TestModuleSchedulerSearch:
     """Test suite for search functionality"""
 
@@ -444,7 +436,6 @@ class TestModuleSchedulerSearch:
 
         assert isinstance(results, list)
 
-
 class TestModuleSchedulerAnalytics:
     """Test suite for analytics functionality"""
 
@@ -476,7 +467,6 @@ class TestModuleSchedulerAnalytics:
         # Should return data or None
         assert result is not None or result is None
 
-
 class TestModuleSchedulerExport:
     """Test suite for export functionality"""
 
@@ -500,7 +490,6 @@ class TestModuleSchedulerExport:
 
         # Should return filename or None
         assert result is None or isinstance(result, str)
-
 
 class TestModuleSchedulerHelperMethods:
     """Test suite for helper methods"""
@@ -546,7 +535,6 @@ class TestModuleSchedulerHelperMethods:
         modules = scheduler._get_known_modules()
 
         assert isinstance(modules, dict)
-
 
 class TestModuleSchedulerEdgeCases:
     """Test suite for edge cases"""

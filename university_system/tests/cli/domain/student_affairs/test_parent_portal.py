@@ -5,13 +5,12 @@ Tests parent portal system including account management, student linking, and in
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.academics.services.parent_portal import ParentPortal
-
 
 class TestParentPortalInitialization:
     """Test suite for ParentPortal initialization"""
@@ -63,7 +62,6 @@ class TestParentPortalInitialization:
                 assert table in tables, f"Table {table} not found"
 
             conn.close()
-
 
 class TestParentPortalDatabaseSchema:
     """Test suite for parent portal database schema"""
@@ -169,7 +167,6 @@ class TestParentPortalDatabaseSchema:
 
             assert expected_columns.issubset(columns)
             conn.close()
-
 
 class TestParentPortalAccountManagement:
     """Test suite for parent account management"""
@@ -301,7 +298,6 @@ class TestParentPortalAccountManagement:
 
                 conn.close()
 
-
 class TestParentPortalStudentLinking:
     """Test suite for student-parent linking"""
 
@@ -375,7 +371,6 @@ class TestParentPortalStudentLinking:
 
         conn.close()
 
-
 class TestParentPortalNotifications:
     """Test suite for parent notifications"""
 
@@ -411,7 +406,6 @@ class TestParentPortalNotifications:
             assert expected_columns.issubset(columns)
             conn.close()
 
-
 class TestParentPortalMessages:
     """Test suite for parent-teacher messaging"""
 
@@ -446,7 +440,6 @@ class TestParentPortalMessages:
 
             assert expected_columns.issubset(columns)
             conn.close()
-
 
 class TestParentPortalFinancial:
     """Test suite for financial features"""
@@ -506,7 +499,6 @@ class TestParentPortalFinancial:
             assert expected_columns.issubset(columns)
             conn.close()
 
-
 class TestParentPortalAcademicFeatures:
     """Test suite for academic features"""
 
@@ -564,7 +556,6 @@ class TestParentPortalAcademicFeatures:
 
             assert expected_columns.issubset(columns)
             conn.close()
-
 
 class TestParentPortalCommunication:
     """Test suite for communication features"""
@@ -624,7 +615,6 @@ class TestParentPortalCommunication:
             assert expected_columns.issubset(columns)
             conn.close()
 
-
 class TestParentPortalIntegration:
     """Integration tests for parent portal"""
 
@@ -643,7 +633,6 @@ class TestParentPortalIntegration:
         assert portal is not None
         assert hasattr(portal, 'auth')
         assert portal.auth == mock_auth
-
 
 class TestParentPortalEdgeCases:
     """Test suite for edge cases"""

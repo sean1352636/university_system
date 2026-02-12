@@ -5,14 +5,13 @@ from __future__ import annotations
 
 import csv
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from io import StringIO
 from unittest import mock
 
 import pytest
 
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import exports
-
 
 @pytest.fixture
 def mock_db_connection():
@@ -21,7 +20,6 @@ def mock_db_connection():
     cursor = mock.MagicMock(spec=sqlite3.Cursor)
     conn.cursor.return_value = cursor
     return conn, cursor
-
 
 @pytest.fixture
 def cleanup_csv_files():
@@ -34,7 +32,6 @@ def cleanup_csv_files():
                 os.unlink(file)
             except (OSError, IOError):
                 pass
-
 
 class TestGenerateEmployeeTaxSummary:
     """Tests for generate_employee_tax_summary function"""
@@ -101,7 +98,6 @@ class TestGenerateEmployeeTaxSummary:
                     assert 'Est. Tax' in output
                     assert '£' in output
 
-
 class TestGenerateAnnualTaxSummary:
     """Tests for generate_annual_tax_summary function"""
 
@@ -154,7 +150,6 @@ class TestGenerateAnnualTaxSummary:
 
                 output = fake_out.getvalue()
                 assert 'Invalid year' in output
-
 
 class TestExportTaxData:
     """Tests for export_tax_data function"""
@@ -221,7 +216,6 @@ class TestExportTaxData:
                         assert 'An error occurred' in output
                         mock_log.assert_called_once()
 
-
 class TestExportExpenseData:
     """Tests for export_expense_data function"""
 
@@ -253,7 +247,6 @@ class TestExportExpenseData:
 
                 output = fake_out.getvalue()
                 assert 'No expense data found' in output
-
 
 class TestExportProfitLossData:
     """Tests for export_profit_loss_data function"""

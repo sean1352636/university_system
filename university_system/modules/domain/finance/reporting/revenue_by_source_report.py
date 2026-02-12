@@ -8,14 +8,13 @@ This enables finance administrators to see which departments/services are
 generating revenue and track trends by source over time.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 from university_system.modules.shared.constants import paths
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 def get_revenue_by_source(
     start_date: Optional[str] = None,
@@ -232,7 +231,6 @@ def get_revenue_by_source(
         logger.error(f"Error in get_revenue_by_source: {e}")
         return {}
 
-
 def print_revenue_by_source_report(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
@@ -293,7 +291,6 @@ def print_revenue_by_source_report(
         print(f"  Range: £{data['min']:,.2f} - £{data['max']:,.2f}")
         print(f"  % of Total Revenue: {(data['total'] / total_revenue * 100):.1f}%")
 
-
 def get_source_revenue_trend(
     source: str,
     months: int = 12
@@ -335,7 +332,6 @@ def get_source_revenue_trend(
     except Exception as e:
         logger.error(f"Error in get_source_revenue_trend: {e}")
         return []
-
 
 def compare_source_revenue_periods(
     source: str,
@@ -417,7 +413,6 @@ def compare_source_revenue_periods(
         logger.error(f"Error in compare_source_revenue_periods: {e}")
         return {}
 
-
 def export_revenue_by_source_csv(
     filename: str,
     start_date: Optional[str] = None,
@@ -470,7 +465,6 @@ def export_revenue_by_source_csv(
     except Exception as e:
         logger.error(f"Error exporting revenue by source: {e}")
         return False
-
 
 # CLI interface function
 def revenue_by_source_menu():

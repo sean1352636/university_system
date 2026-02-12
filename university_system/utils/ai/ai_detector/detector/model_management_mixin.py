@@ -1,5 +1,6 @@
 """Model and system management mixin for AI detector."""
 
+import io
 import os
 import json
 import time
@@ -15,6 +16,48 @@ if ML_AVAILABLE:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score
+
+
+# Allowed modules/classes for safe model deserialization
+_SAFE_ML_MODULES = {
+    'numpy', 'numpy.core', 'numpy.core.multiarray', 'numpy.core.numeric',
+    'numpy.random', 'numpy.ma', 'numpy.ma.core',
+    'sklearn', 'sklearn.ensemble', 'sklearn.ensemble._forest',
+    'sklearn.feature_extraction', 'sklearn.feature_extraction.text',
+    'sklearn.tree', 'sklearn.tree._classes', 'sklearn.tree._tree',
+    'sklearn.utils', 'sklearn.utils._bunch',
+    'sklearn.model_selection', 'sklearn.preprocessing',
+    'sklearn.preprocessing._data', 'sklearn.metrics',
+    'scipy', 'scipy.sparse', 'scipy.sparse._csr', 'scipy.sparse._csc',
+    'scipy.sparse.csr', 'scipy.sparse.csc',
+    'builtins', 'collections', 'copyreg', '_codecs',
+}
+
+_BLOCKED_NAMES = {'exec', 'eval', 'compile', '__import__', 'system', 'popen',
+                  'subprocess', 'os', 'sys', 'globals', 'locals'}
+
+
+class _RestrictedModelUnpickler(pickle.Unpickler):
+    """Unpickler that only allows safe sklearn/numpy types for model deserialization."""
+
+    def find_class(self, module, name):
+        if name in _BLOCKED_NAMES:
+            raise pickle.UnpicklingError(
+                f"Restricted unpickler refused to load blocked name '{module}.{name}'"
+            )
+        # Check if the module is in our allowed list
+        base_module = module.split('.')[0]
+        if base_module in ('numpy', 'sklearn', 'scipy', 'builtins', 'collections',
+                           'copyreg', '_codecs'):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Restricted unpickler refused to load '{module}.{name}'"
+        )
+
+
+def _safe_model_load(file_obj):
+    """Safely load a pickled ML model, only allowing sklearn/numpy types."""
+    return _RestrictedModelUnpickler(file_obj).load()
 
 
 class ModelManagementMixin:
@@ -325,7 +368,7 @@ class ModelManagementMixin:
             for version, model_path in models.items():
                 try:
                     with open(model_path, 'rb') as f:
-                        model_data = pickle.load(f)
+                        model_data = _safe_model_load(f)
 
                     model = model_data['model']
                     vectorizer = model_data['vectorizer']
@@ -484,7 +527,7 @@ class ModelManagementMixin:
             if validate:
                 try:
                     with open(import_path, 'rb') as f:
-                        model_data = pickle.load(f)
+                        model_data = _safe_model_load(f)
 
                     if 'model' not in model_data or 'vectorizer' not in model_data:
                         validation_result = {'is_valid': False, 'compatibility': 'invalid_structure'}

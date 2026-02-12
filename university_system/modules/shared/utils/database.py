@@ -134,8 +134,10 @@ def execute_db_operation(operation, *args, **kwargs):
     Total users: 42
 
     >>> def insert_record(conn, table, data):
+    ...     from university_system.core.sql_safety import validate_table_name
+    ...     safe_table = validate_table_name(table)
     ...     cursor = conn.cursor()
-    ...     cursor.execute(f"INSERT INTO {table} VALUES (?)", (data,))
+    ...     cursor.execute("INSERT INTO [" + safe_table + "] VALUES (?)", (data,))
     ...     conn.commit()
     ...     return cursor.lastrowid
     ...
@@ -160,7 +162,6 @@ def execute_db_operation(operation, *args, **kwargs):
     except Exception as e:
         print(f"Database operation error: {e}")
         return None
-
 
 def safe_db_operation(func):
     """
@@ -245,8 +246,7 @@ def schedule_database_maintenance(interval_hours: int = 24, run_immediately: boo
         consider using a proper task scheduler (cron, systemd timer, etc.)
     """
     import threading
-    import sqlite3
-
+    from university_system.infrastructure.database.db import sqlite3
     def run_maintenance():
         """Execute database maintenance operations"""
         try:

@@ -591,7 +591,7 @@ def view_urgent_messages(self):
                         current_values[4] = "Yes"
                         msg_tree.item(item_id, values=current_values)
                         messages_data[item_id]['is_read'] = True
-                    except:
+                    except Exception:
                         pass
 
     def show_email_details(event):

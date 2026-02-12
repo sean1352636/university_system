@@ -514,7 +514,8 @@ def validate_backup_detailed(backup_path):
         try:
             if results["encryption_detected"]:
                 if config.get("encryption_password"):
-                    temp_decrypt = tempfile.mktemp(suffix='.db')
+                    fd, temp_decrypt = tempfile.mkstemp(suffix='.db')
+                    os.close(fd)
                     test_file = decrypt_file(backup_path, config["encryption_password"], temp_decrypt)
                     if test_file:
                         temp_files.append(temp_decrypt)
@@ -526,7 +527,8 @@ def validate_backup_detailed(backup_path):
                     return results
 
             if results["compression_detected"]:
-                temp_decompress = tempfile.mktemp(suffix='.db')
+                fd, temp_decompress = tempfile.mkstemp(suffix='.db')
+                os.close(fd)
                 test_file = decompress_file(test_file, temp_decompress)
                 if test_file:
                     temp_files.append(temp_decompress)
@@ -550,7 +552,8 @@ def validate_backup_detailed(backup_path):
                     for table_row in tables:
                         table_name = table_row[0]
                         try:
-                            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                            safe_table = validate_table_name(table_name, conn=conn)
+                            cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                             count = cursor.fetchone()[0]
                             total_records += count
                             accessible_tables += 1
@@ -871,7 +874,7 @@ def _prepare_backup_for_read(source_path, password=None):
 def _get_table_snapshot(connection, table_name):
     """Return a hash signature and row snapshot for a given table."""
     validated_table = validate_table_name(table_name, conn=connection)
-    cursor = connection.execute(f"SELECT * FROM [{validated_table}]")
+    cursor = connection.execute("SELECT * FROM [" + validated_table + "]")
     columns = [description[0] for description in cursor.description]
     rows = cursor.fetchall()
 
@@ -1142,18 +1145,19 @@ def create_selective_backup(tables, backup_path):
 
         for table in tables:
             cursor = conn.cursor()
-            cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table}';")
+            cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,))
             create_sql = cursor.fetchone()
 
             if create_sql:
                 backup_conn.execute(create_sql[0])
 
-                cursor.execute(f"SELECT * FROM {table}")
+                safe_table = validate_table_name(table, conn=conn)
+                cursor.execute("SELECT * FROM [" + safe_table + "]")
                 rows = cursor.fetchall()
 
                 if rows:
                     placeholders = ','.join(['?' for _ in range(len(rows[0]))])
-                    backup_conn.executemany(f"INSERT INTO {table} VALUES ({placeholders})", rows)
+                    backup_conn.executemany("INSERT INTO [" + safe_table + "] VALUES (" + placeholders + ")", rows)
 
         backup_conn.commit()
         backup_conn.close()
@@ -1207,8 +1211,9 @@ def compare_backups(backup1_path, backup2_path):
 
         for table in common_tables:
             try:
-                count1 = conn1.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-                count2 = conn2.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                safe_table = validate_table_name(table)
+                count1 = conn1.execute("SELECT COUNT(*) FROM [" + safe_table + "]").fetchone()[0]
+                count2 = conn2.execute("SELECT COUNT(*) FROM [" + safe_table + "]").fetchone()[0]
 
                 if count1 != count2:
                     differences["tables_modified"].append(table)

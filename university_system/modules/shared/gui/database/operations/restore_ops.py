@@ -44,7 +44,8 @@ def restore_from_backup(backup_path, target_tables=None, point_in_time=None):
                 logger.error("Encryption password required for encrypted backup")
                 return False
 
-            temp_decrypt = tempfile.mktemp(suffix='.db')
+            fd, temp_decrypt = tempfile.mkstemp(suffix='.db')
+            os.close(fd)
             restore_file = decrypt_file(backup_path, config["encryption_password"], temp_decrypt)
             temp_files.append(temp_decrypt)
 
@@ -54,7 +55,8 @@ def restore_from_backup(backup_path, target_tables=None, point_in_time=None):
 
         # Decompress if needed
         if restore_file.endswith(('.gz', '.zip')):
-            temp_decompress = tempfile.mktemp(suffix='.db')
+            fd, temp_decompress = tempfile.mkstemp(suffix='.db')
+            os.close(fd)
             restore_file = decompress_file(restore_file, temp_decompress)
             temp_files.append(temp_decompress)
 
@@ -124,12 +126,12 @@ def restore_partial_tables(backup_path, tables):
                 main_conn.execute(create_sql[0])
 
                 # Copy data
-                cursor.execute(f"SELECT * FROM [{validated_table}]")
+                cursor.execute("SELECT * FROM [" + validated_table + "]")
                 rows = cursor.fetchall()
 
                 if rows:
                     placeholders = ','.join(['?' for _ in range(len(rows[0]))])
-                    main_conn.executemany(f"INSERT INTO [{validated_table}] VALUES ({placeholders})", rows)
+                    main_conn.executemany("INSERT INTO [" + validated_table + "] VALUES (" + placeholders + ")", rows)
 
         main_conn.commit()
         main_conn.close()

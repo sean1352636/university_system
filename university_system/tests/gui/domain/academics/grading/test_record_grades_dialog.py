@@ -7,15 +7,13 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.record_grades_dialog import (
     RecordGradesDialog
 )
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog import (
     GradeEditDialog
 )
-
 
 @pytest.fixture
 def root():
@@ -27,7 +25,6 @@ def root():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_connection():
     """Mock database connection"""
@@ -37,7 +34,6 @@ def mock_connection():
     mock_conn.commit = Mock()
     mock_conn.close = Mock()
     return mock_conn, mock_cursor
-
 
 class TestRecordGradesDialog:
     """Test RecordGradesDialog class"""
@@ -419,7 +415,6 @@ class TestRecordGradesDialog:
         assert "Error saving grades" in str(mock_msgbox.showerror.call_args)
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

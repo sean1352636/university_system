@@ -571,10 +571,10 @@ def search_tickets(self, criteria):
 
         where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
 
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT t.ticket_id, t.subject, t.status, t.priority, t.created_at
         FROM support_tickets t
-        WHERE {where_clause}
+        WHERE ''' + where_clause + '''
         ORDER BY t.created_at DESC
         LIMIT 100
         ''', params)

@@ -12,6 +12,7 @@ import logging
 from datetime import datetime
 
 from university_system.infrastructure.database.db import sqlite3
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,8 @@ class RoleManager:
                 update_values = []
                 for key, value in kwargs.items():
                     if key not in ['id', 'created_at']:
-                        update_fields.append(f"{key} = ?")
+                        safe_key = validate_identifier(key, "column")
+                        update_fields.append(safe_key + " = ?")
                         update_values.append(value)
 
                 update_fields.append("updated_at = ?")
@@ -126,7 +128,7 @@ class RoleManager:
                 update_values.append(role_id)
 
                 cursor.execute(
-                    f'UPDATE roles SET {", ".join(update_fields)} WHERE id = ?',
+                    'UPDATE roles SET ' + ", ".join(update_fields) + ' WHERE id = ?',
                     update_values
                 )
                 conn.commit()

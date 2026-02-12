@@ -9,12 +9,10 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.assessment_dialog import (
     AssessmentDialog
 )
-
 
 @pytest.fixture
 def root_window():
@@ -26,7 +24,6 @@ def root_window():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_cursor():
     """Create a mock database cursor"""
@@ -37,7 +34,6 @@ def mock_cursor():
         ('MATH201',)
     ]
     return cursor
-
 
 class TestAssessmentDialog:
     """Test suite for AssessmentDialog"""
@@ -306,7 +302,6 @@ class TestAssessmentDialog:
 
         mock_error.assert_called_once()
 
-
 class TestAssessmentDialogIntegration:
     """Integration tests for AssessmentDialog"""
 
@@ -352,7 +347,6 @@ class TestAssessmentDialogIntegration:
         assert dialog.result[4] == 15.0
         # Other fields should remain from original
         assert dialog.result[1] == 'Quiz'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

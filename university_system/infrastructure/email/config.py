@@ -25,7 +25,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from university_system.modules.shared.constants import paths as sys_paths
+from university_system.core import paths as sys_paths
 
 _logger = logging.getLogger(__name__)
 

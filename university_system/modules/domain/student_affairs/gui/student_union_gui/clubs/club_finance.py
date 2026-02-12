@@ -153,7 +153,7 @@ class ClubFinancialReportsDialog:
             report += "=" * 80 + "\n\n"
 
             # Get budget information
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT SUM(amount), category
             FROM club_budgets
             WHERE club_id = ?
@@ -173,10 +173,10 @@ class ClubFinancialReportsDialog:
                 report += "  No budget set for this club.\n\n"
 
             # Get expenses
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT SUM(amount), category
             FROM club_expenses
-            WHERE club_id = ? {date_filter}
+            WHERE club_id = ? ''' + date_filter + '''
             GROUP BY category
             ''', (club_id,))
 
@@ -193,10 +193,10 @@ class ClubFinancialReportsDialog:
                 report += "  No expenses recorded for this period.\n\n"
 
             # Get income
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT SUM(amount), source
             FROM club_income
-            WHERE club_id = ? {date_filter}
+            WHERE club_id = ? ''' + date_filter + '''
             GROUP BY source
             ''', (club_id,))
 
@@ -233,10 +233,10 @@ class ClubFinancialReportsDialog:
             report += "\n\nRECENT TRANSACTIONS:\n"
             report += "-" * 80 + "\n"
 
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT expense_date, category, description, amount
             FROM club_expenses
-            WHERE club_id = ? {date_filter}
+            WHERE club_id = ? ''' + date_filter + '''
             ORDER BY expense_date DESC
             LIMIT 10
             ''', (club_id,))

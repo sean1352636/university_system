@@ -4,7 +4,7 @@ Tests the unified assessment and assignment data service
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 from datetime import datetime, timedelta
 from university_system.modules.domain.academics.services.assessment_service import (
@@ -12,7 +12,6 @@ from university_system.modules.domain.academics.services.assessment_service impo
 )
 from university_system.modules.shared.constants import paths
 from university_system.infrastructure.database.db import get_connection, transaction
-
 
 @pytest.fixture
 def setup_test_db():
@@ -120,7 +119,6 @@ def setup_test_db():
         cursor.execute("DELETE FROM assignments WHERE module_code LIKE 'TEST%'")
         # Then delete parent records
         cursor.execute("DELETE FROM modules WHERE module_code LIKE 'TEST%'")
-
 
 class TestAssessmentAssignmentService:
     """Test suite for AssessmentAssignmentService"""
@@ -365,7 +363,6 @@ class TestAssessmentAssignmentService:
         with transaction() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM assignments WHERE title = 'Inactive Assignment'")
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -1,5 +1,7 @@
+import io
 import json
 import os
+import pickle
 import threading
 import time
 import random
@@ -11,6 +13,33 @@ from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, sqlite3
 from university_system.infrastructure.auth import UserAuth
 from university_system.infrastructure.shared_context import get_auth
+
+
+# Allowed modules/classes for safe ML model deserialization
+_BLOCKED_NAMES = {'exec', 'eval', 'compile', '__import__', 'system', 'popen',
+                  'subprocess', 'os', 'sys', 'globals', 'locals'}
+
+
+class _RestrictedModelUnpickler(pickle.Unpickler):
+    """Unpickler that only allows safe sklearn/numpy types for model deserialization."""
+
+    def find_class(self, module, name):
+        if name in _BLOCKED_NAMES:
+            raise pickle.UnpicklingError(
+                f"Restricted unpickler refused to load blocked name '{module}.{name}'"
+            )
+        base_module = module.split('.')[0]
+        if base_module in ('numpy', 'sklearn', 'scipy', 'builtins', 'collections',
+                           'copyreg', '_codecs'):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Restricted unpickler refused to load '{module}.{name}'"
+        )
+
+
+def _safe_model_load(file_obj):
+    """Safely load a pickled ML model, only allowing sklearn/numpy types."""
+    return _RestrictedModelUnpickler(file_obj).load()
 
 try:
     from university_system.utils.ai.ai_detector.detector import AIDetector
@@ -315,9 +344,8 @@ def import_model_weights(self):
         if hasattr(self.detector, 'import_weights'):
             self.detector.import_weights(file_path)
         else:
-            import pickle
             with open(file_path, 'rb') as f:
-                weights = pickle.load(f)
+                weights = _safe_model_load(f)
             if 'version' in weights:
                 self.current_version_var.set(weights['version'])
 

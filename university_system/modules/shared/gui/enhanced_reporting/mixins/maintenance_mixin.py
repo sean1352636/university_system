@@ -15,6 +15,7 @@ from ..standalone.constants import (
     load_templates, load_scheduled_reports,
     get_log_file,
 )
+from university_system.core.sql_safety import validate_table_name
 
 
 class MaintenanceMixin:
@@ -184,7 +185,8 @@ class MaintenanceMixin:
                         tables = ['student_modules', 'student_grades', 'student_attendance']
                         for table in tables:
                             try:
-                                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                                safe_table = validate_table_name(table)
+                                cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                                 count = cursor.fetchone()[0]
                                 table_name = table.replace('_', ' ').title()
                                 output += f"{table_name}: {count}\n"

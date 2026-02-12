@@ -4,12 +4,11 @@ Tests enhanced voting system including ranked choice voting and campaigns.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import voting
-
 
 @pytest.fixture
 def mock_cursor():
@@ -22,7 +21,6 @@ def mock_cursor():
     cursor.rowcount = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -32,7 +30,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def sample_elections():
     """Sample election data."""
@@ -40,7 +37,6 @@ def sample_elections():
         (1, 'President', 'Student Union'),
         (2, 'Secretary', 'Engineering Society'),
     ]
-
 
 @pytest.fixture
 def sample_candidates():
@@ -50,7 +46,6 @@ def sample_candidates():
         (2, 'Bob', 'Green', 'More events and activities'),
         (3, 'Charlie', 'White', 'Better academic support'),
     ]
-
 
 class TestRankedChoiceVoting:
     """Tests for ranked_choice_voting function."""
@@ -108,7 +103,6 @@ class TestRankedChoiceVoting:
         assert any('No preferences' in str(call) for call in mock_print.call_args_list)
         mock_conn.commit.assert_not_called()
 
-
 class TestConfigureVotingMethods:
     """Tests for configure_voting_methods function."""
 
@@ -150,7 +144,6 @@ class TestConfigureVotingMethods:
 
         # Should display configuration
         assert any('Configuration' in str(call) for call in mock_print.call_args_list)
-
 
 class TestHelperFunctions:
     """Tests for helper functions in voting module."""
@@ -199,7 +192,6 @@ class TestHelperFunctions:
         assert any('Access Control' in str(call) or 'admin' in str(call).lower()
                   for call in mock_print.call_args_list)
 
-
 class TestLogConfigurationChange:
     """Tests for log_configuration_change function."""
 
@@ -221,7 +213,6 @@ class TestLogConfigurationChange:
                   for call in mock_cursor.execute.call_args_list)
         mock_conn.commit.assert_called()
 
-
 class TestEmailNotifications:
     """Tests for email notification functions."""
 
@@ -240,7 +231,6 @@ class TestEmailNotifications:
         mock_email.assert_called_once()
         # Should confirm success
         assert any('sent successfully' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestIntegrationVoting:
     """Integration tests using real database."""
@@ -344,7 +334,6 @@ class TestIntegrationVoting:
         assert row is not None
         assert row[1] == 'test_key'
         assert row[2] == 'test_value'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

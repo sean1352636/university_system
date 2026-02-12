@@ -4,7 +4,7 @@ Tests calendar GUI components, error handling, and core functionality
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 import tkinter as tk
@@ -30,7 +30,6 @@ try:
 except ImportError as e:
     GUI_AVAILABLE = False
     import_error = e
-
 
 class TestCalendarErrors:
     """Tests for custom error classes"""
@@ -98,7 +97,6 @@ class TestCalendarErrors:
         assert str(error) == "Sync failed"
         assert isinstance(error, CalendarError)
 
-
 class TestCalendarGUIInitialization:
     """Tests for CalendarGUI initialization"""
 
@@ -121,7 +119,6 @@ class TestCalendarGUIInitialization:
         gui = object.__new__(CalendarGUI)
         assert gui is not None
 
-
 class TestCalendarGUIComponents:
     """Tests for CalendarGUI components and methods"""
 
@@ -133,7 +130,6 @@ class TestCalendarGUIComponents:
         # Check that class exists and can be inspected
         assert hasattr(CalendarGUI, '__init__')
         assert callable(getattr(CalendarGUI, '__init__'))
-
 
 class TestDatabaseIntegration:
     """Tests for database integration in calendar GUI"""
@@ -199,7 +195,6 @@ class TestDatabaseIntegration:
 
         conn.close()
 
-
 class TestErrorHandling:
     """Tests for error handling in calendar GUI"""
 
@@ -219,7 +214,6 @@ class TestErrorHandling:
 
         with pytest.raises(DatabaseError):
             raise DatabaseError("Failed to connect to database")
-
 
 class TestGUIImportAvailability:
     """Tests for GUI module import availability"""
@@ -250,7 +244,6 @@ class TestGUIImportAvailability:
             assert error_class is not None
             assert issubclass(error_class, Exception)
 
-
 class TestCalendarGUIIntegration:
     """Integration tests for CalendarGUI"""
 
@@ -266,7 +259,6 @@ class TestCalendarGUIIntegration:
 
         # Try to verify class can be used with mock
         assert CalendarGUI is not None
-
 
 class TestEventManagement:
     """Tests for event management functionality"""
@@ -348,7 +340,6 @@ class TestEventManagement:
         assert count == 1  # Only Exam should remain
         conn.close()
 
-
 class TestDateValidation:
     """Tests for date validation functionality"""
 
@@ -370,7 +361,6 @@ class TestDateValidation:
         for date_str in invalid_dates:
             with pytest.raises(ValueError):
                 datetime.strptime(date_str, '%Y-%m-%d')
-
 
 class TestModuleStructure:
     """Tests for module structure and organization"""
@@ -397,7 +387,6 @@ class TestModuleStructure:
 
         for error_class in error_classes:
             assert hasattr(academic_calendar_gui, error_class)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

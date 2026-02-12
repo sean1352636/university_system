@@ -7,7 +7,7 @@ incident reports with filtering and statistics.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import csv
 from datetime import datetime, timedelta
 
@@ -18,7 +18,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_incidents_page(self):
     """Display incident reporting and management page."""
@@ -114,12 +113,10 @@ def show_incidents_page(self):
     stats_text = f"Open: {open_count} | Urgent (Critical/High): {urgent_count} | Today: {today_count}"
     tk.Label(stats_frame, text=stats_text, bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
-
 def set_incident_filter(self, filter_value):
     """Set the incident filter."""
     self.incident_filter = filter_value
     self.show_incidents_page()
-
 
 def report_incident(self):
     """Report a new incident."""
@@ -201,7 +198,7 @@ def report_incident(self):
         if fields['screen'].get().strip():
             try:
                 screen = int(fields['screen'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
@@ -223,7 +220,6 @@ def report_incident(self):
         self.show_incidents_page()
 
     ttk.Button(frame, text=_t("cinema.incidents.report"), style="Danger.TButton", command=save).grid(row=11, column=0, columnspan=2, pady=20)
-
 
 def view_incident_details(self):
     """View details of selected incident."""
@@ -311,7 +307,6 @@ Follow-up Completed: {'Yes' if incident[18] else 'No'}
     text_widget.insert("1.0", details_text)
     text_widget.configure(state="disabled")
 
-
 def update_incident(self):
     """Update or resolve an incident."""
     selected = self.incident_tree.selection() if hasattr(self, 'incident_tree') else None
@@ -387,7 +382,6 @@ def update_incident(self):
 
     ttk.Button(frame, text=_t("cinema.buttons.save_changes"), style="Success.TButton", command=save).pack(pady=20)
 
-
 def show_incident_stats(self):
     """Show incident statistics."""
     form = tk.Toplevel(self.root)
@@ -454,7 +448,6 @@ def show_incident_stats(self):
     tk.Label(res_frame, text=f"  Avg Resolution Time: {avg_resolution:.1f} hours", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
     conn.close()
-
 
 def export_incident_report(self):
     """Export incidents to CSV."""

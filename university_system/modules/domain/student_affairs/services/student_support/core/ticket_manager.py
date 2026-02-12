@@ -2,7 +2,6 @@
 Ticket CRUD operations for Student Support.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def create_support_ticket(student_id, title, description, category, priority='Medium', 
                         template_id=None, attachments=None, tags=None):
@@ -107,7 +103,6 @@ def create_support_ticket(student_id, title, description, category, priority='Me
         logger.error(f"Error creating support ticket: {e}")
         raise
 
-
 def _validate_ticket_inputs(title, description, category, priority):
     """Validate ticket creation inputs"""
     if not title or not description or not category:
@@ -122,7 +117,6 @@ def _validate_ticket_inputs(title, description, category, priority):
     if priority not in TICKET_PRIORITIES:
         raise ValueError(f"Invalid priority. Choose from: {', '.join(TICKET_PRIORITIES)}")
 
-
 def _check_ticket_creation_permission(student_id):
     """Check if user has permission to create ticket for student_id"""
     if _auth_mod.auth.current_user['role'] == 'student':
@@ -134,7 +128,6 @@ def _check_ticket_creation_permission(student_id):
         
         if not result or result[0] != student_id:
             raise PermissionError("You can only create support tickets for your own account")
-
 
 def get_student_tickets(student_id=None, filters=None, page=1, per_page=20):
     """Get support tickets with enhanced filtering and pagination."""
@@ -183,7 +176,6 @@ def get_student_tickets(student_id=None, filters=None, page=1, per_page=20):
     except Exception as e:
         logger.error(f"Error retrieving tickets: {e}")
         raise
-
 
 def _build_ticket_query(student_id, filters, current_user):
     """Build SQL query for ticket retrieval with filters"""
@@ -245,7 +237,6 @@ def _build_ticket_query(student_id, filters, current_user):
     base_query += " ORDER BY created_datetime DESC"
     return base_query, params
 
-
 def get_ticket_details(ticket_id):
     """Get detailed information about a specific ticket"""
     if not _auth_mod.auth or not _auth_mod.auth.current_user:
@@ -298,7 +289,6 @@ def get_ticket_details(ticket_id):
         logger.error(f"Error getting ticket details: {e}")
         raise
 
-
 def get_ticket_attachments(ticket_id):
     """Get all attachments for a ticket"""
     try:
@@ -315,7 +305,6 @@ def get_ticket_attachments(ticket_id):
     except Exception as e:
         logger.error(f"Error getting ticket attachments: {e}")
         return []
-
 
 def download_attachment(attachment_id):
     """Download a ticket attachment"""
@@ -355,7 +344,6 @@ def download_attachment(attachment_id):
     except Exception as e:
         logger.error(f"Unexpected error during attachment download: {e}")
         raise
-
 
 def get_ticket_history(ticket_id):
     """Get complete history of a ticket including all changes"""
@@ -449,7 +437,6 @@ def get_ticket_history(ticket_id):
     except Exception as e:
         logger.error(f"Error getting ticket history: {e}")
         raise
-
 
 def view_my_tickets_enhanced(support):
     """View student's own tickets with enhanced filtering"""
@@ -545,7 +532,6 @@ def view_my_tickets_enhanced(support):
         print(f"❌ Error viewing tickets: {e}")
     
     input("\nPress Enter to continue...")
-
 
 def use_ticket_template(support):
     """Create ticket using a template"""
@@ -746,7 +732,6 @@ def view_all_tickets_enhanced(support):
         print(f"❌ Error viewing tickets: {e}")
     
     input("\nPress Enter to continue...")
-
 
 def display_ticket_details_enhanced(support, ticket_id):
     """Display enhanced ticket details"""

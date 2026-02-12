@@ -5,7 +5,7 @@ Tests LMS core functionality including course, content, discussion, quiz, and gr
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from datetime import datetime
@@ -17,7 +17,6 @@ from university_system.modules.domain.academics.services.lms.lms_core import (
     LMSQuizManager,
     LMSGradebookManager
 )
-
 
 class TestLMSCourseManager:
     """Test suite for LMSCourseManager"""
@@ -183,7 +182,6 @@ class TestLMSCourseManager:
         assert all(c['instructor_id'] == 'INST001' for c in courses)
 
         mock_conn.close()
-
 
 class TestLMSContentManager:
     """Test suite for LMSContentManager"""
@@ -396,7 +394,6 @@ class TestLMSContentManager:
 
         mock_conn.close()
 
-
 class TestLMSDiscussionManager:
     """Test suite for LMSDiscussionManager"""
 
@@ -563,7 +560,6 @@ class TestLMSDiscussionManager:
         assert likes == 1
 
         mock_conn.close()
-
 
 class TestLMSQuizManager:
     """Test suite for LMSQuizManager"""
@@ -768,7 +764,6 @@ class TestLMSQuizManager:
         assert percentage == 50.0  # Got 1 out of 2 correct
 
         mock_conn.close()
-
 
 class TestLMSGradebookManager:
     """Test suite for LMSGradebookManager"""

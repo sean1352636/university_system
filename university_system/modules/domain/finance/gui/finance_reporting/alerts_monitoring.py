@@ -596,7 +596,7 @@ def run_system_performance_monitoring(self):
         if hasattr(self, '_monitoring_after_id'):
             try:
                 monitoring_window.after_cancel(self._monitoring_after_id)
-            except:
+            except Exception:
                 pass
         monitoring_window.destroy()
 
@@ -658,7 +658,7 @@ def start_performance_monitoring(self):
                     # Only retry if monitoring is still active
                     if hasattr(self, 'monitoring_window') and self.monitoring_window.winfo_exists() and self.monitoring_active.get():
                         self._monitoring_after_id = self.monitoring_window.after(10000, update_metrics)  # Retry in 10 seconds
-                except:
+                except Exception:
                     pass  # Window destroyed
 
     update_metrics()

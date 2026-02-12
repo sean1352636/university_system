@@ -1253,10 +1253,10 @@ def update_trip():
             values.append(trip_id)
             
             # Execute update
-            cursor.execute(f'''
-            UPDATE trips SET {', '.join(updates)}
-            WHERE id = ?
-            ''', values)
+            cursor.execute(
+                "UPDATE trips SET " + ", ".join(updates) +
+                " WHERE id = ?",
+                values)
 
             print(get_text("mobility.trip_management.update.success", "Trip updated successfully!"))
             return True
@@ -3119,10 +3119,10 @@ class TripReportGenerator:
             values.append(expense_id)
 
             cursor = conn.cursor()
-            cursor.execute(f'''
-            UPDATE trip_expenses SET {', '.join(updates)}
-            WHERE id = ?
-            ''', values)
+            cursor.execute(
+                "UPDATE trip_expenses SET " + ", ".join(updates) +
+                " WHERE id = ?",
+                values)
 
             print(get_text("mobility.trip_management.expenses.updated", "Expense updated successfully."))
 

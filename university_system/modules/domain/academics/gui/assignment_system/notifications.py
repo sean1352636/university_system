@@ -18,6 +18,7 @@ from university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PAT
 from university_system.infrastructure.auth import UserAuth
 from university_system.modules.shared.constants import paths
 from university_system.infrastructure.email.template_utils import render_template
+from university_system.core.sql_safety import validate_identifier
 from collections import deque
 
 # Try to import desktop notification library
@@ -170,12 +171,13 @@ class NotificationManager:
             columns = {col[1] for col in cursor.fetchall()}
             id_col = 'notification_id' if 'notification_id' in columns else 'id'
             date_col = 'created_datetime' if 'created_datetime' in columns else 'created_at'
+            safe_date_col = validate_identifier(date_col, "column")
 
-            cursor.execute(f'''
-            SELECT title, message, {date_col}, is_read
+            cursor.execute('''
+            SELECT title, message, [''' + safe_date_col + '''], is_read
             FROM notifications
             WHERE user_id = ?
-            ORDER BY {date_col} DESC
+            ORDER BY [''' + safe_date_col + '''] DESC
             LIMIT 50
             ''', (user_id,))
             
@@ -383,9 +385,10 @@ class NotificationManager:
             cursor.execute("PRAGMA table_info(notifications)")
             columns = {col[1] for col in cursor.fetchall()}
             id_col = 'notification_id' if 'notification_id' in columns else 'id'
+            safe_id_col = validate_identifier(id_col, "column")
 
-            cursor.execute(f'''
-                SELECT * FROM notifications WHERE {id_col} = ?
+            cursor.execute('''
+                SELECT * FROM notifications WHERE [''' + safe_id_col + '''] = ?
             ''', (notif_id,))
 
             notification = cursor.fetchone()
@@ -401,8 +404,8 @@ class NotificationManager:
             is_read_idx = next((i for i, col in enumerate(col_info) if col[1] == 'is_read'), None)
 
             if is_read_idx is not None and not notification[is_read_idx]:
-                cursor.execute(f'''
-                    UPDATE notifications SET is_read = 1 WHERE {id_col} = ?
+                cursor.execute('''
+                    UPDATE notifications SET is_read = 1 WHERE [''' + safe_id_col + '''] = ?
                 ''', (notif_id,))
                 conn.commit()
 
@@ -483,9 +486,10 @@ class NotificationManager:
             cursor.execute("PRAGMA table_info(notifications)")
             columns = {col[1] for col in cursor.fetchall()}
             id_col = 'notification_id' if 'notification_id' in columns else 'id'
+            safe_id_col = validate_identifier(id_col, "column")
 
-            cursor.execute(f'''
-                UPDATE notifications SET is_read = ? WHERE {id_col} = ? AND user_id = ?
+            cursor.execute('''
+                UPDATE notifications SET is_read = ? WHERE [''' + safe_id_col + '''] = ? AND user_id = ?
             ''', (1 if is_read else 0, notif_id, user_id))
 
             conn.commit()
@@ -522,9 +526,10 @@ class NotificationManager:
             cursor.execute("PRAGMA table_info(notifications)")
             columns = {col[1] for col in cursor.fetchall()}
             id_col = 'notification_id' if 'notification_id' in columns else 'id'
+            safe_id_col = validate_identifier(id_col, "column")
 
-            cursor.execute(f'''
-                DELETE FROM notifications WHERE {id_col} = ? AND user_id = ?
+            cursor.execute('''
+                DELETE FROM notifications WHERE [''' + safe_id_col + '''] = ? AND user_id = ?
             ''', (notif_id, user_id))
 
             conn.commit()

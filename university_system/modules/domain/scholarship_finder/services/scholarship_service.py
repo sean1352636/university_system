@@ -17,14 +17,14 @@ Features:
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.exceptions import DatabaseError, ValidationError
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.infrastructure.shared_context import get_auth
-
+from university_system.core.sql_safety import validate_identifier
 
 class ScholarshipDatabase:
     """Manages scholarship database and discovery"""
@@ -403,7 +403,6 @@ class ScholarshipDatabase:
                 return scholarship_dict
             return None
 
-
 class StudentProfileManager:
     """Manages student scholarship profiles for matching"""
 
@@ -440,11 +439,11 @@ class StudentProfileManager:
 
                     update_fields = {k: v for k, v in profile_data.items() if k in allowed_fields}
                     if update_fields:
-                        set_clause = ", ".join([f"{k} = ?" for k in update_fields.keys()])
+                        set_clause = ", ".join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
                         set_clause += ", profile_completeness = ?, updated_at = CURRENT_TIMESTAMP"
                         values = list(update_fields.values()) + [completeness, student_id]
 
-                        conn.execute(f"UPDATE student_scholarship_profiles SET {set_clause} WHERE student_id = ?", values)
+                        conn.execute("UPDATE student_scholarship_profiles SET " + set_clause + " WHERE student_id = ?", values)
                         profile_id = existing['profile_id']
                 else:
                     # Insert
@@ -490,7 +489,6 @@ class StudentProfileManager:
             ''', (student_id,))
             profile = cursor.fetchone()
             return dict(profile) if profile else None
-
 
 class RecommendationEngine:
     """Generates personalized scholarship recommendations"""
@@ -676,7 +674,6 @@ class RecommendationEngine:
             ''', (student_id,))
             return [dict(row) for row in cursor.fetchall()]
 
-
 class ApplicationManager:
     """Manages scholarship applications"""
 
@@ -771,11 +768,11 @@ class ApplicationManager:
                 progress = sum(components)
                 update_fields['application_progress'] = progress
 
-                set_clause = ", ".join([f"{k} = ?" for k in update_fields.keys()])
+                set_clause = ", ".join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
                 set_clause += ", updated_at = CURRENT_TIMESTAMP"
                 values = list(update_fields.values()) + [application_id]
 
-                conn.execute(f"UPDATE student_scholarship_applications SET {set_clause} WHERE application_id = ?", values)
+                conn.execute("UPDATE student_scholarship_applications SET " + set_clause + " WHERE application_id = ?", values)
                 log_activity('update', 'scholarship_application', application_id=application_id,
                            details={'progress': progress})
                 return True
@@ -847,7 +844,6 @@ class ApplicationManager:
             ''', (student_id, end_date))
             return [dict(row) for row in cursor.fetchall()]
 
-
 class DocumentVaultManager:
     """Manages scholarship document vault"""
 
@@ -907,7 +903,6 @@ class DocumentVaultManager:
 
         except sqlite3.Error as e:
             raise DatabaseError(f"Error tracking document usage: {e}") from e
-
 
 # Initialize tables on module import
 try:

@@ -12,14 +12,13 @@ Tests all functionality in university_system/modules/shared/utils/finance_integr
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 import shutil
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from decimal import Decimal
-
 
 @pytest.fixture
 def temp_db():
@@ -90,7 +89,6 @@ def temp_db():
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
 
-
 class TestFinanceIntegrationImports:
     """Test finance_integration module imports"""
 
@@ -111,7 +109,6 @@ class TestFinanceIntegrationImports:
         assert hasattr(finance_integration, 'record_revenue_to_finance')
         assert hasattr(finance_integration, 'get_student_financial_summary')
         assert hasattr(finance_integration, 'get_finance_report_by_source')
-
 
 class TestRecordPaymentToFinance:
     """Test record_payment_to_finance function"""
@@ -265,7 +262,6 @@ class TestRecordPaymentToFinance:
 
             assert amount == 123.46
 
-
 class TestRecordRefundToFinance:
     """Test record_refund_to_finance function"""
 
@@ -379,7 +375,6 @@ class TestRecordRefundToFinance:
 
             assert refund_id is None
 
-
 class TestRecordRevenueToFinance:
     """Test record_revenue_to_finance function"""
 
@@ -435,7 +430,6 @@ class TestRecordRevenueToFinance:
 
             assert 'Revenue - Sale' in notes
             assert 'Book sale' in notes
-
 
 class TestGetStudentFinancialSummary:
     """Test get_student_financial_summary function"""
@@ -552,7 +546,6 @@ class TestGetStudentFinancialSummary:
 
             assert summary == {}
 
-
 class TestGetFinanceReportBySource:
     """Test get_finance_report_by_source function"""
 
@@ -645,7 +638,6 @@ class TestGetFinanceReportBySource:
 
             assert report == {}
 
-
 class TestModuleConstants:
     """Test module-level constants and imports"""
 
@@ -660,7 +652,6 @@ class TestModuleConstants:
         from university_system.modules.shared.utils import finance_integration
 
         assert hasattr(finance_integration, 'paths')
-
 
 class TestIntegration:
     """Integration tests for finance integration"""
@@ -762,7 +753,6 @@ class TestIntegration:
             assert report['transaction_count'] == 1
             assert report['total_revenue'] == 5000.00
 
-
 class TestModuleDocumentation:
     """Test module documentation"""
 
@@ -788,7 +778,6 @@ class TestModuleDocumentation:
         for func_name in functions:
             func = getattr(finance_integration, func_name)
             assert func.__doc__ is not None, f"{func_name} should have docstring"
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

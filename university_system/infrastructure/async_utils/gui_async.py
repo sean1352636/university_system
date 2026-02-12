@@ -13,7 +13,7 @@ from typing import Callable, Any, Optional, TypeVar
 from functools import wraps
 from dataclasses import dataclass
 
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 

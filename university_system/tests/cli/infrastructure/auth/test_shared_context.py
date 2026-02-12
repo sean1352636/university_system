@@ -15,7 +15,7 @@ import pytest
 import threading
 from unittest.mock import Mock, MagicMock, patch
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 
 from university_system.infrastructure.shared_context import (
@@ -28,7 +28,6 @@ from university_system.infrastructure.shared_context import (
     require_permission,
     AuthenticationNotInitializedError
 )
-
 
 @pytest.fixture(autouse=True)
 def reset_auth():
@@ -47,7 +46,6 @@ def reset_auth():
     # Restore original state (important for test isolation)
     context_module._auth_instance = original_instance
     context_module._auth_initialized = original_initialized
-
 
 @pytest.fixture
 def temp_db():
@@ -121,7 +119,6 @@ def temp_db():
     except Exception:
         pass
 
-
 # ============================================================================
 # Auth Instance Management Tests
 # ============================================================================
@@ -194,7 +191,6 @@ class TestAuthInstanceManagement:
 
         assert auth1 is auth2
 
-
 # ============================================================================
 # Initialize Auth Tests
 # ============================================================================
@@ -233,7 +229,6 @@ class TestInitializeAuth:
 
                 # Should use default path
                 MockUserAuth.assert_called_once()
-
 
 # ============================================================================
 # Current User Tests
@@ -282,7 +277,6 @@ class TestCurrentUser:
 
         assert user is None
 
-
 # ============================================================================
 # Permission Checking Tests
 # ============================================================================
@@ -323,7 +317,6 @@ class TestPermissionChecking:
         assert check_permission('read_students') is True
         assert check_permission('read_grades') is True
         assert check_permission('write_students') is False
-
 
 # ============================================================================
 # Permission Decorator Tests
@@ -403,7 +396,6 @@ class TestPermissionDecorator:
         assert result == "Student grades"
         assert mock_auth.check_permission.call_count >= 2
 
-
 # ============================================================================
 # Thread Safety Tests
 # ============================================================================
@@ -463,7 +455,6 @@ class TestThreadSafety:
 
         assert len(errors) == 0
         assert len(results) == 5
-
 
 # ============================================================================
 # Integration Tests
@@ -525,7 +516,6 @@ class TestSharedContextIntegration:
         assert get_current_user()['username'] == 'admin1'
         assert check_permission('admin') is True
 
-
 # ============================================================================
 # Edge Cases Tests
 # ============================================================================
@@ -566,7 +556,6 @@ class TestSharedContextEdgeCases:
         result = check_permission('')
         assert result is False
 
-
 # ============================================================================
 # Error Handling Tests
 # ============================================================================
@@ -599,7 +588,6 @@ class TestErrorHandling:
             secret_function()
 
         assert 'super_secret_permission' in str(exc_info.value)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

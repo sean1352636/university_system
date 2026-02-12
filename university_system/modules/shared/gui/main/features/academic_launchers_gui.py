@@ -26,6 +26,10 @@ from university_system.modules.shared.gui.main.imports.gui_imports import (
     ATTENDANCE_GUI_AVAILABLE,
     AI_DETECTOR_GUI_AVAILABLE,
     AIDetectorGUI,
+    OFFICE_HOURS_GUI_AVAILABLE,
+    OfficeHoursGUI,
+    TA_MANAGEMENT_GUI_AVAILABLE,
+    TAManagementGUI,
 )
 
 # Import paths
@@ -362,7 +366,7 @@ def show_assignments(self):
                     user_id = self.auth.current_user.get('id')
                     if user_id:
                         try:
-                            import sqlite3
+                            from university_system.infrastructure.database.db import sqlite3
                             from university_system.infrastructure.database.db import DEFAULT_DB_PATH
 
                             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -457,6 +461,48 @@ def open_attendance_gui(self):
             messagebox.showerror(_t("academic_launchers.titles.attendance"), _t("academic_launchers.errors.attendance_unexpected_error", error=e))
         except Exception as ex:
             logger.error(f"Failed to show attendance error dialog: {ex}")
+def show_office_hours_gui(self):
+    """Launch the Office Hours Management GUI in a child window"""
+    if not self.auth.current_user:
+        messagebox.showerror("Error", "Please log in to access Office Hours.")
+        return
+
+    try:
+        if not OFFICE_HOURS_GUI_AVAILABLE:
+            messagebox.showerror("Office Hours", "Office Hours GUI is not available.")
+            return
+
+        win = tk.Toplevel(self.root)
+        win.transient(self.root)
+        try:
+            OfficeHoursGUI(win, auth=self.auth)
+        except Exception as e:
+            win.destroy()
+            messagebox.showerror("Office Hours", f"Failed to open Office Hours: {e}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Unexpected error opening Office Hours: {e}")
+
+def show_ta_management_gui(self):
+    """Launch the TA Management GUI in a child window"""
+    if not self.auth.current_user:
+        messagebox.showerror("Error", "Please log in to access TA Management.")
+        return
+
+    try:
+        if not TA_MANAGEMENT_GUI_AVAILABLE:
+            messagebox.showerror("TA Management", "TA Management GUI is not available.")
+            return
+
+        win = tk.Toplevel(self.root)
+        win.transient(self.root)
+        try:
+            TAManagementGUI(win, auth=self.auth)
+        except Exception as e:
+            win.destroy()
+            messagebox.showerror("TA Management", f"Failed to open TA Management: {e}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Unexpected error opening TA Management: {e}")
+
 def show_virtual_classroom_gui(self):
     """Launch the Virtual Classroom Management GUI in a child window"""
     if not self.auth.current_user:

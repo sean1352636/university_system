@@ -77,18 +77,10 @@ try:
 except ImportError:
     display_student_union_menu = None
 
-# Placeholder functions for not-yet-implemented features
-def display_advanced_attendance_menu():
-    print("\n❌ Advanced Attendance menu is not yet implemented")
-    input("Press Enter to continue...")
-
-def display_timetable_optimizer_menu():
-    print("\n❌ Timetable Optimizer menu is not yet implemented")
-    input("Press Enter to continue...")
-
-def display_alumni_relations_menu():
-    print("\n❌ Alumni Relations menu is not yet implemented")
-    input("Press Enter to continue...")
+# Import fully-implemented menu functions for previously-stubbed features
+from university_system.modules.domain.academics.services.attendance import display_advanced_attendance_menu
+from university_system.modules.domain.academics.services.timetable import display_timetable_optimizer_menu
+from university_system.modules.domain.student_affairs.services.alumni_management import display_alumni_menu as display_alumni_relations_menu
 
 # Import utility functions
 from .utils import safe_auth_check
@@ -113,6 +105,23 @@ from university_system.modules.services.cli.cafe_system_cli import setup_cafe_pe
 from university_system.modules.domain.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
 from university_system.modules.domain.commerce.services.grocery.grocery_service import setup_grocery_permissions
 from university_system.modules.domain.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
+from university_system.modules.domain.academics.services.office_hours.office_hours_permissions import setup_office_hours_permissions
+from university_system.modules.domain.academics.services.ta_management.ta_permissions_setup import setup_ta_permissions
+
+# Import Office Hours and TA Management CLI menus
+try:
+    from university_system.modules.domain.academics.cli.office_hours_cli import display_office_hours_menu
+    OFFICE_HOURS_CLI_AVAILABLE = True
+except ImportError:
+    display_office_hours_menu = None
+    OFFICE_HOURS_CLI_AVAILABLE = False
+
+try:
+    from university_system.modules.domain.academics.cli.ta_management_cli import display_ta_management_menu
+    TA_MANAGEMENT_CLI_AVAILABLE = True
+except ImportError:
+    display_ta_management_menu = None
+    TA_MANAGEMENT_CLI_AVAILABLE = False
 
 # Import plagiarism checker integration
 from university_system.modules.domain.academics.gui.plagiarism_main_gui import integrate_plagiarism_checker_with_main
@@ -140,6 +149,12 @@ from university_system.modules.shared.services.integrations.integration_marketpl
 from university_system.modules.domain.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
 from university_system.modules.domain.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
 from university_system.modules.domain.academics.services.virtual_classroom.classroom_manager import VirtualClassroomManager
+from university_system.modules.domain.academics.services.virtual_classroom.session_manager import SessionManager
+from university_system.modules.domain.academics.services.virtual_classroom.participant_manager import ParticipantManager
+from university_system.modules.domain.academics.services.virtual_classroom.recording_manager import RecordingManager
+from university_system.modules.domain.academics.services.virtual_classroom.poll_manager import PollManager
+from university_system.modules.domain.academics.services.virtual_classroom.breakout_room_manager import BreakoutRoomManager
+from university_system.modules.domain.academics.services.virtual_classroom.chat_manager import ChatManager
 from university_system.modules.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
 
 auth = None
@@ -222,6 +237,8 @@ def display_menu():
             setup_takeaway_permissions(auth)  # Takeaway system permissions
             setup_grocery_permissions(auth)  # Grocery shop permissions
             setup_staff_hr_permissions(auth)  # Staff HR permissions
+            setup_office_hours_permissions(auth)  # Office Hours permissions
+            setup_ta_permissions(auth)  # TA Management permissions
 
             # Add plagiarism permissions AFTER UserAuth is fully initialized
             try:
@@ -329,6 +346,10 @@ def display_menu():
         ]
         if DEGREE_AUDIT_CLI_AVAILABLE:
             items.append(add_option(get_text('cli.menu.degree_audit', default='Degree Audit'), "degree_audit"))
+        if OFFICE_HOURS_CLI_AVAILABLE:
+            items.append(add_option("Office Hours", "office_hours"))
+        if TA_MANAGEMENT_CLI_AVAILABLE:
+            items.append(add_option("TA Management", "ta_management"))
         print_row(items)
 
         # 👥 STUDENT SERVICES
@@ -521,6 +542,18 @@ def display_menu():
                     launch_degree_audit_cli(auth)
                 else:
                     print("\n❌ Degree Audit CLI is not available")
+                    input("Press Enter to continue...")
+            elif option == "office_hours":
+                if OFFICE_HOURS_CLI_AVAILABLE:
+                    display_office_hours_menu(auth)
+                else:
+                    print("\n❌ Office Hours menu is not available")
+                    input("Press Enter to continue...")
+            elif option == "ta_management":
+                if TA_MANAGEMENT_CLI_AVAILABLE:
+                    display_ta_management_menu(auth)
+                else:
+                    print("\n❌ TA Management menu is not available")
                     input("Press Enter to continue...")
             elif option == "housing_accommodations":
                 display_housing_accommodation_menu()
@@ -765,6 +798,299 @@ def display_menu():
             print(get_text('cli.invalid_choice', default='Invalid choice. Please try again.'))
 
 
+def _vc_schedule_session(auth):
+    """Schedule a virtual session sub-menu"""
+    print("\n--- Schedule Virtual Session ---")
+    print("1. Create new session")
+    print("2. View upcoming sessions")
+    print("3. List sessions by classroom")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        sm = SessionManager()
+        if sub == '1':
+            classroom_id = int(input("Enter classroom ID: ").strip())
+            start_time_str = input("Enter start time (YYYY-MM-DD HH:MM): ").strip()
+            start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M")
+            session_type = input("Session type (lecture/lab/office_hours) [lecture]: ").strip() or "lecture"
+            duration = int(input("Duration in minutes [60]: ").strip() or "60")
+            notes = input("Notes (optional): ").strip() or None
+            session_id = sm.create_session(
+                classroom_id=classroom_id, start_time=start_time,
+                session_type=session_type, duration_minutes=duration, notes=notes
+            )
+            if session_id:
+                print(f"✅ Session created! Session ID: {session_id}")
+            else:
+                print("❌ Failed to create session.")
+        elif sub == '2':
+            classroom_id_str = input("Classroom ID (or Enter for all): ").strip()
+            classroom_id = int(classroom_id_str) if classroom_id_str else None
+            sessions = sm.get_upcoming_sessions(classroom_id=classroom_id)
+            if sessions:
+                for s in sessions:
+                    print(f"  ID: {s['id']}, Start: {s.get('start_time', 'N/A')}, Type: {s.get('session_type', 'N/A')}, Status: {s.get('status', 'N/A')}")
+            else:
+                print("No upcoming sessions found.")
+        elif sub == '3':
+            classroom_id = int(input("Enter classroom ID: ").strip())
+            sessions = sm.get_sessions_by_classroom(classroom_id)
+            if sessions:
+                for s in sessions:
+                    print(f"  ID: {s['id']}, Start: {s.get('start_time', 'N/A')}, Type: {s.get('session_type', 'N/A')}, Status: {s.get('status', 'N/A')}")
+            else:
+                print("No sessions found for this classroom.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_manage_participants(auth):
+    """Manage participants sub-menu"""
+    print("\n--- Manage Participants ---")
+    print("1. Join a session")
+    print("2. View session participants")
+    print("3. View attendance history")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        pm = ParticipantManager()
+        if sub == '1':
+            session_id = int(input("Enter session ID: ").strip())
+            user_id = auth.current_user['user_id']
+            user_type = auth.current_user.get('role', 'student')
+            device = input("Device type (desktop/mobile/tablet) [desktop]: ").strip() or "desktop"
+            pid = pm.add_participant(
+                session_id=session_id, user_id=user_id,
+                user_type=user_type, device_type=device
+            )
+            if pid:
+                print(f"✅ Joined session! Participant ID: {pid}")
+            else:
+                print("❌ Failed to join session.")
+        elif sub == '2':
+            session_id = int(input("Enter session ID: ").strip())
+            participants = pm.get_session_participants(session_id)
+            if participants:
+                for p in participants:
+                    print(f"  User ID: {p.get('user_id')}, Type: {p.get('user_type')}, Status: {p.get('attendance_status', 'N/A')}")
+            else:
+                print("No participants found.")
+        elif sub == '3':
+            user_id_str = input("Enter user ID (or Enter for yourself): ").strip()
+            user_id = int(user_id_str) if user_id_str else auth.current_user['user_id']
+            history = pm.get_user_attendance_history(user_id)
+            if history:
+                for h in history:
+                    print(f"  Session: {h.get('session_id')}, Status: {h.get('attendance_status', 'N/A')}, Joined: {h.get('join_time', 'N/A')}")
+            else:
+                print("No attendance history found.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_view_recordings(auth):
+    """View recordings sub-menu"""
+    print("\n--- View Recordings ---")
+    print("1. List recordings by classroom")
+    print("2. View recording details")
+    print("3. View storage usage")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        rm = RecordingManager()
+        if sub == '1':
+            classroom_id = int(input("Enter classroom ID: ").strip())
+            recordings = rm.get_recordings_by_classroom(classroom_id)
+            if recordings:
+                for r in recordings:
+                    print(f"  ID: {r['id']}, File: {r.get('file_name', 'N/A')}, Duration: {r.get('duration', 'N/A')}s, Views: {r.get('view_count', 0)}")
+            else:
+                print("No recordings found.")
+        elif sub == '2':
+            recording_id = int(input("Enter recording ID: ").strip())
+            rec = rm.get_recording(recording_id)
+            if rec:
+                for k, v in rec.items():
+                    print(f"  {k}: {v}")
+            else:
+                print("Recording not found.")
+        elif sub == '3':
+            classroom_id_str = input("Classroom ID (or Enter for all): ").strip()
+            classroom_id = int(classroom_id_str) if classroom_id_str else None
+            usage = rm.get_storage_usage(classroom_id=classroom_id)
+            for k, v in usage.items():
+                print(f"  {k}: {v}")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_create_polls(auth):
+    """Create polls/quizzes sub-menu"""
+    print("\n--- Polls & Quizzes ---")
+    print("1. Create a poll")
+    print("2. View session polls")
+    print("3. View poll results")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        plm = PollManager()
+        if sub == '1':
+            session_id = int(input("Enter session ID: ").strip())
+            question = input("Enter poll question: ").strip()
+            poll_type = input("Poll type (multiple_choice/true_false/open_ended) [multiple_choice]: ").strip() or "multiple_choice"
+            options = None
+            if poll_type in ('multiple_choice', 'true_false'):
+                options_str = input("Enter options (comma-separated): ").strip()
+                options = [o.strip() for o in options_str.split(',') if o.strip()]
+            correct_answer = input("Correct answer (optional): ").strip() or None
+            time_limit_str = input("Time limit in seconds (optional): ").strip()
+            time_limit = int(time_limit_str) if time_limit_str else None
+            poll_id = plm.create_poll(
+                session_id=session_id, question=question,
+                created_by=auth.current_user['user_id'],
+                poll_type=poll_type, options=options,
+                correct_answer=correct_answer, time_limit=time_limit
+            )
+            if poll_id:
+                print(f"✅ Poll created! Poll ID: {poll_id}")
+            else:
+                print("❌ Failed to create poll.")
+        elif sub == '2':
+            session_id = int(input("Enter session ID: ").strip())
+            polls = plm.get_session_polls(session_id)
+            if polls:
+                for p in polls:
+                    print(f"  ID: {p['id']}, Question: {p.get('question', 'N/A')}, Type: {p.get('poll_type', 'N/A')}, Status: {p.get('status', 'N/A')}")
+            else:
+                print("No polls found for this session.")
+        elif sub == '3':
+            poll_id = int(input("Enter poll ID: ").strip())
+            results = plm.get_poll_results(poll_id)
+            for k, v in results.items():
+                print(f"  {k}: {v}")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_manage_breakout_rooms(auth):
+    """Manage breakout rooms sub-menu"""
+    print("\n--- Breakout Rooms ---")
+    print("1. Create breakout room")
+    print("2. View session rooms")
+    print("3. Start a room")
+    print("4. End a room")
+    print("5. Return")
+    sub = input("Choice: ").strip()
+    try:
+        brm = BreakoutRoomManager()
+        if sub == '1':
+            session_id = int(input("Enter session ID: ").strip())
+            room_name = input("Enter room name: ").strip()
+            room_number = int(input("Enter room number: ").strip())
+            participants_str = input("Enter participant user IDs (comma-separated): ").strip()
+            participants = [int(p.strip()) for p in participants_str.split(',') if p.strip()]
+            topic = input("Topic (optional): ").strip() or None
+            duration = int(input("Duration in minutes [15]: ").strip() or "15")
+            room_id = brm.create_breakout_room(
+                session_id=session_id, room_name=room_name,
+                room_number=room_number, participants=participants,
+                topic=topic, duration_minutes=duration
+            )
+            if room_id:
+                print(f"✅ Breakout room created! Room ID: {room_id}")
+            else:
+                print("❌ Failed to create breakout room.")
+        elif sub == '2':
+            session_id = int(input("Enter session ID: ").strip())
+            rooms = brm.get_session_breakout_rooms(session_id)
+            if rooms:
+                for r in rooms:
+                    print(f"  ID: {r['id']}, Name: {r.get('room_name', 'N/A')}, Status: {r.get('status', 'N/A')}, Topic: {r.get('topic', 'N/A')}")
+            else:
+                print("No breakout rooms found.")
+        elif sub == '3':
+            room_id = int(input("Enter room ID to start: ").strip())
+            if brm.start_breakout_room(room_id):
+                print("✅ Breakout room started!")
+            else:
+                print("❌ Failed to start breakout room.")
+        elif sub == '4':
+            room_id = int(input("Enter room ID to end: ").strip())
+            if brm.end_breakout_room(room_id):
+                print("✅ Breakout room ended!")
+            else:
+                print("❌ Failed to end breakout room.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_view_chat(auth):
+    """View chat messages sub-menu"""
+    print("\n--- Chat Messages ---")
+    print("1. View session messages")
+    print("2. Search messages")
+    print("3. Chat statistics")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        cm = ChatManager()
+        if sub == '1':
+            session_id = int(input("Enter session ID: ").strip())
+            limit = int(input("Number of messages to show [50]: ").strip() or "50")
+            messages = cm.get_session_messages(session_id, limit=limit)
+            if messages:
+                for m in messages:
+                    print(f"  [{m.get('timestamp', '')}] {m.get('user_name', 'Unknown')}: {m.get('message_text', '')}")
+            else:
+                print("No messages found.")
+        elif sub == '2':
+            session_id = int(input("Enter session ID: ").strip())
+            search_term = input("Search term: ").strip()
+            results = cm.search_messages(session_id, search_term)
+            if results:
+                for m in results:
+                    print(f"  [{m.get('timestamp', '')}] {m.get('user_name', 'Unknown')}: {m.get('message_text', '')}")
+            else:
+                print("No matching messages found.")
+        elif sub == '3':
+            session_id = int(input("Enter session ID: ").strip())
+            stats = cm.get_chat_statistics(session_id)
+            for k, v in stats.items():
+                print(f"  {k}: {v}")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _vc_session_analytics(auth):
+    """Session analytics sub-menu"""
+    print("\n--- Session Analytics ---")
+    print("1. View session statistics")
+    print("2. Classroom overview")
+    print("3. Return")
+    sub = input("Choice: ").strip()
+    try:
+        if sub == '1':
+            sm = SessionManager()
+            session_id = int(input("Enter session ID: ").strip())
+            stats = sm.get_session_statistics(session_id)
+            if stats:
+                for k, v in stats.items():
+                    print(f"  {k}: {v}")
+            else:
+                print("No statistics available for this session.")
+        elif sub == '2':
+            vcm = VirtualClassroomManager()
+            classroom_id = int(input("Enter classroom ID: ").strip())
+            classroom = vcm.get_classroom(classroom_id)
+            if classroom:
+                for k, v in classroom.items():
+                    print(f"  {k}: {v}")
+            else:
+                print("Classroom not found.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
 def display_virtual_classroom_menu(auth):
     """Display the virtual classroom management CLI menu"""
     print("\n" + "="*50)
@@ -804,26 +1130,19 @@ def display_virtual_classroom_menu(auth):
                 except (AuthenticationError, PermissionDeniedError) as e:
                     print(get_text('virtual.error.creating', default='Error creating classroom: {error}').format(error=e))
             elif choice == '2':
-                print(f"\n{get_text('virtual.feature.schedule', default='Schedule Virtual Session - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_schedule_session(auth)
             elif choice == '3':
-                print(f"\n{get_text('virtual.feature.participants', default='Manage Participants - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_manage_participants(auth)
             elif choice == '4':
-                print(f"\n{get_text('virtual.feature.recordings', default='View Recordings - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_view_recordings(auth)
             elif choice == '5':
-                print(f"\n{get_text('virtual.feature.polls', default='Create Polls/Quizzes - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_create_polls(auth)
             elif choice == '6':
-                print(f"\n{get_text('virtual.feature.breakout', default='Manage Breakout Rooms - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_manage_breakout_rooms(auth)
             elif choice == '7':
-                print(f"\n{get_text('virtual.feature.chat', default='View Chat Messages - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_view_chat(auth)
             elif choice == '8':
-                print(f"\n{get_text('virtual.feature.analytics', default='Session Analytics - Feature available via GUI')}")
-                print(get_text('virtual.use_gui', default='Please use the GUI version for full functionality.'))
+                _vc_session_analytics(auth)
             elif choice == '9':
                 display_language_menu_option()
             elif choice == '10':
@@ -837,6 +1156,109 @@ def display_virtual_classroom_menu(auth):
             break
         except (ValueError, TypeError, ValidationError) as e:
             print(get_text('virtual.error', default='Error: {error}').format(error=e))
+
+
+def _finaid_manage_scholarships(auth):
+    """Manage scholarships sub-menu"""
+    from university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+    print("\n--- Manage Scholarships ---")
+    print("1. Create scholarship")
+    print("2. View available scholarships")
+    print("3. Submit scholarship application")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        sm = ScholarshipManager()
+        if sub == '1':
+            name = input("Scholarship name: ").strip()
+            amount = float(input("Amount: ").strip())
+            scholarship_type = input("Type (merit/need/athletic/departmental) [merit]: ").strip() or "merit"
+            description = input("Description (optional): ").strip() or None
+            min_gpa_str = input("Minimum GPA (optional): ").strip()
+            min_gpa = float(min_gpa_str) if min_gpa_str else None
+            deadline_str = input("Deadline (YYYY-MM-DD, optional): ").strip()
+            deadline = None
+            if deadline_str:
+                from datetime import date as _date
+                deadline = _date.fromisoformat(deadline_str)
+            sid = sm.create_scholarship(
+                name=name, amount=amount, scholarship_type=scholarship_type,
+                description=description, min_gpa=min_gpa, deadline=deadline
+            )
+            if sid:
+                print(f"✅ Scholarship created! ID: {sid}")
+            else:
+                print("❌ Failed to create scholarship.")
+        elif sub == '2':
+            scholarships = sm.get_available_scholarships()
+            if scholarships:
+                for s in scholarships:
+                    print(f"  ID: {s['id']}, Name: {s.get('name', 'N/A')}, Amount: ${s.get('amount', 0):.2f}, Type: {s.get('scholarship_type', 'N/A')}")
+            else:
+                print("No scholarships available.")
+        elif sub == '3':
+            scholarship_id = int(input("Scholarship ID: ").strip())
+            student_id = int(input("Student ID: ").strip())
+            essay = input("Essay text (optional): ").strip() or None
+            gpa_str = input("GPA (optional): ").strip()
+            gpa = float(gpa_str) if gpa_str else None
+            app_id = sm.submit_application(
+                scholarship_id=scholarship_id, student_id=student_id,
+                essay_text=essay, gpa=gpa
+            )
+            if app_id:
+                print(f"✅ Application submitted! Application ID: {app_id}")
+            else:
+                print("❌ Failed to submit application.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
+
+
+def _finaid_disbursement_management(auth):
+    """Disbursement management sub-menu"""
+    print("\n--- Disbursement Management ---")
+    print("1. Create disbursement")
+    print("2. View pending disbursements")
+    print("3. Process disbursement")
+    print("4. Return")
+    sub = input("Choice: ").strip()
+    try:
+        aid_mgr = FinancialAidManager()
+        if sub == '1':
+            student_id = int(input("Student ID: ").strip())
+            amount = float(input("Amount: ").strip())
+            from datetime import date as _date
+            date_str = input("Disbursement date (YYYY-MM-DD): ").strip()
+            disb_date = _date.fromisoformat(date_str)
+            disb_type = input("Type (tuition/housing/books/stipend): ").strip()
+            term = input("Academic term (e.g., Fall 2025): ").strip()
+            did = aid_mgr.create_disbursement(
+                student_id=student_id, amount=amount,
+                disbursement_date=disb_date, disbursement_type=disb_type,
+                academic_term=term
+            )
+            if did:
+                print(f"✅ Disbursement created! ID: {did}")
+            else:
+                print("❌ Failed to create disbursement.")
+        elif sub == '2':
+            term = input("Academic term (or Enter for all): ").strip() or None
+            pending = aid_mgr.get_pending_disbursements(academic_term=term)
+            if pending:
+                for d in pending:
+                    print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: ${d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
+            else:
+                print("No pending disbursements.")
+        elif sub == '3':
+            disb_id = int(input("Disbursement ID: ").strip())
+            processed_by = auth.current_user['user_id']
+            txn_id = input("Transaction ID (optional): ").strip() or None
+            if aid_mgr.process_disbursement(disb_id, processed_by=processed_by, transaction_id=txn_id):
+                print("✅ Disbursement processed successfully!")
+            else:
+                print("❌ Failed to process disbursement.")
+    except (ValueError, TypeError, ValidationError) as e:
+        print(f"❌ Error: {e}")
 
 
 def display_financial_aid_menu(auth):
@@ -861,8 +1283,26 @@ def display_financial_aid_menu(auth):
             choice = input(f"\n{get_text('finaid.prompt.choice', default='Enter your choice (1-10)')}: ").strip()
 
             if choice == '1':
-                print(f"\n{get_text('finaid.feature.applications', default='View Financial Aid Applications - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                # View Financial Aid Applications
+                try:
+                    student_id = int(input(get_text('finaid.prompt.student_id', default="Enter student ID: ")).strip())
+                    academic_year = input(get_text('finaid.prompt.academic_year', default="Enter academic year (e.g., 2024-2025): ")).strip()
+                    aid_mgr = FinancialAidManager()
+                    package = aid_mgr.get_aid_package(student_id, academic_year)
+                    if package:
+                        print(f"\n--- Aid Package for Student {student_id} ({academic_year}) ---")
+                        for k, v in package.items():
+                            print(f"  {k}: {v}")
+                    else:
+                        fafsa = aid_mgr.get_fafsa_data(student_id, academic_year)
+                        if fafsa:
+                            print(f"\n--- FAFSA Data for Student {student_id} ({academic_year}) ---")
+                            for k, v in fafsa.items():
+                                print(f"  {k}: {v}")
+                        else:
+                            print("No financial aid data found for this student and academic year.")
+                except (ValueError, TypeError, ValidationError) as e:
+                    print(get_text('finaid.error.applications', default='Error viewing applications: {error}').format(error=e))
             elif choice == '2':
                 # Submit FAFSA Data
                 try:
@@ -882,23 +1322,104 @@ def display_financial_aid_menu(auth):
                 except (ValueError, TypeError, ValidationError) as e:
                     print(get_text('finaid.error.fafsa', default='Error importing FAFSA data: {error}').format(error=e))
             elif choice == '3':
-                print(f"\n{get_text('finaid.feature.package', default='Create Aid Package - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                # Create Aid Package
+                try:
+                    student_id = int(input(get_text('finaid.prompt.student_id', default="Enter student ID: ")).strip())
+                    academic_year = input(get_text('finaid.prompt.academic_year', default="Enter academic year (e.g., 2024-2025): ")).strip()
+                    aid_mgr = FinancialAidManager()
+                    pkg_id = aid_mgr.create_aid_package(
+                        student_id=student_id, academic_year=academic_year,
+                        created_by=auth.current_user['user_id']
+                    )
+                    if pkg_id:
+                        print(f"✅ Aid package created! Package ID: {pkg_id}")
+                        add_component = input("Add a component now? (y/n): ").strip().lower()
+                        while add_component == 'y':
+                            aid_type = input("Aid type (grant/loan/scholarship/work_study): ").strip()
+                            name = input("Component name: ").strip()
+                            amount = float(input("Amount: ").strip())
+                            source = input("Source (federal/state/institutional) [institutional]: ").strip() or "institutional"
+                            comp_id = aid_mgr.add_aid_component(
+                                package_id=pkg_id, aid_type=aid_type,
+                                name=name, amount=amount, source=source
+                            )
+                            if comp_id:
+                                print(f"✅ Component added! Component ID: {comp_id}")
+                            else:
+                                print("❌ Failed to add component.")
+                            add_component = input("Add another component? (y/n): ").strip().lower()
+                    else:
+                        print("❌ Failed to create aid package.")
+                except (ValueError, TypeError, ValidationError) as e:
+                    print(get_text('finaid.error.package', default='Error creating aid package: {error}').format(error=e))
             elif choice == '4':
-                print(f"\n{get_text('finaid.feature.scholarships', default='Manage Scholarships - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                _finaid_manage_scholarships(auth)
             elif choice == '5':
-                print(f"\n{get_text('finaid.feature.review', default='Review Scholarship Applications - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                # Review Scholarship Applications
+                try:
+                    from university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    app_id = int(input("Enter application ID: ").strip())
+                    status = input("Decision (approved/denied/waitlisted): ").strip()
+                    score_str = input("Review score (0-100, optional): ").strip()
+                    score = float(score_str) if score_str else None
+                    comments = input("Review comments (optional): ").strip() or None
+                    sm = ScholarshipManager()
+                    if sm.review_application(
+                        app_id=app_id, reviewer_id=auth.current_user['user_id'],
+                        status=status, review_score=score, review_comments=comments
+                    ):
+                        print("✅ Application reviewed successfully!")
+                    else:
+                        print("❌ Failed to review application.")
+                except (ValueError, TypeError, ValidationError) as e:
+                    print(get_text('finaid.error.review', default='Error reviewing application: {error}').format(error=e))
             elif choice == '6':
-                print(f"\n{get_text('finaid.feature.award', default='Award Scholarship - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                # Award Scholarship
+                try:
+                    from university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    scholarship_id = int(input("Enter scholarship ID: ").strip())
+                    student_id = int(input("Enter student ID: ").strip())
+                    academic_year = input("Academic year (e.g., 2024-2025): ").strip()
+                    amount = float(input("Award amount: ").strip())
+                    renewable_str = input("Is renewable? (y/n) [n]: ").strip().lower()
+                    is_renewable = renewable_str == 'y'
+                    sm = ScholarshipManager()
+                    award_id = sm.award_scholarship(
+                        scholarship_id=scholarship_id, student_id=student_id,
+                        academic_year=academic_year, amount=amount,
+                        is_renewable=is_renewable
+                    )
+                    if award_id:
+                        print(f"✅ Scholarship awarded! Award ID: {award_id}")
+                    else:
+                        print("❌ Failed to award scholarship.")
+                except (ValueError, TypeError, ValidationError) as e:
+                    print(get_text('finaid.error.award', default='Error awarding scholarship: {error}').format(error=e))
             elif choice == '7':
-                print(f"\n{get_text('finaid.feature.disbursement', default='Disbursement Management - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                _finaid_disbursement_management(auth)
             elif choice == '8':
-                print(f"\n{get_text('finaid.feature.compliance', default='Compliance Reports - Feature available via GUI')}")
-                print(get_text('finaid.use_gui', default='Please use the GUI version for full functionality.'))
+                # Compliance Reports
+                try:
+                    from university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    student_id = int(input("Enter student ID: ").strip())
+                    sm = ScholarshipManager()
+                    awards = sm.get_student_awards(student_id)
+                    if awards:
+                        print(f"\n--- Scholarship Awards for Student {student_id} ---")
+                        for a in awards:
+                            print(f"  ID: {a.get('id', 'N/A')}, Name: {a.get('scholarship_name', a.get('name', 'N/A'))}, Amount: ${a.get('amount', 0):.2f}, Year: {a.get('academic_year', 'N/A')}")
+                    else:
+                        print("No scholarship awards found.")
+                    aid_mgr = FinancialAidManager()
+                    pending = aid_mgr.get_pending_disbursements()
+                    if pending:
+                        print(f"\n--- Pending Disbursements ---")
+                        for d in pending:
+                            print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: ${d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
+                    else:
+                        print("No pending disbursements.")
+                except (ValueError, TypeError, ValidationError) as e:
+                    print(get_text('finaid.error.compliance', default='Error generating compliance report: {error}').format(error=e))
             elif choice == '9':
                 display_language_menu_option()
             elif choice == '10':
@@ -1003,8 +1524,22 @@ def display_communication_hub_menu(auth):
                 except (AuthenticationError, PermissionDeniedError) as e:
                     print(f"❌ Error queuing SMS: {e}")
             elif choice == '3':
-                print("\n📱 Send Push Notification - Feature available via GUI")
-                print("Please use the GUI version for full functionality.")
+                # Send Push Notification
+                try:
+                    user_id = int(input("Enter recipient user ID: ").strip())
+                    title = input("Enter notification title: ").strip()
+                    body = input("Enter notification body: ").strip()
+                    click_action = input("Enter click action URL (or press Enter to skip): ").strip() or None
+                    comm_mgr = CommunicationManager()
+                    notif_id = comm_mgr.send_push_notification(
+                        user_id=user_id, title=title, body=body, click_action=click_action
+                    )
+                    if notif_id:
+                        print(f"✅ Push notification sent! Notification ID: {notif_id}")
+                    else:
+                        print("❌ Failed to send push notification.")
+                except (AuthenticationError, PermissionDeniedError) as e:
+                    print(f"❌ Error sending push notification: {e}")
             elif choice == '4':
                 # Messages Management
                 from university_system.infrastructure.email.admin import display_messages_menu

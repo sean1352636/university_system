@@ -17,7 +17,7 @@ import secrets
 import re
 import os
 import csv
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 

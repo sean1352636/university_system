@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import sqlite3
 from university_system.infrastructure.database.db import get_connection
+from university_system.core.sql_safety import validate_identifier
 
 def _table_exists(cur: sqlite3.Cursor, name: str) -> bool:
     try:
@@ -14,7 +15,8 @@ def _table_exists(cur: sqlite3.Cursor, name: str) -> bool:
 
 def _cols(cur: sqlite3.Cursor, table: str) -> set[str]:
     try:
-        return {row[1] for row in cur.execute(f"PRAGMA table_info({table})").fetchall()}
+        safe_table = validate_identifier(table, "table")
+        return {row[1] for row in cur.execute("PRAGMA table_info([" + safe_table + "])").fetchall()}
     except Exception:
         return set()
 
@@ -63,9 +65,17 @@ def select_assessment(
             return None
 
         order_col = date_col or id_col
+        safe_table = validate_identifier(table, "table")
+        safe_id = validate_identifier(id_col, "column")
+        safe_name = validate_identifier(name_col, "column")
+        safe_order = validate_identifier(order_col, "column")
+        select_cols = "[" + safe_id + "], [" + safe_name + "]"
+        if date_col:
+            safe_date = validate_identifier(date_col, "column")
+            select_cols += ", [" + safe_date + "]"
         rows = cursor.execute(
-            f"SELECT {id_col}, {name_col}" + (f", {date_col}" if date_col else "") +
-            f" FROM {table} ORDER BY {order_col} DESC LIMIT 100"
+            "SELECT " + select_cols +
+            " FROM [" + safe_table + "] ORDER BY [" + safe_order + "] DESC LIMIT 100"
         ).fetchall()
 
         if not rows:

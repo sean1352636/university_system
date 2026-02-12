@@ -4,7 +4,7 @@ Cinema Booking System - Shift Scheduling
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_shift_scheduling_page(self):
     """Display shift scheduling with weekly calendar view."""
@@ -89,7 +88,7 @@ def show_shift_scheduling_page(self):
             day_idx = (shift_date - start_of_week).days
             if 0 <= day_idx < 7:
                 shifts_by_day[day_idx].append(shift)
-        except:
+        except (ValueError, TypeError):
             pass
 
     # Display shifts in grid
@@ -139,7 +138,6 @@ def show_shift_scheduling_page(self):
 
     tk.Label(stats_frame, text=f"This Week: {scheduled_count} shifts | {staff_count} staff members | {pending_swaps} pending swap requests",
             bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
-
 
 def add_shift(self):
     """Add a new shift assignment."""
@@ -236,7 +234,7 @@ def add_shift(self):
         if fields['screen'].get().strip():
             try:
                 screen = int(fields['screen'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
@@ -254,7 +252,6 @@ def add_shift(self):
         self.show_shift_scheduling_page()
 
     ttk.Button(frame, text=_t("cinema.shift_scheduling.add_shift"), style="Success.TButton", command=save).grid(row=10, column=0, columnspan=2, pady=20)
-
 
 def edit_shift(self, shift_id):
     """Edit an existing shift."""
@@ -323,7 +320,6 @@ def edit_shift(self, shift_id):
     ttk.Button(btn_frame, text=_t("cinema.btn.update"), style="Success.TButton", command=update).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.request_swap"), style="Warning.TButton", command=request_swap).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.delete"), style="Danger.TButton", command=delete).pack(side="left", padx=5)
-
 
 def show_staff_availability(self):
     """Show and manage staff availability."""
@@ -428,7 +424,6 @@ def show_staff_availability(self):
 
     ttk.Button(frame, text=_t("cinema.btn.save_availability"), style="Success.TButton", command=save_availability).pack(pady=10)
 
-
 def request_shift_swap(self, shift_id):
     """Request a shift swap."""
     conn = sqlite3.connect(DB_FILE)
@@ -504,7 +499,6 @@ def request_shift_swap(self, shift_id):
         form.destroy()
 
     ttk.Button(frame, text=_t("cinema.btn.submit_request"), style="Success.TButton", command=submit).pack(pady=20)
-
 
 def show_swap_requests(self):
     """Show pending shift swap requests."""
@@ -605,7 +599,6 @@ def show_swap_requests(self):
     btn_frame.pack(fill="x", pady=10)
     ttk.Button(btn_frame, text=_t("cinema.btn.approve"), style="Success.TButton", command=approve).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.deny"), style="Danger.TButton", command=deny).pack(side="left", padx=5)
-
 
 def auto_schedule_shifts(self):
     """Auto-schedule shifts based on staff availability."""

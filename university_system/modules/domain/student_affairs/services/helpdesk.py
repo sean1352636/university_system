@@ -26,6 +26,7 @@ from university_system.modules.shared.utils.i18n import (
 from university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
+from university_system.core.sql_safety import validate_identifier
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -439,10 +440,10 @@ def display_kb_suggestions(ticket):
         article_ids = ticket['knowledge_base_articles'].split(',')
         placeholders = ','.join(['?' for _ in article_ids])
         
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT article_id, title, category, helpful_votes, unhelpful_votes
-        FROM knowledge_base 
-        WHERE article_id IN ({placeholders}) AND status = 'published'
+        FROM knowledge_base
+        WHERE article_id IN (''' + placeholders + ''') AND status = 'published'
         ''', article_ids)
         
         articles = cursor.fetchall()
@@ -773,9 +774,9 @@ def reply_to_ticket_enhanced(auth, ticket_id, is_internal=False):
                 WHERE ticket_id = ?
                 ''', (now, ticket_id))
         
-        cursor.execute(f'''
+        cursor.execute('''
         UPDATE support_tickets
-        SET updated_at = ?, last_activity_at = ? {status_update}
+        SET updated_at = ?, last_activity_at = ? ''' + status_update + '''
         WHERE ticket_id = ?
         ''', (now, now, ticket_id))
         
@@ -2374,18 +2375,18 @@ def view_all_tickets_enhanced(auth):
     where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
     
     # Get tickets with enhanced information
-    cursor.execute(f'''
+    cursor.execute('''
     SELECT t.ticket_id, t.subject, t.category, t.status, t.priority, t.impact, t.urgency,
            t.created_at, t.updated_at, t.due_date, t.escalation_level,
            u1.username as submitter, u2.username as assignee, t.department
     FROM support_tickets t
     JOIN users u1 ON t.user_id = u1.id
     LEFT JOIN users u2 ON t.assigned_to = u2.id
-    WHERE {where_clause}
-    ORDER BY 
+    WHERE ''' + where_clause + '''
+    ORDER BY
         CASE WHEN t.due_date IS NOT NULL AND t.due_date < datetime('now') AND t.status NOT IN ('resolved', 'closed') THEN 1 ELSE 2 END,
         t.escalation_level DESC,
-        CASE 
+        CASE
             WHEN t.status = 'open' THEN 1
             WHEN t.status = 'in progress' THEN 2
             WHEN t.status = 'waiting for customer' THEN 3
@@ -3451,10 +3452,10 @@ def view_kb_articles(auth):
         except ValueError as e:
             logger.debug(f"Invalid knowledge base category input: {e}")
 
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT article_id, title, category, views, helpful_votes, unhelpful_votes, updated_at
         FROM knowledge_base
-        {where_clause}
+        ''' + where_clause + '''
         ORDER BY helpful_votes DESC, views DESC
         ''', params)
         
@@ -3811,20 +3812,20 @@ def view_user_tickets_enhanced(auth):
     elif filter_choice == '4':
         where_clause += " AND status IN ('resolved', 'closed')"
     
-    cursor.execute(f'''
+    cursor.execute('''
     SELECT ticket_id, subject, category, subcategory, status, priority, impact, urgency,
            created_at, updated_at, due_date, assigned_to
     FROM support_tickets
-    {where_clause}
-    ORDER BY 
-        CASE 
+    ''' + where_clause + '''
+    ORDER BY
+        CASE
             WHEN status = 'open' THEN 1
             WHEN status = 'in progress' THEN 2
             WHEN status = 'waiting for customer' THEN 3
             WHEN status = 'resolved' THEN 4
             WHEN status = 'closed' THEN 5
         END,
-        CASE 
+        CASE
             WHEN priority = 'high' THEN 1
             WHEN priority = 'medium' THEN 2
             WHEN priority = 'low' THEN 3
@@ -4302,17 +4303,17 @@ def edit_sla_policy(auth):
         
         if updates:
             params.append(policy_id)
-            cursor.execute(f'''
-            UPDATE sla_policies SET {", ".join(updates)} WHERE sla_id = ?
-            ''', params)
-            
+            cursor.execute(
+                'UPDATE sla_policies SET ' + ", ".join(updates) + ' WHERE sla_id = ?',
+                params)
+
             conn.commit()
             print("SLA policy updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing SLA policy: {e}")
 
@@ -4501,17 +4502,17 @@ def edit_ticket_template(auth):
         
         if updates:
             params.append(template_id)
-            cursor.execute(f'''
-            UPDATE ticket_templates SET {", ".join(updates)} WHERE template_id = ?
-            ''', params)
-            
+            cursor.execute(
+                'UPDATE ticket_templates SET ' + ", ".join(updates) + ' WHERE template_id = ?',
+                params)
+
             conn.commit()
             print("Template updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing template: {e}")
 
@@ -4722,17 +4723,17 @@ def edit_workflow(auth):
         
         if updates:
             params.append(workflow_id)
-            cursor.execute(f'''
-            UPDATE ticket_workflows SET {", ".join(updates)} WHERE workflow_id = ?
-            ''', params)
-            
+            cursor.execute(
+                'UPDATE ticket_workflows SET ' + ", ".join(updates) + ' WHERE workflow_id = ?',
+                params)
+
             conn.commit()
             print("Workflow updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing workflow: {e}")
 
@@ -4906,17 +4907,17 @@ def edit_department(auth):
         
         if updates:
             params.append(dept_id)
-            cursor.execute(f'''
-            UPDATE departments SET {", ".join(updates)} WHERE dept_id = ?
-            ''', params)
-            
+            cursor.execute(
+                'UPDATE departments SET ' + ", ".join(updates) + ' WHERE dept_id = ?',
+                params)
+
             conn.commit()
             print("Department updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing department: {e}")
 
@@ -5089,17 +5090,17 @@ def edit_organization(auth):
         
         if updates:
             params.append(org_id)
-            cursor.execute(f'''
-            UPDATE organizations SET {", ".join(updates)} WHERE org_id = ?
-            ''', params)
-            
+            cursor.execute(
+                'UPDATE organizations SET ' + ", ".join(updates) + ' WHERE org_id = ?',
+                params)
+
             conn.commit()
             print("Organization updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing organization: {e}")
 
@@ -5912,18 +5913,18 @@ def edit_kb_article(auth):
             updates.append("updated_at = ?")
             params.append(now)
             params.append(article_id)
-            
-            cursor.execute(f'''
-            UPDATE knowledge_base SET {", ".join(updates)} WHERE article_id = ?
-            ''', params)
-            
+
+            cursor.execute(
+                'UPDATE knowledge_base SET ' + ", ".join(updates) + ' WHERE article_id = ?',
+                params)
+
             conn.commit()
             print("Article updated successfully!")
         else:
             print("No changes made.")
-        
+
         conn.close()
-        
+
     except (ValueError, sqlite3.Error) as e:
         print(f"Error editing article: {e}")
 

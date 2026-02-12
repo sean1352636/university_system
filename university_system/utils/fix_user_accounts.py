@@ -11,7 +11,7 @@ This script:
 Run this after database initialization or if login shows wrong roles.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 from datetime import datetime
@@ -45,7 +45,6 @@ SYSTEM_ACCOUNTS = {
         'email': 'student@university.local'
     }
 }
-
 
 def analyze_database(conn):
     """Analyze the database for issues"""
@@ -108,7 +107,6 @@ def analyze_database(conn):
     print(f"\n{len(issues)} issue(s) found" if issues else "\n✅ No issues found!")
     return issues
 
-
 def fix_system_account(conn, username):
     """Fix or create a system account with correct user mapping"""
     cursor = conn.cursor()
@@ -166,7 +164,6 @@ def fix_system_account(conn, username):
     conn.commit()
     return user_id
 
-
 def clean_duplicate_mappings(conn):
     """Clean up accounts that point to the same user_id"""
     cursor = conn.cursor()
@@ -210,7 +207,6 @@ def clean_duplicate_mappings(conn):
 
     conn.commit()
     print("\n✅ Cleaned duplicate mappings")
-
 
 def verify_integrity(conn):
     """Verify database integrity after fixes"""
@@ -276,7 +272,6 @@ def verify_integrity(conn):
         print(f"✅ No duplicate user_id mappings")
 
     return all_good
-
 
 def main():
     """Main fix routine"""
@@ -355,7 +350,6 @@ def main():
         import traceback
         traceback.print_exc()
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

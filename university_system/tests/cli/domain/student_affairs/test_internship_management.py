@@ -10,7 +10,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
@@ -20,7 +20,6 @@ from university_system.modules.domain.student_affairs.services.internship_manage
     setup_internship_permissions,
     set_auth,
 )
-
 
 @pytest.fixture
 def setup_internship_database():
@@ -44,7 +43,6 @@ def setup_internship_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Create mock authentication object"""
@@ -58,7 +56,6 @@ def mock_auth():
     auth.check_permission = MagicMock(return_value=True)
     auth.is_logged_in = MagicMock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def sample_student(setup_internship_database):
@@ -80,7 +77,6 @@ def sample_student(setup_internship_database):
     conn.close()
 
     return 'S001'
-
 
 class TestDatabaseSetup:
     """Tests for database initialization"""
@@ -111,7 +107,6 @@ class TestDatabaseSetup:
         conn.close()
 
         assert count >= 3  # At least the 3 sample internships
-
 
 class TestInternshipCRUD:
     """Tests for internship CRUD operations"""
@@ -223,7 +218,6 @@ class TestInternshipCRUD:
         conn.close()
 
         assert result is None
-
 
 class TestApplicationManagement:
     """Tests for internship applications"""
@@ -360,7 +354,6 @@ class TestApplicationManagement:
 
         assert len(applications) == 3
 
-
 class TestPlacementTracking:
     """Tests for internship placements"""
 
@@ -438,7 +431,6 @@ class TestPlacementTracking:
         assert placement['feedback_student'] is not None
         assert placement['feedback_employer'] is not None
 
-
 class TestReporting:
     """Tests for reporting and analytics"""
 
@@ -472,7 +464,6 @@ class TestReporting:
         conn.close()
 
         assert isinstance(counts, list)
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -564,7 +555,6 @@ class TestIntegrationScenarios:
         assert internship is not None
         assert application['status'] == 'approved'
         assert placement['status'] == 'active'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -3,13 +3,12 @@ Unified Communication Manager
 Handles all communication channels: email, SMS, push notifications, announcements
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.modules.shared.utils.i18n import get_text, _
-
 
 class CommunicationManager:
     """Comprehensive manager for all communication operations"""

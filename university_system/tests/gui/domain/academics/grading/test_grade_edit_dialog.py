@@ -6,14 +6,12 @@ Tests grade editing with auto-calculation, UI components, and validation.
 import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog import (
     GradeEditDialog,
     GRADE_SYSTEMS,
     percentage_to_letter
 )
-
 
 @pytest.fixture
 def root():
@@ -24,7 +22,6 @@ def root():
         root.destroy()
     except Exception:
         pass
-
 
 class TestGradeEditDialog:
     """Test GradeEditDialog class"""
@@ -458,7 +455,6 @@ class TestGradeEditDialog:
         assert dialog.grade_var.get() == "A+"
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

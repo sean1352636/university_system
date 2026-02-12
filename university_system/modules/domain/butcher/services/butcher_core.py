@@ -4,7 +4,7 @@ Provides business logic for butchers shop operations including
 products, orders, inventory, and transaction management.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -34,7 +34,6 @@ UNIT_TYPES = ['kg', 'g', 'lb', 'oz', 'each', 'pack']
 
 # Order statuses
 ORDER_STATUSES = ['pending', 'processing', 'ready', 'collected', 'cancelled']
-
 
 def init_butcher_db():
     """Initialize butcher shop database tables"""
@@ -152,7 +151,6 @@ def init_butcher_db():
         ''')
 
         logger.info("Butcher shop database tables initialized successfully")
-
 
 class ProductManager:
     """Manages butcher shop products"""
@@ -282,7 +280,6 @@ class ProductManager:
                 ORDER BY name
             ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%')).fetchall()
             return [dict(row) for row in rows]
-
 
 class OrderManager:
     """Manages customer orders"""
@@ -441,7 +438,6 @@ class OrderManager:
             ''').fetchall()
             return [dict(row) for row in rows]
 
-
 class TransactionManager:
     """Manages financial transactions"""
 
@@ -548,7 +544,6 @@ class TransactionManager:
                 'total_refunds': total_refunds,
                 'net_sales': total_sales - total_refunds
             }
-
 
 class ReportManager:
     """Generates reports for the butcher shop"""
@@ -704,7 +699,6 @@ Low Stock Items: {low_stock_count}
 End of Report
 """
         return report
-
 
 def launch_butcher_gui(parent=None, auth=None):
     """Launch the Butcher Shop GUI"""

@@ -14,7 +14,7 @@ Features:
 - Multi-category support (Academic, Social, Athletic, Cultural, Career, Community Service)
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
@@ -26,7 +26,6 @@ from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
-
 
 class EventsService:
     """Service for managing university events, RSVPs, and recommendations"""
@@ -1097,7 +1096,6 @@ class EventsService:
         except Exception as e:
             logger.error(f"Error getting statistics for user {user_id}: {e}")
             raise
-
 
 # Singleton instance
 _events_service = None

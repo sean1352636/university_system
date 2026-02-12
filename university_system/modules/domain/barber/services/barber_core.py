@@ -4,7 +4,7 @@ Provides business logic for barber shop operations including
 appointments, services, staff, and transaction management.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -38,7 +38,6 @@ TIME_SLOTS = [
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
 ]
-
 
 def init_barber_db():
     """Initialize barber shop database tables"""
@@ -157,7 +156,6 @@ def init_barber_db():
 
         logger.info("Barber shop database tables initialized successfully")
 
-
 class ServiceManager:
     """Manages barber shop services"""
 
@@ -215,7 +213,6 @@ class ServiceManager:
             )
             return True
 
-
 class StaffManager:
     """Manages barber staff"""
 
@@ -266,7 +263,6 @@ class StaffManager:
 
             booked_times = set(row['appointment_time'] for row in booked)
             return [slot for slot in TIME_SLOTS if slot not in booked_times]
-
 
 class AppointmentManager:
     """Manages appointments"""
@@ -427,7 +423,6 @@ class AppointmentManager:
         today = datetime.now().strftime('%Y-%m-%d')
         return AppointmentManager.get_appointments_by_date(today)
 
-
 class TransactionManager:
     """Manages financial transactions"""
 
@@ -514,7 +509,6 @@ class TransactionManager:
                 'tips': row['tips'] or 0,
                 'total_revenue': row['total_revenue'] or 0
             }
-
 
 class ReportManager:
     """Generates reports for the barber shop"""
@@ -629,7 +623,6 @@ End of Report
 """
         return report
 
-
 class WaitlistManager:
     """Manages appointment waitlist"""
 
@@ -684,7 +677,6 @@ class WaitlistManager:
             ''', (reason, waitlist_id))
             return True
 
-
 class BlockedSlotManager:
     """Manages blocked time slots"""
 
@@ -722,7 +714,6 @@ class BlockedSlotManager:
         with transaction() as conn:
             conn.execute('DELETE FROM barber_blocked_slots WHERE block_id = ?', (block_id,))
             return True
-
 
 class RecurringAppointmentManager:
     """Manages recurring appointments"""
@@ -764,7 +755,6 @@ class RecurringAppointmentManager:
                 UPDATE barber_recurring_appointments SET is_active = 0 WHERE recurring_id = ?
             ''', (recurring_id,))
             return True
-
 
 class CustomerManager:
     """Manages customer profiles and notes"""
@@ -919,7 +909,6 @@ class CustomerManager:
             conn.execute('DELETE FROM barber_customer_profiles WHERE customer_id = ?', (secondary_id,))
             return True
 
-
 class FeedbackManager:
     """Manages customer feedback"""
 
@@ -962,7 +951,6 @@ class FeedbackManager:
             ''', (staff_id,)).fetchall()
             return [dict(row) for row in rows]
 
-
 class ServicePackageManager:
     """Manages service packages"""
 
@@ -995,7 +983,6 @@ class ServicePackageManager:
                 result.append(d)
             return result
 
-
 class ServiceAddonManager:
     """Manages service add-ons"""
 
@@ -1019,7 +1006,6 @@ class ServiceAddonManager:
                 query += ' WHERE is_active = 1'
             rows = conn.execute(query).fetchall()
             return [dict(row) for row in rows]
-
 
 class StaffScheduleManager:
     """Manages staff schedules"""
@@ -1060,7 +1046,6 @@ class StaffScheduleManager:
                 ORDER BY appointment_date, appointment_time
             ''', (staff_id, start_date, end_date)).fetchall()
             return [dict(row) for row in rows]
-
 
 class CommissionManager:
     """Manages staff commissions"""
@@ -1149,7 +1134,6 @@ class CommissionManager:
                 'appointments_count': len(appointments)
             }
 
-
 class GiftCardManager:
     """Manages gift cards"""
 
@@ -1219,7 +1203,6 @@ class GiftCardManager:
 
             return True, f"Redeemed £{amount:.2f}. Remaining balance: £{new_balance:.2f}"
 
-
 class DiscountManager:
     """Manages discounts"""
 
@@ -1258,7 +1241,6 @@ class DiscountManager:
 
             return original_price, new_price
 
-
 class RefundManager:
     """Manages refunds"""
 
@@ -1288,7 +1270,6 @@ class RefundManager:
             ''', (transaction_id,))
 
             return cursor.lastrowid
-
 
 class CashDrawerManager:
     """Manages cash drawer"""
@@ -1343,7 +1324,6 @@ class CashDrawerManager:
                 'discrepancy': discrepancy
             }
 
-
 class AuditLogManager:
     """Manages audit log"""
 
@@ -1382,7 +1362,6 @@ class AuditLogManager:
             query += f' ORDER BY created_at DESC LIMIT {limit}'
             rows = conn.execute(query, params).fetchall()
             return [dict(row) for row in rows]
-
 
 class AnalyticsManager:
     """Manages analytics and reporting"""
@@ -1524,7 +1503,6 @@ class AnalyticsManager:
             ''', (start_date, end_date)).fetchall()
             return [dict(row) for row in rows]
 
-
 class ScheduledReportManager:
     """Manages scheduled reports"""
 
@@ -1548,7 +1526,6 @@ class ScheduledReportManager:
                 SELECT * FROM barber_scheduled_reports WHERE is_active = 1
             ''').fetchall()
             return [dict(row) for row in rows]
-
 
 class NoShowManager:
     """Manages no-shows"""
@@ -1613,7 +1590,6 @@ class NoShowManager:
             ''').fetchall()
             return [dict(row) for row in rows]
 
-
 class ReminderManager:
     """Manages appointment reminders"""
 
@@ -1652,7 +1628,6 @@ class ReminderManager:
                 WHERE reminder_id = ?
             ''', (datetime.now().isoformat(), reminder_id))
             return True
-
 
 def init_extended_barber_db():
     """Initialize extended barber shop database tables"""
@@ -1967,7 +1942,6 @@ def init_extended_barber_db():
         ''')
 
         logger.info("Extended barber shop database tables initialized successfully")
-
 
 def launch_barber_gui(parent=None, auth=None):
     """Launch the Barber Shop GUI"""

@@ -4,12 +4,11 @@ import unittest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
 from university_system.modules.domain.academics.gui.grade_tracking.module_manager import ModuleManager
-
 
 class TestModuleManager(unittest.TestCase):
     """Test ModuleManager class"""
@@ -181,7 +180,6 @@ class TestModuleManager(unittest.TestCase):
         # Should not raise exception
         self.module_manager.refresh_modules()
 
-
 class TestModuleManagerEdgeCases(unittest.TestCase):
     """Test edge cases for ModuleManager"""
 
@@ -212,7 +210,6 @@ class TestModuleManagerEdgeCases(unittest.TestCase):
 
         # Should return None
         self.assertIsNone(module_manager.content_frame)
-
 
 if __name__ == '__main__':
     unittest.main()

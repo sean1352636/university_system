@@ -160,7 +160,7 @@ def check_meal_balance(self):
         if selected:
             try:
                 return selected.split("ID: ")[1].rstrip(")")
-            except:
+            except (IndexError, AttributeError):
                 return None
         return None
 

@@ -12,7 +12,7 @@ from typing import Dict, Tuple, Optional, Callable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from university_system.infrastructure.auth.mfa_service import MFAService
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 
 class MFAIntegration:

@@ -51,7 +51,6 @@ except ImportError:
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
-
 # Import attendance notification service
 try:
     from university_system.modules.domain.academics.services.attendance.attendance_notifications import (
@@ -64,7 +63,6 @@ except ImportError:
 # Feature flags
 GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
-
 
 class GeofencingWindow:
     def __init__(self, parent, geo_system):
@@ -149,7 +147,7 @@ class GeofencingWindow:
             try:
                 from university_system.infrastructure.database.db import get_db_connection as get_conn
                 conn = get_conn()
-            except:
+            except ImportError:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
 
             cursor = conn.cursor()
@@ -900,7 +898,7 @@ class GamificationWindow:
         
         # Load real leaderboard data from database
         try:
-            import sqlite3
+
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
@@ -1470,7 +1468,7 @@ class ReportWindow:
         admin_emails = []
 
         try:
-            import sqlite3
+
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
@@ -2198,7 +2196,6 @@ For more information, visit the system documentation or contact your administrat
         
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Primary.TButton').pack(pady=10)
-
 
 # Aliases for backward compatibility
 ReportPreviewWindow = ReportWindow

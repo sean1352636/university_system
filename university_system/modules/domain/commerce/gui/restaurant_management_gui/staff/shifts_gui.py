@@ -956,7 +956,7 @@ class ShiftDialog:
                     duration = (end - start).total_seconds() / 3600
                     hours_worked = duration - (self.break_var.get() / 60)
                     total_pay = hours_worked * (hourly_rate or 0)
-                except:
+                except (ValueError, TypeError):
                     pass
 
             notes = self.notes_text.get('1.0', tk.END).strip()

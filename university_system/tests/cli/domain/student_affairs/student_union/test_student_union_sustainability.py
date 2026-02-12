@@ -4,12 +4,11 @@ Tests carbon footprint tracking, waste reduction, and green transport.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from university_system.modules.domain.student_affairs.student_union.services import sustainability
-
 
 @pytest.fixture
 def mock_cursor():
@@ -22,7 +21,6 @@ def mock_cursor():
     cursor.rowcount = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -32,7 +30,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def sample_events():
     """Sample event data for carbon tracking."""
@@ -40,7 +37,6 @@ def sample_events():
         (1, 'Tech Conference', 'Tech Society', '2024-11-01', 100),
         (2, 'Music Festival', 'Music Club', '2024-11-05', 200),
     ]
-
 
 class TestTrackCarbonFootprint:
     """Tests for track_carbon_footprint function."""
@@ -100,7 +96,6 @@ class TestTrackCarbonFootprint:
         # Should indicate invalid selection
         assert any('Invalid' in str(call) for call in mock_print.call_args_list)
 
-
 class TestWasteReductionTracking:
     """Tests for waste_reduction_tracking function."""
 
@@ -147,7 +142,6 @@ class TestWasteReductionTracking:
         assert any('Challenges' in str(call) or 'Zero Waste' in str(call)
                   for call in mock_print.call_args_list)
 
-
 class TestGreenTransportTracking:
     """Tests for green_transport_tracking function."""
 
@@ -185,7 +179,6 @@ class TestGreenTransportTracking:
         assert any('Bus routes' in str(call) or 'Transport' in str(call)
                   for call in mock_print.call_args_list)
 
-
 class TestViewEcoSuppliers:
     """Tests for view_eco_suppliers function."""
 
@@ -200,7 +193,6 @@ class TestViewEcoSuppliers:
         # Should show certifications
         assert any('Certification' in str(call) or 'Organic' in str(call)
                   for call in mock_print.call_args_list)
-
 
 class TestGreenCertificationSystem:
     """Tests for green_certification_system function."""
@@ -255,7 +247,6 @@ class TestGreenCertificationSystem:
         # Should show standards
         assert any('Standards' in str(call) or 'Carbon footprint' in str(call)
                   for call in mock_print.call_args_list)
-
 
 class TestIntegrationSustainability:
     """Integration tests using real database."""
@@ -353,7 +344,6 @@ class TestIntegrationSustainability:
         assert row is not None
         assert row[2] == 150.5  # carbon_footprint
         assert row[3] == 75.0   # sustainability_score
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

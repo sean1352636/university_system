@@ -21,11 +21,39 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import warnings
+import io
 import pickle
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, accuracy_score
+
+
+# Allowed modules/classes for safe ML model deserialization
+_BLOCKED_NAMES = {'exec', 'eval', 'compile', '__import__', 'system', 'popen',
+                  'subprocess', 'os', 'sys', 'globals', 'locals'}
+
+
+class _RestrictedModelUnpickler(pickle.Unpickler):
+    """Unpickler that only allows safe sklearn/numpy types for model deserialization."""
+
+    def find_class(self, module, name):
+        if name in _BLOCKED_NAMES:
+            raise pickle.UnpicklingError(
+                f"Restricted unpickler refused to load blocked name '{module}.{name}'"
+            )
+        base_module = module.split('.')[0]
+        if base_module in ('numpy', 'sklearn', 'scipy', 'builtins', 'collections',
+                           'copyreg', '_codecs'):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Restricted unpickler refused to load '{module}.{name}'"
+        )
+
+
+def _safe_model_load(file_obj):
+    """Safely load a pickled ML model, only allowing sklearn/numpy types."""
+    return _RestrictedModelUnpickler(file_obj).load()
 # sqlite3 and DatabaseManager imported above from university_system.infrastructure.database.db
 from threading import Timer
 import schedule
@@ -331,7 +359,7 @@ class PaymentPredictionML:
         if self.model is None:
             try:
                 with open('payment_prediction_model.pkl', 'rb') as f:
-                    saved_data = pickle.load(f)
+                    saved_data = _safe_model_load(f)
                     self.model = saved_data['model']
                     self.scaler = saved_data['scaler']
             except (OSError, IOError, FileNotFoundError):
@@ -2846,7 +2874,9 @@ def display_enhanced_finance_menu():
                     # Analyze table sizes
                     tables = ['students', 'student_fees', 'payments', 'fee_types']
                     for table in tables:
-                        cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                        from university_system.core.sql_safety import validate_table_name
+                        validated_table = validate_table_name(table, conn=conn)
+                        cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                         count = cursor.fetchone()[0]
                         print(f"  {table}: {count:,} records")
                     

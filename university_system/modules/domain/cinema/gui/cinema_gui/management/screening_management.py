@@ -4,7 +4,7 @@ Cinema Booking System - Screening Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_screening_management(self):
     """Display screening management page."""
@@ -81,14 +80,16 @@ def show_screening_management(self):
             JOIN movies m ON s.movie_id = m.id
         '''
 
+        params = []
         selected_movie = movie_combo.get()
         if selected_movie != "All Movies":
             movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
             if movie_id and movie_id != "all":
-                sql += f" WHERE s.movie_id = {movie_id}"
+                sql += " WHERE s.movie_id = ?"
+                params.append(movie_id)
 
         sql += " ORDER BY s.show_time DESC LIMIT 100"
-        cursor.execute(sql)
+        cursor.execute(sql, params)
 
         for row in cursor.fetchall():
             self.screening_tree.insert("", "end", values=(
@@ -118,7 +119,6 @@ def show_screening_management(self):
               command=self.cancel_selected_screening).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.buttons.refresh"), style="Secondary.TButton",
               command=load_screenings).pack(side="left", padx=5)
-
 
 def show_add_screening_form(self):
     """Show form to add a new screening."""
@@ -189,7 +189,7 @@ def show_add_screening_form(self):
 
         try:
             price = float(price_entry.get().strip())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), _t("cinema.messages.errors.invalid_price"))
             return
 
@@ -232,7 +232,6 @@ def show_add_screening_form(self):
               command=save_screening).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton",
               command=form_window.destroy).pack(side="left", padx=5)
-
 
 def edit_selected_screening(self):
     """Edit selected screening."""
@@ -285,7 +284,7 @@ def edit_selected_screening(self):
     def save_changes():
         try:
             price = float(price_entry.get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), _t("cinema.messages.errors.invalid_price_short"))
             return
 
@@ -306,7 +305,6 @@ def edit_selected_screening(self):
 
     ttk.Button(btn_frame, text=_t("cinema.buttons.save"), style="Success.TButton", command=save_changes).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton", command=form_window.destroy).pack(side="left", padx=5)
-
 
 def cancel_selected_screening(self):
     """Cancel selected screening."""

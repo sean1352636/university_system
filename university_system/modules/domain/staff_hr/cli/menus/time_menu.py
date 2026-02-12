@@ -112,7 +112,7 @@ def _view_today(user_id: str) -> None:
                     cout = datetime.strptime(e['clock_out'], '%H:%M:%S')
                     hours = (cout - cin).seconds / 3600
                     total_hours += hours
-                except:
+                except (ValueError, TypeError):
                     pass
         print(f"\nTotal hours: {total_hours:.2f}")
     else:

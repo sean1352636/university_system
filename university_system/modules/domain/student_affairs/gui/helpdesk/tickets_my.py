@@ -590,7 +590,7 @@ def get_my_tickets(self):
             params.append(status_filter)
 
         # Use COALESCE to handle both old (title) and new (subject) column names
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT ticket_id,
                COALESCE(subject, title, 'No Subject') as subject,
                COALESCE(category, 'General') as category,
@@ -599,7 +599,7 @@ def get_my_tickets(self):
                COALESCE(created_at, created_datetime) as created_at,
                COALESCE(updated_at, last_updated_datetime) as updated_at
         FROM support_tickets
-        {where_clause}
+        ''' + where_clause + '''
         ORDER BY COALESCE(created_at, created_datetime) DESC
         ''', params)
 

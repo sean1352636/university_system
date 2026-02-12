@@ -4,8 +4,7 @@ Cinema Booking System - Membership/Loyalty Program Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -14,7 +13,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import MEMBERSHIP_TIERS
-
 
 def show_members_page(self):
     """Display members/loyalty program management page."""
@@ -127,7 +125,6 @@ def show_members_page(self):
 
     search_members()
 
-
 def show_add_member_form(self):
     """Show form to add a new member."""
     form_window = tk.Toplevel(self.root)
@@ -175,7 +172,7 @@ def show_add_member_form(self):
 
         try:
             points = int(points_entry.get() or 100)
-        except:
+        except (ValueError, TypeError):
             points = 100
 
         conn = sqlite3.connect(DB_FILE)
@@ -202,7 +199,6 @@ def show_add_member_form(self):
               command=save_member).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton",
               command=form_window.destroy).pack(side="left", padx=5)
-
 
 def show_member_lookup(self):
     """Quick member lookup dialog."""
@@ -269,7 +265,6 @@ def show_member_lookup(self):
 
     ttk.Button(search_frame, text=_t("cinema.buttons.lookup"), style="Primary.TButton",
               command=lookup).pack(side="left", padx=5)
-
 
 def view_member_details(self):
     """View detailed member information."""
@@ -339,7 +334,6 @@ def view_member_details(self):
         tk.Label(frame, text=f"{booking[0]} - {booking[1]} - {booking[2]} - £{booking[3]:.2f} ({booking[4]})",
                 bg="#ffffff", fg="#7f8c8d", font=("Helvetica", 9)).pack(anchor="w")
 
-
 def edit_selected_member(self):
     """Edit selected member."""
     selected = self.member_tree.selection()
@@ -347,7 +341,6 @@ def edit_selected_member(self):
         messagebox.showwarning(_t("cinema.common.warning"), "Please select a member")
         return
     messagebox.showinfo(_t("cinema.common.info"), "Edit member details in the database directly for now")
-
 
 def add_member_points(self):
     """Add points to selected member."""
@@ -376,7 +369,7 @@ def add_member_points(self):
     def add_points():
         try:
             points = int(points_entry.get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid points value")
             return
 
@@ -404,7 +397,6 @@ def add_member_points(self):
     ttk.Button(frame, text=_t("cinema.members.add_points"), style="Success.TButton",
               command=add_points).pack()
 
-
 def deactivate_member(self):
     """Deactivate selected member."""
     selected = self.member_tree.selection()
@@ -424,7 +416,6 @@ def deactivate_member(self):
     conn.close()
 
     self.show_members_page()
-
 
 def get_member_discount(self, email):
     conn = sqlite3.connect(DB_FILE)

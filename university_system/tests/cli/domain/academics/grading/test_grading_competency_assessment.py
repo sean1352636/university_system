@@ -1,6 +1,6 @@
 import pytest
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 import tempfile
@@ -16,7 +16,6 @@ from university_system.modules.domain.academics.grading.competency_assessment im
     assess_student_risk,
     assess_comprehensive_student_risk
 )
-
 
 class TestAddCompetencyLevels:
     """Test the add_competency_levels function"""
@@ -60,7 +59,6 @@ class TestAddCompetencyLevels:
         # Should handle error and retry
         assert cursor.execute.call_count >= 1
 
-
 class TestManageCompetencyLevels:
     """Test the manage_competency_levels function"""
 
@@ -96,7 +94,6 @@ class TestManageCompetencyLevels:
             manage_competency_levels()
 
         assert any('not found' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestViewStudentCompetencyProfile:
     """Test the view_student_competency_profile function"""
@@ -175,7 +172,6 @@ class TestViewStudentCompetencyProfile:
         # Verify plots were created
         assert mock_plt.savefig.call_count >= 1
 
-
 class TestGenerateCompetencyReport:
     """Test the generate_competency_report function"""
 
@@ -208,7 +204,6 @@ class TestGenerateCompetencyReport:
         generate_competency_report()
 
         mock_gen_report.assert_called_once()
-
 
 class TestGenerateStudentCompetencyReport:
     """Test the generate_student_competency_report function"""
@@ -269,7 +264,6 @@ class TestGenerateStudentCompetencyReport:
 
         mock_print.assert_any_call("No competency assessments recorded for this student.")
 
-
 class TestGenerateCourseCompetencyReport:
     """Test the generate_course_competency_report function"""
 
@@ -310,7 +304,6 @@ class TestGenerateCourseCompetencyReport:
         generate_course_competency_report(cursor, 'InvalidCourse')
 
         assert any('No students found' in str(call) for call in mock_print.call_args_list)
-
 
 class TestAssessStudentRisk:
     """Test the assess_student_risk function"""
@@ -388,7 +381,6 @@ class TestAssessStudentRisk:
         assert result['risk_level'] in ['Medium', 'Low']
         assert 10 <= result['risk_score'] < 50
 
-
 class TestAssessComprehensiveStudentRisk:
     """Test the assess_comprehensive_student_risk function"""
 
@@ -443,7 +435,6 @@ class TestAssessComprehensiveStudentRisk:
 
         assert result['risk_level'] == 'Minimal'
         assert result['risk_score'] < 10
-
 
 class TestCompetencyIntegration:
     """Integration tests for competency assessment"""
@@ -552,7 +543,6 @@ class TestCompetencyIntegration:
         assert result[0][0] == 'Problem Solving'
         assert result[0][1] == 'Advanced'
         assert result[0][2] == 4
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

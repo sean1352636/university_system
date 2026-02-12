@@ -5,12 +5,11 @@ Tests database initialization, auth setup, and menu functionality
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.core import financial_core
-
 
 @pytest.fixture
 def temp_db():
@@ -23,7 +22,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication object"""
@@ -31,7 +29,6 @@ def mock_auth():
     auth.current_user = {"username": "test_admin"}
     auth.check_permission = MagicMock(return_value=True)
     return auth
-
 
 class TestDatabaseInitialization:
     """Test database initialization"""
@@ -71,7 +68,6 @@ class TestDatabaseInitialization:
 
             conn.close()
 
-
 class TestAuthSetup:
     """Test authentication setup"""
 
@@ -79,7 +75,6 @@ class TestAuthSetup:
         """Test setting finance authentication"""
         financial_core.set_finance_auth(mock_auth)
         # Should set auth without errors
-
 
 class TestInitialization:
     """Test finance system initialization"""
@@ -98,7 +93,6 @@ class TestInitialization:
 
             conn.close()
 
-
 class TestFinanceMenu:
     """Test finance menu functionality"""
 
@@ -108,7 +102,6 @@ class TestFinanceMenu:
              patch('builtins.input', side_effect=['29']):
 
             financial_core.display_enhanced_finance_menu()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

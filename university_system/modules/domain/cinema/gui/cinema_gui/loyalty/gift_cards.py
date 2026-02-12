@@ -4,7 +4,7 @@ Cinema Booking System - Gift Card Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 import string
 from datetime import datetime, timedelta
@@ -16,7 +16,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_gift_cards_page(self):
     """Display gift cards management page."""
@@ -66,7 +65,6 @@ def show_gift_cards_page(self):
     ttk.Button(action_frame, text=_t("cinema.members.deactivate"), style="Danger.TButton",
               command=self.deactivate_gift_card).pack(side="left", padx=5)
 
-
 def refresh_gift_cards(self):
     """Refresh gift cards list."""
     for item in self.gc_tree.get_children():
@@ -83,7 +81,6 @@ def refresh_gift_cards(self):
             row[9][:10] if row[9] else "-", row[11].upper()
         ))
     conn.close()
-
 
 def create_gift_card(self):
     """Create a new gift card."""
@@ -132,7 +129,7 @@ def create_gift_card(self):
     def save_gift_card():
         try:
             value = float(value_var.get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid value")
             return
 
@@ -171,7 +168,6 @@ def create_gift_card(self):
               command=save_gift_card).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton",
               command=form_window.destroy).pack(side="left", padx=5)
-
 
 def check_gift_card_balance(self):
     """Check gift card balance."""
@@ -216,7 +212,6 @@ def check_gift_card_balance(self):
     ttk.Button(frame, text=_t("cinema.btn.check_balance"), style="Primary.TButton",
               command=check).pack()
 
-
 def view_gift_card_details(self):
     """View gift card details."""
     selected = self.gc_tree.selection()
@@ -224,7 +219,6 @@ def view_gift_card_details(self):
         messagebox.showwarning(_t("cinema.common.warning"), "Please select a gift card")
         return
     messagebox.showinfo(_t("cinema.common.info"), "Gift card details displayed in the list")
-
 
 def deactivate_gift_card(self):
     """Deactivate a gift card."""

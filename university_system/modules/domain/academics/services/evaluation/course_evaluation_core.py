@@ -7,7 +7,7 @@ results analytics, and instructor performance tracking.
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from university_system.infrastructure.database.db import get_connection
@@ -20,7 +20,6 @@ from university_system.modules.shared.utils.i18n import (
 from university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
-
 
 class EvaluationTemplateManager:
     """Manages evaluation templates"""
@@ -69,7 +68,6 @@ class EvaluationTemplateManager:
         finally:
             conn.close()
 
-
 class CourseEvaluationManager:
     """Manages course evaluations"""
 
@@ -95,7 +93,6 @@ class CourseEvaluationManager:
             raise DatabaseError(f"Error creating evaluation: {e}") from e
         finally:
             conn.close()
-
 
 class ResponseManager:
     """Manages evaluation responses"""
@@ -166,7 +163,6 @@ class ResponseManager:
         finally:
             conn.close()
 
-
 class ResultsAnalyticsManager:
     """Manages evaluation results and analytics"""
 
@@ -207,7 +203,6 @@ class ResultsAnalyticsManager:
         finally:
             conn.close()
 
-
 def display_course_evaluation_menu(auth):
     """Display the Course Evaluation System CLI menu"""
     print("\n" + "="*50)
@@ -242,7 +237,6 @@ def display_course_evaluation_menu(auth):
         except Exception as e:
             print(get_text('evaluation.error', default='Error: {error}').format(error=e))
 
-
 # Import the full GUI
 try:
     from university_system.modules.domain.academics.gui.course_evaluation_gui import (
@@ -263,8 +257,6 @@ Features:
 • Evaluation history""",
         cli_instruction="Use CLI: Course Evaluation System"
     )
-
-
 
 __all__ = [
     'EvaluationTemplateManager', 'CourseEvaluationManager',

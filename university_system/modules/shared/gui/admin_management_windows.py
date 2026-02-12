@@ -17,14 +17,11 @@ import os
 import time
 import threading
 from datetime import datetime, timedelta
-import sqlite3
-
-# Import i18n for language support
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 
 # Initialize i18n
 init_i18n()
-
 
 class ApiManagementWindow:
     """Comprehensive API Management Interface"""
@@ -405,7 +402,6 @@ API SECURITY LOG
         messagebox.showinfo(_("admin_windows.api.messages.rate_config_title"),
                            _("admin_windows.api.messages.rate_config_body"))
 
-
 class AuditLogsWindow:
     """Comprehensive Audit Logs Viewer"""
 
@@ -616,7 +612,6 @@ class AuditLogsWindow:
         details_text.config(state='disabled')
 
         ttk.Button(details_window, text=_("common.close"), command=details_window.destroy).pack(pady=10)
-
 
 class DiagnosticsWindow:
     """Comprehensive System Diagnostics"""
@@ -1195,7 +1190,6 @@ RECOMMENDATIONS:
                                    _("admin_windows.diagnostics.messages.storage_optimize_body"))
         if result:
             messagebox.showinfo(_("admin_windows.diagnostics.messages.storage_complete_title"), _("admin_windows.diagnostics.messages.storage_complete_body"))
-
 
 class DatabaseMaintenanceWindow:
     """Comprehensive Database Maintenance Tools"""
@@ -1904,7 +1898,6 @@ MONITORING CONFIGURATION:
         """View live statistics"""
         messagebox.showinfo(_("admin_windows.database.messages.live_stats_title"),
                            _("admin_windows.database.messages.live_stats_body"))
-
 
 # Example usage
 if __name__ == "__main__":

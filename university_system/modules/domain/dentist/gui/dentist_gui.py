@@ -409,7 +409,7 @@ University Dental Clinic"""
                             SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP
                             WHERE student_id = ? AND account_status = 'active'
                         ''', (treatment_fee, self.user_id))
-                except:
+                except Exception:
                     pass
             messagebox.showerror(_t("dentist.window_title"), _t("dentist.errors.booking_failed"))
 
@@ -833,7 +833,7 @@ Follow-up Date: {treatment['follow_up_date'] if treatment['follow_up_date'] else
             return
         try:
             amount = float(values[4])
-        except:
+        except (ValueError, TypeError):
             amount = 0
         treatment_id = values[0]
 

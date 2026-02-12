@@ -6,7 +6,7 @@ receiving, storing, tracking, and delivery notifications with
 email and finance integration.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -33,16 +33,13 @@ FORWARDING_FEES = {
 }
 PO_BOX_MONTHLY_FEE = 10.00
 
-
 def generate_tracking_number() -> str:
     """Generate a unique tracking number."""
     return f"UNI-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
 
-
 def generate_reference() -> str:
     """Generate a unique reference number."""
     return f"REF-{uuid.uuid4().hex[:12].upper()}"
-
 
 def init_mail_db():
     """Initialize mail/post system database tables."""
@@ -159,7 +156,6 @@ def init_mail_db():
     except Exception as e:
         print(f"Error initializing mail database: {e}")
         return False
-
 
 class PackageManager:
     """Manages mail package operations."""
@@ -331,7 +327,6 @@ class PackageManager:
             print(f"Error searching packages: {e}")
             return []
 
-
 class POBoxManager:
     """Manages PO Box rentals."""
 
@@ -424,7 +419,6 @@ class POBoxManager:
             print(f"Error releasing PO box: {e}")
             return False
 
-
 class ForwardingManager:
     """Manages mail forwarding services."""
 
@@ -487,7 +481,6 @@ class ForwardingManager:
             print(f"Error cancelling forwarding: {e}")
             return False
 
-
 class TransactionManager:
     """Manages mail service transactions."""
 
@@ -541,7 +534,6 @@ class TransactionManager:
         except Exception as e:
             print(f"Error getting transactions: {e}")
             return []
-
 
 class ReportManager:
     """Manages reporting for mail services."""

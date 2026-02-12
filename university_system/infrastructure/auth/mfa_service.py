@@ -10,7 +10,7 @@ Provides comprehensive MFA functionality including:
 - MFA Enforcement Policies
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import pyotp
 import qrcode
 import secrets
@@ -25,7 +25,7 @@ import json
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 # Import immutable audit logging for compliance
 try:
@@ -50,7 +50,6 @@ try:
 except ImportError:
     EMAIL_OTP_SERVICE_AVAILABLE = False
     send_email_otp = None
-
 
 class MFAService:
     """Comprehensive Multi-Factor Authentication Service"""
@@ -1351,7 +1350,6 @@ class MFAService:
         finally:
             conn.close()
 
-
 # Convenience functions for quick access
 def setup_totp(user_id: int, username: str) -> Dict:
     """
@@ -1393,7 +1391,6 @@ def setup_totp(user_id: int, username: str) -> Dict:
     """
     service = MFAService()
     return service.setup_totp(user_id, username)
-
 
 def verify_totp(user_id: int, code: str, device_id: str = None) -> Dict:
     """
@@ -1443,7 +1440,6 @@ def verify_totp(user_id: int, code: str, device_id: str = None) -> Dict:
     service = MFAService()
     return service.verify_totp(user_id, code, device_id)
 
-
 def generate_sms_otp(user_id: int, phone: str) -> Dict:
     """
     Generate and send an SMS One-Time Password to a user's phone.
@@ -1488,7 +1484,6 @@ def generate_sms_otp(user_id: int, phone: str) -> Dict:
     """
     service = MFAService()
     return service.generate_sms_otp(user_id, phone)
-
 
 def verify_sms_otp(user_id: int, code: str, device_id: str = None) -> Dict:
     """
@@ -1537,7 +1532,6 @@ def verify_sms_otp(user_id: int, code: str, device_id: str = None) -> Dict:
     """
     service = MFAService()
     return service.verify_sms_otp(user_id, code, device_id)
-
 
 if __name__ == '__main__':
     # Test MFA service

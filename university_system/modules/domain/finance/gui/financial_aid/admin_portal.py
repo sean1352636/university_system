@@ -1317,6 +1317,8 @@ class AdminPortal:
             (get_text("financial_aid.admin_portal.reports.disbursement_schedule", "Disbursement Schedule"), get_text("financial_aid.admin_portal.reports.disbursement_schedule_desc", "Upcoming and completed disbursements")),
             (get_text("financial_aid.admin_portal.reports.compliance_fisap", "Compliance Report (FISAP)"), get_text("financial_aid.admin_portal.reports.compliance_fisap_desc", "Federal compliance reporting")),
             (get_text("financial_aid.admin_portal.reports.sai_report", "Student Aid Index Report"), get_text("financial_aid.admin_portal.reports.sai_report_desc", "SAI/EFC analysis")),
+            (get_text("financial_aid.admin_portal.reports.need_analysis", "Need Analysis Report"), get_text("financial_aid.admin_portal.reports.need_analysis_desc", "Unmet financial need by student demographics")),
+            (get_text("financial_aid.admin_portal.reports.renewal_tracking", "Renewal Tracking Report"), get_text("financial_aid.admin_portal.reports.renewal_tracking_desc", "Scholarship renewal eligibility and status")),
         ]
 
         for i, (name, description) in enumerate(reports):
@@ -1340,6 +1342,10 @@ class AdminPortal:
             self._generate_compliance_report()
         elif report_name == get_text("financial_aid.admin_portal.reports.sai_report", "Student Aid Index Report"):
             self._generate_sai_report()
+        elif report_name == get_text("financial_aid.admin_portal.reports.need_analysis", "Need Analysis Report"):
+            self._generate_need_analysis_report()
+        elif report_name == get_text("financial_aid.admin_portal.reports.renewal_tracking", "Renewal Tracking Report"):
+            self._generate_renewal_tracking_report()
         else:
             show_warning(get_text("financial_aid.admin_portal.dialogs.coming_soon", "Coming Soon"), get_text("financial_aid.admin_portal.messages.report_not_implemented", "Report '{name}' not yet implemented").format(name=report_name))
 
@@ -2175,6 +2181,298 @@ class AdminPortal:
                   command=lambda: self._export_report_to_txt(report_text, "SAI_EFC_Analysis_Report")).pack(side='left', padx=5)
         ttk.Button(button_frame, text=get_text("financial_aid.admin_portal.buttons.close", "Close"),
                   command=lambda: report_window.destroy).pack(side='left', padx=5)
+
+    def _generate_need_analysis_report(self):
+        """Generate Need Analysis report showing unmet financial need by demographics"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title(get_text("financial_aid.admin_portal.reports.need_analysis_title", "Need Analysis Report"))
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text=get_text("financial_aid.admin_portal.reports.need_analysis", "Need Analysis Report"), style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        try:
+            report = []
+            report.append("=" * 80)
+            report.append("FINANCIAL NEED ANALYSIS REPORT")
+            report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append(f"Academic Year: {get_current_academic_year()}")
+            report.append("=" * 80)
+            report.append("")
+
+            with get_connection() as conn:
+                # Section 1: Overall Need Summary
+                report.append("SECTION 1: OVERALL FINANCIAL NEED SUMMARY")
+                report.append("-" * 80)
+
+                overall = conn.execute("""
+                    SELECT
+                        COUNT(DISTINCT sfa.student_id) as aided_students,
+                        SUM(sfa.awarded_amount) as total_awarded,
+                        AVG(sfa.awarded_amount) as avg_awarded,
+                        SUM(sfa.disbursed_amount) as total_disbursed
+                    FROM student_financial_aid sfa
+                    WHERE sfa.status IN ('awarded', 'disbursed')
+                """).fetchone()
+
+                if overall:
+                    d = dict(overall)
+                    report.append(f"Students Receiving Aid: {d['aided_students'] or 0}")
+                    report.append(f"Total Aid Awarded: {format_currency(d['total_awarded'] or 0)}")
+                    report.append(f"Average Award: {format_currency(d['avg_awarded'] or 0)}")
+                    report.append(f"Total Disbursed: {format_currency(d['total_disbursed'] or 0)}")
+
+                # Total enrolled students
+                total_enrolled = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+                aided = dict(overall)['aided_students'] or 0 if overall else 0
+                unaided = total_enrolled - aided
+                report.append(f"\nTotal Enrolled Students: {total_enrolled}")
+                report.append(f"Students Without Aid: {unaided}")
+                if total_enrolled > 0:
+                    report.append(f"Aid Participation Rate: {aided / total_enrolled * 100:.1f}%")
+
+                report.append("")
+
+                # Section 2: Need by Aid Category
+                report.append("SECTION 2: AID DISTRIBUTION BY CATEGORY")
+                report.append("-" * 80)
+
+                by_category = conn.execute("""
+                    SELECT
+                        COALESCE(fat.aid_category, 'Other') as category,
+                        COUNT(DISTINCT sfa.student_id) as recipients,
+                        SUM(sfa.awarded_amount) as total,
+                        AVG(sfa.awarded_amount) as avg_amount
+                    FROM student_financial_aid sfa
+                    LEFT JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+                    WHERE sfa.status IN ('awarded', 'disbursed')
+                    GROUP BY category
+                    ORDER BY total DESC
+                """).fetchall()
+
+                for row in by_category:
+                    r = dict(row)
+                    report.append(f"\n{(r['category'] or 'Other').upper()}")
+                    report.append(f"  Recipients: {r['recipients']}")
+                    report.append(f"  Total: {format_currency(r['total'] or 0)}")
+                    report.append(f"  Average: {format_currency(r['avg_amount'] or 0)}")
+
+                report.append("")
+
+                # Section 3: Students with Highest Unmet Need
+                report.append("SECTION 3: STUDENTS WITH HIGHEST TOTAL AID")
+                report.append("-" * 80)
+
+                top_aid = conn.execute("""
+                    SELECT
+                        sfa.student_id,
+                        SUM(sfa.awarded_amount) as total_aid,
+                        COUNT(DISTINCT sfa.aid_type_id) as aid_sources
+                    FROM student_financial_aid sfa
+                    WHERE sfa.status IN ('awarded', 'disbursed')
+                    GROUP BY sfa.student_id
+                    ORDER BY total_aid DESC
+                    LIMIT 15
+                """).fetchall()
+
+                if top_aid:
+                    report.append(f"{'Student ID':<15} {'Total Aid':>15} {'Sources':>10}")
+                    report.append("-" * 40)
+                    for row in top_aid:
+                        r = dict(row)
+                        report.append(f"{r['student_id']:<15} {format_currency(r['total_aid'] or 0):>15} {r['aid_sources']:>10}")
+                else:
+                    report.append("No aid data available")
+
+                report.append("")
+
+                # Section 4: Aid Status Breakdown
+                report.append("SECTION 4: AID STATUS BREAKDOWN")
+                report.append("-" * 80)
+
+                status_breakdown = conn.execute("""
+                    SELECT status, COUNT(*) as count, SUM(awarded_amount) as total
+                    FROM student_financial_aid
+                    GROUP BY status
+                    ORDER BY count DESC
+                """).fetchall()
+
+                for row in status_breakdown:
+                    r = dict(row)
+                    report.append(f"  {r['status'].title()}: {r['count']} awards, {format_currency(r['total'] or 0)}")
+
+            report.append("")
+            report.append("=" * 80)
+            report.append("END OF NEED ANALYSIS REPORT")
+            report.append("=" * 80)
+
+            report_text.insert('1.0', '\n'.join(report))
+            report_text.config(state='disabled')
+
+        except Exception as e:
+            logger.error(f"Error generating need analysis report: {e}")
+            report_text.insert('1.0', f"Error generating report:\n{str(e)}")
+            report_text.config(state='disabled')
+
+        btn_frame = ttk.Frame(report_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.export_csv", "Export as CSV"),
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "need_analysis_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.export_text", "Export as Text"),
+                  command=lambda: self._export_report_to_txt(report_text.get('1.0', 'end-1c'), "need_analysis_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.close", "Close"),
+                  command=report_window.destroy).pack(side='left', padx=5)
+
+    def _generate_renewal_tracking_report(self):
+        """Generate Renewal Tracking report for scholarships"""
+        report_window = tk.Toplevel(self.parent_frame)
+        report_window.title(get_text("financial_aid.admin_portal.reports.renewal_tracking_title", "Renewal Tracking Report"))
+        report_window.geometry("900x700")
+
+        ttk.Label(report_window, text=get_text("financial_aid.admin_portal.reports.renewal_tracking", "Renewal Tracking Report"), style='Title.TLabel').pack(pady=10)
+
+        report_frame = ttk.Frame(report_window)
+        report_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text.pack(fill='both', expand=True)
+
+        try:
+            report = []
+            report.append("=" * 80)
+            report.append("SCHOLARSHIP RENEWAL TRACKING REPORT")
+            report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append(f"Academic Year: {get_current_academic_year()}")
+            report.append("=" * 80)
+            report.append("")
+
+            with get_connection() as conn:
+                # Check if scholarship_awards table exists
+                table_check = conn.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type='table' AND name='scholarship_awards'
+                """).fetchone()
+
+                if not table_check:
+                    report.append("SCHOLARSHIP AWARDS TABLE NOT YET CONFIGURED")
+                    report.append("")
+                    report.append("The scholarship_awards table has not been created yet.")
+                    report.append("This report requires scholarship award tracking to be enabled.")
+                else:
+                    # Section 1: Renewable Scholarship Summary
+                    report.append("SECTION 1: RENEWABLE SCHOLARSHIP OVERVIEW")
+                    report.append("-" * 80)
+
+                    renewable_summary = conn.execute("""
+                        SELECT
+                            COUNT(*) as total_awards,
+                            SUM(CASE WHEN sa.is_renewable = 1 THEN 1 ELSE 0 END) as renewable_count,
+                            SUM(CASE WHEN sa.is_renewable = 0 THEN 1 ELSE 0 END) as non_renewable_count,
+                            SUM(sa.amount) as total_amount,
+                            SUM(CASE WHEN sa.is_renewable = 1 THEN sa.amount ELSE 0 END) as renewable_amount
+                        FROM scholarship_awards sa
+                        WHERE sa.status = 'active'
+                    """).fetchone()
+
+                    if renewable_summary:
+                        d = dict(renewable_summary)
+                        report.append(f"Total Active Awards: {d['total_awards'] or 0}")
+                        report.append(f"Renewable Awards: {d['renewable_count'] or 0}")
+                        report.append(f"Non-Renewable Awards: {d['non_renewable_count'] or 0}")
+                        report.append(f"Total Award Amount: {format_currency(d['total_amount'] or 0)}")
+                        report.append(f"Renewable Amount: {format_currency(d['renewable_amount'] or 0)}")
+
+                    report.append("")
+
+                    # Section 2: Awards by Scholarship
+                    report.append("SECTION 2: ACTIVE AWARDS BY SCHOLARSHIP")
+                    report.append("-" * 80)
+
+                    awards_by_scholarship = conn.execute("""
+                        SELECT
+                            COALESCE(s.name, 'Unknown') as scholarship_name,
+                            s.renewable as is_renewable_scholarship,
+                            COUNT(sa.award_id) as award_count,
+                            SUM(sa.amount) as total_awarded,
+                            AVG(sa.amount) as avg_award
+                        FROM scholarship_awards sa
+                        LEFT JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
+                        WHERE sa.status = 'active'
+                        GROUP BY sa.scholarship_id
+                        ORDER BY total_awarded DESC
+                    """).fetchall()
+
+                    if awards_by_scholarship:
+                        for row in awards_by_scholarship:
+                            r = dict(row)
+                            renewable_tag = " [RENEWABLE]" if r['is_renewable_scholarship'] else ""
+                            report.append(f"\n{r['scholarship_name']}{renewable_tag}")
+                            report.append(f"  Active Awards: {r['award_count']}")
+                            report.append(f"  Total Awarded: {format_currency(r['total_awarded'] or 0)}")
+                            report.append(f"  Average Award: {format_currency(r['avg_award'] or 0)}")
+                    else:
+                        report.append("No active scholarship awards found")
+
+                    report.append("")
+
+                    # Section 3: Recent Awards
+                    report.append("SECTION 3: RECENT SCHOLARSHIP AWARDS")
+                    report.append("-" * 80)
+
+                    recent_awards = conn.execute("""
+                        SELECT
+                            sa.student_id,
+                            COALESCE(s.name, 'Unknown') as scholarship_name,
+                            sa.amount,
+                            sa.academic_year,
+                            sa.is_renewable,
+                            sa.awarded_date
+                        FROM scholarship_awards sa
+                        LEFT JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
+                        WHERE sa.status = 'active'
+                        ORDER BY sa.awarded_date DESC
+                        LIMIT 20
+                    """).fetchall()
+
+                    if recent_awards:
+                        report.append(f"{'Student':<12} {'Scholarship':<30} {'Amount':>12} {'Year':<12} {'Renewable':<10}")
+                        report.append("-" * 76)
+                        for row in recent_awards:
+                            r = dict(row)
+                            renew_str = "Yes" if r['is_renewable'] else "No"
+                            name = (r['scholarship_name'] or 'Unknown')[:28]
+                            report.append(f"{r['student_id']:<12} {name:<30} {format_currency(r['amount'] or 0):>12} {r['academic_year'] or 'N/A':<12} {renew_str:<10}")
+                    else:
+                        report.append("No recent awards found")
+
+            report.append("")
+            report.append("=" * 80)
+            report.append("END OF RENEWAL TRACKING REPORT")
+            report.append("=" * 80)
+
+            report_text.insert('1.0', '\n'.join(report))
+            report_text.config(state='disabled')
+
+        except Exception as e:
+            logger.error(f"Error generating renewal tracking report: {e}")
+            report_text.insert('1.0', f"Error generating report:\n{str(e)}")
+            report_text.config(state='disabled')
+
+        btn_frame = ttk.Frame(report_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.export_csv", "Export as CSV"),
+                  command=lambda: self._export_report_to_csv(report_text.get('1.0', 'end-1c'), "renewal_tracking_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.export_text", "Export as Text"),
+                  command=lambda: self._export_report_to_txt(report_text.get('1.0', 'end-1c'), "renewal_tracking_report")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=get_text("financial_aid.admin_portal.buttons.close", "Close"),
+                  command=report_window.destroy).pack(side='left', padx=5)
 
     def _export_report_to_csv(self, report_text: str, filename_base: str):
         """Export report to CSV file"""

@@ -1,11 +1,12 @@
 """Car Rental System Core Services Module"""
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
 from university_system.infrastructure.database.db import get_db_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ RENTAL_STATUSES = ['reserved', 'active', 'completed', 'cancelled', 'overdue']
 
 # Vehicle statuses
 VEHICLE_STATUSES = ['available', 'rented', 'maintenance', 'unavailable']
-
 
 def init_carrental_db():
     """Initialize car rental database tables"""
@@ -152,7 +152,6 @@ def init_carrental_db():
         logger.error(f"Failed to initialize car rental database: {e}")
         return False
 
-
 class VehicleManager:
     """Manages vehicle operations"""
 
@@ -189,7 +188,7 @@ class VehicleManager:
             values = []
             for key, value in kwargs.items():
                 if value is not None:
-                    updates.append(f"{key} = ?")
+                    updates.append(validate_identifier(key, "column") + " = ?")
                     values.append(value)
 
             if not updates:
@@ -199,11 +198,11 @@ class VehicleManager:
             values.append(vehicle_id)
 
             with transaction() as conn:
-                conn.execute(f'''
-                    UPDATE carrental_vehicles
-                    SET {', '.join(updates)}
-                    WHERE vehicle_id = ?
-                ''', values)
+                conn.execute(
+                    "UPDATE carrental_vehicles"
+                    " SET " + ", ".join(updates) +
+                    " WHERE vehicle_id = ?",
+                    values)
             return True
         except Exception as e:
             logger.error(f"Failed to update vehicle: {e}")
@@ -274,7 +273,6 @@ class VehicleManager:
         except Exception as e:
             logger.error(f"Failed to update vehicle status: {e}")
             return False
-
 
 class RentalManager:
     """Manages rental operations"""
@@ -472,7 +470,6 @@ class RentalManager:
             logger.error(f"Failed to cancel rental: {e}")
             return False
 
-
 class TransactionManager:
     """Manages payment transactions"""
 
@@ -553,7 +550,6 @@ class TransactionManager:
         except Exception as e:
             logger.error(f"Failed to get transactions: {e}")
             return []
-
 
 class ReportManager:
     """Manages reports and analytics"""

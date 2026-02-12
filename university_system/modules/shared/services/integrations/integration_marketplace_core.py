@@ -31,6 +31,7 @@ from university_system.infrastructure.database.db import get_connection, transac
 from university_system.modules.shared.feature_gui_factory import create_gui_launcher
 from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.sql_safety import validate_identifier
 
 # Try to import optional dependencies
 try:
@@ -439,8 +440,10 @@ class SearchDiscoveryManager:
             if not conditions:
                 conditions = ["1=1"]
 
-            joiner = f" {logic} "
-            query = f"SELECT * FROM integration_catalog WHERE is_active = 1 AND ({joiner.join(conditions)}) ORDER BY rating DESC"
+            # Validate logic operator to prevent injection
+            safe_logic = logic.upper() if logic.upper() in ('AND', 'OR') else 'AND'
+            joiner = " " + safe_logic + " "
+            query = "SELECT * FROM integration_catalog WHERE is_active = 1 AND (" + joiner.join(conditions) + ") ORDER BY rating DESC"
             cursor.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 

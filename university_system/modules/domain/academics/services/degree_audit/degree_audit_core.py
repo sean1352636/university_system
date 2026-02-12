@@ -8,7 +8,7 @@ what-if scenarios, advising appointments, and graduation audits.
 from __future__ import annotations
 
 import json
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, date
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection
@@ -25,7 +25,6 @@ from university_system.modules.shared.utils.i18n import (
 from university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
-
 
 class DegreeProgramManager:
     """Manages degree programs and requirements"""
@@ -174,7 +173,6 @@ class DegreeProgramManager:
 
         finally:
             conn.close()
-
 
 class DegreeProgressManager:
     """Manages student degree progress tracking"""
@@ -328,7 +326,6 @@ class DegreeProgressManager:
         finally:
             conn.close()
 
-
 class WhatIfScenarioManager:
     """Manages what-if degree planning scenarios"""
 
@@ -414,7 +411,6 @@ class WhatIfScenarioManager:
         finally:
             conn.close()
 
-
 class AdvisingAppointmentManager:
     """Manages academic advising appointments"""
 
@@ -470,7 +466,6 @@ class AdvisingAppointmentManager:
 
         finally:
             conn.close()
-
 
 class GraduationAuditManager:
     """Manages graduation audits and conferral"""
@@ -578,11 +573,9 @@ class GraduationAuditManager:
         finally:
             conn.close()
 
-
 # Removed: display_degree_audit_menu() - replaced by comprehensive degree_audit_cli.py
 # The placeholder menu has been replaced with a full-featured CLI in:
 # university_system/modules/services/cli/degree_audit_cli.py
-
 
 # Import GUI launcher from the actual GUI module
 try:
@@ -603,8 +596,6 @@ Features:
 • Degree requirements""",
         cli_instruction="Use CLI: Degree Audit & Academic Advising"
     )
-
-
 
 __all__ = [
     'DegreeProgramManager',

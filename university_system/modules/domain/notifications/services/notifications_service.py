@@ -22,14 +22,14 @@ Database Schema:
 - bundled_notifications: Related notification grouping
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta, time
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 class NotificationPriority(Enum):
     """Notification priority levels"""
@@ -37,7 +37,6 @@ class NotificationPriority(Enum):
     MEDIUM = "medium"
     HIGH = "high"
     URGENT = "urgent"
-
 
 class NotificationChannel(Enum):
     """Notification channel categories"""
@@ -49,13 +48,11 @@ class NotificationChannel(Enum):
     EVENTS = "events"
     SYSTEM = "system"
 
-
 class DeliveryMethod(Enum):
     """Notification delivery methods"""
     PUSH = "push"
     EMAIL = "email"
     SMS = "sms"
-
 
 def map_notification_type_to_channel_priority(notification_type: str) -> Tuple[str, str]:
     """
@@ -116,7 +113,6 @@ def map_notification_type_to_channel_priority(notification_type: str) -> Tuple[s
 
     # Default to system/medium if not found
     return type_mapping.get(notification_type.lower(), ('system', 'medium'))
-
 
 def create_notification_legacy(
     user_id: str,
@@ -196,7 +192,6 @@ def create_notification_legacy(
                 ) VALUES (?, ?, ?, ?, ?, ?)
             ''', (user_id, channel, priority, title, message, metadata))
             return cursor.lastrowid
-
 
 class NotificationsService:
     """Service for managing the Smart Notifications Hub"""
@@ -353,7 +348,8 @@ class NotificationsService:
             for col_name, col_type in required_columns.items():
                 if col_name not in existing_columns:
                     try:
-                        conn.execute(f'ALTER TABLE notification_preferences ADD COLUMN {col_name} {col_type}')
+                        safe_col = validate_identifier(col_name, "column")
+                        conn.execute('ALTER TABLE notification_preferences ADD COLUMN ' + safe_col + ' ' + col_type)
                     except Exception:
                         pass  # Column might already exist or other constraint
 

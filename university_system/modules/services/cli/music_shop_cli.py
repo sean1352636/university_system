@@ -15,7 +15,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -31,7 +31,6 @@ except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
 
-
 # Music categories
 MUSIC_CATEGORIES = ["Albums", "Singles", "Vinyl", "Instruments", "Accessories", "Sheet Music", "Merchandise"]
 
@@ -43,7 +42,6 @@ ORDER_STATUSES = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"]
 
 # Condition types
 CONDITION_TYPES = ["New", "Like New", "Very Good", "Good", "Acceptable"]
-
 
 MUSIC_SHOP_SCHEMA = """
 CREATE TABLE IF NOT EXISTS musicshop_products (
@@ -95,7 +93,6 @@ CREATE TABLE IF NOT EXISTS musicshop_wishlist (
 );
 """
 
-
 def init_musicshop_database():
     """Initialize music shop database tables."""
     try:
@@ -132,7 +129,6 @@ def init_musicshop_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -141,11 +137,9 @@ def get_current_user():
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
 
-
 def generate_order_number():
     """Generate unique order number."""
     return f"MUS-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
 
 # ==================== PRODUCT MANAGEMENT ====================
 
@@ -191,7 +185,6 @@ def get_all_products(category=None, genre=None, search=None):
         print(f"Error getting products: {e}")
         return []
 
-
 def get_product_by_id(product_id):
     """Get specific product by ID."""
     try:
@@ -212,7 +205,6 @@ def get_product_by_id(product_id):
     except Exception as e:
         print(f"Error getting product: {e}")
     return None
-
 
 # ==================== ORDER MANAGEMENT ====================
 
@@ -259,7 +251,6 @@ def create_order(order_data, cart_items):
         print(f"Error creating order: {e}")
         return False
 
-
 def get_all_orders():
     """Get all orders."""
     try:
@@ -282,7 +273,6 @@ def get_all_orders():
         print(f"Error getting orders: {e}")
         return []
 
-
 # ==================== WISHLIST ====================
 
 def add_to_wishlist(customer_name, product_id):
@@ -298,7 +288,6 @@ def add_to_wishlist(customer_name, product_id):
     except Exception as e:
         print(f"Error adding to wishlist: {e}")
         return False
-
 
 def get_wishlist(customer_name):
     """Get customer's wishlist."""
@@ -322,7 +311,6 @@ def get_wishlist(customer_name):
         print(f"Error getting wishlist: {e}")
         return []
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -331,10 +319,8 @@ def print_header(title):
     print(f"  {title}")
     print("=" * 80)
 
-
 # Shopping cart (global for session)
 cart = []
-
 
 def browse_catalog_menu():
     """Browse music catalog."""
@@ -399,7 +385,6 @@ def browse_catalog_menu():
 
     print()
 
-
 def add_to_cart_menu():
     """Add product to cart."""
     product_id = input("\n  Enter Product ID to add to cart: ").strip()
@@ -437,7 +422,6 @@ def add_to_cart_menu():
 
     print(f"\n  ✅ Added {quantity}x {product['title']} to cart!")
 
-
 def view_cart_menu():
     """View shopping cart."""
     print_header("Shopping Cart")
@@ -461,7 +445,6 @@ def view_cart_menu():
     print("  " + "-" * 85)
     print(f"  {'TOTAL':<62} £{total:.2f}")
     print()
-
 
 def checkout_menu():
     """Process checkout."""
@@ -524,7 +507,6 @@ def checkout_menu():
     else:
         print("\n  ❌ Failed to process order.")
 
-
 def view_orders_menu():
     """View all orders."""
     print_header("Music Shop - All Orders")
@@ -544,7 +526,6 @@ def view_orders_menu():
         print(f"  {order['order_number']:<20} {customer:<25} £{order['total_amount']:<9.2f} {order['payment_status']:<10} {order['order_status']:<12}")
 
     print()
-
 
 def wishlist_menu():
     """Manage wishlist."""
@@ -574,7 +555,6 @@ def wishlist_menu():
         print(f"  {title:<35} {artist:<20} £{item['price']:<9.2f} {item['stock']:<6}")
 
     print()
-
 
 def statistics_menu():
     """Show shop statistics."""
@@ -617,7 +597,6 @@ def statistics_menu():
 
     print()
 
-
 def music_shop_menu():
     """Main music shop CLI menu."""
     init_musicshop_database()
@@ -657,7 +636,6 @@ def music_shop_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     music_shop_menu()

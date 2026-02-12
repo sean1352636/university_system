@@ -4,7 +4,7 @@ Tests AI Detector GUI components, initialization, and functionality
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 import tkinter as tk
@@ -22,7 +22,6 @@ except ImportError as e:
     GUI_AVAILABLE = False
     import_error = e
 
-
 @pytest.fixture
 def mock_detector():
     """Create a mock AI detector"""
@@ -30,7 +29,6 @@ def mock_detector():
     detector.analyze_text = MagicMock(return_value={'ai_probability': 0.75, 'analysis': 'Test result'})
     detector.analyze_file = MagicMock(return_value={'ai_probability': 0.65, 'analysis': 'File result'})
     return detector
-
 
 @pytest.fixture
 def mock_auth():
@@ -46,7 +44,6 @@ def mock_auth():
     auth.is_logged_in = MagicMock(return_value=True)
     return auth
 
-
 @pytest.fixture
 def mock_tk_root():
     """Create a mock Tkinter root window"""
@@ -54,7 +51,6 @@ def mock_tk_root():
     root.winfo_screenwidth = MagicMock(return_value=1920)
     root.winfo_screenheight = MagicMock(return_value=1080)
     return root
-
 
 class TestAIDetectorGUIImport:
     """Tests for AI Detector GUI import"""
@@ -73,7 +69,6 @@ class TestAIDetectorGUIImport:
 
         from university_system.modules.domain.academics.gui import ai_detector
         assert hasattr(ai_detector, 'AIDetectorGUI')
-
 
 class TestAIDetectorGUIInitialization:
     """Tests for AI Detector GUI initialization"""
@@ -136,7 +131,6 @@ class TestAIDetectorGUIInitialization:
         with pytest.raises(RuntimeError):
             gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=None)
 
-
 class TestAuthenticationInitialization:
     """Tests for authentication initialization"""
 
@@ -187,7 +181,6 @@ class TestAuthenticationInitialization:
 
                         assert gui.auth is not None
 
-
 class TestWindowSetup:
     """Tests for window setup"""
 
@@ -222,7 +215,6 @@ class TestWindowSetup:
 
                 # Geometry should be set
                 assert mock_root.geometry.called
-
 
 class TestStyleSetup:
     """Tests for style setup"""
@@ -263,7 +255,6 @@ class TestStyleSetup:
                 assert hasattr(gui, 'colors')
                 assert isinstance(gui.colors, dict)
 
-
 class TestInterfaceCreation:
     """Tests for interface creation"""
 
@@ -284,7 +275,6 @@ class TestInterfaceCreation:
 
                 # Widgets should be created
                 assert mock_frame.called or mock_button.called
-
 
 class TestGUIAttributes:
     """Tests for GUI attributes"""
@@ -327,7 +317,6 @@ class TestGUIAttributes:
                     assert gui.analysis_results == {}
                     assert gui.current_submission_id is None
 
-
 class TestErrorHandling:
     """Tests for error handling"""
 
@@ -348,7 +337,6 @@ class TestErrorHandling:
 
             # Error dialog should have been shown
             mock_error.assert_called_once()
-
 
 class TestFallbackAuthentication:
     """Tests for fallback authentication"""
@@ -380,7 +368,6 @@ class TestFallbackAuthentication:
                         assert gui.auth.current_user['id'] == 1
                         assert gui.auth.current_user['username'] == 'admin'
 
-
 class TestModuleAvailability:
     """Tests for module availability and dependencies"""
 
@@ -401,7 +388,6 @@ class TestModuleAvailability:
             assert True
         except ImportError as e:
             pytest.skip(f"Tkinter not available: {e}")
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

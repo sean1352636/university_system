@@ -421,13 +421,13 @@ def generate_fine_report(self):
         cursor = conn.cursor()
         student_columns = self._get_student_columns()
         grade_sql = ', s.grade_level' if 'grade_level' in student_columns else ''
-        cursor.execute(f'''
+        cursor.execute('''
             SELECT bl.user_id,
                    COALESCE(s.first_name || ' ' || s.last_name, 'Unknown') AS full_name,
                    SUM(COALESCE(bl.fine_amount, 0)) AS total_fines,
                    COUNT(*) AS fine_items,
                    MAX(bl.due_date) AS latest_due,
-                   s.email_address{grade_sql}
+                   s.email_address''' + grade_sql + '''
             FROM book_loans bl
             LEFT JOIN students s ON bl.user_id = s.student_id
             WHERE bl.fine_amount > 0 AND bl.status != 'returned'

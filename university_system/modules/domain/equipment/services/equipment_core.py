@@ -1,11 +1,12 @@
 """Equipment Rental System Core Services Module"""
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
 from university_system.infrastructure.database.db import get_db_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ RENTAL_STATUSES = ['reserved', 'checked_out', 'returned', 'overdue', 'cancelled'
 
 # Equipment conditions
 EQUIPMENT_CONDITIONS = ['excellent', 'good', 'fair', 'needs_repair', 'out_of_service']
-
 
 def init_equipment_db():
     """Initialize equipment rental database tables"""
@@ -150,7 +150,6 @@ def init_equipment_db():
         logger.error(f"Failed to initialize equipment database: {e}")
         return False
 
-
 class EquipmentManager:
     """Manages equipment inventory"""
 
@@ -194,7 +193,7 @@ class EquipmentManager:
             values = []
             for key, value in kwargs.items():
                 if value is not None:
-                    updates.append(f"{key} = ?")
+                    updates.append(validate_identifier(key, "column") + " = ?")
                     values.append(value)
 
             if not updates:
@@ -204,11 +203,11 @@ class EquipmentManager:
             values.append(item_id)
 
             with transaction() as conn:
-                conn.execute(f'''
-                    UPDATE equipment_items
-                    SET {', '.join(updates)}
-                    WHERE item_id = ?
-                ''', values)
+                conn.execute(
+                    "UPDATE equipment_items"
+                    " SET " + ", ".join(updates) +
+                    " WHERE item_id = ?",
+                    values)
             return True
         except Exception as e:
             logger.error(f"Failed to update equipment: {e}")
@@ -279,7 +278,6 @@ class EquipmentManager:
         except Exception as e:
             logger.error(f"Failed to update availability: {e}")
             return False
-
 
 class RentalManager:
     """Manages equipment rental operations"""
@@ -513,7 +511,6 @@ class RentalManager:
             logger.error(f"Failed to extend rental: {e}")
             return False
 
-
 class TransactionManager:
     """Manages payment transactions"""
 
@@ -593,7 +590,6 @@ class TransactionManager:
         except Exception as e:
             logger.error(f"Failed to get transactions: {e}")
             return []
-
 
 class ReportManager:
     """Manages reports and analytics"""

@@ -18,6 +18,7 @@ import csv
 import re
 import shutil
 from collections import deque
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 # Import internationalization support
 from university_system.modules.shared.utils.i18n import get_text as _, init_i18n
@@ -361,12 +362,13 @@ class AuditLogsWindow:
 
             for table_name in candidates:
                 try:
-                    cursor.execute(f"PRAGMA table_info({table_name})")
+                    safe_table = validate_table_name(table_name, conn=conn)
+                    cursor.execute("PRAGMA table_info([" + safe_table + "])")
                     columns = [row[1] for row in cursor.fetchall()]
                     if not columns:
                         continue
 
-                    cursor.execute(f"SELECT * FROM {table_name} ORDER BY ROWID DESC LIMIT 500")
+                    cursor.execute("SELECT * FROM [" + safe_table + "] ORDER BY ROWID DESC LIMIT 500")
                     for row in cursor.fetchall():
                         log_entry = self._build_log_record(table_name, columns, row)
                         if log_entry:
@@ -897,7 +899,8 @@ class DiagnosticsWindow:
                 for table_name, metric_label in count_targets.items():
                     if any(t['name'] == table_name for t in tables if t['exists']):
                         try:
-                            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                            safe_table = validate_table_name(table_name, conn=conn)
+                            cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                             count = cursor.fetchone()[0]
                             metrics["counts"][metric_label] = f"{count:,}"
                         except Exception:
@@ -942,7 +945,8 @@ class DiagnosticsWindow:
             row_count = "—"
             if exists:
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {name}")
+                    safe_name = validate_identifier(name, "table")
+                    cursor.execute("SELECT COUNT(*) FROM [" + safe_name + "]")
                     row_count = f"{cursor.fetchone()[0]:,}"
                 except Exception:
                     row_count = "?"
@@ -969,12 +973,13 @@ class DiagnosticsWindow:
             if table not in existing_tables:
                 continue
             try:
-                cursor.execute(f"PRAGMA table_info({table})")
+                safe_table = validate_identifier(table, "table")
+                cursor.execute("PRAGMA table_info([" + safe_table + "])")
                 columns = [row[1] for row in cursor.fetchall()]
                 if not columns:
                     continue
 
-                cursor.execute(f"SELECT * FROM {table} ORDER BY ROWID DESC LIMIT 5")
+                cursor.execute("SELECT * FROM [" + safe_table + "] ORDER BY ROWID DESC LIMIT 5")
                 rows = cursor.fetchall()
                 recent = []
                 for row in rows:

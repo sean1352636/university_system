@@ -4,7 +4,6 @@ from datetime import datetime
 import csv
 import json
 import logging
-import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,6 @@ try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
-
 
 class DashboardManager:
     """Manager for dashboard-related functionality in the Document Manager GUI."""

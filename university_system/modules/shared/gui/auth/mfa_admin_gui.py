@@ -6,13 +6,12 @@ Administrative interface for managing MFA policies, user MFA settings, and monit
 
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List
 from university_system.infrastructure.auth.mfa_service import MFAService
 from university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 init_i18n()
-
 
 def _ensure_mfa_tables_exist():
     """Ensure required MFA tables exist in the database"""
@@ -21,7 +20,6 @@ def _ensure_mfa_tables_exist():
         run_migration()
     except Exception as e:
         print(f"Note: MFA tables initialization: {e}")
-
 
 class MFAAdminPanel(tk.Toplevel):
     """
@@ -1278,12 +1276,10 @@ class MFAAdminPanel(tk.Toplevel):
         except Exception as e:
             messagebox.showerror(_("common.error"), _("mfa_admin.messages.test_failed", error=str(e)))
 
-
 def show_mfa_admin(parent, admin_user_id: int):
     """Show MFA admin panel"""
     panel = MFAAdminPanel(parent, admin_user_id)
     return panel
-
 
 if __name__ == '__main__':
     # Test admin panel

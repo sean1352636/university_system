@@ -119,24 +119,23 @@ def refresh_maintenance_list(gui_instance):
 
         where_clause = " AND ".join(where_clauses) if where_clauses else "1=1"
 
-        cursor.execute(f'''
-        SELECT m.request_id, m.request_date, s.first_name, s.last_name,
-               r.room_number, b.building_name, m.issue_type, m.priority, m.status
-        FROM housing_maintenance_requests m
-        JOIN students s ON m.student_id = s.student_id
-        JOIN housing_rooms r ON m.room_id = r.room_id
-        JOIN housing_buildings b ON r.building_id = b.building_id
-        WHERE {where_clause}
-        ORDER BY
-            CASE m.priority
-                WHEN 'Emergency' THEN 1
-                WHEN 'High' THEN 2
-                WHEN 'Medium' THEN 3
-                WHEN 'Low' THEN 4
-                ELSE 5
-            END,
-            m.request_date DESC
-        ''', params)
+        cursor.execute(
+        "SELECT m.request_id, m.request_date, s.first_name, s.last_name,"
+        " r.room_number, b.building_name, m.issue_type, m.priority, m.status"
+        " FROM housing_maintenance_requests m"
+        " JOIN students s ON m.student_id = s.student_id"
+        " JOIN housing_rooms r ON m.room_id = r.room_id"
+        " JOIN housing_buildings b ON r.building_id = b.building_id"
+        " WHERE " + where_clause +
+        " ORDER BY"
+        " CASE m.priority"
+        " WHEN 'Emergency' THEN 1"
+        " WHEN 'High' THEN 2"
+        " WHEN 'Medium' THEN 3"
+        " WHEN 'Low' THEN 4"
+        " ELSE 5"
+        " END,"
+        " m.request_date DESC", params)
 
         requests = cursor.fetchall()
 

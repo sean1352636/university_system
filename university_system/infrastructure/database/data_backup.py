@@ -19,7 +19,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from university_system.modules.shared.constants.paths import PROJECT_ROOT, DATA_DIR, BACKUP_DIR, DEFAULT_DB_PATH
+from university_system.core.paths import PROJECT_ROOT, DATA_DIR, BACKUP_DIR, DEFAULT_DB_PATH
 
 # Third-party imports
 import boto3
@@ -41,11 +41,11 @@ from university_system.infrastructure.database.db import sqlite3
 from university_system.utils.logging.log_config import configure_logging
 from university_system.utils.logging.log_config import get_log_file
 from university_system.infrastructure.email.template_utils import render_template
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core.sql_safety import (
     validate_table_name,
     SQLIdentifierError,
 )
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.i18n import get_text as _t, init_i18n
 
 init_i18n()
 
@@ -463,7 +463,8 @@ def upload_to_sftp(file_path: str, host: str, username: str, password: str, remo
     """Upload file to SFTP server"""
     try:
         with paramiko.SSHClient() as ssh:
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.load_system_host_keys()
+            ssh.set_missing_host_key_policy(paramiko.RejectPolicy())
             ssh.connect(host, username=username, password=password)
 
             with ssh.open_sftp() as sftp:
@@ -643,12 +644,12 @@ def create_selective_backup(tables: list, backup_path: str) -> bool:
                 # Copy table data - table name validated above via validate_table_name
                 # Use bracket quoting for additional safety
                 validated_table = validate_table_name(table, conn=source_conn)
-                cursor.execute(f"SELECT * FROM [{validated_table}]")
+                cursor.execute("SELECT * FROM [" + validated_table + "]")
                 rows = cursor.fetchall()
 
                 if rows:
                     placeholders = ','.join(['?' for _ in range(len(rows[0]))])
-                    backup_conn.executemany(f"INSERT INTO [{validated_table}] VALUES ({placeholders})", rows)
+                    backup_conn.executemany("INSERT INTO [" + validated_table + "] VALUES (" + placeholders + ")", rows)
 
         backup_conn.commit()
         return True
@@ -778,7 +779,7 @@ def export_to_csv(backup_path: str, output_dir: str) -> bool:
         for table in tables:
             # Validate table name to prevent SQL injection
             validated_table = validate_table_name(table, conn)
-            df = pd.read_sql_query(f"SELECT * FROM [{validated_table}]", conn)
+            df = pd.read_sql_query("SELECT * FROM [" + validated_table + "]", conn)
             csv_path = os.path.join(output_dir, f"{table}.csv")
             df.to_csv(csv_path, index=False)
 
@@ -817,7 +818,7 @@ def export_to_json(backup_path: str, output_file: str) -> bool:
 
             cursor = conn.cursor()
             # Table name validated above - safe to use in query with bracket quoting
-            cursor.execute(f"SELECT * FROM [{validated_table}]")
+            cursor.execute("SELECT * FROM [" + validated_table + "]")
             columns = [description[0] for description in cursor.description]
             rows = cursor.fetchall()
 
@@ -863,7 +864,7 @@ def export_to_xml(backup_path: str, output_file: str) -> bool:
 
             cursor = conn.cursor()
             # Table name validated above - safe to use in query with bracket quoting
-            cursor.execute(f"SELECT * FROM [{validated_table}]")
+            cursor.execute("SELECT * FROM [" + validated_table + "]")
             columns = [description[0] for description in cursor.description]
             rows = cursor.fetchall()
 
@@ -1314,24 +1315,26 @@ def restore_from_backup(backup_path, target_tables=None, point_in_time=None):
                 logger.error("Encryption password required for encrypted backup")
                 return False
             
-            temp_decrypt = tempfile.mktemp(suffix='.db')
+            fd, temp_decrypt = tempfile.mkstemp(suffix='.db')
+            os.close(fd)
             restore_file = decrypt_file(backup_path, config["encryption_password"], temp_decrypt)
             temp_files.append(temp_decrypt)
-            
+
             if not restore_file:
                 logger.error("Failed to decrypt backup file")
                 return False
-        
+
         # Decompress if needed
         if restore_file.endswith(('.gz', '.zip')):
-            temp_decompress = tempfile.mktemp(suffix='.db')
+            fd, temp_decompress = tempfile.mkstemp(suffix='.db')
+            os.close(fd)
             restore_file = decompress_file(restore_file, temp_decompress)
             temp_files.append(temp_decompress)
-            
+
             if not restore_file:
                 logger.error("Failed to decompress backup file")
                 return False
-        
+
         # Perform restore
         if target_tables:
             # Partial restore - only specified tables
@@ -1411,12 +1414,12 @@ def restore_partial_tables(backup_path, tables):
                 main_conn.execute(create_sql[0])
 
                 # Copy data - table name validated above, use bracket quoting
-                cursor.execute(f"SELECT * FROM [{validated_table}]")
+                cursor.execute("SELECT * FROM [" + validated_table + "]")
                 rows = cursor.fetchall()
 
                 if rows:
                     placeholders = ','.join(['?' for _ in range(len(rows[0]))])
-                    main_conn.executemany(f"INSERT INTO [{validated_table}] VALUES ({placeholders})", rows)
+                    main_conn.executemany("INSERT INTO [" + validated_table + "] VALUES (" + placeholders + ")", rows)
         
         main_conn.commit()
         main_conn.close()
@@ -1529,10 +1532,10 @@ def compare_table_data(conn1, conn2, table):
         cursor2 = conn2.cursor()
 
         # Table name validated above - use bracket quoting for safety
-        cursor1.execute(f"SELECT COUNT(*) FROM [{validated_table}]")
+        cursor1.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
         count1 = cursor1.fetchone()[0]
 
-        cursor2.execute(f"SELECT COUNT(*) FROM [{validated_table}]")
+        cursor2.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
         count2 = cursor2.fetchone()[0]
 
         # This is a simplified comparison
@@ -1588,16 +1591,18 @@ def validate_backup(backup_path):
             # Handle encrypted files
             if backup_path.endswith('.encrypted'):
                 if config["encryption_password"]:
-                    temp_decrypt = tempfile.mktemp(suffix='.db')
+                    fd, temp_decrypt = tempfile.mkstemp(suffix='.db')
+                    os.close(fd)
                     test_file = decrypt_file(backup_path, config["encryption_password"], temp_decrypt)
                     temp_files.append(temp_decrypt)
                 else:
                     validation_results["errors"].append("Cannot validate encrypted backup without password")
                     return validation_results
-            
+
             # Handle compressed files
             if test_file and test_file.endswith(('.gz', '.zip')):
-                temp_decompress = tempfile.mktemp(suffix='.db')
+                fd, temp_decompress = tempfile.mkstemp(suffix='.db')
+                os.close(fd)
                 test_file = decompress_file(test_file, temp_decompress)
                 temp_files.append(temp_decompress)
             
@@ -1624,7 +1629,7 @@ def validate_backup(backup_path):
                         # Validate table name to prevent SQL injection
                         validated_table = validate_table_name(table_name, conn)
                         # Table name validated above - use bracket quoting for safety
-                        cursor.execute(f"SELECT COUNT(*) FROM [{validated_table}]")
+                        cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                         cursor.fetchone()
                     except ValueError as ve:
                         table_errors.append(f"Invalid table {table_name}: {ve}")

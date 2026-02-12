@@ -26,13 +26,13 @@ concerns from core authentication logic.
 
 import logging
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 
-from university_system.modules.shared.constants import paths
+from university_system.core import paths
 
 __all__ = [
     'log_activity',
@@ -48,7 +48,6 @@ logger = logging.getLogger(__name__)
 # Emergency log buffers (module-level for persistence)
 _emergency_log_buffer: List[Dict[str, Any]] = []
 _shared_connection_fallback_buffer: List[Dict[str, Any]] = []
-
 
 def log_activity(
     db_path: str,
@@ -157,7 +156,6 @@ def log_activity(
     except Exception as e:
         return _handle_unexpected_error(db_path, e, log_entry)
 
-
 def log_activity_with_connection(
     conn: sqlite3.Connection,
     username: str,
@@ -261,7 +259,6 @@ def log_activity_with_connection(
     except Exception as e:
         return _handle_shared_connection_unexpected_error(e, log_entry)
 
-
 # ============================================================================
 # Helper Functions - Primary Database Logging
 # ============================================================================
@@ -312,7 +309,6 @@ def _attempt_database_logging(db_path: str, log_entry: Dict[str, Any]) -> bool:
             except Exception as close_error:
                 logging.error(f"Unexpected error closing log connection: {type(close_error).__name__}: {close_error}")
 
-
 def _retry_database_logging(db_path: str, log_entry: Dict[str, Any], reason: str) -> bool:
     """Retry database logging with reduced timeout and fallback"""
     logging.info(f"Retrying activity logging due to: {reason}")
@@ -349,7 +345,6 @@ def _retry_database_logging(db_path: str, log_entry: Dict[str, Any], reason: str
     except Exception as retry_error:
         logging.error(f"Unexpected error during activity logging retry: {type(retry_error).__name__}: {retry_error}")
         return _fallback_to_file_logging(log_entry, f"retry_unexpected: {retry_error}")
-
 
 # ============================================================================
 # Helper Functions - Shared Connection Logging
@@ -403,7 +398,6 @@ def _attempt_shared_connection_logging(conn: sqlite3.Connection, log_entry: Dict
         # Re-raise for specific handling by calling methods
         raise unexpected_error
 
-
 def _validate_shared_connection(conn: sqlite3.Connection) -> bool:
     """Validate that the shared connection is still usable"""
     try:
@@ -428,7 +422,6 @@ def _validate_shared_connection(conn: sqlite3.Connection) -> bool:
     except Exception as e:
         logging.error(f"Unexpected error validating shared connection: {type(e).__name__}: {e}")
         return False
-
 
 # ============================================================================
 # Error Handlers - Primary Logging
@@ -462,7 +455,6 @@ def _handle_operational_error(db_path: str, error: sqlite3.OperationalError, log
         logging.error(f"Operational error during activity logging: {error}")
         return _retry_database_logging(db_path, log_entry, "operational_error")
 
-
 def _handle_integrity_error(db_path: str, error: sqlite3.IntegrityError, log_entry: Dict[str, Any]) -> bool:
     """Handle database integrity constraint violations"""
     error_msg = str(error).lower()
@@ -483,18 +475,15 @@ def _handle_integrity_error(db_path: str, error: sqlite3.IntegrityError, log_ent
         logging.error(f"Integrity constraint violation in activity logging: {error}")
         return _fallback_to_file_logging(log_entry, f"Integrity error: {error}")
 
-
 def _handle_database_error(error: sqlite3.DatabaseError, log_entry: Dict[str, Any]) -> bool:
     """Handle general database errors"""
     logging.error(f"Database error during activity logging: {error}")
     return _fallback_to_file_logging(log_entry, f"Database error: {error}")
 
-
 def _handle_sqlite_error(error: sqlite3.Error, log_entry: Dict[str, Any]) -> bool:
     """Handle general SQLite errors"""
     logging.error(f"SQLite error during activity logging: {error}")
     return _fallback_to_file_logging(log_entry, f"SQLite error: {error}")
-
 
 def _handle_os_error(error: OSError, log_entry: Dict[str, Any]) -> bool:
     """Handle operating system errors"""
@@ -512,7 +501,6 @@ def _handle_os_error(error: OSError, log_entry: Dict[str, Any]) -> bool:
         logging.error(f"OS error during activity logging: {error}")
         return _fallback_to_file_logging(log_entry, f"OS error: {error}")
 
-
 def _handle_memory_error(error: MemoryError, log_entry: Dict[str, Any]) -> bool:
     """Handle memory exhaustion errors"""
     logging.critical(f"Memory error during activity logging: {error}")
@@ -523,7 +511,6 @@ def _handle_memory_error(error: MemoryError, log_entry: Dict[str, Any]) -> bool:
         'timestamp': log_entry['timestamp']
     }
     return _emergency_memory_logging(minimal_entry, f"Memory error: {error}")
-
 
 def _handle_unexpected_error(db_path: str, error: Exception, log_entry: Dict[str, Any]) -> bool:
     """Handle unexpected errors with comprehensive fallback"""
@@ -537,7 +524,6 @@ def _handle_unexpected_error(db_path: str, error: Exception, log_entry: Dict[str
         return _retry_database_logging(db_path, log_entry, f"unexpected_recoverable: {error_type}")
     else:
         return _fallback_to_file_logging(log_entry, f"unexpected_error: {error_type}: {error_msg}")
-
 
 # ============================================================================
 # Error Handlers - Shared Connection
@@ -559,7 +545,6 @@ def _handle_shared_connection_integrity_error(error: sqlite3.IntegrityError, log
         logging.error(f"Integrity constraint violation in shared logging: {error}")
         return _fallback_shared_connection_logging(log_entry, f"integrity_error: {error}")
 
-
 def _handle_shared_connection_operational_error(error: sqlite3.OperationalError, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle operational errors in shared connection logging"""
     error_msg = str(error).lower()
@@ -576,30 +561,25 @@ def _handle_shared_connection_operational_error(error: sqlite3.OperationalError,
         logging.error(f"Operational error in shared connection logging: {error}")
         return _fallback_shared_connection_logging(log_entry, f"operational_error: {error}")
 
-
 def _handle_shared_connection_database_error(error: sqlite3.DatabaseError, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle general database errors in shared connection"""
     logging.error(f"Database error in shared connection logging: {error}")
     return _fallback_shared_connection_logging(log_entry, f"database_error: {error}")
-
 
 def _handle_shared_connection_sqlite_error(error: sqlite3.Error, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle general SQLite errors in shared connection"""
     logging.error(f"SQLite error in shared connection logging: {error}")
     return _fallback_shared_connection_logging(log_entry, f"sqlite_error: {error}")
 
-
 def _handle_shared_connection_attribute_error(error: AttributeError, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle attribute errors (like connection object issues)"""
     logging.error(f"Attribute error in shared connection logging: {error}")
     return _fallback_shared_connection_logging(log_entry, f"attribute_error: {error}")
 
-
 def _handle_shared_connection_value_error(error: ValueError, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle value errors (like data type issues)"""
     logging.warning(f"Value error in shared connection logging: {error}")
     return _fallback_shared_connection_logging(log_entry, f"value_error: {error}")
-
 
 def _handle_shared_connection_memory_error(error: MemoryError, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle memory errors in shared connection logging"""
@@ -617,7 +597,6 @@ def _handle_shared_connection_memory_error(error: MemoryError, log_entry: Dict[s
 
     return _fallback_shared_connection_logging(minimal_entry, f"memory_error: {error}")
 
-
 def _handle_shared_connection_unexpected_error(error: Exception, log_entry: Dict[str, Any]) -> Dict[str, Any]:
     """Handle unexpected errors in shared connection logging"""
     error_type = type(error).__name__
@@ -625,7 +604,6 @@ def _handle_shared_connection_unexpected_error(error: Exception, log_entry: Dict
 
     logging.error(f"Unexpected error in shared connection logging: {error_type}: {error_msg}")
     return _fallback_shared_connection_logging(log_entry, f"unexpected_error: {error_type}: {error_msg}")
-
 
 # ============================================================================
 # Fallback Mechanisms
@@ -677,7 +655,6 @@ def _fallback_to_file_logging(log_entry: Dict[str, Any], reason: str) -> bool:
         logging.error(f"Unexpected error in file backup logging: {type(file_error).__name__}: {file_error}")
         return _emergency_memory_logging(log_entry, f"file_backup_unexpected: {file_error}")
 
-
 def _fallback_to_alternate_location(log_entry: Dict[str, Any], reason: str) -> bool:
     """Try alternative logging locations when primary backup fails"""
     alternate_locations = [
@@ -708,7 +685,6 @@ def _fallback_to_alternate_location(log_entry: Dict[str, Any], reason: str) -> b
     logging.error(f"All alternate logging locations failed for {log_entry['username']}")
     return _emergency_memory_logging(log_entry, f"all_alternates_failed: {reason}")
 
-
 def _emergency_memory_logging(log_entry: Dict[str, Any], reason: str) -> bool:
     """Emergency in-memory logging when all file operations fail"""
     global _emergency_log_buffer
@@ -735,7 +711,6 @@ def _emergency_memory_logging(log_entry: Dict[str, Any], reason: str) -> bool:
         logging.critical(f"Emergency memory logging failed for {log_entry['username']}: {emergency_error}")
         logging.critical(f"Lost activity log: {log_entry['username']} performed {log_entry['action']} at {log_entry['timestamp']}")
         return False
-
 
 def _fallback_shared_connection_logging(log_entry: Dict[str, Any], reason: str) -> Dict[str, Any]:
     """Fallback logging when shared connection fails"""
@@ -768,7 +743,6 @@ def _fallback_shared_connection_logging(log_entry: Dict[str, Any], reason: str) 
         'reason': reason
     }
 
-
 def _attempt_fallback_memory_logging(log_entry: Dict[str, Any], reason: str) -> bool:
     """Attempt to log to memory buffer as fallback"""
     global _shared_connection_fallback_buffer
@@ -793,7 +767,6 @@ def _attempt_fallback_memory_logging(log_entry: Dict[str, Any], reason: str) -> 
         logging.debug(f"Memory fallback logging failed: {memory_error}")
         return False
 
-
 # ============================================================================
 # Utility Functions
 # ============================================================================
@@ -812,7 +785,6 @@ def _format_log_entry_for_file(log_entry: Dict[str, Any], reason: str, safe_enco
 
     return f"{log_entry.get('timestamp')} - {username}: {action} - {details} - IP: {log_entry.get('ip_address', 'unknown')} - Reason: {reason}"
 
-
 def _get_client_ip() -> str:
     """Get client IP address with fallback for different environments"""
     # In a real web application, you would extract this from the request
@@ -823,7 +795,6 @@ def _get_client_ip() -> str:
         return "127.0.0.1"
     except Exception:
         return "unknown"
-
 
 # ============================================================================
 # Public Buffer Access Functions
@@ -840,13 +811,11 @@ def get_emergency_log_buffer() -> List[Dict[str, Any]]:
     """
     return _emergency_log_buffer.copy()
 
-
 def clear_emergency_log_buffer() -> None:
     """Clear the emergency log buffer after processing"""
     global _emergency_log_buffer
     _emergency_log_buffer.clear()
     logging.info("Emergency log buffer cleared")
-
 
 def get_shared_connection_fallback_buffer() -> List[Dict[str, Any]]:
     """
@@ -858,7 +827,6 @@ def get_shared_connection_fallback_buffer() -> List[Dict[str, Any]]:
         List of log entries that failed with shared connections
     """
     return _shared_connection_fallback_buffer.copy()
-
 
 def clear_shared_connection_fallback_buffer() -> None:
     """Clear the shared connection fallback buffer after processing"""

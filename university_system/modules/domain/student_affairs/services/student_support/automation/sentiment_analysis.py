@@ -2,7 +2,6 @@
 Sentiment analysis and AI suggestions.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def _analyze_sentiment(text):
     """Simple sentiment analysis based on keywords"""
@@ -60,7 +56,6 @@ def _analyze_sentiment(text):
         return TicketSentiment.POSITIVE.value
     else:
         return TicketSentiment.NEUTRAL.value
-
 
 def _suggest_category(text):
     """AI-powered category suggestion based on text content"""
@@ -90,7 +85,6 @@ def _suggest_category(text):
     
     return None
 
-
 def _get_auto_assignment(category, priority, staff_assignments=None):
     """Get staff member for auto-assignment"""
     # Load staff assignments if not provided
@@ -113,7 +107,6 @@ def _get_auto_assignment(category, priority, staff_assignments=None):
             return primary_staff[0]['staff_id']
 
     return staff_list[0]['staff_id']
-
 
 def _estimate_resolution_time(category, priority):
     """Estimate resolution time based on category and priority"""

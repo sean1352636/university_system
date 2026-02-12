@@ -41,8 +41,7 @@ import threading
 import subprocess
 import webbrowser
 from pathlib import Path
-import sqlite3
-# Import the original module scheduling functionality
+from university_system.infrastructure.database.db import sqlite3
 # This ensures full backward compatibility
 try:
     from university_system.modules.domain.academics.services.module_scheduling import (
@@ -61,7 +60,6 @@ except ImportError:
         from university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
     except Exception:
         class ModuleScheduler: pass
-
 
 class ModuleSchedulingGUI:
     def __init__(self, root):
@@ -508,7 +506,6 @@ Developer: Academic Systems Team
 
             return result[0] if result else default
 
-
 def main():
     """Main function to launch the GUI application"""
     try:
@@ -542,11 +539,9 @@ def main():
         except ImportError:
             print("CLI mode also unavailable. Please check your installation.")
 
-
 def launch_gui():
     """Alternative launcher function"""
     main()
-
 
 def launch_cli():
     """Launch CLI mode directly"""
@@ -555,7 +550,6 @@ def launch_cli():
         display_enhanced_scheduling_menu()
     except ImportError:
         print("CLI mode not available. Please ensure module_scheduling.py is in the same directory.")
-
 
 def create_desktop_shortcut():
     """Create a desktop shortcut for the application (Windows)"""
@@ -584,7 +578,6 @@ def create_desktop_shortcut():
     except Exception as e:
         print(f"Error creating desktop shortcut: {e}")
 
-
 def setup_application():
     """Setup application for first-time use"""
     try:
@@ -604,14 +597,12 @@ def setup_application():
     except Exception as e:
         print(f"Error during application setup: {e}")
 
-
 def launch_module_scheduling_gui():
     """Launch the Module Scheduling GUI."""
     import tkinter as tk
     root = tk.Tk()
     app = ModuleSchedulingGUI(root)
     root.mainloop()
-
 
 def run_gui_with_database(db_path=None):
     """Run the GUI with a specific database path for backward compatibility."""

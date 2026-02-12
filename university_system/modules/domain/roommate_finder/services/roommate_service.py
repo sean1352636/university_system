@@ -5,7 +5,7 @@ Helps students find compatible roommates through questionnaires, matching algori
 and anonymous messaging.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -13,7 +13,7 @@ import hashlib
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 class RoommateService:
     """Service for roommate matching and communication."""
@@ -246,7 +246,7 @@ class RoommateService:
             return False
 
         # Build UPDATE query
-        set_clause = ", ".join([f"{field} = ?" for field in valid_updates.keys()])
+        set_clause = ", ".join([validate_identifier(field, "column") + " = ?" for field in valid_updates.keys()])
         set_clause += ", updated_at = ?"
 
         values = list(valid_updates.values())
@@ -254,11 +254,11 @@ class RoommateService:
         values.append(profile_id)
 
         with transaction() as conn:
-            conn.execute(f"""
-                UPDATE roommate_profiles
-                SET {set_clause}
-                WHERE profile_id = ?
-            """, values)
+            conn.execute(
+                "UPDATE roommate_profiles"
+                " SET " + set_clause +
+                " WHERE profile_id = ?",
+                values)
 
             log_activity('update', 'roommate_profile',
                         details={'profile_id': profile_id, 'updated_fields': list(valid_updates.keys())})

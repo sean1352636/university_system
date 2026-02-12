@@ -5,13 +5,12 @@ Tests database schema initialization for Learning Management System (LMS)
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from university_system.modules.domain.academics.services.lms.db_schema import (
     initialize_lms_database
 )
-
 
 class TestLMSDatabaseSchema:
     """Test suite for LMS database schema initialization"""
@@ -418,7 +417,6 @@ class TestLMSDatabaseSchema:
                     assert row[5] == 1, f"Column {pk_column} should be primary key"
 
         conn.close()
-
 
 class TestLMSDatabaseIntegration:
     """Integration tests for LMS database"""

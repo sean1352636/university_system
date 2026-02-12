@@ -7,6 +7,8 @@ Features: Case management, complaints, evidence tracking, patrol logs, emergency
 from datetime import datetime
 from pathlib import Path
 
+from university_system.core.sql_safety import validate_identifier
+
 try:
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 except ImportError:
@@ -15,7 +17,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -30,7 +32,6 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
-
 
 # Campus locations
 CAMPUS_LOCATIONS = [
@@ -78,7 +79,6 @@ OFFICER_RANKS = [
     "Corporal", "Campus Police Officer", "Security Officer",
     "Parking Enforcement Officer", "Dispatcher", "Student Safety Officer"
 ]
-
 
 POLICE_STATION_SCHEMA = """
 CREATE TABLE IF NOT EXISTS police_cases (
@@ -187,7 +187,6 @@ CREATE TABLE IF NOT EXISTS police_case_counter (
 INSERT OR IGNORE INTO police_case_counter (id, counter) VALUES (1, 1000);
 """
 
-
 def init_police_database():
     """Initialize police station database tables."""
     try:
@@ -199,7 +198,6 @@ def init_police_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -207,7 +205,6 @@ def get_current_user():
         if user:
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
-
 
 def get_next_case_id():
     """Generate next case ID."""
@@ -222,7 +219,6 @@ def get_next_case_id():
     except Exception as e:
         print(f"Error generating case ID: {e}")
         return f"CASE-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
 
 # ==================== CASE MANAGEMENT ====================
 
@@ -249,7 +245,6 @@ def create_case(case_data):
         print(f"Error creating case: {e}")
         return False
 
-
 def get_all_cases():
     """Get all cases."""
     try:
@@ -273,7 +268,6 @@ def get_all_cases():
         print(f"Error getting cases: {e}")
         return []
 
-
 def get_case_by_id(case_id):
     """Get specific case by ID."""
     try:
@@ -296,6 +290,11 @@ def get_case_by_id(case_id):
         print(f"Error getting case: {e}")
     return None
 
+_CASE_ALLOWED_COLUMNS = frozenset({
+    'title', 'type', 'status', 'priority', 'officer', 'location',
+    'description', 'notes', 'witnesses', 'student_id', 'student_name',
+    'is_student_involved', 'date',
+})
 
 def update_case(case_id, updates):
     """Update case fields."""
@@ -303,6 +302,9 @@ def update_case(case_id, updates):
         fields = []
         values = []
         for key, value in updates.items():
+            if key not in _CASE_ALLOWED_COLUMNS:
+                raise ValueError(f"Invalid column name: {key}")
+            validate_identifier(key, "column")
             fields.append(f"{key} = ?")
             values.append(value)
 
@@ -322,7 +324,6 @@ def update_case(case_id, updates):
         print(f"Error updating case: {e}")
         return False
 
-
 def delete_case(case_id):
     """Delete a case."""
     try:
@@ -333,7 +334,6 @@ def delete_case(case_id):
     except Exception as e:
         print(f"Error deleting case: {e}")
         return False
-
 
 # ==================== COMPLAINTS ====================
 
@@ -363,7 +363,6 @@ def create_complaint(complaint_data):
         print(f"Error creating complaint: {e}")
         return False
 
-
 def get_all_complaints():
     """Get all complaints."""
     try:
@@ -385,7 +384,6 @@ def get_all_complaints():
     except Exception as e:
         print(f"Error getting complaints: {e}")
         return []
-
 
 def get_complaint_by_id(complaint_id):
     """Get specific complaint by ID."""
@@ -410,7 +408,6 @@ def get_complaint_by_id(complaint_id):
         print(f"Error getting complaint: {e}")
     return None
 
-
 # ==================== EMERGENCY ALERTS ====================
 
 def create_emergency_alert(alert_data):
@@ -429,7 +426,6 @@ def create_emergency_alert(alert_data):
     except Exception as e:
         print(f"Error creating alert: {e}")
         return False
-
 
 def get_all_alerts():
     """Get all emergency alerts."""
@@ -452,7 +448,6 @@ def get_all_alerts():
         print(f"Error getting alerts: {e}")
         return []
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -460,7 +455,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def print_case_summary(case):
     """Print case summary."""
@@ -470,7 +464,6 @@ def print_case_summary(case):
     print(f"  Officer: {case.get('officer', 'Unassigned')}")
     print(f"  Location: {case.get('location', 'N/A')}")
     print(f"  Date: {case['date']}")
-
 
 def print_case_details(case):
     """Print full case details."""
@@ -493,7 +486,6 @@ def print_case_details(case):
     if case.get('notes'):
         print(f"  Notes: {case['notes']}")
 
-
 def list_cases_menu():
     """List all cases."""
     print_header("Police Cases - All Records")
@@ -515,7 +507,6 @@ def list_cases_menu():
 
     print()
 
-
 def view_case_menu():
     """View case details."""
     print_header("View Case")
@@ -531,7 +522,6 @@ def view_case_menu():
         return
 
     print_case_details(case)
-
 
 def create_case_menu():
     """Create new case."""
@@ -609,7 +599,6 @@ def create_case_menu():
     else:
         print("\n  ❌ Failed to create case.")
 
-
 def update_case_menu():
     """Update case status/details."""
     print_header("Update Case")
@@ -674,7 +663,6 @@ def update_case_menu():
         if update_case(case_id, {'notes': notes}):
             print("\n  ✅ Notes updated.")
 
-
 def delete_case_menu():
     """Delete a case."""
     print_header("Delete Case")
@@ -697,7 +685,6 @@ def delete_case_menu():
             print(f"\n  ✅ Case {case_id} deleted.")
         else:
             print("\n  ❌ Failed to delete case.")
-
 
 def emergency_alert_menu():
     """Create emergency alert."""
@@ -732,7 +719,6 @@ def emergency_alert_menu():
     else:
         print("\n  ❌ Failed to create alert.")
 
-
 def view_alerts_menu():
     """View recent emergency alerts."""
     print_header("Recent Emergency Alerts")
@@ -751,7 +737,6 @@ def view_alerts_menu():
         print(f"  Details: {alert['details']}")
         print(f"  Reporter: {alert['reporter']} | Time: {alert['timestamp']}")
         print("  " + "-" * 70)
-
 
 def statistics_menu():
     """Show case statistics."""
@@ -796,7 +781,6 @@ def statistics_menu():
 
     print()
 
-
 def police_station_menu():
     """Main police station CLI menu."""
     init_police_database()
@@ -839,7 +823,6 @@ def police_station_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     police_station_menu()

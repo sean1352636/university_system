@@ -586,7 +586,7 @@ class DatabaseManager:
                 try:
                     # Validate table name to prevent SQL injection
                     validated_table = validate_table_name(table, conn=conn)
-                    cursor.execute(f"SELECT COUNT(*) FROM [{validated_table}]")
+                    cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                     count = cursor.fetchone()[0]
                     stats_text += f"{table.replace('_', ' ').title()}: {count:,}\n"
                 except SQLIdentifierError as e:

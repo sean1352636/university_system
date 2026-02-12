@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # Import optional features
 try:
-    from university_system.modules.shared.utils.activity_logger import (
+    from university_system.core.activity_logger import (
         set_user, log_login, log_logout
     )
     ACTIVITY_LOGGER_AVAILABLE = True
@@ -415,6 +415,237 @@ class LoginManager:
         except sqlite3.Error as e:
             logger.error(f"Database error: {e}")
             return False
+
+    def login_by_method(self, method: str, **kwargs) -> Union[Dict, bool, str]:
+        """
+        Unified login dispatcher for all authentication methods.
+
+        Parameters:
+            method: Authentication method ('password', 'sso', 'webauthn', 'biometric')
+            **kwargs: Method-specific arguments
+
+        Returns:
+            Union[Dict, bool, str]: Login result
+        """
+        if method == 'password':
+            return self.login(kwargs['username'], kwargs['password'])
+        elif method == 'sso':
+            return self.login_via_sso(kwargs['sso_identity'])
+        elif method == 'webauthn':
+            return self.login_via_webauthn(kwargs['assertion_data'])
+        elif method == 'biometric':
+            return self.login_via_biometric(kwargs['biometric_type'], kwargs['template_data'])
+        else:
+            raise AuthenticationError(
+                f"Unsupported authentication method: {method}",
+                code="UNSUPPORTED_AUTH_METHOD"
+            )
+
+    def login_via_sso(self, sso_identity: dict) -> Union[bool, str]:
+        """
+        Authenticate a user via SSO identity.
+
+        Bypasses password verification but completes the standard login flow.
+
+        Parameters:
+            sso_identity: Dict with keys: user_id, username, role, provider_id
+
+        Returns:
+            Union[bool, str]: True if successful, 'password_reset_required' if reset needed
+        """
+        try:
+            user_id = sso_identity.get('user_id')
+            username = sso_identity.get('username')
+            provider_id = sso_identity.get('provider_id')
+
+            if not user_id or not username:
+                raise AuthenticationError(
+                    "Invalid SSO identity: missing user_id or username",
+                    code="INVALID_SSO_IDENTITY"
+                )
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT ua.id, ua.password_reset_required, u.role
+                       FROM user_accounts ua
+                       JOIN users u ON ua.user_id = u.id
+                       WHERE u.id = ?''',
+                    (user_id,)
+                )
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    raise AuthenticationError(
+                        "SSO user not found in local database",
+                        code="SSO_USER_NOT_FOUND"
+                    )
+
+                account_id, password_reset_required, role = user_data
+                result = self._complete_login(
+                    user_id, account_id, username, role, password_reset_required
+                )
+
+                # Tag the session with SSO metadata
+                if result is True and self.session_manager.current_user:
+                    self.session_manager.current_user['auth_method'] = 'sso'
+                    self.session_manager.current_user['sso_provider_id'] = provider_id
+
+                return result
+
+        except AuthenticationError:
+            raise
+        except Exception as e:
+            logger.error(f"SSO login error: {e}")
+            raise AuthenticationError(
+                "SSO login failed unexpectedly",
+                code="SSO_LOGIN_ERROR"
+            ) from e
+
+    def login_via_webauthn(self, assertion_data: dict) -> Union[bool, str]:
+        """
+        Authenticate a user via WebAuthn assertion.
+
+        Parameters:
+            assertion_data: Dict with keys: user_id, username, credential_id
+
+        Returns:
+            Union[bool, str]: True if successful, 'password_reset_required' if reset needed
+        """
+        try:
+            user_id = assertion_data.get('user_id')
+            username = assertion_data.get('username')
+
+            if not user_id or not username:
+                raise AuthenticationError(
+                    "Invalid WebAuthn assertion: missing user_id or username",
+                    code="INVALID_WEBAUTHN_ASSERTION"
+                )
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT ua.id, ua.password_reset_required, u.role
+                       FROM user_accounts ua
+                       JOIN users u ON ua.user_id = u.id
+                       WHERE u.id = ?''',
+                    (user_id,)
+                )
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    raise AuthenticationError(
+                        "WebAuthn user not found",
+                        code="WEBAUTHN_USER_NOT_FOUND"
+                    )
+
+                account_id, password_reset_required, role = user_data
+                result = self._complete_login(
+                    user_id, account_id, username, role, password_reset_required
+                )
+
+                if result is True and self.session_manager.current_user:
+                    self.session_manager.current_user['auth_method'] = 'webauthn'
+
+                return result
+
+        except AuthenticationError:
+            raise
+        except Exception as e:
+            logger.error(f"WebAuthn login error: {e}")
+            raise AuthenticationError(
+                "WebAuthn login failed unexpectedly",
+                code="WEBAUTHN_LOGIN_ERROR"
+            ) from e
+
+    def login_via_biometric(self, biometric_type: str, template_data) -> Union[bool, str]:
+        """
+        Authenticate a user via biometric verification.
+
+        Parameters:
+            biometric_type: Type of biometric ('face' or 'fingerprint')
+            template_data: Biometric template data for matching
+
+        Returns:
+            Union[bool, str]: True if successful, 'password_reset_required' if reset needed
+        """
+        try:
+            # Import BiometricService to perform matching
+            from university_system.infrastructure.auth.biometric_service import BiometricService
+            bio_service = BiometricService(self.db_manager)
+
+            # Try to match against all enrolled users
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT be.user_id, u.username
+                       FROM biometric_enrollments be
+                       JOIN users u ON be.user_id = u.id
+                       WHERE be.biometric_type = ? AND be.is_active = 1''',
+                    (biometric_type,)
+                )
+                enrolled_users = cursor.fetchall()
+
+            matched_user_id = None
+            matched_username = None
+
+            for user_id, username in enrolled_users:
+                if biometric_type == 'face':
+                    result = bio_service.verify_face(user_id, template_data)
+                else:
+                    result = bio_service.verify_fingerprint(user_id, template_data)
+
+                if result.get('success') and result.get('match'):
+                    matched_user_id = user_id
+                    matched_username = username
+                    break
+
+            if not matched_user_id:
+                raise InvalidCredentialsError(
+                    "Biometric authentication failed: no match found",
+                    details={'biometric_type': biometric_type}
+                )
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT ua.id, ua.password_reset_required, u.role
+                       FROM user_accounts ua
+                       JOIN users u ON ua.user_id = u.id
+                       WHERE u.id = ?''',
+                    (matched_user_id,)
+                )
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    raise AuthenticationError(
+                        "Biometric user account not found",
+                        code="BIOMETRIC_USER_NOT_FOUND"
+                    )
+
+                account_id, password_reset_required, role = user_data
+                result = self._complete_login(
+                    matched_user_id, account_id, matched_username, role, password_reset_required
+                )
+
+                if result is True and self.session_manager.current_user:
+                    self.session_manager.current_user['auth_method'] = 'biometric'
+
+                return result
+
+        except (InvalidCredentialsError, AuthenticationError):
+            raise
+        except ImportError:
+            raise AuthenticationError(
+                "Biometric authentication is not available. Install face_recognition library.",
+                code="BIOMETRIC_NOT_AVAILABLE"
+            )
+        except Exception as e:
+            logger.error(f"Biometric login error: {e}")
+            raise AuthenticationError(
+                "Biometric login failed unexpectedly",
+                code="BIOMETRIC_LOGIN_ERROR"
+            ) from e
 
     def logout(self):
         """Log out the current user."""

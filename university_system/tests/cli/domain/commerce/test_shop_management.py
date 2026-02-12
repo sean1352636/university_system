@@ -4,7 +4,7 @@ Tests shop initialization, product management, inventory, transactions, and disc
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -12,7 +12,6 @@ import tempfile
 
 # Import the module to test
 from university_system.modules.domain.commerce.services import shop_management
-
 
 @pytest.fixture
 def test_db():
@@ -26,7 +25,6 @@ def test_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -35,7 +33,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
     return auth
-
 
 class TestInitShopDB:
     """Test shop database initialization"""
@@ -87,7 +84,6 @@ class TestInitShopDB:
         assert discount_count > 0
         assert inventory_count > 0
         assert result is True
-
 
 class TestSetupShopPermissions:
     """Test shop permissions setup"""
@@ -146,7 +142,6 @@ class TestSetupShopPermissions:
 
         captured = capsys.readouterr()
         assert 'permissions setup successfully' in captured.out
-
 
 class TestBrowseProducts:
     """Test product browsing functionality"""
@@ -228,7 +223,6 @@ class TestBrowseProducts:
         captured = capsys.readouterr()
         # Test passes if no error is raised
 
-
 class TestShoppingCart:
     """Test shopping cart functionality"""
 
@@ -256,7 +250,6 @@ class TestShoppingCart:
 
         captured = capsys.readouterr()
         assert 'empty' in captured.out or 'SHOPPING CART' in captured.out
-
 
 class TestCheckout:
     """Test checkout functionality"""
@@ -287,7 +280,6 @@ class TestCheckout:
         captured = capsys.readouterr()
         assert 'empty' in captured.out or 'no items' in captured.out.lower()
 
-
 class TestPurchaseHistory:
     """Test purchase history viewing"""
 
@@ -317,7 +309,6 @@ class TestPurchaseHistory:
         captured = capsys.readouterr()
         assert 'No purchases' in captured.out or 'PURCHASE HISTORY' in captured.out
 
-
 class TestProductManagement:
     """Test product management (admin functions)"""
 
@@ -328,7 +319,6 @@ class TestProductManagement:
 
         assert hasattr(shop_management, 'display_product_management_menu')
         assert callable(shop_management.display_product_management_menu)
-
 
 class TestInventoryManagement:
     """Test inventory management (admin functions)"""
@@ -341,7 +331,6 @@ class TestInventoryManagement:
         assert hasattr(shop_management, 'display_inventory_management_menu')
         assert callable(shop_management.display_inventory_management_menu)
 
-
 class TestTransactionViewing:
     """Test transaction viewing (admin functions)"""
 
@@ -352,7 +341,6 @@ class TestTransactionViewing:
 
         assert hasattr(shop_management, 'view_all_transactions')
         assert callable(shop_management.view_all_transactions)
-
 
 class TestDiscountManagement:
     """Test discount management functions"""
@@ -365,7 +353,6 @@ class TestDiscountManagement:
         assert hasattr(shop_management, 'display_discount_management_menu')
         assert callable(shop_management.display_discount_management_menu)
 
-
 class TestSalesReports:
     """Test sales reporting functions"""
 
@@ -376,7 +363,6 @@ class TestSalesReports:
 
         assert hasattr(shop_management, 'display_sales_reports_menu')
         assert callable(shop_management.display_sales_reports_menu)
-
 
 class TestDisplayShopMenu:
     """Test main shop menu"""
@@ -395,7 +381,6 @@ class TestDisplayShopMenu:
             except (KeyboardInterrupt, StopIteration):
                 pass
 
-
     def test_display_shop_menu_no_auth(self, capsys):
         """Test shop menu without authentication"""
         shop_management.set_auth(None)
@@ -404,7 +389,6 @@ class TestDisplayShopMenu:
 
         captured = capsys.readouterr()
         assert 'must be logged in' in captured.out
-
 
 class TestSetAuth:
     """Test authentication setup"""
@@ -426,7 +410,6 @@ class TestSetAuth:
                 shop_management.set_auth(mock_auth)
                 mock_set_auth_instance.assert_called_once_with(mock_auth)
 
-
 class TestPermissions:
     """Test permission checking"""
 
@@ -440,7 +423,6 @@ class TestPermissions:
         captured = capsys.readouterr()
         assert "don't have permission" in captured.out
 
-
 class TestActivityLogging:
     """Test activity logging decorators"""
 
@@ -453,7 +435,6 @@ class TestActivityLogging:
         """Test that log_read decorator is applied"""
         assert hasattr(shop_management.browse_products, '__wrapped__') or callable(shop_management.browse_products)
 
-
 class TestModuleConstants:
     """Test module-level constants and variables"""
 
@@ -464,7 +445,6 @@ class TestModuleConstants:
     def test_auth_variable_defined(self):
         """Test that auth variable is defined"""
         assert hasattr(shop_management, 'auth')
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

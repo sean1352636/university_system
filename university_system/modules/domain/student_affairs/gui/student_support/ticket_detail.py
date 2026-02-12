@@ -570,7 +570,7 @@ class TicketDetailMixin:
                 ticket_tags = ticket.get('tags', [])
                 tags_list = json.loads(ticket_tags) if isinstance(ticket_tags, str) else ticket_tags
                 tags_str = ', '.join(tags_list) if isinstance(tags_list, list) else str(tags_list)
-            except:
+            except (ValueError, json.JSONDecodeError):
                 tags_str = str(ticket.get('tags', ''))
         edit_tags_var = tk.StringVar(value=tags_str)
         tags_entry = ttk.Entry(form_frame, textvariable=edit_tags_var, width=80, font=('Segoe UI', 10))

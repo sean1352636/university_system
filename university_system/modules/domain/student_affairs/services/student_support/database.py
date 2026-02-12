@@ -5,17 +5,17 @@ This module handles all database table creation, migrations, and
 initialization of default data for the student support system.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import datetime
 import json
 import logging
 
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from university_system.core.sql_safety import validate_identifier
 
 from .config import SUPPORT_DB
 
 logger = logging.getLogger(__name__)
-
 
 def init_enhanced_db():
     """Initialize the enhanced support database with new tables."""
@@ -40,7 +40,6 @@ def init_enhanced_db():
     except Exception as e:
         logger.error(f"Failed to initialize enhanced database: {e}")
         raise
-
 
 def _create_original_tables(cursor):
     """Create the original tables with enhancements"""
@@ -92,10 +91,11 @@ def _create_original_tables(cursor):
     for column_name, column_def in required_columns.items():
         if column_name not in existing_columns:
             try:
-                cursor.execute(f'ALTER TABLE support_tickets ADD COLUMN {column_name} {column_def}')
-                print(f"✅ Added column '{column_name}' to support_tickets table")
+                safe_col = validate_identifier(column_name, "column")
+                cursor.execute('ALTER TABLE support_tickets ADD COLUMN ' + safe_col + ' ' + column_def)
+                print(f"Added column '{column_name}' to support_tickets table")
             except Exception as e:
-                print(f"⚠️ Could not add column '{column_name}': {e}")
+                print(f"Could not add column '{column_name}': {e}")
     
     # Enhanced ticket responses table
     cursor.execute('''
@@ -149,8 +149,6 @@ def _create_original_tables(cursor):
         is_featured BOOLEAN DEFAULT 0
     )
     ''')
-
-
 
 def _create_enhanced_tables(cursor):
     """Create new enhanced tables"""
@@ -313,7 +311,8 @@ def _create_enhanced_tables(cursor):
     for col_name, col_type in audit_trail_migrations:
         if col_name not in existing_columns:
             try:
-                cursor.execute(f"ALTER TABLE audit_trail ADD COLUMN {col_name} {col_type}")
+                safe_col = validate_identifier(col_name, "column")
+                cursor.execute('ALTER TABLE audit_trail ADD COLUMN ' + safe_col + ' ' + col_type)
                 logger.info(f"Added missing column '{col_name}' to audit_trail table")
             except Exception as e:
                 logger.warning(f"Could not add column '{col_name}' to audit_trail: {e}")
@@ -371,8 +370,6 @@ def _create_enhanced_tables(cursor):
     )
     ''')
 
-
-
 def _initialize_default_data(cursor):
     """Initialize default data for enhanced tables"""
     
@@ -421,5 +418,4 @@ def _initialize_default_data(cursor):
             default_ticket_templates
         )
     
-
 

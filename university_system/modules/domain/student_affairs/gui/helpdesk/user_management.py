@@ -503,10 +503,10 @@ def _refresh_user_list(self, tree):
 
         created_col = 'created_at' if 'created_at' in columns else 'NULL'
 
-        cursor.execute(f'''
+        cursor.execute('''
             SELECT id, username, email, role,
-                   {status_expr} as status,
-                   {created_col} as created_at
+                   ''' + status_expr + ''' as status,
+                   ''' + created_col + ''' as created_at
             FROM users
             ORDER BY username
         ''')
@@ -557,10 +557,10 @@ def _search_users(self, tree):
 
         created_col = 'created_at' if 'created_at' in columns else 'NULL'
 
-        cursor.execute(f'''
+        cursor.execute('''
             SELECT id, username, email, role,
-                   {status_expr} as status,
-                   {created_col} as created_at
+                   ''' + status_expr + ''' as status,
+                   ''' + created_col + ''' as created_at
             FROM users
             WHERE LOWER(username) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ?
             ORDER BY username

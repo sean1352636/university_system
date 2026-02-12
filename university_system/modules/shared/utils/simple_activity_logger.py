@@ -360,115 +360,64 @@ class DatabaseManager:
 
 
 class DatabaseLogger:
-    """Handle database logging operations"""
-    
+    """Handle database logging operations using the main activity_log table."""
+
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.db_manager = DatabaseManager(db_path)
-        self._init_database()
-    
-    def _init_database(self):
-        """Initialize SQLite database with proper schema"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS activity_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                username TEXT NOT NULL,
-                role TEXT NOT NULL,
-                action TEXT NOT NULL,
-                module TEXT NOT NULL,
-                details TEXT,
-                status TEXT NOT NULL,
-                log_level TEXT NOT NULL,
-                session_id TEXT,
-                ip_address TEXT,
-                user_agent TEXT,
-                request_size INTEGER,
-                response_size INTEGER,
-                processing_time REAL,
-                geolocation TEXT,
-                security_level TEXT,
-                trace_id TEXT,
-                stack_trace TEXT,
-                metadata TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Create indexes for performance
-        indexes = [
-            ('idx_timestamp', 'timestamp'),
-            ('idx_user_id', 'user_id'),
-            ('idx_action', 'action'),
-            ('idx_module', 'module'),
-            ('idx_status', 'status'),
-            ('idx_log_level', 'log_level'),
-            ('idx_security_level', 'security_level'),
-            ('idx_created_at', 'created_at')
-        ]
-        
-        for index_name, column in indexes:
-            cursor.execute(f'CREATE INDEX IF NOT EXISTS {index_name} ON activity_logs({column})')
-        
-        conn.commit()
-        conn.close()
-    
+
+    def _build_details(self, log_entry: LogEntry) -> str:
+        """Pack extra log fields into a JSON details string."""
+        detail_parts = {}
+        if log_entry.details:
+            detail_parts['message'] = log_entry.details
+        for field in ('role', 'module', 'status', 'log_level', 'session_id',
+                       'user_agent', 'request_size', 'response_size',
+                       'processing_time', 'geolocation', 'security_level',
+                       'trace_id', 'stack_trace'):
+            val = getattr(log_entry, field, None)
+            if val is not None:
+                detail_parts[field] = val
+        if log_entry.metadata:
+            detail_parts['metadata'] = log_entry.metadata
+        return json.dumps(detail_parts) if detail_parts else None
+
     def insert_log(self, log_entry: LogEntry):
-        """Insert log entry into database"""
+        """Insert log entry into the activity_log table."""
         query = '''
-            INSERT INTO activity_logs (
-                timestamp, user_id, username, role, action, module, details, status,
-                log_level, session_id, ip_address, user_agent, request_size, response_size,
-                processing_time, geolocation, security_level, trace_id, stack_trace, metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO activity_log (
+                user_id, username, action, details, timestamp, ip_address
+            ) VALUES (?, ?, ?, ?, ?, ?)
         '''
-        
         params = (
-            log_entry.timestamp, log_entry.user_id, log_entry.username, log_entry.role,
-            log_entry.action, log_entry.module, log_entry.details, log_entry.status,
-            log_entry.log_level, log_entry.session_id, log_entry.ip_address,
-            log_entry.user_agent, log_entry.request_size, log_entry.response_size,
-            log_entry.processing_time, json.dumps(log_entry.geolocation),
-            log_entry.security_level, log_entry.trace_id, log_entry.stack_trace,
-            json.dumps(log_entry.metadata or {})
+            log_entry.user_id, log_entry.username, log_entry.action,
+            self._build_details(log_entry), log_entry.timestamp,
+            log_entry.ip_address,
         )
-        
         self.db_manager.execute_update(query, params)
-    
+
     def insert_batch_logs(self, log_entries: List[LogEntry]):
-        """Insert multiple log entries in batch"""
+        """Insert multiple log entries in batch."""
         query = '''
-            INSERT INTO activity_logs (
-                timestamp, user_id, username, role, action, module, details, status,
-                log_level, session_id, ip_address, user_agent, request_size, response_size,
-                processing_time, geolocation, security_level, trace_id, stack_trace, metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO activity_log (
+                user_id, username, action, details, timestamp, ip_address
+            ) VALUES (?, ?, ?, ?, ?, ?)
         '''
-        
-        params_list = []
-        for log_entry in log_entries:
-            params = (
-                log_entry.timestamp, log_entry.user_id, log_entry.username, log_entry.role,
-                log_entry.action, log_entry.module, log_entry.details, log_entry.status,
-                log_entry.log_level, log_entry.session_id, log_entry.ip_address,
-                log_entry.user_agent, log_entry.request_size, log_entry.response_size,
-                log_entry.processing_time, json.dumps(log_entry.geolocation),
-                log_entry.security_level, log_entry.trace_id, log_entry.stack_trace,
-                json.dumps(log_entry.metadata or {})
+        params_list = [
+            (
+                e.user_id, e.username, e.action,
+                self._build_details(e), e.timestamp,
+                e.ip_address,
             )
-            params_list.append(params)
-        
+            for e in log_entries
+        ]
         self.db_manager.execute_batch(query, params_list)
-    
+
     def query_logs(self, filters: Dict[str, Any] = None, limit: int = 1000) -> List[Dict]:
-        """Query logs with optional filters"""
-        query = "SELECT * FROM activity_logs"
+        """Query logs with optional filters."""
+        query = "SELECT * FROM activity_log"
         params = []
-        
+
         if filters:
             conditions = []
             for key, value in filters.items():
@@ -491,19 +440,19 @@ class DatabaseLogger:
                 else:
                     conditions.append(f"{key} = ?")
                     params.append(value)
-            
+
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
-        
+
         query += f" ORDER BY timestamp DESC LIMIT {limit}"
-        
+
         return self.db_manager.execute_query(query, tuple(params))
-    
+
     def get_log_count(self, filters: Dict[str, Any] = None) -> int:
-        """Get count of logs matching filters"""
-        query = "SELECT COUNT(*) as count FROM activity_logs"
+        """Get count of logs matching filters."""
+        query = "SELECT COUNT(*) as count FROM activity_log"
         params = []
-        
+
         if filters:
             conditions = []
             for key, value in filters.items():
@@ -520,49 +469,37 @@ class DatabaseLogger:
                 else:
                     conditions.append(f"{key} = ?")
                     params.append(value)
-            
+
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
-        
+
         result = self.db_manager.execute_query(query, tuple(params))
         return result[0]['count'] if result else 0
-    
+
     def delete_old_logs(self, days: int) -> int:
-        """Delete logs older than specified days"""
+        """Delete logs older than specified days."""
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
-        query = "DELETE FROM activity_logs WHERE timestamp < ?"
+        query = "DELETE FROM activity_log WHERE timestamp < ?"
         return self.db_manager.execute_update(query, (cutoff_date,))
-    
+
     def get_database_stats(self) -> Dict[str, Any]:
-        """Get database statistics"""
+        """Get database statistics."""
         stats = {}
-        
+
         # Total logs
         stats['total_logs'] = self.get_log_count()
-        
-        # Logs by level
-        level_query = """
-            SELECT log_level, COUNT(*) as count 
-            FROM activity_logs 
-            GROUP BY log_level 
-            ORDER BY count DESC
-        """
-        stats['logs_by_level'] = {
-            row['log_level']: row['count'] 
-            for row in self.db_manager.execute_query(level_query)
-        }
-        
+
         # Recent activity (last 24 hours)
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
         stats['recent_activity'] = self.get_log_count({'timestamp_from': yesterday})
-        
+
         # Database size
         try:
             stats['database_size'] = os.path.getsize(self.db_path)
         except (OSError, FileNotFoundError) as e:
             logger.warning(f"Failed to get database size: {e}")
             stats['database_size'] = 0
-        
+
         return stats
 
 
@@ -1468,7 +1405,7 @@ class EnhancedActivityLogger:
         # Initialize database logger if enabled
         self.db_logger = None
         if OutputFormat.DATABASE in [OutputFormat(f) for f in self.config.get('output_formats', ['json'])]:
-            db_path = os.path.join(self.log_dir, 'activity_logs.db')
+            db_path = str(paths.DEFAULT_DB_PATH)
             self.db_logger = DatabaseLogger(db_path)
         
         # Initialize analytics engine
@@ -1997,7 +1934,19 @@ class EnhancedActivityLogger:
         webhook_url = self.config.get('security_alerts', {}).get('webhook_url')
         if not webhook_url:
             return
-        
+
+        # Validate webhook URL scheme to prevent SSRF
+        from urllib.parse import urlparse
+        parsed = urlparse(webhook_url)
+        if parsed.scheme not in ('https', 'http'):
+            print(f"Invalid webhook URL scheme: {parsed.scheme}")
+            return
+        # Block requests to private/internal networks
+        hostname = parsed.hostname or ''
+        if hostname in ('localhost', '127.0.0.1', '0.0.0.0', '::1') or hostname.startswith('10.') or hostname.startswith('192.168.') or hostname.startswith('172.'):
+            print(f"Webhook URL points to internal network, blocked for security")
+            return
+
         try:
             payload = {
                 'alert_type': 'security',
@@ -2009,7 +1958,7 @@ class EnhancedActivityLogger:
                 'ip_address': log_entry.ip_address,
                 'trace_id': log_entry.trace_id
             }
-            
+
             response = requests.post(webhook_url, json=payload, timeout=10)
             response.raise_for_status()
             

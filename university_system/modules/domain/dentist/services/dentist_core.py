@@ -6,13 +6,14 @@ appointments, treatments, patient records, and billing with
 email and finance integration.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.core.sql_safety import validate_identifier
 
 # Constants
 TREATMENT_TYPES = {
@@ -49,21 +50,17 @@ WORKING_HOURS = {
 APPOINTMENT_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
                      '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00']
 
-
 def generate_appointment_ref() -> str:
     """Generate a unique appointment reference."""
     return f"DEN-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-
 
 def generate_patient_id() -> str:
     """Generate a unique patient ID."""
     return f"PAT-{uuid.uuid4().hex[:8].upper()}"
 
-
 def generate_reference() -> str:
     """Generate a unique reference number."""
     return f"REF-{uuid.uuid4().hex[:12].upper()}"
-
 
 def init_dentist_db():
     """Initialize dentist database tables."""
@@ -196,7 +193,6 @@ def init_dentist_db():
         print(f"Error initializing dentist database: {e}")
         return False
 
-
 class PatientManager:
     """Manages patient records."""
 
@@ -281,13 +277,13 @@ class PatientManager:
             if not updates:
                 return False
 
-            set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+            set_clause = ", ".join(validate_identifier(k, "column") + " = ?" for k in updates.keys())
             values = list(updates.values()) + [patient_id]
 
             with transaction() as conn:
-                conn.execute(f'''
-                    UPDATE dentist_patients SET {set_clause} WHERE patient_id = ?
-                ''', values)
+                conn.execute(
+                    "UPDATE dentist_patients SET " + set_clause + " WHERE patient_id = ?",
+                    values)
             return True
         except Exception as e:
             print(f"Error updating patient: {e}")
@@ -309,7 +305,6 @@ class PatientManager:
         except Exception as e:
             print(f"Error searching patients: {e}")
             return []
-
 
 class AppointmentManager:
     """Manages dental appointments."""
@@ -550,7 +545,6 @@ class AppointmentManager:
             print(f"Error getting today's appointments: {e}")
             return []
 
-
 class TreatmentManager:
     """Manages dental treatments."""
 
@@ -630,7 +624,6 @@ class TreatmentManager:
             print(f"Error getting pending payments: {e}")
             return []
 
-
 class PrescriptionManager:
     """Manages dental prescriptions."""
 
@@ -674,7 +667,6 @@ class PrescriptionManager:
         except Exception as e:
             print(f"Error getting prescriptions: {e}")
             return []
-
 
 class TransactionManager:
     """Manages dental transactions."""
@@ -727,7 +719,6 @@ class TransactionManager:
         except Exception as e:
             print(f"Error getting transactions: {e}")
             return []
-
 
 class ReportManager:
     """Manages dental clinic reporting."""

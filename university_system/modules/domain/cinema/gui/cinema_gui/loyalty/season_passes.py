@@ -4,7 +4,7 @@ Cinema Booking System - Season Pass Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 import string
 from datetime import datetime, timedelta
@@ -17,7 +17,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import SEASON_PASSES
-
 
 def show_season_passes_page(self):
     self.clear_content()
@@ -47,7 +46,6 @@ def show_season_passes_page(self):
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.pass_tree.yview)
     self.pass_tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
-
 
 def sell_pass(self):
     form = tk.Toplevel(self.root)
@@ -85,7 +83,6 @@ def sell_pass(self):
         form.destroy()
         self.show_season_passes_page()
     ttk.Button(frame, text=_t("cinema.btn.sell"), style="Success.TButton", command=sell).grid(row=4, column=0, columnspan=2, pady=20)
-
 
 def verify_pass(self):
     dialog = tk.Toplevel(self.root)

@@ -4,7 +4,7 @@ Tests learning outcome management, tracking, and reporting
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 from unittest.mock import Mock, patch, MagicMock, call
@@ -21,7 +21,6 @@ from university_system.modules.domain.academics.grading.learning_outcomes import
     generate_outcome_report
 )
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def test_db(tmp_path):
@@ -92,7 +91,6 @@ def test_db(tmp_path):
         with patch('university_system.modules.domain.academics.grading.learning_outcomes.get_connection', mock_get_connection):
             yield mock_get_connection
 
-
 @pytest.fixture
 def sample_data(test_db):
     """Insert sample data for testing"""
@@ -130,7 +128,6 @@ def sample_data(test_db):
     conn.close()
 
     return test_db
-
 
 class TestLearningOutcomeManagement:
     """Tests for learning outcome management functions"""
@@ -230,7 +227,6 @@ class TestLearningOutcomeManagement:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'No outcome found' in printed_output
 
-
 class TestOutcomeAchievementRecording:
     """Tests for outcome achievement recording"""
 
@@ -257,7 +253,6 @@ class TestOutcomeAchievementRecording:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         # Function should handle gracefully
 
-
 class TestOutcomeReporting:
     """Tests for outcome reporting functions"""
 
@@ -271,7 +266,6 @@ class TestOutcomeReporting:
             if hasattr(learning_outcomes, 'generate_outcome_report'):
                 # Just test that it can be called
                 pass
-
 
 class TestViewStudentOutcomeAchievement:
     """Tests for viewing student outcome achievement"""
@@ -296,7 +290,6 @@ class TestViewStudentOutcomeAchievement:
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'ST001' in printed_output or 'No outcome achievement' in printed_output
-
 
 class TestDatabaseIntegrity:
     """Tests for database integrity and constraints"""
@@ -348,7 +341,6 @@ class TestDatabaseIntegrity:
 
         conn.close()
 
-
 class TestLearningOutcomeMenu:
     """Tests for the learning outcome menu function"""
 
@@ -369,7 +361,6 @@ class TestLearningOutcomeMenu:
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'Invalid choice' in printed_output
-
 
 class TestDataValidation:
     """Tests for data validation in learning outcomes"""
@@ -410,7 +401,6 @@ class TestDataValidation:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'Invalid ID' in printed_output
 
-
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions"""
 
@@ -435,7 +425,6 @@ class TestEdgeCases:
         count = cursor.fetchone()[0]
         assert count >= 1
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

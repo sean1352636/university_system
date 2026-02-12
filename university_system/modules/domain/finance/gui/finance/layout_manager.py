@@ -236,14 +236,14 @@ class LayoutManager:
     def setup_styles(self):
         """Set up GUI styles and fonts"""
         self.style = ttk.Style()
-        self.style.theme_use('clam')
-        
-        # Define custom styles
-        self.style.configure('Title.TLabel', font=('Arial', 16, 'bold'))
-        self.style.configure('Heading.TLabel', font=('Arial', 12, 'bold'))
-        self.style.configure('Large.TButton', font=('Arial', 10, 'bold'), padding=10)
-        
-        # Color schemes - ADD 'info' color here
+
+        # Define finance-specific custom styles (namespaced to avoid
+        # overriding the main GUI's global styles such as Large.TButton)
+        self.style.configure('Finance.Title.TLabel', font=('Arial', 16, 'bold'))
+        self.style.configure('Finance.Heading.TLabel', font=('Arial', 12, 'bold'))
+        self.style.configure('Finance.Large.TButton', font=('Arial', 10, 'bold'), padding=10)
+
+        # Color schemes
         self.colors = {
             'primary': '#2c3e50',
             'secondary': '#3498db',
@@ -659,7 +659,7 @@ class LayoutManager:
             try:
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM finance_refunds")
                 refunds = cursor.fetchone()[0] or 0
-            except:
+            except Exception:
                 # Fallback to old method if finance_refunds doesn't exist
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_method = 'refund'")
                 general_refunds = cursor.fetchone()[0] or 0
@@ -667,7 +667,7 @@ class LayoutManager:
                 try:
                     cursor.execute("SELECT COALESCE(SUM(refund_amount), 0) FROM library_fine_payments WHERE refund_amount > 0")
                     library_refunds = cursor.fetchone()[0] or 0
-                except:
+                except Exception:
                     library_refunds = 0
 
                 refunds = general_refunds + library_refunds
@@ -3484,7 +3484,9 @@ class LayoutManager:
 
             for table in tables:
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    from university_system.core.sql_safety import validate_table_name
+                    validated_table = validate_table_name(table, conn=conn)
+                    cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                     count = cursor.fetchone()[0]
                     stats_text += f"{table:30s}: {count:>10,} records\n"
                 except Exception:
@@ -3967,7 +3969,9 @@ class LayoutManager:
                 
                 for table in essential_tables:
                     try:
-                        cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                        from university_system.core.sql_safety import validate_table_name
+                        validated_table = validate_table_name(table, conn=conn)
+                        cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                         count = cursor.fetchone()[0]
                         status_info += f"  ✓ {table}: {count} records\n"
                     except Exception:

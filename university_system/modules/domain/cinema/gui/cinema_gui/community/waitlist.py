@@ -4,8 +4,7 @@ Cinema Booking System - Waitlist Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_waitlist_page(self):
     """Display waitlist management page."""
@@ -65,11 +63,13 @@ def show_waitlist_page(self):
             JOIN screenings s ON w.screening_id = s.id
             JOIN movies m ON s.movie_id = m.id
         '''
+        params = []
         if status != "all":
-            sql += f" WHERE w.status = '{status}'"
+            sql += " WHERE w.status = ?"
+            params.append(status)
         sql += " ORDER BY w.created_at DESC"
 
-        cursor.execute(sql)
+        cursor.execute(sql, params)
         for row in cursor.fetchall():
             self.waitlist_tree.insert("", "end", values=(
                 row[0], row[1][:20], row[2], row[3], row[4],
@@ -98,7 +98,6 @@ def show_waitlist_page(self):
 
     load_waitlist()
 
-
 def notify_waitlist_customer(self):
     """Mark waitlist entry as notified."""
     selected = self.waitlist_tree.selection()
@@ -118,7 +117,6 @@ def notify_waitlist_customer(self):
     messagebox.showinfo(_t("cinema.common.notified"), f"Customer {email} has been marked as notified.\n\n(In a real system, an email would be sent)")
     self.show_waitlist_page()
 
-
 def mark_waitlist_fulfilled(self):
     """Mark waitlist entry as fulfilled."""
     selected = self.waitlist_tree.selection()
@@ -135,7 +133,6 @@ def mark_waitlist_fulfilled(self):
     conn.close()
 
     self.show_waitlist_page()
-
 
 def remove_waitlist_entry(self):
     """Remove waitlist entry."""

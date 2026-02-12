@@ -115,12 +115,12 @@ def generate_vaccination_status_report(auth):
             params = (f"%{vaccine}%",)
 
         # Totals
-        c.execute(f"""
-            SELECT COUNT(*),
-                   SUM(CASE WHEN verified=1 THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN adverse_reaction=1 THEN 1 ELSE 0 END)
-            FROM vaccination_records {where}
-        """, params)
+        c.execute(
+            "SELECT COUNT(*),"
+            " SUM(CASE WHEN verified=1 THEN 1 ELSE 0 END),"
+            " SUM(CASE WHEN adverse_reaction=1 THEN 1 ELSE 0 END)"
+            " FROM vaccination_records " + where,
+            params)
         total, verified, adverse = c.fetchone()
         total = total or 0; verified = verified or 0; adverse = adverse or 0
 
@@ -129,30 +129,30 @@ def generate_vaccination_status_report(auth):
         print(get_text("health.reports.vaccination_totals", total=total, verified=verified, adverse=adverse))
 
         # Expired / expiring soon
-        c.execute(f"""
-            SELECT COUNT(*) FROM vaccination_records
-            {('WHERE' if not where else where + ' AND')} 
-            (expiry_date IS NOT NULL AND date(expiry_date) < date('now','localtime'))
-        """, params)
+        c.execute(
+            "SELECT COUNT(*) FROM vaccination_records "
+            + ('WHERE' if not where else where + ' AND') +
+            " (expiry_date IS NOT NULL AND date(expiry_date) < date('now','localtime'))",
+            params)
         expired = c.fetchone()[0] or 0
 
-        c.execute(f"""
-            SELECT COUNT(*) FROM vaccination_records
-            {('WHERE' if not where else where + ' AND')}
-            (expiry_date IS NOT NULL AND date(expiry_date) BETWEEN date('now','localtime') AND date('now','localtime','+30 day'))
-        """, params)
+        c.execute(
+            "SELECT COUNT(*) FROM vaccination_records "
+            + ('WHERE' if not where else where + ' AND') +
+            " (expiry_date IS NOT NULL AND date(expiry_date) BETWEEN date('now','localtime') AND date('now','localtime','+30 day'))",
+            params)
         expiring_30 = c.fetchone()[0] or 0
 
         print(get_text("health.reports.expired_expiring", expired=expired, expiring_30=expiring_30))
 
         # Top vaccines
-        c.execute(f"""
-            SELECT vaccine_name, COUNT(*) as n
-            FROM vaccination_records {where}
-            GROUP BY vaccine_name
-            ORDER BY n DESC
-            LIMIT 10
-        """, params)
+        c.execute(
+            "SELECT vaccine_name, COUNT(*) as n"
+            " FROM vaccination_records " + where +
+            " GROUP BY vaccine_name"
+            " ORDER BY n DESC"
+            " LIMIT 10",
+            params)
         rows = c.fetchall()
         if rows:
             print("\n" + get_text("health.reports.top_vaccines_header"))
@@ -201,13 +201,13 @@ def generate_appointment_schedule_report(auth):
         else:
             where += " AND date(appointment_date) <= date('now','localtime','+7 day')"
 
-        c.execute(f"""
-            SELECT provider, status, COUNT(*) AS n
-            FROM {table}
-            {where}
-            GROUP BY provider, status
-            ORDER BY provider, n DESC
-        """, tuple(params))
+        c.execute(
+            "SELECT provider, status, COUNT(*) AS n"
+            " FROM [" + table + "] "
+            + where +
+            " GROUP BY provider, status"
+            " ORDER BY provider, n DESC",
+            tuple(params))
         rows = c.fetchall()
         if not rows:
             print("No appointments in the selected window.")
@@ -297,16 +297,16 @@ def generate_provider_performance_report(auth):
             return
 
         # Totals per provider
-        c.execute(f"""
-            SELECT provider,
-                   COUNT(*) AS total,
-                   SUM(CASE WHEN status IN ('completed','done') THEN 1 ELSE 0 END) AS completed,
-                   SUM(CASE WHEN status IN ('cancelled','canceled') THEN 1 ELSE 0 END) AS cancelled
-            FROM {table}
-            WHERE date(appointment_date) >= date('now','localtime','-30 day')
-            GROUP BY provider
-            ORDER BY total DESC
-        """)
+        c.execute(
+            "SELECT provider,"
+            " COUNT(*) AS total,"
+            " SUM(CASE WHEN status IN ('completed','done') THEN 1 ELSE 0 END) AS completed,"
+            " SUM(CASE WHEN status IN ('cancelled','canceled') THEN 1 ELSE 0 END) AS cancelled"
+            " FROM [" + table + "]"
+            " WHERE date(appointment_date) >= date('now','localtime','-30 day')"
+            " GROUP BY provider"
+            " ORDER BY total DESC"
+        )
         rows = c.fetchall()
         if not rows:
             print("No appointments in last 30 days.")

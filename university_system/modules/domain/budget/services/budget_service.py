@@ -15,14 +15,14 @@ Features:
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.exceptions import DatabaseError, ValidationError
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.infrastructure.shared_context import get_auth
-
+from university_system.core.sql_safety import validate_identifier
 
 class BudgetManager:
     """Manages student budget plans and tracking"""
@@ -336,7 +336,6 @@ class BudgetManager:
 
             return budget
 
-
 class ExpenseManager:
     """Manages expense tracking and categorization"""
 
@@ -486,11 +485,11 @@ class ExpenseManager:
                 if not update_fields:
                     return False
 
-                set_clause = ", ".join([f"{k} = ?" for k in update_fields.keys()])
+                set_clause = ", ".join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
                 set_clause += ", updated_at = CURRENT_TIMESTAMP"
                 values = list(update_fields.values()) + [expense_id]
 
-                conn.execute(f"UPDATE student_expenses SET {set_clause} WHERE expense_id = ?", values)
+                conn.execute("UPDATE student_expenses SET " + set_clause + " WHERE expense_id = ?", values)
                 log_activity('update', 'student_expense', expense_id=expense_id)
                 return True
 
@@ -530,7 +529,6 @@ class ExpenseManager:
 
         except sqlite3.Error as e:
             raise DatabaseError(f"Error deleting expense: {e}") from e
-
 
 class IncomeManager:
     """Manages income tracking"""
@@ -585,7 +583,6 @@ class IncomeManager:
             query += " ORDER BY income_date DESC"
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
-
 
 class MealPlanManager:
     """Manages meal plan tracking and usage"""
@@ -757,7 +754,6 @@ class MealPlanManager:
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-
 class TextbookComparisonManager:
     """Manages textbook price comparison"""
 
@@ -906,7 +902,6 @@ class TextbookComparisonManager:
             ''', (student_id,))
             return [dict(row) for row in cursor.fetchall()]
 
-
 class SavingsGoalManager:
     """Manages savings goals"""
 
@@ -995,7 +990,6 @@ class SavingsGoalManager:
                 goals.append(goal)
 
             return goals
-
 
 # Initialize tables on module import
 try:

@@ -12,7 +12,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
@@ -21,7 +21,6 @@ from university_system.modules.domain.student_affairs.services.helpdesk import (
     init_helpdesk_db,
     init_default_data,
 )
-
 
 @pytest.fixture
 def setup_helpdesk_database():
@@ -51,7 +50,6 @@ def setup_helpdesk_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def sample_user(setup_helpdesk_database):
     """Create a sample user for testing"""
@@ -72,7 +70,6 @@ def sample_user(setup_helpdesk_database):
     conn.close()
 
     return 1001
-
 
 class TestDatabaseSetup:
     """Tests for database initialization"""
@@ -117,7 +114,6 @@ class TestDatabaseSetup:
         assert dept_count > 0
 
         conn.close()
-
 
 class TestTicketManagement:
     """Tests for ticket creation and management"""
@@ -207,7 +203,6 @@ class TestTicketManagement:
 
         assert status == 'in_progress'
 
-
 class TestTicketReplies:
     """Tests for ticket replies"""
 
@@ -268,7 +263,6 @@ class TestTicketReplies:
 
         assert len(internal_notes) == 1
 
-
 class TestTicketAssignments:
     """Tests for ticket assignments"""
 
@@ -304,7 +298,6 @@ class TestTicketAssignments:
 
         assert assigned_to == 2001
 
-
 class TestSLAPolicies:
     """Tests for SLA policies"""
 
@@ -330,7 +323,6 @@ class TestSLAPolicies:
 
         assert high_priority_sla is not None
         assert high_priority_sla['first_response_hours'] < high_priority_sla['resolution_hours']
-
 
 class TestKnowledgeBase:
     """Tests for knowledge base"""
@@ -395,7 +387,6 @@ class TestKnowledgeBase:
         assert len(results) == 1
         assert 'Password' in results[0]['title']
 
-
 class TestTimeTracking:
     """Tests for time tracking"""
 
@@ -439,7 +430,6 @@ class TestTimeTracking:
 
         assert total == 120
 
-
 class TestTicketEscalations:
     """Tests for ticket escalations"""
 
@@ -477,7 +467,6 @@ class TestTicketEscalations:
         conn.close()
 
         assert level == 1
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -541,7 +530,6 @@ class TestIntegrationScenarios:
         assert ticket['satisfaction_rating'] == 5
         assert reply_count == 1
         assert time_spent == 30
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

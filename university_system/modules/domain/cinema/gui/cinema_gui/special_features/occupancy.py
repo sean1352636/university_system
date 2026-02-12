@@ -4,7 +4,7 @@ Cinema Booking System - Occupancy Dashboard
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_occupancy_dashboard(self):
     """Display real-time screen occupancy dashboard."""
@@ -69,7 +68,7 @@ def show_occupancy_dashboard(self):
                     break
                 elif show_time > now and not current_screening:
                     current_screening = scr
-            except:
+            except (ValueError, TypeError):
                 pass
 
         if current_screening:
@@ -117,7 +116,7 @@ def show_occupancy_dashboard(self):
             try:
                 show_time = datetime.strptime(data['time'], "%Y-%m-%d %H:%M")
                 tk.Label(screen_frame, text=show_time.strftime("%H:%M"), bg="#ffffff", fg="#7f8c8d").pack()
-            except:
+            except (ValueError, TypeError):
                 pass
 
             # Occupancy bar
@@ -166,7 +165,6 @@ def show_occupancy_dashboard(self):
                                  f"Active Screens: {active_screens}/5",
             bg="#ffffff", fg="#27ae60", font=("Helvetica", 11)).pack()
 
-
 def toggle_occupancy_refresh(self):
     """Toggle auto-refresh for occupancy dashboard."""
     if self.auto_refresh_var.get():
@@ -175,18 +173,15 @@ def toggle_occupancy_refresh(self):
         if hasattr(self, 'occupancy_refresh_id'):
             self.root.after_cancel(self.occupancy_refresh_id)
 
-
 def schedule_occupancy_refresh(self):
     """Schedule next occupancy refresh."""
     if self.auto_refresh_var.get():
         self.refresh_occupancy_display()
         self.occupancy_refresh_id = self.root.after(5000, self.schedule_occupancy_refresh)
 
-
 def refresh_occupancy_display(self):
     """Refresh the occupancy display."""
     self.show_occupancy_dashboard()
-
 
 def show_occupancy_seat_map(self, screening_id):
     """Show seat map for a specific screening."""

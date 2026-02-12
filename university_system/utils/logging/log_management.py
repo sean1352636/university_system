@@ -9,6 +9,7 @@ import threading
 import smtplib
 import zipfile
 import re
+import secrets
 import time
 import warnings
 import queue
@@ -220,7 +221,7 @@ class LogConfig:
             "smtp_password": "",
             "enable_encryption": True,
             "api_enabled": False,
-            "api_secret_key": "your-secret-key-change-this-in-production",
+            "api_secret_key": os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)),
             "webhook_secret": "webhook-secret-key-change-this",
             "max_search_results": 1000,
             "enable_analytics": True,
@@ -262,7 +263,7 @@ class LogConfig:
 config = LogConfig()
 
 # JWT Configuration - now config is defined
-app.config['SECRET_KEY'] = config.get('api_secret_key', 'your-secret-key-change-this')
+app.config['SECRET_KEY'] = config.get('api_secret_key', os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)))
 
 def token_required(f):
     """Decorator for API authentication.  When Flask/JWT are unavailable
@@ -310,15 +311,37 @@ def admin_required(f):
         pass
     return decorated
 
+# Simple in-memory rate limiter for login
+_login_attempts = {}
+
+def _check_login_rate_limit(ip_address):
+    """Check if IP has exceeded login rate limit (5 attempts per minute)."""
+    import time
+    now = time.time()
+    attempts = _login_attempts.get(ip_address, [])
+    # Remove attempts older than 60 seconds
+    attempts = [t for t in attempts if now - t < 60]
+    _login_attempts[ip_address] = attempts
+    if len(attempts) >= 5:
+        return False
+    attempts.append(now)
+    _login_attempts[ip_address] = attempts
+    return True
+
 # Authentication Endpoints
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """API login endpoint"""
+    # Rate limiting
+    client_ip = request.remote_addr
+    if not _check_login_rate_limit(client_ip):
+        return jsonify({'error': 'Too many login attempts. Please try again later.'}), 429
+
     data = request.get_json()
-    
+
     username = data.get('username')
     password = data.get('password')
-    
+
     # This would typically validate against your user database
     # For demonstration, we'll create a simple token
     if username and password:
@@ -326,13 +349,13 @@ def login():
             'user_id': username,
             'exp': datetime.utcnow() + timedelta(hours=24)
         }, app.config['SECRET_KEY'], algorithm='HS256')
-        
+
         return jsonify({
             'token': token,
             'expires_in': 86400,
             'user_id': username
         })
-    
+
     return jsonify({'error': 'Invalid credentials'}), 401
 
 # Log Query Endpoints
@@ -363,7 +386,8 @@ def search_logs(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Search logs error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/logs/recent', methods=['GET'])
 @token_required
@@ -389,7 +413,8 @@ def get_recent_logs(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/logs/user/<user_id>', methods=['GET'])
 @token_required
@@ -420,7 +445,8 @@ def get_user_logs(current_user, user_id):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Analytics Endpoints
 @app.route('/api/analytics/summary', methods=['GET'])
@@ -439,7 +465,8 @@ def get_analytics_summary(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/analytics/user/<user_id>', methods=['GET'])
 @token_required
@@ -457,7 +484,8 @@ def get_user_analytics(current_user, user_id):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/analytics/chart', methods=['POST'])
 @token_required
@@ -483,7 +511,8 @@ def generate_chart(current_user):
             return jsonify({'error': 'Chart generation failed'}), 500
             
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Alert Endpoints
 @app.route('/api/alerts', methods=['GET'])
@@ -500,10 +529,10 @@ def get_alerts(current_user):
         cursor = conn.cursor()
         
         cursor.execute('''
-            SELECT * FROM alerts 
-            WHERE triggered_at > datetime('now', '-{} hours')
+            SELECT * FROM alerts
+            WHERE triggered_at > datetime('now', ? || ' hours')
             ORDER BY triggered_at DESC
-        '''.format(hours))
+        ''', (f'-{hours}',))
         
         alerts = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -515,7 +544,8 @@ def get_alerts(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 @app.route('/api/alerts/check', methods=['POST'])
 @token_required
@@ -532,7 +562,8 @@ def run_alert_check(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Export Endpoints
 @app.route('/api/export/logs', methods=['POST'])
@@ -581,7 +612,8 @@ def export_logs(current_user):
             })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Real-time Endpoints
 @app.route('/api/realtime/status', methods=['GET'])
@@ -656,7 +688,8 @@ def update_config(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # System Status Endpoints
 @app.route('/api/system/status', methods=['GET'])
@@ -690,18 +723,29 @@ def get_system_status(current_user):
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Webhook Endpoints
 @app.route('/api/webhooks/log', methods=['POST'])
 def webhook_log_entry():
     """Webhook endpoint for receiving log entries from external systems"""
     try:
-        # Verify webhook authenticity (implement your own verification)
+        # Verify webhook authenticity
         webhook_key = request.headers.get('X-Webhook-Key')
-        if webhook_key != config.get('webhook_secret'):
+        if not webhook_key or not secrets.compare_digest(webhook_key, config.get('webhook_secret', '')):
             return jsonify({'error': 'Invalid webhook key'}), 401
-        
+
+        # Validate timestamp to prevent replay attacks (5 min window)
+        webhook_ts = request.headers.get('X-Webhook-Timestamp', '')
+        if webhook_ts:
+            try:
+                ts = datetime.fromisoformat(webhook_ts)
+                if abs((datetime.utcnow() - ts).total_seconds()) > 300:
+                    return jsonify({'error': 'Request timestamp expired'}), 401
+            except ValueError:
+                pass
+
         log_data = request.get_json()
         
         # Validate required fields
@@ -727,7 +771,8 @@ def webhook_log_entry():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"API error: {e}")
+        return jsonify({'error': 'An internal error occurred'}), 500
 
 # Error Handlers
 @app.errorhandler(404)
@@ -744,8 +789,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'version': '1.0.0'
+        'timestamp': datetime.now().isoformat()
     })
 
 class LogSecurity:
@@ -3478,6 +3522,6 @@ if __name__ == "__main__":
     if config.get('api_enabled', False):
         print("Starting Log Management API Server...")
         print("API Documentation available at /api/docs")
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=5000, debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
     else:
         print("API is disabled. Enable it in configuration to start the server.")

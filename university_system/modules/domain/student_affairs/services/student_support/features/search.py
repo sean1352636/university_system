@@ -2,7 +2,6 @@
 Advanced search functionality.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from .knowledge_base import _search_knowledge_base
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def advanced_search(query, search_type='global', filters=None, page=1, per_page=20):
     """Advanced search across tickets, FAQs, and resources with analytics"""
@@ -68,7 +64,6 @@ def advanced_search(query, search_type='global', filters=None, page=1, per_page=
     except Exception as e:
         logger.error(f"Error performing advanced search: {e}")
         raise
-
 
 def _search_tickets(query, filters, page, per_page):
     """Search tickets with full-text search"""
@@ -135,7 +130,6 @@ def _search_tickets(query, filters, page, per_page):
         logger.error(f"Error searching tickets: {e}")
         return {'tickets': [], 'total_count': 0}
 
-
 def _search_faqs(query, filters):
     """Search FAQs with relevance scoring"""
     try:
@@ -175,7 +169,6 @@ def _search_faqs(query, filters):
     except Exception as e:
         logger.error(f"Error searching FAQs: {e}")
         return []
-
 
 def _search_resources(query, filters):
     """Search support resources"""
@@ -255,7 +248,6 @@ def _get_search_suggestions(query, results):
     
     return suggestions[:5]  # Return top 5 suggestions
 
-
 def _log_search_analytics(query, search_type, user_id):
     """Log search analytics for improvement"""
     try:
@@ -276,7 +268,6 @@ def _log_search_analytics(query, search_type, user_id):
         
     except Exception as e:
         logger.error(f"Error logging search analytics: {e}")
-
 
 def perform_advanced_search(support):
     """Perform advanced search across all content"""

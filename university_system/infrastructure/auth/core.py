@@ -43,9 +43,9 @@ from university_system.infrastructure.database.db import get_connection
 import sys
 
 # Import constants and paths
-from university_system.modules.shared.constants import paths
-from university_system.modules.shared.constants import defaults
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core import paths
+from university_system.core import defaults
+from university_system.core.sql_safety import (
     validate_column_definition,
     SQLIdentifierError,
 )
@@ -66,11 +66,11 @@ from university_system.infrastructure.exceptions import (
 logger = logging.getLogger(__name__)
 
 # Import i18n
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 # Import centralized activity logger
 try:
-    from university_system.modules.shared.utils.activity_logger import (
+    from university_system.core.activity_logger import (
         set_user, log_login, log_logout, log_activity, log_access
     )
     ACTIVITY_LOGGER_AVAILABLE = True
@@ -269,6 +269,11 @@ class UserAuth:
             from university_system.infrastructure.auth.managers.mfa_manager import MFAManager
             from university_system.infrastructure.auth.managers.account_security import AccountSecurityManager
             from university_system.infrastructure.auth.managers.login_manager import LoginManager
+            from university_system.infrastructure.auth.managers.account_linking_manager import AccountLinkingManager
+            from university_system.infrastructure.auth.managers.sso_manager import SSOManager
+            from university_system.infrastructure.auth.managers.webauthn_manager import WebAuthnManager
+            from university_system.infrastructure.auth.managers.biometric_manager import BiometricManager
+            from university_system.infrastructure.auth.managers.delegated_access_manager import DelegatedAccessManager
 
             # Initialize database manager
             self.db_manager = DatabaseConnectionManager(self.db_path)
@@ -385,6 +390,35 @@ class UserAuth:
                 name_deriver=simple_name_deriver
             )
 
+            # Initialize extended authentication managers
+            self.account_linking_manager = AccountLinkingManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+                self.permission_manager,
+            )
+            self.sso_manager = SSOManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.webauthn_manager = WebAuthnManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.biometric_manager = BiometricManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.delegated_access_manager = DelegatedAccessManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+                self.permission_manager,
+            )
+
             # Initialize the database
             self._init_db()
 
@@ -430,6 +464,11 @@ class UserAuth:
             from university_system.infrastructure.auth.managers.mfa_manager import MFAManager
             from university_system.infrastructure.auth.managers.account_security import AccountSecurityManager
             from university_system.infrastructure.auth.managers.login_manager import LoginManager
+            from university_system.infrastructure.auth.managers.account_linking_manager import AccountLinkingManager
+            from university_system.infrastructure.auth.managers.sso_manager import SSOManager
+            from university_system.infrastructure.auth.managers.webauthn_manager import WebAuthnManager
+            from university_system.infrastructure.auth.managers.biometric_manager import BiometricManager
+            from university_system.infrastructure.auth.managers.delegated_access_manager import DelegatedAccessManager
             from university_system.infrastructure.auth.managers import activity_logger
             from university_system.infrastructure.auth.core_utils.utils import (
                 validate_username, validate_password, validate_email
@@ -505,6 +544,35 @@ class UserAuth:
                 session_manager=self.session_manager,
                 role_inferrer=simple_role_inferrer,
                 name_deriver=simple_name_deriver
+            )
+
+            # Initialize extended authentication managers
+            self.account_linking_manager = AccountLinkingManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+                self.permission_manager,
+            )
+            self.sso_manager = SSOManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.webauthn_manager = WebAuthnManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.biometric_manager = BiometricManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+            )
+            self.delegated_access_manager = DelegatedAccessManager(
+                self.db_manager,
+                activity_logger_wrapper,
+                lambda: self.current_user,
+                self.permission_manager,
             )
 
             self._init_db()
@@ -828,7 +896,7 @@ class UserAuth:
                     try:
                         # Validate column definition using SQL safety module
                         col_def = validate_column_definition(column, definition)
-                        cursor.execute(f'ALTER TABLE students ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                        cursor.execute('ALTER TABLE students ADD COLUMN [' + col_def.name + '] ' + col_def.type_def)
                         logging.info(f"Added missing column '{column}' to students table")
                     except SQLIdentifierError as e:
                         logging.warning(f"Invalid column definition for '{column}': {e}")
@@ -845,7 +913,9 @@ class UserAuth:
             raise
 
     def _create_default_student_if_needed(self, cursor, conn):
-        """Ensure the students table exists and report if it is empty."""
+        """Ensure the default student record exists in the students table."""
+        from university_system.core import defaults
+
         try:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='students'")
             table_exists = cursor.fetchone() is not None
@@ -855,53 +925,33 @@ class UserAuth:
                 )
                 return
 
-            cursor.execute('SELECT COUNT(*) FROM students')
-            student_count = cursor.fetchone()[0]
-            if student_count == 0:
-                logging.info(
-                    "Students table is present but empty. Import student records to enable student-facing workflows."
-                )
+            cursor.execute('SELECT student_id FROM students WHERE student_id = ?',
+                           (defaults.DEFAULT_STUDENT_ID,))
+            if not cursor.fetchone():
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute('''
+                    INSERT INTO students (student_id, first_name, last_name, email_address,
+                                          status, registration_datetime)
+                    VALUES (?, ?, ?, ?, 'Active', ?)
+                ''', (
+                    defaults.DEFAULT_STUDENT_ID,
+                    defaults.DEFAULT_STUDENT_FIRST_NAME,
+                    defaults.DEFAULT_STUDENT_LAST_NAME,
+                    defaults.DEFAULT_STUDENT_EMAIL,
+                    timestamp,
+                ))
+                conn.commit()
+                logging.info(f"Created default student record: {defaults.DEFAULT_STUDENT_ID}")
         except sqlite3.Error as exc:
             logging.warning(f"Could not inspect students table: {exc}")
 
     def _create_default_accounts_if_needed(self, cursor, conn, target_usernames: Optional[set[str]] = None):
         """Ensure baseline system accounts exist, creating them when missing."""
-        import os
-        import secrets
-        import string
+        from university_system.core import defaults
 
-        def generate_secure_password(length=16):
-            """Generate a cryptographically secure random password."""
-            alphabet = string.ascii_letters + string.digits + string.punctuation
-            return ''.join(secrets.choice(alphabet) for _ in range(length))
-
-        # Get passwords from environment variables or use simple defaults for development
-        admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD') or os.getenv('INITIAL_ADMIN_PASSWORD')
-        admin_using_default = False
-        if not admin_password:
-            admin_password = 'admin123'
-            admin_using_default = True
-            logging.warning(
-                "SECURITY WARNING: No DEFAULT_ADMIN_PASSWORD environment variable set. "
-                "Using default password for development. NEVER use this in production!"
-            )
-            logger.warning("Admin account using default dev password (set DEFAULT_ADMIN_PASSWORD in production)")
-
-        staff_password = os.getenv('DEFAULT_STAFF_PASSWORD') or os.getenv('INITIAL_STAFF_PASSWORD')
-        staff_using_default = False
-        if not staff_password:
-            staff_password = 'staff123'
-            staff_using_default = True
-            logging.info("Using default password for staff account (development only)")
-            logger.warning("Staff account using default dev password (set DEFAULT_STAFF_PASSWORD in production)")
-
-        student_password = os.getenv('DEFAULT_STUDENT_PASSWORD') or os.getenv('INITIAL_STUDENT_PASSWORD')
-        student_using_default = False
-        if not student_password:
-            student_password = 'student123'
-            student_using_default = True
-            logging.info("Using default password for student account (development only)")
-            logger.warning("Student account using default dev password (set DEFAULT_STUDENT_PASSWORD in production)")
+        admin_password = defaults.DEFAULT_ADMIN_PASSWORD
+        staff_password = defaults.DEFAULT_STAFF_PASSWORD
+        student_password = defaults.DEFAULT_STUDENT_PASSWORD
 
         default_accounts = {
             'admin': {
@@ -922,14 +972,14 @@ class UserAuth:
                 'role': 'staff',
                 'student_id': None
             },
-            'student': {
-                'username': 'student',
+            defaults.DEFAULT_STUDENT_USERNAME: {
+                'username': defaults.DEFAULT_STUDENT_USERNAME,
                 'password': student_password,
-                'first_name': 'Demo',
-                'last_name': 'Student',
-                'email': 'student@university.edu',
+                'first_name': defaults.DEFAULT_STUDENT_FIRST_NAME,
+                'last_name': defaults.DEFAULT_STUDENT_LAST_NAME,
+                'email': defaults.DEFAULT_STUDENT_EMAIL,
                 'role': 'student',
-                'student_id': None
+                'student_id': defaults.DEFAULT_STUDENT_ID
             }
         }
 
@@ -943,6 +993,64 @@ class UserAuth:
             # Check if account already exists
             cursor.execute('SELECT id FROM user_accounts WHERE username = ?', (username,))
             if cursor.fetchone():
+                # Account exists — sync password hash to current DEFAULT_*_PASSWORD
+                try:
+                    salt, password_hash = self._hash_password(account_info['password'])
+                    cursor.execute(
+                        'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ? WHERE username = ?',
+                        (password_hash, salt, timestamp, username),
+                    )
+                except sqlite3.Error as exc:
+                    logging.error(
+                        f"Failed to sync password for '{username}': {exc}"
+                    )
+
+                # Check for role inconsistencies and missing user profiles
+                cursor.execute(
+                    'SELECT id, role FROM users WHERE username = ?', (username,),
+                )
+                user_row = cursor.fetchone()
+                if user_row:
+                    user_id, existing_role = user_row
+                    if existing_role != account_info['role']:
+                        logging.warning(
+                            f"Fixing role for '{username}': "
+                            f"'{existing_role}' -> '{account_info['role']}'"
+                        )
+                        try:
+                            cursor.execute(
+                                'UPDATE users SET role = ?, updated_at = ? WHERE id = ?',
+                                (account_info['role'], timestamp, user_id),
+                            )
+                        except sqlite3.Error as exc:
+                            logging.error(
+                                f"Failed to update role for user '{username}': {exc}"
+                            )
+                else:
+                    # User record missing but account exists — create user profile
+                    try:
+                        cursor.execute(
+                            '''INSERT INTO users
+                               (username, first_name, last_name, email, role,
+                                student_id, created_at, updated_at)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                            (username, account_info['first_name'],
+                             account_info['last_name'], account_info['email'],
+                             account_info['role'], account_info['student_id'],
+                             timestamp, timestamp),
+                        )
+                        new_user_id = cursor.lastrowid
+                        cursor.execute(
+                            'UPDATE user_accounts SET user_id = ? WHERE username = ?',
+                            (new_user_id, username),
+                        )
+                        logging.info(
+                            f"Created missing user profile for '{username}'"
+                        )
+                    except sqlite3.Error as exc:
+                        logging.error(
+                            f"Failed to create user record for '{username}': {exc}"
+                        )
                 continue  # Account already exists
 
             # Create user record
@@ -1296,6 +1404,188 @@ class UserAuth:
         return self.account_security_manager.clear_failed_attempts(username)
 
     # ==========================================================================
+    # ACCOUNT LINKING (Delegated to AccountLinkingManager)
+    # ==========================================================================
+
+    def create_link_request(self, target_user_id, reason=None):
+        """Create a request to link another account"""
+        return self.account_linking_manager.create_link_request(target_user_id, reason)
+
+    def approve_link_request(self, request_id):
+        """Approve a pending link request"""
+        return self.account_linking_manager.approve_link_request(request_id)
+
+    def reject_link_request(self, request_id, reason=None):
+        """Reject a pending link request"""
+        return self.account_linking_manager.reject_link_request(request_id, reason)
+
+    def get_linked_accounts(self, user_id=None):
+        """Get all linked accounts for a user"""
+        return self.account_linking_manager.get_linked_accounts(user_id)
+
+    def switch_active_role(self, linked_account_id):
+        """Switch to a linked account's role"""
+        return self.account_linking_manager.switch_active_role(linked_account_id)
+
+    def revert_role(self):
+        """Revert to original role after role switch"""
+        return self.account_linking_manager.revert_role()
+
+    def unlink_account(self, link_id):
+        """Remove a link between accounts"""
+        return self.account_linking_manager.unlink_account(link_id)
+
+    def get_link_requests(self, status='pending', direction='incoming'):
+        """Get account link requests"""
+        return self.account_linking_manager.get_link_requests(status, direction)
+
+    # ==========================================================================
+    # SSO MANAGEMENT (Delegated to SSOManager)
+    # ==========================================================================
+
+    def configure_sso_provider(self, provider_id, provider_type, display_name, config, **kwargs):
+        """Configure an SSO provider"""
+        return self.sso_manager.configure_provider(provider_id, provider_type, display_name, config, **kwargs)
+
+    def list_sso_providers(self, enabled_only=True):
+        """List configured SSO providers"""
+        return self.sso_manager.list_providers(enabled_only)
+
+    def get_sso_provider_config(self, provider_id):
+        """Get SSO provider configuration"""
+        return self.sso_manager.get_provider_config(provider_id)
+
+    def delete_sso_provider(self, provider_id):
+        """Delete an SSO provider"""
+        return self.sso_manager.delete_provider(provider_id)
+
+    def enable_sso_provider(self, provider_id):
+        """Enable an SSO provider"""
+        return self.sso_manager.enable_provider(provider_id)
+
+    def disable_sso_provider(self, provider_id):
+        """Disable an SSO provider"""
+        return self.sso_manager.disable_provider(provider_id)
+
+    # ==========================================================================
+    # WEBAUTHN / FIDO2 (Delegated to WebAuthnManager)
+    # ==========================================================================
+
+    def register_webauthn_key(self, credential_name=None):
+        """Begin WebAuthn key registration"""
+        return self.webauthn_manager.register_key(credential_name)
+
+    def complete_webauthn_registration(self, session_id, attestation_response):
+        """Complete WebAuthn key registration"""
+        return self.webauthn_manager.complete_registration(session_id, attestation_response)
+
+    def begin_webauthn_authentication(self, username=None):
+        """Begin WebAuthn authentication"""
+        return self.webauthn_manager.begin_authentication(username)
+
+    def complete_webauthn_authentication(self, session_id, assertion_response):
+        """Complete WebAuthn authentication"""
+        return self.webauthn_manager.complete_authentication(session_id, assertion_response)
+
+    def list_webauthn_keys(self, user_id=None):
+        """List registered WebAuthn keys"""
+        return self.webauthn_manager.list_user_keys(user_id)
+
+    def remove_webauthn_key(self, credential_id):
+        """Remove a WebAuthn key"""
+        return self.webauthn_manager.remove_key(credential_id)
+
+    def rename_webauthn_key(self, credential_id, new_name):
+        """Rename a WebAuthn key"""
+        return self.webauthn_manager.rename_key(credential_id, new_name)
+
+    # ==========================================================================
+    # BIOMETRIC AUTHENTICATION (Delegated to BiometricManager)
+    # ==========================================================================
+
+    def enroll_biometric(self, biometric_type, data, quality_score=None):
+        """Enroll a biometric template"""
+        return self.biometric_manager.enroll_biometric(biometric_type, data, quality_score)
+
+    def authenticate_biometric(self, biometric_type, data):
+        """Authenticate using biometric data"""
+        return self.biometric_manager.authenticate_biometric(biometric_type, data)
+
+    def list_biometric_enrollments(self, user_id=None):
+        """List biometric enrollments"""
+        return self.biometric_manager.list_enrollments(user_id)
+
+    def revoke_biometric_enrollment(self, enrollment_id):
+        """Revoke a biometric enrollment"""
+        return self.biometric_manager.revoke_enrollment(enrollment_id)
+
+    # ==========================================================================
+    # DELEGATED ACCESS (Delegated to DelegatedAccessManager)
+    # ==========================================================================
+
+    def create_delegation(self, delegate_user_id, scope_keys, relationship=None, expires_at=None):
+        """Create a delegation granting access to another user"""
+        return self.delegated_access_manager.create_delegation(
+            delegate_user_id, scope_keys, relationship, expires_at
+        )
+
+    def revoke_delegation(self, delegation_id):
+        """Revoke a delegation"""
+        return self.delegated_access_manager.revoke_delegation(delegation_id)
+
+    def get_delegations_for_user(self, user_id=None, direction='granted'):
+        """Get delegations for a user"""
+        return self.delegated_access_manager.get_delegations_for_user(user_id, direction)
+
+    def check_delegated_permission(self, delegate_user_id, target_user_id, permission):
+        """Check if delegate has a specific delegated permission"""
+        return self.delegated_access_manager.check_delegated_permission(
+            delegate_user_id, target_user_id, permission
+        )
+
+    def create_delegation_request(self, target_user_id, relationship, scope_keys, reason=None):
+        """Request delegated access to a user's records"""
+        return self.delegated_access_manager.create_delegation_request(
+            target_user_id, relationship, scope_keys, reason
+        )
+
+    def approve_delegation_request(self, request_id):
+        """Approve a delegation request"""
+        return self.delegated_access_manager.approve_delegation_request(request_id)
+
+    def reject_delegation_request(self, request_id, reason=None):
+        """Reject a delegation request"""
+        return self.delegated_access_manager.reject_delegation_request(request_id, reason)
+
+    def get_delegation_requests(self, status='pending', direction='incoming'):
+        """Get delegation requests"""
+        return self.delegated_access_manager.get_delegation_requests(status, direction)
+
+    def expire_delegations(self):
+        """Expire all overdue delegations"""
+        return self.delegated_access_manager.expire_delegations()
+
+    # ==========================================================================
+    # UNIFIED LOGIN (Delegated to LoginManager)
+    # ==========================================================================
+
+    def login_by_method(self, method, **kwargs):
+        """Unified login dispatcher for all authentication methods"""
+        return self.login_manager.login_by_method(method, **kwargs)
+
+    def login_via_sso(self, sso_identity):
+        """Login via SSO identity"""
+        return self.login_manager.login_via_sso(sso_identity)
+
+    def login_via_webauthn(self, assertion_data):
+        """Login via WebAuthn assertion"""
+        return self.login_manager.login_via_webauthn(assertion_data)
+
+    def login_via_biometric(self, biometric_type, template_data):
+        """Login via biometric authentication"""
+        return self.login_manager.login_via_biometric(biometric_type, template_data)
+
+    # ==========================================================================
     # DATABASE CONSISTENCY AND MAINTENANCE
     # ==========================================================================
 
@@ -1348,7 +1638,7 @@ class UserAuth:
                             VALUES (?, ?, ?, ?, ?, ?, 1)
                         ''', (username, password_hash, salt, user_id, timestamp, timestamp))
 
-                        logger.info(f"Created account for {username} (temp password: {temp_password})")
+                        logger.info(f"Created account for {username} with temporary password")
                     except sqlite3.IntegrityError as e:
                         logger.error(f"Failed to create account for {username}: {e}")
 
@@ -1435,7 +1725,7 @@ class UserAuth:
                 ''', (username, password_hash, salt, user_id, timestamp, timestamp))
 
                 identifier = username or email or f"user-{user_id}"
-                logger.info(f"Created account for {identifier}. Temporary password: {password}")
+                logger.info(f"Created account for {identifier} with temporary password")
 
             conn.commit()
             conn.close()
@@ -1819,7 +2109,8 @@ def quick_test_integration():
         print("✓ UserAuth initialized successfully")
 
         # Test login with default admin
-        result = auth.login('admin', 'admin123')
+        from university_system.core.defaults import DEFAULT_ADMIN_PASSWORD
+        result = auth.login('admin', DEFAULT_ADMIN_PASSWORD)
         if result.get('success'):
             print("✓ Admin login successful")
             auth.logout()

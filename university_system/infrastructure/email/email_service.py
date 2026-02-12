@@ -7,19 +7,19 @@ import json
 import queue
 import re
 import smtplib
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from datetime import datetime, timedelta
 
 import schedule
 
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.i18n import get_text as _t, init_i18n
 init_i18n()
 
 from university_system.infrastructure.email.config import config
 from university_system.infrastructure.email.email_db_utilities import _ensure_db_ready, execute_db_operation
-from university_system.modules.shared.utils.logs import handle_exception, log_event
+from university_system.core.logs import handle_exception, log_event
 from university_system.infrastructure.email.reports import log_email_metrics
 from university_system.infrastructure.email.smtp import send_email_via_smtp
 # Import auth access - use function to get current auth instance
@@ -88,8 +88,6 @@ stop_workers_event = threading.Event()
 scheduled_jobs = {}
 scheduled_jobs_lock = threading.Lock()  # Protect scheduled_jobs dict
 
-
-
 @handle_exception
 def safe_log_email(cursor, recipient, subject, sent_date, status, related_to=None, student_id=None, 
                   sender_email=None, sender_name=None, cc_recipients=None, bcc_recipients=None, 
@@ -122,8 +120,6 @@ def safe_log_email(cursor, recipient, subject, sent_date, status, related_to=Non
         except sqlite3.Error as e2:
             log_event('error', f"Database error logging email: {e2}")
             return False
-
-
 
 @handle_exception
 def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=None):
@@ -204,8 +200,6 @@ def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=No
         log_email_metrics('failed')
     
     return result
-
-
 
 def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, current_time):
     _ensure_db_ready()
@@ -330,8 +324,6 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
         log_event('error', f"Email error storing email: {e}")
         return False
 
-
-
 def fix_inbox_display_issue():
     """Fix the issue where sent emails don't appear in recipient inboxes"""
     
@@ -392,8 +384,6 @@ def fix_inbox_display_issue():
         print(_t("email_service.db_error_fixing", error=str(e)))
         return 0
 
-
-
 def generate_system_username(sender_name, sender_email):
     """Generate a descriptive username for system users"""
     
@@ -411,8 +401,6 @@ def generate_system_username(sender_name, sender_email):
         clean_name = clean_name[:20]
     
     return f"system_{clean_name}"
-
-
 
 @handle_exception  
 def send_email_as_user(recipient_email, subject, body, sender_user_id=None, cc=None, bcc=None, attachments=None):
@@ -452,8 +440,6 @@ def send_email_as_user(recipient_email, subject, body, sender_user_id=None, cc=N
     
     return result
 
-
-
 @handle_exception
 def send_email_as_system(recipient_email, subject, body, system_name="University System", cc=None, bcc=None, attachments=None):
     """Send an email as a named system entity"""
@@ -468,8 +454,6 @@ def send_email_as_system(recipient_email, subject, body, system_name="University
     config['sender_name'] = original_sender_name
     
     return result
-
-
 
 def get_appropriate_sender_id(cursor, sender_email, sender_name, current_time):
     """
@@ -517,8 +501,6 @@ def get_appropriate_sender_id(cursor, sender_email, sender_name, current_time):
         new_user_id = cursor.lastrowid
         log_event('info', f"Created system user: {system_username} (ID: {new_user_id}) for {sender_name}")
         return new_user_id
-
-
 
 @handle_exception
 def send_template_email(template_name, recipient_email, template_vars, cc=None, bcc=None, attachments=None):
@@ -579,8 +561,6 @@ def send_template_email(template_name, recipient_email, template_vars, cc=None, 
         log_event('error', f"Failed to send template email '{template_name}' to {recipient_email}")
 
     return result
-
-
 
 @handle_exception
 def get_stored_emails(limit=50, offset=0, recipient_filter=None, date_filter=None, sender_filter=None):
@@ -658,8 +638,6 @@ def get_stored_emails(limit=50, offset=0, recipient_filter=None, date_filter=Non
         log_event('error', f"Database error retrieving stored emails: {e}")
         return {'emails': [], 'total_count': 0, 'limit': limit, 'offset': offset}
 
-
-
 @handle_exception
 def delete_stored_email(email_id):
     """Delete a stored email by ID"""
@@ -680,8 +658,6 @@ def delete_stored_email(email_id):
         log_event('error', f"Database error deleting stored email: {e}")
         return False
 
-
-
 @handle_exception
 def clear_stored_emails(older_than_days=None):
     """Clear stored emails, optionally only those older than specified days"""
@@ -701,8 +677,6 @@ def clear_stored_emails(older_than_days=None):
     except sqlite3.Error as e:
         log_event('error', f"Database error clearing stored emails: {e}")
         return 0
-
-
 
 @handle_exception
 def email_worker():
@@ -775,8 +749,6 @@ def email_worker():
     
     log_event('info', f"Email worker {worker_id} stopped")
 
-
-
 @handle_exception
 def start_email_workers():
     """Start worker threads for processing the email queue - SINGLE THREAD ONLY"""
@@ -801,8 +773,6 @@ def start_email_workers():
 
     return True
 
-
-
 @handle_exception
 def stop_email_workers():
     """Stop all email worker threads"""
@@ -819,8 +789,6 @@ def stop_email_workers():
             worker_threads.clear()
             log_event('info', "Email workers stopped")
     return True
-
-
 
 @handle_exception
 def queue_email(recipient, subject, body, cc=None, bcc=None, attachments=None, scheduled_id=None):
@@ -850,8 +818,6 @@ def queue_email(recipient, subject, body, cc=None, bcc=None, attachments=None, s
     email_queue.put(task)
     
     return True
-
-
 
 @handle_exception
 def queue_template_email(template_name, recipient, template_vars, cc=None, bcc=None, attachments=None, scheduled_id=None):
@@ -892,8 +858,6 @@ def queue_template_email(template_name, recipient, template_vars, cc=None, bcc=N
     
     return True
 
-
-
 @handle_exception
 def wait_for_email_queue():
     """Wait for all queued emails to be sent"""
@@ -906,8 +870,6 @@ def wait_for_email_queue():
     email_queue.join()
     log_event('info', "All emails have been sent")
     return True
-
-
 
 @handle_exception
 def send_bulk(recipients, template_name, template_vars_list=None, rate_limit=None):
@@ -978,8 +940,6 @@ def send_bulk(recipients, template_name, template_vars_list=None, rate_limit=Non
         'success': success_count,
         'failure': failure_count
     }
-
-
 
 @handle_exception
 def schedule_send(datetime_obj, recipients, template_name, template_vars_list=None):
@@ -1060,8 +1020,6 @@ def schedule_send(datetime_obj, recipients, template_name, template_vars_list=No
             'scheduled_ids': []
         }
 
-
-
 @handle_exception
 def process_scheduled_emails():
     """Process due scheduled emails"""
@@ -1123,8 +1081,6 @@ def process_scheduled_emails():
         log_event('error', f"Database error processing scheduled emails: {e}")
         return 0
 
-
-
 @handle_exception
 def ensure_scheduler_running():
     """Ensure the scheduler is running"""
@@ -1152,8 +1108,6 @@ def ensure_scheduler_running():
     log_event('info', "Email scheduler started")
     return True
 
-
-
 def run_scheduler():
     """Run the scheduler in a loop"""
     while True:
@@ -1163,8 +1117,6 @@ def run_scheduler():
         except (RuntimeError, OSError) as e:
             log_event('error', f"Scheduler runtime error: {e}")
             time.sleep(30)  # Longer delay on error
-
-
 
 @handle_exception
 def update_scheduled_email_status(scheduled_id, status):
@@ -1182,8 +1134,6 @@ def update_scheduled_email_status(scheduled_id, status):
     except sqlite3.Error as e:
         log_event('error', f"Database error updating scheduled email status: {e}")
         return False
-
-
 
 @handle_exception
 def send_registration_confirmation(student_id):
@@ -1247,8 +1197,6 @@ def send_registration_confirmation(student_id):
         log_event('error', f"Email error sending registration confirmation: {e}")
         return False
 
-
-
 @handle_exception
 def send_update_confirmation(student_email, updated_fields):
     """Send update confirmation email to student"""
@@ -1273,8 +1221,6 @@ def send_update_confirmation(student_email, updated_fields):
     except (TypeError, AttributeError) as e:
         log_event('error', f"Data error sending update confirmation: {e}")
         return False
-
-
 
 @handle_exception
 def send_grade_notification(student_id, module_code, module_name, grade):
@@ -1320,8 +1266,6 @@ def send_grade_notification(student_id, module_code, module_name, grade):
     except Exception as e:
         log_event('error', f"Error sending grade notification: {e}")
         return False
-
-
 
 @handle_exception
 def send_password_reset(student_id, reset_code):
@@ -1379,8 +1323,6 @@ def send_password_reset(student_id, reset_code):
         log_event('error', f"Error sending password reset: {e}")
         return False
 
-
-
 @handle_exception
 def send_assignment_notification(assignment_id, assignment_title, module_code, due_date, description=None):
     """Send assignment notification using the centralized email system"""
@@ -1411,7 +1353,7 @@ def send_assignment_notification(assignment_id, assignment_title, module_code, d
                 if send_template_email('assignment_notification', email, template_vars):
                     success_count += 1
                     continue
-            except:
+            except Exception:
                 pass
 
             # Fallback to simple email
@@ -1446,8 +1388,6 @@ Academic Administration Team
         log_event('error', f"Error sending assignment notifications: {e}")
         return False
 
-
-
 @handle_exception
 def send_grade_notification(student_email, assignment_title, module_code, grade, feedback=None):
     """Send grade notification email"""
@@ -1461,8 +1401,6 @@ def send_grade_notification(student_email, assignment_title, module_code, grade,
     
     return send_template_email('assignment_grade_released', student_email, template_vars)
 
-
-
 @handle_exception  
 def send_extension_notification(student_email, assignment_title, module_code, new_due_date, extension_days):
     """Send extension approval notification"""
@@ -1475,8 +1413,6 @@ def send_extension_notification(student_email, assignment_title, module_code, ne
     }
     
     return send_template_email('assignment_extension_approved', student_email, template_vars)
-
-
 
 @handle_exception
 def send_confirmation_email(self, student_id, subject, message):
@@ -1501,8 +1437,6 @@ def send_confirmation_email(self, student_id, subject, message):
     except Exception as e:
         log_event('error', f"Error sending confirmation email: {e}")
         return False
-
-
 
 @handle_exception
 def send_batch_email_form():
@@ -1574,8 +1508,6 @@ def send_batch_email_form():
             wait_confirm = input("\nWait for all emails to be sent? (y/n): ")
             if wait_confirm.lower() == 'y':
                 wait_for_email_queue()
-
-
 
 @handle_exception
 def schedule_email_form():
@@ -1655,8 +1587,6 @@ def schedule_email_form():
         print(_t("email_service.failed_schedule", count=result['failure']))
 
     print(_t("email_service.scheduled_ids", ids=', '.join(map(str, result['scheduled_ids']))))
-
-
 
 @handle_exception
 def send_ticket_notification(ticket_id, subject, username, admin_list=None):
@@ -1779,8 +1709,6 @@ def send_ticket_notification(ticket_id, subject, username, admin_list=None):
     except Exception as e:
         log_event('error', f"Error sending ticket notification: {e}")
         return False
-
-
 
 @handle_exception
 def send_reply_notification(ticket_id, user_id=None, username=None, responder=None, admin_list=None, status_update=None):
@@ -1906,8 +1834,6 @@ def send_reply_notification(ticket_id, user_id=None, username=None, responder=No
         log_event('error', f"Error sending reply notification: {e}")
         return False
 
-
-
 @handle_exception
 def send_appointment_confirmation(student_id, appointment_id, appointment_date, appointment_time, provider, appointment_type):
     """Send an email confirmation for a scheduled health appointment"""
@@ -1966,8 +1892,6 @@ def send_appointment_confirmation(student_id, appointment_id, appointment_date, 
         log_event('error', f"Error sending appointment confirmation email: {e}")
         return False
 
-
-
 @handle_exception
 def send_health_notification(student_id, advisory_title, advisory_description, severity):
     """Send a health advisory notification to a student"""
@@ -2023,8 +1947,6 @@ def send_health_notification(student_id, advisory_title, advisory_description, s
     except Exception as e:
         log_event('error', f"Error sending health notification email: {e}")
         return False
-
-
 
 @handle_exception
 def send_internship_notification(student_id, internship_id, status, feedback=None):
@@ -2100,8 +2022,6 @@ def send_internship_notification(student_id, internship_id, status, feedback=Non
         log_event('error', f"Error sending internship notification: {e}")
         return False
 
-
-
 @handle_exception
 def send_application_confirmation(student_id, internship_id):
     """Send a confirmation email when a student applies for an internship"""
@@ -2165,8 +2085,6 @@ def send_application_confirmation(student_id, internship_id):
         log_event('error', f"Error sending application confirmation: {e}")
         return False
 
-
-
 @handle_exception
 def send_alumni_welcome_email(alumni_id, email_address, full_name):
     """Send a welcome email to a newly registered alumni"""
@@ -2207,8 +2125,6 @@ def send_alumni_welcome_email(alumni_id, email_address, full_name):
         log_event('error', f"Error sending alumni welcome email: {e}")
         return False
 
-
-
 def send_mentorship_notification(mentor_email, mentee_email, mentor_name, mentee_name, focus_area, start_date, end_date=None):
     end_text = f" until {end_date}" if end_date else ""
     subject, body = render_template("mentorship_notification", {
@@ -2221,8 +2137,6 @@ def send_mentorship_notification(mentor_email, mentee_email, mentor_name, mentee
 
     send_email(mentor_email, subject, body)
     send_email(mentee_email, subject, body)
-
-
 
 @handle_exception
 def send_event_invitation(alumni_id, event_id=None, email_address=None, event_name=None, event_date=None, event_location=None):
@@ -2292,8 +2206,6 @@ def send_event_invitation(alumni_id, event_id=None, email_address=None, event_na
     except Exception as e:
         log_event('error', f"Error sending event invitation: {e}")
         return False
-
-
 
 @handle_exception
 def send_donation_receipt(alumni_id, donation_id=None, email_address=None, amount=None, donation_date=None, purpose=None):
@@ -2366,8 +2278,6 @@ def send_donation_receipt(alumni_id, donation_id=None, email_address=None, amoun
         log_event('error', f"Error sending donation receipt: {e}")
         return False
 
-
-
 @handle_exception
 def send_permit_confirmation(permit_id, email, zone, permit_type, start_date, end_date):
     """Send a parking permit confirmation email"""
@@ -2416,8 +2326,6 @@ def send_permit_confirmation(permit_id, email, zone, permit_type, start_date, en
         log_event('error', f"Error sending permit confirmation: {e}")
         return False
 
-
-
 @handle_exception
 def send_permit_update_confirmation(permit_id, email, updated_fields):
     """Send a parking permit update confirmation email"""
@@ -2461,8 +2369,6 @@ def send_permit_update_confirmation(permit_id, email, updated_fields):
     except Exception as e:
         log_event('error', f"Error sending permit update confirmation: {e}")
         return False
-
-
 
 @handle_exception
 def send_book_checkout_confirmation(user_id, book_id, book_title, due_date):
@@ -2540,8 +2446,6 @@ def send_book_checkout_confirmation(user_id, book_id, book_title, due_date):
         log_event('error', f"Error sending book checkout confirmation: {e}")
         return False
 
-
-
 @handle_exception
 def send_book_return_reminder(user_id, book_id, book_title, due_date):
     """Send a reminder email for an upcoming book return date"""
@@ -2617,8 +2521,6 @@ def send_book_return_reminder(user_id, book_id, book_title, due_date):
     except Exception as e:
         log_event('error', f"Error sending book return reminder: {e}")
         return False
-
-
 
 @handle_exception
 def send_overdue_notification(user_id, book_id, book_title, due_date, days_overdue):
@@ -2696,8 +2598,6 @@ def send_overdue_notification(user_id, book_id, book_title, due_date, days_overd
     except Exception as e:
         log_event('error', f"Error sending overdue notification: {e}")
         return False
-
-
 
 @handle_exception
 def display_stored_emails_menu(auth=None):
@@ -2984,8 +2884,6 @@ def display_stored_emails_menu(auth=None):
         else:
             print(_t("email_service.invalid_choice"))
 
-
-
 @handle_exception
 def send_sla_alert(ticket_id, alert_type='overdue'):
     """Send SLA alert notifications for tickets"""
@@ -3082,8 +2980,6 @@ def send_sla_alert(ticket_id, alert_type='overdue'):
         log_event('error', f"Error sending SLA alert for ticket {ticket_id}: {e}")
         return False
 
-
-
 @handle_exception
 def send_satisfaction_survey(ticket_id, custom_message=None):
     """Send customer satisfaction survey for resolved tickets"""
@@ -3160,8 +3056,6 @@ def send_satisfaction_survey(ticket_id, custom_message=None):
         log_event('error', f"Error sending satisfaction survey for ticket {ticket_id}: {e}")
         return False
 
-
-
 @handle_exception
 def send_bulk_satisfaction_surveys(days_old=1):
     """Send satisfaction surveys for tickets resolved in the last N days"""
@@ -3202,8 +3096,6 @@ def send_bulk_satisfaction_surveys(days_old=1):
     except Exception as e:
         log_event('error', f"Error sending bulk satisfaction surveys: {e}")
         return 0, 0
-
-
 
 def fix_existing_email_senders():
     """Fix existing emails that show 'system' as sender when they should show actual users"""
@@ -3256,8 +3148,6 @@ def fix_existing_email_senders():
     except Exception as e:
         print(_t("email_service.error_fixing_senders", error=str(e)))
         return 0
-
-
 
 def test_sender_attribution(auth_instance=None):
     """Test that emails show proper sender names
@@ -3315,7 +3205,6 @@ def test_sender_attribution(auth_instance=None):
         print(_t("email_service.failed_test_emails"))
         return False
 
-
 # ============================================================================
 # Schedule Change Notifications for Module Scheduling System
 # ============================================================================
@@ -3334,7 +3223,7 @@ def send_schedule_change_notification(schedule_id: int, old_data: dict, new_data
     """
     try:
         from university_system.infrastructure.database.db import get_connection
-        from university_system.modules.shared.utils.activity_logger import log_activity
+        from university_system.core.activity_logger import log_activity
 
         module_code = old_data.get('module_code')
         if not module_code:
@@ -3418,7 +3307,6 @@ def send_schedule_change_notification(schedule_id: int, old_data: dict, new_data
         log_event('error', f"Database error sending schedule change notifications: {e}")
         return False
 
-
 def _get_module_info(module_code: str) -> dict | None:
     """Get module information from database"""
     try:
@@ -3443,7 +3331,6 @@ def _get_module_info(module_code: str) -> dict | None:
         log_event('error', f"Database error getting module info: {e}")
     return None
 
-
 def _get_room_location(room_id: int | None) -> str:
     """Get room location string"""
     if not room_id:
@@ -3467,7 +3354,6 @@ def _get_room_location(room_id: int | None) -> str:
         log_event('error', f"Database error getting room location: {e}")
 
     return "TBA"
-
 
 def _get_instructor_info(instructor_id: int | None) -> dict:
     """Get instructor information"""
@@ -3496,7 +3382,6 @@ def _get_instructor_info(instructor_id: int | None) -> dict:
 
     return {'name': 'TBA', 'email': ''}
 
-
 def _get_enrolled_students(module_code: str) -> list:
     """Get list of students enrolled in a module"""
     students = []
@@ -3524,7 +3409,6 @@ def _get_enrolled_students(module_code: str) -> list:
 
     return students
 
-
 def _get_module_staff(module_code: str) -> list:
     """Get staff associated with a module (via schedules)"""
     staff = []
@@ -3551,7 +3435,6 @@ def _get_module_staff(module_code: str) -> list:
         log_event('error', f"Database error getting module staff: {e}")
 
     return staff
-
 
 def _notify_datetime_change(recipients: list, module_info: dict, old_data: dict, new_data: dict) -> bool:
     """Send date/time change notifications"""
@@ -3601,7 +3484,6 @@ def _notify_datetime_change(recipients: list, module_info: dict, old_data: dict,
 
     return True
 
-
 def _notify_instructor_change(recipients: list, module_info: dict, old_data: dict, new_data: dict) -> bool:
     """Send instructor change notifications"""
     old_instructor = _get_instructor_info(old_data.get('instructor_id'))
@@ -3646,7 +3528,6 @@ def _notify_instructor_change(recipients: list, module_info: dict, old_data: dic
 
     return True
 
-
 def _notify_room_change(recipients: list, module_info: dict, old_data: dict, new_data: dict) -> bool:
     """Send room change notifications"""
     old_room = _get_room_location(old_data.get('room_id'))
@@ -3689,7 +3570,6 @@ def _notify_room_change(recipients: list, module_info: dict, old_data: dict, new
             return False
 
     return True
-
 
 def _notify_new_instructor_assignment(instructor_id: int, module_info: dict, schedule_data: dict) -> bool:
     """Notify a newly assigned instructor"""

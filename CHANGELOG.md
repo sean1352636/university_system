@@ -5,6 +5,448 @@ All notable changes to the University Management System will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.40.0] - 2026-02-12
+
+### Added
+- **Account Linking** (`account_linking_manager.py`, `add_account_linking.py`): New system allowing users to link multiple accounts together and switch active roles — includes link requests with approval workflow, role switching with audit trail, and admin oversight; tables: `linked_accounts`, `account_link_requests`, `active_role_switches`
+- **SSO Integration** (`sso_service.py`, `sso_manager.py`, `saml_provider.py`, `oidc_provider.py`): Single Sign-On support for SAML 2.0 and OpenID Connect providers — admin-configurable provider management, identity mapping with auto-provisioning, and SSO session tracking; tables: `sso_providers`, `sso_identities`, `sso_sessions`
+- **Passwordless Authentication / WebAuthn** (`webauthn_service.py`, `webauthn_manager.py`, `add_webauthn.py`): FIDO2/WebAuthn security key registration and authentication — credential lifecycle management (register, authenticate, rename, revoke), challenge-response flow with expiry, and discoverable credential support; tables: `webauthn_credentials`, `webauthn_challenges`
+- **Biometric Authentication** (`biometric_service.py`, `biometric_manager.py`, `add_biometric_auth.py`): Face and fingerprint enrollment and verification — 128-D face encoding vectors (never raw images), fingerprint template matching, quality scoring, and device-aware auth logging; tables: `biometric_enrollments`, `biometric_auth_log`
+- **Delegated Access / Power of Attorney** (`delegated_access_manager.py`, `delegated_access_scopes.py`, `add_delegated_access.py`): Scoped, time-bound access delegation — students grant parents/guardians access to specific record categories (grades, finances, health, attendance, timetable, payments, messaging), with request/approval workflow and full audit trail; tables: `delegated_access`, `delegated_access_requests`, `delegated_access_audit`
+- **Unified login dispatcher** (`login_manager.py`): New `login_by_method()` routing login attempts to password, SSO, WebAuthn, or biometric handlers, all funnelling through `_complete_login()` for consistent session setup
+- **Delegated permission checking** (`permission_manager.py`): `has_permission()` and `check_permission()` now check delegated scopes when the session has `acting_as_delegate_for` set
+- **CLI menus for new auth features** (`cli_menus.py`): Four new sub-menus under My Account — Account Linking (link/unlink/switch role), Security Keys (register/remove/rename WebAuthn credentials), Biometric Enrollment (face/fingerprint), Delegated Access (role-aware: student grants, parent requests/acts, admin manages)
+- **GUI alternative login buttons** (`auth_gui.py`): "Sign in with SSO", "Security Key", and "Biometric" buttons added to the login screen
+- **25 new RBAC permissions** (`constants.py`): Permissions for all 5 features across admin, staff, student, instructor, and parent roles, plus `AUTH_METHODS` tuple
+- **Session user dict extensions** (`session_manager.py`): New fields: `auth_method`, `active_linked_account_id`, `original_role`, `acting_as_delegate_for`, `sso_provider_id`
+- **30+ delegate methods on UserAuth** (`core.py`): Convenience methods on the central `UserAuth` orchestrator forwarding to the 5 new managers
+- **Default account `.env` file** (`university_system/.env`): Stable demo passwords (`admin123`/`staff123`/`student123`) loaded via `python-dotenv` in `run.py`, replacing random-on-every-restart behaviour for development
+
+### Changed
+- **`run.py`**: Added `dotenv.load_dotenv()` call at startup to load `university_system/.env`
+- **`requirements.txt`**: Added optional dependencies `python3-saml>=1.16.0`, `authlib>=1.3.0`, `py-webauthn>=2.0.0`
+- **`infrastructure/auth/managers/__init__.py`**: Imports and exports `SSOManager`, `WebAuthnManager`, `BiometricManager`, `DelegatedAccessManager`, `AccountLinkingManager`
+- **`infrastructure/auth/__init__.py`**: Exports all 5 new manager classes
+
+### Fixed
+- **BiometricManager init** (`biometric_manager.py`): Fixed `BiometricService.__init__() missing 1 required positional argument: 'db_manager'` — now passes `db_manager` to `BiometricService(db_manager=db_manager)`
+
+## [5.39.7] - 2026-02-12
+
+### Security
+- **Removed hardcoded credential fallbacks**: Eliminated `admin123`, `staff123`, `student123` hardcoded password defaults across the codebase. When `DEFAULT_ADMIN_PASSWORD`, `DEFAULT_STAFF_PASSWORD`, or `DEFAULT_STUDENT_PASSWORD` environment variables are not set, the system now generates cryptographically secure random passwords using `secrets` and displays them once at startup.
+
+### Fixed
+- **Default account passwords out of sync with env vars** (`core.py`): `_create_default_accounts_if_needed()` now syncs the password hash for existing accounts on every startup so the stored hash always matches the current `DEFAULT_*_PASSWORD` value
+
+### Changed
+- **`core/defaults.py`**: Replaced `_get_env()` with `_require_password_env()` for all password constants; added `_generate_random_password()` and `print_generated_passwords()` for secure fallback handling
+- **`infrastructure/auth/core.py`**: Removed 30+ lines of local password resolution with hardcoded fallbacks in `_create_default_accounts_if_needed()`; now delegates to centralized `defaults.DEFAULT_*_PASSWORD`
+- **`modules/shared/gui/main/auth_gui.py`**: Replaced `os.getenv('...', 'admin123')` calls with imports from `core.defaults`
+- **`modules/shared/gui/document_manager_gui/database.py`**: Replaced `os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')` with import from `core.defaults`
+- **`modules/shared/utils/document_manager.py`**: Same hardcoded fallback removal
+- **`utils/reset_password.py`**: Replaced all hardcoded password fallbacks with centralized defaults
+- **`run.py`**: Added `print_generated_passwords()` call at startup so operators see any auto-generated credentials
+
+## [5.39.6] - 2026-02-11
+
+### Fixed
+- **Database corruption recovery**: Restored database from backup after `database disk image is malformed` error; cleared stale WAL/SHM files
+- **Wipe Database uses raw sqlite3 connection** (`database_admin_gui.py`): Replaced `import sqlite3` with project's `get_connection()` so the wipe connection gets proper PRAGMAs (WAL mode, 30s busy_timeout, synchronous=NORMAL) instead of defaults
+- **Wipe Database stale connection for sync_modules** (`database_admin_gui.py`): Closed the wipe connection before `_do_init_db()` runs and opened a fresh one for `sync_modules_to_database()`, fixing stale reads where synced modules couldn't see newly created default data
+- **Default student account wrong username** (`core.py`): `_create_default_accounts_if_needed` had hardcoded `username: 'student'` and `student_id: None`; now uses `defaults.DEFAULT_STUDENT_USERNAME` (`S12345`) and `defaults.DEFAULT_STUDENT_ID` (`S12345`) to match `user_manager.py`
+- **Default student record never created** (`core.py`): `_create_default_student_if_needed` only logged a warning when the students table was empty; now creates the `S12345` student record so the default student account has a linked student record
+
+### Changed
+- **Wipe Database preserves CS and DS courses** (`database_admin_gui.py`): The wipe function now saves and restores the Computer Science and Data Science course records, so they survive a database reset
+- **Wipe Database restarts system after wipe** (`database_admin_gui.py`): After a successful wipe, the GUI now calls `restart_gui()` to shut down and relaunch the application with a clean state
+
+## [5.39.5] - 2026-02-11
+
+### Fixed
+- **Help Center knowledge base queries** (`help_center_gui.py`): Fixed `no such column: id` in Knowledge Base search and FAQ tab — actual table uses `article_id` not `id`
+- **Help Center FAQ filter** (`help_center_gui.py`): Fixed `no such column: article_type` — column doesn't exist on `knowledge_base` table; FAQ tab now filters by `category = 'faq'` instead
+- **Help Center CREATE TABLE** (`help_center_gui.py`): Fixed `_ensure_tables()` to match actual `knowledge_base` schema (article_id, tags, author_id, status, views, helpful/unhelpful votes, search_keywords, updated_at)
+- **Help Center activity logging** (`help_center_gui.py`): Fixed `log_activity` calls to pass integer user ID instead of username string to avoid FK constraint failures
+- **Document Center `no such column: file_path`** (`document_center_gui.py`): The `document_repository` table stores content inline (no `file_path` column); rewrote queries to use actual columns (`content`, `module_code`, `submission_date`), replaced file-size column with module column, replaced file upload with content viewer, fixed activity logging to use integer user ID
+- **Grades Breakdown `no such column: a.weight`** (`grades_breakdown_gui.py`): The `assignments` table has no `weight` column; replaced with `assignment_type` in both the query and the treeview (column header changed from "Weight %" to "Type")
+- **Attendance alert email template not found** (`student_crud_gui.py`): Fixed template path from `email/low_attendance_alert.json` to `email/academics/low_attendance_alert.json` to match the actual template location
+
+## [5.39.4] - 2026-02-11
+
+### Fixed
+- **Roster Viewer & Messaging email column** (`roster_gui.py`, `messaging_gui.py`): Fixed `no such column: s.email` — students table uses `email_address` not `email`
+- **Attendance Grade attendance query** (`attendance_grade_gui.py`): Fixed `no such column: module_code` — `attendance_analytics` table has no `module_code` column
+- **Activity logger FK constraint** (`roster_gui.py`, `attendance_grade_gui.py`, `messaging_gui.py`): Fixed `FOREIGN KEY constraint failed` in batch flush by passing integer `auth.current_user['id']` instead of username string to `log_activity`
+- **Course Health blank screen** (`dashboard_service.py`, `course_health_gui.py`): Added `role` parameter to `get_course_health_data()` — staff/admin users now see all modules instead of returning empty results due to no instructor linkage
+- **Module Messaging shows only 1 student** (`messaging_gui.py`): Changed enrollment filter from `status = 'Enrolled'` to `status IN ('Enrolled', 'enrolled')` to catch both casing variants in the database
+- **Module Messaging layout — send button inaccessible** (`messaging_gui.py`): Removed `expand=True` from student list frame so it stays compact (6 rows with scrollbar); moved `expand=True` to message composer frame; send button now always visible at bottom
+
+## [5.39.3] - 2026-02-11
+
+### Fixed
+- **Roster Viewer email column** (`roster_gui.py`): Fixed `no such column: s.email` — students table uses `email_address`, not `email`
+- **Course Messaging email column** (`messaging_gui.py`): Same `s.email` → `s.email_address` fix
+- **Attendance Grade attendance query** (`attendance_grade_gui.py`): Fixed `no such column: module_code` — `attendance_analytics` table tracks per-student only (no `module_code` column), removed invalid filter
+
+## [5.39.2] - 2026-02-11
+
+### Fixed
+- **Roster Viewer module loading** (`roster_gui.py`): Fixed `no such column: instructor_id` error by replacing broken `modules.instructor_id` query with role-based approach — staff/admin users see all modules, instructors see modules via `module_schedule` linkage
+- **Attendance Grade module loading** (`attendance_grade_gui.py`): Same `instructor_id` column fix; renamed labels from "Course" to "Module"; replaced attendance-only preview with full student grades view showing average grade, graded count, and attendance percentage per enrolled student
+- **Course Messaging module loading** (`messaging_gui.py`): Same `instructor_id` column fix; increased window size from 900x650 to 1000x800 with 900x700 minimum so all buttons and message body are visible; renamed labels from "Course" to "Module"
+- **Course Health Data query** (`dashboard_service.py`): Fixed `get_course_health_data()` which referenced non-existent `modules.capacity` and `modules.instructor_id`; now uses `module_schedule` for instructor linkage and sets capacity to 0 (modules table has no capacity column)
+- **Instructor dashboard queries** (`dashboard_service.py`): Fixed all `modules.instructor_id` references across `get_instructor_dashboard_data()`, `get_at_risk_students_for_instructor()`, `get_grading_backlog()`, `get_instructor_announcements()`, and `get_semester_comparison_data()` to use the correct `modules.instructor` column and `module_schedule` table for instructor-module linkage
+- **Grade distribution by instructor** (`dashboard_service.py`): Fixed `get_operational_metrics()` grade distribution query that joined `modules.instructor_id` to `users.id`; now joins via `module_schedule` and `instructors` table
+
+### Added
+- **Module Timetable in Roster Viewer** (`roster_gui.py`): Added timetable section showing day, time, room, session type, and instructor name from `module_schedule` for the selected module
+
+## [5.39.1] - 2026-02-11
+
+### Fixed
+- **Admin Dashboard course count** (`dashboard_service.py`): Changed `get_admin_dashboard_data()` to count from `courses` table (filtering out auto-generated module mirrors with `id NOT LIKE 'course_%'`) instead of `modules` table, which incorrectly reported 14 modules instead of the 3 real courses (CS, DS, Digital Forensics)
+- **Course Utilization showing no data** (`dashboard_service.py`): Rewrote `get_operational_metrics()` course utilization query to use `courses` table with `max_enrollment`/`current_enrollment` columns instead of `modules` table which has no `capacity` column
+- **Table Statistics drill-down** (`system_health_dashboard.py`): Added double-click handler to Database Table Statistics Treeview that opens a new Toplevel window displaying all columns and up to 500 rows from the selected table, with horizontal/vertical scrollbars and an allowlist of known tables for SQL injection prevention
+
+## [5.39.0] - 2026-02-11
+
+### Added
+- **Student Dashboard Quick Actions** (`student_dashboard.py`): Added 2-row button bar with 12 quick-launch buttons for all new student features — My Profile, Account Security, Notifications, Grades Breakdown, Degree Progress, Course Catalog, GPA Calculator, Messages, Discussion Forums, Finances, Help Center, and Documents
+- **Student Dashboard Embedded Widgets** (`student_dashboard.py`, `student_widgets.py`): Added 4 summary widgets below existing sections — Grades Summary (per-module averages table), Degree Progress (progress bar + credits/GPA stats), GPA What-If (current GPA + "Open Calculator" link), and Payment Alerts (overdue in red, upcoming deadlines)
+- **Student Dashboard Service** (`student_services.py`): New `StudentDashboardService` class with `get_grades_by_module()`, `get_degree_progress_summary()`, `get_financial_summary()`, and `simulate_gpa()` methods providing shared data for widgets and feature GUIs
+- **Dashboard Service extensions** (`dashboard_service.py`): Added `get_student_grades_summary()` (per-module grade averages) and `get_student_financial_summary()` (balance + upcoming payment deadlines) methods
+- **Student Profile Center** (`student_profile/profile_gui.py`): Feature 31 — Toplevel 900x600 form for viewing/editing name (read-only), email, phone, address, emergency contact, and pronouns; safely adds missing columns via `ALTER TABLE`; saves via `transaction()` with activity logging
+- **Account Security Dashboard** (`account_security/security_gui.py`): Feature 32 — Toplevel 900x650 with 3-tab notebook: Login History (color-coded Treeview from `login_attempts`), MFA Settings (status display with enable/disable toggle updating `user_accounts`), Active Sessions (logins grouped by IP)
+- **Notification Preferences** (`notification_prefs/notification_prefs_gui.py`): Feature 33 — Toplevel 700x550 with per-category rows (Grades, Assignments, Announcements, Financial, Registration, System) each with enabled checkbox, method combobox (email/push/both), and advance time spinbox (1-72 hrs); creates `notification_preferences` table with upsert logic
+- **Grades Breakdown by Module** (`grades_breakdown/grades_breakdown_gui.py`): Feature 34 — Toplevel 1000x650 with module listbox (left) and per-assignment scores Treeview (right) showing title, score, max, weight, due date, plus module average and letter grade
+- **Degree Progress Tracker** (`degree_progress/degree_progress_gui.py`): Feature 35 — Toplevel 900x650 with large progress bar, stat cards (credits earned/required, GPA, est. graduation), and requirements checklist Treeview with color-coded status (completed=green, in_progress=yellow, not_started=gray); reads `requirement_completion` with `StudentDashboardService` fallback
+- **Course Catalog & Self-Registration** (`course_catalog/course_catalog_gui.py`): Feature 36 — Toplevel 1100x700 with search/filter bar, results Treeview showing enrolled/capacity and status (Enrolled/Available/Full), Register button with capacity check and waitlist offer, and Drop button with confirmation
+- **What-If GPA Calculator** (`gpa_calculator/gpa_calculator_gui.py`): Feature 37 — Toplevel 800x550 with current GPA display, per-module rows with current grade and hypothetical grade combobox, Calculate button showing projected GPA and delta (green/red); read-only, no database writes
+- **Student Messaging Hub** (`messaging_hub/messaging_hub_gui.py`): Feature 38 — Toplevel 950x650 with two-pane PanedWindow: conversation list (left) from `chat_rooms`/`chat_room_members`, message thread (right) from `chat_messages`; New Direct Message and New Study Group buttons create rooms via `transaction()`; creates tables if not exist
+- **Course Discussion Forums** (`course_forums/course_forums_gui.py`): Feature 39 — Toplevel 1000x700 with course selector, forum list Treeview, threaded post view with indented replies on scrollable canvas; New Topic, Reply, and Like actions via `transaction()`; creates `lms_discussion_forums`/`lms_discussion_posts` tables if not exist
+- **Unified Student Financial Dashboard** (`student_finance/student_finance_gui.py`): Feature 40 — Toplevel 1000x650 with 3-tab notebook: Overview (balance card with color, charges/aid/scholarships summary), Transactions (filterable Treeview from `student_finance_transactions`), Scholarships & Aid (combined view of `student_scholarships` + `student_financial_aid`)
+- **Integrated Help Center** (`help_center/help_center_gui.py`): Feature 42 — Toplevel 950x650 with 4-tab notebook: My Tickets (list + create dialog with subject/category/priority/description), Knowledge Base (search + article viewer), FAQ (filtered `knowledge_base` entries), Feedback (1-5 star rating + comment submission to `user_feedback` table)
+- **Personal Document Center** (`document_center/document_center_gui.py`): Feature 43 — Toplevel 900x600 with documents Treeview (from `document_repository`), Request Document dialog (enrollment confirmation/transcript/financial statement/attendance record), Upload Document via filedialog with file copy to `data/uploads/student_documents/`, View button with cross-platform file opener, and Document Requests section
+
+## [5.38.0] - 2026-02-11
+
+### Added
+- **Seed Data Population Script** (`seed_demo_data.py`): New script (`python -m university_system.modules.scripts.seed_demo_data`) populating 30 previously-empty tables with 310 realistic demo records across 5 areas — Attendance (sessions, records, analytics, alerts, policies, predictions, gamification), Financial Aid (student aid awards, scholarships, applications, payment plans), Housing (assignments, inspections, inventory, maintenance requests), Alumni (15 profiles with donations, achievements, 6 events with registrations), and Health Services (records, appointments, vaccinations, conditions, prescriptions, vitals, lab results, campaigns, metrics)
+- **Activity Tab — Live Data** (`dashboard_gui.py`): Replaced hardcoded placeholder text in the dashboard "Recent Activity" tab with a live Treeview querying the `activity_log` table (773+ entries), showing timestamp/user/action/details with action-type filter dropdown and refresh button, displaying the most recent 100 entries
+- **System Health Tab — Live Data** (`dashboard_gui.py`): Replaced placeholder in the dashboard "System Health" tab with live metrics — database file size, total tables, estimated total rows, active users (24h), login attempts/failures (24h), activity log count, application uptime timer, connection pool status (via `PoolMetricsCollector`), and last 10 ERROR lines from `app.log`
+
+## [5.37.0] - 2026-02-11
+
+### Added
+- **At-Risk Students widget** (`instructor_dashboard.py`, `dashboard_service.py`): New "At-Risk Students" section on the instructor dashboard showing students from `early_warning_profiles` joined with instructor's courses — Treeview with student ID, name, module, risk score, and risk level with color-coded rows (critical=red, high=orange, medium=yellow)
+- **Grading Backlog widget** (`instructor_dashboard.py`, `dashboard_service.py`): New "Grading Backlog" section on the instructor dashboard showing ungraded `assignment_submissions` grouped by assignment — Treeview with assignment name, module, ungraded count, and due date
+- **Announcements widget** (`instructor_dashboard.py`): New "Recent Announcements" section on the instructor dashboard displaying the 5 most recent announcements with priority indicators, plus a "Create Announcement" dialog that inserts into the `announcements` table via `transaction()`
+- **Class Roster Viewer & Export** (`roster_viewer/roster_gui.py`): New standalone Toplevel GUI (1100x700) — course selector filtered to instructor's courses, Treeview with student ID/name/email/enrollment status, live search filter by name/ID/email, CSV export with `filedialog.asksaveasfilename`, and activity logging for exports
+- **Bulk Grade Import** (`bulk_grade_import/bulk_grade_gui.py`): New standalone Toplevel GUI (1000x700) — assignment selector, CSV file browser, auto-detecting column mapping (student_id, grade/score), preview table with validation (student exists, grade range 0-100, enrollment check), color-coded valid/invalid rows, and batch import via `transaction()` updating `assignment_submissions`
+- **Course-Targeted Student Messaging** (`course_messaging/messaging_gui.py`): New standalone Toplevel GUI (900x650) with 3-step workflow — course selection, student selection with toggle checkboxes and select all/deselect all, message composer (subject + body), and send via `send_email()` from `email_service` with activity logging
+- **Attendance-to-Grade Integration** (`attendance_grade/attendance_grade_gui.py`): New standalone Toplevel GUI (800x600) — course selector, attendance weight and minimum attendance percentage spinboxes, save configuration with upsert to new `attendance_grade_config` table, and preview showing calculated grade contribution from `attendance_analytics` data
+- **Course Health Dashboard** (`course_health/course_health_gui.py`, `dashboard_service.py`): New standalone Toplevel GUI (1200x800) — per-course summary cards (first 4 courses) and detail Treeview showing enrollment vs capacity, average grade, attendance rate, submission rate, and at-risk count with color-coded danger/warning indicators
+- **Comparative Semester Analytics** (`semester_analytics/semester_analytics_gui.py`, `dashboard_service.py`): New standalone Toplevel GUI (1100x800) — side-by-side current vs previous semester summary cards, comparison Treeview with metric/current/previous/change columns, color-coded positive (green) and negative (red) percentage changes, auto-detection of Fall/Spring semester based on current month
+- **TA Performance Evaluation** (`ta_management/evaluation_manager.py`, `ta_gui.py`): New "Performance Evaluation" tab in TA Management GUI for admin/instructor roles — Treeview showing TA name, module, average grading turnaround days, hours allocated vs logged, and submissions graded; "Calculate Metrics" button computes turnaround from `julianday` differences and upserts into new `ta_evaluations` table
+- **Instructor Quick Actions bar** (`instructor_dashboard.py`): Added 6 quick-launch buttons at the top of the instructor dashboard — Class Roster, Bulk Grade Import, Course Messaging, Attendance-Grade, Course Health, and Semester Analytics
+
+## [5.36.0] - 2026-02-11
+
+### Added
+- **Compliance Reporting tab** (`security_dashboard_gui.py`): New "Compliance" tab in Security Dashboard with 4 sub-tabs — Data Access Audit (queries `audit_trail` with CSV export), Sensitive Data Access (queries `privacy_audit_log` with CSV export), Permission Changes (filters audit trail for role/permission modifications), and Data Retention (displays `data_retention_policies` enforcement status)
+- **Batch User Operations** (`user_operations_manager.py`, `main_gui.py`): New "User Operations" tab in Batch Operations GUI with 4 operations — Bulk User Creation from CSV with role assignment and auto-generated passwords, Bulk Permission Updates (grant/revoke by role or CSV with multi-select picker), Batch Course Enrollment from CSV with duplicate detection, and Batch Email Campaign targeting user segments (all students, staff, by course)
+- **Alert & Notification Configuration Console** (`alert_config_gui.py`): New standalone admin GUI with 4 tabs — Notification Templates CRUD (`notification_templates` table, supports email/SMS/push channels), Alert Schedules management (`notification_schedules` with trigger conditions, reminder intervals), User Preferences viewer (`notification_preferences`), and Notification Queue monitor (`notification_queue` status tracking)
+- **Department & Organizational Management** (`department_management_gui.py`): New standalone admin GUI with 3 tabs — Departments CRUD (`departments` table with manager assignment and active toggle), Cross-Department Reports (summary cards and per-department metrics for courses, enrollments, staff, grades), and Org Hierarchy (tree visualization of departments, managers, and staff)
+- **Institution Branding & Customization** (`branding_config_gui.py`): New standalone admin GUI with 5 tabs — Identity (institution name, abbreviation, tagline, logo path with preview), Colors (primary/secondary/accent color pickers with live swatches), Messages (welcome message, footer text, email signature), UI Theme (light/dark mode toggle via `ThemeManager`), and Email Templates (browse and edit all templates via `template_utils`). Settings persist to `security_settings` table
+- **Admin Tools launcher section** (`admin_dashboard.py`): Added "Admin Tools" section with quick-launch buttons for Alert & Notifications, Department Management, and Branding & Customization GUIs
+
+## [5.35.0] - 2026-02-11
+
+### Added
+- **User Access & Login Analytics tab** (`login_analytics_dashboard.py`, `dashboard_service.py`): New admin-only "Login Analytics" tab in main dashboard — summary cards (total/successful/failed logins, success rate, MFA adoption), active users (24h/7d), daily login trends table (30 days), hourly activity text-bar chart, top failed logins by user and IP, recent failed login attempts log. Data sourced from `login_attempts` and `user_accounts` tables
+- **Domain-Specific Operational Dashboards tab** (`operations_dashboard.py`, `dashboard_service.py`): New admin-only "Operations" tab with 5 sub-tabs — Course Utilization (enrollment vs capacity with utilization %, high/low demand indicators), Grade Distribution (overall grade bands with bar chart + per-instructor averages), Student Retention (active/dropped/withdrawn counts with retention rate), Financial Aid Funnel (application pipeline from `student_financial_aid`), Support Tickets (volume/status/avg resolution from `support_tickets`, breakdowns by category and priority)
+- **Real-Time System Health Monitoring tab** (`system_health_dashboard.py`, `dashboard_service.py`): New admin-only "System Health (Live)" tab exposing existing `QueryMonitor` and `PoolMetricsCollector` — system summary (active users, DB size, query counts), connection pool status (total/active/idle connections, utilization %, wait times with p95/p99 percentiles), cumulative pool stats (acquires, errors, timeouts, exhaustion), query performance (total/slow counts, avg time, top queries by total time), database table row counts, and refresh button
+
+## [5.34.0] - 2026-02-10
+
+### Added
+- **Virtual Classroom CLI** (`menu_router.py`): Wired 7 stub menu options (2-8) to existing service layers — schedule sessions (`SessionManager`), manage participants (`ParticipantManager`), view recordings (`RecordingManager`), create polls (`PollManager`), manage breakout rooms (`BreakoutRoomManager`), view chat (`ChatManager`), and session analytics
+- **Financial Aid CLI** (`menu_router.py`): Wired 7 stub menu options (1, 3-8) to existing service layers — view applications, create aid packages, manage scholarships (`ScholarshipManager`), review/award scholarships, disbursement management, and compliance reports (`FinancialAidManager`)
+- **Push Notification CLI** (`menu_router.py`): Wired stub option 3 to `CommunicationManager.send_push_notification()`, matching the existing email and SMS patterns
+- **Financial Aid Admin Portal reports** (`admin_portal.py`): Added 2 new report types — Need Analysis Report (aid summary, distribution by category, top-aided students) and Renewal Tracking Report (renewable vs non-renewable overview, awards by scholarship)
+- **Staff HR menu options** (`staff_hr_cli.py`): Added 3 new sub-features under HR Services — My Schedule (queries `staff_schedules`), My Documents (queries `staff_documents`), and Workload Overview (queries `staff_workload`)
+- **Helpdesk ticket actions** (`ticket_actions.py`): Added 3 new action types — internal notes, time entries, and ticket linking
+
+### Fixed
+- **Helpdesk broken method references** (`ticket_actions.py`): Fixed 3 incorrect method names in `execute_ticket_action_gui` — `show_add_reply` → `reply_to_ticket_enhanced_gui`, `escalate_ticket_dialog` → `escalate_ticket_manual`, `view_ticket_details` → `view_ticket_detail_enhanced_gui`
+- **Student Jobs admin view stub** (`jobs_cli.py`): Replaced "Feature not yet implemented" stub in `view_app_details_admin` with full database query joining `campus_job_applications`, `campus_job_postings`, and `students` tables
+- **Medical Records missing report** (`medical_records.py`): Implemented "Student Health Summary" report type that was listed but unimplemented — queries health records, medical conditions, vaccinations, and appointments with save-to-file and audit logging
+- **Health Portal placeholder** (`health_portal_gui.py`): Enhanced `create_placeholder` fallback from bare labels to informative UI listing available features
+- **Staff HR fallback message** (`staff_hr_cli.py`): Changed generic else clause from "not yet implemented" to "is not available" since all menu options are now handled
+
+## [5.33.0] - 2026-02-10
+
+### Added
+- **Student self-service attendance viewing**: Students can now see the "View Attendance" button in their own student details Actions tab (previously restricted to staff with `manage_attendance` permission)
+
+### Fixed
+- **Statistics tab showing hardcoded "Loading..." placeholders**: Replaced static text with live database queries for total students, active courses, pending assignments, recent logins (last 24h), total users, and active enrollments
+- **Student dashboard crash (`sqlite3.Row` has no attribute `get`)**: `total_credits` calculation was iterating raw Row objects instead of converted dicts; fixed to use the already-converted list
+
+## [5.32.0] - 2026-02-10
+
+### Fixed
+- **Student dashboard GPA showing 0**: GPA query used empty `module_grades` table; fixed to calculate from `assignment_submissions.grade` with numeric-to-4.0-scale conversion
+- **"Enrolled Courses" renamed to "Enrolled Modules"**: Updated labels, column headers, and replaced empty "Credits" column with "Type" (CS/DS/COMPULSORY/OPTIONAL)
+- **Enrolled modules list truncated**: Increased Treeview max height from 5 to 8 rows so all enrolled modules display without scrolling
+
+## [5.31.0] - 2026-02-10
+
+### Fixed
+- **Admin dashboard instructors showing 0**: Query was checking empty `staff` table for `role = 'instructor'`; fixed to query `users WHERE role = 'staff'` which is where instructor/staff accounts are stored
+- **Admin dashboard enrollments showing 0**: Query used non-existent `enrollments` table; fixed to use `student_modules WHERE status IN ('Enrolled', 'enrolled')`
+- **Admin dashboard recent registrations showing 0**: Query referenced non-existent `name` and `created_at` columns; fixed to use `first_name || ' ' || last_name` and `registration_datetime`
+- **Attendance alert email crash (`name 'os' is not defined`)**: Added missing `import os` to `student_crud_gui.py` (needed for `os.path.join` in email template path)
+- **Student data Treeview crash (`invalid command name`)**: Added `winfo_exists()` checks and `tk.TclError` handlers in `view_students` and `view_students_in_window` to prevent errors when Toplevel windows are closed during data loading
+
+### Removed
+- **Admin dashboard Quick Actions section**: Removed redundant panel since Quick Access already exists in the System Overview tab
+
+## [5.30.0] - 2026-02-10
+
+### Fixed
+- **Staff user assigned student role on login**: The `staff` username in `user_accounts` was linked to `user_id=6` (a student record); created a proper `users` entry with `role='staff'` and relinked the account
+- **"Failed to load student details" error**: `_load_academic_data` was defined in `student_records_gui.py` but not imported or registered as a method on `UnifiedManagementGUI`; added it to both the import and class assignment in `main_gui.py`
+
+## [5.29.0] - 2026-02-10
+
+### Added
+- **Office Hours Management** (9 new files): Full CRUD for instructor office hours with student booking/cancellation, capacity checks, and conflict detection. Includes service layer (`office_hours_service.py`), CLI menu (`office_hours_cli.py`), Tkinter GUI with instructor manager and booking manager tabs, and Flask API blueprint at `/api/office-hours` with 8 endpoints
+- **TA Management** (9 new files): Assign/remove teaching assistants to courses, manage per-module TA permissions (grading, attendance, uploads, discussions, student info), and track workload. Includes service layer (`ta_service.py`), CLI menu (`ta_management_cli.py`), Tkinter GUI with assignment and permissions manager tabs, and Flask API blueprint at `/api/teaching-assistants` with 9 endpoints
+- **Unified Role-Based Dashboards** (4 new files): Role-specific "My Dashboard" tab shown on login — student dashboard (enrolled courses, GPA, assignments, office hour bookings, TA assignments), instructor/staff dashboard (courses taught, pending grading, enrollment counts, office hours, TA assignments), admin dashboard (system totals, recent registrations, financial summary)
+- **Auto-show dashboard on login**: Main GUI now displays the role-based dashboard immediately after authentication instead of the generic welcome screen
+- **New permissions**: Added `manage_office_hours`, `book_office_hours`, `view_office_hours`, `manage_tas`, `view_ta_assignments`, `assign_tas` across all roles (admin, staff, instructor, student)
+
+### Fixed
+- **Staff users shown as student role on dashboard**: Staff role now correctly maps to the instructor dashboard (staff/instructor share the same feature set)
+- **Student enrolled courses showing empty**: Dashboard service was querying non-existent `enrollments` table; fixed to use `student_modules` table with `status = 'Enrolled'` and `module_grades.final_grade` for GPA calculation
+- **Admin dashboard content cut off**: All three role dashboards now bind canvas `<Configure>` event to stretch the scrollable frame to the full canvas width, preventing content from being clipped
+
+## [5.28.0] - 2026-02-10
+
+### Security
+- **[CRITICAL] Removed `eval()` code execution** (`social_matching_gui.py`, `calculator.py`): Replaced `eval()` with `json.loads()` for treeview tag deserialization and a safe AST-based math expression evaluator that only allows arithmetic operators
+- **[CRITICAL] Eliminated unsafe `pickle` deserialization** (7 files): Replaced `pickle.load/loads` with `json` for simple data (batch_operations, import_manager, backend) and added `_RestrictedUnpickler` whitelist for ML model files (federated_learning, model_management_mixin, financial_reports, model_security_view)
+- **[CRITICAL] Fixed SQL injection vulnerabilities** (6 files): Parameterized all user-input-derived SQL in `advanced_search.py` (added operator whitelist, field validation, `?` placeholders with params list), `alumni_management.py` (passed `filter_params` to execute), `analytics_classes.py` (parameterized numeric threshold), `medical_records.py` (added column/modifier whitelists), `log_management.py` (replaced `.format()` with parameterized query)
+- **[CRITICAL] Removed dummy auth bypasses in finance modules** (7 files): Replaced `auth = type("Auth", (), {})(); auth.check_permission = lambda p: True` with `auth = get_auth()` in `fee_structure.py`, `payment_plans.py`, `account_management.py`, `security_automation.py`, `budget_analysis.py`, `revenue_analytics.py`, `scholarship_programs.py`
+- **[CRITICAL] Removed hardcoded secrets** (3 files): Replaced placeholder Flask secret keys in `enhanced_reporting.py` and `log_management.py` with `os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))`; replaced hardcoded API key in `api_server_config.json` with placeholder requiring environment configuration
+- **[CRITICAL] Disabled Flask debug mode by default** (`log_management.py`): Changed `debug=True` to environment-based `debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'`
+- **[CRITICAL] Removed password logging** (4 files): Stripped temporary passwords from `logger.info()` calls in `core.py`, replaced with `[REDACTED]` in `setup_database_complete.py`, removed password display from CLI output in `cli_menus.py`, replaced credential display with documentation reference in `misc.py`
+- **[HIGH] Fixed command injection** (6 files): Replaced all `os.system()` shell calls with `subprocess.run()` using list arguments in `report_manager.py`, `reports_mixin.py`, `transaction_manager.py`, `submission_manager.py`, `staff_profile_gui.py`; fixed string-based `subprocess.Popen()` in `log_management_gui.py`
+- **[HIGH] Restricted CORS configuration** (3 files): Changed `CORS(app)` (wildcard `*`) to environment-configured `CORS(app, origins=allowed_origins, supports_credentials=True)` in `api_server.py`, `web_api.py`, `mobile_api.py`
+- **[HIGH] Fixed insecure token generation** (`automation_manager.py`): Replaced `random.randint()` API key generation with cryptographically secure `secrets.token_hex()`
+- **[HIGH] Secured session token storage** (`session_manager.py`): Added `os.chmod(token_file, 0o600)` for remember-me token files; implemented actual chatbot session token storage and validation with 1-hour expiry (replaced stub that accepted any token)
+- **[HIGH] Fixed SSH MITM vulnerability** (`data_backup.py`): Replaced `paramiko.AutoAddPolicy()` with `ssh.load_system_host_keys()` + `paramiko.RejectPolicy()`
+- **[MEDIUM] Hardened Content Security Policy** (`flask_security_headers.py`): Removed `'unsafe-inline'` from `script-src` and `style-src` directives
+- **[MEDIUM] Added secure cookie configuration** (`flask_security_headers.py`): Added `init_cookie_security()` setting `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE='Lax'`, and `SESSION_COOKIE_SECURE` (production); auto-applied by `init_security_headers()`
+- **[MEDIUM] Added login rate limiting** (`log_management.py`): Implemented per-IP rate limiter (5 attempts/minute) on `/api/auth/login` endpoint
+- **[MEDIUM] Fixed error information disclosure** (`log_management.py`): Replaced all 11 `str(e)` error responses with generic `'An internal error occurred'`; errors logged server-side only
+- **[MEDIUM] Removed version disclosure** (`log_management.py`): Removed `version` field from `/api/health` endpoint response
+- **[MEDIUM] Hardened webhook authentication** (`log_management.py`): Added timing-safe comparison via `secrets.compare_digest()` and timestamp validation (5-minute replay window)
+- **[MEDIUM] Added SSRF protection** (`simple_activity_logger.py`): Added URL scheme validation (https/http only) and private network blocking (localhost, 10.x, 192.168.x, 172.x) for security webhook URLs
+- **[MEDIUM] Salted recovery code hashing** (`mfa_manager.py`): Changed from unsalted SHA256 to salted SHA256 (`salt$hash` format) with `_verify_recovery_code()` method; includes legacy fallback for existing hashes
+- **[MEDIUM] Enforced SMTP TLS** (`smtp.py`): STARTTLS now enforced on ports 587/465 regardless of `use_tls` configuration
+- **[MEDIUM] Fixed insecure temp files** (3 files): Replaced all `tempfile.mktemp()` (deprecated, TOCTOU race condition) with `tempfile.mkstemp()` in `backup_ops.py`, `restore_ops.py`, `data_backup.py`
+
+## [5.27.0] - 2026-02-10
+
+### Added
+- **Email Report to Admin Buttons** (`document_manager_gui/reports.py`): Added "Email Report to Admin" buttons to 5 report types that were missing them — Status Report, Expiry Report, Monthly Summary, Student Progress Report, and Custom Report Builder — reusing the existing `send_report_to_admin` infrastructure from the Compliance Report
+
+## [5.26.0] - 2026-02-10
+
+### Added
+- **HR API Endpoints** (`/api/hr/*`): Staff listing (admin, searchable, filterable by role/status, excludes password_hash/salt), departments, instructors (searchable, filterable by department), leave requests CRUD (admin-gated approval), shifts (filterable, admin-gated creation), timesheets CRUD (draft/approval workflow), and appraisal records
+- **Helpdesk API Endpoints** (`/api/helpdesk/*`): Support tickets CRUD (searchable, filterable by status/priority/category), ticket replies per ticket (paginated), KB articles (searchable, filterable by category, admin-gated creation), FAQs (filterable, admin-gated), and SLA policies listing
+- **Parent Portal API Endpoints** (`/api/parents/*`): Parent accounts (searchable, excludes 2FA secrets), student links per parent, messages CRUD (filterable by parent/student), conferences CRUD (filterable by parent/status), documents listing, and notifications with mark-read
+- **LMS API Endpoints** (`/api/lms/*`): LMS courses CRUD (filterable by module/instructor), quizzes per course with creation, discussion forums per course with creation, video lectures listing, and gradebook (filterable by course/student)
+- **Academic Integrity API Endpoints** (`/api/integrity/*`): Misconduct cases CRUD (admin-gated, filterable by status/severity/student), plagiarism results (paginated), AI detection results (paginated), and forensic cases (admin-gated, filterable by status/priority)
+- **Campus Services API Endpoints** (`/api/campus/*`): Buildings listing, rooms (paginated, filterable by building/type/status), room bookings CRUD, campus tours CRUD (admin-gated creation), campus events (searchable, filterable), resource bookings CRUD, and space utilization data
+- **Evaluation API Endpoints** (`/api/evaluations/*`): Feedback submissions CRUD (filterable by status/category/type), evaluation templates listing, survey responses (filterable by survey), and course evaluations CRUD (admin-gated creation)
+- **Communication API Endpoints** (`/api/communication/*`): Messages CRUD with mark-read, email log (admin), email templates listing, newsletters CRUD (admin-gated), SMS log (admin), and group messages (filterable by type/group)
+- **Counseling API Endpoints** (`/api/counseling/*`): Mental health appointments CRUD (filterable by student/status, anonymous support), mental health resources (filterable by category/content_type), counseling appointments CRUD, and crisis resources listing
+- **Emergency API Endpoints** (`/api/emergency/*`): Emergency alerts (create/deactivate, admin-gated), emergency contacts per student (CRUD), and incidents CRUD (filterable by status/severity/type)
+- **Virtual Classroom API Endpoints** (`/api/virtual-classrooms/*`): Classrooms CRUD (filterable by course/platform), sessions per classroom with creation, recordings per session, and virtual study rooms (filterable by course, active-only default)
+- **Equipment API Endpoints** (`/api/equipment/*`): Equipment listing (searchable, filterable by type/status), checkouts CRUD, rentals listing, facility assets (filterable by building/type/status), inventory listing, and maintenance CRUD (admin-gated creation)
+- **Election API Endpoints** (`/api/elections/*`): Polls CRUD with options (admin-gated creation), poll voting (auto-increments vote count), election candidates (filterable by election), election voting, and union representatives listing
+- **Document Management API Endpoints** (`/api/documents/*`): Document repository CRUD (searchable, filterable by module/author, auto-computes content hash and word count), student documents (filterable by student/verification/workflow status, current versions only), and document workflows
+- **Credential API Endpoints** (`/api/credentials/*`): Blockchain credentials CRUD (filterable by student/type, admin-gated creation) with public verification endpoint by hash, digital badges CRUD (admin-gated), micro-credentials listing (filterable by category), and certifications CRUD
+- **Input Validators** (`api/validators.py`): Added 35 new validators for HR, helpdesk, parent portal, LMS, academic integrity, campus services, evaluations, communication, counseling, emergency, virtual classrooms, equipment, elections, documents, and credentials
+- **Dashboard Expansion** (`/api/dashboard/stats`): Now reports counts across 83 tables (added staff, departments, instructors, leave requests, shifts, timesheets, support tickets, KB articles, FAQs, parent accounts, LMS courses, misconduct cases, buildings, room bookings, feedback, evaluations, messages, newsletters, counseling, emergency, virtual classrooms, equipment, elections, documents, credentials, and more)
+
+### Changed
+- **API Index Endpoint** (`/api/`): Now lists all 57 endpoint groups (added 15 new domain endpoints)
+- **Blueprint Registration** (`api/routes/__init__.py`): Registers 56 blueprints (up from 41)
+
+## [5.25.0] - 2026-02-10
+
+### Added
+- **Exam API Endpoints** (`/api/exams/*`): Exam CRUD (paginated, filterable by module/exam_type/status) and exam accommodations listing per exam
+- **Academic Calendar API Endpoints** (`/api/calendar/*`): Calendar events CRUD with delete (admin-gated writes, paginated, filterable by event_type/academic_year/semester)
+- **Assessment API Endpoints** (`/api/assessments/*`): Module assessments CRUD (paginated, filterable by module/assessment_type)
+- **Financial Aid API Endpoints** (`/api/financial-aid/*`): Aid applications CRUD (paginated, filterable by student/status/type, admin-gated listing), aid packages (filterable by student/status), and payment plans with installments per plan
+- **Degree Program API Endpoints** (`/api/degrees/*`): Degree programs CRUD (paginated, searchable, filterable by department/level), degree requirements per program, and course prerequisites CRUD
+- **Announcement API Endpoints** (`/api/announcements/*`): Announcements CRUD with delete (admin-gated writes, paginated, filterable by category/priority, active-only filter)
+- **Advising API Endpoints** (`/api/advising/*`): Advising appointments CRUD (paginated, filterable by student/advisor/status)
+- **Accommodation API Endpoints** (`/api/accommodations/*`): Active accommodations (paginated, filterable by student/status), accommodation requests CRUD (admin-gated review, auto-creates accommodation record on approval)
+- **Tutoring API Endpoints** (`/api/tutoring/*`): Tutoring offers CRUD (paginated, searchable, filterable by subject/tutor, available-only default)
+- **Early Warning API Endpoints** (`/api/early-warning/*`): Risk profiles (admin-only listing, filterable by risk_level, per-student lookup), interventions CRUD (admin-gated creation, filterable by student/status/priority)
+- **Chat API Endpoints** (`/api/chat/*`): Chat rooms (paginated, searchable, filterable by room_type) with creation, and per-room messages (paginated) with posting
+- **Input Validators** (`api/validators.py`): Added 18 new validators for exams, calendar events, assessments, financial aid, degree programs, prerequisites, announcements, advising, accommodations, tutoring, and chat
+- **Dashboard Expansion** (`/api/dashboard/stats`): Now reports counts across 44 tables (added exams, calendar events, assessments, financial aid, degree programs, announcements, advising, accommodations, tutoring, early warning, chat)
+
+### Changed
+- **API Index Endpoint** (`/api/`): Now lists all 42 endpoint groups (added 11 new domain endpoints)
+- **Blueprint Registration** (`api/routes/__init__.py`): Registers 41 blueprints (up from 28)
+
+## [5.24.0] - 2026-02-10
+
+### Added
+- **Housing API Endpoints** (`/api/housing/*`): Buildings list, rooms (paginated, filterable by building/status), applications CRUD with status workflow, and housing assignments (joined with room/building details)
+- **Library API Endpoints** (`/api/library/*`): Book catalog (paginated, searchable by title/author/ISBN, filterable by category/status), book loans with checkout/return workflow (auto-updates book status), and reservations
+- **Health Services API Endpoints** (`/api/health-services/*`): Appointment CRUD (paginated, filterable by student/status) and health records listing (excludes encrypted data, requires student_id)
+- **Facilities API Endpoints** (`/api/facilities/*`): Facility bookings (paginated, filterable by facility/user/status) and maintenance requests (paginated, filterable by status/priority) with full CRUD
+- **Career Services API Endpoints** (`/api/career/*`): Job postings (paginated, searchable, filterable by category/type), job applications (with cover letter), and active internship listings with placements
+- **Research API Endpoints** (`/api/research/*`): Research projects CRUD (paginated, searchable, filterable by department/status) and publications (paginated, searchable, filterable by project)
+- **Admissions API Endpoints** (`/api/admissions/*`): Prospect listing (admin-only, searchable), admission applications CRUD (admin-only listing, filterable by status/program/year, joined with prospect details)
+- **Alumni API Endpoints** (`/api/alumni/*`): Alumni profiles (paginated, searchable, filterable by graduation year) with profile updates, alumni events listing, and donations (list/create with recurring support)
+- **Events API Endpoints** (`/api/events/*`): Campus events CRUD (paginated, searchable, filterable by category, upcoming filter), event registrations per event
+- **Dining API Endpoints** (`/api/dining/*`): Menu items (filterable by category/availability), meal account balance lookup, account top-up with transaction logging, and transaction history (paginated)
+- **Notification API Endpoints** (`/api/notifications/*`): Notifications (paginated, filterable by read status/priority), create/mark-read/mark-all-read, and notification preferences (get/upsert)
+- **Mentorship API Endpoints** (`/api/mentorship/*`): Mentorship relationships CRUD (paginated, filterable by mentor/mentee/status) with rating support, and session logging per relationship
+- **Parking API Endpoints** (`/api/parking/*`): Parking permits (paginated, filterable by user/zone), permit creation, parking spaces listing (filterable by lot/status), and vehicle registration
+- **Club API Endpoints** (`/api/clubs/*`): Student clubs CRUD (paginated, searchable, filterable by category/status) with member management (list/add, joined with student names, auto-updates member count)
+- **Security API Endpoints** (`/api/security/*`): Security desk tickets CRUD (paginated, filterable by status/priority/type) with admin notes
+- **Lost & Found API Endpoints** (`/api/lost-found/*`): Item listing (paginated, searchable, filterable by status/category), item creation, and claim workflow
+- **Scholarship API Endpoints** (`/api/scholarships/*`): Scholarship listings (paginated, searchable, active filter), detailed scholarship view, applications CRUD (filterable by student/scholarship/status, duplicate prevention, admin-only review)
+- **Study Group API Endpoints** (`/api/study-groups/*`): Study groups CRUD (paginated, filterable by course/status) with member management (auto-adds creator as Leader, enforces max capacity, joined with student names)
+- **Input Validators** (`api/validators.py`): Added 22 new validators for housing, books, health, facilities, career, research, admissions, events, dining, notifications, mentorship, parking, clubs, security, lost & found, scholarships, study groups, and alumni
+- **Dashboard Expansion** (`/api/dashboard/stats`): Now reports counts across 30 tables (added housing, library, health, facilities, career, research, admissions, alumni, events, dining, notifications, mentorship, parking, clubs, security, lost & found, scholarships, study groups)
+
+### Changed
+- **API Index Endpoint** (`/api/`): Now lists all 31 endpoint groups (added 17 new domain endpoints)
+- **Blueprint Registration** (`api/routes/__init__.py`): Registers 28 blueprints (up from 13)
+
+## [5.23.0] - 2026-02-10
+
+### Added
+- **Finance API Endpoints** (`/api/finance/*`): List fees (joined with fee types), list/create payments (paginated), list active scholarships (paginated), and student account balance summary
+- **Attendance API Endpoints** (`/api/attendance/*`): List/create attendance sessions (filterable by module), list/create attendance records (filterable by student/session), and per-student attendance analytics with rates per module
+- **Assignment API Endpoints** (`/api/assignments/*`): Full CRUD for assignments (paginated, filterable by module), plus list/create submissions per assignment
+- **Timetable API Endpoints** (`/api/timetable/*`): Module schedule lookup and full student timetable (joins `module_schedule` with `student_modules`)
+- **Course API Endpoints** (`/api/courses/*`): Full CRUD for courses (paginated, searchable by name/code, filterable by department) plus course waitlist view (joined with student names)
+- **User Management API Endpoints** (`/api/users/*`): Admin-gated list/get/create/update/deactivate users; uses `UserAuth.create_user()` for creation; filters `password_hash`/`salt` from all responses; non-admin users can only view their own profile
+- **Dashboard API Endpoint** (`/api/dashboard/stats`): Aggregate counts across 8 tables (students, modules, enrollments, courses, users, payments, assignments, attendance sessions)
+- **Finance Error Mappings** (`api/errors.py`): Added `FinanceError` (400), `PaymentError` (400), `InsufficientFundsError` (402), `TransactionFailedError` (500) to exception-status mapping
+- **Input Validators** (`api/validators.py`): Added 10 new validators for payments, attendance sessions/records, assignments, submissions, courses, and users with role/status/amount validation
+
+### Changed
+- **API Index Endpoint** (`/api/`): Now lists all 14 endpoint groups (added finance, attendance, assignments, timetable, courses, users, dashboard)
+- **Blueprint Registration** (`api/routes/__init__.py`): Registers 13 blueprints (up from 6)
+
+## [5.22.0] - 2026-02-09
+
+### Added
+- **Flask REST API Server**: Replaced the 88-line stdlib `http.server` stub in `university_system/api/api_server.py` with a production-ready Flask API server exposing 22 endpoints across 6 resource groups
+- **JWT Authentication**: Bearer-token auth via PyJWT with access/refresh token flow, in-memory token blacklisting on logout, and `@token_required` / `@admin_required` decorators (`api/auth.py`)
+- **Auth Endpoints** (`/api/auth/*`): Login (returns JWT tokens), logout (revokes token), refresh (issue new access token), and current-user info
+- **Student CRUD Endpoints** (`/api/students/*`): List (paginated, searchable by query/status/course), get by ID, create, update, and delete — backed by `SQLiteStudentRepository`
+- **Module CRUD Endpoints** (`/api/modules/*`): List (filterable by department/search), get by code, create, update, and delete — uses direct SQL via `get_connection`/`transaction`
+- **Enrollment Endpoints** (`/api/enrollments/*`): List (filterable by student/module), enroll (with duplicate/existence checks), and drop
+- **Grade Endpoints** (`/api/grades/*`): List (filterable by student/module), record, and update
+- **System Endpoints**: `/api/health` (no auth) and `/api/version` (no auth)
+- **API Config Module** (`api/config.py`): Loads `api_server_config.json` merged with defaults; auto-generates a random JWT secret when none is configured
+- **Error Handling** (`api/errors.py`): Maps 12 domain exceptions to HTTP status codes (ValidationError→400, AuthenticationError→401, PermissionDeniedError→403, StudentNotFoundError→404, DuplicateStudentError→409, DatabaseError→503, etc.) with consistent JSON error responses
+- **Pagination Helpers** (`api/pagination.py`): Extracts `page`/`per_page` from query params with bounds clamping; wraps responses with `pagination` metadata (total, total_pages, has_next, has_prev)
+- **Input Validators** (`api/validators.py`): Validates payloads for student, module, enrollment, grade, and login requests; raises `ValidationError` on bad input
+- **In-Memory Rate Limiting**: Per-IP sliding-window rate limiter using config from `api_server_config.json`, enforced via `@app.before_request`
+- **CORS Support**: Enabled via `flask-cors` for cross-origin API access
+- **Activity Logging**: All mutation endpoints log via `log_activity()` for audit compliance
+
+### Changed
+- **`run.py`**: Added `--api` / `-a` command-line flag to start the REST API server, with help text
+- **`api_server_config.json`**: Added `jwt` configuration section (`secret_key`, `access_token_expires_minutes`, `refresh_token_expires_days`, `algorithm`)
+- **`api/__init__.py`**: Now exports `create_app` and `run_api_server` from the app factory
+
+## [5.21.8] - 2026-02-09
+
+### Fixed
+- **Course Scheduling GUI - "None - None" in Course Dropdowns**: Course selector dropdowns in Course Details, main GUI, and Add to Waitlist queried `course_code`/`course_name` columns which are NULL for courses created via other parts of the system that use `code`/`name` columns; now uses `COALESCE(course_code, code)` / `COALESCE(course_name, name)` and filters to Active courses only
+- **Course Scheduling GUI - Process Waitlist Course Query**: `process_course_waitlist()` had the same `course_code`/`course_name` NULL issue; applied the same COALESCE fix
+
+### Added
+- **Course Waitlist - Email on Add to Waitlist**: `AddToWaitlistDialog._add()` now sends a confirmation email to the student when they are added to a course waitlist, using the `course_waitlist_added` template with hardcoded fallback
+- **Course Waitlist - Email on Waitlist Enrollment**: `ProcessWaitlistDialog.process_course_waitlist()` now sends an enrollment confirmation email to each student enrolled from the waitlist, using the `course_waitlist_enrolled` template with hardcoded fallback
+- **Email Templates**: Added `course_waitlist_added.json` and `course_waitlist_enrolled.json` templates in `templates/email/academics/` and registered them in `email_template_mapping.json`
+
+## [5.21.7] - 2026-02-09
+
+### Fixed
+- **Email Template Mapping**: Added 24 missing templates to `email_template_mapping.json` so they resolve via the fast mapping lookup (Strategy 2) instead of falling back to a full directory scan (Strategy 3) and logging "not in mapping file" warnings. Covers security desk (2), academics/assignments (9), mobility (8), and other categories (5)
+
+## [5.21.6] - 2026-02-09
+
+### Fixed
+- **Security Desk GUI - Save & Notify Never Sent Email**: `save_changes()` checked `self.ticket.get('requester_email')` for the recipient, but tickets loaded from the database only have the `user_email` column — `requester_email` is only set on newly created tickets in the same session. Now falls back to `user_email` when `requester_email` is absent, so notifications actually reach the ticket requester
+- **Security Desk GUI - Admin Notes Not Persisted**: `save_changes()` appended notes to `self.ticket['notes']` (an in-memory list) but `_db_save_ticket()` reads `ticket.get('admin_notes')` (a string column) which was never updated; now also writes the note text to `admin_notes` so it survives DB round-trips
+- **Security Desk GUI - Template Render Fallback**: Added `None` check after `render_template()` call so the hardcoded email fallback is used when the template returns empty subject/body
+
+## [5.21.5] - 2026-02-09
+
+### Fixed
+- **Email Template Rendering - Missing `body` Key**: `render_template()` in `template_utils.py` always looked for `template_data['body']`, but 10 newer templates (including `assignment_submission_student`, `assignment_submission_instructor`, `assignment_submission_admin`) use `body_text`/`body_html` keys instead, causing `KeyError: 'body'`; now falls back to `body_html` then `body_text` when `body` is not present
+- **Assignment Submission Emails - Silent Failure**: When `render_template()` failed it returned `(None, None)` without raising, so the `except` fallback to hardcoded email was never triggered and `send_email()` received `None` subject/body causing `[VALIDATION_INVALID_INPUT] Email subject is required`; added a `None` check after each `render_template` call (student, instructor, admin) that raises into the existing `except` to activate the hardcoded fallback
+- **Batch Ops GUI - Widget Access After Dialog Destroy**: `execute_operation()` in `update_manager.py` called `course_var.get()` after `dialog.destroy()`, causing `TclError: invalid command name` on the destroyed combobox; captured the value before destroying. Same fix in `export_manager.py` where `course_combo.get()`, `start_date_entry.get()`, and `end_date_entry.get()` were accessed in a worker thread after dialog destruction, causing `NoneType object has no attribute 'get'`
+
+## [5.21.4] - 2026-02-09
+
+### Changed
+- **Batch Ops GUI - Backend Class**: Switched `self.backend` from `OriginalBatchOperationManager` to `EnhancedBatchOperationManager` (which extends it) so all GUI-specific methods (`import_from_csv_file`, `batch_update_from_file`, `import_grade_data_from_file`, `clean_and_fix_data`, etc.) are available; was causing `AttributeError: 'BatchOperationManager' has no attribute ...` for every import/update/quality operation
+- **Batch Ops GUI - Dashboard**: `show_dashboard()` (View → Dashboard menu) now opens a new `Toplevel` window with the quality dashboard data instead of incorrectly switching to the Import tab (tab 0) while silently updating the quality text widget on a different tab
+
+### Fixed
+- **Batch Ops GUI - Quality Dashboard Data**: `refresh_quality_dashboard()` called `self.gui.backend.data_quality_dashboard()` which returns different keys than `format_quality_dashboard()` expects, showing all zeros; changed to `self.gui.get_quality_dashboard_data()` which returns the correct key set
+- **Batch Ops GUI - Export Statistics**: `export_statistics()` called `self.gui.backend.generate_enrollment_statistics()` but the method exists on `self.gui` (delegating to `report_mgr`), not on the backend; fixed the call target
+- **Batch Ops GUI - Missing `import_grade_data_from_file`**: Added wrapper method in `backend.py` that reads a CSV file and delegates to `process_grade_data()`
+- **Batch Ops GUI - Missing `clean_and_fix_data`**: Added wrapper method in `backend.py` around `validate_and_clean_data()` returning the count of issues fixed
+- **Batch Ops GUI - strptime with None dob**: `import_from_csv_file` crashed with `strptime() argument 1 must be str, not None` when a CSV row had a missing/null date of birth; added validation to skip rows with missing dob
+
+## [5.21.3] - 2026-02-09
+
+### Changed
+- **API Server**: Moved `api_server.py` from project root to `university_system/api/api_server.py`; updated config loading to use `pathlib.Path` relative to the script location instead of a bare relative filename
+- **API Server Config**: Moved `api_server_config.json` from project root to `university_system/data/config/api_server_config.json` (the project's `CONFIG_DIR`)
+- **Batch Ops - Automation Manager**: Updated `automation_manager.py` to write generated API server script to `university_system/api/api_server.py` and config to `CONFIG_DIR / "api_server_config.json"` using `PROJECT_ROOT` and `CONFIG_DIR` path constants from `university_system.core.paths`
+- **Activity Logger - Database Consolidation**: Merged `DatabaseLogger` in `simple_activity_logger.py` into the main `student_records.db` `activity_log` table instead of using a separate `logs/activity_logs.db`; extra fields (role, module, status, log_level, session_id, etc.) are packed into the `details` column as JSON; removed `_init_database()` since the table already exists
+
+### Added
+- **Student Details GUI - Academic Record Refresh**: Added a "Refresh" button to the Academic Record tab in the student details popup so data (modules, grades, attendance) can be reloaded without closing and reopening the window
+
+### Fixed
+- **Edit Student GUI - Reassign Course**: `random.choice(['CS', 'DS'])` could pick the same course the student already had; `course_changed` was still set to `True`, deleting all modules and re-adding random ones even though the course didn't change. Now toggles the course (`CS→DS` / `DS→CS`) so it always actually changes
+- **Edit Student GUI - Module Reassignment on Course Change**: After deleting old modules, the query to find new modules used `WHERE department = ?` but `department` is empty for all rows in the `modules` table, so zero modules were re-added. Changed to query `WHERE module_type = ?` which is populated. Also now only deletes the old course's modules instead of wiping all modules
+- **Edit Student CLI - Course Swap Module Cleanup**: `old_course` was read from the database AFTER the course had already been updated, so it contained the new course value; this caused the wrong modules to be deleted (new course's instead of old) while old course modules were left behind. Now saves `old_course` before the `UPDATE`
+- **Email GUI - Template Loading**: `list_templates` and `load_template` were used as bare names in `email_dialogs.py` without ever being imported, causing `NameError: name 'list_templates' is not defined`; added the import from `template_utils` with a try/except fallback to `None`
+- **Document Manager GUI - Event Logging**: `log_event()` in `helpers.py` inserted into columns (`user_role`, `entity_type`, `entity_id`) that don't exist on the `activity_log` table; rewrote to use the actual schema columns (`user_id`, `username`, `action`, `details`, `timestamp`), packing extra fields into the `details` JSON
+- **Document Manager GUI - Student Report**: Student progress report query used `email` but the `students` table column is `email_address`, causing "no such column: email" error
+- **Assignment Submission GUI - Admin Upload**: Admin users could not submit assignments because `_get_student_id_safe()` returned `None` (admins have no student record), showing "No student ID found". Added a student selector dropdown (`[ADMIN] Submit as Student`) so admins can pick a student to submit on behalf of for testing; replaced the blocking warning dialog with input validation
+- **Delete Student GUI - Auth Failure**: `delete_user()` in `user_manager.py` required `'manage_users'` in the user's permissions list, but the admin user had no rows in `user_permissions` so the check always failed with "Failed to delete user via auth". Now also allows users with `role='admin'` to delete users
+- **Delete Student GUI - Toplevel Crash**: `dialog.destroy()` was called after successful deletion without checking if the dialog still existed, causing "invalid command name toplevel" if the window had already been closed. Wrapped with `winfo_exists()` guard; also wrapped the post-deletion `view_students()` / `refresh_advanced_search()` calls in try/except
+
+### Removed
+- **activity_logs.db**: Deleted the separate `university_system/logs/activity_logs.db` file (was empty); all activity logging now uses the main database
+
 ## [5.21.2] - 2026-02-09
 
 ### Added

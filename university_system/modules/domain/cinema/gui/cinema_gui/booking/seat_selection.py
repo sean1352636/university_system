@@ -7,9 +7,7 @@ and toggling individual seat selections.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
-# i18n support
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -18,7 +16,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import TICKET_TYPES
-
 
 def show_seat_selection(self, screening_id, movie):
     """Display seat selection grid with ticket types."""
@@ -119,7 +116,6 @@ def show_seat_selection(self, screening_id, movie):
 
     ttk.Button(btn_frame, text=_t("cinema.booking.proceed_payment") + " →", style="Primary.TButton",
               command=lambda: self.show_snacks_page(screening, movie)).pack(side="left", padx=5)
-
 
 def toggle_seat(self, seat_data, button, base_price, is_vip):
     """Toggle seat selection with ticket type."""

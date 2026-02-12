@@ -6,7 +6,7 @@ This module tests intervention recommendation functions.
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest import mock
 
 import pytest
@@ -18,7 +18,6 @@ from university_system.modules.domain.academics.grading.interventions import (
     generate_system_recommendations,
     intervention_recommendations,
 )
-
 
 @pytest.fixture
 def setup_intervention_tables():
@@ -86,7 +85,6 @@ def setup_intervention_tables():
         cursor.execute("DELETE FROM recommended_interventions")
         cursor.execute("DELETE FROM student_risk_assessment WHERE student_id LIKE 'INTV%'")
 
-
 @pytest.fixture
 def setup_test_data(setup_intervention_tables):
     """Set up test data for intervention tests"""
@@ -135,7 +133,6 @@ def setup_test_data(setup_intervention_tables):
         cursor.execute("DELETE FROM modules WHERE module_code = 'INTV101'")
         cursor.execute("DELETE FROM students WHERE student_id LIKE 'INTV%'")
 
-
 class TestInterventionRecommendations:
     """Test intervention recommendation generation"""
 
@@ -169,7 +166,6 @@ class TestInterventionRecommendations:
 
             captured = capsys.readouterr()
             assert "Database error" in captured.out
-
 
 class TestGenerateInterventionPlan:
     """Test individual intervention plan generation"""
@@ -277,7 +273,6 @@ class TestGenerateInterventionPlan:
             priorities = [i['priority'] for i in plan['interventions']]
             assert priorities == sorted(priorities)
 
-
 class TestDisplayInterventionRecommendations:
     """Test displaying intervention recommendations"""
 
@@ -312,7 +307,6 @@ class TestDisplayInterventionRecommendations:
 
         captured = capsys.readouterr()
         assert "INTERVENTION RECOMMENDATIONS" in captured.out
-
 
 class TestGenerateSystemRecommendations:
     """Test system-wide recommendation generation"""
@@ -403,7 +397,6 @@ class TestGenerateSystemRecommendations:
         assert isinstance(recommendations, list)
         assert len(recommendations) == 0
 
-
 class TestEdgeCases:
     """Test edge cases and boundary conditions"""
 
@@ -454,7 +447,6 @@ class TestEdgeCases:
 
                 assert plan is not None
                 assert plan['risk_score'] == risk_score
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

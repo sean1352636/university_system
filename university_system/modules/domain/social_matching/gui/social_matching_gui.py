@@ -14,6 +14,7 @@ Features:
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
+import json
 from typing import Optional
 
 from university_system.infrastructure.shared_context import get_auth
@@ -295,7 +296,7 @@ class SocialMatchingGUI:
                 match['user_id'],
                 f"{match['compatibility_score']:.1f}%",
                 match['shared_count']
-            ), tags=(str(match),))
+            ), tags=(json.dumps(match),))
 
         messagebox.showinfo("Success", f"Found {len(matches)} matches!")
 
@@ -307,7 +308,7 @@ class SocialMatchingGUI:
 
         item = self.matches_tree.item(selection[0])
         # Get match data from tags
-        match_data = eval(item['tags'][0])
+        match_data = json.loads(item['tags'][0])
 
         # Display match details
         self.match_details_text.delete(1.0, tk.END)

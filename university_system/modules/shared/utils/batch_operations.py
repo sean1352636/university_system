@@ -9,7 +9,7 @@ import time
 import threading
 import zipfile
 import logging
-import pickle
+import pickle  # kept only for backward compat with old .pkl resume files
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
@@ -221,7 +221,7 @@ class BatchOperationManager:
                 self.start_api_server()
             elif choice == '22':
                 self.external_system_integration()
-            elif choice == '25':
+            elif choice in ('0', '25'):
                 print(_t("shared.utils.batch_operations.returning_to_menu"))
                 break
             else:
@@ -719,7 +719,7 @@ class BatchOperationManager:
         print("\n" + _t("shared.utils.batch_operations.title_resume_import"))
 
         # Check for saved import state
-        resume_files = list(Path('.').glob('import_resume_*.pkl'))
+        resume_files = list(Path('.').glob('import_resume_*.json'))
 
         if not resume_files:
             print(_t("shared.utils.batch_operations.no_failed_imports"))
@@ -737,8 +737,8 @@ class BatchOperationManager:
                 resume_file = resume_files[choice]
 
                 # Load saved state
-                with open(resume_file, 'rb') as f:
-                    saved_state = pickle.load(f)
+                with open(resume_file, 'r') as f:
+                    saved_state = json.load(f)
 
                 remaining_records = saved_state['remaining_records']
                 original_total = saved_state['original_total']
@@ -759,7 +759,7 @@ class BatchOperationManager:
             else:
                 print(_t("shared.utils.batch_operations.invalid_selection"))
 
-        except (ValueError, FileNotFoundError, pickle.PickleError) as e:
+        except (ValueError, FileNotFoundError, json.JSONDecodeError) as e:
             print(_t("shared.utils.batch_operations.error_resuming", error=str(e)))
 
     # ========================================
@@ -1130,8 +1130,8 @@ class BatchOperationManager:
                 'original_file': getattr(self, 'current_import_file', 'unknown')
             }
             
-            with open(filename, 'wb') as f:
-                pickle.dump(progress_data, f)
+            with open(filename, 'w') as f:
+                json.dump(progress_data, f, default=str)
                 
         except Exception as e:
             logger.error(f"Error saving import progress: {e}")
@@ -1355,6 +1355,7 @@ class BatchOperationManager:
                 DS_optional_module_3['code'], DS_optional_module_4['code']
             ]
             placeholders = ','.join('?' * len(old_module_codes))
+            assert all(c in '?,' for c in placeholders), "Invalid placeholder string"
             cursor.execute(f'''
             DELETE FROM student_modules
             WHERE student_id = ? AND module_code IN ({placeholders})

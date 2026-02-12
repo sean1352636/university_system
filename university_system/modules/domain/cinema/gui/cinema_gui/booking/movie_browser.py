@@ -7,7 +7,7 @@ and showing available screenings for selected movies.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 # i18n support
@@ -18,7 +18,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_movies_page(self):
     """Display the movies listing page."""
@@ -37,7 +36,6 @@ def show_movies_page(self):
 
     for i, movie in enumerate(movies):
         self.create_movie_card(movies_frame, movie, i)
-
 
 def create_movie_card(self, parent, movie, index):
     """Create a movie card widget."""
@@ -61,7 +59,6 @@ def create_movie_card(self, parent, movie, index):
 
     ttk.Button(card, text=_t("cinema.screenings.view"), style="Primary.TButton",
               command=lambda m=movie: self.show_screenings(m)).pack(side="right")
-
 
 def show_screenings(self, movie):
     """Show available screenings for a movie."""

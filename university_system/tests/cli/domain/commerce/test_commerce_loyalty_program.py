@@ -4,11 +4,10 @@ Tests customer creation, viewing, updating, feedback, and loyalty management.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.commerce.services.restaurant.customer import loyalty_program
-
 
 @pytest.fixture
 def mock_auth():
@@ -22,7 +21,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def mock_db_connection(tmp_path):
@@ -120,7 +118,6 @@ def mock_db_connection(tmp_path):
 
     conn.commit()
     return conn
-
 
 class TestCustomerCreation:
     """Tests for customer creation functionality."""
@@ -223,7 +220,6 @@ class TestCustomerCreation:
         # Verify
         captured = capsys.readouterr()
         assert "Email already exists" in captured.out
-
 
 class TestLoyaltyManagement:
     """Tests for loyalty program management."""
@@ -353,7 +349,6 @@ class TestLoyaltyManagement:
             assert points == 200  # 100 + 100
         mock_audit.assert_called_once()
 
-
 class TestFeedbackManagement:
     """Tests for customer feedback management."""
 
@@ -441,7 +436,6 @@ class TestFeedbackManagement:
             assert filename.endswith('.csv')
             assert 'feedback_report_' in filename
 
-
 class TestCustomerAnalytics:
     """Tests for customer analytics functions."""
 
@@ -482,7 +476,6 @@ class TestCustomerAnalytics:
             assert "Total Customers: 4" in captured.out
             assert "Bronze" in captured.out
             assert "Platinum" in captured.out
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

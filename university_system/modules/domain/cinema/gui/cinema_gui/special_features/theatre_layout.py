@@ -4,7 +4,7 @@ Cinema Booking System - Theatre Layout Configuration
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_theatre_layout_page(self):
     """Display theatre layout configuration page (per-screen)."""
@@ -151,7 +150,7 @@ def show_theatre_layout_page(self):
             vip_rows_list = [r.strip() for r in vip_row_str.split(',') if r.strip()]
             wheelchair_str = fields['wheelchair'].get().upper()
             wheelchair_list = [s.strip() for s in wheelchair_str.split(',') if s.strip()]
-        except:
+        except (ValueError, TypeError):
             return
 
         # Draw screen

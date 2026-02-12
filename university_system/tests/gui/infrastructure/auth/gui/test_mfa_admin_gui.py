@@ -5,11 +5,10 @@ Tests administrative panel for MFA management, policies, user management, and au
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock
-
 
 # Mock tkinter before importing MFA Admin GUI
 @pytest.fixture(autouse=True)
@@ -23,7 +22,6 @@ def mock_tkinter():
         'tkinter.filedialog': MagicMock(),
     }):
         yield
-
 
 @pytest.fixture
 def temp_db():
@@ -58,7 +56,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_mfa_service():
     """Create a mock MFA service"""
@@ -66,7 +63,6 @@ def mock_mfa_service():
     service.db_path = '/fake/path/db.db'
     service.disable_mfa.return_value = {'success': True}
     return service
-
 
 class TestMFAAdminPanelInitialization:
     """Test MFA Admin Panel initialization"""
@@ -102,7 +98,6 @@ class TestMFAAdminPanelInitialization:
         # Verify window configuration
         mock_instance.title.assert_called()
         mock_instance.geometry.assert_called()
-
 
 class TestOverviewTab:
     """Test Overview/Dashboard tab"""
@@ -142,7 +137,6 @@ class TestOverviewTab:
         # stats_labels should be a dictionary
         assert hasattr(panel, 'stats_labels')
         assert isinstance(panel.stats_labels, dict)
-
 
 class TestPoliciesTab:
     """Test Policies tab"""
@@ -186,7 +180,6 @@ class TestPoliciesTab:
 
         # Should show warning about no selection
         mock_messagebox.assert_called()
-
 
 class TestUsersTab:
     """Test Users tab"""
@@ -280,7 +273,6 @@ class TestUsersTab:
         # Should show warning
         mock_messagebox.assert_called()
 
-
 class TestAuditTab:
     """Test Audit Log tab"""
 
@@ -354,7 +346,6 @@ class TestAuditTab:
             assert 'Timestamp' in content or 'Username' in content
             mock_showinfo.assert_called()
 
-
 class TestSettingsTab:
     """Test Settings tab"""
 
@@ -422,7 +413,6 @@ class TestSettingsTab:
         mock_email_service.send_otp.assert_called()
         mock_showinfo.assert_called()
 
-
 class TestDataLoading:
     """Test data loading methods"""
 
@@ -453,7 +443,6 @@ class TestDataLoading:
         panel._load_audit_log.assert_called_once()
         panel._load_settings.assert_called_once()
 
-
 class TestConvenienceFunction:
     """Test show_mfa_admin convenience function"""
 
@@ -471,7 +460,6 @@ class TestConvenienceFunction:
         # Should create and return panel
         mock_panel_class.assert_called_once_with(mock_parent, admin_user_id=1)
         assert result == mock_panel
-
 
 class TestErrorHandling:
     """Test error handling in admin panel"""
@@ -497,7 +485,6 @@ class TestErrorHandling:
 
         # Should show error
         mock_showerror.assert_called()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

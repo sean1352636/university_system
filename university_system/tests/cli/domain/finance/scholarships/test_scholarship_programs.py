@@ -11,13 +11,12 @@ This module tests scholarship and financial aid management functions including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from university_system.modules.domain.finance.scholarships import scholarship_programs
-
 
 @pytest.fixture
 def temp_db():
@@ -134,7 +133,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestScholarshipManagement:
     """Test suite for scholarship management functions"""
 
@@ -197,7 +195,6 @@ class TestScholarshipManagement:
             captured = capsys.readouterr()
             assert "required" in captured.out.lower()
 
-
 class TestScholarshipAward:
     """Test suite for scholarship awarding functions"""
 
@@ -256,7 +253,6 @@ class TestScholarshipAward:
                     except Exception:
                         pass
 
-
 class TestScholarshipReports:
     """Test suite for scholarship reporting functions"""
 
@@ -280,7 +276,6 @@ class TestScholarshipReports:
 
             captured = capsys.readouterr()
             assert "Scholarship Utilization Analysis" in captured.out or "utilization" in captured.out.lower()
-
 
 class TestFinancialAidManagement:
     """Test suite for financial aid management functions"""
@@ -349,7 +344,6 @@ class TestFinancialAidManagement:
                         except Exception:
                             pass
 
-
 class TestMenuSystems:
     """Test suite for menu systems"""
 
@@ -399,7 +393,6 @@ class TestMenuSystems:
 
             captured = capsys.readouterr()
             assert "FINANCIAL AID MANAGEMENT" in captured.out
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

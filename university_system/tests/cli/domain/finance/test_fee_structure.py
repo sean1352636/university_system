@@ -5,13 +5,12 @@ Tests late fee calculations, currency conversion, and exchange rate updates
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.billing import fee_structure
-
 
 @pytest.fixture
 def temp_db():
@@ -121,7 +120,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication object"""
@@ -129,7 +127,6 @@ def mock_auth():
     auth.current_user = {"username": "test_admin"}
     auth.check_permission = MagicMock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def sample_data(temp_db):
@@ -197,7 +194,6 @@ def sample_data(temp_db):
     conn.close()
 
     return temp_db
-
 
 class TestLateFeeCalculations:
     """Test late fee calculation functionality"""
@@ -328,7 +324,6 @@ class TestLateFeeCalculations:
 
             conn.close()
 
-
 class TestLateFeeWaiver:
     """Test late fee waiver functionality"""
 
@@ -361,7 +356,6 @@ class TestLateFeeWaiver:
             assert result[1] == 'Financial hardship', "Waiver reason should be recorded"
 
             conn.close()
-
 
 class TestExchangeRates:
     """Test exchange rate functionality"""
@@ -436,7 +430,6 @@ class TestExchangeRates:
             assert result == amount, "Missing rate should return original amount"
             conn.close()
 
-
 class TestCurrencyConversionTool:
     """Test currency conversion tool"""
 
@@ -466,7 +459,6 @@ class TestCurrencyConversionTool:
             # Should handle invalid amount gracefully
             fee_structure.currency_conversion_tool()
 
-
 class TestAPIEndpoints:
     """Test API endpoints"""
 
@@ -481,7 +473,6 @@ class TestAPIEndpoints:
             # Verify response contains exchange rates
             assert isinstance(response.json, dict) or callable(response.json)
             conn.close()
-
 
 class TestPermissions:
     """Test permission requirements"""
@@ -505,7 +496,6 @@ class TestPermissions:
         with patch('university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
             fee_structure.waive_late_fee()
             # Should not proceed without permission
-
 
 class TestEdgeCases:
     """Test edge cases and error handling"""
@@ -565,7 +555,6 @@ class TestEdgeCases:
             assert result < 0, "Negative amount should remain negative"
 
             conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

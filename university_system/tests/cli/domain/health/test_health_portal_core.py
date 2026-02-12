@@ -4,7 +4,7 @@ Tests all functionality in university_system/modules/domain/health/portal/health
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -22,7 +22,6 @@ from university_system.modules.domain.health.portal.health_portal_core import (
 )
 from university_system.infrastructure.database.db import get_connection
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def test_db():
@@ -95,7 +94,6 @@ def test_db():
     finally:
         conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -108,7 +106,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.logout = Mock()
     return auth
-
 
 class TestSecurityManager:
     """Test SecurityManager class"""
@@ -123,7 +120,6 @@ class TestSecurityManager:
         result = SecurityManager.check_session_timeout(mock_auth)
         # Should return False (not timed out) for our mock auth
         assert result is False
-
 
 class TestEncryptionFunctions:
     """Test encryption utility functions"""
@@ -181,7 +177,6 @@ class TestEncryptionFunctions:
         result = decrypt_sensitive_data(invalid_data)
         assert result == invalid_data
 
-
 class TestAuditLogging:
     """Test audit logging"""
 
@@ -196,7 +191,6 @@ class TestAuditLogging:
         assert 'user123' in call_args
         assert 'create' in call_args
         assert 'record' in call_args
-
 
 class TestDatabaseInitialization:
     """Test database initialization"""
@@ -243,7 +237,6 @@ class TestDatabaseInitialization:
 
         # Should have at least one setting
         assert count >= 1
-
 
 class TestHealthPortalMenu:
     """Test health portal menu system"""
@@ -301,7 +294,6 @@ class TestHealthPortalMenu:
                 # Function may or may not be called depending on menu structure
                 # Just verify no crash occurred
 
-
 class TestMenuPermissions:
     """Test menu permission checks"""
 
@@ -336,7 +328,6 @@ class TestMenuPermissions:
                 # Student should see personal dashboard
                 assert 'Personal Health' in captured.out or 'Dashboard' in captured.out or 'Health Portal' in captured.out
 
-
 class TestSessionTimeout:
     """Test session timeout functionality"""
 
@@ -365,7 +356,6 @@ class TestSessionTimeout:
             # Should not timeout on error
             assert result is False
 
-
 class TestErrorHandling:
     """Test error handling scenarios"""
 
@@ -387,7 +377,6 @@ class TestErrorHandling:
             except AttributeError:
                 # Expected if cipher_suite is None
                 pass
-
 
 class TestIntegration:
     """Integration tests for complete workflows"""
@@ -438,7 +427,6 @@ class TestIntegration:
         # Check session timeout
         result = SecurityManager.check_session_timeout(mock_auth)
         assert result is False
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

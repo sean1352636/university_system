@@ -2,7 +2,6 @@
 Metrics tracking and recording.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,17 +28,13 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 __all__ = [
     'submit_satisfaction_rating',
     '_record_status_change_metrics',
     '_update_metrics',
 ]
-
 
 def submit_satisfaction_rating(ticket_id, rating, feedback=None):
     """Submit satisfaction rating for a resolved ticket"""
@@ -135,7 +130,6 @@ def _record_status_change_metrics(ticket_id, old_status, new_status, timestamp):
     finally:
         if conn:
             conn.close()
-
 
 def _update_metrics():
     """Update system performance metrics with improved error handling"""

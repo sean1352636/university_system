@@ -8,18 +8,17 @@ import os
 import json
 import logging
 import smtplib
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Optional, List
 from abc import ABC, abstractmethod
 from string import Template
-from university_system.modules.shared.constants import paths
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core import paths
+from university_system.core.i18n import get_text, _
 
 # Initialize logger
 logger = logging.getLogger(__name__)
-
 
 class EmailProvider(ABC):
     """Abstract base class for email providers"""
@@ -28,7 +27,6 @@ class EmailProvider(ABC):
     def send_otp(self, to_email: str, code: str, username: str = None) -> Dict:
         """Send OTP via email"""
         pass
-
 
 class SMTPEmailProvider(EmailProvider):
     """SMTP Email Provider (supports Gmail, Office365, etc.)"""
@@ -304,7 +302,6 @@ University System Security Team
 </html>
 """
 
-
 class AWS_SES_Provider(EmailProvider):
     """AWS SES Email Provider"""
 
@@ -366,7 +363,6 @@ class AWS_SES_Provider(EmailProvider):
                 'error': f'AWS SES error: {str(e)}'
             }
 
-
 class MockEmailProvider(EmailProvider):
     """Mock Email Provider for development/testing"""
 
@@ -412,7 +408,6 @@ This code expires in 10 minutes.
                 'success': False,
                 'error': f'Mock provider error: {str(e)}'
             }
-
 
 class EmailOTPService:
     """
@@ -546,7 +541,6 @@ class EmailOTPService:
             'fallback': type(self.fallback).__name__ if self.fallback else None
         }
 
-
 # Configuration loader
 def load_email_config() -> Dict:
     """Load email provider configuration from file or environment"""
@@ -567,10 +561,8 @@ def load_email_config() -> Dict:
         'smtp_whitelist': []  # Empty = all emails sent via SMTP (backward compatible)
     }
 
-
 # Default service instance
 _default_service = None
-
 
 def get_email_service() -> EmailOTPService:
     """Get or create default email service instance"""
@@ -586,12 +578,10 @@ def get_email_service() -> EmailOTPService:
 
     return _default_service
 
-
 def send_otp(to_email: str, code: str, username: str = None) -> Dict:
     """Convenience function to send OTP"""
     service = get_email_service()
     return service.send_otp(to_email, code, username)
-
 
 if __name__ == '__main__':
     # Test Email service

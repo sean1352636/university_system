@@ -15,11 +15,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock, mock_open
 from datetime import datetime
-import sqlite3
-
-# Import module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.student_affairs.student_union.elections import election_management
-
 
 @pytest.fixture
 def mock_cursor():
@@ -32,7 +29,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -42,7 +38,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -51,7 +46,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestViewElections:
     """Test viewing elections functionality."""
@@ -88,7 +82,6 @@ class TestViewElections:
         election_management.view_elections(mock_cursor)
 
         assert mock_cursor.execute.call_count >= 2
-
 
 class TestNominateForElection:
     """Test nomination functionality."""
@@ -140,7 +133,6 @@ class TestNominateForElection:
             election_management.nominate_for_election(mock_cursor, mock_conn)
             assert any('no elections' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestVoteInElection:
     """Test voting functionality."""
 
@@ -186,7 +178,6 @@ class TestVoteInElection:
             election_management.vote_in_election(mock_cursor, mock_conn)
             assert any('no eligible' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestSetupElection:
     """Test election setup functionality."""
 
@@ -219,7 +210,6 @@ class TestSetupElection:
         with patch('builtins.print') as mock_print:
             election_management.set_up_election(mock_cursor, mock_conn)
             assert any('permission' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestElectionResults:
     """Test election results viewing."""
@@ -266,7 +256,6 @@ class TestElectionResults:
 
         mock_conn.commit.assert_called()
 
-
 class TestCampaignMaterials:
     """Test campaign materials management."""
 
@@ -291,7 +280,6 @@ class TestCampaignMaterials:
         with patch('builtins.print') as mock_print:
             election_management.submit_campaign_materials(mock_cursor, mock_conn)
             assert any('not a candidate' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestCampaignExpenses:
     """Test campaign expenses tracking."""
@@ -328,7 +316,6 @@ class TestCampaignExpenses:
 
         assert mock_cursor.execute.call_count >= 2
 
-
 class TestSecurityFeatures:
     """Test election security features."""
 
@@ -360,7 +347,6 @@ class TestSecurityFeatures:
             assert any('duplicate' in str(call).lower() or 'suspicious' in str(call).lower()
                       for call in mock_print.call_args_list)
 
-
 class TestElectionMenu:
     """Test election menu display."""
 
@@ -379,7 +365,6 @@ class TestElectionMenu:
         # Actual implementation would test menu navigation
         assert True
 
-
 class TestAuthSetup:
     """Test authentication setup."""
 
@@ -388,7 +373,6 @@ class TestAuthSetup:
         election_management.set_auth(mock_auth)
 
         assert election_management.auth == mock_auth
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

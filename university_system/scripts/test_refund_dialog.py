@@ -3,7 +3,7 @@
 Test script to diagnose refund dialog issues
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 

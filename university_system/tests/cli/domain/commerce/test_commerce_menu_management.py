@@ -4,7 +4,7 @@ Tests menu item creation, updates, viewing, analytics, and import/export.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import csv
 import json
 import sys
@@ -16,7 +16,6 @@ from pathlib import Path
 sys.modules['university_system.modules.core.services.restaurant_orders_payments'] = MagicMock()
 
 from university_system.modules.domain.commerce.services.restaurant.menu import menu_management
-
 
 @pytest.fixture
 def mock_auth():
@@ -30,7 +29,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def mock_db_connection(tmp_path):
@@ -92,7 +90,6 @@ def mock_db_connection(tmp_path):
 
     conn.commit()
     return conn
-
 
 class TestMenuItemCreation:
     """Tests for menu item creation functionality."""
@@ -193,7 +190,6 @@ class TestMenuItemCreation:
         captured = capsys.readouterr()
         assert "Item name is required" in captured.out
 
-
 class TestMenuItemViewing:
     """Tests for viewing menu items."""
 
@@ -270,7 +266,6 @@ class TestMenuItemViewing:
         # Verify
         captured = capsys.readouterr()
         assert "Cheesecake" in captured.out
-
 
 class TestMenuItemUpdates:
     """Tests for updating menu items."""
@@ -355,7 +350,6 @@ class TestMenuItemUpdates:
         assert available == 0
         mock_audit.assert_called_once()
 
-
 class TestMenuItemDeletion:
     """Tests for deleting menu items."""
 
@@ -397,7 +391,6 @@ class TestMenuItemDeletion:
         item = cursor.fetchone()
         assert item is None
         mock_audit.assert_called_once()
-
 
 class TestMenuAnalytics:
     """Tests for menu analytics functionality."""
@@ -450,7 +443,6 @@ class TestMenuAnalytics:
         assert "MENU ANALYTICS" in captured.out
         assert "Best Selling Items" in captured.out or "Category Performance" in captured.out
 
-
 class TestImportExport:
     """Tests for menu import/export functionality."""
 
@@ -502,7 +494,6 @@ class TestImportExport:
         menu_management.export_menu_json()
 
         # Verify JSON file exists and contains correct structure
-
 
 class TestOrderAnalytics:
     """Tests for order analytics."""
@@ -597,7 +588,6 @@ class TestOrderAnalytics:
         assert result is not None
         assert 'summary' in result
         assert 'top_items' in result
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

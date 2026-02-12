@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -94,14 +95,14 @@ class FallbackSearchService:
     ) -> bool:
         """Index a document in FTS table"""
         try:
-            table_name = f"{index}_fts"
+            table_name = validate_table_name(index + "_fts")
 
             # Build column names and values
             columns = []
             values = []
 
             # Always include ID
-            id_field = self._get_id_field(index)
+            id_field = validate_identifier(self._get_id_field(index), "column")
             columns.append(id_field)
             values.append(doc_id)
 
@@ -109,7 +110,8 @@ class FallbackSearchService:
             searchable_fields = self._get_searchable_fields(index)
             for field in searchable_fields:
                 if field in document:
-                    columns.append(field)
+                    safe_field = validate_identifier(field, "column")
+                    columns.append(safe_field)
                     values.append(str(document[field]))
 
             with transaction() as conn:
@@ -118,13 +120,13 @@ class FallbackSearchService:
 
                 # Delete existing entry first
                 conn.execute(
-                    f"DELETE FROM {table_name} WHERE {id_field} = ?",
+                    "DELETE FROM [" + table_name + "] WHERE [" + id_field + "] = ?",
                     (doc_id,)
                 )
 
                 # Insert new entry
                 conn.execute(
-                    f"INSERT INTO {table_name} ({cols}) VALUES ({placeholders})",
+                    "INSERT INTO [" + table_name + "] (" + cols + ") VALUES (" + placeholders + ")",
                     values
                 )
 
@@ -156,22 +158,22 @@ class FallbackSearchService:
             Search results in Elasticsearch-compatible format
         """
         try:
-            table_name = f"{index}_fts"
-            id_field = self._get_id_field(index)
+            table_name = validate_table_name(index + "_fts")
+            id_field = validate_identifier(self._get_id_field(index), "column")
 
             # Build FTS query
             # Escape special characters and add wildcard
             fts_query = query.replace('"', '').strip()
-            fts_query = f'"{fts_query}"*'  # Prefix match
+            fts_query = '"' + fts_query + '"*'  # Prefix match
 
             # Base FTS search
-            sql = f"""
-                SELECT {id_field}, rank
-                FROM {table_name}
-                WHERE {table_name} MATCH ?
-                ORDER BY rank
-                LIMIT ? OFFSET ?
-            """
+            sql = (
+                "SELECT [" + id_field + "], rank"
+                " FROM [" + table_name + "]"
+                " WHERE [" + table_name + "] MATCH ?"
+                " ORDER BY rank"
+                " LIMIT ? OFFSET ?"
+            )
 
             with get_connection() as conn:
                 cursor = conn.execute(sql, (fts_query, size, from_))
@@ -194,7 +196,7 @@ class FallbackSearchService:
 
                 # Get total count
                 cursor = conn.execute(
-                    f"SELECT COUNT(*) FROM {table_name} WHERE {table_name} MATCH ?",
+                    "SELECT COUNT(*) FROM [" + table_name + "] WHERE [" + table_name + "] MATCH ?",
                     (fts_query,)
                 )
                 total = cursor.fetchone()[0]
@@ -227,17 +229,18 @@ class FallbackSearchService:
                 'events': 'campus_events'
             }
 
-            table = table_map.get(index, index)
-            id_field = self._get_id_field(index)
+            table = validate_table_name(table_map.get(index, index))
+            id_field = validate_identifier(self._get_id_field(index), "column")
 
             # Build query
-            sql = f"SELECT * FROM {table} WHERE {id_field} = ?"
+            sql = "SELECT * FROM [" + table + "] WHERE [" + id_field + "] = ?"
             params = [doc_id]
 
             # Add filters if provided
             if filters:
                 for field, value in filters.items():
-                    sql += f" AND {field} = ?"
+                    safe_field = validate_identifier(field, "column")
+                    sql += " AND [" + safe_field + "] = ?"
                     params.append(value)
 
             cursor = conn.execute(sql, params)
@@ -257,12 +260,12 @@ class FallbackSearchService:
     def delete_document(self, index: str, doc_id: str) -> bool:
         """Delete document from FTS table"""
         try:
-            table_name = f"{index}_fts"
-            id_field = self._get_id_field(index)
+            table_name = validate_table_name(index + "_fts")
+            id_field = validate_identifier(self._get_id_field(index), "column")
 
             with transaction() as conn:
                 conn.execute(
-                    f"DELETE FROM {table_name} WHERE {id_field} = ?",
+                    "DELETE FROM [" + table_name + "] WHERE [" + id_field + "] = ?",
                     (doc_id,)
                 )
 
@@ -275,14 +278,14 @@ class FallbackSearchService:
     def count(self, index: str, query: Optional[str] = None) -> int:
         """Count matching documents"""
         try:
-            table_name = f"{index}_fts"
+            table_name = validate_table_name(index + "_fts")
 
             if query:
-                fts_query = f'"{query.replace(chr(34), "").strip()}"*'
-                sql = f"SELECT COUNT(*) FROM {table_name} WHERE {table_name} MATCH ?"
+                fts_query = '"' + query.replace(chr(34), "").strip() + '"*'
+                sql = "SELECT COUNT(*) FROM [" + table_name + "] WHERE [" + table_name + "] MATCH ?"
                 params = (fts_query,)
             else:
-                sql = f"SELECT COUNT(*) FROM {table_name}"
+                sql = "SELECT COUNT(*) FROM [" + table_name + "]"
                 params = ()
 
             with get_connection() as conn:

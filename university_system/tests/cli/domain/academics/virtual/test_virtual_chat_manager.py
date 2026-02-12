@@ -14,13 +14,12 @@ import pytest
 import os
 import json
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.services.virtual_classroom.chat_manager import (
     ChatManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -86,12 +85,10 @@ def temp_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a ChatManager instance with temp database."""
     return ChatManager(db_path=temp_db)
-
 
 class TestChatManagerInit:
     """Test ChatManager initialization."""
@@ -105,7 +102,6 @@ class TestChatManagerInit:
         """Test initialization with custom database path."""
         manager = ChatManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestSendMessage:
     """Test sending chat messages."""
@@ -226,7 +222,6 @@ class TestSendMessage:
 
         assert count == 1
 
-
 class TestDeleteMessage:
     """Test message deletion."""
 
@@ -249,7 +244,6 @@ class TestDeleteMessage:
         """Test deleting a non-existent message."""
         result = manager.delete_message(99999)
         assert result is False
-
 
 class TestAddReaction:
     """Test adding reactions to messages."""
@@ -325,7 +319,6 @@ class TestAddReaction:
         result = manager.add_reaction(99999, "👍")
         assert result is False
 
-
 class TestGetMessage:
     """Test retrieving messages."""
 
@@ -348,7 +341,6 @@ class TestGetMessage:
         """Test getting a non-existent message."""
         message = manager.get_message(99999)
         assert message is None
-
 
 class TestGetSessionMessages:
     """Test retrieving messages for a session."""
@@ -424,7 +416,6 @@ class TestGetSessionMessages:
         assert messages[1]['message_id'] == msg2
         assert messages[2]['message_id'] == msg1
 
-
 class TestGetThreadMessages:
     """Test retrieving thread/reply messages."""
 
@@ -470,7 +461,6 @@ class TestGetThreadMessages:
 
         thread = manager.get_thread_messages(message_id)
         assert thread == []
-
 
 class TestSearchMessages:
     """Test message search functionality."""
@@ -525,7 +515,6 @@ class TestSearchMessages:
 
         results = manager.search_messages(1, "Python")
         assert results == []
-
 
 class TestGetChatStatistics:
     """Test chat statistics retrieval."""
@@ -586,7 +575,6 @@ class TestGetChatStatistics:
         assert stats['total_messages'] == 0
         assert stats['active_users'] == 0
 
-
 class TestClearSessionChat:
     """Test clearing all messages for a session."""
 
@@ -614,7 +602,6 @@ class TestClearSessionChat:
         result = manager.clear_session_chat(99999)
         assert result is False
 
-
 class TestDatabaseConnection:
     """Test database connection handling."""
 
@@ -630,7 +617,6 @@ class TestDatabaseConnection:
         assert result[0] == 1
 
         conn.close()
-
 
 class TestErrorHandling:
     """Test error handling in various scenarios."""
@@ -650,7 +636,6 @@ class TestErrorHandling:
 
         stats = manager.get_chat_statistics(1)
         assert stats == {}
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

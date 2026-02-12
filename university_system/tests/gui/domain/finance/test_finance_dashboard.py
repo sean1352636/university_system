@@ -12,11 +12,9 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.finance.gui.finance.dashboard import DashboardManager
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_gui():
@@ -46,12 +44,10 @@ def mock_gui():
 
     return gui
 
-
 @pytest.fixture
 def dashboard_manager(mock_gui):
     """Create a DashboardManager instance for testing"""
     return DashboardManager(mock_gui)
-
 
 @pytest.fixture
 def test_db_with_dashboard_data():
@@ -122,7 +118,6 @@ def test_db_with_dashboard_data():
     conn.commit()
     conn.close()
 
-
 class TestDashboardManagerInit:
     """Test DashboardManager initialization"""
 
@@ -142,7 +137,6 @@ class TestDashboardManagerInit:
         """Test that initialization handles missing finance_system gracefully"""
         manager = DashboardManager(mock_gui)
         assert manager.finance_system is None
-
 
 class TestDashboardRefresh:
     """Test dashboard refresh functionality"""
@@ -198,7 +192,6 @@ class TestDashboardRefresh:
         captured = capsys.readouterr()
         assert 'error' in captured.out.lower() or True
 
-
 class TestStatCardCreation:
     """Test stat card creation"""
 
@@ -211,7 +204,6 @@ class TestStatCardCreation:
 
         # Verify grid_columnconfigure was called
         parent.grid_columnconfigure.assert_called()
-
 
 class TestDashboardStats:
     """Test dashboard statistics updates"""
@@ -239,7 +231,6 @@ class TestDashboardStats:
         """Test update_dashboard_stats with missing stat attributes"""
         # Should not crash if stat attributes don't exist
         dashboard_manager.update_dashboard_stats(10000.0, 150, 2000.0, 85.5)
-
 
 class TestRecentActivity:
     """Test recent activity loading"""
@@ -282,7 +273,6 @@ class TestRecentActivity:
         # Should print error
         captured = capsys.readouterr()
         assert 'Error' in captured.out or 'error' in captured.out or True
-
 
 class TestQuickActions:
     """Test quick action methods"""
@@ -345,7 +335,6 @@ class TestQuickActions:
         # Should show error
         mock_error.assert_called()
 
-
 class TestUpdateQuickStats:
     """Test quick stats updates"""
 
@@ -376,7 +365,6 @@ class TestUpdateQuickStats:
         # Verify columnconfigure was called
         parent_frame.columnconfigure.assert_called()
 
-
 class TestGUIGeneration:
     """Test GUI generation methods"""
 
@@ -391,7 +379,6 @@ class TestGUIGeneration:
 
         # Verify thread was created
         mock_thread.assert_called()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

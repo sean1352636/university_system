@@ -3,12 +3,11 @@ Breakout Room Manager
 Handles breakout room creation and management
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 class BreakoutRoomManager:
     """Manager for breakout room operations"""

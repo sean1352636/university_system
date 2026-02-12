@@ -20,8 +20,6 @@ from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.i18n import get_text as _
 from collections import deque
 
-
-
 class PeerReviewManager:
     """Peer review system"""
 
@@ -314,7 +312,7 @@ class PeerReviewManager:
             def run_setup():
                 try:
                     import random
-                    import sqlite3
+
                     from datetime import datetime, timedelta
     
                     results_text.insert(tk.END, f"Setting up peer reviews for: {selected_assignment}\n")
@@ -537,7 +535,6 @@ class PeerReviewManager:
         """Open peer review management tools."""
         self._launch_gui_feature(self.manage_peer_reviews, "peer review management")
 
-
     def _configure_peer_review(self, assignment_id):
         """Configure peer review parameters for an assignment"""
         try:
@@ -672,7 +669,6 @@ class PeerReviewManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open configuration: {e}")
 
-
     def _assign_peer_reviewers(self, assignment_id):
         """Assign peer reviewers automatically based on configuration"""
         try:
@@ -750,12 +746,10 @@ class PeerReviewManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to assign peer reviewers: {e}")
 
-
     def _launch_gui_feature(self, callback, feature_name):
         """Helper to launch GUI features with error handling"""
         try:
             callback()
         except Exception as e:
             messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
-
 

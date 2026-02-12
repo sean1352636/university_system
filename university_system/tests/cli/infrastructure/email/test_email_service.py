@@ -5,7 +5,7 @@ Tests email sending, queuing, scheduling, templates, and notifications
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import queue
@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 
 # Import the module under test
 from university_system.infrastructure.email import email_service
-
 
 @pytest.fixture
 def temp_db():
@@ -134,7 +133,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestSendEmail:
     """Test basic email sending functionality"""
 
@@ -210,7 +208,6 @@ class TestSendEmail:
 
             assert stored_email is not None
 
-
 class TestTemplateEmail:
     """Test template-based email functionality"""
 
@@ -244,7 +241,6 @@ class TestTemplateEmail:
                     {}
                 )
 
-
 class TestEmailQueue:
     """Test email queuing functionality"""
 
@@ -277,7 +273,6 @@ class TestEmailQueue:
                 bcc=['bcc@example.com']
             )
 
-
 class TestEmailWorkers:
     """Test email worker thread functionality"""
 
@@ -301,7 +296,6 @@ class TestEmailWorkers:
             email_service.start_email_workers()
             assert len(email_service.worker_threads) > 0
             email_service.stop_email_workers()
-
 
 class TestScheduledEmails:
     """Test email scheduling functionality"""
@@ -375,7 +369,6 @@ class TestScheduledEmails:
             result = email_service.update_scheduled_email_status(email_id, 'sent')
             assert result is True or result is not None
 
-
 class TestBulkEmails:
     """Test bulk email functionality"""
 
@@ -398,7 +391,6 @@ class TestBulkEmails:
                     'welcome',
                     rate_limit=0.1  # Very short delay for testing
                 )
-
 
 class TestStoredEmails:
     """Test stored email management"""
@@ -447,7 +439,6 @@ class TestStoredEmails:
         """Test clearing old stored emails"""
         with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.clear_stored_emails(older_than_days=30)
-
 
 class TestSpecializedNotifications:
     """Test specialized notification functions"""
@@ -500,7 +491,6 @@ class TestSpecializedNotifications:
             with patch('smtplib.SMTP'):
                 result = email_service.send_password_reset(1, 'ABC123')
 
-
 class TestHealthAndWellnessNotifications:
     """Test health-related notifications"""
 
@@ -522,7 +512,6 @@ class TestHealthAndWellnessNotifications:
                     'Please get vaccinated',
                     'medium'
                 )
-
 
 class TestLibraryNotifications:
     """Test library-related notifications"""
@@ -550,7 +539,6 @@ class TestLibraryNotifications:
                 result = email_service.send_overdue_notification(
                     1, 1, 'Test Book', '2025-11-01', 15
                 )
-
 
 class TestTicketNotifications:
     """Test helpdesk ticket notifications"""
@@ -582,7 +570,6 @@ class TestTicketNotifications:
         with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_satisfaction_survey(1)
-
 
 class TestUtilityFunctions:
     """Test utility functions"""
@@ -623,7 +610,6 @@ class TestUtilityFunctions:
                     'University System'
                 )
 
-
 class TestScheduleChangeNotifications:
     """Test schedule change notifications"""
 
@@ -646,7 +632,6 @@ class TestScheduleChangeNotifications:
                 result = email_service.send_schedule_change_notification(
                     1, old_data, new_data
                 )
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

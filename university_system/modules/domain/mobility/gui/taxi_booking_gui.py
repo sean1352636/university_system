@@ -13,7 +13,7 @@ Features:
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 import random
 import string
@@ -61,7 +61,6 @@ except ImportError:
     FINANCE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
-
 
 class Database:
     """Handle all database operations using university system database"""
@@ -208,7 +207,6 @@ class Database:
         random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         return f"{prefix}-{timestamp}-{random_suffix}"
 
-
 class ModernStyle:
     """Modern styling configuration"""
     
@@ -231,7 +229,6 @@ class ModernStyle:
     FONT_BODY = (FONT_FAMILY, 11)
     FONT_SMALL = (FONT_FAMILY, 10)
     FONT_BUTTON = (FONT_FAMILY, 11, "bold")
-
 
 class TaxiBookingApp:
     """Main application class"""
@@ -2013,7 +2010,6 @@ TaxiGo - {_t("taxi.subtitle", default="Your Campus Ride")}
             messagebox.showerror(_t("common.error", default="Error"),
                                  _t("taxi.refunds.export_error", default=f"Error exporting to CSV: {str(e)}"))
 
-
 def main():
     """Main entry point"""
     root = tk.Tk()
@@ -2027,7 +2023,6 @@ def main():
     
     app = TaxiBookingApp(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

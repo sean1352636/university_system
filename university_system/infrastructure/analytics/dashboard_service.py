@@ -12,6 +12,7 @@ from collections import defaultdict
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.analytics.models import DashboardWidget, AnalyticsMetric
+from university_system.core.sql_safety import validate_identifier
 from university_system.infrastructure.analytics.retention_prediction import get_retention_predictor
 from university_system.infrastructure.analytics.performance_analytics import get_performance_analyzer
 from university_system.infrastructure.analytics.report_generator import get_report_generator
@@ -262,6 +263,10 @@ class DashboardService:
             logger.error(f"Error listing dashboards: {e}")
             return []
 
+    _DASHBOARD_ALLOWED_COLUMNS = frozenset({
+        'name', 'description', 'owner_id', 'shared', 'refresh_interval', 'layout_config',
+    })
+
     def update_dashboard(
         self,
         dashboard_id: int,
@@ -275,6 +280,15 @@ class DashboardService:
             # Handle layout_config serialization
             if 'layout_config' in updates and updates['layout_config']:
                 updates['layout_config'] = json.dumps(updates['layout_config'])
+
+            # Validate column names against whitelist
+            invalid_keys = set(updates.keys()) - self._DASHBOARD_ALLOWED_COLUMNS
+            if invalid_keys:
+                raise ValueError(f"Invalid column names: {invalid_keys}")
+
+            # Validate each column name format for defense-in-depth
+            for k in updates.keys():
+                validate_identifier(k, "column name")
 
             # Build update query
             set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
@@ -449,6 +463,11 @@ class DashboardService:
             logger.error(f"Error getting dashboard widgets: {e}")
             return []
 
+    _WIDGET_ALLOWED_COLUMNS = frozenset({
+        'widget_type', 'title', 'data_source', 'configuration',
+        'position_x', 'position_y', 'width', 'height', 'refresh_interval',
+    })
+
     def update_widget(self, widget_id: int, **updates) -> bool:
         """Update widget configuration"""
         try:
@@ -458,6 +477,15 @@ class DashboardService:
             # Handle configuration serialization
             if 'configuration' in updates and updates['configuration']:
                 updates['configuration'] = json.dumps(updates['configuration'])
+
+            # Validate column names against whitelist
+            invalid_keys = set(updates.keys()) - self._WIDGET_ALLOWED_COLUMNS
+            if invalid_keys:
+                raise ValueError(f"Invalid column names: {invalid_keys}")
+
+            # Validate each column name format for defense-in-depth
+            for k in updates.keys():
+                validate_identifier(k, "column name")
 
             # Build update query
             set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])

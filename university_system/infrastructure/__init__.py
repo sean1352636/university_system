@@ -88,13 +88,6 @@ def __getattr__(name):
         except ImportError:
             return False
 
-    if name == 'REALTIME_AVAILABLE':
-        try:
-            from university_system.infrastructure import realtime
-            return True
-        except ImportError:
-            return False
-
     if name == 'ML_AVAILABLE':
         try:
             from university_system.infrastructure import ml
@@ -128,13 +121,6 @@ def __getattr__(name):
         try:
             from university_system.infrastructure import async_utils
             return getattr(async_utils, name)
-        except ImportError:
-            return None
-
-    if name in _LAZY_REALTIME_EXPORTS:
-        try:
-            from university_system.infrastructure import realtime
-            return getattr(realtime, name)
         except ImportError:
             return None
 
@@ -192,17 +178,6 @@ _LAZY_ASYNC_EXPORTS = {
 }
 
 _LAZY_SHARED_CONTEXT_EXPORTS = {'get_auth', 'set_auth'}
-
-_LAZY_REALTIME_EXPORTS = {
-    'WebSocketManager', 'ConnectionManager', 'NotificationService', 'NotificationPriority',
-    'NotificationCategory', 'PresenceManager', 'UserStatus', 'ChatService',
-    'ChatRoomType', 'ChatMessageType', 'CollaborationService', 'DocumentType',
-    'OperationType', 'ActivityStream', 'ActivityType', 'ActivityVisibility',
-    'DashboardService', 'DashboardMetric', 'MessageType', 'get_websocket_manager',
-    'get_connection_manager', 'get_notification_service', 'get_presence_manager',
-    'get_chat_service', 'get_collaboration_service', 'get_activity_stream',
-    'get_dashboard_service'
-}
 
 _LAZY_ML_EXPORTS = {
     'CourseRecommender', 'RecommendationEngine', 'EssayGrader', 'GradingRubric',
@@ -330,38 +305,9 @@ __all__ = [
     'VALIDATION_AVAILABLE',
     'CACHE_AVAILABLE',
     'ASYNC_UTILS_AVAILABLE',
-    'REALTIME_AVAILABLE',
     'ML_AVAILABLE',
     'WORKFLOWS_AVAILABLE',
     'SEARCH_AVAILABLE',
-    # Real-time services
-    'WebSocketManager',
-    'ConnectionManager',
-    'NotificationService',
-    'NotificationPriority',
-    'NotificationCategory',
-    'PresenceManager',
-    'UserStatus',
-    'ChatService',
-    'ChatRoomType',
-    'ChatMessageType',
-    'CollaborationService',
-    'DocumentType',
-    'OperationType',
-    'ActivityStream',
-    'ActivityType',
-    'ActivityVisibility',
-    'DashboardService',
-    'DashboardMetric',
-    'MessageType',
-    'get_websocket_manager',
-    'get_connection_manager',
-    'get_notification_service',
-    'get_presence_manager',
-    'get_chat_service',
-    'get_collaboration_service',
-    'get_activity_stream',
-    'get_dashboard_service',
     # Machine Learning
     'CourseRecommender',
     'RecommendationEngine',

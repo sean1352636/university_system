@@ -42,7 +42,7 @@ from university_system.infrastructure.security.password_generator import (
     check_password_strength,
 )
 
-from university_system.infrastructure.security.audit_log_viewer_gui import (
+from university_system.modules.shared.gui.security.audit_log_viewer_gui import (
     AuditLogViewerGUI,
     AnomalyDetector,
     show_audit_log_viewer,

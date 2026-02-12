@@ -445,7 +445,7 @@ COURSE DISTRIBUTION
             try:
                 self.gui.update_status("Refreshing quality dashboard...")
 
-                dashboard_data = self.gui.backend.data_quality_dashboard()
+                dashboard_data = self.gui.get_quality_dashboard_data()
 
                 # Update the quality dashboard display
                 self.gui.quality_text.config(state='normal')

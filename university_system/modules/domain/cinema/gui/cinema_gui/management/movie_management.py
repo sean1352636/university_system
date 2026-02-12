@@ -4,8 +4,7 @@ Cinema Booking System - Movie Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_movie_management(self):
     """Display movie management page."""
@@ -55,7 +53,6 @@ def show_movie_management(self):
     ttk.Button(action_frame, text=_t("cinema.buttons.delete_selected"), style="Danger.TButton",
               command=self.delete_selected_movie).pack(side="left", padx=5)
 
-
 def refresh_movie_list(self):
     if hasattr(self, 'movie_tree'):
         for item in self.movie_tree.get_children():
@@ -71,10 +68,8 @@ def refresh_movie_list(self):
             self.movie_tree.insert("", "end", values=movie)
         conn.close()
 
-
 def show_add_movie_form(self):
     self.show_movie_form(None)
-
 
 def show_movie_form(self, movie_data):
     form_window = tk.Toplevel(self.root)
@@ -118,7 +113,7 @@ def show_movie_form(self, movie_data):
 
         try:
             duration = int(entries['duration'].get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), _t("cinema.messages.warnings.invalid_duration"))
             return
 
@@ -151,7 +146,6 @@ def show_movie_form(self, movie_data):
     ttk.Button(btn_frame, text=_t("cinema.buttons.save"), style="Success.TButton", command=save_movie).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton", command=form_window.destroy).pack(side="left", padx=5)
 
-
 def edit_selected_movie(self):
     selected = self.movie_tree.selection()
     if not selected:
@@ -167,7 +161,6 @@ def edit_selected_movie(self):
 
     if movie:
         self.show_movie_form(movie)
-
 
 def delete_selected_movie(self):
     selected = self.movie_tree.selection()

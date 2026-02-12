@@ -494,7 +494,7 @@ class DegreeAuditGUI:
                     try:
                         enroll_dt = datetime.strptime(enrollment_date.split()[0], '%Y-%m-%d')
                         enrollment_year = str(enroll_dt.year)
-                    except:
+                    except (ValueError, TypeError):
                         pass
 
                 # Standard degree is typically 120 credits
@@ -508,7 +508,7 @@ class DegreeAuditGUI:
                         enroll_dt = datetime.strptime(enrollment_date.split()[0], '%Y-%m-%d')
                         grad_year = enroll_dt.year + 4
                         expected_grad = f"{grad_year}"
-                    except:
+                    except (ValueError, TypeError):
                         pass
 
                 # Update labels

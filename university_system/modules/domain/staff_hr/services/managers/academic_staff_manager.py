@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 try:
     from university_system.modules.shared.utils.activity_logger import log_activity
@@ -45,19 +46,19 @@ class AcademicStaffManager:
             ''', (user_id,)).fetchone()
 
             if existing:
-                fields = ', '.join(f'{k} = ?' for k in data.keys())
+                fields = ', '.join(validate_identifier(k, "column") + ' = ?' for k in data.keys())
                 values = list(data.values()) + [datetime.now().isoformat(), user_id]
-                conn.execute(f'''
-                    UPDATE teaching_portfolios
-                    SET {fields}, last_updated = ? WHERE user_id = ?
-                ''', values)
+                conn.execute(
+                    'UPDATE teaching_portfolios SET ' + fields + ', last_updated = ? WHERE user_id = ?',
+                    values)
             else:
-                cols = ', '.join(['user_id'] + list(data.keys()))
+                safe_cols = [validate_identifier(k, "column") for k in data.keys()]
+                cols = ', '.join(['user_id'] + safe_cols)
                 placeholders = ', '.join(['?'] * (len(data) + 1))
                 values = [user_id] + list(data.values())
-                conn.execute(f'''
-                    INSERT INTO teaching_portfolios ({cols}) VALUES ({placeholders})
-                ''', values)
+                conn.execute(
+                    'INSERT INTO teaching_portfolios (' + cols + ') VALUES (' + placeholders + ')',
+                    values)
             return True
 
     # ==================== RESEARCH PROFILES ====================
@@ -80,19 +81,19 @@ class AcademicStaffManager:
             ''', (user_id,)).fetchone()
 
             if existing:
-                fields = ', '.join(f'{k} = ?' for k in data.keys())
+                fields = ', '.join(validate_identifier(k, "column") + ' = ?' for k in data.keys())
                 values = list(data.values()) + [datetime.now().isoformat(), user_id]
-                conn.execute(f'''
-                    UPDATE research_profiles
-                    SET {fields}, last_updated = ? WHERE user_id = ?
-                ''', values)
+                conn.execute(
+                    'UPDATE research_profiles SET ' + fields + ', last_updated = ? WHERE user_id = ?',
+                    values)
             else:
-                cols = ', '.join(['user_id'] + list(data.keys()))
+                safe_cols = [validate_identifier(k, "column") for k in data.keys()]
+                cols = ', '.join(['user_id'] + safe_cols)
                 placeholders = ', '.join(['?'] * (len(data) + 1))
                 values = [user_id] + list(data.values())
-                conn.execute(f'''
-                    INSERT INTO research_profiles ({cols}) VALUES ({placeholders})
-                ''', values)
+                conn.execute(
+                    'INSERT INTO research_profiles (' + cols + ') VALUES (' + placeholders + ')',
+                    values)
             return True
 
     # ==================== STUDENT SUPERVISIONS ====================
@@ -135,12 +136,11 @@ class AcademicStaffManager:
         if not data:
             return False
         with transaction() as conn:
-            fields = ', '.join(f'{k} = ?' for k in data.keys())
+            fields = ', '.join(validate_identifier(k, "column") + ' = ?' for k in data.keys())
             values = list(data.values()) + [datetime.now().isoformat(), supervision_id]
-            conn.execute(f'''
-                UPDATE student_supervisions
-                SET {fields}, updated_at = ? WHERE supervision_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE student_supervisions SET ' + fields + ', updated_at = ? WHERE supervision_id = ?',
+                values)
             return True
 
     # ==================== EXTERNAL EXAMINERS ====================

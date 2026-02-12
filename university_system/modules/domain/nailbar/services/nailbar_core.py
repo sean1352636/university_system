@@ -4,7 +4,7 @@ Provides business logic for nail bar/salon operations including
 treatments, appointments, technicians, and transaction management.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -36,7 +36,6 @@ TIME_SLOTS = [
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
 ]
-
 
 def init_nailbar_db():
     """Initialize nail bar database tables"""
@@ -172,7 +171,6 @@ def init_nailbar_db():
 
         logger.info("Nail bar database tables initialized successfully")
 
-
 class TreatmentManager:
     """Manages nail bar treatments"""
 
@@ -237,7 +235,6 @@ class TreatmentManager:
             )
             return True
 
-
 class TechnicianManager:
     """Manages nail technicians"""
 
@@ -289,7 +286,6 @@ class TechnicianManager:
 
             booked_times = set(row['appointment_time'] for row in booked)
             return [slot for slot in TIME_SLOTS if slot not in booked_times]
-
 
 class AppointmentManager:
     """Manages appointments"""
@@ -477,7 +473,6 @@ class AppointmentManager:
         today = datetime.now().strftime('%Y-%m-%d')
         return AppointmentManager.get_appointments_by_date(today)
 
-
 class TransactionManager:
     """Manages financial transactions"""
 
@@ -577,7 +572,6 @@ class TransactionManager:
                 'tips': row['tips'] or 0,
                 'total_revenue': row['total_revenue'] or 0
             }
-
 
 class ReportManager:
     """Generates reports for the nail bar"""
@@ -699,7 +693,6 @@ TECHNICIAN PERFORMANCE
 End of Report
 """
         return report
-
 
 def launch_nailbar_gui(parent=None, auth=None):
     """Launch the Nail Bar GUI"""

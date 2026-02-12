@@ -4,7 +4,7 @@ Course Planning Assistant Service
 Helps students plan multi-semester course schedules with prerequisite tracking.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple, Set
 import json
@@ -12,7 +12,6 @@ from collections import defaultdict, deque
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
 
 class PlanningService:
     """Service for intelligent course planning and schedule optimization."""
@@ -1036,7 +1035,7 @@ class PlanningService:
                     WHERE lse.student_id = ? AND lse.is_active = 1
                 """, (student_id,)).fetchall()
                 current_ids = {row['course_id'] for row in current if row['course_id']}
-            except:
+            except Exception:
                 current_ids = set()
 
             # Get student's program

@@ -614,19 +614,14 @@ def update_student_record():
                     "SELECT course FROM students WHERE student_id = ?",
                     (student_id,)
                 )
-                current = cursor.fetchone()[0]
-                new_course = 'DS' if current == 'CS' else 'CS'
+                old_course = cursor.fetchone()[0]
+                new_course = 'DS' if old_course == 'CS' else 'CS'
                 cursor.execute(
                     "UPDATE students SET course = ? WHERE student_id = ?",
                     (new_course, student_id)
                 )
 
-                # Update course-specific modules
-                # Get old course to determine which modules to delete
-                cursor.execute("SELECT course FROM students WHERE student_id = ?", (student_id,))
-                old_course_result = cursor.fetchone()
-                old_course = old_course_result[0] if old_course_result else 'CS'
-
+                # Delete old course-specific modules
                 if old_course == 'CS':
                     old_modules = [CS_optional_module_1['code'], CS_optional_module_2['code'],
                                   CS_optional_module_3['code'], CS_optional_module_4['code']]
@@ -634,7 +629,6 @@ def update_student_record():
                     old_modules = [DS_optional_module_1['code'], DS_optional_module_2['code'],
                                   DS_optional_module_3['code'], DS_optional_module_4['code']]
 
-                # Delete old course-specific modules by their codes
                 if old_modules:
                     placeholders = ','.join('?' * len(old_modules))
                     cursor.execute(

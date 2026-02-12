@@ -149,8 +149,9 @@ class UpdateManager:
                     messagebox.showerror(_t("batch_ops.msg_titles.error"), "Module name is required for add/replace operations")
                     return
 
+                course = course_var.get()
                 dialog.destroy()
-                self.execute_bulk_module_operation(operation, student_selection, course_var.get(),
+                self.execute_bulk_module_operation(operation, student_selection, course,
                                                  module_code, module_name, module_type)
 
         ttk.Button(button_frame, text=_t("batch_ops.buttons.execute"), command=execute_operation).pack(side=tk.LEFT, padx=10)

@@ -7,7 +7,7 @@ Features: Stock tracking, sold status, revenue calculation, and reporting.
 Integrated with the University Management System.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 import csv
 import json
@@ -21,6 +21,7 @@ from decimal import Decimal
 # University system imports
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.database.db import get_connection
+from university_system.core.sql_safety import safe_alter_table_add_column
 
 # Import auth instance management
 try:
@@ -93,6 +94,15 @@ WISHLISTS_TABLE = "charity_shop_wishlists"
 FEEDBACK_TABLE = "charity_shop_feedback"
 REFERRALS_TABLE = "charity_shop_referrals"
 
+# Validate all table name constants at module load time
+from university_system.core.sql_safety import validate_table_name
+for _tbl in [TABLE_NAME, CUSTOMERS_TABLE, DONATIONS_TABLE, DONORS_TABLE, STAFF_TABLE,
+             GIFT_CARDS_TABLE, PRICE_HISTORY_TABLE, SALES_TABLE, BUNDLES_TABLE,
+             PROMOTIONS_TABLE, LAYAWAY_TABLE, LOYALTY_TABLE, ARCHIVED_TABLE,
+             LOCATIONS_TABLE, SHIFTS_TABLE, TASKS_TABLE, WISHLISTS_TABLE,
+             FEEDBACK_TABLE, REFERRALS_TABLE]:
+    validate_table_name(_tbl)
+
 # Categories for charity shop items
 CATEGORIES = [
     "Books", "Clothing", "Electronics", "Furniture", "Homeware",
@@ -108,7 +118,6 @@ DEFAULT_LOW_STOCK_THRESHOLD = 5
 # Loyalty points per pound spent
 LOYALTY_POINTS_PER_POUND = 10
 
-
 def set_auth(auth_instance: Any) -> None:
     """Set the global auth instance for charity shop CLI."""
     global auth
@@ -119,7 +128,6 @@ def set_auth(auth_instance: Any) -> None:
             set_shared_auth(auth_instance)
         except Exception as e:
             logger.warning(f"Failed to set auth in shared_context: {e}")
-
 
 def init_charity_shop_db() -> bool:
     """Initialize the charity shop database tables."""
@@ -134,9 +142,9 @@ def init_charity_shop_db() -> bool:
         if 'sold' not in columns:
             if 'id' in columns:
                 # Migration: add new columns to existing table
-                cursor.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN sold INTEGER DEFAULT 0")
-                cursor.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN sold_date TEXT")
-                cursor.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN sold_quantity INTEGER DEFAULT 0")
+                safe_alter_table_add_column(TABLE_NAME, "sold", "INTEGER DEFAULT 0", conn)
+                safe_alter_table_add_column(TABLE_NAME, "sold_date", "TEXT", conn)
+                safe_alter_table_add_column(TABLE_NAME, "sold_quantity", "INTEGER DEFAULT 0", conn)
             else:
                 # Create new table
                 cursor.execute(f"""
@@ -167,10 +175,7 @@ def init_charity_shop_db() -> bool:
         ]
         for col_name, col_def in new_columns:
             if col_name not in columns:
-                try:
-                    cursor.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN {col_name} {col_def}")
-                except sqlite3.OperationalError:
-                    pass
+                safe_alter_table_add_column(TABLE_NAME, col_name, col_def, conn)
 
         # Create customers table
         cursor.execute(f"""
@@ -462,7 +467,6 @@ def init_charity_shop_db() -> bool:
         print(f"Database error: {e}")
         return False
 
-
 def setup_charity_shop_permissions(auth_instance=None) -> None:
     """Setup permissions for the charity shop module."""
     if auth_instance is None:
@@ -512,7 +516,6 @@ def setup_charity_shop_permissions(auth_instance=None) -> None:
     except Exception as e:
         logger.warning(f"Could not setup charity shop permissions: {e}")
 
-
 # ============================================================================
 # Database Operations
 # ============================================================================
@@ -539,7 +542,6 @@ def get_all_stock(show_sold: str = "all") -> List[Tuple]:
     conn.close()
     return results
 
-
 def search_stock(search_term: str, category: str = "All", show_sold: str = "all") -> List[Tuple]:
     """Search stock by name and optionally filter by category and sold status."""
     conn = get_connection()
@@ -563,7 +565,6 @@ def search_stock(search_term: str, category: str = "All", show_sold: str = "all"
     conn.close()
     return results
 
-
 def add_item(name: str, category: str, price: float, quantity: int, condition: str) -> bool:
     """Add a new stock item."""
     try:
@@ -583,7 +584,6 @@ def add_item(name: str, category: str, price: float, quantity: int, condition: s
     except sqlite3.Error as e:
         logger.error(f"Error adding item: {e}")
         return False
-
 
 def update_item(item_id: int, name: str, category: str, price: float, quantity: int,
                 condition: str, sold: bool, sold_quantity: int = 0) -> bool:
@@ -606,7 +606,6 @@ def update_item(item_id: int, name: str, category: str, price: float, quantity: 
     except sqlite3.Error as e:
         logger.error(f"Error updating item: {e}")
         return False
-
 
 def mark_as_sold(item_id: int, quantity_sold: int = None) -> bool:
     """Mark an item as sold."""
@@ -651,7 +650,6 @@ def mark_as_sold(item_id: int, quantity_sold: int = None) -> bool:
         logger.error(f"Error marking item as sold: {e}")
         return False
 
-
 def mark_as_available(item_id: int) -> bool:
     """Mark an item as available (not sold)."""
     try:
@@ -667,7 +665,6 @@ def mark_as_available(item_id: int) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error marking item as available: {e}")
         return False
-
 
 def delete_item(item_id: int) -> bool:
     """Delete a stock item."""
@@ -692,7 +689,6 @@ def delete_item(item_id: int) -> bool:
         logger.error(f"Error deleting item: {e}")
         return False
 
-
 def get_stock_summary() -> Tuple:
     """Get summary statistics for available stock."""
     conn = get_connection()
@@ -707,7 +703,6 @@ def get_stock_summary() -> Tuple:
     result = cursor.fetchone()
     conn.close()
     return result
-
 
 def get_revenue_summary() -> Tuple:
     """Get revenue statistics from sold items."""
@@ -724,7 +719,6 @@ def get_revenue_summary() -> Tuple:
     conn.close()
     return result
 
-
 def get_revenue_by_category() -> List[Tuple]:
     """Get revenue breakdown by category."""
     conn = get_connection()
@@ -739,7 +733,6 @@ def get_revenue_by_category() -> List[Tuple]:
     conn.close()
     return results
 
-
 def get_stock_by_category() -> List[Tuple]:
     """Get stock count by category."""
     conn = get_connection()
@@ -753,7 +746,6 @@ def get_stock_by_category() -> List[Tuple]:
     results = cursor.fetchall()
     conn.close()
     return results
-
 
 # ============================================================================
 # INVENTORY MANAGEMENT FUNCTIONS (10)
@@ -798,7 +790,6 @@ def bulk_import_items(file_path: str) -> Tuple[int, int]:
 
     return success_count, error_count
 
-
 def bulk_export_items(file_path: str, filter_type: str = "all") -> bool:
     """Export inventory to CSV file."""
     try:
@@ -819,7 +810,6 @@ def bulk_export_items(file_path: str, filter_type: str = "all") -> bool:
     except Exception as e:
         logger.error(f"Error exporting items: {e}")
         return False
-
 
 def adjust_stock_quantity(item_id: int, adjustment: int, reason: str = "") -> bool:
     """Quick adjust stock levels (add positive, subtract negative)."""
@@ -850,7 +840,6 @@ def adjust_stock_quantity(item_id: int, adjustment: int, reason: str = "") -> bo
         logger.error(f"Error adjusting stock: {e}")
         return False
 
-
 def set_low_stock_alert(item_id: int, threshold: int) -> bool:
     """Configure low stock alert threshold for an item."""
     try:
@@ -864,7 +853,6 @@ def set_low_stock_alert(item_id: int, threshold: int) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error setting low stock alert: {e}")
         return False
-
 
 def view_low_stock_items(threshold: int = None) -> List[Tuple]:
     """Show items needing restock (below threshold)."""
@@ -889,7 +877,6 @@ def view_low_stock_items(threshold: int = None) -> List[Tuple]:
     results = cursor.fetchall()
     conn.close()
     return results
-
 
 def merge_duplicate_items(item_id_keep: int, item_id_merge: int) -> bool:
     """Combine similar items by merging quantities."""
@@ -926,7 +913,6 @@ def merge_duplicate_items(item_id_keep: int, item_id_merge: int) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error merging items: {e}")
         return False
-
 
 def archive_old_items(days_old: int = 90) -> int:
     """Move items older than X days to archive. Returns count of archived items."""
@@ -967,7 +953,6 @@ def archive_old_items(days_old: int = 90) -> int:
         logger.error(f"Error archiving items: {e}")
         return 0
 
-
 def restore_archived_items(archived_ids: List[int] = None) -> int:
     """Bring back archived items. If no IDs provided, shows list to choose from."""
     try:
@@ -998,7 +983,6 @@ def restore_archived_items(archived_ids: List[int] = None) -> int:
         logger.error(f"Error restoring items: {e}")
         return 0
 
-
 def get_archived_items() -> List[Tuple]:
     """Get list of archived items."""
     conn = get_connection()
@@ -1007,7 +991,6 @@ def get_archived_items() -> List[Tuple]:
     results = cursor.fetchall()
     conn.close()
     return results
-
 
 def transfer_between_locations(item_id: int, from_location: int, to_location: int, quantity: int) -> bool:
     """Transfer stock to different shop locations."""
@@ -1058,7 +1041,6 @@ def transfer_between_locations(item_id: int, from_location: int, to_location: in
         logger.error(f"Error transferring items: {e}")
         return False
 
-
 def barcode_scanner_integration(barcode: str) -> Optional[Dict]:
     """Look up item by barcode or create new entry."""
     conn = get_connection()
@@ -1080,7 +1062,6 @@ def barcode_scanner_integration(barcode: str) -> Optional[Dict]:
         }
     return None
 
-
 def set_item_barcode(item_id: int, barcode: str) -> bool:
     """Set barcode for an item."""
     try:
@@ -1093,7 +1074,6 @@ def set_item_barcode(item_id: int, barcode: str) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error setting barcode: {e}")
         return False
-
 
 # ============================================================================
 # SALES & PRICING FUNCTIONS (10)
@@ -1138,7 +1118,6 @@ def apply_discount(item_id: int, discount_type: str, discount_value: float) -> b
         logger.error(f"Error applying discount: {e}")
         return False
 
-
 def create_sale_bundle(name: str, description: str, item_ids: List[int], bundle_price: float) -> Optional[int]:
     """Bundle multiple items at special price."""
     try:
@@ -1162,7 +1141,6 @@ def create_sale_bundle(name: str, description: str, item_ids: List[int], bundle_
     except sqlite3.Error as e:
         logger.error(f"Error creating bundle: {e}")
         return None
-
 
 def get_bundles(active_only: bool = True) -> List[Dict]:
     """Get all bundles."""
@@ -1191,7 +1169,6 @@ def get_bundles(active_only: bool = True) -> List[Dict]:
         })
     return bundles
 
-
 def price_history_tracker(item_id: int) -> List[Dict]:
     """Track price changes over time for an item."""
     conn = get_connection()
@@ -1216,7 +1193,6 @@ def price_history_tracker(item_id: int) -> List[Dict]:
 
     conn.close()
     return history
-
 
 def dynamic_pricing_suggestions(item_id: int) -> Dict:
     """Suggest prices based on demand/condition."""
@@ -1246,7 +1222,7 @@ def dynamic_pricing_suggestions(item_id: int) -> Dict:
     try:
         date_obj = datetime.strptime(date_added, "%Y-%m-%d")
         days_in_stock = (datetime.now() - date_obj).days
-    except:
+    except (ValueError, TypeError):
         days_in_stock = 0
 
     conn.close()
@@ -1271,7 +1247,6 @@ def dynamic_pricing_suggestions(item_id: int) -> Dict:
         'condition': condition,
         'reason': 'Based on category average, condition, and time in stock'
     }
-
 
 def create_promotional_event(name: str, discount_type: str, discount_value: float,
                             start_date: str, end_date: str, category: str = None,
@@ -1298,7 +1273,6 @@ def create_promotional_event(name: str, discount_type: str, discount_value: floa
     except sqlite3.Error as e:
         logger.error(f"Error creating promotion: {e}")
         return None
-
 
 def get_active_promotions() -> List[Dict]:
     """Get currently active promotions."""
@@ -1327,7 +1301,6 @@ def get_active_promotions() -> List[Dict]:
 
     conn.close()
     return promos
-
 
 def process_refund(sale_id: int, reason: str) -> bool:
     """Handle returns and refunds."""
@@ -1381,7 +1354,6 @@ def process_refund(sale_id: int, reason: str) -> bool:
         logger.error(f"Error processing refund: {e}")
         return False
 
-
 def layaway_system(item_id: int, customer_id: int, deposit: float, due_days: int = 30) -> Optional[int]:
     """Hold items for customers with deposits."""
     try:
@@ -1418,7 +1390,6 @@ def layaway_system(item_id: int, customer_id: int, deposit: float, due_days: int
     except sqlite3.Error as e:
         logger.error(f"Error creating layaway: {e}")
         return None
-
 
 def get_layaways(customer_id: int = None, status: str = 'active') -> List[Dict]:
     """Get layaway records."""
@@ -1458,7 +1429,6 @@ def get_layaways(customer_id: int = None, status: str = 'active') -> List[Dict]:
 
     conn.close()
     return layaways
-
 
 def gift_card_management(action: str, **kwargs) -> Any:
     """Issue and redeem gift cards."""
@@ -1517,7 +1487,6 @@ def gift_card_management(action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def loyalty_points_system(customer_id: int, action: str, **kwargs) -> Any:
     """Track customer purchases for rewards."""
     conn = get_connection()
@@ -1571,7 +1540,6 @@ def loyalty_points_system(customer_id: int, action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def calculate_profit_margin(item_id: int = None, category: str = None) -> Dict:
     """Show profit after donation costs."""
     conn = get_connection()
@@ -1601,6 +1569,7 @@ def calculate_profit_margin(item_id: int = None, category: str = None) -> Dict:
         return {}
 
     else:
+        params = []
         query = f"""
             SELECT SUM(price * sold_quantity) as total_revenue,
                    SUM((price - COALESCE(donation_cost, 0)) * sold_quantity) as total_profit
@@ -1608,9 +1577,10 @@ def calculate_profit_margin(item_id: int = None, category: str = None) -> Dict:
             WHERE sold_quantity > 0
         """
         if category:
-            query = query.replace("WHERE", f"WHERE category = '{category}' AND")
+            query = query.replace("WHERE", "WHERE category = ? AND")
+            params.append(category)
 
-        cursor.execute(query)
+        cursor.execute(query, params)
         row = cursor.fetchone()
         conn.close()
 
@@ -1621,7 +1591,6 @@ def calculate_profit_margin(item_id: int = None, category: str = None) -> Dict:
                 'margin_percent': (row[1] / row[0] * 100) if row[0] > 0 else 0
             }
         return {'total_revenue': 0, 'total_profit': 0, 'margin_percent': 0}
-
 
 # ============================================================================
 # REPORTING & ANALYTICS FUNCTIONS (10)
@@ -1660,7 +1629,6 @@ def generate_daily_sales_report(date: str = None) -> Dict:
         'by_payment_method': [{'method': r[0], 'count': r[1], 'amount': r[2]} for r in by_payment]
     }
 
-
 def generate_weekly_sales_report(start_date: str = None) -> Dict:
     """Weekly performance report."""
     if not start_date:
@@ -1697,7 +1665,6 @@ def generate_weekly_sales_report(start_date: str = None) -> Dict:
         'total_items_sold': totals[2] or 0,
         'daily_breakdown': [{'date': d[0], 'transactions': d[1], 'revenue': d[2], 'items': d[3]} for d in daily]
     }
-
 
 def generate_monthly_sales_report(year: int = None, month: int = None) -> Dict:
     """Monthly trends report."""
@@ -1742,7 +1709,6 @@ def generate_monthly_sales_report(year: int = None, month: int = None) -> Dict:
         'weekly_breakdown': [{'week': w[0], 'transactions': w[1], 'revenue': w[2]} for w in weekly]
     }
 
-
 def best_selling_items_report(limit: int = 10, period_days: int = 30) -> List[Dict]:
     """Top performing items."""
     conn = get_connection()
@@ -1774,7 +1740,6 @@ def best_selling_items_report(limit: int = 10, period_days: int = 30) -> List[Di
     conn.close()
     return results
 
-
 def slow_moving_items_report(days_threshold: int = 60) -> List[Dict]:
     """Items not selling."""
     conn = get_connection()
@@ -1804,7 +1769,6 @@ def slow_moving_items_report(days_threshold: int = 60) -> List[Dict]:
 
     conn.close()
     return results
-
 
 def revenue_trend_analysis(period: str = 'monthly', num_periods: int = 12) -> List[Dict]:
     """Revenue over time analysis."""
@@ -1846,7 +1810,6 @@ def revenue_trend_analysis(period: str = 'monthly', num_periods: int = 12) -> Li
     conn.close()
     return results
 
-
 def category_performance_comparison(period_days: int = 30) -> List[Dict]:
     """Compare category sales."""
     conn = get_connection()
@@ -1879,7 +1842,6 @@ def category_performance_comparison(period_days: int = 30) -> List[Dict]:
 
     conn.close()
     return results
-
 
 def seasonal_trends_report() -> Dict:
     """Identify seasonal patterns."""
@@ -1931,7 +1893,6 @@ def seasonal_trends_report() -> Dict:
         'by_day_of_week': daily
     }
 
-
 def donor_contribution_report(period_days: int = 365) -> List[Dict]:
     """Track donations by source."""
     conn = get_connection()
@@ -1963,7 +1924,6 @@ def donor_contribution_report(period_days: int = 365) -> List[Dict]:
 
     conn.close()
     return results
-
 
 def tax_deduction_report(year: int = None) -> List[Dict]:
     """Generate donation receipts for tax purposes."""
@@ -1999,7 +1959,6 @@ def tax_deduction_report(year: int = None) -> List[Dict]:
     conn.close()
     return results
 
-
 # ============================================================================
 # CUSTOMER MANAGEMENT FUNCTIONS (8)
 # ============================================================================
@@ -2033,7 +1992,6 @@ def register_customer(name: str, email: str = None, phone: str = None,
         logger.error(f"Error registering customer: {e}")
         return None
 
-
 def get_customer(customer_id: int) -> Optional[Dict]:
     """Get customer details."""
     conn = get_connection()
@@ -2060,7 +2018,6 @@ def get_customer(customer_id: int) -> Optional[Dict]:
             'notes': row[12]
         }
     return None
-
 
 def customer_purchase_history(customer_id: int) -> List[Dict]:
     """View customer transactions."""
@@ -2090,7 +2047,6 @@ def customer_purchase_history(customer_id: int) -> List[Dict]:
 
     conn.close()
     return history
-
 
 def customer_wishlist(customer_id: int, action: str, **kwargs) -> Any:
     """Save items customers are interested in."""
@@ -2137,7 +2093,6 @@ def customer_wishlist(customer_id: int, action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def send_customer_notifications(customer_ids: List[int], subject: str, message: str,
                                method: str = 'email') -> int:
     """Email/SMS about new items (returns count of notifications sent)."""
@@ -2159,7 +2114,6 @@ def send_customer_notifications(customer_ids: List[int], subject: str, message: 
 
     conn.close()
     return sent_count
-
 
 def customer_feedback_system(action: str, **kwargs) -> Any:
     """Collect reviews and ratings."""
@@ -2214,7 +2168,6 @@ def customer_feedback_system(action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def vip_customer_management(action: str, customer_id: int = None) -> Any:
     """Track frequent shoppers."""
     conn = get_connection()
@@ -2267,7 +2220,6 @@ def vip_customer_management(action: str, customer_id: int = None) -> Any:
     conn.close()
     return None
 
-
 def customer_birthday_discounts() -> List[Dict]:
     """Get customers with birthdays this month for special offers."""
     conn = get_connection()
@@ -2293,7 +2245,6 @@ def customer_birthday_discounts() -> List[Dict]:
 
     conn.close()
     return customers
-
 
 def customer_referral_program(referrer_code: str, new_customer_id: int, reward_points: int = 100) -> bool:
     """Reward customer referrals."""
@@ -2331,7 +2282,6 @@ def customer_referral_program(referrer_code: str, new_customer_id: int, reward_p
     except sqlite3.Error as e:
         logger.error(f"Error processing referral: {e}")
         return False
-
 
 # ============================================================================
 # DONATION MANAGEMENT FUNCTIONS (6)
@@ -2377,7 +2327,6 @@ def record_donation(donor_id: int, item_description: str, category: str = None,
         logger.error(f"Error recording donation: {e}")
         return None
 
-
 def generate_donation_receipt(donation_id: int) -> Optional[Dict]:
     """Create tax receipts for donors."""
     conn = get_connection()
@@ -2411,7 +2360,6 @@ def generate_donation_receipt(donation_id: int) -> Optional[Dict]:
         'statement': 'This receipt confirms that the above items were donated. '
                     'No goods or services were provided in exchange for this donation.'
     }
-
 
 def donor_database(action: str, **kwargs) -> Any:
     """Track donor information and history."""
@@ -2491,7 +2439,6 @@ def donor_database(action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def donation_value_estimator(category: str, condition: str, description: str = "") -> float:
     """Estimate value for tax purposes based on category and condition."""
     # Base values by category (in GBP)
@@ -2521,7 +2468,6 @@ def donation_value_estimator(category: str, condition: str, description: str = "
     multiplier = condition_mult.get(condition, 1.0)
 
     return round(base * multiplier, 2)
-
 
 def donation_drive_tracker(action: str, **kwargs) -> Any:
     """Manage collection events."""
@@ -2576,7 +2522,6 @@ def donation_drive_tracker(action: str, **kwargs) -> Any:
 
     conn.close()
     return None
-
 
 def thank_you_letter_generator(donor_id: int, year: int = None) -> Dict:
     """Generate automated donor appreciation letter."""
@@ -2633,7 +2578,6 @@ University Charity Shop Team
     }
 
     return letter
-
 
 # ============================================================================
 # STAFF & OPERATIONS FUNCTIONS (6)
@@ -2695,7 +2639,6 @@ def staff_performance_tracker(staff_id: int = None, period_days: int = 30) -> An
         conn.close()
         return staff
 
-
 def shift_scheduling(action: str, **kwargs) -> Any:
     """Manage volunteer/staff schedules."""
     conn = get_connection()
@@ -2713,7 +2656,7 @@ def shift_scheduling(action: str, **kwargs) -> Any:
             start = datetime.strptime(start_time, "%H:%M")
             end = datetime.strptime(end_time, "%H:%M")
             hours = (end - start).seconds / 3600
-        except:
+        except (ValueError, TypeError):
             hours = 0
 
         cursor.execute(f"""
@@ -2772,7 +2715,6 @@ def shift_scheduling(action: str, **kwargs) -> Any:
 
     conn.close()
     return None
-
 
 def task_assignment_system(action: str, **kwargs) -> Any:
     """Assign daily tasks to staff."""
@@ -2863,7 +2805,6 @@ def task_assignment_system(action: str, **kwargs) -> Any:
     conn.close()
     return None
 
-
 def volunteer_hours_tracker(staff_id: int, period: str = 'month') -> Dict:
     """Log volunteer time."""
     conn = get_connection()
@@ -2917,7 +2858,6 @@ def volunteer_hours_tracker(staff_id: int, period: str = 'month') -> Dict:
         }
     return {}
 
-
 def opening_closing_checklist(action: str, checklist_type: str = 'opening') -> Any:
     """Daily procedures checklist."""
     # Predefined checklists
@@ -2965,7 +2905,6 @@ def opening_closing_checklist(action: str, checklist_type: str = 'opening') -> A
 
     return None
 
-
 def cash_register_reconciliation(opening_float: float, expected_total: float,
                                 actual_total: float, notes: str = "") -> Dict:
     """End-of-day cash counting."""
@@ -2987,7 +2926,6 @@ def cash_register_reconciliation(opening_float: float, expected_total: float,
                     status=status, difference=difference)
 
     return result
-
 
 def register_staff(name: str, email: str = None, phone: str = None, role: str = 'volunteer') -> Optional[int]:
     """Register a new staff member or volunteer."""
@@ -3011,7 +2949,6 @@ def register_staff(name: str, email: str = None, phone: str = None, role: str = 
     except sqlite3.Error as e:
         logger.error(f"Error registering staff: {e}")
         return None
-
 
 def get_all_staff(active_only: bool = True) -> List[Dict]:
     """Get all staff members."""
@@ -3043,7 +2980,6 @@ def get_all_staff(active_only: bool = True) -> List[Dict]:
     conn.close()
     return staff
 
-
 def get_all_locations() -> List[Dict]:
     """Get all shop locations."""
     conn = get_connection()
@@ -3064,7 +3000,6 @@ def get_all_locations() -> List[Dict]:
     conn.close()
     return locations
 
-
 def add_location(name: str, address: str = None, phone: str = None, manager: str = None) -> Optional[int]:
     """Add a new shop location."""
     try:
@@ -3083,7 +3018,6 @@ def add_location(name: str, address: str = None, phone: str = None, manager: str
     except sqlite3.Error as e:
         logger.error(f"Error adding location: {e}")
         return None
-
 
 # ============================================================================
 # CLI Menu Functions
@@ -3105,7 +3039,7 @@ def display_charity_shop_menu() -> None:
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{TABLE_NAME}'")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (TABLE_NAME,))
         if not cursor.fetchone():
             conn.close()
             print("Charity shop database not initialized. Initializing now...")
@@ -3270,7 +3204,6 @@ def display_charity_shop_menu() -> None:
                 break
             print(get_text('charity.invalid_input', default='Invalid input. Please enter a number.'))
 
-
 def view_stock_cli(filter_type: str = 'all') -> None:
     """View stock items in CLI."""
     stock = get_all_stock(filter_type)
@@ -3295,7 +3228,6 @@ def view_stock_cli(filter_type: str = 'all') -> None:
     print(f"Total: {len(stock)} items")
 
     input("\nPress Enter to continue...")
-
 
 def search_stock_cli() -> None:
     """Search stock items."""
@@ -3332,7 +3264,6 @@ def search_stock_cli() -> None:
         print(f"\nFound {len(results)} items.")
 
     input("\nPress Enter to continue...")
-
 
 def add_item_cli() -> None:
     """Add a new item via CLI."""
@@ -3387,7 +3318,6 @@ def add_item_cli() -> None:
         print("\n❌ Failed to add item.")
 
     input("\nPress Enter to continue...")
-
 
 def edit_item_cli() -> None:
     """Edit an existing item via CLI."""
@@ -3464,7 +3394,6 @@ def edit_item_cli() -> None:
 
     input("\nPress Enter to continue...")
 
-
 def sell_item_cli() -> None:
     """Sell an item via CLI."""
     print("\n--- Sell Item ---")
@@ -3518,7 +3447,6 @@ def sell_item_cli() -> None:
 
     input("\nPress Enter to continue...")
 
-
 def mark_available_cli() -> None:
     """Mark an item as available via CLI."""
     print("\n--- Mark Item Available ---")
@@ -3535,7 +3463,6 @@ def mark_available_cli() -> None:
         print("\n❌ Failed to update item.")
 
     input("\nPress Enter to continue...")
-
 
 def delete_item_cli() -> None:
     """Delete an item via CLI."""
@@ -3568,7 +3495,6 @@ def delete_item_cli() -> None:
         print("Deletion cancelled.")
 
     input("\nPress Enter to continue...")
-
 
 def view_reports_cli() -> None:
     """View charity shop reports."""
@@ -3738,7 +3664,6 @@ def view_reports_cli() -> None:
         elif choice == '13':
             break
 
-
 # ============================================================================
 # INVENTORY MANAGEMENT CLI
 # ============================================================================
@@ -3899,7 +3824,6 @@ def inventory_management_cli() -> None:
         elif choice == '11':
             break
 
-
 # ============================================================================
 # SALES & PRICING CLI
 # ============================================================================
@@ -4056,7 +3980,6 @@ def sales_pricing_cli() -> None:
         elif choice == '12':
             break
 
-
 def layaway_menu_cli() -> None:
     """Layaway submenu."""
     while True:
@@ -4094,7 +4017,6 @@ def layaway_menu_cli() -> None:
 
         elif choice == '3':
             break
-
 
 def gift_card_menu_cli() -> None:
     """Gift card submenu."""
@@ -4150,7 +4072,6 @@ def gift_card_menu_cli() -> None:
         elif choice == '4':
             break
 
-
 def loyalty_menu_cli() -> None:
     """Loyalty points submenu."""
     while True:
@@ -4196,7 +4117,6 @@ def loyalty_menu_cli() -> None:
 
         elif choice == '4':
             break
-
 
 # ============================================================================
 # CUSTOMER MANAGEMENT CLI
@@ -4365,7 +4285,6 @@ def customer_management_cli() -> None:
         elif choice == '9':
             break
 
-
 # ============================================================================
 # DONATION MANAGEMENT CLI
 # ============================================================================
@@ -4520,7 +4439,6 @@ def donation_management_cli() -> None:
 
         elif choice == '10':
             break
-
 
 # ============================================================================
 # STAFF & OPERATIONS CLI
@@ -4703,7 +4621,6 @@ def staff_operations_cli() -> None:
 
         elif choice == '11':
             break
-
 
 # Export functions for use in cli_main.py
 __all__ = [

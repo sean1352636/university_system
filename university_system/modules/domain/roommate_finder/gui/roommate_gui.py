@@ -8,11 +8,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 from typing import Optional, List, Dict
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.infrastructure.shared_context import get_auth
 from university_system.modules.domain.roommate_finder.services.roommate_service import RoommateService
-
 
 class RoommateFinderGUI:
     """Main GUI for Roommate Finder System"""
@@ -563,7 +561,7 @@ class RoommateFinderGUI:
                 import json
                 try:
                     reasons = json.loads(match['match_reasons']) if isinstance(match['match_reasons'], str) else match['match_reasons']
-                except:
+                except (ValueError, json.JSONDecodeError):
                     reasons = []
 
                 # Determine which profile is the match
@@ -607,7 +605,7 @@ class RoommateFinderGUI:
                 import json
                 try:
                     reasons = json.loads(match['match_reasons']) if isinstance(match['match_reasons'], str) else match['match_reasons']
-                except:
+                except (ValueError, json.JSONDecodeError):
                     reasons = []
 
                 # Display details
@@ -794,14 +792,12 @@ class RoommateFinderGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load statistics: {e}")
 
-
 def main():
     """Main entry point for GUI"""
     root = tk.Tk()
     root.withdraw()  # Hide main window
     app = RoommateFinderGUI(root)
     root.mainloop()
-
 
 if __name__ == '__main__':
     main()

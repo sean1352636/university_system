@@ -31,6 +31,13 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(c
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Import template functions
+list_templates = load_template = None
+try:
+    from university_system.infrastructure.email.template_utils import list_templates, load_template
+except ImportError:
+    pass
+
 class ComposeEmailDialog:
     def __init__(self, parent, auth, recipient=None):
         self.auth = auth

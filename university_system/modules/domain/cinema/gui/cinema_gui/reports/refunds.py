@@ -8,7 +8,7 @@ with integration to the university finance system.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 import csv
 from datetime import datetime, timedelta
@@ -57,7 +57,6 @@ except ImportError:
     def send_email(*args, **kwargs):
         return False
     render_template = None
-
 
 def show_refunds_page(self):
     """Display refunds management interface"""
@@ -133,7 +132,6 @@ def show_refunds_page(self):
     # Load data
     self.refresh_cinema_refunds_list()
 
-
 def refresh_cinema_refunds_list(self):
     """Refresh the refunds list with search support"""
     # Clear existing items
@@ -178,7 +176,7 @@ def refresh_cinema_refunds_list(self):
                 try:
                     date_obj = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                     formatted_date = date_obj.strftime('%Y-%m-%d %H:%M')
-                except:
+                except (ValueError, TypeError):
                     formatted_date = date
             else:
                 formatted_date = ''
@@ -204,7 +202,6 @@ def refresh_cinema_refunds_list(self):
         print(f"Error refreshing refunds list: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to load refunds: {str(e)}")
 
-
 def process_cinema_refund(self):
     """Process a refund for a cinema booking"""
     # Get selected booking
@@ -228,7 +225,7 @@ def process_cinema_refund(self):
     # Parse amount
     try:
         amount = float(amount_str.replace('\u00a3', '').replace(',', ''))
-    except:
+    except (ValueError, TypeError):
         messagebox.showerror(_t("cinema.common.error"), "Invalid amount format.")
         return
 
@@ -256,7 +253,6 @@ def process_cinema_refund(self):
     except Exception as e:
         print(f"Error processing cinema refund: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to process refund: {str(e)}")
-
 
 def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, customer_email):
     """Show dialog to select refund method"""
@@ -397,7 +393,6 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
     ttk.Button(buttons_frame, text=_t("cinema.buttons.cancel"),
               command=dialog.destroy, width=30).pack(pady=10)
 
-
 def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method, customer_email, student_id):
     """Complete the refund process (for cash/card)"""
     try:
@@ -438,7 +433,7 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
                 if auth and hasattr(auth, 'current_user') and auth.current_user:
                     user = auth.current_user
                     processed_by = user.get('username') or user.get('id', '')
-            except:
+            except Exception:
                 pass
 
         cursor.execute("""
@@ -465,7 +460,6 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
     except Exception as e:
         print(f"Error completing cinema refund: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to complete refund: {str(e)}")
-
 
 def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, customer_email, student_id):
     """Add refund amount to student finance account"""
@@ -512,7 +506,7 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
                 if auth and hasattr(auth, 'current_user') and auth.current_user:
                     user = auth.current_user
                     processed_by = user.get('username') or user.get('id', '')
-            except:
+            except Exception:
                 pass
 
         cursor.execute("""
@@ -568,7 +562,6 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
     except Exception as e:
         print(f"Error adding cinema refund to student account: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to add refund to account: {str(e)}")
-
 
 def send_cinema_refund_receipt(self, customer_email, amount, refund_method, refund_ref, booking_ref, new_balance=None):
     """Send refund receipt email to customer"""
@@ -645,7 +638,6 @@ University Cinema
     except Exception as e:
         print(f"Error sending cinema refund receipt: {e}")
 
-
 def notify_cinema_finance_gui(self, booking_id, amount, refund_method, refund_ref):
     """Notify finance system about the refund"""
     try:
@@ -677,7 +669,7 @@ def notify_cinema_finance_gui(self, booking_id, amount, refund_method, refund_re
                     if auth and hasattr(auth, 'current_user') and auth.current_user:
                         user = auth.current_user
                         processed_by = user.get('username') or user.get('id', '')
-                except:
+                except Exception:
                     pass
 
             # Insert refund record
@@ -692,7 +684,6 @@ def notify_cinema_finance_gui(self, booking_id, amount, refund_method, refund_re
 
     except Exception as e:
         print(f"Error notifying finance GUI: {e}")
-
 
 def view_cinema_booking_details(self):
     """View detailed information about a booking"""
@@ -760,7 +751,7 @@ def view_cinema_booking_details(self):
                 date_part, time_part = show_datetime.split(' ', 1)
                 show_date = date_part
                 show_time = time_part
-            except:
+            except (ValueError, TypeError):
                 show_date = show_datetime
                 show_time = ''
         else:
@@ -786,7 +777,7 @@ def view_cinema_booking_details(self):
                 snacks_text = _t("cinema.labels.snacks_drinks")
                 for snack, qty in snacks_list.items():
                     snacks_text += f"  {snack} x {qty}\n"
-            except:
+            except (ValueError, json.JSONDecodeError):
                 snacks_text = f"\nSnacks: {snacks_items}\n"
 
         # Create details window
@@ -855,7 +846,6 @@ Financial Details:
     except Exception as e:
         print(f"Error viewing booking details: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to load details: {str(e)}")
-
 
 def export_cinema_refunds_to_csv(self):
     """Export refunds data to CSV file"""

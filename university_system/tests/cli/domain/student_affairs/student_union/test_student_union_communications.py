@@ -4,11 +4,10 @@ Tests email sending functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import communications
-
 
 @pytest.fixture
 def mock_conn():
@@ -18,7 +17,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_cursor():
     """Create a mock database cursor."""
@@ -26,7 +24,6 @@ def mock_cursor():
     cursor.fetchone = Mock()
     cursor.execute = Mock()
     return cursor
-
 
 class TestSendConfirmationEmail:
     """Tests for send_confirmation_email function."""
@@ -201,7 +198,6 @@ class TestSendConfirmationEmail:
         # Verify results
         assert result is True
 
-
 class TestIntegrationCommunications:
     """Integration tests for communications module."""
 
@@ -242,7 +238,6 @@ class TestIntegrationCommunications:
         email = cursor.fetchone()[0]
 
         assert email == 'john.doe@example.com'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

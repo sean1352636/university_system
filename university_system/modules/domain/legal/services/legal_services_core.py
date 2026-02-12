@@ -5,7 +5,7 @@ Provides manager classes for legal case management, consultations,
 documents, and payments with database operations.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import uuid
@@ -13,7 +13,7 @@ import traceback
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 # Service fee structure (in GBP)
 SERVICE_FEES = {
@@ -47,7 +47,6 @@ CONSULTATION_STATUSES = ['scheduled', 'completed', 'cancelled', 'no_show']
 
 # Payment statuses
 PAYMENT_STATUSES = ['pending', 'paid', 'refunded']
-
 
 def init_legal_services_db():
     """Initialize legal services database tables"""
@@ -153,13 +152,11 @@ def init_legal_services_db():
         print(f"Error initializing legal services database: {e}")
         return False
 
-
 def generate_case_number() -> str:
     """Generate unique case number"""
     timestamp = datetime.now().strftime('%Y%m%d')
     unique_id = uuid.uuid4().hex[:6].upper()
     return f"CASE-{timestamp}-{unique_id}"
-
 
 class CaseManager:
     """Manager for legal case operations"""
@@ -272,12 +269,12 @@ class CaseManager:
 
             updates['updated_at'] = datetime.now().isoformat()
 
-            set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
+            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in updates.keys()])
             values = list(updates.values()) + [case_id]
 
             with transaction() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'UPDATE legal_cases SET {set_clause} WHERE case_id = ?', values)
+                cursor.execute('UPDATE legal_cases SET ' + set_clause + ' WHERE case_id = ?', values)
 
             log_activity('update', 'legal_case', details={'case_id': case_id, 'updates': list(updates.keys())})
             return True
@@ -355,7 +352,6 @@ class CaseManager:
         except sqlite3.Error as e:
             print(f"Error getting case statistics: {e}")
             return {}
-
 
 class ConsultationManager:
     """Manager for legal consultation operations"""
@@ -455,12 +451,12 @@ class ConsultationManager:
             if not updates:
                 return False
 
-            set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
+            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in updates.keys()])
             values = list(updates.values()) + [consultation_id]
 
             with transaction() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'UPDATE legal_consultations SET {set_clause} WHERE consultation_id = ?', values)
+                cursor.execute('UPDATE legal_consultations SET ' + set_clause + ' WHERE consultation_id = ?', values)
 
             log_activity('update', 'legal_consultation', details={'consultation_id': consultation_id})
             return True
@@ -512,7 +508,6 @@ class ConsultationManager:
         except sqlite3.Error as e:
             print(f"Error getting upcoming consultations: {e}")
             return []
-
 
 class DocumentManager:
     """Manager for legal document operations"""
@@ -608,19 +603,18 @@ class DocumentManager:
             if 'file_content' in updates or 'file_path' in updates:
                 updates['version'] = current['version'] + 1
 
-            set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
+            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in updates.keys()])
             values = list(updates.values()) + [document_id]
 
             with transaction() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'UPDATE legal_documents SET {set_clause} WHERE document_id = ?', values)
+                cursor.execute('UPDATE legal_documents SET ' + set_clause + ' WHERE document_id = ?', values)
 
             return True
 
         except sqlite3.Error as e:
             print(f"Error updating document: {e}")
             return False
-
 
 class PaymentManager:
     """Manager for legal payment operations"""
@@ -818,45 +812,44 @@ class PaymentManager:
                     base_query += ' AND DATE(created_at) <= ?'
                     params.append(end_date)
 
+                # Build date filter clause
+                date_filter = ''
+                if start_date:
+                    date_filter += ' AND DATE(created_at) >= ?'
+                if end_date:
+                    date_filter += ' AND DATE(created_at) <= ?'
+
                 # Total revenue
-                cursor.execute(f'''
-                    SELECT SUM(amount) FROM legal_payments
-                    WHERE status = 'completed'
-                    {' AND DATE(created_at) >= ?' if start_date else ''}
-                    {' AND DATE(created_at) <= ?' if end_date else ''}
-                ''', params)
+                cursor.execute(
+                    "SELECT SUM(amount) FROM legal_payments"
+                    " WHERE status = 'completed'" + date_filter,
+                    params)
                 total_revenue = cursor.fetchone()[0] or 0
 
                 # Revenue by payment type
-                cursor.execute(f'''
-                    SELECT payment_type, SUM(amount) as total, COUNT(*) as count
-                    FROM legal_payments
-                    WHERE status = 'completed'
-                    {' AND DATE(created_at) >= ?' if start_date else ''}
-                    {' AND DATE(created_at) <= ?' if end_date else ''}
-                    GROUP BY payment_type
-                ''', params)
+                cursor.execute(
+                    "SELECT payment_type, SUM(amount) as total, COUNT(*) as count"
+                    " FROM legal_payments"
+                    " WHERE status = 'completed'" + date_filter +
+                    " GROUP BY payment_type",
+                    params)
                 by_type = {row[0]: {'total': row[1], 'count': row[2]} for row in cursor.fetchall()}
 
                 # Revenue by method
-                cursor.execute(f'''
-                    SELECT payment_method, SUM(amount) as total, COUNT(*) as count
-                    FROM legal_payments
-                    WHERE status = 'completed'
-                    {' AND DATE(created_at) >= ?' if start_date else ''}
-                    {' AND DATE(created_at) <= ?' if end_date else ''}
-                    GROUP BY payment_method
-                ''', params)
+                cursor.execute(
+                    "SELECT payment_method, SUM(amount) as total, COUNT(*) as count"
+                    " FROM legal_payments"
+                    " WHERE status = 'completed'" + date_filter +
+                    " GROUP BY payment_method",
+                    params)
                 by_method = {row[0]: {'total': row[1], 'count': row[2]} for row in cursor.fetchall()}
 
                 # Refunds
-                cursor.execute(f'''
-                    SELECT SUM(amount), COUNT(*)
-                    FROM legal_payments
-                    WHERE status = 'refunded'
-                    {' AND DATE(created_at) >= ?' if start_date else ''}
-                    {' AND DATE(created_at) <= ?' if end_date else ''}
-                ''', params)
+                cursor.execute(
+                    "SELECT SUM(amount), COUNT(*)"
+                    " FROM legal_payments"
+                    " WHERE status = 'refunded'" + date_filter,
+                    params)
                 refund_data = cursor.fetchone()
 
                 return {
@@ -871,7 +864,6 @@ class PaymentManager:
         except sqlite3.Error as e:
             print(f"Error getting revenue statistics: {e}")
             return {}
-
 
 def calculate_service_fee(service_type: str, duration_minutes: int = 30) -> float:
     """Calculate fee for a service type"""
@@ -892,7 +884,6 @@ def calculate_service_fee(service_type: str, duration_minutes: int = 30) -> floa
         base_fee += extra_30min_blocks * (SERVICE_FEES['consultation_30min'] * 0.75)
 
     return round(base_fee, 2)
-
 
 def generate_invoice_text(case: Dict, payments: List[Dict], services: List[str]) -> str:
     """Generate invoice text for a case"""

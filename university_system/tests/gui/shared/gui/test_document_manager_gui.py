@@ -18,7 +18,7 @@ Tests cover:
 import unittest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 import shutil
@@ -32,7 +32,6 @@ from university_system.modules.shared.gui.document_manager_gui.main_gui import (
 from university_system.modules.shared.gui.document_manager_gui.console import (
     DocumentManager,
 )
-
 
 class TestDocumentManagerGUI(unittest.TestCase):
     """Test suite for DocumentManagerGUI class"""
@@ -700,7 +699,6 @@ class TestDocumentManagerGUI(unittest.TestCase):
 
         self.assertGreater(count, 0, "Expiring document not found")
 
-
 class TestDocumentManager(unittest.TestCase):
     """Test suite for DocumentManager console class"""
 
@@ -744,7 +742,6 @@ class TestDocumentManager(unittest.TestCase):
         conn.close()
 
         self.assertGreater(table_count, 0, "No tables created")
-
 
 class TestIntegrationScenarios(unittest.TestCase):
     """Integration tests for complete workflows"""
@@ -909,7 +906,6 @@ class TestIntegrationScenarios(unittest.TestCase):
 
         self.assertEqual(approved_count, 10, "Bulk update failed")
 
-
 def run_all_tests():
     """Run all test suites"""
     # Create test suite
@@ -936,7 +932,6 @@ def run_all_tests():
     print("="*70)
 
     return result.wasSuccessful()
-
 
 if __name__ == '__main__':
     success = run_all_tests()

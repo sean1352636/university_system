@@ -1,4 +1,5 @@
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
+from university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta
 import os
 import sys
 import shutil
-import sqlite3
+
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -315,7 +316,6 @@ except ImportError as e:
 
 SEARCH_ANALYTICS_COLUMNS_CACHE: Optional[List[str]] = None
 
-
 def refresh_search_analytics_columns(cursor) -> List[str]:
     """Refresh and return the column names for search_analytics."""
     global SEARCH_ANALYTICS_COLUMNS_CACHE
@@ -323,13 +323,11 @@ def refresh_search_analytics_columns(cursor) -> List[str]:
     SEARCH_ANALYTICS_COLUMNS_CACHE = [row[1] for row in cursor.fetchall()]
     return SEARCH_ANALYTICS_COLUMNS_CACHE
 
-
 def get_search_analytics_columns(cursor) -> List[str]:
     """Get cached column list for search_analytics, refreshing if required."""
     if SEARCH_ANALYTICS_COLUMNS_CACHE is None:
         return refresh_search_analytics_columns(cursor)
     return SEARCH_ANALYTICS_COLUMNS_CACHE
-
 
 def ensure_search_analytics_schema(cursor) -> List[str]:
     """Ensure the analytics table has the columns expected by various modules."""
@@ -352,14 +350,15 @@ def ensure_search_analytics_schema(cursor) -> List[str]:
             "UPDATE search_analytics SET search_query = CASE WHEN search_query IS NULL OR search_query = '' THEN COALESCE(search_criteria, search_type, 'N/A') ELSE search_query END"
         )
 
+    _VALID_TIME_COLUMNS = {'timestamp', 'search_datetime'}
     time_column = 'timestamp' if 'timestamp' in columns else 'search_datetime' if 'search_datetime' in columns else None
     if time_column:
+        validate_field_for_query(time_column, _VALID_TIME_COLUMNS, "time column")
         cursor.execute(
             f"UPDATE search_analytics SET {time_column} = COALESCE({time_column}, datetime('now'))"
         )
 
     return list(columns)
-
 
 def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[str], search_type: str,
                                   criteria: Any, results_count: int, execution_time: float = 0.0,
@@ -395,13 +394,15 @@ def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[s
 
     return record
 
-
 def insert_search_analytics_record(cursor, **kwargs):
     """Insert an analytics entry while adapting to the table schema."""
     columns = ensure_search_analytics_schema(cursor)
     record = build_search_analytics_record(columns, **kwargs)
     if not record:
         return
+    # Validate all column names before SQL interpolation
+    for key in record.keys():
+        validate_column_name(key)
     placeholders = ', '.join('?' for _ in record)
     cursor.execute(
         f"INSERT INTO search_analytics ({', '.join(record.keys())}) VALUES ({placeholders})",
@@ -790,7 +791,8 @@ def data_quality_reports():
         report += "MISSING DATA ANALYSIS:\n"
 
         for field, label in fields:
-            cursor.execute(f"SELECT COUNT(*) FROM students WHERE {field} IS NULL OR {field} = ''")
+            safe_field = validate_identifier(field, "column")
+            cursor.execute("SELECT COUNT(*) FROM students WHERE [" + safe_field + "] IS NULL OR [" + safe_field + "] = ''")
             missing = cursor.fetchone()[0]
             percentage = (missing / total * 100) if total > 0 else 0
             report += f"  {label}: {missing} missing ({percentage:.1f}%)\n"
@@ -870,8 +872,6 @@ def get_connection():
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
-
-
 
 from .base import AdvancedSearchGUI
 
@@ -1058,11 +1058,12 @@ def perform_conditional_logic_search(self, conditions):
             logic = condition['logic']
             
             # Build condition string
+            safe_field = validate_identifier(field, "column")
             if operator in ['LIKE', 'NOT LIKE']:
-                condition_str = f"{field} {operator} ?"
+                condition_str = "[" + safe_field + "] " + operator + " ?"
                 params.append(f"%{value}%")
             else:
-                condition_str = f"{field} {operator} ?"
+                condition_str = "[" + safe_field + "] " + operator + " ?"
                 # Type conversion for numeric fields
                 if field in ['age'] and value.isdigit():
                     params.append(int(value))
@@ -1072,10 +1073,12 @@ def perform_conditional_logic_search(self, conditions):
             if i == 0:
                 where_parts.append(condition_str)
             else:
-                where_parts.append(f" {logic} {condition_str}")
+                # Only allow safe logic operators
+                safe_logic = "AND" if logic != "OR" else "OR"
+                where_parts.append(" " + safe_logic + " " + condition_str)
         
         where_clause = "".join(where_parts)
-        query = f"SELECT * FROM students WHERE {where_clause}"
+        query = "SELECT * FROM students WHERE " + where_clause
         
         cursor.execute(query, params)
         results = cursor.fetchall()
@@ -1203,8 +1206,8 @@ def perform_conditional_search(self, conditions, logic_operator):
         conn = get_connection()
         cursor = conn.cursor()
         
-        where_clause = f" {logic_operator} ".join(conditions)
-        query = f"SELECT * FROM students WHERE {where_clause}"
+        where_clause = (" " + logic_operator + " ").join(conditions)
+        query = "SELECT * FROM students WHERE " + where_clause
         
         cursor.execute(query)
         results = cursor.fetchall()

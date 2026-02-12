@@ -12,7 +12,7 @@ Tests:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
@@ -28,7 +28,6 @@ from university_system.infrastructure.security.comprehensive_security import (
 )
 from university_system.infrastructure.security.init_security_tables import init_security_tables
 
-
 @pytest.fixture
 def test_db():
     """Create a temporary test database"""
@@ -43,7 +42,6 @@ def test_db():
     # Cleanup
     if os.path.exists(path):
         os.remove(path)
-
 
 # ============================================================================
 # APISecurityManager Tests
@@ -173,7 +171,6 @@ class TestAPISecurityManager:
 
         assert result['allowed'] is True
         assert result['remaining'] == 9
-
 
 # ============================================================================
 # PasswordSecurityManager Tests
@@ -315,7 +312,6 @@ class TestPasswordSecurityManager:
         is_new = manager.check_password_reuse(1, "hash456")
         assert is_new is False
 
-
 # ============================================================================
 # SecurityAuditManager Tests
 # ============================================================================
@@ -406,7 +402,6 @@ class TestSecurityAuditManager:
         assert 'security_events' in report
         assert 'failed_logins' in report
 
-
 # ============================================================================
 # DataLossPreventionManager Tests
 # ============================================================================
@@ -485,7 +480,6 @@ class TestDataLossPreventionManager:
 
         assert any(item['type'] == 'Credit Card' for item in pii_found)
 
-
 # ============================================================================
 # IncidentResponseManager Tests
 # ============================================================================
@@ -533,7 +527,6 @@ class TestIncidentResponseManager:
         conn.close()
 
         assert action is not None
-
 
 # ============================================================================
 # VulnerabilityScanner Tests
@@ -617,7 +610,6 @@ class TestVulnerabilityScanner:
 
         assert result['vulnerable'] is True
 
-
 # ============================================================================
 # Integration Tests
 # ============================================================================
@@ -672,7 +664,6 @@ class TestSecurityIntegration:
 
         assert len(report['data_access']) > 0
         assert report['permission_changes'] > 0
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

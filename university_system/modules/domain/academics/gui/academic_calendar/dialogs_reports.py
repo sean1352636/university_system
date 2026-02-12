@@ -92,7 +92,7 @@ class ReportsDialog:
             for month in sorted(monthly_data.keys()):
                 try:
                     month_label = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
-                except:
+                except (ValueError, TypeError):
                     month_label = month
 
                 report += f"{month_label} ({len(monthly_data[month])} events)\n"
@@ -783,7 +783,7 @@ class DataVisualizationDialog:
                     try:
                         month = date_str[:7]
                         monthly_counts[month] = monthly_counts.get(month, 0) + count
-                    except:
+                    except (TypeError, IndexError):
                         pass
 
                 for month in sorted(monthly_counts.keys()):
@@ -927,7 +927,8 @@ class DataVisualizationDialog:
                                label=year['id'], color=self.plt.cm.Set2(i/len(years)))
                         ax.text(start.toordinal() + (end - start).days/2, i, year['id'],
                                ha='center', va='center', fontsize=9)
-                    except:
+                    except (ValueError, TypeError, KeyError) as e:
+                        gui_logger.warning(f"Failed to render academic year timeline entry: {e}")
                         continue
 
                 ax.set_xlabel('Date')
@@ -966,7 +967,7 @@ class DataVisualizationDialog:
             try:
                 report = self.calendar_manager.advanced_reporting.generate_utilization_report()
                 resources = report.get('resources', []) if report.get('success') else []
-            except:
+            except Exception:
                 resources = []
 
             self._clear_viz_area()
@@ -1024,7 +1025,7 @@ class DataVisualizationDialog:
             try:
                 report = self.calendar_manager.advanced_reporting.generate_attendance_report()
                 success = report.get('success', False)
-            except:
+            except Exception:
                 report = {}
                 success = False
 

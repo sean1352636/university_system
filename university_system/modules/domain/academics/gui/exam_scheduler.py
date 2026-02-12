@@ -196,7 +196,7 @@ class DataManager:
                     if enrolled_student_ids:
                         try:
                             student_ids = json.loads(enrolled_student_ids) if isinstance(enrolled_student_ids, str) else enrolled_student_ids
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             student_ids = []
                     else:
                         student_ids = []
@@ -266,7 +266,7 @@ class DataManager:
                                 features_lower = [str(f).lower() for f in features_data]
                                 has_computers = has_computers or any('computer' in f for f in features_lower)
                                 has_projector = has_projector or any('projector' in f for f in features_lower)
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             pass
 
                     room = Room(
@@ -760,7 +760,7 @@ class DataManager:
                 with get_connection() as conn:
                     cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM exams")
                     return cursor.fetchone()[0]
-            except:
+            except Exception:
                 pass
 
         # Fallback to in-memory list
@@ -775,7 +775,7 @@ class DataManager:
                 with get_connection() as conn:
                     cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rooms")
                     return cursor.fetchone()[0]
-            except:
+            except Exception:
                 pass
 
         # Fallback to in-memory list
@@ -2193,7 +2193,7 @@ class ExamSchedulerApp:
             current_date = datetime.strptime(exam.date, '%Y-%m-%d')
             next_date = current_date + timedelta(days=1)
             self.exam_vars['date'].set(next_date.strftime('%Y-%m-%d'))
-        except:
+        except (ValueError, TypeError):
             pass
 
         messagebox.showinfo(
@@ -2264,7 +2264,7 @@ class ExamSchedulerApp:
             if start_date and end_date:
                 try:
                     filtered_exams = self.data_manager.get_exams_by_date_range(start_date, end_date)
-                except:
+                except (ValueError, TypeError):
                     messagebox.showerror("Error", "Invalid date range")
                     return
 

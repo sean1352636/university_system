@@ -16,7 +16,6 @@ from typing import Optional, List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-
 class BackupScheduler:
     """
     Manages automated database backups.
@@ -29,7 +28,7 @@ class BackupScheduler:
     """
 
     def __init__(self, backup_dir: Optional[str] = None):
-        from university_system.modules.shared.constants import paths
+        from university_system.core import paths
 
         self.backup_dir = Path(backup_dir) if backup_dir else Path(paths.DATA_DIR) / 'backups'
         self.backup_dir.mkdir(parents=True, exist_ok=True)
@@ -57,7 +56,7 @@ class BackupScheduler:
             Dictionary with backup info
         """
         try:
-            from university_system.modules.shared.constants import paths
+            from university_system.core import paths
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_name = f'backup_{backup_type}_{timestamp}.db'
@@ -94,9 +93,7 @@ class BackupScheduler:
     def _verify_backup(self, backup_path: Path) -> bool:
         """Verify backup integrity"""
         try:
-            import sqlite3
-
-            # Try to open backup and run a test query
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(backup_path))
             cursor = conn.execute("SELECT COUNT(*) FROM sqlite_master")
             result = cursor.fetchone()
@@ -250,10 +247,8 @@ class BackupScheduler:
 
         logger.info("Backup scheduler stopped")
 
-
 # Global backup scheduler instance
 _backup_scheduler: Optional[BackupScheduler] = None
-
 
 def get_backup_scheduler() -> BackupScheduler:
     """Get the global backup scheduler instance"""
@@ -263,7 +258,6 @@ def get_backup_scheduler() -> BackupScheduler:
         _backup_scheduler = BackupScheduler()
 
     return _backup_scheduler
-
 
 def schedule_backups():
     """Quick function to start backup scheduling"""

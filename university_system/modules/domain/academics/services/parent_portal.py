@@ -1,5 +1,6 @@
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 import datetime
 import os
 import random
@@ -1799,10 +1800,11 @@ class ParentPortal:
                         'attendance_alerts', 'behavior_alerts', 'assignment_alerts', 'weekly_summary'
                     ]
                     column = columns[int(choice) - 1]
-                    
-                    cursor.execute(f'''
+                    safe_column = validate_identifier(column, "column")
+
+                    cursor.execute('''
                     UPDATE parent_preferences
-                    SET {column} = NOT {column}
+                    SET [''' + safe_column + '''] = NOT [''' + safe_column + ''']
                     WHERE parent_id = ?
                     ''', (parent_id,))
                     
@@ -1913,9 +1915,10 @@ class ParentPortal:
                         print(f"{column.replace('_', ' ').title()} cannot be empty.")
                         continue
                     
-                    cursor.execute(f'''
+                    safe_column = validate_identifier(column, "column")
+                    cursor.execute('''
                     UPDATE parent_accounts
-                    SET {column} = ?
+                    SET [''' + safe_column + '''] = ?
                     WHERE parent_id = ?
                     ''', (new_value, parent_id))
                     
@@ -6204,13 +6207,15 @@ def export_child_data(self):
             
             for data_type, table_name, id_column in tables_to_export:
                 try:
-                    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
+                    safe_table = validate_table_name(table_name, conn=conn)
+                    safe_id_col = validate_identifier(id_column, "column")
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
                     if cursor.fetchone():
-                        cursor.execute(f"SELECT * FROM {table_name} WHERE {id_column} = ?", (student_id,))
+                        cursor.execute("SELECT * FROM [" + safe_table + "] WHERE [" + safe_id_col + "] = ?", (student_id,))
                         rows = cursor.fetchall()
-                        
+
                         # Get column names
-                        cursor.execute(f"PRAGMA table_info({table_name})")
+                        cursor.execute("PRAGMA table_info([" + safe_table + "])")
                         columns = [col[1] for col in cursor.fetchall()]
                         
                         # Convert to list of dictionaries

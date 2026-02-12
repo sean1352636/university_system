@@ -7,8 +7,7 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_grade_dialog import (
     EditGradeDialog,
     GRADE_SYSTEMS,
@@ -17,7 +16,6 @@ from university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_
     letter_to_gpa,
     safe_grab_set
 )
-
 
 @pytest.fixture
 def root():
@@ -29,7 +27,6 @@ def root():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_connection():
     """Mock database connection"""
@@ -39,7 +36,6 @@ def mock_connection():
     mock_conn.commit = Mock()
     mock_conn.close = Mock()
     return mock_conn, mock_cursor
-
 
 class TestGradeSystemFunctions:
     """Test grade conversion helper functions"""
@@ -85,7 +81,6 @@ class TestGradeSystemFunctions:
         assert letter_to_gpa("F") == 0.0
         assert letter_to_gpa("INVALID") == 0
 
-
 class TestSafeGrabSet:
     """Test safe_grab_set helper function"""
 
@@ -103,7 +98,6 @@ class TestSafeGrabSet:
         # Should not raise exception even if grab fails
         safe_grab_set(dialog)
         dialog.destroy()
-
 
 class TestEditGradeDialog:
     """Test EditGradeDialog class"""
@@ -379,7 +373,6 @@ class TestEditGradeDialog:
         assert mock_cursor.execute.called
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

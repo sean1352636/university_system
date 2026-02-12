@@ -1,4 +1,4 @@
-from university_system.modules.shared.utils.i18n import get_text
+from university_system.core.i18n import get_text
 
 
 def debug_function_definition():

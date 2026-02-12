@@ -161,10 +161,14 @@ class ReportsMixin:
                 messagebox.showerror("Error", f"Failed to open report: {str(e)}")
         elif result is False:  # No - show in file manager
             try:
-                if os.name == 'nt':  # Windows
-                    os.startfile(os.path.dirname(report_path))
-                elif os.name == 'posix':  # macOS and Linux
-                    os.system(f'open "{os.path.dirname(report_path)}"')
+                import subprocess, platform
+                report_dir = os.path.dirname(report_path)
+                if platform.system() == 'Windows':
+                    os.startfile(report_dir)
+                elif platform.system() == 'Darwin':
+                    subprocess.run(['open', report_dir], check=False)
+                else:
+                    subprocess.run(['xdg-open', report_dir], check=False)
             except Exception:
                 pass
 

@@ -7,13 +7,11 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_dialog import (
     GradeDialog,
     GRADE_SYSTEMS
 )
-
 
 @pytest.fixture
 def root():
@@ -25,7 +23,6 @@ def root():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_cursor():
     """Mock database cursor"""
@@ -33,7 +30,6 @@ def mock_cursor():
     cursor.fetchall.return_value = []
     cursor.fetchone.return_value = None
     return cursor
-
 
 class TestGradeDialog:
     """Test GradeDialog class"""
@@ -312,7 +308,6 @@ class TestGradeDialog:
         assert dialog.result is not None
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

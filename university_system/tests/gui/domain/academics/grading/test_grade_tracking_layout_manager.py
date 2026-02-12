@@ -3,10 +3,8 @@
 import unittest
 import tkinter as tk
 from unittest.mock import Mock, patch
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.layout_manager import LayoutManager
-
 
 class TestLayoutManager(unittest.TestCase):
     """Test LayoutManager class"""
@@ -139,7 +137,6 @@ class TestLayoutManager(unittest.TestCase):
         self.layout.update_status("Test message")
         self.assertEqual(self.layout.status_var.get(), "Test message")
 
-
 class TestLayoutManagerRoleBasedAccess(unittest.TestCase):
     """Test role-based access control in LayoutManager"""
 
@@ -204,7 +201,6 @@ class TestLayoutManagerRoleBasedAccess(unittest.TestCase):
         button_count = len(layout.view_buttons)
         self.assertGreater(button_count, 5)
         self.assertLess(button_count, 20)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 if TYPE_CHECKING:
     from university_system.infrastructure.auth import UserAuth
 
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 

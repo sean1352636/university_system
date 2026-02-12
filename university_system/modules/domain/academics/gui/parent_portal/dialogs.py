@@ -262,7 +262,7 @@ class AbsenceReportDialog:
                 # Extract ID from "Name (ID: xxx)"
                 try:
                     return selected.split("ID: ")[1].rstrip(")")
-                except:
+                except (IndexError, AttributeError):
                     return None
         return None
 
@@ -534,7 +534,7 @@ class EmergencyContactDialog:
         if selected:
             try:
                 return selected.split("ID: ")[1].rstrip(")")
-            except:
+            except (IndexError, AttributeError):
                 return None
         return None
 

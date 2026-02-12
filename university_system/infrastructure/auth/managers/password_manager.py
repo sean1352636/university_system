@@ -23,7 +23,7 @@ concerns from general authentication logic.
 import hashlib
 import logging
 import secrets
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Tuple, Optional
 
@@ -46,7 +46,6 @@ try:
     IMMUTABLE_AUDIT_AVAILABLE = True
 except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
-
 
 def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
     """
@@ -100,7 +99,6 @@ def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
 
     return salt, key.hex()
 
-
 def verify_password(password: str, salt: str, stored_hash: str) -> bool:
     """
     Verify a password against a stored hash.
@@ -130,7 +128,6 @@ def verify_password(password: str, salt: str, stored_hash: str) -> bool:
     _, computed_hash = hash_password(password, salt)
     return computed_hash == stored_hash
 
-
 def generate_temp_password() -> str:
     """
     Generate a secure temporary password.
@@ -159,7 +156,6 @@ def generate_temp_password() -> str:
     """
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
     return ''.join(secrets.choice(chars) for _ in range(12))
-
 
 def change_user_password(
     db_manager,
@@ -263,7 +259,6 @@ def change_user_password(
     except sqlite3.Error as e:
         logger.error(f"Database error during password change: {e}")
         return False
-
 
 def reset_user_password(
     db_manager,
@@ -402,7 +397,6 @@ def reset_user_password(
     except sqlite3.Error as e:
         logger.error(f"Database error during password reset: {e}")
         return False, None
-
 
 def check_password_reset_required(db_manager, username: str) -> bool:
     """

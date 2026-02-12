@@ -10,14 +10,13 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.gui.degree_audit_gui import (
     DegreeAuditGUI, launch_degree_audit_gui
 )
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def mock_auth():
@@ -32,7 +31,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     return auth
 
-
 @pytest.fixture
 def root_window():
     """Create a root Tkinter window for testing"""
@@ -43,7 +41,6 @@ def root_window():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_db_connection():
     """Create a mock database connection"""
@@ -53,7 +50,6 @@ def mock_db_connection():
     conn.__enter__ = Mock(return_value=conn)
     conn.__exit__ = Mock(return_value=False)
     return conn, cursor
-
 
 class TestDegreeAuditGUI:
     """Test suite for DegreeAuditGUI"""
@@ -263,7 +259,6 @@ class TestDegreeAuditGUI:
         mock_grad_mgr.approve_graduation.assert_called_once()
         mock_log.assert_called_once()
 
-
 class TestLaunchDegreeAuditGUI:
     """Test the launch function"""
 
@@ -295,7 +290,6 @@ class TestLaunchDegreeAuditGUI:
             launch_degree_audit_gui(root_window, auth)
 
         mock_error.assert_called_once()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

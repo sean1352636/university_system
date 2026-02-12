@@ -7,8 +7,9 @@ import re
 from datetime import datetime, timedelta
 
 from university_system.infrastructure.email import state
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core.sql_safety import (
     validate_column_definition,
+    safe_alter_table_add_column,
     SQLIdentifierError,
 )
 
@@ -54,7 +55,7 @@ from university_system.infrastructure.email.email_service import (
     start_email_workers,
     wait_for_email_queue,
 )
-from university_system.modules.shared.utils.logs import (
+from university_system.core.logs import (
     LOG_MANAGEMENT_AVAILABLE,
     display_communication_analytics_menu,
     display_communication_logs_menu,
@@ -129,17 +130,17 @@ def list_all_users(auth, page=1, limit=10, role_filter=None):
             params.append(role_filter)
         
         # Get total count
-        cursor.execute(f'SELECT COUNT(*) FROM users u {where_clause}', params)
+        cursor.execute('SELECT COUNT(*) FROM users u ' + where_clause, params)
         total_count = cursor.fetchone()[0]
-        
+
         # Calculate offset
         offset = (page - 1) * limit
         total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
-        
+
         # Get users for current page
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT u.id, u.username, u.first_name, u.last_name, u.email, u.role
-        FROM users u {where_clause}
+        FROM users u ''' + where_clause + '''
         ORDER BY u.first_name, u.last_name, u.username
         LIMIT ? OFFSET ?
         ''', params + [limit, offset])
@@ -211,7 +212,7 @@ class CommunicationDashboard:
         """Initialize using the same database path as auth system with logging integration"""
         try:
             # Use auth database path if available, with proper fallback
-            from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+            from university_system.core.paths import DEFAULT_DB_PATH
             if auth and hasattr(auth, 'db_path') and auth.db_path:
                 self.db_path = auth.db_path
             else:
@@ -388,9 +389,7 @@ class CommunicationDashboard:
             for column_name, definition in chat_room_column_definitions:
                 if column_name not in chat_room_columns:
                     try:
-                        # Validate column definition using SQL safety module
-                        col_def = validate_column_definition(column_name, definition)
-                        cursor.execute(f'ALTER TABLE chat_rooms ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                        safe_alter_table_add_column("chat_rooms", column_name, definition, cursor.connection)
                         log_event('info', f"Added missing column {column_name} to chat_rooms")
                     except SQLIdentifierError as e:
                         log_event('warning', f"Invalid column definition for {column_name}: {e}")
@@ -1083,7 +1082,7 @@ class CommunicationDashboard:
             message_ids = [msg[0] for msg in messages_to_delete]
             placeholders = ','.join(['?' for _ in message_ids])
             
-            cursor.execute(f'DELETE FROM messages WHERE id IN ({placeholders})', message_ids)
+            cursor.execute('DELETE FROM messages WHERE id IN (' + placeholders + ')', message_ids)
             
             deleted_count = cursor.rowcount
             if cursor.connection:

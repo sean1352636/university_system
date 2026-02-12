@@ -10,6 +10,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import schedule
 
 from .constants import _t, logger, EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH
+from university_system.core.paths import CONFIG_DIR, PROJECT_ROOT
 from .progress_dialog import GUIProgressDialog
 
 
@@ -543,12 +544,13 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
 
             # API Key configuration
             tk.Label(auth_config_frame, text=_t("batch_ops.labels.api_key"), font=('Arial', 10)).pack(anchor='w')
-            api_key_var = tk.StringVar(value="sk_" + ''.join([str(random.randint(0, 9)) for _ in range(20)]))
+            import secrets as _secrets
+            api_key_var = tk.StringVar(value="sk_" + _secrets.token_hex(20))
             api_key_entry = tk.Entry(auth_config_frame, textvariable=api_key_var, font=('Arial', 10), width=40)
             api_key_entry.pack(anchor='w', pady=(5, 10))
 
             def generate_new_key():
-                new_key = "sk_" + ''.join([str(random.randint(0, 9)) for _ in range(20)])
+                new_key = "sk_" + _secrets.token_hex(20)
                 api_key_var.set(new_key)
 
             tk.Button(auth_config_frame, text=_t("batch_ops.buttons.generate_key"), command=generate_new_key,
@@ -670,7 +672,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
                     }
 
                     # Save configuration
-                    config_filename = "api_server_config.json"
+                    config_filename = str(CONFIG_DIR / "api_server_config.json")
                     with open(config_filename, 'w') as f:
                         json.dump(server_config, f, indent=2)
 
@@ -766,7 +768,7 @@ if __name__ == '__main__':
 '''
 
                     # Save the server script
-                    script_filename = "api_server.py"
+                    script_filename = str(PROJECT_ROOT / "api" / "api_server.py")
                     with open(script_filename, 'w') as f:
                         f.write(server_script)
 

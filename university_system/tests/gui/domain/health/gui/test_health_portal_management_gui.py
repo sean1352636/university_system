@@ -4,7 +4,7 @@ Tests all functionality in university_system/modules/domain/health/gui/health_po
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -13,7 +13,6 @@ import threading
 
 from university_system.modules.domain.health.gui.health_portal_management_gui import HealthPortalManagementGUI
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def mock_auth():
@@ -27,7 +26,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     return auth
 
-
 @pytest.fixture
 def root_window():
     """Create a Tk root window for testing"""
@@ -37,7 +35,6 @@ def root_window():
         root.destroy()
     except (OSError, IOError):
         pass
-
 
 @pytest.fixture
 def temp_db():
@@ -67,7 +64,6 @@ def temp_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 class TestHealthPortalManagementGUIInit:
     """Test HealthPortalManagementGUI initialization"""
 
@@ -94,7 +90,6 @@ class TestHealthPortalManagementGUIInit:
 
             assert gui.theme_manager == mock_theme_manager
             mock_theme_manager.register_observer.assert_called_once()
-
 
 class TestOpenHealthPortalGUI:
     """Test opening the health portal GUI"""
@@ -146,7 +141,6 @@ class TestOpenHealthPortalGUI:
                 # Verify theme was applied
                 mock_theme_manager.apply_theme_to_window.assert_called_with(mock_window)
 
-
 class TestCreateHealthTab:
     """Test creating health monitoring tab"""
 
@@ -175,7 +169,6 @@ class TestCreateHealthTab:
 
             # Verify threads were created for health checks
             assert mock_thread.call_count >= 4  # At least 4 health checks
-
 
 class TestHealthChecks:
     """Test individual health check methods"""
@@ -250,7 +243,6 @@ class TestHealthChecks:
 
             assert result is False
 
-
 class TestThemeSupport:
     """Test theme manager support"""
 
@@ -278,7 +270,6 @@ class TestThemeSupport:
             # Should not crash even without theme manager
             assert gui.theme_manager is None
 
-
 class TestErrorHandling:
     """Test error handling scenarios"""
 
@@ -302,7 +293,6 @@ class TestErrorHandling:
 
             # Should return False on exception
             assert result is False
-
 
 class TestIntegration:
     """Integration tests for complete workflows"""
@@ -358,7 +348,6 @@ class TestIntegration:
                 assert gui._check_auth() is True
                 assert gui._check_filesystem() is True
                 assert gui._check_gui_components() is True
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

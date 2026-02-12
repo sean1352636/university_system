@@ -13,11 +13,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock, mock_open, call
 from datetime import datetime
-import sqlite3
-
-# Import the module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.student_affairs.student_union.administration import admin_management
-
 
 @pytest.fixture
 def mock_cursor():
@@ -30,7 +27,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -40,7 +36,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -49,7 +44,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestSetupPermissions:
     """Test permission setup functionality."""
@@ -85,7 +79,6 @@ class TestSetupPermissions:
         assert mock_cursor.execute.call_count > 0
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
-
 
 class TestCompetitionAdmin:
     """Test competition administration functionality."""
@@ -169,7 +162,6 @@ class TestCompetitionAdmin:
                 # Should print error message
                 assert any('error' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestCompetitionReports:
     """Test competition reporting functionality."""
 
@@ -218,7 +210,6 @@ class TestCompetitionReports:
 
         mock_cursor.execute.assert_called()
 
-
 class TestSupportGroupsAdmin:
     """Test support groups administration."""
 
@@ -266,7 +257,6 @@ class TestSupportGroupsAdmin:
 
         mock_cursor.execute.assert_called()
         mock_conn.commit.assert_called()
-
 
 class TestEnvironmentalReports:
     """Test environmental reporting functionality."""
@@ -318,7 +308,6 @@ class TestEnvironmentalReports:
 
         assert mock_cursor.execute.call_count >= 2
 
-
 class TestComplianceReporting:
     """Test compliance reporting functionality."""
 
@@ -359,7 +348,6 @@ class TestComplianceReporting:
         admin_management.send_compliance_reminders(mock_cursor)
 
         mock_send_email.assert_not_called()
-
 
 class TestSecurityAudits:
     """Test security audit functionality."""
@@ -414,7 +402,6 @@ class TestSecurityAudits:
         mock_file.assert_called()
         mock_cursor.execute.assert_called()
 
-
 class TestVotingConfiguration:
     """Test voting configuration management."""
 
@@ -449,7 +436,6 @@ class TestVotingConfiguration:
             # Should print error message
             assert any('not found' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestSampleData:
     """Test sample data insertion."""
 
@@ -466,7 +452,6 @@ class TestSampleData:
         assert mock_cursor.executemany.call_count >= 3
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
-
 
 class TestAdminMenu:
     """Test admin menu display functionality."""
@@ -499,7 +484,6 @@ class TestAdminMenu:
         # Should reach return statement
         assert True
 
-
 class TestAuthSetup:
     """Test authentication setup functionality."""
 
@@ -519,7 +503,6 @@ class TestAuthSetup:
             mock_set.assert_called_once_with(mock_auth)
 
         admin_management.HAS_AUTH = original_has_auth
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

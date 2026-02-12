@@ -8,7 +8,7 @@ content delivery, quizzes, discussions, and gradebook integration.
 from __future__ import annotations
 
 import json
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection
@@ -24,7 +24,6 @@ from university_system.modules.shared.utils.i18n import (
 from university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
-
 
 class LMSCourseManager:
     """Manages LMS courses and course content"""
@@ -122,7 +121,6 @@ class LMSCourseManager:
 
         finally:
             conn.close()
-
 
 class LMSContentManager:
     """Manages course content and materials"""
@@ -230,7 +228,6 @@ class LMSContentManager:
         finally:
             conn.close()
 
-
 class LMSDiscussionManager:
     """Manages discussion forums and posts"""
 
@@ -329,7 +326,6 @@ class LMSDiscussionManager:
 
         finally:
             conn.close()
-
 
 class LMSQuizManager:
     """Manages quizzes and assessments"""
@@ -481,7 +477,6 @@ class LMSQuizManager:
         finally:
             conn.close()
 
-
 class LMSGradebookManager:
     """Manages gradebook entries and calculations"""
 
@@ -571,7 +566,6 @@ class LMSGradebookManager:
         finally:
             conn.close()
 
-
 def display_lms_menu(auth):
     """Display the LMS (Learning Management System) CLI menu"""
     while True:
@@ -608,7 +602,6 @@ def display_lms_menu(auth):
             print(get_text('lms.error', default='Error: {error}').format(error=e))
             break
 
-
 # Import the real GUI launcher
 try:
     from university_system.modules.domain.academics.gui.lms_gui import launch_lms_gui
@@ -629,7 +622,6 @@ Features:
 • Student progress tracking""",
         cli_instruction="Use CLI: LMS (Learning Management System)"
     )
-
 
 __all__ = [
     'LMSCourseManager',

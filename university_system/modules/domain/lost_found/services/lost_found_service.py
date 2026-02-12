@@ -4,7 +4,7 @@ Lost & Found Service
 Manages lost and found items with photo uploads, claim verification, and matching.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -14,7 +14,6 @@ import hashlib
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.modules.shared.constants import paths
-
 
 class LostFoundService:
     """Service for lost and found item management."""
@@ -664,7 +663,7 @@ class LostFoundService:
             elif date_diff <= 7:
                 score += 10
                 reasons.append(f"Dates within {date_diff} days")
-        except:
+        except (ValueError, TypeError):
             pass
 
         return score, reasons

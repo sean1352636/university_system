@@ -699,10 +699,10 @@ def award_bonus_points(self, parent_dialog):
                     if tier_customer_ids:
                         # Batch update loyalty points to avoid N+1
                         placeholders = ','.join('?' * len(tier_customer_ids))
-                        cursor.execute(f'''
+                        cursor.execute('''
                             UPDATE restaurant_customers
                             SET loyalty_points = loyalty_points + ?
-                            WHERE customer_id IN ({placeholders})
+                            WHERE customer_id IN (''' + placeholders + ''')
                         ''', [points] + tier_customer_ids)
                         # Batch insert bonus points records to avoid N+1
                         reason_text = reason_entry.get()

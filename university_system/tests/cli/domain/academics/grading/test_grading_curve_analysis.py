@@ -1,5 +1,5 @@
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
@@ -14,7 +14,6 @@ from university_system.modules.domain.academics.grading.curve_analysis import (
     analyze_overall_distribution,
     dropout_risk_analysis
 )
-
 
 class TestApplyGradingCurve:
     """Test the apply_grading_curve function"""
@@ -141,7 +140,6 @@ class TestApplyGradingCurve:
 
         assert any('No grades found' in str(call) for call in mock_print.call_args_list)
 
-
 class TestPerformanceAnalysisMenu:
     """Test the performance_analysis_menu function"""
 
@@ -169,7 +167,6 @@ class TestPerformanceAnalysisMenu:
         performance_analysis_menu()
 
         assert any('Invalid choice' in str(call) for call in mock_print.call_args_list)
-
 
 class TestComparativePerformanceAnalysis:
     """Test the comparative_performance_analysis function"""
@@ -219,7 +216,6 @@ class TestComparativePerformanceAnalysis:
 
         mock_print.assert_any_call("Invalid choice. Returning to menu.")
 
-
 class TestPerformanceTrendsAnalysis:
     """Test the performance_trends_analysis function"""
 
@@ -253,7 +249,6 @@ class TestPerformanceTrendsAnalysis:
 
         mock_analyze.assert_called_once_with(cursor)
 
-
 class TestAnalyzeDistributionByCourse:
     """Test the analyze_distribution_by_course function"""
 
@@ -284,7 +279,6 @@ class TestAnalyzeDistributionByCourse:
 
         mock_print.assert_any_call("No grade distribution data found.")
 
-
 class TestAnalyzeDistributionByModuleType:
     """Test the analyze_distribution_by_module_type function"""
 
@@ -313,7 +307,6 @@ class TestAnalyzeDistributionByModuleType:
         analyze_distribution_by_module_type(cursor)
 
         mock_print.assert_any_call("No grade distribution data found.")
-
 
 class TestAnalyzeOverallDistribution:
     """Test the analyze_overall_distribution function"""
@@ -345,7 +338,6 @@ class TestAnalyzeOverallDistribution:
 
         # Should complete without error
         assert True
-
 
 class TestDropoutRiskAnalysis:
     """Test the dropout_risk_analysis function"""
@@ -424,7 +416,6 @@ class TestDropoutRiskAnalysis:
         dropout_risk_analysis()
 
         mock_print.assert_any_call("Invalid choice. Returning to menu.")
-
 
 class TestCurveAnalysisIntegration:
     """Integration tests for curve analysis"""
@@ -522,7 +513,6 @@ class TestCurveAnalysisIntegration:
         assert len(distribution) == 2  # Two different grades
         assert any(grade[0] == 'C' for grade in distribution)
         assert any(grade[0] == 'B' for grade in distribution)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

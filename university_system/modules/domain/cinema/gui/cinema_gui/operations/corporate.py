@@ -4,7 +4,7 @@ Cinema Booking System - Corporate Accounts
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_corporate_page(self):
     self.clear_content()
@@ -38,7 +37,6 @@ def show_corporate_page(self):
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.corp_tree.yview)
     self.corp_tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
-
 
 def add_corporate(self):
     form = tk.Toplevel(self.root)
@@ -66,7 +64,7 @@ def add_corporate(self):
         try:
             credit = float(entries['credit'].get() or 1000)
             discount = float(entries['discount'].get() or 10)
-        except:
+        except (ValueError, TypeError):
             credit, discount = 1000, 10
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()

@@ -16,14 +16,13 @@ Tests all functionality in university_system/modules/shared/utils/document_manag
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 import shutil
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, call
 import json
-
 
 @pytest.fixture
 def temp_db():
@@ -36,7 +35,6 @@ def temp_db():
     # Cleanup
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
-
 
 @pytest.fixture
 def mock_auth():
@@ -53,7 +51,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.get_current_user.return_value = auth.current_user
     return auth
-
 
 @pytest.fixture
 def doc_manager(temp_db, mock_auth):
@@ -76,7 +73,6 @@ def doc_manager(temp_db, mock_auth):
         # Cleanup
         if hasattr(manager, 'conn'):
             manager.conn.close()
-
 
 class TestDocumentManagerInitialization:
     """Test DocumentManager initialization and database setup"""
@@ -144,7 +140,6 @@ class TestDocumentManagerInitialization:
 
             conn.close()
 
-
 class TestDocumentUpload:
     """Test document upload functionality"""
 
@@ -178,7 +173,6 @@ class TestDocumentUpload:
 
             assert hasattr(doc_manager, 'get_file_upload_details')
 
-
 class TestDocumentStatus:
     """Test document status management"""
 
@@ -211,7 +205,6 @@ class TestDocumentStatus:
         conn.close()
 
         assert hasattr(doc_manager, 'update_document_status')
-
 
 class TestDocumentSearch:
     """Test document search functionality"""
@@ -255,7 +248,6 @@ class TestDocumentSearch:
         criteria = {'student_id': 'S001', 'status': 'approved'}
 
         assert hasattr(doc_manager, 'execute_advanced_search')
-
 
 class TestDashboardAndAnalytics:
     """Test dashboard and analytics functionality"""
@@ -325,7 +317,6 @@ class TestDashboardAndAnalytics:
 
         conn.close()
 
-
 class TestVersionControl:
     """Test document versioning functionality"""
 
@@ -344,7 +335,6 @@ class TestVersionControl:
     def test_restore_previous_version(self, doc_manager):
         """Test restoring previous document version"""
         assert hasattr(doc_manager, 'restore_previous_version')
-
 
 class TestWorkflowManagement:
     """Test workflow management functionality"""
@@ -388,7 +378,6 @@ class TestWorkflowManagement:
         """Test processing workflow steps"""
         assert hasattr(doc_manager, 'process_workflow_step')
 
-
 class TestReportGeneration:
     """Test report generation functionality"""
 
@@ -420,7 +409,6 @@ class TestReportGeneration:
         """Test custom report builder"""
         assert hasattr(doc_manager, 'custom_report_builder')
 
-
 class TestBulkOperations:
     """Test bulk operations functionality"""
 
@@ -443,7 +431,6 @@ class TestBulkOperations:
     def test_bulk_tag_assignment(self, doc_manager):
         """Test bulk tag assignment"""
         assert hasattr(doc_manager, 'bulk_tag_assignment')
-
 
 class TestNotifications:
     """Test notification system"""
@@ -488,7 +475,6 @@ class TestNotifications:
         """Test bulk notification campaign"""
         assert hasattr(doc_manager, 'bulk_notification_campaign')
 
-
 class TestImportExport:
     """Test import/export functionality"""
 
@@ -520,7 +506,6 @@ class TestImportExport:
         """Test compliance data export"""
         assert hasattr(doc_manager, 'export_compliance_data')
 
-
 class TestStudentSelfService:
     """Test student self-service functionality"""
 
@@ -548,7 +533,6 @@ class TestStudentSelfService:
         """Test student notifications"""
         assert hasattr(doc_manager, 'my_notifications')
 
-
 class TestDocumentTypes:
     """Test document type management"""
 
@@ -568,7 +552,6 @@ class TestDocumentTypes:
         """Test modifying document type"""
         assert hasattr(doc_manager, 'modify_document_type')
 
-
 class TestSystemSettings:
     """Test system settings"""
 
@@ -584,7 +567,6 @@ class TestSystemSettings:
         """Test email settings"""
         assert hasattr(doc_manager, 'email_settings')
 
-
 class TestBackupSystem:
     """Test backup functionality"""
 
@@ -595,7 +577,6 @@ class TestBackupSystem:
     def test_create_full_backup(self, doc_manager):
         """Test creating full backup"""
         assert hasattr(doc_manager, 'create_full_backup')
-
 
 class TestAdvancedFeatures:
     """Test advanced features"""
@@ -616,7 +597,6 @@ class TestAdvancedFeatures:
         """Test web interface menu"""
         assert hasattr(doc_manager, 'web_interface_menu')
 
-
 class TestAuthentication:
     """Test authentication and authorization"""
 
@@ -633,7 +613,6 @@ class TestAuthentication:
         """Test student menu access"""
         doc_manager.auth.current_user['role'] = 'student'
         assert hasattr(doc_manager, 'display_student_menu')
-
 
 class TestHelperMethods:
     """Test helper methods"""
@@ -677,7 +656,6 @@ class TestHelperMethods:
     def test_select_tags(self, doc_manager):
         """Test tag selection helper"""
         assert hasattr(doc_manager, 'select_tags')
-
 
 class TestIntegration:
     """Integration tests"""
@@ -742,7 +720,6 @@ class TestIntegration:
         assert current_count == 1, "Should have exactly 1 current version"
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

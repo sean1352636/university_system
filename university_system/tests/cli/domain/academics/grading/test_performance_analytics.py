@@ -4,7 +4,7 @@ Tests module performance analysis, dashboards, and reporting
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 import numpy as np
@@ -32,7 +32,6 @@ from university_system.modules.domain.academics.grading.performance_analytics im
     build_module_success_model
 )
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def test_db(tmp_path):
@@ -135,7 +134,6 @@ def test_db(tmp_path):
         with patch('university_system.modules.domain.academics.grading.performance_analytics.get_connection', mock_get_connection):
             yield mock_get_connection
 
-
 @pytest.fixture
 def sample_data(test_db):
     """Insert sample data for testing"""
@@ -207,7 +205,6 @@ def sample_data(test_db):
 
     return test_db
 
-
 class TestCollectDashboardData:
     """Tests for collect_dashboard_data function"""
 
@@ -274,7 +271,6 @@ class TestCollectDashboardData:
 
         conn.close()
 
-
 class TestModulePerformanceSummary:
     """Tests for module_performance_summary function"""
 
@@ -295,7 +291,6 @@ class TestModulePerformanceSummary:
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'CS101' in printed_output or 'Performance' in printed_output
-
 
 class TestAnalyzeModulePerformance:
     """Tests for analyze_module_performance function"""
@@ -348,7 +343,6 @@ class TestAnalyzeModulePerformance:
 
         conn.close()
 
-
 class TestCalculateCourseStatistics:
     """Tests for calculate_course_statistics function"""
 
@@ -380,7 +374,6 @@ class TestCalculateCourseStatistics:
 
         conn.close()
 
-
 class TestGeneratePerformanceDashboard:
     """Tests for generate_performance_dashboard function"""
 
@@ -394,7 +387,6 @@ class TestGeneratePerformanceDashboard:
 
         # Should call the display, report, and visualization functions
         assert mock_display.called or mock_print.called
-
 
 class TestDisplayModulePerformanceResults:
     """Tests for display_module_performance_results function"""
@@ -428,7 +420,6 @@ class TestDisplayModulePerformanceResults:
         assert 'CS101' in printed_output
         assert 'MODULE PERFORMANCE' in printed_output
 
-
 class TestExportModulePerformance:
     """Tests for export_module_performance function"""
 
@@ -459,7 +450,6 @@ class TestExportModulePerformance:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'exported' in printed_output
 
-
 class TestForecastSingleCourse:
     """Tests for forecast_single_course function"""
 
@@ -475,7 +465,6 @@ class TestForecastSingleCourse:
         assert 'No sufficient historical data' in printed_output or 'Forecast' in printed_output
 
         conn.close()
-
 
 class TestBuildModuleSuccessModel:
     """Tests for build_module_success_model function"""
@@ -505,7 +494,6 @@ class TestBuildModuleSuccessModel:
         assert 'Module' in printed_output or 'model' in printed_output.lower()
 
         conn.close()
-
 
 class TestDataValidation:
     """Tests for data validation and edge cases"""
@@ -537,7 +525,6 @@ class TestDataValidation:
         assert stats is None or stats['avg_score'] is not None
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

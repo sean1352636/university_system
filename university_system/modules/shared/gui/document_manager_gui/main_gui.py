@@ -50,7 +50,7 @@ except ImportError:
         return {'username': 'admin', 'role': 'admin'}
 
 # Import all managers
-from university_system.modules.shared.gui.document_manager_gui.database import DatabaseManager as DBManager
+from university_system.modules.shared.gui.document_manager_gui.database import DocumentDatabaseManager as DBManager
 from university_system.modules.shared.gui.document_manager_gui.layout import LayoutManager
 from university_system.modules.shared.gui.document_manager_gui.helpers import HelperManager
 from university_system.modules.shared.gui.document_manager_gui.dashboard import DashboardManager

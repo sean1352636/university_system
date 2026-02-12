@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, asynccontextmanager
 from typing import Any, Callable, List, Optional, Tuple, TypeVar, Union
 from functools import wraps
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -388,13 +389,17 @@ class DatabaseQueryBuilder:
 
     def _build_query(self) -> Tuple[str, Tuple]:
         """Build the SQL query."""
-        columns = ", ".join(self._columns)
-        sql = f"SELECT {columns} FROM {self.table}"
+        safe_table = validate_table_name(self.table)
+        safe_columns = ", ".join(
+            validate_identifier(c, "column") if c != "*" else c
+            for c in self._columns
+        )
+        sql = "SELECT " + safe_columns + " FROM [" + safe_table + "]"
 
         params = []
         if self._conditions:
             conditions = " AND ".join(cond for cond, _ in self._conditions)
-            sql += f" WHERE {conditions}"
+            sql += " WHERE " + conditions
             for _, value in self._conditions:
                 if isinstance(value, tuple):
                     params.extend(value)
@@ -402,12 +407,12 @@ class DatabaseQueryBuilder:
                     params.append(value)
 
         if self._order:
-            sql += f" ORDER BY {self._order}"
+            sql += " ORDER BY " + self._order
 
         if self._limit:
-            sql += f" LIMIT {self._limit}"
+            sql += " LIMIT " + str(int(self._limit))
             if self._offset:
-                sql += f" OFFSET {self._offset}"
+                sql += " OFFSET " + str(int(self._offset))
 
         return sql, tuple(params)
 

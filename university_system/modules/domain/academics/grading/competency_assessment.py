@@ -837,11 +837,11 @@ def generate_course_competency_report(cursor, course):
         student_id_values = [s[0] for s in students]
         placeholders = ','.join(['?' for _ in student_id_values])
 
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT DISTINCT c.competency_id, c.name, c.category
         FROM competencies c
         JOIN student_competencies sc ON c.competency_id = sc.competency_id
-        WHERE sc.student_id IN ({placeholders})
+        WHERE sc.student_id IN (''' + placeholders + ''')
         ORDER BY c.category, c.name
         ''', student_id_values)
 
@@ -856,11 +856,11 @@ def generate_course_competency_report(cursor, course):
 
         for comp_id, comp_name, category in competencies:
             # SECURITY FIX: Use parameterized query for IN clause
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT sc.student_id, cl.level_value
             FROM student_competencies sc
             JOIN competency_levels cl ON sc.level_id = cl.level_id
-            WHERE sc.competency_id = ? AND sc.student_id IN ({placeholders})
+            WHERE sc.competency_id = ? AND sc.student_id IN (''' + placeholders + ''')
             ''', [comp_id] + student_id_values)
             
             assessments = cursor.fetchall()

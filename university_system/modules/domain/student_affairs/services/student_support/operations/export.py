@@ -2,7 +2,6 @@
 Data export functionality.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def export_data(export_type, filters=None, format='csv'):
     """Export support data in various formats"""
@@ -70,7 +66,6 @@ def export_data(export_type, filters=None, format='csv'):
         logger.error(f"Error exporting data: {e}")
         raise
 
-
 def _export_tickets(cursor, filters):
     """Export ticket data"""
     query = "SELECT * FROM support_tickets WHERE 1=1"
@@ -99,7 +94,6 @@ def _export_tickets(cursor, filters):
         'columns': columns,
         'rows': rows
     }
-
 
 def _export_responses(cursor, filters):
     """Export response data"""
@@ -131,7 +125,6 @@ def _export_responses(cursor, filters):
         'rows': rows
     }
 
-
 def _export_metrics(cursor, filters):
     """Export metrics data"""
     query = "SELECT * FROM system_metrics WHERE 1=1"
@@ -160,7 +153,6 @@ def _export_metrics(cursor, filters):
         'columns': columns,
         'rows': rows
     }
-
 
 def _export_users(cursor, filters):
     """Export user data for support-related activities"""
@@ -201,7 +193,6 @@ def _export_users(cursor, filters):
         'columns': columns,
         'rows': rows
     }
-
 
 def _export_logs(cursor, filters):
     """Export system logs and activity data"""
@@ -256,7 +247,6 @@ def _export_logs(cursor, filters):
                 'rows': []
             }
 
-
 def _format_as_csv(data):
     """Format data as CSV string"""
     import csv
@@ -273,7 +263,6 @@ def _format_as_csv(data):
         writer.writerow(row)
 
     return output.getvalue()
-
 
 def export_data_menu(support):
     """Export data menu (staff only)"""
@@ -306,7 +295,6 @@ def export_data_menu(support):
         print(f"❌ Error in export menu: {e}")
     
     input("\nPress Enter to continue...")
-
 
 def export_tickets_menu(support):
     """Export tickets with filters"""
@@ -357,7 +345,6 @@ def export_tickets_menu(support):
     except Exception as e:
         print(f"❌ Error exporting tickets: {e}")
 
-
 def export_responses_menu(support):
     """Export responses with filters"""
     print("\n📤 EXPORT RESPONSES")
@@ -398,7 +385,6 @@ def export_responses_menu(support):
         
     except Exception as e:
         print(f"❌ Error exporting responses: {e}")
-
 
 def export_metrics_menu(support):
     """Export metrics with filters"""
@@ -445,7 +431,6 @@ def export_metrics_menu(support):
         
     except Exception as e:
         print(f"❌ Error exporting metrics: {e}")
-
 
 def export_filtered_tickets_menu(support):
     """Export tickets with advanced filters"""

@@ -2,7 +2,6 @@
 Knowledge base article management.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from ..utils.audit import audit_action
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def create_kb_article(title, content, category, summary=None, tags=None, is_published=False):
     """Create a new knowledge base article"""
@@ -71,7 +67,6 @@ def create_kb_article(title, content, category, summary=None, tags=None, is_publ
     except Exception as e:
         logger.error(f"Error creating knowledge base article: {e}")
         raise
-
 
 def get_kb_articles(category=None, published_only=True):
     """Get knowledge base articles"""
@@ -165,7 +160,6 @@ def _generate_search_keywords(text):
     
     return ' '.join(keywords[:50])  # Limit to 50 keywords
 
-
 def _search_knowledge_base(query, filters):
     """Search knowledge base articles"""
     try:
@@ -209,7 +203,6 @@ def _search_knowledge_base(query, filters):
         logger.error(f"Error searching knowledge base: {e}")
         return []
 
-
 def manage_knowledge_base_menu(support):
     """Manage knowledge base articles (staff only)"""
     try:
@@ -239,7 +232,6 @@ def manage_knowledge_base_menu(support):
     
     input("\nPress Enter to continue...")
 
-
 def view_all_kb_articles(support):
     """View all knowledge base articles"""
     try:
@@ -263,7 +255,6 @@ def view_all_kb_articles(support):
             print()
     except Exception as e:
         print(f"❌ Error viewing articles: {e}")
-
 
 def create_kb_article_interactive(support):
     """Interactive knowledge base article creation"""
@@ -318,7 +309,6 @@ def create_kb_article_interactive(support):
     except Exception as e:
         print(f"❌ Error creating article: {e}")
 
-
 def show_kb_statistics(support):
     """Show knowledge base statistics"""
     try:
@@ -358,7 +348,6 @@ def show_kb_statistics(support):
         
     except Exception as e:
         print(f"❌ Error getting knowledge base statistics: {e}")
-
 
 def browse_knowledge_base(support):
     """Browse knowledge base articles"""
@@ -414,7 +403,6 @@ def browse_knowledge_base(support):
     
     input("\nPress Enter to continue...")
 
-
 def display_article_list(articles, title):
     """Display a list of knowledge base articles"""
     print(f"\n📖 {title}")
@@ -440,7 +428,6 @@ def display_article_list(articles, title):
     if view_choice.isdigit() and 1 <= int(view_choice) <= min(len(articles), 10):
         article = articles[int(view_choice) - 1]
         display_full_article(article)
-
 
 def display_full_article(article):
     """Display full knowledge base article"""
@@ -480,7 +467,6 @@ def display_full_article(article):
 # Main integration function
 if __name__ == "__main__":
     display_support_menu()
-
 
 def publish_kb_article_interactive(support):
     """Interactive knowledge base article publishing"""

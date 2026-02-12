@@ -1720,8 +1720,8 @@ class NailBarGUI:
                     new_balance = get_student_finance_account_balance(customer_id)
                     if new_balance is not None:
                         balance_text = f"Your updated account balance is: £{new_balance:.2f}"
-                except:
-                    pass
+                except Exception:
+                    logger.debug("Could not retrieve updated student finance balance")
 
             # Use JSON template for email
             subject, body = render_template('commerce/nailbar/refund_receipt', {

@@ -6,13 +6,11 @@ Tests UI initialization, database operations, and validation.
 import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog import (
     EditLearningOutcomeDialog,
     safe_grab_set
 )
-
 
 @pytest.fixture
 def root():
@@ -24,7 +22,6 @@ def root():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_connection():
     """Mock database connection"""
@@ -34,7 +31,6 @@ def mock_connection():
     mock_conn.commit = Mock()
     mock_conn.close = Mock()
     return mock_conn, mock_cursor
-
 
 class TestEditLearningOutcomeDialog:
     """Test EditLearningOutcomeDialog class"""
@@ -308,7 +304,6 @@ class TestEditLearningOutcomeDialog:
         assert dialog.course_var.get() == "CS102"
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

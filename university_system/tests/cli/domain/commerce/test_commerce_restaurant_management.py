@@ -4,11 +4,10 @@ Tests initialization, menu management, order management, and core functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.commerce.services import restaurant_management
-
 
 @pytest.fixture
 def mock_auth():
@@ -25,12 +24,10 @@ def mock_auth():
     auth.check_session = Mock(return_value=True)
     return auth
 
-
 @pytest.fixture
 def mock_db_path(tmp_path):
     """Create a temporary database path."""
     return tmp_path / "test_restaurant.db"
-
 
 class TestDatabaseInitialization:
     """Tests for database initialization."""
@@ -67,7 +64,6 @@ class TestDatabaseInitialization:
             assert cursor.fetchone() is not None
 
             conn.close()
-
 
 class TestMenuManagement:
     """Tests for menu management functionality."""
@@ -305,7 +301,6 @@ class TestMenuManagement:
 
             assert available == 0  # Should be toggled to unavailable
 
-
 class TestOrderManagement:
     """Tests for order management functionality."""
 
@@ -476,7 +471,6 @@ class TestOrderManagement:
             captured = capsys.readouterr()
             assert "Order Summary" in captured.out or "Today" in captured.out
 
-
 class TestSalesReports:
     """Tests for sales reporting functionality."""
 
@@ -518,7 +512,6 @@ class TestSalesReports:
             assert "Today's Orders:" in captured.out
             assert "Weekly Orders:" in captured.out
 
-
 class TestAuthIntegration:
     """Tests for authentication integration."""
 
@@ -544,7 +537,6 @@ class TestAuthIntegration:
         captured = capsys.readouterr()
         assert "Please log in" in captured.out
         mock_fallback.assert_not_called()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

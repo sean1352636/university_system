@@ -7,10 +7,8 @@ This migration:
 3. Adds any missing indexes for performance
 """
 
-from university_system.modules.shared.constants import paths
-import sqlite3
-
-
+from university_system.core import paths
+from university_system.infrastructure.database.db import sqlite3
 def migrate():
     """Run the migration"""
     db_path = paths.DEFAULT_DB_PATH
@@ -137,7 +135,6 @@ def migrate():
 
     finally:
         conn.close()
-
 
 if __name__ == "__main__":
     migrate()

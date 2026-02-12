@@ -4,8 +4,7 @@ Cinema Booking System - Bookings Page
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_bookings_page(self):
     """Display bookings search page."""

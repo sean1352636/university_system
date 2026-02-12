@@ -915,7 +915,6 @@ class AuthenticatedSession:
     login_time: datetime
     last_activity: datetime
 
-
 @dataclass
 class UserSession:
     user_id: str
@@ -2252,7 +2251,6 @@ class UniversityChatbot:
             print(f"Error getting student ID for user {username}: {e}")
             return None
 
-
     def run_authenticated_console_interface(self):
         """Run console interface with existing authentication - NO DOUBLE LOGIN"""
         print("Enhanced University Chatbot")
@@ -2422,7 +2420,6 @@ class UniversityChatbot:
         except ImportError:
             print("pyotp not available for MFA verification")
             return True  # Skip MFA if library not available
-
 
     def validate_session(self, session_token: str) -> Optional[UserSession]:
         """Validate user session"""
@@ -3216,9 +3213,7 @@ class UniversityChatbot:
         """Send proactive notifications based on deadlines and events"""
         try:
             from datetime import datetime, timedelta
-            import sqlite3
 
-            # Connect to database
             conn = sqlite3.connect(str(self.db_path))
             cursor = conn.cursor()
 
@@ -3306,7 +3301,6 @@ class UniversityChatbot:
         except Exception as e:
             self.logger.error(f"Error sending proactive alerts: {e}")
 
-
 # Supporting Classes
 class NotificationService:
     def __init__(self, config: Dict):
@@ -3357,7 +3351,7 @@ class CourseRecommendationEngine:
         - Tracks prerequisite effectiveness
         """
         try:
-            import sqlite3
+
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
@@ -3507,7 +3501,6 @@ def setup_enhanced_api_routes(self):
     self.setup_api_routes()
 
 # authenticate_user removed - use central authentication via get_auth()
-
 
 # Main execution enhancement
     if __name__ == "__main__":

@@ -12,13 +12,11 @@ Tests all classes, functions, and functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.services.virtual_classroom.schema import (
     VIRTUAL_CLASSROOM_SCHEMA,
     create_virtual_classroom_tables
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -27,7 +25,6 @@ def temp_db():
         db_path = f.name
     yield db_path
     os.unlink(db_path)
-
 
 class TestSchemaDefinition:
     """Test schema SQL definition."""
@@ -55,7 +52,6 @@ class TestSchemaDefinition:
     def test_schema_contains_indexes(self):
         """Test that schema includes performance indexes."""
         assert 'CREATE INDEX' in VIRTUAL_CLASSROOM_SCHEMA
-
 
 class TestCreateVirtualClassroomTables:
     """Test table creation function."""
@@ -129,7 +125,6 @@ class TestCreateVirtualClassroomTables:
 
         conn.close()
 
-
 class TestTableStructure:
     """Test individual table structures."""
 
@@ -194,7 +189,6 @@ class TestTableStructure:
         assert 'question' in columns
         assert 'poll_type' in columns
 
-
 class TestForeignKeys:
     """Test foreign key relationships."""
 
@@ -214,7 +208,6 @@ class TestForeignKeys:
             """)
 
         conn.close()
-
 
 class TestDefaultValues:
     """Test default column values."""
@@ -262,7 +255,6 @@ class TestDefaultValues:
         assert row[0] == 'scheduled'
         assert row[1] == 'lecture'
 
-
 class TestCascadeDeletes:
     """Test cascade delete behavior."""
 
@@ -293,7 +285,6 @@ class TestCascadeDeletes:
         conn.close()
 
         assert count == 0
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

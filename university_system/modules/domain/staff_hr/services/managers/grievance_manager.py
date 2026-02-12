@@ -15,6 +15,7 @@ import uuid
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.core.sql_safety import validate_identifier
 
 
 class GrievanceManager:
@@ -199,7 +200,7 @@ class GrievanceManager:
         values = []
         for key, value in data.items():
             if key not in ('grievance_id', 'created_at', 'complainant_id', 'reference_number'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -210,9 +211,9 @@ class GrievanceManager:
         values.append(grievance_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE grievances SET {', '.join(fields)} WHERE grievance_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE grievances SET ' + ', '.join(fields) + ' WHERE grievance_id = ?',
+                values)
 
             log_activity('update', 'grievance', details={
                 'grievance_id': grievance_id,
@@ -505,7 +506,7 @@ class GrievanceManager:
         values = []
         for key, value in data.items():
             if key not in ('record_id', 'created_at', 'user_id', 'reference_number'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -516,9 +517,9 @@ class GrievanceManager:
         values.append(record_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE disciplinary_records SET {', '.join(fields)} WHERE record_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE disciplinary_records SET ' + ', '.join(fields) + ' WHERE record_id = ?',
+                values)
             log_activity('update', 'disciplinary_record', details={'record_id': record_id})
             return True
 

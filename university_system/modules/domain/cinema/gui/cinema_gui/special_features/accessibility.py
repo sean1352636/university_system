@@ -4,7 +4,7 @@ Cinema Booking System - Accessibility Features
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -15,7 +15,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import SEAT_TYPES
-
 
 def show_accessible_page(self):
     self.clear_content()
@@ -104,7 +103,6 @@ def show_accessible_page(self):
         f.pack(side="left", padx=15)
         tk.Canvas(f, width=20, height=20, bg=color, highlightthickness=1).pack(side="left")
         tk.Label(f, text=label, bg="#ecf0f1", fg="#333333").pack(side="left", padx=5)
-
 
 def configure_accessible_seats(self):
     form = tk.Toplevel(self.root)
@@ -216,7 +214,6 @@ def configure_accessible_seats(self):
             messagebox.showerror(_t("cinema.common.error"), f"Failed to save configuration:\n{str(e)}")
 
     ttk.Button(frame, text=_t("cinema.btn.save_configuration"), style="Success.TButton", command=save).pack(pady=20)
-
 
 def view_accessible_bookings(self):
     conn = sqlite3.connect(DB_FILE)

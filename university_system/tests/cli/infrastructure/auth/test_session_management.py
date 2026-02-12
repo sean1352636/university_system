@@ -14,7 +14,7 @@ Tests:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
@@ -22,7 +22,6 @@ from unittest.mock import Mock, patch
 
 from university_system.infrastructure.security.session_management import SessionManager
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-
 
 @pytest.fixture
 def test_db():
@@ -81,7 +80,6 @@ def test_db():
     # Cleanup
     if os.path.exists(path):
         os.remove(path)
-
 
 # ============================================================================
 # Session Creation Tests
@@ -157,7 +155,6 @@ class TestSessionCreation:
         assert result['success'] is True
         assert result['suspicious'] is True
         assert len(result['warnings']) > 0
-
 
 # ============================================================================
 # Session Validation Tests
@@ -242,7 +239,6 @@ class TestSessionValidation:
         assert result['valid'] is True
         assert any('IP address changed' in w for w in result.get('warnings', []))
 
-
 # ============================================================================
 # Session Termination Tests
 # ============================================================================
@@ -322,7 +318,6 @@ class TestSessionTermination:
         validate_result = manager.validate_session(current_session_id, 1)
         assert validate_result['valid'] is True
 
-
 # ============================================================================
 # Suspicious Activity Detection Tests
 # ============================================================================
@@ -376,7 +371,6 @@ class TestSuspiciousActivityDetection:
         if is_unusual_hours:
             assert any('unusual' in w.lower() for w in result.get('warnings', []))
 
-
 # ============================================================================
 # Session Listing Tests
 # ============================================================================
@@ -420,7 +414,6 @@ class TestSessionListing:
         # Should have only 1 active session
         assert all(s['is_active'] for s in active_sessions)
 
-
 # ============================================================================
 # Session Cleanup Tests
 # ============================================================================
@@ -456,7 +449,6 @@ class TestSessionCleanup:
         count = manager.cleanup_expired_sessions()
 
         assert count >= 1
-
 
 # ============================================================================
 # Session Statistics Tests
@@ -498,7 +490,6 @@ class TestSessionStatistics:
         stats = manager.get_session_statistics(user_id=1)
 
         assert stats['active_sessions'] >= 1
-
 
 # ============================================================================
 # Location Services Tests
@@ -549,7 +540,6 @@ class TestLocationServices:
         assert location['city'] == 'San Francisco'
         assert location['country'] == 'United States'
 
-
 # ============================================================================
 # Integration Tests
 # ============================================================================
@@ -585,7 +575,6 @@ class TestSessionIntegration:
         # Validate should now fail
         validate_result2 = manager.validate_session(session_id, 1)
         assert validate_result2['valid'] is False
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

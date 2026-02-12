@@ -9,13 +9,12 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.gui.grade_tracking.assessment_manager import (
     AssessmentManager, percentage_to_letter, letter_to_percentage, letter_to_gpa
 )
-
 
 @pytest.fixture
 def root_window():
@@ -26,7 +25,6 @@ def root_window():
         root.destroy()
     except Exception:
         pass
-
 
 @pytest.fixture
 def mock_app(root_window):
@@ -41,7 +39,6 @@ def mock_app(root_window):
     app.layout.content_frame = ttk.Frame(root_window)
 
     return app
-
 
 class TestGradeConversions:
     """Test grade conversion functions"""
@@ -77,7 +74,6 @@ class TestGradeConversions:
     def test_letter_to_gpa_f(self):
         """Test converting F to GPA"""
         assert letter_to_gpa('F') == 0.0
-
 
 class TestAssessmentManager:
     """Test suite for AssessmentManager"""
@@ -308,7 +304,6 @@ class TestAssessmentManager:
 
         cursor.execute.assert_called()
 
-
 class TestAssessmentEditing:
     """Test assessment editing functionality"""
 
@@ -349,7 +344,6 @@ class TestAssessmentEditing:
 
         mock_warning.assert_called_once()
 
-
 class TestAssessmentIntegration:
     """Integration tests for assessment management"""
 
@@ -388,7 +382,6 @@ class TestAssessmentIntegration:
 
         # Verify multiple database calls were made
         assert cursor.execute.call_count >= 4
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -13,31 +13,7 @@ from university_system.modules.shared.constants import paths
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 
-# --------------------------------------------------------------------
-# Override sqlite3.connect for this GUI. Many database calls within this
-# module reference 'courses.db' or str(DEFAULT_DB_PATH) directly. Without
-# overriding, these calls would create separate database files in the
-# working directory, leading to inconsistencies and missing tables. By
-# redirecting those names to the central student_records.db located in
-# university_system/data/db_files, we ensure a single database file is
-# used across the entire application. Only connections specifying no
-# database or targeting courses.db/student_records.db are redirected;
-# all other database paths are left untouched.
-
-_original_sqlite_connect = sqlite3.connect
-
-def _patched_sqlite_connect(database, *args, **kwargs):
-    try:
-        db_name = os.path.basename(str(database)) if database else ""
-        if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
-            return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
-    except Exception:
-        pass
-    return _original_sqlite_connect(database, *args, **kwargs)
-
-sqlite3.connect = _patched_sqlite_connect
 import re
 import csv
 import json
@@ -419,13 +395,3 @@ def _migrate_database(self, cursor, conn):
 
     except Exception as e:
         print(_("course_management.errors.migration_error", error=str(e)))
-
-
-def _patched_sqlite_connect(database, *args, **kwargs):
-    try:
-        db_name = os.path.basename(str(database)) if database else ""
-        if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
-            return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
-    except Exception:
-        pass
-    return _original_sqlite_connect(database, *args, **kwargs)

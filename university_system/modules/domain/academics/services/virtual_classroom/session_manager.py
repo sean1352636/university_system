@@ -3,12 +3,12 @@ Virtual Session Manager
 Handles scheduling and management of virtual sessions
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
+from university_system.core.sql_safety import validate_identifier
 
 class SessionManager:
     """Manager for virtual session operations"""
@@ -252,7 +252,7 @@ class SessionManager:
 
                 for key, value in kwargs.items():
                     if key in allowed_fields:
-                        updates.append(f"{key} = ?")
+                        updates.append(f"{validate_identifier(key, 'column')} = ?")
                         values.append(value)
 
                 if not updates:

@@ -3,7 +3,7 @@ Tests for university_system/modules/core/services/restaurant_misc/financials.py
 """
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from io import StringIO
 from unittest import mock
@@ -11,7 +11,6 @@ from unittest import mock
 import pytest
 
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import financials
-
 
 @pytest.fixture
 def mock_db_connection():
@@ -21,7 +20,6 @@ def mock_db_connection():
     conn.cursor.return_value = cursor
     return conn, cursor
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication context"""
@@ -29,7 +27,6 @@ def mock_auth():
     auth.current_user = {'id': 'USER001', 'username': 'testuser'}
     auth.check_permission.return_value = True
     return auth
-
 
 class TestProfitLossStatement:
     """Tests for profit_loss_statement function"""
@@ -96,7 +93,6 @@ class TestProfitLossStatement:
                         assert 'An error occurred' in output
                         mock_log.assert_called_once()
 
-
 class TestExpenseTracking:
     """Tests for expense_tracking function"""
 
@@ -128,7 +124,6 @@ class TestExpenseTracking:
 
                 output = fake_out.getvalue()
                 assert 'Invalid choice' in output
-
 
 class TestAddExpense:
     """Tests for add_expense function"""
@@ -212,7 +207,6 @@ class TestAddExpense:
                                 assert 'Expense added successfully!' in output
                                 assert 'Custom Category' in output
 
-
 class TestViewExpenses:
     """Tests for view_expenses function"""
 
@@ -258,7 +252,6 @@ class TestViewExpenses:
                     output = fake_out.getvalue()
                     assert 'No expenses found' in output
 
-
 class TestBudgetManagement:
     """Tests for budget_management function"""
 
@@ -272,7 +265,6 @@ class TestBudgetManagement:
                 assert 'BUDGET MANAGEMENT' in output
                 assert '1. View budgets' in output
                 assert '2. Create budget' in output
-
 
 class TestViewBudgets:
     """Tests for view_budgets function"""
@@ -307,7 +299,6 @@ class TestViewBudgets:
                     financials.view_budgets()
 
                     assert 'WHERE spent_amount > allocated_amount' in cursor.execute.call_args[0][0]
-
 
 class TestCreateBudget:
     """Tests for create_budget function"""
@@ -344,7 +335,6 @@ class TestCreateBudget:
 
                 output = fake_out.getvalue()
                 assert "You don't have permission" in output
-
 
 class TestUpdateBudget:
     """Tests for update_budget function"""
@@ -383,7 +373,6 @@ class TestUpdateBudget:
 
                             output = fake_out.getvalue()
                             assert 'Budget not found' in output
-
 
 class TestBudgetVsActual:
     """Tests for budget_vs_actual function"""

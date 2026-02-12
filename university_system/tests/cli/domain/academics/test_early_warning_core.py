@@ -10,7 +10,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
@@ -23,7 +23,6 @@ from university_system.modules.domain.student_affairs.services.early_warning.ear
     TutoringManager,
     display_early_warning_menu,
 )
-
 
 @pytest.fixture
 def setup_database():
@@ -205,7 +204,6 @@ def setup_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def sample_student(setup_database):
     """Create a sample student for testing"""
@@ -222,7 +220,6 @@ def sample_student(setup_database):
     conn.close()
 
     return student_id
-
 
 class TestRiskAssessmentManager:
     """Tests for RiskAssessmentManager"""
@@ -322,7 +319,6 @@ class TestRiskAssessmentManager:
         assert len(at_risk) >= 1
         assert any(s['student_id'] == 'HIGH_RISK_1' for s in at_risk)
 
-
 class TestIndicatorManager:
     """Tests for IndicatorManager"""
 
@@ -406,7 +402,6 @@ class TestIndicatorManager:
         active = IndicatorManager.get_active_indicators(student_id)
 
         assert len(active) == 2  # Two should still be active
-
 
 class TestInterventionManager:
     """Tests for InterventionManager"""
@@ -492,7 +487,6 @@ class TestInterventionManager:
         pending = InterventionManager.get_pending_interventions()
 
         assert len(pending) >= 2
-
 
 class TestCoachingManager:
     """Tests for CoachingManager"""
@@ -583,7 +577,6 @@ class TestCoachingManager:
         assert progress is not None
         assert assignment['last_meeting_date'] is not None
 
-
 class TestTutoringManager:
     """Tests for TutoringManager"""
 
@@ -636,7 +629,6 @@ class TestTutoringManager:
         assert rec['tutor_assigned'] == 'tutor@school.edu'
         assert rec['status'] == 'assigned'
 
-
 class TestCLIMenu:
     """Tests for CLI menu"""
 
@@ -646,7 +638,6 @@ class TestCLIMenu:
             with patch('builtins.print'):
                 mock_auth = MagicMock()
                 display_early_warning_menu(mock_auth)
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -712,7 +703,6 @@ class TestIntegrationScenarios:
         assert cursor.fetchone() is not None
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

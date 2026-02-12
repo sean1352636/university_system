@@ -2,7 +2,6 @@
 Automatic ticket escalation.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def _process_escalations():
     """Process automatic escalations based on rules"""
@@ -121,7 +117,6 @@ def _apply_escalation_rule(rule, cursor):
     except Exception as e:
         logger.error(f"Error applying escalation rule {rule_id}: {e}")
 
-
 def _escalate_ticket(ticket_id, rule_id, cursor):
     """Escalate a ticket"""
     escalation_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -145,7 +140,6 @@ def _escalate_ticket(ticket_id, rule_id, cursor):
         escalation_time, 1
     ))
 
-
 def _create_escalation_notification(ticket_id, target, cursor):
     """Create notification for escalation"""
     if not target:
@@ -164,7 +158,6 @@ def _create_escalation_notification(ticket_id, target, cursor):
         f'Ticket #{ticket_id} requires attention due to escalation rules.',
         NotificationType.EMAIL.value, ticket_id, timestamp
     ))
-
 
 def _reassign_ticket(ticket_id, new_assignee, cursor):
     """Reassign a ticket"""

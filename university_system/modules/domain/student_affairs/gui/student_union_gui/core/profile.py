@@ -14,6 +14,7 @@ import queue
 from university_system.infrastructure.email.template_utils import render_template
 from university_system.infrastructure.auth import UserAuth
 from university_system.infrastructure.shared_context import get_auth
+from university_system.core.sql_safety import validate_table_name
 
 # Import i18n for multi-language support
 from university_system.modules.shared.utils.i18n import (
@@ -199,12 +200,13 @@ def show_database_info(self):
         info += _t("student_union.profile.db_tables") + "\n"
         for table in tables:
             table_name = table[0]
-            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            safe_table = validate_table_name(table_name, conn=conn)
+            cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
             count = cursor.fetchone()[0]
             info += f"  {table_name}: {count} records\n"
-            
+
             # Show table structure
-            cursor.execute(f"PRAGMA table_info({table_name})")
+            cursor.execute("PRAGMA table_info([" + safe_table + "])")
             columns = cursor.fetchall()
             info += "    Columns: "
             info += ", ".join([col[1] for col in columns])

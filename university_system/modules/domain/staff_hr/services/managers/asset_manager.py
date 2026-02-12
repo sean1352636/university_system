@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 try:
     from university_system.modules.shared.utils.activity_logger import log_activity
@@ -228,7 +229,7 @@ class AssetManager:
                 if current.get(key) != value:
                     old_values[key] = current.get(key)
                     new_values[key] = value
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -239,11 +240,9 @@ class AssetManager:
         values.append(asset_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE assets
-                SET {', '.join(fields)}
-                WHERE asset_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE assets SET ' + ', '.join(fields) + ' WHERE asset_id = ?',
+                values)
 
             # Create audit log entry
             if old_values:

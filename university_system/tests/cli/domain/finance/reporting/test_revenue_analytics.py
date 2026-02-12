@@ -10,13 +10,12 @@ This module tests the financial reporting and analytics functions including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from university_system.modules.domain.finance.reporting import revenue_analytics
-
 
 @pytest.fixture
 def temp_db():
@@ -159,7 +158,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestRevenueAnalytics:
     """Test suite for revenue analytics functions"""
 
@@ -213,7 +211,6 @@ class TestRevenueAnalytics:
             captured = capsys.readouterr()
             assert "Payment Collection Report" in captured.out or captured.out != ""
 
-
 class TestPredictiveAnalytics:
     """Test suite for predictive analytics functions"""
 
@@ -231,7 +228,6 @@ class TestPredictiveAnalytics:
 
                 captured = capsys.readouterr()
                 assert "predictive analytics" in captured.out.lower() or "insufficient data" in captured.out.lower()
-
 
 class TestFinancialReportsMenu:
     """Test the financial reports menu system"""
@@ -271,7 +267,6 @@ class TestFinancialReportsMenu:
             captured = capsys.readouterr()
             assert "permission" in captured.out.lower()
 
-
 class TestDatabaseIntegrity:
     """Test database operations and integrity"""
 
@@ -309,7 +304,6 @@ class TestDatabaseIntegrity:
         assert cursor.fetchone()[0] == 5
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

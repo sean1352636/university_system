@@ -626,14 +626,13 @@ def refresh_rooms_list(gui_instance):
 
         where_clause = " AND ".join(where_clauses) if where_clauses else "1=1"
 
-        cursor.execute(f'''
-        SELECT r.room_id, b.building_name, r.room_number, r.floor_number, r.room_type,
-               r.max_occupants, r.current_occupants, r.status, r.monthly_rent, r.is_accessible
-        FROM housing_rooms r
-        JOIN housing_buildings b ON r.building_id = b.building_id
-        WHERE {where_clause}
-        ORDER BY b.building_name, r.floor_number, r.room_number
-        ''', params)
+        cursor.execute(
+        "SELECT r.room_id, b.building_name, r.room_number, r.floor_number, r.room_type,"
+        " r.max_occupants, r.current_occupants, r.status, r.monthly_rent, r.is_accessible"
+        " FROM housing_rooms r"
+        " JOIN housing_buildings b ON r.building_id = b.building_id"
+        " WHERE " + where_clause +
+        " ORDER BY b.building_name, r.floor_number, r.room_number", params)
 
         rooms = cursor.fetchall()
 

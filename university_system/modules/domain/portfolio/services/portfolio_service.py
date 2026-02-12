@@ -6,7 +6,7 @@ leadership roles, verified badges, skills endorsements, and resume building.
 Supports shareable public profiles for internship applications and career services.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
@@ -17,7 +17,7 @@ import secrets
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.infrastructure.shared_context import get_auth
-
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 class PortfolioService:
     """
@@ -326,23 +326,24 @@ class PortfolioService:
                 has_featured = 'is_featured' in columns
 
                 # Create new table
-                conn.execute(f"""
-                    CREATE TABLE IF NOT EXISTS student_skills_new (
-                        skill_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        student_id TEXT NOT NULL,
-                        skill_name TEXT NOT NULL,
-                        skill_category TEXT CHECK(skill_category IN (
-                            'technical', 'soft_skill', 'language', 'tool', 'domain'
-                        )),
-                        proficiency_level TEXT CHECK(proficiency_level IN (
-                            'beginner', 'intermediate', 'advanced', 'expert'
-                        )),
-                        years_experience REAL,
-                        {'is_featured BOOLEAN DEFAULT 0,' if has_featured else ''}
-                        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(student_id, skill_name)
-                    )
-                """)
+                featured_col = "is_featured BOOLEAN DEFAULT 0," if has_featured else ""
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS student_skills_new ("
+                    " skill_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    " student_id TEXT NOT NULL,"
+                    " skill_name TEXT NOT NULL,"
+                    " skill_category TEXT CHECK(skill_category IN ("
+                    "  'technical', 'soft_skill', 'language', 'tool', 'domain'"
+                    " )),"
+                    " proficiency_level TEXT CHECK(proficiency_level IN ("
+                    "  'beginner', 'intermediate', 'advanced', 'expert'"
+                    " )),"
+                    " years_experience REAL,"
+                    " " + featured_col +
+                    " added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                    " UNIQUE(student_id, skill_name)"
+                    ")"
+                )
 
                 # Copy data
                 if has_featured:
@@ -366,10 +367,11 @@ class PortfolioService:
 
             # Similar for other tables - badges, public_profiles, resumes
             for table_name in ['badges', 'public_profiles', 'resumes']:
-                cursor = conn.execute(f"""
-                    SELECT sql FROM sqlite_master
-                    WHERE type='table' AND name='{table_name}'
-                """)
+                safe_table = validate_table_name(table_name)
+                cursor = conn.execute(
+                    "SELECT sql FROM sqlite_master"
+                    " WHERE type='table' AND name=?",
+                    (safe_table,))
                 result = cursor.fetchone()
 
                 if result and 'REFERENCES students' in result[0]:
@@ -485,7 +487,7 @@ class PortfolioService:
 
             update_fields['updated_at'] = datetime.now().isoformat()
 
-            set_clause = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+            set_clause = ', '.join([f"{validate_identifier(k, 'column')} = ?" for k in update_fields.keys()])
             values = list(update_fields.values()) + [portfolio_id]
 
             with transaction() as conn:
@@ -633,7 +635,7 @@ class PortfolioService:
 
             update_fields['updated_at'] = datetime.now().isoformat()
 
-            set_clause = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+            set_clause = ', '.join([f"{validate_identifier(k, 'column')} = ?" for k in update_fields.keys()])
             values = list(update_fields.values()) + [item_id]
 
             with transaction() as conn:
@@ -852,7 +854,7 @@ class PortfolioService:
             if not update_fields:
                 return False, "No valid fields to update"
 
-            set_clause = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+            set_clause = ', '.join([f"{validate_identifier(k, 'column')} = ?" for k in update_fields.keys()])
             values = list(update_fields.values()) + [skill_id]
 
             with transaction() as conn:
@@ -1094,7 +1096,7 @@ class PortfolioService:
 
             update_fields['updated_at'] = datetime.now().isoformat()
 
-            set_clause = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+            set_clause = ', '.join([f"{validate_identifier(k, 'column')} = ?" for k in update_fields.keys()])
             values = list(update_fields.values()) + [student_id]
 
             with transaction() as conn:

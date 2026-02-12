@@ -8,7 +8,7 @@ from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 import os
 from datetime import datetime, timedelta
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from decimal import Decimal
 
 # Import centralized authentication and database
@@ -55,7 +55,6 @@ from university_system.infrastructure.exceptions import (
     ValidationError
 )
 
-
 def get_db_connection():
     """Get database connection with proper error handling"""
     try:
@@ -64,7 +63,6 @@ def get_db_connection():
     except (sqlite3.Error, OSError) as e:
         print(f"Database connection error: {e}")
         return None
-
 
 def init_db():
     """Initialize cafe database tables"""
@@ -169,7 +167,6 @@ def init_db():
     except sqlite3.Error as e:
         print(f"Database initialization error: {e}")
         return False
-
 
 class CafeSystemGUI:
     """Main Cafe System GUI class"""
@@ -2702,7 +2699,6 @@ Status: {values[6]}
         if self.return_to_main:
             self.return_to_main()
 
-
 def main():
     """Standalone main function for testing"""
     root = tk.Tk()
@@ -2712,7 +2708,6 @@ def main():
     cafe_gui.show_cafe_system()
 
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

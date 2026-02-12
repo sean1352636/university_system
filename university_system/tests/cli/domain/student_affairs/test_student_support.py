@@ -13,7 +13,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
@@ -25,7 +25,6 @@ from university_system.modules.domain.student_affairs.services.student_support i
     TicketSentiment,
     SUPPORT_DB,
 )
-
 
 @pytest.fixture
 def setup_database():
@@ -159,7 +158,6 @@ def setup_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def support_system(setup_database):
     """Create EnhancedStudentSupport instance"""
@@ -174,7 +172,6 @@ def support_system(setup_database):
             system = EnhancedStudentSupport(config)
             return system
 
-
 @pytest.fixture
 def mock_auth():
     """Create mock authentication object"""
@@ -188,7 +185,6 @@ def mock_auth():
     auth.check_permission = MagicMock(return_value=True)
     auth.is_logged_in = MagicMock(return_value=True)
     return auth
-
 
 class TestSupportSystemInitialization:
     """Tests for support system initialization"""
@@ -217,7 +213,6 @@ class TestSupportSystemInitialization:
                 assert system.config.max_file_size == 20 * 1024 * 1024
                 assert system.config.auto_assign_enabled is False
                 assert system.config.escalation_time_hours == 48
-
 
 class TestTicketManagement:
     """Tests for ticket management functionality"""
@@ -267,7 +262,6 @@ class TestTicketManagement:
         conn.close()
 
         assert status == 'Resolved'
-
 
 class TestNotifications:
     """Tests for notification system"""
@@ -328,7 +322,6 @@ class TestNotifications:
 
         assert is_read == 1
 
-
 class TestSatisfactionRatings:
     """Tests for satisfaction rating system"""
 
@@ -365,7 +358,6 @@ class TestSatisfactionRatings:
         conn.close()
 
         assert rating == 5
-
 
 class TestFAQManagement:
     """Tests for FAQ system"""
@@ -415,7 +407,6 @@ class TestFAQManagement:
         conn.close()
 
         assert len(results) >= 1
-
 
 class TestResourceLibrary:
     """Tests for resource library"""
@@ -471,7 +462,6 @@ class TestResourceLibrary:
         conn.close()
 
         assert count == 1
-
 
 class TestKnowledgeBase:
     """Tests for knowledge base articles"""
@@ -533,7 +523,6 @@ class TestKnowledgeBase:
 
         assert len(results) >= 1
 
-
 class TestDataTypes:
     """Tests for data types and enums"""
 
@@ -558,7 +547,6 @@ class TestDataTypes:
         assert config.auto_assign_enabled is True
         assert config.escalation_time_hours == 24
         assert config.satisfaction_survey_enabled is True
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -618,7 +606,6 @@ class TestIntegrationScenarios:
         assert ticket[5] == 'Resolved'
         assert ticket[11] == 5
         assert notification is not None
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

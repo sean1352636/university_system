@@ -466,7 +466,7 @@ def send_shop_refund_receipt(self, transaction_id, customer_id, amount, method, 
                 new_balance = get_student_finance_account_balance(customer_id)
                 if new_balance is not None:
                     balance_text = f"\n\nYour updated account balance is: £{new_balance:.2f}"
-            except:
+            except Exception:
                 pass
 
         # Prepare template variables

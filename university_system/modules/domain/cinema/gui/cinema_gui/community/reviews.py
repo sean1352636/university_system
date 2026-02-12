@@ -4,8 +4,7 @@ Cinema Booking System - Movie Reviews Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_reviews_page(self):
     """Display movie reviews management page."""
@@ -72,13 +70,15 @@ def show_reviews_page(self):
             FROM reviews r
             JOIN movies m ON r.movie_id = m.id
         '''
+        params = []
         if selected_movie != "All Movies":
             movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
             if movie_id and movie_id != "all":
-                sql += f" WHERE r.movie_id = {movie_id}"
+                sql += " WHERE r.movie_id = ?"
+                params.append(movie_id)
         sql += " ORDER BY r.created_at DESC"
 
-        cursor.execute(sql)
+        cursor.execute(sql, params)
         for row in cursor.fetchall():
             stars = "\u2605" * row[3] + "\u2606" * (5 - row[3])
             review_preview = (row[4][:40] + "...") if row[4] and len(row[4]) > 40 else (row[4] or "-")
@@ -135,7 +135,6 @@ def show_reviews_page(self):
               command=lambda: self.update_review_status('hidden')).pack(side="left", padx=5)
 
     load_reviews()
-
 
 def add_review(self):
     """Add a new movie review."""
@@ -217,7 +216,6 @@ def add_review(self):
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton",
               command=form_window.destroy).pack(side="left", padx=5)
 
-
 def view_full_review(self):
     """View full review text."""
     selected = self.review_tree.selection()
@@ -264,7 +262,6 @@ def view_full_review(self):
     review_label = tk.Label(frame, text=review[5] or "No written review",
                            bg="#ffffff", fg="#333333", wraplength=400, justify="left")
     review_label.pack(pady=20)
-
 
 def update_review_status(self, new_status):
     """Update review status."""

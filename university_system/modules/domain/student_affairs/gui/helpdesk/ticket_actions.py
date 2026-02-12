@@ -1187,17 +1187,23 @@ HelpdeskGUI.change_ticket_status_enhanced = change_ticket_status_enhanced
 def execute_ticket_action_gui(self, ticket_id, action):
     """Execute various ticket actions through unified interface"""
     if action == 'reply':
-        self.show_add_reply(ticket_id)
+        self.reply_to_ticket_enhanced_gui(ticket_id)
     elif action == 'assign':
         self.assign_ticket_enhanced(ticket_id)
     elif action == 'change_status':
         self.change_ticket_status_enhanced(ticket_id)
     elif action == 'escalate':
-        self.escalate_ticket_dialog(ticket_id)
+        self.escalate_ticket_manual(ticket_id)
     elif action == 'view':
-        self.view_ticket_details(ticket_id)
+        self.view_ticket_detail_enhanced_gui(ticket_id)
     elif action == 'close':
         self.change_ticket_status_enhanced(ticket_id)
+    elif action == 'internal_note':
+        self.reply_to_ticket_enhanced_gui(ticket_id, is_internal=True)
+    elif action == 'time_entry':
+        self.add_time_entry_gui(ticket_id)
+    elif action == 'link':
+        self.link_tickets_gui(ticket_id)
     else:
         messagebox.showinfo("Info", f"Action '{action}' not yet implemented")
 

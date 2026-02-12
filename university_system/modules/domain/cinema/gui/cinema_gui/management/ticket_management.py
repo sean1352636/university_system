@@ -4,8 +4,7 @@ Cinema Booking System - Ticket Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_ticket_management(self):
     """Display ticket/booking management page."""
@@ -134,7 +132,6 @@ def show_ticket_management(self):
 
     search_tickets()
 
-
 def print_selected_ticket(self):
     """Print selected ticket."""
     selected = self.ticket_tree.selection()
@@ -143,7 +140,6 @@ def print_selected_ticket(self):
         return
     ref = self.ticket_tree.item(selected[0])['values'][1]
     self.print_ticket(ref)
-
 
 def edit_selected_ticket(self):
     """Edit the selected ticket/booking."""
@@ -259,7 +255,6 @@ def edit_selected_ticket(self):
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton",
               command=form_window.destroy).pack(side="left", padx=5)
 
-
 def cancel_selected_ticket(self):
     """Cancel the selected ticket/booking."""
     selected = self.ticket_tree.selection()
@@ -303,7 +298,6 @@ def cancel_selected_ticket(self):
     finally:
         conn.close()
 
-
 def delete_selected_ticket(self):
     """Permanently delete the selected ticket/booking."""
     selected = self.ticket_tree.selection()
@@ -343,7 +337,6 @@ def delete_selected_ticket(self):
     finally:
         conn.close()
 
-
 def reactivate_selected_ticket(self):
     """Reactivate a cancelled booking."""
     selected = self.ticket_tree.selection()
@@ -368,10 +361,10 @@ def reactivate_selected_ticket(self):
         seat_ids = [row[0] for row in cursor.fetchall()]
 
         if seat_ids:
-            cursor.execute(f'''
-                SELECT COUNT(*) FROM seats
-                WHERE id IN ({','.join('?' * len(seat_ids))}) AND status != 'available'
-            ''', seat_ids)
+            cursor.execute(
+                "SELECT COUNT(*) FROM seats"
+                " WHERE id IN (" + ",".join("?" * len(seat_ids)) + ") AND status != 'available'",
+                seat_ids)
             unavailable = cursor.fetchone()[0]
 
             if unavailable > 0:

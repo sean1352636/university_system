@@ -12,13 +12,13 @@ Features:
 """
 
 import json
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 # Interest categories
 INTEREST_CATEGORIES = [
@@ -40,7 +40,6 @@ GROUP_SIZE_PREFERENCES = [
 ACTIVITY_LEVELS = [
     'Low', 'Moderate', 'High', 'Very High'
 ]
-
 
 class SocialMatchingService:
     """Service for managing interest-based social matching and connections."""
@@ -450,13 +449,14 @@ class SocialMatchingService:
             else:
                 field = 'sender_id'
 
-            cursor = conn.execute(f"""
-                SELECT request_id, sender_id, receiver_id, request_type,
-                       destination, message, status, sent_at, responded_at
-                FROM buddy_requests
-                WHERE {field} = ? AND status = ?
-                ORDER BY sent_at DESC
-            """, (user_id, status))
+            safe_field = validate_identifier(field, "column")
+            cursor = conn.execute(
+                "SELECT request_id, sender_id, receiver_id, request_type,"
+                "       destination, message, status, sent_at, responded_at"
+                " FROM buddy_requests"
+                " WHERE " + safe_field + " = ? AND status = ?"
+                " ORDER BY sent_at DESC",
+                (user_id, status))
 
             requests = []
             for row in cursor.fetchall():

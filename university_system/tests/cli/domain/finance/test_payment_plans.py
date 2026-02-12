@@ -5,13 +5,12 @@ Tests payment plan creation, management, processing, and modifications
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.billing import payment_plans
-
 
 @pytest.fixture
 def temp_db():
@@ -138,7 +137,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication object"""
@@ -146,7 +144,6 @@ def mock_auth():
     auth.current_user = {"username": "test_admin"}
     auth.check_permission = MagicMock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def sample_data(temp_db):
@@ -213,7 +210,6 @@ def sample_data(temp_db):
     conn.close()
 
     return temp_db
-
 
 class TestPaymentPlanCreation:
     """Test payment plan creation functionality"""
@@ -304,7 +300,6 @@ class TestPaymentPlanCreation:
 
             conn.close()
 
-
 class TestPaymentPlanViewing:
     """Test payment plan viewing functionality"""
 
@@ -344,7 +339,6 @@ class TestPaymentPlanViewing:
 
             # Should handle empty case gracefully
             conn.close()
-
 
 class TestPaymentPlanPaymentProcessing:
     """Test payment plan payment processing"""
@@ -469,7 +463,6 @@ class TestPaymentPlanPaymentProcessing:
 
             conn.close()
 
-
 class TestPaymentPlanModification:
     """Test payment plan modification functionality"""
 
@@ -583,7 +576,6 @@ class TestPaymentPlanModification:
 
             conn.close()
 
-
 class TestPaymentPlanCancellation:
     """Test payment plan cancellation"""
 
@@ -627,7 +619,6 @@ class TestPaymentPlanCancellation:
 
             conn.close()
 
-
 class TestPermissions:
     """Test permission requirements"""
 
@@ -650,7 +641,6 @@ class TestPermissions:
         with patch('university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth):
             payment_plans.process_payment_plan_payment()
             # Should not proceed without permission
-
 
 class TestEdgeCases:
     """Test edge cases and error handling"""
@@ -723,7 +713,6 @@ class TestEdgeCases:
 
             conn.close()
 
-
 class TestNotifications:
     """Test payment plan notification functionality"""
 
@@ -736,7 +725,6 @@ class TestNotifications:
 
             # Should send notification successfully
             payment_plans.send_payment_plan_notification('STU001', 1, 'payment_plan_setup')
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

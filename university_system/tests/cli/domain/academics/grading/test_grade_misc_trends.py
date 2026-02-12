@@ -1,6 +1,6 @@
 import pytest
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 import tempfile
@@ -19,7 +19,6 @@ from university_system.modules.domain.academics.grading.trends import (
     create_individual_trend_visualization,
     create_course_comparison_charts
 )
-
 
 class TestAnalyzeIndividualStudentTrends:
     """Test the analyze_individual_student_trends function"""
@@ -136,7 +135,6 @@ class TestAnalyzeIndividualStudentTrends:
         # Check that declining trend was detected
         assert any('declining' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestAnalyzeSingleCourseTrends:
     """Test the analyze_single_course_trends function"""
 
@@ -189,7 +187,6 @@ class TestAnalyzeSingleCourseTrends:
         analyze_single_course_trends(cursor, 'Computer Science')
 
         assert any('Declining' in str(call) for call in mock_print.call_args_list)
-
 
 class TestAnalyzeSeasonalTrends:
     """Test the analyze_seasonal_trends function"""
@@ -254,7 +251,6 @@ class TestAnalyzeSeasonalTrends:
 
         mock_print.assert_any_call("Invalid choice.")
 
-
 class TestAnalyzeMonthlyPatterns:
     """Test the analyze_monthly_patterns function"""
 
@@ -283,7 +279,6 @@ class TestAnalyzeMonthlyPatterns:
         analyze_monthly_patterns(cursor)
 
         mock_print.assert_any_call("Insufficient data for monthly pattern analysis.")
-
 
 class TestAnalyzeDayOfWeekPatterns:
     """Test the analyze_day_of_week_patterns function"""
@@ -316,7 +311,6 @@ class TestAnalyzeDayOfWeekPatterns:
 
         mock_print.assert_any_call("Insufficient data for daily pattern analysis.")
 
-
 class TestAnalyzeAcademicTermPatterns:
     """Test the analyze_academic_term_patterns function"""
 
@@ -346,7 +340,6 @@ class TestAnalyzeAcademicTermPatterns:
         analyze_academic_term_patterns(cursor)
 
         mock_print.assert_any_call("Insufficient data for term pattern analysis.")
-
 
 class TestTrendForecasting:
     """Test the trend_forecasting function"""
@@ -388,7 +381,6 @@ class TestTrendForecasting:
         trend_forecasting()
 
         mock_print.assert_any_call("Invalid choice. Returning to menu.")
-
 
 class TestCreateTrendVisualization:
     """Test the create_trend_visualization function"""
@@ -442,7 +434,6 @@ class TestCreateTrendVisualization:
         # Should handle error gracefully
         assert any('Error' in str(call) for call in mock_print.call_args_list)
 
-
 class TestCreateIndividualTrendVisualization:
     """Test the create_individual_trend_visualization function"""
 
@@ -487,7 +478,6 @@ class TestCreateIndividualTrendVisualization:
 
         # Should still create visualization
         mock_plt.savefig.assert_called_once()
-
 
 class TestCreateCourseComparisonCharts:
     """Test the create_course_comparison_charts function"""
@@ -538,7 +528,6 @@ class TestCreateCourseComparisonCharts:
 
         # Should not raise exception
         create_course_comparison_charts(comparison_data)
-
 
 class TestTrendIntegration:
     """Integration tests for trend analysis"""
@@ -619,7 +608,6 @@ class TestTrendIntegration:
         assert len(grades) == 2
         assert grades[0][1] == 85.0
         assert grades[1][1] == 78.0
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

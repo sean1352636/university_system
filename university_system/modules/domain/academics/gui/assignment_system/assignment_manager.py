@@ -19,8 +19,6 @@ from university_system.infrastructure.auth import UserAuth
 from university_system.modules.shared.constants import paths
 from collections import deque
 
-
-
 class AssignmentManager:
     """Assignment CRUD operations and management"""
 
@@ -784,7 +782,6 @@ class AssignmentManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open edit window: {e}")
-
 
     def duplicate_selected_assignment(self):
         """Duplicate the selected assignment"""
@@ -2620,7 +2617,7 @@ class AssignmentManager:
         """Check for overdue assignments and send reminder emails to students"""
         try:
             from university_system.infrastructure.email.email_service import send_email
-            import sqlite3
+
             from datetime import datetime
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))

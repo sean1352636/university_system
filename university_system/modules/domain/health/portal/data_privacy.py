@@ -117,7 +117,9 @@ def ensure_integration_schema():
 
         # 2) Add compatibility/alias columns if older schemas exist
         def cols(table):
-            c.execute(f"PRAGMA table_info({table})")
+            from university_system.core.sql_safety import validate_identifier
+            validate_identifier(table, "table")
+            c.execute("PRAGMA table_info([" + table + "])")
             return {r[1] for r in c.fetchall()}
 
         # integration_logs: accept 'service' and 'timestamp' aliases
@@ -224,7 +226,9 @@ def ensure_security_schema():
 
         # Utility: list columns
         def cols_of(table: str) -> set[str]:
-            c.execute(f"PRAGMA table_info({table})")
+            from university_system.core.sql_safety import validate_identifier
+            validate_identifier(table, "table")
+            c.execute("PRAGMA table_info([" + table + "])")
             return {row[1] for row in c.fetchall()}
 
         # ----- Ensure friendly columns on roles/permissions -----
@@ -359,8 +363,10 @@ def ensure_security_schema():
             pass
 
 def _first_existing_column(conn: sqlite3.Connection, table: str, candidates: list[str]) -> str | None:
+    from university_system.core.sql_safety import validate_identifier
+    validate_identifier(table, "table")
     cur = conn.cursor()
-    cur.execute(f"PRAGMA table_info({table})")
+    cur.execute("PRAGMA table_info([" + table + "])")
     cols = {row[1] for row in cur.fetchall()}
     for col in candidates:
         if col in cols:
@@ -541,7 +547,8 @@ def security_policy_configuration(auth):
         status_col  = _first_existing_column(conn, "security_policies", ["status", "value", "enabled"])
         updated_col = _first_existing_column(conn, "security_policies", ["last_updated", "updated_at", "modified_at", "timestamp"])
 
-        sql = f"SELECT {policy_name}, {status_col}, {updated_col} FROM security_policies ORDER BY {policy_name}"
+        sql = ("SELECT [" + policy_name + "], [" + status_col + "], [" + updated_col + "]"
+               " FROM [security_policies] ORDER BY [" + policy_name + "]")
         rows = c.execute(sql).fetchall()
 
         print("\nSecurity Policies:")
@@ -585,8 +592,8 @@ def encryption_key_management(auth):
         status_col = _first_existing_column(conn, "encryption_keys", ["status", "is_active"])
 
         cols = [key_id, algorithm, created_at, status_col]
-        sel  = ", ".join(cols)
-        sql  = f"SELECT {sel} FROM encryption_keys ORDER BY {created_at} DESC"
+        sel  = ", ".join("[" + c + "]" for c in cols)
+        sql  = "SELECT " + sel + " FROM [encryption_keys] ORDER BY [" + created_at + "] DESC"
         rows = c.execute(sql).fetchall()
 
         print("\nEncryption Keys:")
@@ -701,8 +708,11 @@ def security_incident_response(auth):
         stat  = _first_existing_column(conn, "security_incidents", ["status"])
         when  = _first_existing_column(conn, "security_incidents", ["detected_at", "opened_at", "created_at"])
 
-        sel = ", ".join([kid, title, sev, stat, when])
-        rows = c.execute(f"SELECT {sel} FROM security_incidents ORDER BY {when} DESC LIMIT 50").fetchall()
+        from university_system.core.sql_safety import validate_identifier
+        for col_name in [kid, title, sev, stat, when]:
+            validate_identifier(col_name, "column")
+        sel = ", ".join(["[" + x + "]" for x in [kid, title, sev, stat, when]])
+        rows = c.execute("SELECT " + sel + " FROM security_incidents ORDER BY [" + when + "] DESC LIMIT 50").fetchall()
 
         print("\nSecurity Incidents (latest 50):")
         if not rows:
@@ -740,12 +750,12 @@ def integration_health_check(auth):
         prov = _first_existing_column(conn, "integration_logs", ["provider", "service", "system"])
         created = _first_existing_column(conn, "integration_logs", ["created_at", "timestamp"])
         if prov and created:
-            rows = c.execute(f"""
-                SELECT {prov}, COUNT(*), MAX({created})
-                  FROM integration_logs
-              GROUP BY {prov}
-              ORDER BY 2 DESC
-            """).fetchall()
+            rows = c.execute(
+                "SELECT [" + prov + "], COUNT(*), MAX([" + created + "])"
+                " FROM integration_logs"
+                " GROUP BY [" + prov + "]"
+                " ORDER BY 2 DESC"
+            ).fetchall()
             print("\nIntegration Logs (by provider):")
             if rows:
                 for p, cnt, last in rows:
@@ -759,12 +769,12 @@ def integration_health_check(auth):
         created = _first_existing_column(conn, "insurance_integration_events", ["created_at", "event_time"])
         status  = _first_existing_column(conn, "insurance_integration_events", ["status"])
         if created and status:
-            rows = c.execute(f"""
-                SELECT {status}, COUNT(*)
-                  FROM insurance_integration_events
-              GROUP BY {status}
-              ORDER BY 2 DESC
-            """).fetchall()
+            rows = c.execute(
+                "SELECT [" + status + "], COUNT(*)"
+                " FROM insurance_integration_events"
+                " GROUP BY [" + status + "]"
+                " ORDER BY 2 DESC"
+            ).fetchall()
             print("\nInsurance Events (by status):")
             if rows:
                 for st, cnt in rows:
@@ -778,12 +788,12 @@ def integration_health_check(auth):
         created = _first_existing_column(conn, "lab_integration_events", ["created_at", "event_time"])
         status  = _first_existing_column(conn, "lab_integration_events", ["status"])
         if created and status:
-            rows = c.execute(f"""
-                SELECT {status}, COUNT(*)
-                  FROM lab_integration_events
-              GROUP BY {status}
-              ORDER BY 2 DESC
-            """).fetchall()
+            rows = c.execute(
+                "SELECT [" + status + "], COUNT(*)"
+                " FROM lab_integration_events"
+                " GROUP BY [" + status + "]"
+                " ORDER BY 2 DESC"
+            ).fetchall()
             print("\nLab Events (by status):")
             if rows:
                 for st, cnt in rows:
@@ -798,16 +808,16 @@ def integration_health_check(auth):
         nextat = _first_existing_column(conn, "sync_queue", ["next_attempt_at"])
         if status:
             total = c.execute("SELECT COUNT(*) FROM sync_queue").fetchone()[0]
-            rows = c.execute(f"SELECT {status}, COUNT(*) FROM sync_queue GROUP BY {status}").fetchall()
+            rows = c.execute("SELECT [" + status + "], COUNT(*) FROM sync_queue GROUP BY [" + status + "]").fetchall()
             print("\nSync Queue:")
             print(f"- total: {total}")
             for st, cnt in rows:
                 print(f"- {st or '—'}: {cnt}")
             if nextat:
-                nxt = c.execute(f"""
-                    SELECT MIN({nextat}) FROM sync_queue
-                     WHERE {status} IN ('pending','failed')
-                """).fetchone()[0]
+                nxt = c.execute(
+                    "SELECT MIN([" + nextat + "]) FROM sync_queue"
+                    " WHERE [" + status + "] IN ('pending','failed')"
+                ).fetchone()[0]
                 if nxt:
                     print(f"- next attempt at: {nxt}")
         else:

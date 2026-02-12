@@ -4,7 +4,7 @@ Tests database initialization, menu functions, and grade tracking features
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 from unittest.mock import Mock, patch, MagicMock
@@ -25,7 +25,6 @@ from university_system.modules.domain.academics.grading.grade_tracking import (
 )
 from university_system.infrastructure.database.db import get_connection
 
-
 @pytest.fixture
 def test_db(tmp_path):
     """Create a temporary test database"""
@@ -40,7 +39,6 @@ def test_db(tmp_path):
     with patch('university_system.infrastructure.database.db.get_connection', mock_get_connection):
         with patch('university_system.modules.domain.academics.grading.grade_tracking.get_connection', mock_get_connection):
             yield mock_get_connection
-
 
 class TestDatabaseInitialization:
     """Tests for database initialization functions"""
@@ -223,7 +221,6 @@ class TestDatabaseInitialization:
 
         conn.close()
 
-
 class TestMenuFunctions:
     """Tests for menu display and navigation functions"""
 
@@ -291,7 +288,6 @@ class TestMenuFunctions:
         # Verify menu was printed
         assert any('Performance Analysis' in str(call) for call in mock_print.call_args_list)
 
-
 class TestDatabaseIntegrity:
     """Tests for database integrity and constraints"""
 
@@ -347,7 +343,6 @@ class TestDatabaseIntegrity:
 
         conn.close()
 
-
 class TestErrorHandling:
     """Tests for error handling in grade tracking functions"""
 
@@ -374,7 +369,6 @@ class TestErrorHandling:
 
         # Check that error was printed
         assert any('Database error' in str(call) for call in mock_print.call_args_list)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

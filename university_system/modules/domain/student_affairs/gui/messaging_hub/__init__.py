@@ -1,0 +1,1 @@
+"""Student Messaging Hub package."""

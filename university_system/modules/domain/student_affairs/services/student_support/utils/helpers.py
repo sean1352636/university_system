@@ -2,7 +2,6 @@
 Helper functions and utilities.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -19,6 +18,8 @@ from functools import wraps
 
 from university_system.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from university_system.infrastructure.email.email_manager import send_email
+from university_system.core.sql_safety import validate_field_for_query
+from university_system.core.sql_safety import validate_identifier
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from university_system.utils.logging.log_config import get_log_file
 
@@ -30,9 +31,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from .audit import audit_action
 
-
 logger = logging.getLogger(__name__)
-
 
 def get_user_preferences(self, user_id=None):
     """Get user notification and display preferences"""
@@ -280,10 +279,12 @@ def get_user_preferences_safe(support_instance, user_id=None):
             'preferences_json': None
         }
         
+        _VALID_PREF_COLUMNS = frozenset(default_values.keys())
         for col in default_values.keys():
             if col in columns:
+                validate_field_for_query(col, _VALID_PREF_COLUMNS, "preference column")
                 available_columns.append(col)
-        
+
         if available_columns:
             query = f"SELECT {', '.join(available_columns)} FROM user_preferences WHERE user_id = ?"
             cursor.execute(query, (user_id,))
@@ -397,7 +398,6 @@ def manage_preferences(support):
     
     input("\nPress Enter to continue...")
 
-
 def validate_ticket_permissions(ticket, current_user):
     """Validate if user has permission to access ticket"""
     if current_user['role'] in ('staff', 'admin'):
@@ -415,8 +415,6 @@ def validate_ticket_permissions(ticket, current_user):
 
     return False
 
-
-
 def format_ticket_status_display(status):
     """Format ticket status for display with emoji"""
     status_emojis = {
@@ -429,8 +427,6 @@ def format_ticket_status_display(status):
     }
     return f"{status_emojis.get(status, '❓')} {status}"
 
-
-
 def format_priority_display(priority):
     """Format ticket priority for display with emoji"""
     priority_emojis = {
@@ -441,8 +437,6 @@ def format_priority_display(priority):
         'Low': '🟢'
     }
     return f"{priority_emojis.get(priority, '⚪')} {priority}"
-
-
 
 def format_file_size(size_bytes):
     """Format file size in human readable format"""
@@ -457,15 +451,11 @@ def format_file_size(size_bytes):
 
     return f"{size_bytes:.1f}{size_names[i]}"
 
-
-
 def truncate_text(text, max_length=100):
     """Truncate text to specified length with ellipsis"""
     if len(text) <= max_length:
         return text
     return text[:max_length-3] + "..."
-
-
 
 def handle_support_error(error, context=""):
     """Standard error handling for support operations"""
@@ -480,7 +470,6 @@ def handle_support_error(error, context=""):
     else:
         logger.error(f"Unexpected error in {context}: {error}")
         return f"❌ An unexpected error occurred. Please try again or contact support."
-
 
 # Patch for the EnhancedStudentSupport class to use safe preferences method
 
@@ -508,7 +497,6 @@ def display_faq_list(faqs, title):
         faq = faqs[int(view_choice) - 1]
         display_full_faq(faq)
 
-
 def display_full_faq(faq):
     """Display full FAQ with answer"""
     print(f"\n❓ {faq['question']}")
@@ -531,7 +519,6 @@ def display_full_faq(faq):
     
     if action == '1':
         print("✅ Marked as helpful. Thank you for your feedback!")
-
 
 def display_enhanced_faqs(support):
     """Display enhanced FAQ interface"""
@@ -593,7 +580,6 @@ def display_enhanced_faqs(support):
     
     input("\nPress Enter to continue...")
 
-
 def display_resource_list(resources, title):
     """Display a list of support resources"""
     print(f"\n📋 {title}")
@@ -618,7 +604,6 @@ def display_resource_list(resources, title):
     if view_choice.isdigit() and 1 <= int(view_choice) <= min(len(resources), 10):
         resource = resources[int(view_choice) - 1]
         display_full_resource(resource)
-
 
 def display_full_resource(resource):
     """Display full resource details"""
@@ -647,7 +632,6 @@ def display_full_resource(resource):
     
     if resource.get('file_path'):
         print(f"📁 File: {resource['file_path']}")
-
 
 def display_enhanced_resources(support):
     """Display enhanced resources interface"""
@@ -718,7 +702,6 @@ def display_enhanced_resources(support):
         print(f"❌ Error displaying resources: {e}")
     
     input("\nPress Enter to continue...")
-
 
 def patch_enhanced_student_support():
     """Patch the EnhancedStudentSupport class with the safe preferences method"""
@@ -793,10 +776,11 @@ def fix_user_preferences_table():
             for column_name, column_def in required_columns.items():
                 if column_name not in existing_columns:
                     try:
-                        cursor.execute(f'ALTER TABLE user_preferences ADD COLUMN {column_name} {column_def}')
-                        print(f"✅ Added column '{column_name}' to user_preferences table")
+                        safe_col = validate_identifier(column_name, "column")
+                        cursor.execute('ALTER TABLE user_preferences ADD COLUMN ' + safe_col + ' ' + column_def)
+                        print(f"Added column '{column_name}' to user_preferences table")
                     except Exception as e:
-                        print(f"⚠️ Could not add column '{column_name}': {e}")
+                        print(f"Could not add column '{column_name}': {e}")
         
         conn.commit()
         conn.close()

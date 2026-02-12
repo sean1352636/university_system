@@ -110,6 +110,11 @@ class ExportManager:
             if not output_file:
                 return
 
+            # Capture widget values before destroying the dialog
+            course_value = course_combo.get()
+            start_date_value = start_date_entry.get()
+            end_date_value = end_date_entry.get()
+
             dialog.destroy()
 
             # Execute export
@@ -120,10 +125,10 @@ class ExportManager:
                     # Build filter parameters
                     filter_params = {}
                     if filter_type == "course":
-                        filter_params['course'] = course_combo.get()
+                        filter_params['course'] = course_value
                     elif filter_type == "date":
-                        filter_params['start_date'] = start_date_entry.get()
-                        filter_params['end_date'] = end_date_entry.get()
+                        filter_params['start_date'] = start_date_value
+                        filter_params['end_date'] = end_date_value
 
                     self.gui.backend.export_students_to_file(
                         output_file, export_format, filter_params, include_modules,
@@ -159,7 +164,7 @@ class ExportManager:
             try:
                 self.gui.update_status("Generating statistics...")
 
-                stats = self.gui.backend.generate_enrollment_statistics()
+                stats = self.gui.generate_enrollment_statistics()
 
                 with open(output_file, 'w') as f:
                     json.dump(stats, f, indent=2, default=str)

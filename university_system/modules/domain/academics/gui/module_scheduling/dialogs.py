@@ -41,8 +41,7 @@ import threading
 import subprocess
 import webbrowser
 from pathlib import Path
-import sqlite3
-# Import the original module scheduling functionality
+
 # This ensures full backward compatibility
 try:
     from university_system.modules.domain.academics.services.module_scheduling import (
@@ -61,7 +60,6 @@ except ImportError:
         from university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
     except Exception:
         class ModuleScheduler: pass
-
 
 class AddScheduleDialog:
     def __init__(self, parent, scheduler):
@@ -418,7 +416,6 @@ class AddScheduleDialog:
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
 
-
 class AddRoomDialog:
     def __init__(self, parent, scheduler):
         self.parent = parent
@@ -556,7 +553,6 @@ class AddRoomDialog:
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-
 
 class AddInstructorDialog:
     def __init__(self, parent, scheduler):
@@ -713,7 +709,6 @@ class AddInstructorDialog:
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-
 
 class EditScheduleDialog:
     def __init__(self, parent, scheduler, schedule_id):
@@ -979,7 +974,6 @@ class EditScheduleDialog:
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
 
-
 class EditRoomDialog:
     def __init__(self, parent, scheduler, room_id):
         self.parent = parent
@@ -1103,7 +1097,6 @@ class EditRoomDialog:
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-
 
 class EditInstructorDialog:
     def __init__(self, parent, scheduler, instructor_id):
@@ -1258,7 +1251,6 @@ class EditInstructorDialog:
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
 
-
 class AddHolidayDialog:
     def __init__(self, parent, scheduler):
         self.parent = parent
@@ -1353,7 +1345,6 @@ class AddHolidayDialog:
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-
 
 class GridViewWindow:
     def __init__(self, parent, scheduler):
@@ -1542,5 +1533,4 @@ class GridViewWindow:
         x = (self.window.winfo_screenwidth() // 2) - (self.window.winfo_width() // 2)
         y = (self.window.winfo_screenheight() // 2) - (self.window.winfo_height() // 2)
         self.window.geometry(f"+{x}+{y}")
-
 

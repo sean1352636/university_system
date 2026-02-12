@@ -933,7 +933,7 @@ class AccessibilityToolsGUI:
                             start = datetime.strptime(row['start_time'], '%H:%M')
                             end = datetime.strptime(row['end_time'], '%H:%M')
                             duration = int((end - start).total_seconds() / 60)
-                        except:
+                        except (ValueError, TypeError):
                             duration = 'N/A'
 
                         exam_tree.insert('', 'end', values=(

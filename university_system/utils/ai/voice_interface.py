@@ -340,7 +340,7 @@ class VoiceInterface:
         if self._tts and _tts_engine == "pyttsx3":
             try:
                 self._tts.stop()
-            except:
+            except Exception:
                 pass
 
 

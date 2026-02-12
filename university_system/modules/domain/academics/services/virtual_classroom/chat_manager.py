@@ -3,12 +3,11 @@ Chat Manager
 Handles virtual session chat and Q&A
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 class ChatManager:
     """Manager for virtual session chat operations"""

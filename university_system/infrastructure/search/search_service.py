@@ -12,6 +12,7 @@ from university_system.infrastructure.search.elasticsearch_service import (
     ELASTICSEARCH_AVAILABLE
 )
 from university_system.infrastructure.search.fallback_search import FallbackSearchService
+from university_system.core.sql_safety import validate_table_name
 
 logger = logging.getLogger(__name__)
 
@@ -312,7 +313,8 @@ class SearchService:
 
         try:
             with get_connection() as conn:
-                cursor = conn.execute(f"SELECT * FROM {table}")
+                safe_tbl = validate_table_name(table, conn=conn)
+                cursor = conn.execute("SELECT * FROM [" + safe_tbl + "]")
                 columns = [desc[0] for desc in cursor.description]
                 rows = cursor.fetchall()
 

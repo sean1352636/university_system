@@ -1,5 +1,6 @@
 # enhanced_course_management.py
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 import re
 import csv
 import json
@@ -187,7 +188,9 @@ def initialize_enhanced_database():
 
         for table, column, col_type in migration_columns:
             try:
-                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                safe_table = validate_table_name(table)
+                safe_column = validate_identifier(column, "column")
+                cursor.execute("ALTER TABLE [" + safe_table + "] ADD COLUMN [" + safe_column + "] " + col_type)
             except sqlite3.OperationalError:
                 pass  # Column already exists
 
@@ -3169,7 +3172,7 @@ def bulk_update_courses(auth):
             id_input = input("\nEnter course IDs: ").strip()
             selected_ids = [int(id.strip()) for id in id_input.split(',') if id.strip().isdigit()]
             
-            cursor.execute(f"SELECT id, course_code, course_name FROM courses WHERE id IN ({','.join(['?']*len(selected_ids))})", selected_ids)
+            cursor.execute("SELECT id, course_code, course_name FROM courses WHERE id IN (" + ','.join(['?']*len(selected_ids)) + ")", selected_ids)
             courses_to_update = cursor.fetchall()
         
         if not courses_to_update:
@@ -3230,6 +3233,14 @@ def bulk_update_courses(auth):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         course_ids = [course[0] for course in courses_to_update]
         
+        _BULK_UPDATE_ALLOWED_COLUMNS = frozenset({
+            'status', 'max_enrollment', 'course_fee', 'course_type', 'department', 'level',
+        })
+        if field_name not in _BULK_UPDATE_ALLOWED_COLUMNS:
+            print(f"Invalid field name: {field_name}")
+            conn.close()
+            return False
+
         placeholders = ','.join(['?'] * len(course_ids))
         update_query = f"UPDATE courses SET {field_name} = ?, updated_at = ? WHERE id IN ({placeholders})"
         
@@ -3764,7 +3775,8 @@ def system_maintenance(auth):
                      'instructors', 'course_waitlist', 'course_history']
             
             for table in tables:
-                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                safe_table = validate_table_name(table)
+                cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                 count = cursor.fetchone()[0]
                 print(f"{table}: {count} records")
             

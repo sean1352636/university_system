@@ -5,7 +5,7 @@ Tests the comprehensive integration management interface
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import tkinter as tk
@@ -13,7 +13,6 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
 from university_system.modules.services.gui import integration_marketplace_gui
-
 
 @pytest.fixture
 def temp_db():
@@ -136,7 +135,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Create mock auth"""
@@ -150,7 +148,6 @@ def mock_auth():
     }
     return auth
 
-
 @pytest.fixture
 def root_window():
     """Create root window"""
@@ -160,7 +157,6 @@ def root_window():
         root.destroy()
     except (OSError, IOError):
         pass
-
 
 class TestIntegrationMarketplaceGUIInitialization:
     """Test GUI initialization"""
@@ -185,7 +181,6 @@ class TestIntegrationMarketplaceGUIInitialization:
                 except (OSError, IOError):
                     pass
 
-
 class TestCatalogTab:
     """Test catalog tab functionality"""
 
@@ -199,7 +194,6 @@ class TestCatalogTab:
                 except (OSError, IOError):
                     pass
 
-
 class TestLauncherFunction:
     """Test launcher function"""
 
@@ -210,7 +204,6 @@ class TestLauncherFunction:
                 integration_marketplace_gui.launch_integration_marketplace_gui(auth=mock_auth, parent=root_window)
             except (OSError, IOError):
                 pass
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

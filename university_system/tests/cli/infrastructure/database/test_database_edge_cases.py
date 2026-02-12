@@ -13,11 +13,10 @@ Tests critical edge cases and error scenarios that could occur in production:
 import pytest
 import threading
 import time
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-
 
 class TestDatabaseDeadlockRecovery:
     """Test that system recovers from database deadlocks."""
@@ -81,7 +80,6 @@ class TestDatabaseDeadlockRecovery:
         mock_conn.execute.return_value = None
         mock_conn.execute("PRAGMA busy_timeout = 30000")
         mock_conn.execute.assert_called()
-
 
 class TestConcurrentEnrollmentSameCourse:
     """Test concurrent enrollments for last seat in course."""
@@ -216,7 +214,6 @@ class TestConcurrentEnrollmentSameCourse:
         assert len(successes) <= 1
         # Should have exactly 3 results
         assert len(results) == 3
-
 
 class TestConnectionPoolExhaustion:
     """Test behavior when all connections are in use."""
@@ -366,7 +363,6 @@ class TestConnectionPoolExhaustion:
         assert stats['available'] == 5
         assert stats['in_use'] == 0
 
-
 class TestTransactionRollback:
     """Test transaction rollback behavior."""
 
@@ -450,7 +446,6 @@ class TestTransactionRollback:
         assert "sp1" in conn.rolled_back_savepoints
         assert len([op for op in conn.operations if "INSERT INTO students" in op[0]]) == 2
 
-
 class TestLargeBatchOperations:
     """Test handling of large batch database operations."""
 
@@ -523,7 +518,6 @@ class TestLargeBatchOperations:
         assert len(processor.errors) == 1
         assert processor.progress == 99.0
         assert processor.duration is not None
-
 
 class TestDatabaseFileCorruption:
     """Test handling of database file corruption scenarios."""

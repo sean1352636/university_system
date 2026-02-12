@@ -82,7 +82,7 @@ def display_database_statistics():
             try:
                 # Validate table name to prevent SQL injection
                 validated_table = validate_table_name(table)
-                cursor.execute(f'SELECT COUNT(*) FROM [{validated_table}]')
+                cursor.execute('SELECT COUNT(*) FROM [' + validated_table + ']')
                 count = cursor.fetchone()[0]
                 print(f"{table.capitalize()}: {count} records")
             except SQLIdentifierError as e:

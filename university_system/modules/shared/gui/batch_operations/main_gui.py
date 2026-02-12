@@ -24,12 +24,10 @@ from .report_manager import ReportManager
 from .quality_manager import QualityManager
 from .utility_manager import UtilityManager
 from .automation_manager import AutomationManager
+from .user_operations_manager import UserOperationsManager
 
-# Import the original batch operations class for backwards compatibility
-try:
-    from university_system.modules.shared.utils.batch_operations import BatchOperationManager as OriginalBatchOperationManager
-except ImportError:
-    from .models import OriginalBatchOperationManager
+# Import the enhanced batch operations class with GUI-specific methods
+from .backend import EnhancedBatchOperationManager
 
 
 class BatchOperationsGUI:
@@ -41,8 +39,8 @@ class BatchOperationsGUI:
         self.root.title(_t("batch_ops.title"))
         self.root.geometry("1200x800")
 
-        # Initialize backend for backwards compatibility
-        self.backend = OriginalBatchOperationManager()
+        # Initialize enhanced backend with GUI-specific methods
+        self.backend = EnhancedBatchOperationManager()
 
         # Queue for thread communication
         self.message_queue = queue.Queue()
@@ -59,6 +57,7 @@ class BatchOperationsGUI:
         self.quality_mgr = QualityManager(self)
         self.utility_mgr = UtilityManager(self)
         self.automation_mgr = AutomationManager(self)
+        self.user_ops_mgr = UserOperationsManager(self)
 
         # Create main interface
         self.create_main_interface()
@@ -116,6 +115,7 @@ class BatchOperationsGUI:
         self.create_quality_tab()
         self.create_utilities_tab()
         self.create_automation_tab()
+        self.create_user_operations_tab()
         self.create_history_tab()
 
         # Status bar
@@ -346,6 +346,37 @@ class BatchOperationsGUI:
         # Status display
         self.automation_status = scrolledtext.ScrolledText(automation_frame, height=10)
         self.automation_status.pack(fill=tk.X, padx=20, pady=10)
+
+    def create_user_operations_tab(self):
+        """Create user operations tab for bulk user management"""
+        user_ops_frame = ttk.Frame(self.notebook)
+        self.notebook.add(user_ops_frame, text="User Operations")
+
+        header = ttk.Label(user_ops_frame, text="Batch User Operations",
+                           style='Header.TLabel')
+        header.pack(pady=(10, 20))
+
+        content_frame = ttk.Frame(user_ops_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+
+        options = [
+            ("Bulk User Creation",
+             "Create multiple user accounts from a CSV file with automatic role assignment.",
+             self.bulk_create_users),
+            ("Bulk Permission Updates",
+             "Grant or revoke permissions for users by role or from a CSV list.",
+             self.bulk_permission_update),
+            ("Batch Course Enrollment",
+             "Enroll multiple students in courses from a CSV file.",
+             self.batch_course_enrollment),
+            ("Batch Email Campaign",
+             "Send targeted email campaigns to user segments (students, staff, by course).",
+             self.batch_email_campaign),
+        ]
+
+        for i, (title, description, command) in enumerate(options):
+            self.create_option_card(content_frame, title, description, command,
+                                    row=i // 2, column=i % 2)
 
     def create_history_tab(self):
         """Create import history tab"""
@@ -753,3 +784,23 @@ class BatchOperationsGUI:
     def show_connection_test_results(self):
         """Show connection test results"""
         return self.report_mgr.show_connection_test_results()
+
+    # =========================================================================
+    # Delegation methods - User operations (delegate to user_ops_mgr)
+    # =========================================================================
+
+    def bulk_create_users(self):
+        """Bulk create users from CSV"""
+        return self.user_ops_mgr.bulk_create_users()
+
+    def bulk_permission_update(self):
+        """Bulk update permissions"""
+        return self.user_ops_mgr.bulk_permission_update()
+
+    def batch_course_enrollment(self):
+        """Batch enroll students in courses"""
+        return self.user_ops_mgr.batch_course_enrollment()
+
+    def batch_email_campaign(self):
+        """Send batch email campaign"""
+        return self.user_ops_mgr.batch_email_campaign()

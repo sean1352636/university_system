@@ -8,7 +8,6 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import tempfile
 import os
 
-
 class TestPDFExportGUI:
     """Test cases for PDFExportGUI class."""
 
@@ -116,7 +115,6 @@ class TestPDFExportGUI:
         assert gui.is_exporting is False
         gui.status_var.set.assert_called_with("Export failed")
 
-
 class TestShowPDFExportGUIFunction:
     """Test the convenience function."""
 
@@ -137,15 +135,13 @@ class TestShowPDFExportGUIFunction:
             mock_class.assert_called_once_with(mock_root, mock_auth)
             mock_class.return_value.show_export_window.assert_called_once()
 
-
 class TestPDFExportGUIIntegration:
     """Integration tests for PDF export GUI."""
 
     @pytest.fixture
     def temp_db(self):
         """Create a temporary test database."""
-        import sqlite3
-
+        from university_system.infrastructure.database.db import sqlite3
         fd, db_path = tempfile.mkstemp(suffix=".db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -237,7 +233,6 @@ class TestPDFExportGUIIntegration:
 
             # Should destroy window
             gui.export_window.destroy.assert_called_once()
-
 
 class TestPDFExportGUIValidation:
     """Test input validation in PDF export GUI."""

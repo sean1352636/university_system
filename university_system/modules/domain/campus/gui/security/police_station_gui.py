@@ -14,6 +14,7 @@ import logging
 
 from university_system.modules.shared.utils.i18n import get_text as _t
 from university_system.infrastructure.email.template_utils import render_template
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -1139,7 +1140,7 @@ class PoliceStationApp:
                     if case.get('witnesses'):
                         try:
                             case['witnesses'] = json.loads(case['witnesses'])
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             case['witnesses'] = []
                     else:
                         case['witnesses'] = []
@@ -1424,8 +1425,9 @@ class PoliceStationApp:
         """Get the next ID for a table."""
         try:
             from university_system.infrastructure.database.db import get_connection
+            safe_table = validate_table_name(table)
             with get_connection() as conn:
-                cursor = conn.execute(f"SELECT COUNT(*) FROM {table}")
+                cursor = conn.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                 count = cursor.fetchone()[0]
                 return f"{prefix}{count + 1:04d}"
         except Exception as e:

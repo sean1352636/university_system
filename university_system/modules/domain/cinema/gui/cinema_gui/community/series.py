@@ -4,8 +4,7 @@ Cinema Booking System - Movie Series Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -13,7 +12,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_series_page(self):
     self.clear_content()
@@ -60,7 +58,6 @@ def show_series_page(self):
 
     self.series_tree.bind("<<TreeviewSelect>>", self.on_series_select)
 
-
 def on_series_select(self, event):
     selected = self.series_tree.selection()
     if not selected:
@@ -78,7 +75,6 @@ def on_series_select(self, event):
     for row in cursor.fetchall():
         self.series_movies_tree.insert("", "end", values=(row[0], row[1], row[2] or "-"))
     conn.close()
-
 
 def create_series(self):
     form = tk.Toplevel(self.root)
@@ -116,7 +112,6 @@ def create_series(self):
         self.show_series_page()
 
     ttk.Button(frame, text=_t("cinema.btn.create_series"), style="Success.TButton", command=save).pack(pady=20)
-
 
 def link_movie_to_series(self):
     form = tk.Toplevel(self.root)

@@ -5,11 +5,10 @@ database data for PDF export.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import patch, MagicMock
-
 
 class TestDataAggregator:
     """Test cases for DataAggregator class."""
@@ -201,7 +200,6 @@ class TestDataAggregator:
         assert isinstance(categorized, dict)
         # Should have "Other" category for uncategorized tables
         assert "Other" in categorized or len(categorized) > 0
-
 
 class TestDataAggregatorEdgeCases:
     """Test edge cases and error handling."""

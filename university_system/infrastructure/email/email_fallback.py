@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import queue
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from dataclasses import dataclass, field
@@ -23,7 +23,6 @@ from typing import Any, Callable, Dict, List, Optional
 from university_system.infrastructure.exceptions import EmailError
 
 logger = logging.getLogger(__name__)
-
 
 class EmailServiceUnavailable(EmailError):
     """Exception raised when email service is unavailable."""
@@ -41,14 +40,12 @@ class EmailServiceUnavailable(EmailError):
         kwargs.pop('code', None)
         super().__init__(message, code="EMAIL_SERVICE_UNAVAILABLE", **kwargs)
 
-
 class SendStatus(Enum):
     """Status of an email send operation."""
     SENT = 'sent'
     QUEUED = 'queued'
     FAILED = 'failed'
     PENDING_RETRY = 'pending_retry'
-
 
 @dataclass
 class Email:
@@ -85,7 +82,6 @@ class Email:
             data['created_at'] = datetime.fromisoformat(data['created_at'])
         return cls(**data)
 
-
 @dataclass
 class SendResult:
     """Result of an email send operation."""
@@ -98,7 +94,6 @@ class SendResult:
     @property
     def success(self) -> bool:
         return self.status == SendStatus.SENT
-
 
 class CircuitBreaker:
     """
@@ -202,7 +197,6 @@ class CircuitBreaker:
             self._half_open_calls = 0
             logger.info("Circuit breaker reset")
 
-
 class FallbackQueue:
     """
     Persistent queue for emails that couldn't be sent.
@@ -225,7 +219,7 @@ class FallbackQueue:
             retry_delays: Delay between retries in seconds (exponential backoff)
         """
         if db_path is None:
-            from university_system.modules.shared.constants import paths
+            from university_system.core import paths
             db_path = str(Path(paths.DATA_DIR) / 'email_queue.db')
 
         self.db_path = db_path
@@ -416,7 +410,6 @@ class FallbackQueue:
             ''', (cutoff,))
             conn.commit()
             return cursor.rowcount
-
 
 class EmailServiceWithFallback:
     """
@@ -615,7 +608,6 @@ class EmailServiceWithFallback:
             'queue': self.fallback_queue.get_stats(),
         }
 
-
 def calculate_retry_time(attempt: int = 0) -> datetime:
     """
     Calculate next retry time using exponential backoff.
@@ -629,7 +621,6 @@ def calculate_retry_time(attempt: int = 0) -> datetime:
     delays = [60, 300, 900, 3600, 7200]  # 1m, 5m, 15m, 1h, 2h
     delay = delays[min(attempt, len(delays) - 1)]
     return datetime.now() + timedelta(seconds=delay)
-
 
 __all__ = [
     'EmailServiceWithFallback',

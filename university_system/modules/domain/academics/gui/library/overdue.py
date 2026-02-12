@@ -430,10 +430,10 @@ def create_overdue_export(self, file_path):
         cursor = conn.cursor()
         student_columns = self._get_student_columns()
         grade_sql = ', s.grade_level' if 'grade_level' in student_columns else ''
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT bl.user_id, bl.book_id, b.title, b.author, bl.checkout_date,
                bl.due_date, julianday('now') - julianday(bl.due_date) as days_overdue,
-               bl.fine_amount, s.first_name, s.last_name, s.email{grade_sql}
+               bl.fine_amount, s.first_name, s.last_name, s.email''' + grade_sql + '''
         FROM book_loans bl
         JOIN books b ON bl.book_id = b.book_id
         LEFT JOIN students s ON bl.user_id = s.student_id

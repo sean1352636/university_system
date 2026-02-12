@@ -5,7 +5,7 @@ Tests library management system including books, loans, reservations, and review
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from datetime import datetime, timedelta
@@ -18,7 +18,6 @@ from university_system.modules.domain.academics.services.library.database import
 )
 from university_system.modules.domain.academics.services.library.settings import set_auth
 from university_system.modules.domain.academics.services.library.barcode import generate_barcode
-
 
 class TestBookClass:
     """Test suite for Book class"""
@@ -91,7 +90,6 @@ class TestBookClass:
 
         assert book.tags == []
 
-
 class TestBookLoanClass:
     """Test suite for BookLoan class"""
 
@@ -132,7 +130,6 @@ class TestBookLoanClass:
         assert loan.renewal_count == 2
         assert loan.reading_progress == 50
 
-
 class TestBookReservationClass:
     """Test suite for BookReservation class"""
 
@@ -153,7 +150,6 @@ class TestBookReservationClass:
         assert reservation.user_id == 'U001'
         assert reservation.status == 'active'
         assert reservation.priority_order == 1
-
 
 class TestBookReviewClass:
     """Test suite for BookReview class"""
@@ -189,7 +185,6 @@ class TestBookReviewClass:
 
         assert review.status == 'pending'
 
-
 class TestReadingListClass:
     """Test suite for ReadingList class"""
 
@@ -210,7 +205,6 @@ class TestReadingListClass:
         assert reading_list.creator_id == 'U001'
         assert reading_list.is_public is False
         assert reading_list.is_collaborative is False
-
 
 class TestLibraryDatabaseFunctions:
     """Test suite for library database functions"""
@@ -309,7 +303,6 @@ class TestLibraryDatabaseFunctions:
         assert 'books' in tables
         conn.close()
 
-
 class TestLibraryAuth:
     """Test suite for library authentication functions"""
 
@@ -323,7 +316,6 @@ class TestLibraryAuth:
         # Import the module to check the global auth
         from university_system.modules.domain.academics.services import library
         assert library.auth == mock_auth
-
 
 class TestLibraryUtilityFunctions:
     """Test suite for library utility functions"""
@@ -371,7 +363,6 @@ class TestLibraryUtilityFunctions:
         mock_cursor.execute.assert_called()
         mock_conn.commit.assert_called()
         mock_conn.close.assert_called()
-
 
 class TestLibraryDatabaseSchema:
     """Test suite for library database schema"""
@@ -519,7 +510,6 @@ class TestLibraryDatabaseSchema:
         assert result is not None
         conn.close()
 
-
 class TestLibraryDataOperations:
     """Test suite for library data operations"""
 
@@ -634,7 +624,6 @@ class TestLibraryDataOperations:
             conn.commit()
 
         conn.close()
-
 
 class TestLibraryEdgeCases:
     """Test suite for edge cases"""

@@ -1610,7 +1610,9 @@ def verify_fix():
 
         for table in tables_to_test:
             try:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                from university_system.core.sql_safety import validate_table_name
+                validated_table = validate_table_name(table, conn=conn)
+                cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                 count = cursor.fetchone()[0]
                 print(f"✅ {table}: {count} records")
             except sqlite3.Error as e:

@@ -2,7 +2,6 @@
 Ticket status management for Student Support.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -19,6 +18,7 @@ from functools import wraps
 
 from university_system.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from university_system.infrastructure.email.email_manager import send_email
+from university_system.core.sql_safety import validate_identifier
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from university_system.utils.logging.log_config import get_log_file
 
@@ -29,10 +29,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def update_ticket_status(ticket_id, new_status, resolution_notes=None):
     """Update the status of a support ticket with enhanced tracking."""
@@ -72,10 +69,10 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
             update_fields['closed_at'] = update_time
         
         # Build SQL
-        set_clause = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+        set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
         values = list(update_fields.values()) + [ticket_id]
-        
-        cursor.execute(f'UPDATE support_tickets SET {set_clause} WHERE ticket_id = ?', values)
+
+        cursor.execute('UPDATE support_tickets SET ' + set_clause + ' WHERE ticket_id = ?', values)
         
         # Add system response about status change
         response_text = f"Ticket status updated from '{old_status}' to '{new_status}'"
@@ -117,7 +114,6 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
         logger.error(f"Error updating ticket status: {e}")
         raise
 
-
 def _create_status_update_notifications(ticket_id, student_id, old_status, new_status):
     """Create notifications for status updates"""
     # Skip if student_id is None or invalid
@@ -151,7 +147,6 @@ def _create_status_update_notifications(ticket_id, student_id, old_status, new_s
     finally:
         if conn:
             conn.close()
-
 
 def _record_status_change_metrics(ticket_id, old_status, new_status, timestamp):
     """Record metrics for status changes"""
@@ -188,7 +183,6 @@ def _record_status_change_metrics(ticket_id, old_status, new_status, timestamp):
         if conn:
             conn.close()
 
-
 def _trigger_satisfaction_survey(ticket_id, student_id):
     """Trigger satisfaction survey for resolved ticket"""
     # Skip if student_id is None or invalid
@@ -224,7 +218,6 @@ def _trigger_satisfaction_survey(ticket_id, student_id):
     finally:
         if conn:
             conn.close()
-
 
 def update_status_enhanced(support, ticket_id):
     """Enhanced status update with resolution notes"""
@@ -270,7 +263,6 @@ def update_status_enhanced(support, ticket_id):
     except Exception as e:
         print(f"❌ Error updating status: {e}")
 
-
 def add_internal_note(support, ticket_id):
     """Add internal note to ticket"""
     try:
@@ -297,7 +289,6 @@ def add_internal_note(support, ticket_id):
         
     except Exception as e:
         print(f"❌ Error adding internal note: {e}")
-
 
 def view_ticket_history(support, ticket_id):
     """View complete ticket history"""

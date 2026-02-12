@@ -4,12 +4,11 @@ Tests table management, reservations, QR code generation, and analytics.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 from university_system.modules.domain.commerce.services.restaurant.customer import reservation_system
-
 
 @pytest.fixture
 def mock_auth():
@@ -23,7 +22,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def mock_db_connection(tmp_path):
@@ -109,7 +107,6 @@ def mock_db_connection(tmp_path):
 
     conn.commit()
     return conn
-
 
 class TestTableManagement:
     """Tests for table management functionality."""
@@ -279,7 +276,6 @@ class TestTableManagement:
         # Verify
         captured = capsys.readouterr()
         assert "Cannot delete occupied table" in captured.out
-
 
 class TestReservationManagement:
     """Tests for reservation management functionality."""
@@ -457,7 +453,6 @@ class TestReservationManagement:
         assert "RES001" in captured.out
         assert "John Doe" in captured.out
 
-
 class TestQRCodeManagement:
     """Tests for QR code generation and management."""
 
@@ -532,7 +527,6 @@ class TestQRCodeManagement:
         usage_count = cursor.fetchone()[0]
         assert usage_count == 1
 
-
 class TestTableAnalytics:
     """Tests for table analytics functionality."""
 
@@ -588,7 +582,6 @@ class TestTableAnalytics:
         assert "Total Tables: 4" in captured.out
         assert "Total Capacity: 16" in captured.out
         assert "Available" in captured.out or "Occupied" in captured.out or "Reserved" in captured.out
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

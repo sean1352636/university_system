@@ -4,7 +4,7 @@ Tests supplier management, waste tracking, inventory reports, and stock operatio
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -13,7 +13,6 @@ import tempfile
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.operations import inventory_management
 from university_system.modules.shared.constants import paths
-
 
 @pytest.fixture
 def test_db():
@@ -177,7 +176,6 @@ def test_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -186,7 +184,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
     return auth
-
 
 class TestSupplierManagement:
     """Test supplier management functions"""
@@ -217,7 +214,6 @@ class TestSupplierManagement:
         assert hasattr(inventory_management, 'update_supplier')
         assert callable(inventory_management.update_supplier)
 
-
 class TestWasteTracking:
     """Test waste tracking functions"""
 
@@ -241,7 +237,6 @@ class TestWasteTracking:
 
         captured = capsys.readouterr()
         assert 'WASTE REPORTS' in captured.out
-
 
 class TestInventoryReports:
     """Test inventory reporting functions"""
@@ -315,7 +310,6 @@ class TestInventoryReports:
         captured = capsys.readouterr()
         assert 'ABC INVENTORY ANALYSIS' in captured.out
 
-
 class TestInventoryOperations:
     """Test inventory CRUD operations"""
 
@@ -371,7 +365,6 @@ class TestInventoryOperations:
         captured = capsys.readouterr()
         assert 'INVENTORY TRANSACTIONS' in captured.out
 
-
 class TestSetAuth:
     """Test authentication setup"""
 
@@ -380,7 +373,6 @@ class TestSetAuth:
         inventory_management.set_auth(mock_auth)
         assert inventory_management.auth == mock_auth
 
-
 class TestSupplierPerformance:
     """Test supplier performance tracking"""
 
@@ -388,7 +380,6 @@ class TestSupplierPerformance:
         """Note: supplier_performance is in staff_administration module, not inventory_management"""
         # This test documents that supplier_performance is in a different module
         assert True
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

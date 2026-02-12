@@ -120,7 +120,8 @@ class AnomalyDetector:
             cursor.execute('SELECT AVG(amount) FROM payments')
             avg_payment = cursor.fetchone()[0] or 0
 
-            cursor.execute(f'SELECT student_id, amount FROM payments WHERE amount > {avg_payment * self.threshold_multiplier}')
+            threshold = avg_payment * self.threshold_multiplier
+            cursor.execute('SELECT student_id, amount FROM payments WHERE amount > ?', (threshold,))
             anomalies = cursor.fetchall()
 
             conn.close()

@@ -4,7 +4,7 @@ Cinema Booking System - Private Rentals
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_rentals_page(self):
     self.clear_content()
@@ -47,7 +46,6 @@ def show_rentals_page(self):
     ttk.Button(action_frame, text=_t("cinema.btn.confirm"), style="Success.TButton", command=self.confirm_rental).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.buttons.cancel"), style="Danger.TButton", command=self.cancel_rental).pack(side="left", padx=5)
 
-
 def create_rental(self):
     form = tk.Toplevel(self.root)
     form.title("New Rental")
@@ -77,7 +75,7 @@ def create_rental(self):
         try:
             guests = int(entries['guests'].get() or 50)
             screen = int(entries['screen'].get() or 1)
-        except:
+        except (ValueError, TypeError):
             guests, screen = 50, 1
         base = 299.00
         conn = sqlite3.connect(DB_FILE)
@@ -90,7 +88,6 @@ def create_rental(self):
         form.destroy()
         self.show_rentals_page()
     ttk.Button(frame, text=_t("cinema.btn.submit"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
-
 
 def confirm_rental(self):
     selected = self.rental_tree.selection()
@@ -105,7 +102,6 @@ def confirm_rental(self):
     conn.close()
     messagebox.showinfo(_t("cinema.common.success"), "Rental confirmed!")
     self.show_rentals_page()
-
 
 def cancel_rental(self):
     selected = self.rental_tree.selection()

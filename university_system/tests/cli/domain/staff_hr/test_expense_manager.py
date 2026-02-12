@@ -4,14 +4,13 @@ Tests expense claims, approvals, reimbursements, and policy compliance.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
 import tempfile
 
 from university_system.modules.domain.staff_hr.services.managers.expense_manager import ExpenseManager
-
 
 @pytest.fixture
 def test_db():
@@ -159,7 +158,6 @@ def test_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 class TestExpenseClaimCreation:
     """Test expense claim creation functionality."""
 
@@ -221,7 +219,6 @@ class TestExpenseClaimCreation:
         assert claim['mileage_miles'] == 100
         assert claim['mileage_rate'] == 0.45
         conn.close()
-
 
 class TestExpenseClaimRetrieval:
     """Test expense claim retrieval functionality."""
@@ -302,7 +299,6 @@ class TestExpenseClaimRetrieval:
 
         assert len(claims) == 2
         conn.close()
-
 
 class TestExpenseApproval:
     """Test expense approval workflow."""
@@ -409,7 +405,6 @@ class TestExpenseApproval:
         assert claim['status'] == 'rejected'
         conn.close()
 
-
 class TestExpenseCategories:
     """Test expense category functionality."""
 
@@ -454,7 +449,6 @@ class TestExpenseCategories:
         assert category['name'] == 'Training'
         assert category['max_amount'] == 1000.00
         conn.close()
-
 
 class TestReimbursement:
     """Test reimbursement functionality."""
@@ -521,7 +515,6 @@ class TestReimbursement:
         assert len(pending) == 2
         conn.close()
 
-
 class TestExpenseStatistics:
     """Test expense statistics functionality."""
 
@@ -556,7 +549,6 @@ class TestExpenseStatistics:
         assert 'by_status' in stats
         assert 'by_category' in stats
         conn.close()
-
 
 class TestExpensePolicy:
     """Test expense policy functionality."""

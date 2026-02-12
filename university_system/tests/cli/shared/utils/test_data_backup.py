@@ -15,7 +15,7 @@ import pytest
 import os
 import tempfile
 import shutil
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from pathlib import Path
 from datetime import datetime
@@ -23,7 +23,6 @@ from unittest.mock import Mock, patch, MagicMock
 
 from university_system.infrastructure.database import data_backup
 from university_system.modules.shared.constants import paths
-
 
 @pytest.fixture
 def temp_db():
@@ -67,7 +66,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def temp_backup_dir():
     """Create a temporary backup directory."""
@@ -75,14 +73,12 @@ def temp_backup_dir():
     yield temp_dir
     shutil.rmtree(temp_dir, ignore_errors=True)
 
-
 @pytest.fixture
 def reset_backup_config():
     """Reset backup configuration to defaults after each test."""
     original_config = data_backup.config.copy()
     yield
     data_backup.config = original_config
-
 
 class TestBackupMetadata:
     """Test backup metadata management."""
@@ -132,7 +128,6 @@ class TestBackupMetadata:
 
         limited = metadata.get_backups(limit=2)
         assert len(limited) == 2
-
 
 class TestEncryption:
     """Test encryption and decryption functions."""
@@ -190,7 +185,6 @@ class TestEncryption:
         if encrypted_path and os.path.exists(encrypted_path):
             os.unlink(encrypted_path)
 
-
 class TestCompression:
     """Test compression and decompression functions."""
 
@@ -239,7 +233,6 @@ class TestCompression:
 
         os.unlink(decompressed_path)
 
-
 class TestFileIntegrity:
     """Test file integrity and hashing functions."""
 
@@ -266,7 +259,6 @@ class TestFileIntegrity:
         wrong_hash = "0" * 64
         result = data_backup.verify_backup_integrity(temp_db, wrong_hash)
         assert result is False
-
 
 class TestDatabaseOperations:
     """Test database-specific operations."""
@@ -340,7 +332,6 @@ class TestDatabaseOperations:
 
                 assert count == 0  # Should have structure but no data
 
-
 class TestBackupCreation:
     """Test backup creation functions."""
 
@@ -362,7 +353,6 @@ class TestBackupCreation:
         """Test database change detection."""
         result = data_backup.has_database_changed()
         assert isinstance(result, bool)
-
 
 class TestExportFunctions:
     """Test export functionality."""
@@ -408,7 +398,6 @@ class TestExportFunctions:
             root = tree.getroot()
             assert root.tag == "database"
 
-
 class TestBackupValidation:
     """Test backup validation functions."""
 
@@ -425,7 +414,6 @@ class TestBackupValidation:
         results = data_backup.validate_backup("/nonexistent/backup.db")
         assert results["file_exists"] is False
         assert len(results.get("errors", [])) > 0
-
 
 class TestBackupComparison:
     """Test backup comparison functions."""
@@ -454,7 +442,6 @@ class TestBackupComparison:
             assert "tables_removed" in differences
             assert "tables_modified" in differences
 
-
 class TestBackupStatistics:
     """Test backup statistics generation."""
 
@@ -465,7 +452,6 @@ class TestBackupStatistics:
         assert "total_backups" in stats
         assert "total_size" in stats
         assert "backup_types" in stats
-
 
 class TestBackupConfiguration:
     """Test backup configuration management."""
@@ -491,7 +477,6 @@ class TestBackupConfiguration:
                 with open(config_file) as f:
                     saved_config = json.load(f)
                     assert saved_config["backup_directory"] == temp_backup_dir
-
 
 class TestBackupTemplates:
     """Test backup template management."""
@@ -519,7 +504,6 @@ class TestBackupTemplates:
         result = data_backup.load_backup_template("test_template")
         if result:
             assert data_backup.config["compression_enabled"] is True
-
 
 class TestNotifications:
     """Test notification functions."""
@@ -551,7 +535,6 @@ class TestNotifications:
         # Verify webhook was called
         assert mock_post.called or True
 
-
 class TestCleanup:
     """Test cleanup and retention functions."""
 
@@ -572,7 +555,6 @@ class TestCleanup:
         # Function should complete without errors
         assert True
 
-
 class TestBackupRestoration:
     """Test backup restoration functions."""
 
@@ -591,7 +573,6 @@ class TestBackupRestoration:
             result = data_backup.restore_from_backup(backup_file)
 
             assert isinstance(result, bool)
-
 
 class TestBackupListing:
     """Test backup listing functions."""
@@ -615,7 +596,6 @@ class TestBackupListing:
         backups = data_backup.list_available_backups(search_term="manual")
         assert isinstance(backups, list)
 
-
 class TestSecureDelete:
     """Test secure file deletion."""
 
@@ -631,7 +611,6 @@ class TestSecureDelete:
         data_backup.secure_delete_file(test_file, passes=1)
 
         assert not os.path.exists(test_file)
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

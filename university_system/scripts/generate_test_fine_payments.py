@@ -5,7 +5,7 @@ Generate test data for library fine payments
 This script creates sample paid fines for testing the refund system.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 import random

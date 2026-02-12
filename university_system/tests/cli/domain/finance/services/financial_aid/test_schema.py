@@ -9,14 +9,13 @@ This module tests the financial aid database schema creation:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from university_system.modules.domain.finance.services.financial_aid.schema import (
     FINANCIAL_AID_SCHEMA,
     create_financial_aid_tables
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -28,7 +27,6 @@ def temp_db():
         os.unlink(temp_path)
     except (OSError, IOError):
         pass
-
 
 class TestSchemaCreation:
     """Test suite for schema creation"""
@@ -69,7 +67,6 @@ class TestSchemaCreation:
 
         for table in required_tables:
             assert table in FINANCIAL_AID_SCHEMA
-
 
 class TestTableStructure:
     """Test suite for table structure validation"""
@@ -162,7 +159,6 @@ class TestTableStructure:
 
         conn.close()
 
-
 class TestIndexes:
     """Test suite for index creation"""
 
@@ -207,7 +203,6 @@ class TestIndexes:
         assert 'idx_fin_aid_apps_student' in indexes
 
         conn.close()
-
 
 class TestConstraints:
     """Test suite for foreign key and unique constraints"""
@@ -259,7 +254,6 @@ class TestConstraints:
             """)
 
         conn.close()
-
 
 class TestDataInsertion:
     """Test suite for data insertion into created tables"""
@@ -341,7 +335,6 @@ class TestDataInsertion:
 
         conn.close()
 
-
 class TestDefaultValues:
     """Test suite for default values in tables"""
 
@@ -412,7 +405,6 @@ class TestDefaultValues:
 
         conn.close()
 
-
 class TestSchemaIdempotency:
     """Test that schema creation is idempotent"""
 
@@ -431,7 +423,6 @@ class TestSchemaIdempotency:
 
         conn.close()
 
-
 class TestMainExecution:
     """Test the __main__ execution block"""
 
@@ -444,7 +435,6 @@ class TestMainExecution:
 
         captured = capsys.readouterr()
         assert "created successfully" in captured.out.lower()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

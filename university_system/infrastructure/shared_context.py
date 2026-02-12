@@ -85,7 +85,7 @@ def initialize_auth(db_path: Optional[str] = None) -> UserAuth:
     with _auth_lock:
         if _auth_instance is None:
             if db_path is None:
-                from university_system.modules.shared.constants import paths
+                from university_system.core import paths
                 db_path = paths.DEFAULT_DB_PATH
             _auth_instance = UserAuth(db_path)
             _auth_initialized = True

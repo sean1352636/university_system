@@ -19,7 +19,7 @@ Functions:
 """
 
 import logging
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
@@ -46,7 +46,6 @@ if CHATBOT_AVAILABLE:
         CHATBOT_AVAILABLE = False
 else:
     logger.info("Chatbot module not available - feature will be disabled")
-
 
 def initialize_chatbot_integration(auth_instance):
     """Initialize chatbot integration with comprehensive error handling
@@ -94,7 +93,6 @@ def initialize_chatbot_integration(auth_instance):
         auth_instance.chatbot = None
         return False
 
-
 def _create_fallback_chatbot(auth_instance):
     """Create a minimal fallback chatbot
     
@@ -120,7 +118,6 @@ def _create_fallback_chatbot(auth_instance):
     
     auth_instance.chatbot = FallbackChatbot()
     logger.info("Fallback chatbot created")
-
 
 def setup_chatbot_permissions(auth_instance):
     """Setup chatbot-specific permissions in the database
@@ -189,7 +186,6 @@ def setup_chatbot_permissions(auth_instance):
         logger.error(f"Configuration error setting up chatbot permissions: {e}")
         return False
 
-
 def create_chatbot_session(auth_instance, username: str) -> Optional[str]:
     """Create a chatbot session for authenticated user
     
@@ -214,7 +210,6 @@ def create_chatbot_session(auth_instance, username: str) -> Optional[str]:
     auth_instance._log_activity(username, 'Chatbot session created', f'Token: {session_token[:8]}...', auth_instance.current_user['id'])
     
     return session_token
-
 
 def get_chatbot_conversation_history(auth_instance, username: str, limit: int = 50) -> List[Dict[str, Any]]:
     """Get chatbot conversation history for a user - IMPROVED VERSION
@@ -309,7 +304,6 @@ def get_chatbot_conversation_history(auth_instance, username: str, limit: int = 
 
     return conversations[:limit]
 
-
 def generate_chatbot_analytics(auth_instance) -> Dict[str, Any]:
     """Generate chatbot usage analytics
     
@@ -359,7 +353,6 @@ def generate_chatbot_analytics(auth_instance) -> Dict[str, Any]:
         logger.error(f"Data error generating chatbot analytics: {e}")
         return {'error': str(e), 'error_type': 'data'}
 
-
 def launch_chatbot_interface(auth_instance):
     """Launch the chatbot interface for the current user
     
@@ -384,7 +377,6 @@ def launch_chatbot_interface(auth_instance):
     
     # Launch the interface
     auth_instance.chatbot.run_authenticated_console_interface()
-
 
 def display_chatbot_integration_menu(auth):
     """Display chatbot integration menu
@@ -592,7 +584,6 @@ def display_chatbot_integration_menu(auth):
         else:
             print("Invalid choice. Please try again.")
 
-
 def process_message(chatbot_instance, message, user_id, is_voice=False):
     """Process a basic message with conversation tracking
     
@@ -667,7 +658,6 @@ def process_message(chatbot_instance, message, user_id, is_voice=False):
     
     return response
 
-
 def test_chatbot_integration(auth):
     """Test chatbot integration functionality
     
@@ -740,7 +730,6 @@ def test_chatbot_integration(auth):
     
     print("\nIntegration test completed!")
 
-
 def create_sample_chatbot_data(auth_instance):
     """Inspect chatbot interaction data stored in the database for validation.
     
@@ -798,7 +787,6 @@ def create_sample_chatbot_data(auth_instance):
                 print(f"  • {' | '.join(summary_parts)}")
     except Exception as error:
         print(f"✗ Failed to read chatbot data: {error}")
-
 
 # Export public functions
 __all__ = [

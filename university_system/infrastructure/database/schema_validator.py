@@ -11,7 +11,7 @@ import hashlib
 import json
 import logging
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -19,10 +19,9 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
 from university_system.infrastructure.exceptions import DatabaseError
-from university_system.modules.shared.utils.sql_safety import validate_identifier
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
-
 
 class SchemaValidationError(DatabaseError):
     """Exception raised when schema validation fails."""
@@ -41,7 +40,6 @@ class SchemaValidationError(DatabaseError):
         super().__init__(message, code="SCHEMA_VALIDATION_ERROR", **kwargs)
         self.differences = differences or []
 
-
 @dataclass
 class TableSchema:
     """Schema definition for a database table."""
@@ -50,7 +48,6 @@ class TableSchema:
     indexes: List[str] = field(default_factory=list)
     foreign_keys: List[Dict[str, str]] = field(default_factory=list)
     primary_key: Optional[List[str]] = None
-
 
 @dataclass
 class SchemaDifference:
@@ -71,7 +68,6 @@ class SchemaDifference:
             'actual': self.actual,
             'severity': self.severity,
         }
-
 
 class SchemaValidator:
     """
@@ -499,7 +495,6 @@ class SchemaValidator:
         logger.info("All required tables present")
         return True, set()
 
-
 def validate_schema_at_startup(
     db_path: Optional[str] = None,
     schema_path: Optional[str] = None,
@@ -525,7 +520,6 @@ def validate_schema_at_startup(
         raise_on_error=raise_on_error
     )
     return is_valid
-
 
 __all__ = [
     'SchemaValidator',

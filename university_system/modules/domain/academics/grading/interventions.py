@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.infrastructure.database.db import get_connection
 
 def intervention_recommendations():

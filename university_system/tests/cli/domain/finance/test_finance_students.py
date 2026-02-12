@@ -10,7 +10,7 @@ Tests all student-related finance functions including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import sys
@@ -18,7 +18,6 @@ import io
 
 from university_system.modules.domain.finance.core import students
 from university_system.infrastructure.database.db import get_connection, transaction
-
 
 @pytest.fixture
 def test_db_connection():
@@ -126,7 +125,6 @@ def test_db_connection():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def sample_student(test_db_connection):
     """Create a sample student for testing"""
@@ -139,7 +137,6 @@ def sample_student(test_db_connection):
           'Computer Science', '2024-01-01', 'active'))
     test_db_connection.commit()
     return 'TEST001'
-
 
 class TestStudentExistence:
     """Test student existence checking"""
@@ -159,7 +156,6 @@ class TestStudentExistence:
 
         monkeypatch.setattr(students, 'get_connection', mock_get_connection)
         assert students.student_exists('TEST001') is False
-
 
 class TestStudentNameRetrieval:
     """Test student name retrieval"""
@@ -183,7 +179,6 @@ class TestStudentNameRetrieval:
         name = students.get_student_name('TEST001')
         assert name == "Unknown Student"
 
-
 class TestStudentEmailRetrieval:
     """Test student email retrieval"""
 
@@ -206,7 +201,6 @@ class TestStudentEmailRetrieval:
         email = students.get_student_email('TEST001')
         assert email == "TEST001@university.ac.uk"
 
-
 class TestStudentPhoneRetrieval:
     """Test student phone retrieval"""
 
@@ -228,7 +222,6 @@ class TestStudentPhoneRetrieval:
         monkeypatch.setattr(students, 'get_connection', mock_get_connection)
         phone = students.get_student_phone('TEST001')
         assert phone == "07000000000"
-
 
 class TestSampleStudentCreation:
     """Test sample student creation"""
@@ -265,7 +258,6 @@ class TestSampleStudentCreation:
 
         captured = capsys.readouterr()
         assert "Error creating sample students" in captured.out
-
 
 class TestStudentCredits:
     """Test student credits functionality"""
@@ -313,7 +305,6 @@ class TestStudentCredits:
         captured = capsys.readouterr()
         assert "No active credits found" in captured.out
 
-
 class TestAddStudentCredit:
     """Test adding student credits"""
 
@@ -360,7 +351,6 @@ class TestAddStudentCredit:
         captured = capsys.readouterr()
         assert "Invalid date format" in captured.out or "Credit added successfully" in captured.out
 
-
 class TestCreditHistory:
     """Test credit history functionality"""
 
@@ -397,7 +387,6 @@ class TestCreditHistory:
         assert "refund" in captured.out
         assert "goodwill" in captured.out
         assert "350.00" in captured.out  # Total credits received
-
 
 class TestApplyCreditToFees:
     """Test applying credits to fees"""
@@ -444,7 +433,6 @@ class TestApplyCreditToFees:
         captured = capsys.readouterr()
         assert "Credit application completed" in captured.out or "Applied" in captured.out
 
-
 class TestAPIFinancialSummary:
     """Test API for student financial summary"""
 
@@ -487,7 +475,6 @@ class TestAPIFinancialSummary:
         # In testing, we just verify it doesn't error
         assert result is not None
 
-
 class TestErrorHandling:
     """Test error handling across all functions"""
 
@@ -521,7 +508,6 @@ class TestErrorHandling:
 
         captured = capsys.readouterr()
         assert "Database error" in captured.out or "does not exist" in captured.out
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

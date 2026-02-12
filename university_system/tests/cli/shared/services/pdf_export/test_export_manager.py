@@ -5,10 +5,9 @@ Tests the PDFExportManager class which orchestrates the full export process.
 
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import pytest
 from unittest.mock import patch, MagicMock, call
-
 
 class TestPDFExportManager:
     """Test cases for PDFExportManager class."""
@@ -207,7 +206,6 @@ class TestPDFExportManager:
         assert output_path is not None
         assert os.path.exists(output_path)
 
-
 class TestExportDatabaseToPDF:
     """Test the convenience function."""
 
@@ -258,7 +256,6 @@ class TestExportDatabaseToPDF:
                     shutil.rmtree(mock_paths.EXPORTS_DIR)
                 except Exception:
                     pass
-
 
 class TestExportManagerEdgeCases:
     """Test edge cases and error handling."""

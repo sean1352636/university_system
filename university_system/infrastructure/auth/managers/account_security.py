@@ -27,7 +27,7 @@ except ImportError:
 
 # Import centralized activity logger
 try:
-    from university_system.modules.shared.utils.activity_logger import log_activity
+    from university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False

@@ -4,7 +4,7 @@ Cinema Booking System - Customer Profile Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -15,7 +15,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import BIRTHDAY_REWARD_TICKET
-
 
 def show_profiles_page(self):
     self.clear_content()
@@ -58,7 +57,6 @@ def show_profiles_page(self):
     ttk.Button(action_frame, text=_t("cinema.btn.edit_profile"), command=self.edit_profile).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.btn.view_history"), command=self.view_profile_history).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.btn.set_favorite_seats"), command=self.set_favorite_seats).pack(side="left", padx=5)
-
 
 def create_profile(self):
     form = tk.Toplevel(self.root)
@@ -111,7 +109,6 @@ def create_profile(self):
         self.show_profiles_page()
 
     ttk.Button(frame, text=_t("cinema.btn.save_profile"), style="Success.TButton", command=save).pack(pady=20)
-
 
 def edit_profile(self):
     selected = self.profile_tree.selection()
@@ -181,7 +178,6 @@ def edit_profile(self):
 
     ttk.Button(frame, text=_t("cinema.buttons.save_changes"), style="Success.TButton", command=save).pack(pady=20)
 
-
 def view_profile_history(self):
     selected = self.profile_tree.selection()
     if not selected:
@@ -215,7 +211,6 @@ def view_profile_history(self):
         tree.insert("", "end", values=(row[0], row[1], row[2], row[3], f"£{row[4]:.2f}", row[5][:10]))
     tree.pack(fill="both", expand=True)
 
-
 def set_favorite_seats(self):
     selected = self.profile_tree.selection()
     if not selected:
@@ -231,7 +226,6 @@ def set_favorite_seats(self):
         conn.commit()
         conn.close()
         self.show_profiles_page()
-
 
 def show_birthday_rewards(self):
     today = datetime.now()

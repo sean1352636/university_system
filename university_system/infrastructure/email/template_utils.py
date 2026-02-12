@@ -19,12 +19,12 @@ from pathlib import Path
 from string import Template
 
 from university_system.infrastructure.email.config import config
-from university_system.modules.shared.utils.logs import handle_exception, log_event
-from university_system.modules.shared.constants import paths
+from university_system.core.logs import handle_exception, log_event
+from university_system.core import paths
 
 # i18n support
 try:
-    from university_system.modules.shared.utils.i18n import get_text as _t
+    from university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, **kwargs):
         return key
@@ -454,10 +454,11 @@ def render_template(template_name, template_vars):
     if 'signature' not in template_vars:
         template_vars['signature'] = config['email_signature']
 
-    # Render subject and body
+    # Render subject and body (support both 'body' and 'body_text'/'body_html' keys)
     try:
         subject_template = Template(template_data['subject'])
-        body_template = Template(template_data['body'])
+        body_key = 'body' if 'body' in template_data else 'body_html' if 'body_html' in template_data else 'body_text'
+        body_template = Template(template_data[body_key])
 
         subject = subject_template.safe_substitute(template_vars)
         body = body_template.safe_substitute(template_vars)

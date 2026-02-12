@@ -166,7 +166,6 @@ CREATE INDEX IF NOT EXISTS idx_virtual_chat_session
     ON virtual_chat_messages(session_id);
 """
 
-
 def create_virtual_classroom_tables(conn):
     """Create all virtual classroom tables"""
     cursor = conn.cursor()
@@ -174,9 +173,8 @@ def create_virtual_classroom_tables(conn):
     conn.commit()
     print("Virtual Classroom tables created successfully")
 
-
 if __name__ == "__main__":
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
     with sqlite3.connect(DEFAULT_DB_PATH) as conn:

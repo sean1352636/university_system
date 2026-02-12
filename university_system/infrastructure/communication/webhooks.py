@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import requests
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 from university_system.infrastructure.communication.models import (
     WebhookSubscription,
     WebhookDelivery,
@@ -136,6 +137,11 @@ class WebhookDispatcher:
             logger.error(f"Error creating webhook: {e}")
             return None
 
+    _WEBHOOK_ALLOWED_COLUMNS = frozenset({
+        'name', 'url', 'secret', 'events_json', 'is_active',
+        'retry_count', 'timeout_seconds', 'updated_at',
+    })
+
     def update_webhook(
         self,
         webhook_id: int,
@@ -152,27 +158,26 @@ class WebhookDispatcher:
             updates = []
             params = []
 
+            _col_pairs = []
             if name is not None:
-                updates.append("name = ?")
-                params.append(name)
+                _col_pairs.append(("name", name))
             if url is not None:
-                updates.append("url = ?")
-                params.append(url)
+                _col_pairs.append(("url", url))
             if secret is not None:
-                updates.append("secret = ?")
-                params.append(secret)
+                _col_pairs.append(("secret", secret))
             if events is not None:
-                updates.append("events_json = ?")
-                params.append(json.dumps(events))
+                _col_pairs.append(("events_json", json.dumps(events)))
             if is_active is not None:
-                updates.append("is_active = ?")
-                params.append(1 if is_active else 0)
+                _col_pairs.append(("is_active", 1 if is_active else 0))
             if retry_count is not None:
-                updates.append("retry_count = ?")
-                params.append(retry_count)
+                _col_pairs.append(("retry_count", retry_count))
             if timeout_seconds is not None:
-                updates.append("timeout_seconds = ?")
-                params.append(timeout_seconds)
+                _col_pairs.append(("timeout_seconds", timeout_seconds))
+
+            for col, val in _col_pairs:
+                validate_identifier(col, "column")
+                updates.append(f"{col} = ?")
+                params.append(val)
 
             if not updates:
                 return False

@@ -14,10 +14,10 @@ Phase 5: Admin System Features (to be added)
 Phase 6: Academic Administration (to be added)
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from university_system.infrastructure.database.db import get_connection, transaction
-
+from university_system.core.sql_safety import safe_alter_table_add_column
 
 def init_staff_hr_v4_schemas():
     """Initialize all Staff HR v4 database tables."""
@@ -37,9 +37,9 @@ def init_staff_hr_v4_schemas():
 
             for table, column, column_def in migration_columns:
                 try:
-                    cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_def}")
-                except sqlite3.OperationalError:
-                    pass  # Column already exists or table doesn't exist yet
+                    safe_alter_table_add_column(table, column, column_def, conn)
+                except Exception:
+                    pass  # Table doesn't exist yet, will be created below
 
             # ==================== CONTRACT MANAGEMENT ====================
 
@@ -546,7 +546,6 @@ def init_staff_hr_v4_schemas():
         print(f"Error initializing Staff HR v4 database: {e}")
         return False
 
-
 def _create_v4_indexes(cursor):
     """Create indexes for v4 tables."""
     indexes = [
@@ -587,7 +586,6 @@ def _create_v4_indexes(cursor):
             cursor.execute(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({columns})')
         except sqlite3.Error:
             pass  # Index may already exist
-
 
 def _insert_v4_defaults(cursor):
     """Insert default data for v4 tables."""
@@ -692,7 +690,6 @@ def _insert_v4_defaults(cursor):
         ''')
     except sqlite3.Error:
         pass
-
 
 # Make schema initialization available
 __all__ = ['init_staff_hr_v4_schemas']

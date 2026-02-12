@@ -4,14 +4,13 @@ Tests peer support, academic support, and related functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
 
 from university_system.modules.domain.student_affairs.student_union.services import support
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_cursor():
@@ -24,7 +23,6 @@ def mock_cursor():
     cursor.rowcount = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -34,7 +32,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_context():
     """Mock the context module."""
@@ -43,7 +40,6 @@ def mock_context():
     ctx.auth.current_user = {'id': 1, 'username': 'testuser'}
     ctx.auth.check_permission = Mock(return_value=False)
     return ctx
-
 
 @pytest.fixture
 def sample_support_groups():
@@ -55,7 +51,6 @@ def sample_support_groups():
          'John', 'Smith', 3, 8, 'Tuesdays 6pm', 'active'),
     ]
 
-
 @pytest.fixture
 def sample_study_groups():
     """Sample study group data."""
@@ -65,7 +60,6 @@ def sample_study_groups():
         (2, 'Physics', 'Quantum mechanics', 'S12346', 'Bob', 'Green', 2, 6,
          '4pm-6pm', 'Science Building', '2024-12-22', 'open'),
     ]
-
 
 class TestBrowseSupportGroups:
     """Tests for browse_support_groups function."""
@@ -101,7 +95,6 @@ class TestBrowseSupportGroups:
         # Should show support type headers
         assert any('ACADEMIC STRESS' in str(call) or 'SUPPORT' in str(call)
                   for call in mock_print.call_args_list)
-
 
 class TestJoinSupportGroup:
     """Tests for join_support_group function."""
@@ -186,7 +179,6 @@ class TestJoinSupportGroup:
         # Should indicate invalid ID
         assert any('Invalid' in str(call) for call in mock_print.call_args_list)
 
-
 class TestViewMySupportGroups:
     """Tests for view_my_support_groups function."""
 
@@ -219,7 +211,6 @@ class TestViewMySupportGroups:
 
         # Should indicate no membership
         assert any('not a member' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestCreateSupportGroup:
     """Tests for create_support_group function."""
@@ -277,7 +268,6 @@ class TestCreateSupportGroup:
         assert any('between 3 and 20' in str(call).lower() for call in mock_print.call_args_list)
         mock_conn.commit.assert_not_called()
 
-
 class TestManageStudyGroups:
     """Tests for manage_study_groups function."""
 
@@ -318,7 +308,6 @@ class TestManageStudyGroups:
         assert any('INSERT INTO study_groups' in str(call)
                   for call in mock_cursor.execute.call_args_list)
         mock_award.assert_called()
-
 
 class TestManagePeerTutoring:
     """Tests for manage_peer_tutoring function."""
@@ -362,7 +351,6 @@ class TestManagePeerTutoring:
         assert any('INSERT INTO tutoring_offers' in str(call)
                   for call in mock_cursor.execute.call_args_list)
         mock_award.assert_called()
-
 
 class TestManageSharedResources:
     """Tests for manage_shared_resources function."""
@@ -426,7 +414,6 @@ class TestManageSharedResources:
         # Should award points to uploader
         mock_award.assert_called()
 
-
 class TestViewWellnessResources:
     """Tests for view_wellness_resources function."""
 
@@ -441,7 +428,6 @@ class TestViewWellnessResources:
                   for call in mock_print.call_args_list)
         assert any('Counselling' in str(call) or 'SUPPORT' in str(call)
                   for call in mock_print.call_args_list)
-
 
 class TestAnonymousPeerMatching:
     """Tests for anonymous_peer_matching function."""
@@ -468,7 +454,6 @@ class TestAnonymousPeerMatching:
 
         # Should indicate invalid selection
         assert any('Invalid' in str(call) for call in mock_print.call_args_list)
-
 
 class TestIntegrationSupport:
     """Integration tests using real database."""
@@ -571,7 +556,6 @@ class TestIntegrationSupport:
         groups = cursor.fetchall()
         assert len(groups) == 1
         assert groups[0][1] == 'Test Group'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

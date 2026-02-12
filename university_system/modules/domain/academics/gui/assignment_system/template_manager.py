@@ -19,8 +19,6 @@ from university_system.infrastructure.auth import UserAuth
 from university_system.modules.shared.constants import paths
 from collections import deque
 
-
-
 class TemplateManager:
     """Assignment template management"""
 
@@ -618,7 +616,6 @@ class TemplateManager:
         """Navigate to template usage flow."""
         self._launch_gui_feature(self.show_templates, "assignment templates")
 
-
     def _create_from_template(self, template_id, assignment_title, module_code, due_date):
         """Create assignment from template (instantiation logic)"""
         try:
@@ -691,7 +688,6 @@ class TemplateManager:
             messagebox.showerror("Error", f"Failed to create assignment from template: {e}")
             return False
 
-
     def _launch_gui_feature(self, callback, feature_name):
         """Helper to launch GUI features with error handling"""
         try:
@@ -705,7 +701,6 @@ class TemplateManager:
         """Send email notifications to students when assignment is created from template"""
         try:
             from university_system.infrastructure.email.email_service import send_email
-            import sqlite3
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
@@ -794,5 +789,4 @@ Note: This assignment was automatically created from the "{template_name}" templ
             import traceback
             traceback.print_exc()
             return 0
-
 

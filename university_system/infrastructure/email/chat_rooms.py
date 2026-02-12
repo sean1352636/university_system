@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from university_system.infrastructure.email.email_db_utilities import execute_db_operation
-from university_system.modules.shared.utils.logs import handle_exception, log_event
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.logs import handle_exception, log_event
+from university_system.core.i18n import get_text as _t, init_i18n
 
 init_i18n()
 

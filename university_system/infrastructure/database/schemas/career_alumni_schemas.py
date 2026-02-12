@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from university_system.infrastructure.database.db import get_connection, sqlite3
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.i18n import get_text as _t, init_i18n
 
 # Initialize i18n
 init_i18n()

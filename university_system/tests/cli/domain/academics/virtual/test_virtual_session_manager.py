@@ -13,13 +13,12 @@ Tests all classes, functions, and functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 from university_system.modules.domain.academics.services.virtual_classroom.session_manager import (
     SessionManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -92,12 +91,10 @@ def temp_db():
     yield db_path
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a SessionManager instance with temp database."""
     return SessionManager(db_path=temp_db)
-
 
 class TestSessionManagerInit:
     """Test SessionManager initialization."""
@@ -109,7 +106,6 @@ class TestSessionManagerInit:
     def test_init_custom_db_path(self, temp_db):
         manager = SessionManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestCreateSession:
     """Test session creation."""
@@ -176,7 +172,6 @@ class TestCreateSession:
         session = manager.get_session(session_id)
         assert session['status'] == 'scheduled'
 
-
 class TestStartSession:
     """Test starting sessions."""
 
@@ -202,7 +197,6 @@ class TestStartSession:
         manager.start_session(session_id)
         result = manager.start_session(session_id)
         assert result is False  # Already started
-
 
 class TestEndSession:
     """Test ending sessions."""
@@ -247,7 +241,6 @@ class TestEndSession:
         result = manager.end_session(session_id)
         assert result is False  # Not started
 
-
 class TestCancelSession:
     """Test cancelling sessions."""
 
@@ -273,7 +266,6 @@ class TestCancelSession:
         result = manager.cancel_session(session_id)
         assert result is False  # Can't cancel in-progress session
 
-
 class TestGetSession:
     """Test retrieving session details."""
 
@@ -291,7 +283,6 @@ class TestGetSession:
     def test_get_nonexistent_session(self, manager):
         session = manager.get_session(99999)
         assert session is None
-
 
 class TestGetSessionsByClassroom:
     """Test retrieving sessions for a classroom."""
@@ -334,7 +325,6 @@ class TestGetSessionsByClassroom:
 
         sessions = manager.get_sessions_by_classroom(1)
         assert sessions[0]['session_id'] == s3  # Most recent first
-
 
 class TestGetUpcomingSessions:
     """Test retrieving upcoming sessions."""
@@ -381,7 +371,6 @@ class TestGetUpcomingSessions:
         assert upcoming[1]['session_id'] == s3
         assert upcoming[2]['session_id'] == s1
 
-
 class TestGetActiveSessions:
     """Test retrieving active sessions."""
 
@@ -406,7 +395,6 @@ class TestGetActiveSessions:
 
         active = manager.get_active_sessions()
         assert len(active) == 2
-
 
 class TestUpdateSession:
     """Test updating session details."""
@@ -454,7 +442,6 @@ class TestUpdateSession:
         result = manager.update_session(session_id, invalid_field="value")
         assert result is False
 
-
 class TestListSessions:
     """Test listing sessions with filters."""
 
@@ -495,7 +482,6 @@ class TestListSessions:
 
         scheduled = manager.list_sessions(status='scheduled')
         assert len(scheduled) == 1
-
 
 class TestGetSessionStatistics:
     """Test retrieving session statistics."""
@@ -539,7 +525,6 @@ class TestGetSessionStatistics:
         stats = manager.get_session_statistics(99999)
         assert stats is not None  # Should return empty stats
 
-
 class TestDatabaseConnection:
     """Test database connection handling."""
 
@@ -554,7 +539,6 @@ class TestDatabaseConnection:
 
         conn.close()
 
-
 class TestErrorHandling:
     """Test error handling."""
 
@@ -566,7 +550,6 @@ class TestErrorHandling:
 
         sessions = manager.list_sessions()
         assert sessions == []
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

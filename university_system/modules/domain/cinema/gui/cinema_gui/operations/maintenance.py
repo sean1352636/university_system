@@ -4,7 +4,7 @@ Cinema Booking System - Screen Maintenance
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_maintenance_page(self):
     self.clear_content()
@@ -42,7 +41,6 @@ def show_maintenance_page(self):
     action_frame.pack(fill="x", pady=10)
     ttk.Button(action_frame, text=_t("cinema.btn.mark_complete"), style="Success.TButton", command=self.complete_maint).pack(side="left", padx=5)
 
-
 def schedule_maint(self):
     form = tk.Toplevel(self.root)
     form.title("Schedule Maintenance")
@@ -67,7 +65,7 @@ def schedule_maint(self):
     def save():
         try:
             screen = int(entries['screen'].get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid screen")
             return
         conn = sqlite3.connect(DB_FILE)
@@ -80,7 +78,6 @@ def schedule_maint(self):
         form.destroy()
         self.show_maintenance_page()
     ttk.Button(frame, text=_t("cinema.btn.schedule"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
-
 
 def complete_maint(self):
     selected = self.maint_tree.selection()

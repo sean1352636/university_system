@@ -4,11 +4,10 @@ Tests facility viewing functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import facilities
-
 
 @pytest.fixture
 def mock_context():
@@ -18,7 +17,6 @@ def mock_context():
     ctx.auth.current_user = {'id': 1, 'username': 'testuser'}
     ctx.auth.check_permission = Mock(return_value=True)
     return ctx
-
 
 @pytest.fixture
 def sample_facilities():
@@ -31,7 +29,6 @@ def sample_facilities():
         (3, 'Auditorium', 'Main Building', 200, 'Large auditorium for events',
          'Stage, Sound system, Lighting', 100.00),
     ]
-
 
 class TestViewFacilities:
     """Tests for view_facilities function."""
@@ -168,7 +165,6 @@ class TestViewFacilities:
         assert any('Equipment:' in str(call) for call in mock_print.call_args_list)
         assert any('Booking Fee:' in str(call) for call in mock_print.call_args_list)
 
-
 class TestIntegrationFacilities:
     """Integration tests using real database."""
 
@@ -219,7 +215,6 @@ class TestIntegrationFacilities:
         assert len(facilities) == 2
         assert facilities[0][1] == 'Conference Room A'
         assert facilities[1][1] == 'Study Room 1'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

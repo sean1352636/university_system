@@ -90,6 +90,8 @@ def create_database_admin_tab(self, parent):
               command=self.optimize_database).grid(row=0, column=2, padx=5, pady=5)
     ttk.Button(tools_frame, text=_t("system_admin_gui.buttons.view_database_statistics"),
               command=self.show_db_statistics).grid(row=1, column=0, padx=5, pady=5)
+    ttk.Button(tools_frame, text="Wipe Database",
+              command=self.wipe_database).grid(row=1, column=1, padx=5, pady=5)
 
 def create_user_admin_tab(self, parent):
     """Create user administration interface"""

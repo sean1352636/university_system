@@ -4,7 +4,7 @@ Academic Misconduct CLI - Case Management System
 A command-line interface for managing academic integrity cases.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
@@ -28,7 +28,6 @@ try:
 except ImportError:
     AUTH_AVAILABLE = False
     get_auth = None
-
 
 def init_misconduct_tables():
     """Create the academic misconduct tables if they don't exist."""
@@ -89,7 +88,6 @@ def init_misconduct_tables():
     conn.commit()
     conn.close()
 
-
 def get_next_case_id():
     """Generate the next case ID in format AM-YYYY-NNNN."""
     try:
@@ -118,7 +116,6 @@ def get_next_case_id():
     except Exception as e:
         print(f"Error generating case ID: {e}")
         return f"AM-{datetime.now().year}-0001"
-
 
 def load_all_cases():
     """Load all cases from the database."""
@@ -160,7 +157,6 @@ def load_all_cases():
         print(f"Error loading cases: {e}")
         return []
 
-
 def get_case_by_id(case_id):
     """Get a specific case by ID."""
     try:
@@ -200,7 +196,6 @@ def get_case_by_id(case_id):
         print(f"Error loading case: {e}")
         return None
 
-
 def save_case(case_data):
     """Save a new case to the database."""
     try:
@@ -232,7 +227,6 @@ def save_case(case_data):
         print(f"Error saving case: {e}")
         return False
 
-
 def update_case(case_data):
     """Update an existing case in the database."""
     try:
@@ -258,7 +252,6 @@ def update_case(case_data):
         print(f"Error updating case: {e}")
         return False
 
-
 def delete_case(case_id):
     """Delete a case from the database."""
     try:
@@ -273,7 +266,6 @@ def delete_case(case_id):
     except Exception as e:
         print(f"Error deleting case: {e}")
         return False
-
 
 def add_case_history(case_id, description, event_type='info'):
     """Add an entry to case history."""
@@ -290,7 +282,6 @@ def add_case_history(case_id, description, event_type='info'):
     except Exception as e:
         print(f"Error adding case history: {e}")
         return False
-
 
 def get_case_history(case_id):
     """Get history for a specific case."""
@@ -310,7 +301,6 @@ def get_case_history(case_id):
     except Exception as e:
         print(f"Error getting case history: {e}")
         return []
-
 
 def get_case_evidence(case_id):
     """Get evidence for a specific case."""
@@ -332,7 +322,6 @@ def get_case_evidence(case_id):
         print(f"Error getting evidence: {e}")
         return []
 
-
 def add_evidence(case_id, file_name, file_path='', file_size='', uploaded_by=''):
     """Add evidence to a case."""
     try:
@@ -350,7 +339,6 @@ def add_evidence(case_id, file_name, file_path='', file_size='', uploaded_by='')
     except Exception as e:
         print(f"Error adding evidence: {e}")
         return False
-
 
 def get_dashboard_stats():
     """Get statistics for dashboard."""
@@ -386,7 +374,6 @@ def get_dashboard_stats():
     except Exception as e:
         print(f"Error getting statistics: {e}")
         return {}
-
 
 def notify_student(case):
     """Send email notification to student about their case."""
@@ -429,7 +416,6 @@ Academic Integrity Office
         print(f"Error sending notification: {e}")
         return False
 
-
 # ==================== CLI Interface Functions ====================
 
 def print_header(title):
@@ -437,7 +423,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def print_case_summary(case):
     """Print a summary of a case."""
@@ -448,7 +433,6 @@ def print_case_summary(case):
     print(f"  Status: {case['status']}")
     print(f"  Severity: {case['severity']}")
     print(f"  Filed: {case['date_filed']}")
-
 
 def print_case_details(case):
     """Print detailed information about a case."""
@@ -480,7 +464,6 @@ def print_case_details(case):
         print(f"    Ruling: {case['ruling']}")
         print(f"    Rationale: {case['ruling_rationale']}")
 
-
 def list_cases_menu():
     """Display all cases."""
     print_header("All Academic Misconduct Cases")
@@ -499,7 +482,6 @@ def list_cases_menu():
         print(f"  {case['id']:<15} {case['student']:<25} {case['course']:<15} {case['type']:<20} {case['status']:<15} {case['severity']:<10}")
 
     print("\n")
-
 
 def view_case_menu():
     """View details of a specific case."""
@@ -538,7 +520,6 @@ def view_case_menu():
         print("    No evidence uploaded.")
 
     print("\n")
-
 
 def create_case_menu():
     """Create a new case."""
@@ -619,7 +600,6 @@ def create_case_menu():
         print(f"\n  ✅ Case {case_id} created successfully!")
     else:
         print(f"\n  ❌ Failed to create case.")
-
 
 def update_case_menu():
     """Update an existing case."""
@@ -738,7 +718,6 @@ def update_case_menu():
             else:
                 print("\n  ❌ Failed to submit decision.")
 
-
 def delete_case_menu():
     """Delete a case."""
     print_header("Delete Case")
@@ -766,7 +745,6 @@ def delete_case_menu():
             print("\n  ❌ Failed to delete case.")
     else:
         print("\n  ℹ️  Delete cancelled.")
-
 
 def add_evidence_menu():
     """Add evidence to a case."""
@@ -807,7 +785,6 @@ def add_evidence_menu():
     else:
         print("\n  ❌ Failed to add evidence.")
 
-
 def notify_student_menu():
     """Send notification to student."""
     print_header("Notify Student")
@@ -842,7 +819,6 @@ def notify_student_menu():
     else:
         print("\n  ℹ️  Notification cancelled.")
 
-
 def view_statistics_menu():
     """View dashboard statistics."""
     print_header("Academic Misconduct Statistics")
@@ -869,7 +845,6 @@ def view_statistics_menu():
         print(f"    {vtype}: {count}")
 
     print("\n")
-
 
 def academic_misconduct_menu():
     """Main menu for Academic Misconduct CLI."""
@@ -914,7 +889,6 @@ def academic_misconduct_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     academic_misconduct_menu()

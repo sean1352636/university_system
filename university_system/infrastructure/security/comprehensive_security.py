@@ -12,7 +12,7 @@ Combines all security features:
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import hashlib
 import secrets
 import json
@@ -27,8 +27,7 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.database.db import get_connection
-from university_system.modules.shared.utils.i18n import get_text, _
-
+from university_system.core.i18n import get_text, _
 
 class APISecurityManager:
     """API Security with rate limiting and key management"""
@@ -214,7 +213,6 @@ class APISecurityManager:
         finally:
             conn.close()
 
-
 class PasswordSecurityManager:
     """Enhanced password security"""
 
@@ -395,7 +393,6 @@ class PasswordSecurityManager:
         finally:
             conn.close()
 
-
 class SecurityAuditManager:
     """Security audit and compliance tracking"""
 
@@ -559,7 +556,6 @@ class SecurityAuditManager:
         finally:
             conn.close()
 
-
 class DataLossPreventionManager:
     """Data Loss Prevention system"""
 
@@ -672,7 +668,6 @@ class DataLossPreventionManager:
 
         return pii_found
 
-
 class IncidentResponseManager:
     """Security incident response system"""
 
@@ -737,7 +732,6 @@ class IncidentResponseManager:
         finally:
             conn.close()
 
-
 class VulnerabilityScanner:
     """Basic vulnerability scanner"""
 
@@ -800,7 +794,6 @@ class VulnerabilityScanner:
             'vulnerable': len(vulnerabilities) > 0,
             'vulnerabilities': vulnerabilities
         }
-
 
 if __name__ == '__main__':
     print("Comprehensive Security System initialized")

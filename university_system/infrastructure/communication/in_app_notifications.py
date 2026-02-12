@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 from university_system.infrastructure.communication.realtime_notifications import (
     NotificationService as BaseNotificationService,
     Notification,

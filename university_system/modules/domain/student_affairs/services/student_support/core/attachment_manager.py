@@ -2,7 +2,6 @@
 File attachment handling for Student Support.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,9 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from ..utils.audit import audit_action
 
-
 logger = logging.getLogger(__name__)
-
 
 def _process_attachments(ticket_id, attachments, cursor):
     """Process and store ticket attachments"""
@@ -64,7 +61,6 @@ def _process_attachments(ticket_id, attachments, cursor):
             datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ))
 
-
 def _validate_file(attachment):
     """Validate uploaded file"""
     if len(attachment['data']) > config.max_file_size:
@@ -78,14 +74,12 @@ def _validate_file(attachment):
         
     return True
 
-
 def _generate_secure_filename(filename):
     """Generate a secure filename"""
     name, ext = os.path.splitext(filename)
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     random_suffix = secrets.token_hex(4)
     return f"{timestamp}_{random_suffix}{ext}"
-
 
 def _get_file_type(filename):
     """Determine file type from filename"""
@@ -100,12 +94,10 @@ def _get_file_type(filename):
     else:
         return FileType.OTHER.value
 
-
 def _get_attachment_count(ticket_id, cursor):
     """Get number of attachments for a ticket"""
     cursor.execute('SELECT COUNT(*) FROM ticket_attachments WHERE ticket_id = ?', (ticket_id,))
     return cursor.fetchone()[0]
-
 
 def _get_last_response_info(ticket_id, cursor):
     """Get information about the last response to a ticket"""

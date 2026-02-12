@@ -6,6 +6,9 @@ import logging
 import threading
 from university_system.modules.shared.utils.i18n import get_text as _t, get_current_language
 from university_system.infrastructure.exceptions import InvalidCredentialsError, AuthenticationError, DatabaseError
+from university_system.core.defaults import (
+    DEFAULT_ADMIN_PASSWORD, DEFAULT_STAFF_PASSWORD, DEFAULT_STUDENT_PASSWORD,
+)
 
 # Check for GUI language selector availability
 try:
@@ -80,15 +83,64 @@ def show_login_screen(self):
     # Focus username
     self.username_entry.focus()
 
+    # Alternative login methods frame
+    alt_login_frame = ttk.LabelFrame(self.content_frame, text="Alternative Login Methods", padding="10")
+    alt_login_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=0, pady=10)
+
+    def _login_with_sso():
+        """Initiate SSO login flow"""
+        try:
+            providers = self.auth.list_sso_providers(enabled_only=True)
+            if not providers:
+                messagebox.showinfo("SSO", "No SSO providers are configured.\nContact your administrator.")
+                return
+            # For simplicity, show first provider; a full implementation
+            # would open a browser for OAuth/SAML flow
+            provider = providers[0]
+            messagebox.showinfo(
+                "SSO Login",
+                f"SSO login via '{provider.get('display_name', provider.get('provider_id'))}' "
+                f"requires a browser-based flow.\n\n"
+                f"This feature works with the web interface.\n"
+                f"Please use the web portal for SSO login."
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"SSO error: {e}")
+
+    def _login_with_security_key():
+        """Initiate WebAuthn login"""
+        messagebox.showinfo(
+            "Security Key Login",
+            "WebAuthn/FIDO2 authentication requires browser interaction.\n\n"
+            "Please use the web portal to sign in with your security key."
+        )
+
+    def _login_with_biometric():
+        """Initiate biometric login"""
+        messagebox.showinfo(
+            "Biometric Login",
+            "Biometric authentication requires a compatible sensor.\n\n"
+            "Face recognition requires a webcam.\n"
+            "Fingerprint requires a compatible reader.\n\n"
+            "This feature will be available in a future GUI update."
+        )
+
+    btn_row = ttk.Frame(alt_login_frame)
+    btn_row.pack(fill=tk.X, pady=5)
+
+    ttk.Button(btn_row, text="Sign in with SSO", command=_login_with_sso).pack(side=tk.LEFT, padx=5, expand=True)
+    ttk.Button(btn_row, text="Security Key", command=_login_with_security_key).pack(side=tk.LEFT, padx=5, expand=True)
+    ttk.Button(btn_row, text="Biometric", command=_login_with_biometric).pack(side=tk.LEFT, padx=5, expand=True)
+
     # Show default credentials info
     # WARNING: These are default demo credentials - change them in production!
     # Set DEFAULT_ADMIN_PASSWORD, DEFAULT_STAFF_PASSWORD, DEFAULT_STUDENT_PASSWORD environment variables
     info_frame = ttk.LabelFrame(self.content_frame, text=_t("gui.default_credentials"), padding="20")
-    info_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=0, pady=20)
+    info_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), padx=0, pady=20)
 
-    admin_pwd = os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')
-    staff_pwd = os.getenv('DEFAULT_STAFF_PASSWORD', 'staff123')
-    student_pwd = os.getenv('DEFAULT_STUDENT_PASSWORD', 'student123')
+    admin_pwd = DEFAULT_ADMIN_PASSWORD
+    staff_pwd = DEFAULT_STAFF_PASSWORD
+    student_pwd = DEFAULT_STUDENT_PASSWORD
     student_username = os.getenv('DEFAULT_STUDENT_USERNAME', 'S12345')
 
     creds_text = _t("gui.login.credentials_format").format(
@@ -159,7 +211,7 @@ def perform_login(self):
         if hasattr(self, 'login_btn_ref') and self.login_btn_ref:
             try:
                 self.login_btn_ref.config(state='normal', text=_t("gui.login.login_button"))
-            except:
+            except Exception:
                 pass
     except Exception as e:
         logger.error(f"Unexpected error in perform_login: {e}", exc_info=True)
@@ -168,7 +220,7 @@ def perform_login(self):
         if hasattr(self, 'login_btn_ref') and self.login_btn_ref:
             try:
                 self.login_btn_ref.config(state='normal', text=_t("gui.login.login_button"))
-            except:
+            except Exception:
                 pass
         try:
             self.log_activity(f"Login error: {str(e)}", level="error", action="login")

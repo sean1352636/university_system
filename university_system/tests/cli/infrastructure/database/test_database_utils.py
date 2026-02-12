@@ -8,12 +8,11 @@ from database_utils.py (legacy compatibility module).
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from university_system.infrastructure.database import database_utils
-
 
 @pytest.fixture
 def temp_db():
@@ -39,7 +38,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestDatabaseManager:
     """Test DatabaseManager context manager."""
@@ -129,7 +127,6 @@ class TestDatabaseManager:
             assert isinstance(results, list)
             assert len(results) >= 1
 
-
 class TestInitDB:
     """Test database initialization functions."""
 
@@ -187,7 +184,6 @@ class TestInitDB:
             # Function might fail if database doesn't exist, that's OK for testing
             assert True
 
-
 class TestCleanup:
     """Test cleanup functions."""
 
@@ -197,7 +193,6 @@ class TestCleanup:
         # We just verify it doesn't raise exceptions
         database_utils.cleanup_database_connections()
         assert True
-
 
 class TestDefaultDBPath:
     """Test default database path handling."""
@@ -212,7 +207,6 @@ class TestDefaultDBPath:
         custom_path = "/custom/path/to/db.sqlite"
         db_manager = database_utils.DatabaseManager(db_path=custom_path)
         assert db_manager.db_path == custom_path
-
 
 class TestRowFactory:
     """Test row factory configuration."""
@@ -232,7 +226,6 @@ class TestRowFactory:
                 except (TypeError, KeyError):
                     # If row factory isn't working, this is OK
                     pass
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

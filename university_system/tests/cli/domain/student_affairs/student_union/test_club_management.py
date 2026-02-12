@@ -13,11 +13,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
-import sqlite3
-
-# Import module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.student_affairs.student_union.clubs import club_management
-
 
 @pytest.fixture
 def mock_cursor():
@@ -30,7 +27,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -40,7 +36,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -49,7 +44,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestCreateClub:
     """Test club creation functionality."""
@@ -122,7 +116,6 @@ class TestCreateClub:
             # Should print permission error
             assert any('permission' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestViewClubs:
     """Test club viewing functionality."""
 
@@ -166,7 +159,6 @@ class TestViewClubs:
             club_management.view_clubs()
             # Should print login required message
             assert any('logged in' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestJoinClub:
     """Test club joining functionality."""
@@ -232,7 +224,6 @@ class TestJoinClub:
             # Should print already member message
             assert any('already' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestViewMyClubs:
     """Test viewing user's clubs."""
 
@@ -269,7 +260,6 @@ class TestViewMyClubs:
             club_management.view_my_clubs()
             # Should print no clubs message
             assert any('not a member' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestManageClub:
     """Test club management functionality."""
@@ -338,7 +328,6 @@ class TestManageClub:
 
         mock_conn.commit.assert_called()
 
-
 class TestAuthSetup:
     """Test authentication setup."""
 
@@ -347,7 +336,6 @@ class TestAuthSetup:
         club_management.set_auth(mock_auth)
 
         assert club_management.auth == mock_auth
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

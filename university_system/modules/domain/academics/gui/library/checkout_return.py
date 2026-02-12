@@ -269,7 +269,7 @@ def verify_checkout_user(self):
             cursor = conn.cursor()
             student_columns = self._get_student_columns()
             grade_sql = ', grade_level' if 'grade_level' in student_columns else ''
-            cursor.execute(f'SELECT first_name, last_name{grade_sql} FROM students WHERE student_id = ?', (user_id,))
+            cursor.execute('SELECT first_name, last_name' + grade_sql + ' FROM students WHERE student_id = ?', (user_id,))
             result = cursor.fetchone()
             conn.close()
 

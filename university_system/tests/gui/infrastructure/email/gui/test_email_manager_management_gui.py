@@ -5,7 +5,7 @@ Tests the wrapper/management GUI for email manager
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import tkinter as tk
@@ -14,7 +14,6 @@ from unittest.mock import Mock, patch, MagicMock, PropertyMock
 
 # Import the module under test
 from university_system.infrastructure.email.gui import email_manager_management_gui
-
 
 @pytest.fixture
 def temp_db():
@@ -55,7 +54,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth(temp_db):
     """Create a mock auth manager"""
@@ -71,7 +69,6 @@ def mock_auth(temp_db):
     auth.get_current_user.return_value = auth.current_user
     return auth
 
-
 @pytest.fixture
 def root_window():
     """Create a Tkinter root window for testing"""
@@ -81,7 +78,6 @@ def root_window():
         root.destroy()
     except (OSError, IOError):
         pass
-
 
 class TestEmailManagerManagementGUIInitialization:
     """Test EmailManagerManagementGUI initialization"""
@@ -147,7 +143,6 @@ class TestEmailManagerManagementGUIInitialization:
                 assert gui is not None
             except (OSError, IOError):
                 pass
-
 
 class TestShowEmailManager:
     """Test show_email_manager method"""
@@ -439,7 +434,6 @@ class TestShowEmailManager:
                 # Should show error message
                 mock_error.assert_called()
 
-
 class TestComposeEmail:
     """Test compose_email method"""
 
@@ -469,7 +463,6 @@ class TestComposeEmail:
             call_args = mock_info.call_args
             assert test_email in str(call_args)
 
-
 class TestThemeManagement:
     """Test theme management functionality"""
 
@@ -495,7 +488,6 @@ class TestThemeManagement:
         # Should execute without error
         gui.on_theme_changed()
 
-
 class TestModuleAvailability:
     """Test module availability checks"""
 
@@ -509,7 +501,6 @@ class TestModuleAvailability:
             email_manager_management_gui.EMAIL_MANAGER_GUI_AVAILABLE,
             bool
         )
-
 
 class TestIntegration:
     """Integration tests"""
@@ -563,7 +554,6 @@ class TestIntegration:
         except (OSError, IOError):
             pass
 
-
 class TestErrorHandling:
     """Test error handling"""
 
@@ -590,7 +580,6 @@ class TestErrorHandling:
             assert gui.auth == invalid_auth
         except (OSError, IOError):
             pass
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

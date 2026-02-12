@@ -10,9 +10,7 @@ from .imports import (
     log_activity
 )
 
-import sqlite3
-
-# Error types that might be raised
+from university_system.infrastructure.database.db import sqlite3
 class ValidationError(Exception):
     pass
 
@@ -26,7 +24,6 @@ auth = None
 def get_db_connection():
     """Get database connection"""
     return sqlite3.connect(DB_PATH)
-
 
 def initialize_chatbot_integration() -> bool:
     """Initialize chatbot with authentication integration"""
@@ -50,7 +47,6 @@ def initialize_chatbot_integration() -> bool:
     except (ValueError, TypeError, ValidationError) as e:
         print(f"❌ Chatbot initialization failed: {e}")
         return False
-
 
 def display_chatbot_menu() -> None:
     """Display chatbot menu with authentication"""
@@ -96,7 +92,6 @@ def display_chatbot_menu() -> None:
             break
         else:
             print(_t("common.invalid_choice"))
-
 
 def start_chat_session():
     """Start interactive chat session"""
@@ -148,7 +143,6 @@ def start_chat_session():
         except (ValueError, TypeError, ValidationError) as e:
             print(f"Error: {e}")
 
-
 def log_chatbot_conversation(user_id, username, message, response, session_id, intent=None):
     """Log chatbot conversation to database"""
     try:
@@ -167,7 +161,6 @@ def log_chatbot_conversation(user_id, username, message, response, session_id, i
         conn.close()
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Database error logging conversation: {e}")
-
 
 def view_conversation_history():
     """View user's conversation history"""
@@ -215,7 +208,6 @@ def view_conversation_history():
     except (sqlite3.Error, DatabaseError) as e:
         print(f"Database error retrieving conversation history: {e}")
 
-
 def view_all_conversations():
     """View all users' conversations (admin only)"""
     print("\nAll User Conversations:")
@@ -242,7 +234,6 @@ def view_all_conversations():
     except (sqlite3.Error, DatabaseError) as e:
         print(f"Database error retrieving conversations: {e}")
 
-
 def chatbot_administration():
     """Chatbot administration menu"""
     while True:
@@ -262,7 +253,6 @@ def chatbot_administration():
             restart_chatbot()
         elif choice == '4':
             break
-
 
 def show_chatbot_statistics():
     """Show chatbot usage statistics"""
@@ -299,7 +289,6 @@ def show_chatbot_statistics():
     except (sqlite3.Error, DatabaseError) as e:
         print(f"Database error retrieving statistics: {e}")
 
-
 def clear_conversation_history():
     """Clear conversation history"""
     confirm = input("Are you sure you want to clear all conversation history? (yes/no): ")
@@ -314,7 +303,6 @@ def clear_conversation_history():
         except (sqlite3.Error, DatabaseError) as e:
             print(f"Database error clearing history: {e}")
 
-
 def restart_chatbot():
     """Restart chatbot instance"""
     global chatbot_instance
@@ -323,7 +311,6 @@ def restart_chatbot():
         print("Chatbot restarted successfully.")
     else:
         print("Failed to restart chatbot.")
-
 
 def setup_chatbot_permissions():
     """Setup chatbot-specific permissions"""
@@ -385,12 +372,10 @@ def setup_chatbot_permissions():
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error setting up chatbot permissions: {e}")
 
-
 def launch_chatbot():
     from university_system.utils.ai.university_chatbot import UniversityChatbot
     chatbot = UniversityChatbot()
     chatbot.run()
-
 
 __all__ = [
     'initialize_chatbot_integration',

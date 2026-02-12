@@ -6,7 +6,7 @@ Provides command-line access to all security features
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -68,7 +68,7 @@ from university_system.infrastructure.security.comprehensive_security import (
     VulnerabilityScanner
 )
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 # Import full authentication module
 try:
@@ -84,7 +84,6 @@ except ImportError as e:
     AUTH_MODULE_AVAILABLE = False
     AUTH_CLI_AVAILABLE = False
     print(f"Warning: Authentication modules not available: {e}")
-
 
 class SecurityDashboardCLI:
     """CLI Security Dashboard"""
@@ -518,7 +517,6 @@ class SecurityDashboardCLI:
                           for item in report['bulk_exports'][:10]]
             print(tabulate(export_data, headers=['User ID', 'Type', 'Records'], tablefmt='grid'))
 
-
 def display_security_dashboard_menu(admin_user_id: int = 1):
     """Main security dashboard menu"""
     dashboard = SecurityDashboardCLI(admin_user_id)
@@ -615,7 +613,6 @@ def display_security_dashboard_menu(admin_user_id: int = 1):
 
         input("\nPress Enter to continue...")
 
-
 def session_management_menu(dashboard):
     """Session management submenu"""
     print("\n" + "="*80)
@@ -645,7 +642,6 @@ def session_management_menu(dashboard):
             print(f"\n✅ All sessions for user {user_id} terminated")
         except Exception as e:
             print(f"\n❌ Error terminating sessions: {e}")
-
 
 def api_key_management_menu(dashboard):
     """API key management submenu"""
@@ -697,7 +693,6 @@ def api_key_management_menu(dashboard):
     elif choice == '3':
         dashboard.display_api_security()
 
-
 def incident_management_menu(dashboard):
     """Incident management submenu"""
     print("\n" + "="*80)
@@ -746,7 +741,6 @@ def incident_management_menu(dashboard):
         except Exception as e:
             print(f"\n❌ Error resolving incident: {e}")
 
-
 def vulnerability_scan_menu(dashboard):
     """Vulnerability scanning submenu"""
     print("\n" + "="*80)
@@ -786,7 +780,6 @@ def vulnerability_scan_menu(dashboard):
 
     elif choice == '3':
         dashboard.display_vulnerabilities()
-
 
 def audit_log_menu(dashboard):
     """Advanced audit log menu with filtering"""
@@ -853,7 +846,6 @@ def audit_log_menu(dashboard):
         else:
             print(f"\n✅ No events found for type: {event_type}")
 
-
 def encryption_management_menu(dashboard):
     """Encryption key management menu"""
     print("\n" + "="*80)
@@ -887,7 +879,6 @@ def encryption_management_menu(dashboard):
             print("\n   Keys requiring rotation:")
             for key in needs_rotation:
                 print(f"   - {key['key_id']} ({key['age_days']} days old)")
-
 
 def password_security_menu(dashboard):
     """Password security management menu"""
@@ -946,7 +937,6 @@ def password_security_menu(dashboard):
                                  tablefmt='grid'))
         else:
             print("\n✅ No compliance data found")
-
 
 def data_export_approval_menu(dashboard):
     """Data export approval menu"""
@@ -1018,7 +1008,6 @@ def data_export_approval_menu(dashboard):
         else:
             print("\n✅ No pending export requests")
 
-
 def security_events_report_menu(dashboard):
     """Security events report menu"""
     print("\n" + "="*80)
@@ -1070,7 +1059,6 @@ def security_events_report_menu(dashboard):
 
     conn.close()
 
-
 def access_audit_report_menu(dashboard):
     """Access audit report menu"""
     print("\n" + "="*80)
@@ -1119,7 +1107,6 @@ def access_audit_report_menu(dashboard):
 
     conn.close()
 
-
 def password_strength_checker_menu(dashboard):
     """Password strength checker menu"""
     print("\n" + "="*80)
@@ -1153,7 +1140,6 @@ def password_strength_checker_menu(dashboard):
     else:
         print("\n✅ This is a strong password!")
 
-
 def compromised_password_check_menu(dashboard):
     """Compromised password check menu"""
     print("\n" + "="*80)
@@ -1185,7 +1171,6 @@ def compromised_password_check_menu(dashboard):
 
     if result.get('error'):
         print(f"\n⚠️ Note: {result['error']}")
-
 
 def user_management_cli_menu(dashboard):
     """User management CLI menu wrapper - provides access to all auth_module.user_authentication functions"""
@@ -1263,7 +1248,6 @@ def user_management_cli_menu(dashboard):
             print(f"   Active Users: {active_count}")
             print(f"   Users with 2FA: {mfa_count}")
 
-
 def role_management_cli_menu(dashboard):
     """Role management CLI menu wrapper - provides access to all auth_module functions"""
     print("\n" + "="*80)
@@ -1322,7 +1306,6 @@ def role_management_cli_menu(dashboard):
 
         conn.close()
 
-
 def my_account_cli_menu(dashboard):
     """My account CLI menu wrapper - provides access to all auth_module account functions"""
     print("\n" + "="*80)
@@ -1353,7 +1336,6 @@ def my_account_cli_menu(dashboard):
         print(f"\n❌ Error accessing account settings: {e}")
         print("\nAccount management requires an active login session")
         print(f"\nAvailable via auth_module: {len([f for f in dir(auth_module) if callable(getattr(auth_module, f))])} functions")
-
 
 def display_available_modules_info():
     """Display information about all available imported modules and their functions"""
@@ -1429,7 +1411,6 @@ def display_available_modules_info():
     print("   audit.log_security_event('event_type', user_id, 'high')")
     print("\n" + "="*80)
 
-
 def display_module_functions_menu():
     """Interactive menu to explore module functions"""
     while True:
@@ -1474,7 +1455,6 @@ def display_module_functions_menu():
 
         input("\nPress Enter to continue...")
 
-
 def explore_module(module_obj, module_name):
     """Explore a specific module's functions"""
     print("\n" + "="*80)
@@ -1499,7 +1479,6 @@ def explore_module(module_obj, module_name):
         doc_summary = doc.split('\n')[0] if doc else "No documentation"
         print(f"   • {func}")
         print(f"     └─ {doc_summary[:70]}")
-
 
 def search_functions():
     """Search for functions across all modules"""
@@ -1538,7 +1517,6 @@ def search_functions():
         print(f"\n❌ No matches found for '{search_term}'")
     else:
         print(f"\n✅ Found {found_count} matches")
-
 
 if __name__ == '__main__':
     # Test the CLI dashboard

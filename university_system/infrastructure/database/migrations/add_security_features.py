@@ -10,7 +10,7 @@ Creates tables for:
 - Incident Response
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import sys
 from datetime import datetime
@@ -18,7 +18,6 @@ from datetime import datetime
 # Import centralized database path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 def run_migration(db_path=None):
     """Execute security features database migration"""
@@ -393,7 +392,6 @@ def run_migration(db_path=None):
         return False
     finally:
         conn.close()
-
 
 if __name__ == '__main__':
     import sys

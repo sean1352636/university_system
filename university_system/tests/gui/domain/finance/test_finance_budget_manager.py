@@ -12,11 +12,9 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.finance.gui.finance.budget_manager import BudgetManager
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_gui():
@@ -41,12 +39,10 @@ def mock_gui():
 
     return gui
 
-
 @pytest.fixture
 def budget_manager(mock_gui):
     """Create a BudgetManager instance for testing"""
     return BudgetManager(mock_gui)
-
 
 @pytest.fixture
 def test_db_with_budget_data():
@@ -108,7 +104,6 @@ def test_db_with_budget_data():
     conn.commit()
     conn.close()
 
-
 class TestBudgetManagerInit:
     """Test BudgetManager initialization"""
 
@@ -128,7 +123,6 @@ class TestBudgetManagerInit:
         """Test that initialization handles missing finance_system gracefully"""
         manager = BudgetManager(mock_gui)
         assert manager.finance_system is None
-
 
 class TestCreateBudgetPlan:
     """Test budget plan creation"""
@@ -185,7 +179,6 @@ class TestCreateBudgetPlan:
         assert result is not None
         assert result[0] == 'Test Plan'
 
-
 class TestEditBudgetPlan:
     """Test budget plan editing"""
 
@@ -215,7 +208,6 @@ class TestEditBudgetPlan:
 
         # Verify dialog was created
         mock_toplevel.assert_called()
-
 
 class TestDeleteBudgetPlan:
     """Test budget plan deletion"""
@@ -262,7 +254,6 @@ class TestDeleteBudgetPlan:
         cursor.execute('SELECT COUNT(*) FROM budget_plans WHERE budget_id = ?', (budget_id,))
         assert cursor.fetchone()[0] == 0
 
-
 class TestBudgetAnalysis:
     """Test budget analysis"""
 
@@ -277,7 +268,6 @@ class TestBudgetAnalysis:
         # Verify show_text_window was called
         budget_manager.show_text_window.assert_called()
 
-
 class TestApproveBudget:
     """Test budget approval"""
 
@@ -290,7 +280,6 @@ class TestApproveBudget:
 
         # Verify show_text_window was called
         budget_manager.show_text_window.assert_called_with("Budget Approval", Mock.ANY)
-
 
 class TestRefreshBudget:
     """Test budget refresh functionality"""
@@ -319,7 +308,6 @@ class TestRefreshBudget:
 
         # Verify update_budget_data was eventually called
         # Note: In real implementation, this happens in a thread with root.after
-
 
 class TestCategoryManagement:
     """Test budget category management"""
@@ -351,7 +339,6 @@ class TestCategoryManagement:
         assert result is not None
         assert result[0] == 'Tuition Revenue'
 
-
 class TestShowTextWindow:
     """Test show_text_window helper method"""
 
@@ -362,7 +349,6 @@ class TestShowTextWindow:
 
         # Verify window was created
         mock_toplevel.assert_called()
-
 
 class TestErrorHandling:
     """Test error handling across budget manager"""
@@ -395,7 +381,6 @@ class TestErrorHandling:
 
         # Should not raise exception
         budget_manager.refresh_budget()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

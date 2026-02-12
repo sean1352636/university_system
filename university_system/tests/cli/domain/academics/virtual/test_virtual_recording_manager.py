@@ -13,13 +13,12 @@ Tests all classes, functions, and functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 from university_system.modules.domain.academics.services.virtual_classroom.recording_manager import (
     RecordingManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -75,12 +74,10 @@ def temp_db():
     yield db_path
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a RecordingManager instance with temp database."""
     return RecordingManager(db_path=temp_db)
-
 
 class TestRecordingManagerInit:
     """Test RecordingManager initialization."""
@@ -92,7 +89,6 @@ class TestRecordingManagerInit:
     def test_init_custom_db_path(self, temp_db):
         manager = RecordingManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestSaveRecording:
     """Test saving recording metadata."""
@@ -144,7 +140,6 @@ class TestSaveRecording:
 
         assert expires_at is not None
 
-
 class TestAddTranscript:
     """Test adding transcripts to recordings."""
 
@@ -162,7 +157,6 @@ class TestAddTranscript:
         result = manager.add_transcript(99999, "https://example.com/transcript.vtt")
         assert result is False
 
-
 class TestAddCaptions:
     """Test adding captions to recordings."""
 
@@ -179,7 +173,6 @@ class TestAddCaptions:
     def test_add_captions_to_nonexistent_recording(self, manager):
         result = manager.add_captions(99999, "https://example.com/captions.srt")
         assert result is False
-
 
 class TestIncrementViewCount:
     """Test incrementing view count."""
@@ -209,7 +202,6 @@ class TestIncrementViewCount:
         result = manager.increment_view_count(99999)
         assert result is False
 
-
 class TestIncrementDownloadCount:
     """Test incrementing download count."""
 
@@ -233,7 +225,6 @@ class TestIncrementDownloadCount:
 
         assert count == 2
 
-
 class TestGetRecording:
     """Test retrieving recording details."""
 
@@ -249,7 +240,6 @@ class TestGetRecording:
         recording = manager.get_recording(99999)
         assert recording is None
 
-
 class TestGetRecordingsBySession:
     """Test retrieving recordings for a session."""
 
@@ -261,14 +251,12 @@ class TestGetRecordingsBySession:
         recordings = manager.get_recordings_by_session(1)
         assert len(recordings) == 3
 
-
     def test_get_recordings_ordered_by_date(self, manager):
         r1 = manager.save_recording(1, "https://example.com/video1.mp4")
         r2 = manager.save_recording(1, "https://example.com/video2.mp4")
 
         recordings = manager.get_recordings_by_session(1)
         assert recordings[0]['recording_id'] == r2  # Most recent first
-
 
 class TestGetRecordingsByClassroom:
     """Test retrieving recordings for a classroom."""
@@ -304,7 +292,6 @@ class TestGetRecordingsByClassroom:
         recordings = manager.get_recordings_by_classroom(1, include_expired=False)
         assert len(recordings) == 1
 
-
 class TestListRecordings:
     """Test listing recordings with filters."""
 
@@ -329,7 +316,6 @@ class TestListRecordings:
         assert len(recordings) == 1
         assert recordings[0]['is_public'] == 1
 
-
 class TestDeleteRecording:
     """Test deleting recordings."""
 
@@ -345,7 +331,6 @@ class TestDeleteRecording:
     def test_delete_nonexistent_recording(self, manager):
         result = manager.delete_recording(99999)
         assert result is False
-
 
 class TestGetExpiredRecordings:
     """Test retrieving expired recordings."""
@@ -363,7 +348,6 @@ class TestGetExpiredRecordings:
 
         expired = manager.get_expired_recordings()
         assert len(expired) == 1
-
 
 class TestGetStorageUsage:
     """Test getting storage usage statistics."""
@@ -384,7 +368,6 @@ class TestGetStorageUsage:
         assert usage['total_recordings'] == 1
         assert usage['total_size'] == 1000000
 
-
 class TestErrorHandling:
     """Test error handling."""
 
@@ -396,7 +379,6 @@ class TestErrorHandling:
 
         recordings = manager.list_recordings()
         assert recordings == []
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

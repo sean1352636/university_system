@@ -383,14 +383,16 @@ def create_archive_tables(self, parent_window):
                 cursor.execute(create_sql)
 
                 # Create indices for better query performance
+                from university_system.core.sql_safety import validate_table_name
+                validated_tbl = validate_table_name(table_name, conn=conn)
                 if table_name == 'archived_transactions':
-                    cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_archived_trans_student ON {table_name}(student_id)')
-                    cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_archived_trans_date ON {table_name}(transaction_date)')
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_archived_trans_student ON [" + validated_tbl + "](student_id)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_archived_trans_date ON [" + validated_tbl + "](transaction_date)")
                 elif table_name == 'archived_payments':
-                    cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_archived_pay_student ON {table_name}(student_id)')
-                    cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_archived_pay_date ON {table_name}(payment_date)')
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_archived_pay_student ON [" + validated_tbl + "](student_id)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_archived_pay_date ON [" + validated_tbl + "](payment_date)")
                 elif table_name == 'archived_financial_aid':
-                    cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_archived_aid_student ON {table_name}(student_id)')
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_archived_aid_student ON [" + validated_tbl + "](student_id)")
 
                 tables_created += 1
                 log_progress(f"✓ Created table: {table_name}")
@@ -843,7 +845,9 @@ def populate_system_info(self, overview_text, db_tree, features_tree):
         tables = ['students', 'student_fees', 'payments', 'fee_types', 'financial_alerts', 'audit_log']
         for table in tables:
             try:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                from university_system.core.sql_safety import validate_table_name
+                validated_table = validate_table_name(table, conn=conn)
+                cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                 count = cursor.fetchone()[0]
                 size_estimate = f"{count * 0.5:.1f} KB"  # Rough estimate
                 db_tree.insert('', 'end', text=table, values=(f"{count:,}", size_estimate))

@@ -4,7 +4,7 @@ Cinema Booking System - Special Events
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_events_page(self):
     self.clear_content()
@@ -38,7 +37,6 @@ def show_events_page(self):
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.event_tree.yview)
     self.event_tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
-
 
 def create_event(self):
     form = tk.Toplevel(self.root)
@@ -71,7 +69,7 @@ def create_event(self):
             price = float(entries['price'].get() or 25)
             cap = int(entries['cap'].get() or 150)
             screen = int(entries['screen'].get() or 1)
-        except:
+        except (ValueError, TypeError):
             price, cap, screen = 25, 150, 1
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()

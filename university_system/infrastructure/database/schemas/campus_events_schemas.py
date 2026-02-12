@@ -1,7 +1,8 @@
 from __future__ import annotations
 from datetime import datetime
 from university_system.infrastructure.database.db import get_connection, sqlite3
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.i18n import get_text as _t, init_i18n
+from university_system.core.sql_safety import safe_alter_table_add_column
 
 # Initialize i18n
 init_i18n()
@@ -74,7 +75,7 @@ def init_campus_events_system_db():
         for col_name, col_type in event_reg_migrations:
             if col_name not in existing_columns:
                 try:
-                    cursor.execute(f"ALTER TABLE campus_event_registrations ADD COLUMN {col_name} {col_type}")
+                    safe_alter_table_add_column("campus_event_registrations", col_name, col_type, conn)
                     print(_t("schemas.added_missing_column", column=col_name, table="campus_event_registrations"))
                 except Exception as e:
                     print(_t("schemas.column_add_warning", column=col_name, table="campus_event_registrations", error=str(e)))

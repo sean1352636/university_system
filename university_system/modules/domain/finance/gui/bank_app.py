@@ -13,8 +13,7 @@ import os
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, Any, List
 import hashlib
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.shared.utils.i18n import get_text as _t
 
 # Try to import finance integration
@@ -33,7 +32,6 @@ except ImportError:
     FINANCE_INTEGRATION_AVAILABLE = False
     paths = None
 
-
 # --- Data Models for Standalone Mode ---
 
 @dataclass
@@ -51,7 +49,6 @@ class Transaction:
     @classmethod
     def from_dict(cls, data):
         return cls(**data)
-
 
 @dataclass
 class Account:
@@ -112,7 +109,6 @@ class Account:
             transactions=transactions,
             created_at=data.get("created_at", datetime.now().isoformat())
         )
-
 
 class Bank:
     """Manages all bank accounts and operations (standalone mode)."""
@@ -201,7 +197,6 @@ class Bank:
                 }
             except (json.JSONDecodeError, KeyError):
                 pass
-
 
 # --- GUI Application ---
 
@@ -1054,12 +1049,10 @@ class BankApp:
 
         self.show_login_screen()
 
-
 def main():
     """Run the banking application."""
     app = BankApp()
     app.run()
-
 
 if __name__ == "__main__":
     main()

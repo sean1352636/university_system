@@ -15,6 +15,8 @@ except ImportError:
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
+from university_system.core.sql_safety import validate_identifier
+
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -655,8 +657,9 @@ class ExportManager:
                 # Write header
                 writer.writerow(fields)
 
-                # Query data
-                query = f"SELECT {', '.join(fields)} FROM documents ORDER BY id DESC LIMIT 1000"
+                # Query data - validate field names
+                validated_fields = [validate_identifier(f, "column") for f in fields]
+                query = "SELECT " + ", ".join(validated_fields) + " FROM documents ORDER BY id DESC LIMIT 1000"
 
                 with get_connection() as conn:
                     cursor = conn.cursor()

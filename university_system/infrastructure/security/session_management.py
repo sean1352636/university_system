@@ -11,7 +11,7 @@ Features:
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import secrets
 import hashlib
 import json
@@ -24,7 +24,7 @@ from dataclasses import dataclass
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.database.db import get_connection
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 # Import immutable audit logging for compliance
 try:
@@ -43,7 +43,6 @@ try:
 except ImportError:
     SECURITY_ALERTS_AVAILABLE = False
 
-
 @dataclass
 class SessionInfo:
     """Session information container"""
@@ -57,7 +56,6 @@ class SessionInfo:
     last_activity: datetime
     expires_at: datetime
     is_active: bool
-
 
 class SessionManager:
     """Advanced Session Management System"""
@@ -799,19 +797,16 @@ class SessionManager:
         finally:
             conn.close()
 
-
 # Convenience functions
 def create_session(user_id: int, role: str, ip_address: str, user_agent: str) -> Dict:
     """Quick create session"""
     manager = SessionManager()
     return manager.create_session(user_id, role, ip_address, user_agent)
 
-
 def validate_session(session_id: str, user_id: int, ip_address: str = None) -> Dict:
     """Quick validate session"""
     manager = SessionManager()
     return manager.validate_session(session_id, user_id, ip_address)
-
 
 if __name__ == '__main__':
     print("Session Management System initialized")

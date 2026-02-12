@@ -7,7 +7,7 @@ with full feature parity to the GUI version.
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import csv
 import json
@@ -47,6 +47,11 @@ except ImportError as e:
     print(f"Warning: Accommodation service not available: {e}")
     SERVICE_AVAILABLE = False
 
+# Validate table name constants at module load time
+if SERVICE_AVAILABLE:
+    from university_system.core.sql_safety import validate_table_name
+    validate_table_name(TEMPLATES_TABLE)
+
 # Database imports
 try:
     from university_system.infrastructure.database.db import get_connection
@@ -71,7 +76,6 @@ try:
 except ImportError:
     def log_activity(action, entity, **kwargs):
         print(f"[LOG] {action} {entity}: {kwargs}")
-
 
 class MedicalAccommodationCLI:
     """Medical Accommodation Command Line Interface"""
@@ -1639,7 +1643,6 @@ class MedicalAccommodationCLI:
 
         self.pause()
 
-
 def launch_medical_accommodation_cli(auth=None):
     """
     Launch the Medical Accommodation CLI
@@ -1656,7 +1659,6 @@ def launch_medical_accommodation_cli(auth=None):
         print(f"\n❌ Error: {e}")
         import traceback
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     # For testing standalone

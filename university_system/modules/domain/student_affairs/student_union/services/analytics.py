@@ -236,13 +236,13 @@ def generate_personalized_recommendations(cursor):
         # Recommend events based on past preferences
         if profile[2]:  # If user has attended events
             attended_categories = profile[2].split(',')
-            category_filter = "', '".join(attended_categories)
+            placeholders = ', '.join(['?' for _ in attended_categories])
 
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT e.event_name, e.description, e.event_date, c.club_name
             FROM union_events e
             JOIN student_clubs c ON e.organizer_id = c.club_id
-            WHERE e.category IN ('{category_filter}')
+            WHERE e.category IN (''' + placeholders + ''')
             AND e.event_date >= date('now')
             AND e.status = 'upcoming'
             AND e.event_id NOT IN (
@@ -250,7 +250,7 @@ def generate_personalized_recommendations(cursor):
             )
             ORDER BY e.event_date
             LIMIT 5
-            ''', (student_id,))
+            ''', attended_categories + [student_id])
 
             event_recommendations = cursor.fetchall()
 

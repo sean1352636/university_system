@@ -5,7 +5,7 @@ Tests TOTP, SMS/Email OTP, recovery codes, device trust, enforcement policies, a
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
@@ -18,7 +18,6 @@ from university_system.infrastructure.auth.mfa_service import (
     generate_sms_otp,
     verify_sms_otp
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -178,7 +177,6 @@ def temp_db():
     # Cleanup
     os.unlink(path)
 
-
 class TestMFAServiceInitialization:
     """Test MFA Service initialization"""
 
@@ -223,7 +221,6 @@ class TestMFAServiceInitialization:
         assert hash1 == hash2  # Same input produces same hash
         assert hash1 != hash3  # Different input produces different hash
         assert len(hash1) == 64  # SHA-256 produces 64 character hex string
-
 
 class TestTOTPMethods:
     """Test TOTP (Authenticator App) methods"""
@@ -335,7 +332,6 @@ class TestTOTPMethods:
         assert result['success'] is True
         assert 'trust_token' in result
         assert len(result['trust_token']) > 0
-
 
 class TestSMSOTPMethods:
     """Test SMS OTP methods"""
@@ -477,7 +473,6 @@ class TestSMSOTPMethods:
         assert verify_result['success'] is False
         assert 'Too many attempts' in verify_result['error']
 
-
 class TestEmailOTPMethods:
     """Test Email OTP methods"""
 
@@ -519,7 +514,6 @@ class TestEmailOTPMethods:
 
         assert verify_result['success'] is True
         assert 'trust_token' in verify_result
-
 
 class TestRecoveryCodesMethods:
     """Test recovery codes methods"""
@@ -618,7 +612,6 @@ class TestRecoveryCodesMethods:
         assert verify_result['success'] is True
         assert verify_result['remaining_codes'] == 1
         assert 'warning' in verify_result
-
 
 class TestDeviceTrustMethods:
     """Test device trust methods"""
@@ -739,7 +732,6 @@ class TestDeviceTrustMethods:
         assert result['success'] is True
         assert len(result['devices']) == 3
 
-
 class TestMFAEnforcementMethods:
     """Test MFA enforcement methods"""
 
@@ -816,7 +808,6 @@ class TestMFAEnforcementMethods:
         conn.close()
 
         assert enabled == 0
-
 
 class TestVerificationAttemptLogging:
     """Test verification attempt logging"""
@@ -901,7 +892,6 @@ class TestVerificationAttemptLogging:
 
         assert is_locked is True
 
-
 class TestConvenienceFunctions:
     """Test module-level convenience functions"""
 
@@ -918,7 +908,6 @@ class TestConvenienceFunctions:
         with patch.object(MFAService, '__init__', lambda x: None):
             # This test just ensures the function exists
             pass
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

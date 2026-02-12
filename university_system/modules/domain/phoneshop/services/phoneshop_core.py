@@ -1,6 +1,6 @@
 """Phone Shop Core Service Module"""
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -14,11 +14,9 @@ PHONE_CATEGORIES = ['Smartphone', 'Feature Phone', 'Tablet', 'Smartwatch', 'Acce
 ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
 PAYMENT_STATUSES = ['pending', 'completed', 'failed', 'refunded']
 
-
 def get_phoneshop_db_path():
     """Get the phone shop database path"""
     return str(paths.DEFAULT_DB_PATH)
-
 
 def init_phoneshop_db():
     """Initialize the phone shop database tables"""
@@ -128,7 +126,6 @@ def init_phoneshop_db():
     conn.close()
     logger.info("Phone shop database initialized")
 
-
 class ProductManager:
     """Manage phone shop products"""
 
@@ -222,9 +219,9 @@ class ProductManager:
         values.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         values.append(product_id)
 
-        cursor.execute(f'''
-        UPDATE phoneshop_products SET {", ".join(updates)} WHERE product_id = ?
-        ''', values)
+        cursor.execute(
+            "UPDATE phoneshop_products SET " + ", ".join(updates) + " WHERE product_id = ?",
+            values)
 
         conn.commit()
         success = cursor.rowcount > 0
@@ -281,7 +278,6 @@ class ProductManager:
         conn.close()
 
         return [dict(row) for row in rows]
-
 
 class OrderManager:
     """Manage phone shop orders"""
@@ -447,7 +443,6 @@ class OrderManager:
         finally:
             conn.close()
 
-
 class TransactionManager:
     """Manage phone shop transactions"""
 
@@ -516,7 +511,6 @@ class TransactionManager:
             return None
         finally:
             conn.close()
-
 
 class ReportManager:
     """Generate phone shop reports"""

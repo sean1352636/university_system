@@ -10,7 +10,7 @@ Complete database setup script:
 7. Create schedules for instructors
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import hashlib
 import secrets
 from datetime import datetime, timedelta
@@ -18,6 +18,7 @@ import random
 import os
 import sys
 from pathlib import Path
+from university_system.core.sql_safety import validate_table_name
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -74,20 +75,17 @@ DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 ROOMS = ["A101", "A102", "A103", "B201", "B202", "B203", "C301", "C302", "C303", "D401"]
 
-
 def hash_password(password):
     """Hash a password with salt"""
     salt = secrets.token_hex(16)
     key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000, dklen=64)
     return key.hex(), salt
 
-
 def get_db_connection():
     """Get database connection"""
     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
     conn.execute('PRAGMA foreign_keys = ON')
     return conn
-
 
 def ensure_tables_exist(conn):
     """Ensure all required tables exist"""
@@ -125,7 +123,6 @@ def ensure_tables_exist(conn):
 
     conn.commit()
 
-
 def remove_invalid_modules(conn):
     """Remove modules not in modules.py"""
     cursor = conn.cursor()
@@ -155,7 +152,8 @@ def remove_invalid_modules(conn):
 
             for table in tables_to_clean:
                 try:
-                    cursor.execute(f"DELETE FROM {table} WHERE module_code = ?", (code,))
+                    safe_table = validate_table_name(table)
+                    cursor.execute("DELETE FROM [" + safe_table + "] WHERE module_code = ?", (code,))
                 except sqlite3.OperationalError:
                     # Table doesn't exist, skip
                     pass
@@ -166,7 +164,6 @@ def remove_invalid_modules(conn):
 
     conn.commit()
     print(get_text("setup.database.removed_modules_count", count=removed_count))
-
 
 def sync_modules_to_database(conn):
     """Ensure all modules from modules.py are in database"""
@@ -192,7 +189,6 @@ def sync_modules_to_database(conn):
 
     conn.commit()
     print(get_text("setup.database.modules_synced"))
-
 
 def create_user_accounts_for_students(conn):
     """Ensure all students have user accounts"""
@@ -231,12 +227,11 @@ def create_user_accounts_for_students(conn):
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (user_id, username, password_hash, salt, timestamp, timestamp))
 
-            print(get_text("setup.database.created_account", student_id=student_id, username=username, password=password))
+            print(get_text("setup.database.created_account", student_id=student_id, username=username, password="[REDACTED]"))
             created_count += 1
 
     conn.commit()
     print(get_text("setup.database.created_accounts_count", count=created_count))
-
 
 def assign_students_to_modules(conn):
     """Assign all students to their course modules"""
@@ -284,7 +279,6 @@ def assign_students_to_modules(conn):
 
     conn.commit()
     print(get_text("setup.database.module_assignments_completed"))
-
 
 def create_student_timetables(conn):
     """Create timetables for all students based on their modules"""
@@ -374,7 +368,6 @@ def create_student_timetables(conn):
     conn.commit()
     print(get_text("setup.database.student_timetables_created"))
 
-
 def add_instructors(conn):
     """Add instructors to database"""
     cursor = conn.cursor()
@@ -415,12 +408,11 @@ def add_instructors(conn):
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (user_id, username, password_hash, salt, timestamp, timestamp))
 
-            print(get_text("setup.database.added_instructor", title=instructor['title'], first_name=instructor['first_name'], last_name=instructor['last_name'], username=username, password=password))
+            print(get_text("setup.database.added_instructor", title=instructor['title'], first_name=instructor['first_name'], last_name=instructor['last_name'], username=username, password="[REDACTED]"))
             added_count += 1
 
     conn.commit()
     print(get_text("setup.database.added_instructors_count", count=added_count))
-
 
 def assign_instructors_to_modules(conn):
     """Assign instructors to modules"""
@@ -457,7 +449,6 @@ def assign_instructors_to_modules(conn):
 
     conn.commit()
     print("Instructor module assignments completed")
-
 
 def create_instructor_schedules(conn):
     """Create schedules for instructors based on modules they teach"""
@@ -513,7 +504,6 @@ def create_instructor_schedules(conn):
 
     conn.commit()
     print("Instructor schedules created")
-
 
 def main():
     """Main execution function"""
@@ -582,7 +572,6 @@ def main():
         conn.rollback()
     finally:
         conn.close()
-
 
 if __name__ == "__main__":
     main()

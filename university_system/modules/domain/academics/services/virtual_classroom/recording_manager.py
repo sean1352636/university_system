@@ -3,11 +3,10 @@ Recording Manager
 Handles virtual classroom recordings
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 class RecordingManager:
     """Manager for virtual classroom recording operations"""

@@ -12,7 +12,7 @@ import io
 import json
 import logging
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -27,14 +27,12 @@ from university_system.modules.shared.utils.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 
-
 class ExportFormat(Enum):
     """Supported export formats."""
     JSON = 'json'
     CSV = 'csv'
     PDF = 'pdf'
     ZIP = 'zip'  # All formats bundled
-
 
 @dataclass
 class ExportResult:
@@ -46,7 +44,6 @@ class ExportResult:
     record_count: int = 0
     error: Optional[str] = None
     content: Optional[bytes] = None  # For in-memory exports
-
 
 @dataclass
 class StudentData:
@@ -61,7 +58,6 @@ class StudentData:
     activity_log: List[Dict[str, Any]] = field(default_factory=list)
     export_metadata: Dict[str, Any] = field(default_factory=dict)
 
-
 class DataExporter(ABC):
     """Abstract base class for data exporters."""
 
@@ -69,7 +65,6 @@ class DataExporter(ABC):
     def export(self, data: Any) -> bytes:
         """Export data to bytes."""
         pass
-
 
 class JSONExporter(DataExporter):
     """Export data as JSON."""
@@ -92,7 +87,6 @@ class JSONExporter(DataExporter):
         elif isinstance(obj, dict):
             return {k: self._to_dict(v) for k, v in obj.items()}
         return obj
-
 
 class CSVExporter(DataExporter):
     """Export data as CSV."""
@@ -131,7 +125,6 @@ class CSVExporter(DataExporter):
                 writer.writerow(record)
 
         return output.getvalue()
-
 
 class PDFExporter(DataExporter):
     """Export data as PDF (uses reportlab if available, falls back to text)."""
@@ -219,7 +212,6 @@ class PDFExporter(DataExporter):
                         lines.append(f"  {k}: {str(v)[:100]}")
 
         return '\n'.join(lines).encode('utf-8')
-
 
 class DataExportService:
     """
@@ -508,7 +500,6 @@ class DataExportService:
             logger.info(f"Cleaned up {removed} old export files")
 
         return removed
-
 
 __all__ = [
     'DataExportService',

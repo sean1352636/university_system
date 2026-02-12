@@ -9,12 +9,11 @@ This module tests the FinancialAidManager class including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, date, timedelta
 from university_system.modules.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
-
 
 @pytest.fixture
 def temp_db():
@@ -158,12 +157,10 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def aid_manager(temp_db):
     """Create FinancialAidManager instance with test database"""
     return FinancialAidManager(db_path=temp_db)
-
 
 class TestFinancialAidApplications:
     """Test suite for financial aid application management"""
@@ -250,7 +247,6 @@ class TestFinancialAidApplications:
 
         assert result is False
 
-
 class TestFAFSAManagement:
     """Test suite for FAFSA data management"""
 
@@ -321,7 +317,6 @@ class TestFAFSAManagement:
         )
 
         assert fafsa_data is None
-
 
 class TestAidPackages:
     """Test suite for aid package management"""
@@ -401,7 +396,6 @@ class TestAidPackages:
 
         # Accept either result
         assert result is True or result is False
-
 
 class TestDisbursements:
     """Test suite for disbursement management"""
@@ -500,7 +494,6 @@ class TestDisbursements:
 
         assert isinstance(pending, list)
 
-
 class TestErrorHandling:
     """Test suite for error handling"""
 
@@ -528,7 +521,6 @@ class TestErrorHandling:
 
         assert fafsa_id is None
 
-
 class TestDatabaseIntegrity:
     """Test database operations and integrity"""
 
@@ -554,7 +546,6 @@ class TestDatabaseIntegrity:
         assert result[0] == 1
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

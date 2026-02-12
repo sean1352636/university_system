@@ -5,13 +5,12 @@ Tests automated notifications, fraud detection, and workflow management
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.core import security_automation
-
 
 @pytest.fixture
 def temp_db():
@@ -143,7 +142,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication object"""
@@ -151,7 +149,6 @@ def mock_auth():
     auth.current_user = {"username": "test_admin"}
     auth.check_permission = MagicMock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def sample_data(temp_db):
@@ -198,7 +195,6 @@ def sample_data(temp_db):
 
     return temp_db
 
-
 class TestAutomatedNotifications:
     """Test automated notification functionality"""
 
@@ -241,7 +237,6 @@ class TestAutomatedNotifications:
 
             conn.close()
 
-
 class TestFraudDetection:
     """Test fraud detection functionality"""
 
@@ -264,7 +259,6 @@ class TestFraudDetection:
 
             conn.close()
 
-
 class TestAuditLogging:
     """Test audit logging functionality"""
 
@@ -286,7 +280,6 @@ class TestAuditLogging:
 
             conn.close()
 
-
 class TestWorkflowManagement:
     """Test workflow management"""
 
@@ -306,7 +299,6 @@ class TestWorkflowManagement:
             assert count == 1, "Approval workflow should be created"
 
             conn.close()
-
 
 class TestNotificationSending:
     """Test notification sending functionality"""
@@ -339,7 +331,6 @@ class TestNotificationSending:
             result = security_automation.send_email_notification('test@test.com', 'Subject', 'Body')
             assert result is True or result is None, "Email should be sent or mocked"
 
-
 class TestPermissions:
     """Test permission requirements"""
 
@@ -351,7 +342,6 @@ class TestPermissions:
 
         with patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
             security_automation.setup_automated_notifications()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

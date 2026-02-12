@@ -2,7 +2,6 @@
 Bulk ticket operations.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def bulk_update_tickets(ticket_ids, updates):
     """Bulk update multiple tickets"""
@@ -107,7 +103,6 @@ def bulk_update_tickets(ticket_ids, updates):
         logger.error(f"Error performing bulk update: {e}")
         raise
 
-
 def perform_bulk_assign(support, ticket_ids, assigned_to):
     """Perform bulk assignment of tickets to a user"""
     if not ticket_ids:
@@ -139,7 +134,6 @@ def perform_bulk_assign(support, ticket_ids, assigned_to):
             print(f"❌ Error during bulk assignment: {e}")
     else:
         print("❌ Bulk assignment cancelled.")
-
 
 def bulk_operations_menu(support):
     """Bulk operations menu (staff only)"""
@@ -176,7 +170,6 @@ def bulk_operations_menu(support):
     
     input("\nPress Enter to continue...")
 
-
 def bulk_assign_tickets_menu(support):
     """Bulk assign tickets to staff"""
     print("\n👨‍💼 BULK ASSIGN TICKETS")
@@ -212,7 +205,6 @@ def bulk_assign_tickets_menu(support):
             print(f"❌ Error during bulk assignment: {e}")
     else:
         print("❌ Bulk assignment cancelled.")
-
 
 def bulk_update_status_menu(support):
     """Bulk update ticket status"""
@@ -257,7 +249,6 @@ def bulk_update_status_menu(support):
     else:
         print("❌ Bulk status update cancelled.")
 
-
 def bulk_update_priority_menu(support):
     """Bulk update ticket priority"""
     print("\n🔥 BULK UPDATE PRIORITY")
@@ -301,7 +292,6 @@ def bulk_update_priority_menu(support):
     else:
         print("❌ Bulk priority update cancelled.")
 
-
 def bulk_update_category_menu(support):
     """Bulk update ticket category"""
     print("\n📂 BULK UPDATE CATEGORY")
@@ -344,7 +334,6 @@ def bulk_update_category_menu(support):
             print(f"❌ Error during bulk category update: {e}")
     else:
         print("❌ Bulk category update cancelled.")
-
 
 def export_filtered_results(support, filters):
     """Helper function to export filtered results"""

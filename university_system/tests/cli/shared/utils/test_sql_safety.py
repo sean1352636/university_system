@@ -13,7 +13,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock
@@ -29,7 +29,6 @@ from university_system.modules.shared.utils.sql_safety import (
     KNOWN_COLUMNS,
     SQLIdentifierError,
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -83,7 +82,6 @@ def temp_db():
     except Exception:
         pass
 
-
 # ============================================================================
 # Identifier Format Validation Tests
 # ============================================================================
@@ -134,7 +132,6 @@ class TestIdentifierFormat:
         assert is_valid_identifier_format("'; DROP TABLE--") is False
         assert is_valid_identifier_format("table; DELETE") is False
         assert is_valid_identifier_format("table/*comment*/") is False
-
 
 # ============================================================================
 # Table Name Validation Tests
@@ -193,7 +190,6 @@ class TestTableNameValidation:
         with pytest.raises(SQLIdentifierError):
             validate_table_name("../../../etc/passwd")
 
-
 # ============================================================================
 # Column Name Validation Tests
 # ============================================================================
@@ -238,7 +234,6 @@ class TestColumnNameValidation:
         with pytest.raises(SQLIdentifierError):
             validate_column_name("user@email")
 
-
 # ============================================================================
 # Generic Identifier Validation Tests
 # ============================================================================
@@ -281,7 +276,6 @@ class TestIdentifierValidation:
         with pytest.raises(SQLIdentifierError):
             validate_identifier("table\nname")
 
-
 # ============================================================================
 # Known Tables and Columns Tests
 # ============================================================================
@@ -322,7 +316,6 @@ class TestKnownTablesAndColumns:
         assert 'id' in columns
         assert 'username' in columns
         assert 'email' in columns
-
 
 # ============================================================================
 # SQL Injection Prevention Tests
@@ -371,7 +364,6 @@ class TestSQLInjectionPrevention:
         with pytest.raises(SQLIdentifierError):
             validate_table_name("users\\'; DROP TABLE--")
 
-
 # ============================================================================
 # Edge Cases Tests
 # ============================================================================
@@ -415,7 +407,6 @@ class TestEdgeCases:
             with pytest.raises(SQLIdentifierError):
                 validate_identifier(variant)
 
-
 # ============================================================================
 # SQLIdentifierError Tests
 # ============================================================================
@@ -436,7 +427,6 @@ class TestSQLIdentifierError:
         """Test error can be caught as ValueError."""
         with pytest.raises(ValueError):
             raise SQLIdentifierError("Test")
-
 
 # ============================================================================
 # Integration Tests
@@ -488,7 +478,6 @@ class TestSQLSafetyIntegration:
         assert "username" in validated
         assert "email" in validated
 
-
 # ============================================================================
 # Security Audit Tests
 # ============================================================================
@@ -539,7 +528,6 @@ class TestSecurityAudit:
         for pattern in patterns:
             with pytest.raises(SQLIdentifierError):
                 validate_identifier(pattern)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

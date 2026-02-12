@@ -8,7 +8,7 @@ Creates comprehensive MFA system tables for:
 - Recovery codes
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import sys
 from datetime import datetime
@@ -218,7 +218,6 @@ def run_migration(db_path=None):
         return False
     finally:
         conn.close()
-
 
 if __name__ == '__main__':
     import sys

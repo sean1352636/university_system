@@ -3,6 +3,7 @@ from university_system.infrastructure.exceptions import (
     CourseNotFoundError,
     ValidationError,
 )
+from university_system.core.sql_safety import validate_table_name
 
 # Import internationalization (i18n) for multi-language support
 try:
@@ -41,8 +42,7 @@ import threading
 import subprocess
 import webbrowser
 from pathlib import Path
-import sqlite3
-# Import the original module scheduling functionality
+from university_system.infrastructure.database.db import sqlite3
 # This ensures full backward compatibility
 try:
     from university_system.modules.domain.academics.services.module_scheduling import (
@@ -61,7 +61,6 @@ except ImportError:
         from university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
     except Exception:
         class ModuleScheduler: pass
-
 
 from .main_gui import ModuleSchedulingGUI
 
@@ -687,8 +686,9 @@ def _migrate_database(self):
 
             for (table_name,) in other_tables:
                 try:
-                    cursor.execute(f'''
-                    SELECT DISTINCT module_code FROM {table_name}
+                    safe_table = validate_table_name(table_name, conn=conn)
+                    cursor.execute('''
+                    SELECT DISTINCT module_code FROM [''' + safe_table + ''']
                     WHERE module_code IS NOT NULL
                     AND module_code NOT IN (SELECT module_code FROM modules WHERE module_code IS NOT NULL)
                     ''')

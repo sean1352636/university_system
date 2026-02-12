@@ -3,11 +3,10 @@ Participant Manager
 Handles session participants and attendance tracking
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 class ParticipantManager:
     """Manager for session participant operations"""

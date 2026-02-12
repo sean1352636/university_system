@@ -376,8 +376,8 @@ class EssayGrader:
         if NLTK_AVAILABLE:
             try:
                 return sent_tokenize(text)
-            except:
-                pass
+            except Exception:
+                logger.debug("NLTK sent_tokenize failed, using fallback")
 
         # Fallback: split on sentence endings
         sentences = re.split(r'[.!?]+', text)
@@ -388,8 +388,8 @@ class EssayGrader:
         if NLTK_AVAILABLE:
             try:
                 return word_tokenize(text)
-            except:
-                pass
+            except Exception:
+                logger.debug("NLTK word_tokenize failed, using fallback")
 
         # Fallback: simple word splitting
         return re.findall(r'\b\w+\b', text)

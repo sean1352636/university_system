@@ -9,7 +9,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from unittest.mock import patch, MagicMock
@@ -22,7 +22,6 @@ from university_system.modules.domain.student_affairs.services.accessibility_too
     AssistiveTechManager,
     display_accessibility_menu,
 )
-
 
 @pytest.fixture
 def setup_database():
@@ -113,7 +112,6 @@ def setup_database():
     conn.commit()
     conn.close()
 
-
 class TestAccessibilityProfileManager:
     """Tests for AccessibilityProfileManager"""
 
@@ -176,7 +174,6 @@ class TestAccessibilityProfileManager:
         assert profile['disabilities'] == []
         assert profile['accommodations'] == []
         assert profile['assistive_technologies'] == []
-
 
 class TestAccommodationRequestManager:
     """Tests for AccommodationRequestManager"""
@@ -271,7 +268,6 @@ class TestAccommodationRequestManager:
         assert len(requests) == 2
         assert all(r['student_id'] == student_id for r in requests)
 
-
 class TestExamAccommodationManager:
     """Tests for ExamAccommodationManager"""
 
@@ -330,7 +326,6 @@ class TestExamAccommodationManager:
 
         accommodations = ExamAccommodationManager.get_accommodations(student_id=student_id)
         assert len(accommodations) == 2
-
 
 class TestAssistiveTechManager:
     """Tests for AssistiveTechManager"""
@@ -396,7 +391,6 @@ class TestAssistiveTechManager:
         assert 'fulfilled' in statuses
         assert 'pending' in statuses
 
-
 class TestAccessibilityMenuDisplay:
     """Tests for CLI menu display function"""
 
@@ -420,7 +414,6 @@ class TestAccessibilityMenuDisplay:
                 # Should print feature availability messages
                 assert mock_print.called
 
-
 class TestErrorHandling:
     """Tests for error handling"""
 
@@ -438,7 +431,6 @@ class TestErrorHandling:
         """Test fulfilling a request that doesn't exist"""
         # Should complete without error
         AssistiveTechManager.fulfill_request(99999)
-
 
 class TestIntegration:
     """Integration tests"""
@@ -504,7 +496,6 @@ class TestIntegration:
         conn.close()
 
         assert status == 'fulfilled'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

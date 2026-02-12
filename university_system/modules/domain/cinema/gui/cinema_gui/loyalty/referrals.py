@@ -4,7 +4,7 @@ Cinema Booking System - Referral Program Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 import string
 
@@ -16,7 +16,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import REFERRAL_REWARD
-
 
 def show_referrals_page(self):
     self.clear_content()
@@ -60,7 +59,6 @@ def show_referrals_page(self):
     ttk.Button(action_frame, text=_t("cinema.btn.mark_used"), command=self.use_referral).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.btn.give_reward"), command=self.give_referral_reward).pack(side="left", padx=5)
 
-
 def create_referral(self):
     form = tk.Toplevel(self.root)
     form.title("New Referral")
@@ -95,7 +93,6 @@ def create_referral(self):
 
     ttk.Button(frame, text=_t("cinema.btn.generate_code"), style="Success.TButton", command=create).pack(pady=20)
 
-
 def use_referral(self):
     selected = self.referral_tree.selection()
     if not selected:
@@ -113,7 +110,6 @@ def use_referral(self):
         conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Referral marked as used")
         self.show_referrals_page()
-
 
 def give_referral_reward(self):
     selected = self.referral_tree.selection()

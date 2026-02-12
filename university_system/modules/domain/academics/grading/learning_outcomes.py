@@ -1027,13 +1027,13 @@ def generate_course_outcome_report(cursor, course):
             
             if ids:  # Only execute query if there are students
                 placeholders = ",".join("?" for _ in ids)
-                cursor.execute(f'''
+                cursor.execute('''
                     SELECT o.student_id, o.achievement_level
                     FROM outcome_results AS o
                     WHERE o.outcome_id = ?
-                      AND o.student_id IN ({placeholders})
+                      AND o.student_id IN (''' + placeholders + ''')
                 ''', [outcome_id] + ids)
-                
+
                 results = cursor.fetchall()
                 outcome_achievement[outcome_id] = {r[0]: r[1] for r in results}
             else:
@@ -1405,10 +1405,10 @@ def generate_all_courses_outcome_report(cursor):
                 if len(student_ids) > 0:
                     # Get achievement levels for this outcome
                     placeholders = ','.join(['?'] * len(student_ids))
-                    cursor.execute(f'''
+                    cursor.execute('''
                     SELECT achievement_level
                     FROM outcome_results
-                    WHERE outcome_id = ? AND student_id IN ({placeholders})
+                    WHERE outcome_id = ? AND student_id IN (''' + placeholders + ''')
                     ''', [outcome_id] + student_ids)
                     
                     achievement_levels = [r[0] for r in cursor.fetchall()]
@@ -1927,13 +1927,13 @@ def generate_module_outcome_report(cursor, module_code):
             
             if ids:  # Only execute query if there are students
                 placeholders = ",".join("?" for _ in ids)
-                cursor.execute(f'''
+                cursor.execute('''
                     SELECT o.student_id, o.achievement_level
                     FROM outcome_results AS o
                     WHERE o.outcome_id = ?
-                      AND o.student_id IN ({placeholders})
+                      AND o.student_id IN (''' + placeholders + ''')
                 ''', [outcome_id] + ids)
-                
+
                 direct_results = {r[0]: r[1] for r in cursor.fetchall()}
             else:
                 # No students, so no direct results

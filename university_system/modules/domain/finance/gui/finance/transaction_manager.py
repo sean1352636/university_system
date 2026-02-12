@@ -3244,12 +3244,13 @@ class TransactionManager:
                     temp_path = temp_file.name
     
                 # Print based on OS
+                import subprocess
                 if platform.system() == 'Windows':
                     os.startfile(temp_path, "print")
                 elif platform.system() == 'Darwin':  # macOS
-                    os.system(f'lpr "{temp_path}"')
+                    subprocess.run(['lpr', temp_path], check=False)
                 else:  # Linux
-                    os.system(f'lpr "{temp_path}"')
+                    subprocess.run(['lpr', temp_path], check=False)
     
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.transaction_manager.statement_sent_to_printer"))
 

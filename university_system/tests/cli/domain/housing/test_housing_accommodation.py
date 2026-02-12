@@ -14,12 +14,11 @@ This test suite validates:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-
 
 @pytest.fixture
 def temp_db():
@@ -31,7 +30,6 @@ def temp_db():
         os.unlink(temp_path)
     except (OSError, IOError):
         pass
-
 
 @pytest.fixture
 def initialized_db(temp_db):
@@ -45,7 +43,6 @@ def initialized_db(temp_db):
 
         yield temp_db, conn
         conn.close()
-
 
 class TestDatabaseInitialization:
     """Test database initialization"""
@@ -96,7 +93,6 @@ class TestDatabaseInitialization:
             assert required_columns.issubset(columns)
             conn.close()
 
-
 class TestIDGeneration:
     """Test ID generation function"""
 
@@ -122,7 +118,6 @@ class TestIDGeneration:
         id2 = generate_id('TEST')
 
         assert id1 != id2
-
 
 class TestBuildingManagement:
     """Test building CRUD operations"""
@@ -206,7 +201,6 @@ class TestBuildingManagement:
         assert cursor.execute.called
         assert mock_log.called
 
-
 class TestRoomManagement:
     """Test room creation and management"""
 
@@ -250,7 +244,6 @@ class TestRoomManagement:
         available_rooms = check_room_availability(building_id='BUILD001', room_type='Single')
 
         assert len(available_rooms) > 0
-
 
 class TestApplicationProcessing:
     """Test application management"""
@@ -315,7 +308,6 @@ class TestApplicationProcessing:
 
         assert len(applications) > 0
 
-
 class TestAssignmentManagement:
     """Test housing assignment operations"""
 
@@ -352,7 +344,6 @@ class TestAssignmentManagement:
 
         assert success is True
         assert cursor.execute.called
-
 
 class TestMaintenanceRequests:
     """Test maintenance request management"""
@@ -415,7 +406,6 @@ class TestMaintenanceRequests:
 
         assert success is True
 
-
 class TestPaymentProcessing:
     """Test payment recording and tracking"""
 
@@ -462,7 +452,6 @@ class TestPaymentProcessing:
 
         assert len(payments) > 0
 
-
 class TestInspectionManagement:
     """Test inspection functions"""
 
@@ -504,7 +493,6 @@ class TestInspectionManagement:
         inspections = view_inspections()
 
         assert len(inspections) > 0
-
 
 class TestReportingFunctions:
     """Test reporting and analytics functions"""
@@ -559,7 +547,6 @@ class TestReportingFunctions:
 
         assert summary is not None
 
-
 class TestAuthIntegration:
     """Test authentication integration"""
 
@@ -572,7 +559,6 @@ class TestAuthIntegration:
 
         # Should not raise error
         assert True
-
 
 class TestExportFunctions:
     """Test data export functions"""
@@ -595,7 +581,6 @@ class TestExportFunctions:
             # May fail due to file operations, that's okay
             pass
 
-
 class TestSearchFunctions:
     """Test search functionality"""
 
@@ -613,7 +598,6 @@ class TestSearchFunctions:
         results = search_housing_records(student_id='S001')
 
         assert isinstance(results, (list, dict, type(None)))
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

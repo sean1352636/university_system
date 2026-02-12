@@ -4,7 +4,7 @@ Student Marketplace Service
 Facilitates buying/selling, subletting, and free stuff exchange among students.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -13,7 +13,7 @@ import os
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.modules.shared.constants import paths
-
+from university_system.core.sql_safety import validate_identifier
 
 class MarketplaceService:
     """Service for student marketplace and exchanges."""
@@ -471,7 +471,7 @@ class MarketplaceService:
         if not valid_updates:
             return False
 
-        set_clause = ", ".join([f"{field} = ?" for field in valid_updates.keys()])
+        set_clause = ", ".join([validate_identifier(field, "column") + " = ?" for field in valid_updates.keys()])
         set_clause += ", updated_at = ?"
 
         values = list(valid_updates.values())
@@ -479,11 +479,11 @@ class MarketplaceService:
         values.append(listing_id)
 
         with transaction() as conn:
-            conn.execute(f"""
-                UPDATE marketplace_listings
-                SET {set_clause}
-                WHERE listing_id = ?
-            """, values)
+            conn.execute(
+                "UPDATE marketplace_listings"
+                " SET " + set_clause +
+                " WHERE listing_id = ?",
+                values)
 
             log_activity('update', 'marketplace_listing',
                         details={'listing_id': listing_id, 'updated_fields': list(valid_updates.keys())})
@@ -700,7 +700,7 @@ class MarketplaceService:
         if not valid_updates:
             return False
 
-        set_clause = ", ".join([f"{field} = ?" for field in valid_updates.keys()])
+        set_clause = ", ".join([validate_identifier(field, "column") + " = ?" for field in valid_updates.keys()])
         set_clause += ", updated_at = ?"
 
         values = list(valid_updates.values())
@@ -708,11 +708,11 @@ class MarketplaceService:
         values.append(sublet_id)
 
         with transaction() as conn:
-            conn.execute(f"""
-                UPDATE sublet_listings
-                SET {set_clause}
-                WHERE sublet_id = ?
-            """, values)
+            conn.execute(
+                "UPDATE sublet_listings"
+                " SET " + set_clause +
+                " WHERE sublet_id = ?",
+                values)
 
             log_activity('update', 'sublet_listing',
                         details={'sublet_id': sublet_id, 'updated_fields': list(valid_updates.keys())})

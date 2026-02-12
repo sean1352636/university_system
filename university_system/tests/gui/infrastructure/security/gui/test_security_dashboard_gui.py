@@ -13,13 +13,12 @@ Note: These tests mock Tkinter to avoid requiring X11/display
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock, call
 
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-
 
 @pytest.fixture
 def test_db():
@@ -40,7 +39,6 @@ def test_db():
     master_key_path = os.path.join(os.path.dirname(path), '.encryption_master_key')
     if os.path.exists(master_key_path):
         os.remove(master_key_path)
-
 
 # ============================================================================
 # Dashboard Initialization Tests
@@ -123,7 +121,6 @@ class TestGUIDashboardInitialization:
                     # Verify geometry was set
                     assert mock_window.geometry.called
 
-
 # ============================================================================
 # Manager Access Tests
 # ============================================================================
@@ -154,7 +151,6 @@ class TestGUIManagerAccess:
                     assert dashboard.dlp_mgr is not None
                     assert dashboard.incident_mgr is not None
                     assert dashboard.vuln_scanner is not None
-
 
 # ============================================================================
 # Widget Creation Tests
@@ -200,7 +196,6 @@ class TestGUIWidgetCreation:
                     # _load_data should have been called
                     mock_load.assert_called_once()
 
-
 # ============================================================================
 # MFA Integration Tests
 # ============================================================================
@@ -221,7 +216,6 @@ class TestMFAIntegration:
 
         # Should be boolean
         assert isinstance(MFA_SETUP_AVAILABLE, bool)
-
 
 # ============================================================================
 # Module Import Tests
@@ -249,7 +243,6 @@ class TestGUIModuleImports:
         from university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
         assert SecurityDashboard is not None
-
 
 # ============================================================================
 # Integration Tests
@@ -284,7 +277,6 @@ class TestGUIIntegration:
                         conn.close()
 
                         assert count > 0
-
 
 # ============================================================================
 # Error Handling Tests
@@ -326,7 +318,6 @@ class TestGUIErrorHandling:
 
                     assert dashboard is not None
 
-
 # ============================================================================
 # Window Management Tests
 # ============================================================================
@@ -356,7 +347,6 @@ class TestGUIWindowManagement:
                     # (multiple calls to geometry are expected)
                     assert mock_window.geometry.call_count >= 1
 
-
 # ============================================================================
 # Functional Tests
 # ============================================================================
@@ -385,7 +375,6 @@ class TestGUIFunctionality:
                     # Calling _load_data again should work
                     dashboard._load_data()
                     assert mock_load.call_count >= 2
-
 
 # ============================================================================
 # Comprehensive Integration Test
@@ -442,7 +431,6 @@ class TestComprehensiveGUIIntegration:
 
                         # All operations should work through GUI dashboard
                         assert True
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

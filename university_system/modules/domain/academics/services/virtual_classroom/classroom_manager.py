@@ -3,12 +3,12 @@ Virtual Classroom Manager
 Handles creation and management of virtual classrooms
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
+from university_system.core.sql_safety import validate_identifier
 
 class VirtualClassroomManager:
     """Manager for virtual classroom operations"""
@@ -172,7 +172,7 @@ class VirtualClassroomManager:
                     if key in allowed_fields:
                         if key == 'features' and isinstance(value, dict):
                             value = json.dumps(value)
-                        updates.append(f"{key} = ?")
+                        updates.append(f"{validate_identifier(key, 'column')} = ?")
                         values.append(value)
 
                 if not updates:

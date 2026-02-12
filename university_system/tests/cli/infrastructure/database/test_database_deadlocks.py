@@ -14,7 +14,7 @@ This module tests deadlock scenarios and mitigation strategies:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -27,7 +27,6 @@ from university_system.infrastructure.database.db import (
     ConnectionPool
 )
 from university_system.infrastructure.database.constants import SQLITE_BUSY_TIMEOUT
-
 
 @pytest.fixture
 def temp_db():
@@ -80,7 +79,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestDeadlockDetection:
     """Test deadlock detection mechanisms."""
@@ -184,7 +182,6 @@ class TestDeadlockDetection:
         # Balance should be original (1000) + (100 * successful updates)
         expected_balance = 1000 + (100 * success_count)
         assert final_balance == expected_balance
-
 
 class TestDeadlockPrevention:
     """Test deadlock prevention strategies."""
@@ -308,7 +305,6 @@ class TestDeadlockPrevention:
         # Second transaction should detect lock early
         assert result in ["locked", "success"]
 
-
 class TestDeadlockRecovery:
     """Test recovery from deadlock situations."""
 
@@ -384,7 +380,6 @@ class TestDeadlockRecovery:
         # Total should be preserved (2000)
         assert total_balance == 2000, f"Balance not preserved: {total_balance}"
 
-
 class TestLockEscalation:
     """Test lock escalation scenarios."""
 
@@ -452,7 +447,6 @@ class TestLockEscalation:
         success_count = results.count("success")
         assert success_count > 0
 
-
 class TestConnectionPoolDeadlocks:
     """Test deadlock scenarios with connection pooling."""
 
@@ -519,7 +513,6 @@ class TestConnectionPoolDeadlocks:
 
         # Should handle gracefully (either succeed or timeout, not deadlock)
         assert result in ["success", "timeout", "error"]
-
 
 class TestTransactionConflicts:
     """Test transaction conflict scenarios."""
@@ -592,7 +585,6 @@ class TestTransactionConflicts:
         assert results["reader"] in ["success", "blocked"]
         assert results["writer"] == "success"
 
-
 class TestDeadlockDiagnostics:
     """Test deadlock diagnostic capabilities."""
 
@@ -641,7 +633,6 @@ class TestDeadlockDiagnostics:
 
         # May detect locked tables (depends on lock granularity)
         assert isinstance(locked, list)
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

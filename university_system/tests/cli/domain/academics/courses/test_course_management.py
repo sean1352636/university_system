@@ -11,12 +11,11 @@ Tests the course management system including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.academics.services import course_management as cm
 from university_system.infrastructure.database.db import get_connection
-
 
 class TestDatabaseInitialization:
     """Test course management database initialization"""
@@ -89,7 +88,6 @@ class TestDatabaseInitialization:
         assert 'is_required' in column_names
 
         conn.close()
-
 
 class TestValidationFunctions:
     """Test validation helper functions"""
@@ -171,7 +169,6 @@ class TestValidationFunctions:
 
         for days in invalid_days:
             assert cm.validate_days_of_week(days) is False
-
 
 class TestCircularPrerequisiteCheck:
     """Test circular prerequisite detection"""
@@ -264,7 +261,6 @@ class TestCircularPrerequisiteCheck:
 
         conn.close()
 
-
 class TestCourseCreation:
     """Test course creation functionality"""
 
@@ -284,7 +280,6 @@ class TestCourseCreation:
         """Test course creation without authentication"""
         result = cm.create_enhanced_course(None)
         assert result is False
-
 
 class TestPrerequisiteManagement:
     """Test prerequisite management functionality"""
@@ -332,7 +327,6 @@ class TestPrerequisiteManagement:
             result = cm.add_prerequisite(mock_auth)
             assert result is False
 
-
 class TestViewPrerequisites:
     """Test viewing prerequisites functionality"""
 
@@ -341,7 +335,6 @@ class TestViewPrerequisites:
         """Test viewing prerequisites without authentication"""
         result = cm.view_prerequisites(None)
         assert result is False
-
 
 class TestCourseTableOperations:
     """Test direct course table operations"""
@@ -402,7 +395,6 @@ class TestCourseTableOperations:
 
         conn.close()
 
-
 class TestInstructorsTable:
     """Test instructors table operations"""
 
@@ -459,7 +451,6 @@ class TestInstructorsTable:
 
         conn.close()
 
-
 class TestCourseScheduleTable:
     """Test course schedule table operations"""
 
@@ -499,7 +490,6 @@ class TestCourseScheduleTable:
 
         conn.close()
 
-
 class TestCourseAnalyticsTable:
     """Test course analytics table operations"""
 
@@ -518,7 +508,6 @@ class TestCourseAnalyticsTable:
         assert result is not None
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

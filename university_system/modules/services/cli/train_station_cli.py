@@ -17,7 +17,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -32,7 +32,6 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
-
 
 TRAIN_STATION_SCHEMA = """
 CREATE TABLE IF NOT EXISTS train_station_services (
@@ -79,7 +78,6 @@ CREATE TABLE IF NOT EXISTS train_refunds (
 );
 """
 
-
 def init_train_database():
     """Initialize train station database tables."""
     try:
@@ -113,7 +111,6 @@ def init_train_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -122,16 +119,13 @@ def get_current_user():
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
 
-
 def generate_ticket_number():
     """Generate unique ticket number."""
     return "TKT-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
-
 def generate_receipt_number():
     """Generate unique receipt number."""
     return "RCP-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-
 
 # ==================== SERVICE MANAGEMENT ====================
 
@@ -156,7 +150,6 @@ def get_all_services():
         print(f"Error getting services: {e}")
         return []
 
-
 def get_service_by_id(service_id):
     """Get a specific service by ID."""
     try:
@@ -177,7 +170,6 @@ def get_service_by_id(service_id):
         print(f"Error getting service: {e}")
     return None
 
-
 def update_service_seats(service_id, seats_change):
     """Update available seats for a service."""
     try:
@@ -192,7 +184,6 @@ def update_service_seats(service_id, seats_change):
     except Exception as e:
         print(f"Error updating seats: {e}")
         return False
-
 
 # ==================== TICKET BOOKING ====================
 
@@ -232,7 +223,6 @@ def purchase_ticket(service_id, passenger_name, payment_method, price_paid):
         print(f"Error purchasing ticket: {e}")
         return None, None, None
 
-
 def get_all_tickets():
     """Get all tickets with service details."""
     try:
@@ -257,7 +247,6 @@ def get_all_tickets():
     except Exception as e:
         print(f"Error getting tickets: {e}")
         return []
-
 
 def get_ticket_by_number(ticket_number):
     """Get a specific ticket by ticket number."""
@@ -284,7 +273,6 @@ def get_ticket_by_number(ticket_number):
         print(f"Error getting ticket: {e}")
     return None
 
-
 # ==================== REFUNDS ====================
 
 def process_refund(ticket_number, amount, refund_method, student_id=None):
@@ -304,7 +292,6 @@ def process_refund(ticket_number, amount, refund_method, student_id=None):
         print(f"Error processing refund: {e}")
         return None
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -312,7 +299,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def print_service_details(service):
     """Print service details."""
@@ -322,7 +308,6 @@ def print_service_details(service):
     print(f"  Arrival: {service['arrival_time']}")
     print(f"  Price: £{service['price']:.2f}")
     print(f"  Available Seats: {service['available_seats']}")
-
 
 def print_ticket_details(ticket):
     """Print ticket details."""
@@ -335,7 +320,6 @@ def print_ticket_details(ticket):
     print(f"  Price Paid: £{ticket['price_paid']:.2f}")
     print(f"  Payment Method: {ticket['payment_method']}")
     print(f"  Purchase Date: {ticket['purchase_date']}")
-
 
 def list_services_menu():
     """List all train services."""
@@ -357,7 +341,6 @@ def list_services_menu():
         print(f"  {service['id']:<5} {service['service_number']:<10} {route:<40} {service['departure_time']:<8} {service['arrival_time']:<8} £{service['price']:<9.2f} {service['available_seats']:<6}")
 
     print()
-
 
 def book_ticket_menu():
     """Book a train ticket."""
@@ -424,7 +407,6 @@ def book_ticket_menu():
     else:
         print("\n  ❌ Failed to purchase ticket.")
 
-
 def view_tickets_menu():
     """View all tickets."""
     print_header("All Train Tickets")
@@ -447,7 +429,6 @@ def view_tickets_menu():
 
     print()
 
-
 def view_ticket_menu():
     """View ticket details."""
     print_header("View Ticket")
@@ -464,7 +445,6 @@ def view_ticket_menu():
 
     print_header("Ticket Details")
     print_ticket_details(ticket)
-
 
 def refund_ticket_menu():
     """Process a ticket refund."""
@@ -512,7 +492,6 @@ def refund_ticket_menu():
     else:
         print("\n  ❌ Failed to process refund.")
 
-
 def statistics_menu():
     """Show train station statistics."""
     print_header("Train Station Statistics")
@@ -559,7 +538,6 @@ def statistics_menu():
 
     print()
 
-
 def train_station_menu():
     """Main train station CLI menu."""
     init_train_database()
@@ -596,7 +574,6 @@ def train_station_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     train_station_menu()

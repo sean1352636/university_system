@@ -4,7 +4,7 @@ Tests order viewing, payment processing, refunds, and purchase orders.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 import os
@@ -13,7 +13,6 @@ import tempfile
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.operations import order_processing
 from university_system.modules.shared.constants import paths
-
 
 @pytest.fixture
 def test_db():
@@ -210,7 +209,6 @@ def test_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -219,7 +217,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
     return auth
-
 
 class TestViewOrders:
     """Test order viewing functions"""
@@ -251,7 +248,6 @@ class TestViewOrders:
         captured = capsys.readouterr()
         assert 'ORDER DETAILS' in captured.out
         assert 'ORD001' in captured.out
-
 
 class TestPaymentProcessing:
     """Test payment processing functions"""
@@ -308,7 +304,6 @@ class TestPaymentProcessing:
         captured = capsys.readouterr()
         assert 'Meal plan payment' in captured.out or 'processed' in captured.out.lower()
 
-
 class TestTipManagement:
     """Test tip functionality"""
 
@@ -342,7 +337,6 @@ class TestTipManagement:
         captured = capsys.readouterr()
         assert 'Tip added' in captured.out
 
-
 class TestRefundProcessing:
     """Test refund functionality"""
 
@@ -361,7 +355,6 @@ class TestRefundProcessing:
 
         captured = capsys.readouterr()
         assert 'Refund processed' in captured.out
-
 
 class TestDiscountApplication:
     """Test discount functionality"""
@@ -396,7 +389,6 @@ class TestDiscountApplication:
         captured = capsys.readouterr()
         assert 'Discount applied' in captured.out
 
-
 class TestOrderStatusUpdate:
     """Test order status management"""
 
@@ -415,7 +407,6 @@ class TestOrderStatusUpdate:
 
         captured = capsys.readouterr()
         assert 'status updated' in captured.out
-
 
 class TestPurchaseOrders:
     """Test purchase order management"""
@@ -490,7 +481,6 @@ class TestPurchaseOrders:
         captured = capsys.readouterr()
         assert 'status updated' in captured.out
 
-
 class TestSetAuth:
     """Test authentication setup"""
 
@@ -498,7 +488,6 @@ class TestSetAuth:
         """Test setting authentication instance"""
         order_processing.set_auth(mock_auth)
         assert order_processing.auth == mock_auth
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

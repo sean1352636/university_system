@@ -1,4 +1,5 @@
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
+from university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta
 import os
 import sys
 import shutil
-import sqlite3
+
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -318,7 +319,6 @@ except ImportError as e:
 
 SEARCH_ANALYTICS_COLUMNS_CACHE: Optional[List[str]] = None
 
-
 def refresh_search_analytics_columns(cursor) -> List[str]:
     """Refresh and return the column names for search_analytics."""
     global SEARCH_ANALYTICS_COLUMNS_CACHE
@@ -326,13 +326,11 @@ def refresh_search_analytics_columns(cursor) -> List[str]:
     SEARCH_ANALYTICS_COLUMNS_CACHE = [row[1] for row in cursor.fetchall()]
     return SEARCH_ANALYTICS_COLUMNS_CACHE
 
-
 def get_search_analytics_columns(cursor) -> List[str]:
     """Get cached column list for search_analytics, refreshing if required."""
     if SEARCH_ANALYTICS_COLUMNS_CACHE is None:
         return refresh_search_analytics_columns(cursor)
     return SEARCH_ANALYTICS_COLUMNS_CACHE
-
 
 def ensure_search_analytics_schema(cursor) -> List[str]:
     """Ensure the analytics table has the columns expected by various modules."""
@@ -355,14 +353,15 @@ def ensure_search_analytics_schema(cursor) -> List[str]:
             "UPDATE search_analytics SET search_query = CASE WHEN search_query IS NULL OR search_query = '' THEN COALESCE(search_criteria, search_type, 'N/A') ELSE search_query END"
         )
 
+    _VALID_TIME_COLUMNS = {'timestamp', 'search_datetime'}
     time_column = 'timestamp' if 'timestamp' in columns else 'search_datetime' if 'search_datetime' in columns else None
     if time_column:
+        validate_field_for_query(time_column, _VALID_TIME_COLUMNS, "time column")
         cursor.execute(
             f"UPDATE search_analytics SET {time_column} = COALESCE({time_column}, datetime('now'))"
         )
 
     return list(columns)
-
 
 def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[str], search_type: str,
                                   criteria: Any, results_count: int, execution_time: float = 0.0,
@@ -398,13 +397,15 @@ def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[s
 
     return record
 
-
 def insert_search_analytics_record(cursor, **kwargs):
     """Insert an analytics entry while adapting to the table schema."""
     columns = ensure_search_analytics_schema(cursor)
     record = build_search_analytics_record(columns, **kwargs)
     if not record:
         return
+    # Validate all column names before SQL interpolation
+    for key in record.keys():
+        validate_column_name(key)
     placeholders = ', '.join('?' for _ in record)
     cursor.execute(
         f"INSERT INTO search_analytics ({', '.join(record.keys())}) VALUES ({placeholders})",
@@ -795,7 +796,8 @@ def data_quality_reports():
         report += _t("advanced_search.missing_data_analysis").upper() + ":\n"
 
         for field, label in fields:
-            cursor.execute(f"SELECT COUNT(*) FROM students WHERE {field} IS NULL OR {field} = ''")
+            safe_field = validate_identifier(field, "column")
+            cursor.execute("SELECT COUNT(*) FROM students WHERE [" + safe_field + "] IS NULL OR [" + safe_field + "] = ''")
             missing = cursor.fetchone()[0]
             percentage = (missing / total * 100) if total > 0 else 0
             report += f"  {label}: {missing} {_t('advanced_search.missing', default='missing')} ({percentage:.1f}%)\n"
@@ -879,8 +881,6 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-
-
 from .base import AdvancedSearchGUI
 
 def show_audit_trail(self):
@@ -929,21 +929,17 @@ def export_system_statistics():
     except Exception as e:
         return f"Error exporting statistics: {str(e)}"
 
-
 def manage_user_permissions():
     """Manage user permissions"""
     return "User permissions:\n- Admin access: Full\n- User access: Limited"
-
 
 def interactive_charts():
     """Generate interactive charts"""
     return "Chart data:\n- Student enrollment trends\n- Performance metrics visualization\n- Use Analytics Dashboard for visual charts"
 
-
 def manage_scheduled_reports():
     """Manage scheduled reports"""
     return "Scheduled reports:\n- Daily reports: Active\n- Weekly summaries: Configured"
-
 
 def run_cli():
     """Run the original CLI version"""
@@ -952,11 +948,9 @@ def run_cli():
     except NameError:
         print_error("CLI functions not available. Please ensure advanced_search.py is properly imported.")
 
-
 def view_search_audit_trail():
     """View search audit trail"""
     return "Audit trail:\n- Recent search activities logged\n- System access monitored"
-
 
 def run_gui():
     """Launch the GUI version"""
@@ -964,14 +958,12 @@ def run_gui():
     app = AdvancedSearchGUI(root)
     root.mainloop()
 
-
 def performance_optimization():
     """Optimize system performance"""
     return _t("advanced_search.msg_optimization_complete", default="Performance optimization:\n- {optimized}\n- {indexes}").format(
         optimized=_t("advanced_search.database_optimized"),
         indexes=_t("advanced_search.indexes_updated")
     )
-
 
 def generate_custom_reports():
     """Generate custom reports"""

@@ -10,7 +10,7 @@ from .imports import (
     log_activity, AIDetector, validate_column_definition
 )
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 
 # Error types
@@ -42,7 +42,6 @@ auth = None
 def get_db_connection():
     """Get database connection"""
     return sqlite3.connect(DB_PATH)
-
 
 def integrate_ai_detector_with_main():
     """Initialize the AI detector system for integration with main menu"""
@@ -91,7 +90,6 @@ def integrate_ai_detector_with_main():
             logging.error(f"Even fallback AI detector failed: {fallback_error}")
             print(f"❌ Complete AI detector failure: {fallback_error}")
             return False
-
 
 def create_minimal_ai_detector():
     """Create a minimal AI detector that won't crash"""
@@ -240,7 +238,6 @@ def create_minimal_ai_detector():
     
     return MinimalAIDetector()
 
-
 def display_ai_detector_menu_from_main(auth_obj):
     """Display AI detector menu with comprehensive error handling"""
     global ai_detector
@@ -310,7 +307,6 @@ def display_ai_detector_menu_from_main(auth_obj):
             print(f"❌ {_t('common.error')}: {e}")
             print(_t("cli.try_again_or_return"))
 
-
 def analyze_text_interface_safe():
     """Safe version of text analysis interface"""
     global ai_detector
@@ -363,7 +359,6 @@ def analyze_text_interface_safe():
     except (ValueError, TypeError, ValidationError) as e:
         print(f"❌ Interface error: {e}")
 
-
 def display_analysis_results_safe(result):
     """Safe version of results display"""
     try:
@@ -411,7 +406,6 @@ def display_analysis_results_safe(result):
         print("Results could not be displayed properly.")
     
     input("\nPress Enter to continue...")
-
 
 def fix_ai_detector_database_schema():
     """Fix AI detector database schema by creating proper tables"""
@@ -531,7 +525,6 @@ def fix_ai_detector_database_schema():
         print(f"❌ Error fixing AI detector database schema: {e}")
         return False
 
-
 def view_submission_history_safe():
     """Safe version of submission history with proper error handling"""
     global ai_detector
@@ -600,7 +593,6 @@ def view_submission_history_safe():
     
     input("\nPress Enter to continue...")
 
-
 def display_detailed_submission(submission):
     """Display detailed information about a submission"""
     print("\n" + "=" * 60)
@@ -634,7 +626,6 @@ def display_detailed_submission(submission):
     print("=" * 60)
     input("\nPress Enter to continue...")
 
-
 def view_ai_detector_statistics_safe():
     """Safe version of statistics viewing"""
     global ai_detector
@@ -665,7 +656,6 @@ def view_ai_detector_statistics_safe():
     
     input("\nPress Enter to continue...")
 
-
 def run_ai_detector_demo_safe():
     """Safe version of demo"""
     try:
@@ -687,7 +677,6 @@ def run_ai_detector_demo_safe():
         print("This indicates the AI detector system needs attention.")
     
     input("\nPress Enter to continue...")
-
 
 def integrate_plagiarism_checker_with_main():
     """Initialize and integrate the plagiarism checker with the main system"""
@@ -718,7 +707,6 @@ def integrate_plagiarism_checker_with_main():
         logging.warning(f"Plagiarism checker integration failed: {e}")
         return True
 
-
 def display_plagiarism_checker_menu(auth):
     """Wrapper to call your real plagiarism menu from plagiarism_main.py"""
     try:
@@ -736,7 +724,6 @@ def display_plagiarism_checker_menu(auth):
     except (ConfigurationError, AuthenticationError, DatabaseError) as e:
         print(f"Error accessing plagiarism checker: {e}")
         input("Press Enter to continue...")
-
 
 __all__ = [
     'integrate_ai_detector_with_main',

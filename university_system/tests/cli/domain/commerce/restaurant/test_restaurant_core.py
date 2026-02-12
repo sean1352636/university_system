@@ -4,7 +4,7 @@ Tests database initialization and main menu display functions.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 import os
@@ -12,7 +12,6 @@ import tempfile
 
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.operations import restaurant_core
-
 
 @pytest.fixture
 def test_db():
@@ -26,7 +25,6 @@ def test_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -36,7 +34,6 @@ def mock_auth():
     auth.check_permission.return_value = True
     auth.logout = Mock()
     return auth
-
 
 class TestSetAuth:
     """Test authentication setup"""
@@ -52,7 +49,6 @@ class TestSetAuth:
             with patch.object(restaurant_core, 'set_auth_instance') as mock_set_auth_instance:
                 restaurant_core.set_auth(mock_auth)
                 mock_set_auth_instance.assert_called_once_with(mock_auth)
-
 
 class TestGetDBConnection:
     """Test database connection function"""
@@ -74,7 +70,6 @@ class TestGetDBConnection:
 
         result = restaurant_core.get_db_connection()
         assert result is not None
-
 
 class TestSafeDBOperation:
     """Test safe database operation wrapper"""
@@ -108,7 +103,6 @@ class TestSafeDBOperation:
 
         captured = capsys.readouterr()
         assert 'unexpected error' in captured.out.lower()
-
 
 class TestInitDB:
     """Test database initialization"""
@@ -145,7 +139,6 @@ class TestInitDB:
         assert result is False
         captured = capsys.readouterr()
         assert 'error' in captured.out.lower()
-
 
 class TestInitializeDefaultData:
     """Test default data initialization"""
@@ -223,7 +216,6 @@ class TestInitializeDefaultData:
 
         conn.close()
 
-
 class TestDisplayMainMenu:
     """Test main menu display function"""
 
@@ -289,7 +281,6 @@ class TestDisplayMainMenu:
         captured = capsys.readouterr()
         assert 'Invalid choice' in captured.out
 
-
 class TestImports:
     """Test that restaurant module functions can be imported"""
 
@@ -323,7 +314,6 @@ class TestImports:
         from university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting import display_financial_reports
         assert callable(display_financial_reports)
 
-
 class TestConstants:
     """Test module constants"""
 
@@ -331,7 +321,6 @@ class TestConstants:
         """Test that DATABASE_FILE constant is defined"""
         assert hasattr(restaurant_core, 'DATABASE_FILE')
         assert restaurant_core.DATABASE_FILE is not None
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

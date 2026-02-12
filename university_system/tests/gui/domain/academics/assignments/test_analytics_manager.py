@@ -9,13 +9,12 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.gui.grade_tracking.analytics_manager import (
     AnalyticsManager
 )
-
 
 @pytest.fixture
 def root_window():
@@ -26,7 +25,6 @@ def root_window():
         root.destroy()
     except Exception:
         pass
-
 
 @pytest.fixture
 def mock_app(root_window):
@@ -41,7 +39,6 @@ def mock_app(root_window):
     app.layout.content_frame = ttk.Frame(root_window)
 
     return app
-
 
 class TestAnalyticsManager:
     """Test suite for AnalyticsManager"""
@@ -305,7 +302,6 @@ class TestAnalyticsManager:
         with patch('tkinter.messagebox.showerror'):
             manager.identify_at_risk_students()
 
-
 class TestAnalyticsIntegration:
     """Integration tests for analytics features"""
 
@@ -338,7 +334,6 @@ class TestAnalyticsIntegration:
 
         # Verify multiple database calls were made
         assert cursor.execute.call_count >= 3
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

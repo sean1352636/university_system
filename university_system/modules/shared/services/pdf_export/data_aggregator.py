@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection
 from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.sql_safety import validate_table_name
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,8 @@ class DataAggregator:
         try:
             with get_connection(self.db_path) as conn:
                 # Get column info
-                cursor = conn.execute(f"PRAGMA table_info({table_name})")
+                safe_table = validate_table_name(table_name, conn=conn)
+                cursor = conn.execute("PRAGMA table_info([" + safe_table + "])")
                 columns = [
                     {
                         "name": row[1],
@@ -128,7 +130,7 @@ class DataAggregator:
                 ]
 
                 # Get row count
-                count_cursor = conn.execute(f"SELECT COUNT(*) FROM {table_name}")
+                count_cursor = conn.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                 row_count = count_cursor.fetchone()[0]
 
                 return {
@@ -156,13 +158,14 @@ class DataAggregator:
         try:
             with get_connection(self.db_path) as conn:
                 # Get column names
-                cursor = conn.execute(f"PRAGMA table_info({table_name})")
+                safe_table = validate_table_name(table_name, conn=conn)
+                cursor = conn.execute("PRAGMA table_info([" + safe_table + "])")
                 columns = [row[1] for row in cursor.fetchall()]
 
                 # Get data
-                query = f"SELECT * FROM {table_name}"
+                query = "SELECT * FROM [" + safe_table + "]"
                 if limit:
-                    query += f" LIMIT {limit}"
+                    query += " LIMIT " + str(int(limit))
 
                 data_cursor = conn.execute(query)
                 rows = data_cursor.fetchall()

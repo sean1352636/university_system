@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
@@ -13,7 +13,6 @@ from university_system.modules.domain.academics.gui.grade_tracking.dialogs.updat
     UpdateGradesDialog,
     safe_grab_set
 )
-
 
 class TestUpdateGradesDialog(unittest.TestCase):
     """Test UpdateGradesDialog class"""
@@ -273,7 +272,6 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-
 class TestUpdateGradesDialogIntegration(unittest.TestCase):
     """Integration tests for UpdateGradesDialog"""
 
@@ -412,7 +410,6 @@ class TestUpdateGradesDialogIntegration(unittest.TestCase):
         self.assertIsNotNone(dialog.grades_tree)
 
         dialog.dialog.destroy()
-
 
 if __name__ == '__main__':
     unittest.main()

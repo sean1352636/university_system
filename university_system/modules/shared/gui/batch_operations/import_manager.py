@@ -1,7 +1,7 @@
 """Import operations manager for batch operations GUI."""
 import os
 import datetime
-import pickle
+import json
 import threading
 from pathlib import Path
 
@@ -506,7 +506,7 @@ Modules that will be assigned to DS students:
     def resume_import(self):
         """GUI version of resume failed import"""
         # Find resume files
-        resume_files = list(Path('.').glob('import_resume_*.pkl'))
+        resume_files = list(Path('.').glob('import_resume_*.json'))
 
         if not resume_files:
             messagebox.showinfo(_t("batch_ops.msg_titles.no_resumes"), "No failed imports found to resume")
@@ -540,9 +540,10 @@ Modules that will be assigned to DS students:
         button_frame.pack(pady=20)
 
         def resume_selected():
-            if selected_file.get():
+            file_path = selected_file.get()
+            if file_path:
                 dialog.destroy()
-                self.execute_resume_import(selected_file.get())
+                self.execute_resume_import(file_path)
 
         ttk.Button(button_frame, text="Resume", command=resume_selected).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
@@ -552,8 +553,8 @@ Modules that will be assigned to DS students:
         def resume_worker():
             try:
                 # Load saved state
-                with open(resume_file_path, 'rb') as f:
-                    saved_state = pickle.load(f)
+                with open(resume_file_path, 'r') as f:
+                    saved_state = json.load(f)
 
                 remaining_records = saved_state['remaining_records']
                 original_total = saved_state['original_total']

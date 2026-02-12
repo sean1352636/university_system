@@ -22,7 +22,7 @@ import json
 import logging
 import random
 import string
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 from datetime import datetime
 
@@ -64,7 +64,6 @@ __all__ = [
     'display_chatbot_integration_menu',
 ]
 
-
 # ============================================================================
 # Remember-Me Token Functions (CLI)
 # ============================================================================
@@ -89,7 +88,6 @@ def _save_cli_remember_token(username, token, device_fingerprint):
     except Exception as e:
         logging.warning(f"Failed to save remember me token: {e}")
 
-
 def _load_cli_remember_token():
     """Load remember me token from file for CLI"""
     try:
@@ -107,7 +105,6 @@ def _load_cli_remember_token():
         logging.warning(f"Failed to load remember me token: {e}")
         return None
 
-
 def _clear_cli_remember_token():
     """Clear remember me token from file for CLI"""
     try:
@@ -119,7 +116,6 @@ def _clear_cli_remember_token():
 
     except Exception as e:
         logging.warning(f"Failed to clear remember me token: {e}")
-
 
 def _check_cli_remember_me_token(auth):
     """Check for remember me token and auto-login if valid"""
@@ -164,7 +160,6 @@ def _check_cli_remember_me_token(auth):
     except Exception as e:
         logging.warning(f"Remember me auto-login failed: {e}")
         return auth, False
-
 
 # ============================================================================
 # Main Authentication Menu
@@ -462,7 +457,6 @@ def display_auth_menu():
 
     return auth
 
-
 # ============================================================================
 # User Management Menu
 # ============================================================================
@@ -567,8 +561,7 @@ def display_user_management_menu(auth):
 
             # Create the user
             if auth.create_user(username, temp_password, email, first_name, last_name, role, student_id, True):
-                print(f"\nUser created successfully with temporary password: {temp_password}")
-                print("User will be required to change password on first login.")
+                print(f"\nUser created successfully. Temporary password has been set - user must change on first login.")
 
         elif choice == '3':
             # View user details with better input handling
@@ -953,7 +946,6 @@ def display_user_management_menu(auth):
         else:
             print("Invalid choice. Please try again.")
 
-
 # ============================================================================
 # Role Management Menu
 # ============================================================================
@@ -1226,7 +1218,6 @@ def display_role_management_menu(auth):
         else:
             print("Invalid choice. Please try again.")
 
-
 # ============================================================================
 # My Account Menu
 # ============================================================================
@@ -1248,9 +1239,20 @@ def display_my_account_menu(auth):
         print("2. View My Permissions")
         print("3. 2-Factor Authentication Settings (TOTP)")
         print("4. MFA Settings (Email Verification)")
-        print("5. Back")
+        print("5. Account Linking")
+        print("6. Security Keys (WebAuthn)")
+        print("7. Biometric Enrollment")
+        if user['role'] == 'student':
+            print("8. Delegated Access (Grant Access)")
+        elif user['role'] == 'parent':
+            print("8. Delegated Access (Act as Delegate)")
+        elif user['role'] == 'admin':
+            print("8. Delegated Access Management")
+        else:
+            print("8. Delegated Access")
+        print("9. Back")
 
-        choice = input("\nEnter your choice (1-5): ")
+        choice = input("\nEnter your choice (1-9): ")
 
         if choice == '1':
             # Change password
@@ -1365,10 +1367,25 @@ def display_my_account_menu(auth):
             display_mfa_settings_menu(auth, user)
 
         elif choice == '5':
+            # Account Linking
+            _display_account_linking_menu(auth)
+
+        elif choice == '6':
+            # Security Keys (WebAuthn)
+            _display_webauthn_menu(auth)
+
+        elif choice == '7':
+            # Biometric Enrollment
+            _display_biometric_menu(auth)
+
+        elif choice == '8':
+            # Delegated Access
+            _display_delegated_access_menu(auth)
+
+        elif choice == '9':
             return
         else:
             print("Invalid choice. Please try again.")
-
 
 # ============================================================================
 # MFA Settings Menu (Email Verification)
@@ -1517,7 +1534,6 @@ def display_mfa_settings_menu(auth, user):
             else:
                 print("Invalid choice.")
 
-
 # ============================================================================
 # MFA Helper Functions
 # ============================================================================
@@ -1582,7 +1598,6 @@ def _cli_setup_mfa_email(mfa_service, user_id, username):
     except Exception as e:
         print(f"\n❌ Error setting up MFA: {e}")
 
-
 def _cli_disable_mfa(mfa_service, user_id):
     """Disable MFA via CLI"""
     print("\n" + "=" * 50)
@@ -1606,7 +1621,6 @@ def _cli_disable_mfa(mfa_service, user_id):
             print(f"\n❌ Failed to disable MFA: {result.get('error')}")
     except Exception as e:
         print(f"\n❌ Error disabling MFA: {e}")
-
 
 def _cli_reenable_mfa(mfa_service, user_id, username, saved_methods):
     """Re-enable MFA with saved settings via CLI"""
@@ -1677,6 +1691,465 @@ def _cli_reenable_mfa(mfa_service, user_id, username, saved_methods):
             print(f"\n❌ Failed to re-enable MFA: {result.get('error')}")
     except Exception as e:
         print(f"\n❌ Error re-enabling MFA: {e}")
+
+# ============================================================================
+# Account Linking Menu
+# ============================================================================
+
+def _display_account_linking_menu(auth):
+    """Display account linking sub-menu"""
+    while True:
+        if not auth.check_session():
+            return
+
+        user = auth.current_user
+        print("\nAccount Linking:")
+        print("================")
+        print("1. View Linked Accounts")
+        print("2. Create Link Request")
+        print("3. View Pending Link Requests")
+        print("4. Switch Active Role")
+        print("5. Revert to Original Role")
+        print("6. Unlink Account")
+        print("7. Back")
+
+        choice = input("\nEnter your choice (1-7): ")
+
+        if choice == '1':
+            linked = auth.get_linked_accounts()
+            if linked:
+                print("\nLinked Accounts:")
+                print("=" * 70)
+                for acc in linked:
+                    print(f"  Link #{acc.get('id')}: {acc.get('primary_username', 'N/A')} <-> {acc.get('secondary_username', 'N/A')} (Active: {acc.get('is_active')})")
+                print("=" * 70)
+            else:
+                print("No linked accounts found.")
+
+        elif choice == '2':
+            target = input("Enter user ID to link with: ").strip()
+            reason = input("Reason for linking (optional): ").strip() or None
+            try:
+                result = auth.create_link_request(int(target), reason)
+                if result.get('success'):
+                    print(f"Link request created (ID: {result.get('request_id')})")
+                else:
+                    print(f"Failed: {result.get('error')}")
+            except ValueError:
+                print("Invalid user ID.")
+
+        elif choice == '3':
+            direction = input("View (i)ncoming or (o)utgoing requests? [i]: ").strip().lower()
+            direction = 'outgoing' if direction == 'o' else 'incoming'
+            requests = auth.get_link_requests(status='pending', direction=direction)
+            if requests:
+                print(f"\n{direction.title()} Link Requests:")
+                for req in requests:
+                    print(f"  Request #{req.get('id')}: from user {req.get('requesting_user_id')} to user {req.get('target_user_id')} - {req.get('status')}")
+
+                if direction == 'incoming':
+                    action = input("\nApprove or Reject a request? (a/r/n): ").strip().lower()
+                    if action in ('a', 'r'):
+                        req_id = input("Enter request ID: ").strip()
+                        try:
+                            if action == 'a':
+                                result = auth.approve_link_request(int(req_id))
+                            else:
+                                reason = input("Rejection reason (optional): ").strip() or None
+                                result = auth.reject_link_request(int(req_id), reason)
+                            print(f"{'Approved' if action == 'a' else 'Rejected'}: {result.get('success')}")
+                        except ValueError:
+                            print("Invalid request ID.")
+            else:
+                print("No pending requests.")
+
+        elif choice == '4':
+            linked = auth.get_linked_accounts()
+            if linked:
+                for acc in linked:
+                    print(f"  Link #{acc.get('id')}: {acc.get('primary_username')} <-> {acc.get('secondary_username')}")
+                link_id = input("Enter link ID to switch to: ").strip()
+                try:
+                    result = auth.switch_active_role(int(link_id))
+                    if result.get('success'):
+                        print(f"Switched to role: {result.get('new_role')}")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+                except ValueError:
+                    print("Invalid link ID.")
+            else:
+                print("No linked accounts to switch to.")
+
+        elif choice == '5':
+            result = auth.revert_role()
+            if result.get('success'):
+                print(f"Reverted to original role: {result.get('role')}")
+            else:
+                print(f"Failed: {result.get('error')}")
+
+        elif choice == '6':
+            link_id = input("Enter link ID to unlink: ").strip()
+            try:
+                confirm = input("Are you sure? (y/n): ").lower()
+                if confirm == 'y':
+                    result = auth.unlink_account(int(link_id))
+                    if result.get('success'):
+                        print("Account unlinked.")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+            except ValueError:
+                print("Invalid link ID.")
+
+        elif choice == '7':
+            return
+        else:
+            print("Invalid choice.")
+
+
+# ============================================================================
+# WebAuthn Menu
+# ============================================================================
+
+def _display_webauthn_menu(auth):
+    """Display WebAuthn/FIDO2 security key sub-menu"""
+    while True:
+        if not auth.check_session():
+            return
+
+        print("\nSecurity Keys (WebAuthn/FIDO2):")
+        print("===============================")
+        print("1. List Registered Keys")
+        print("2. Register New Key")
+        print("3. Remove Key")
+        print("4. Rename Key")
+        print("5. Back")
+
+        choice = input("\nEnter your choice (1-5): ")
+
+        if choice == '1':
+            keys = auth.list_webauthn_keys()
+            if keys:
+                print("\nRegistered Security Keys:")
+                print("=" * 70)
+                for key in keys:
+                    name = key.get('credential_name', 'Unnamed')
+                    cred_id = key.get('credential_id', '')[:16] + '...'
+                    created = key.get('created_at', 'Unknown')
+                    active = 'Active' if key.get('is_active') else 'Inactive'
+                    print(f"  {name} (ID: {cred_id}) - {active} - Registered: {created}")
+                print("=" * 70)
+            else:
+                print("No security keys registered.")
+
+        elif choice == '2':
+            name = input("Key name (e.g., 'My YubiKey'): ").strip()
+            result = auth.register_webauthn_key(name or None)
+            if result.get('success'):
+                print(f"\nRegistration challenge created (session: {result.get('session_id', '')[:8]}...)")
+                print("Complete registration using your security key device.")
+                print("Note: Full WebAuthn registration requires a browser or compatible client.")
+            else:
+                print(f"Failed: {result.get('error')}")
+
+        elif choice == '3':
+            cred_id = input("Enter credential ID to remove: ").strip()
+            if cred_id:
+                confirm = input("Are you sure? (y/n): ").lower()
+                if confirm == 'y':
+                    result = auth.remove_webauthn_key(cred_id)
+                    if result.get('success'):
+                        print("Key removed.")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+
+        elif choice == '4':
+            cred_id = input("Enter credential ID to rename: ").strip()
+            new_name = input("New name: ").strip()
+            if cred_id and new_name:
+                result = auth.rename_webauthn_key(cred_id, new_name)
+                if result.get('success'):
+                    print("Key renamed.")
+                else:
+                    print(f"Failed: {result.get('error')}")
+
+        elif choice == '5':
+            return
+        else:
+            print("Invalid choice.")
+
+
+# ============================================================================
+# Biometric Menu
+# ============================================================================
+
+def _display_biometric_menu(auth):
+    """Display biometric authentication sub-menu"""
+    while True:
+        if not auth.check_session():
+            return
+
+        print("\nBiometric Authentication:")
+        print("=========================")
+        print("1. List Enrollments")
+        print("2. Enroll Face")
+        print("3. Enroll Fingerprint")
+        print("4. Revoke Enrollment")
+        print("5. Back")
+
+        choice = input("\nEnter your choice (1-5): ")
+
+        if choice == '1':
+            enrollments = auth.list_biometric_enrollments()
+            if enrollments:
+                print("\nBiometric Enrollments:")
+                print("=" * 70)
+                for e in enrollments:
+                    bio_type = e.get('biometric_type', 'Unknown')
+                    active = 'Active' if e.get('is_active') else 'Revoked'
+                    quality = e.get('quality_score', 'N/A')
+                    created = e.get('enrolled_at', 'Unknown')
+                    print(f"  #{e.get('id')} - {bio_type} - {active} - Quality: {quality} - Enrolled: {created}")
+                print("=" * 70)
+            else:
+                print("No biometric enrollments found.")
+
+        elif choice == '2':
+            print("\nFace Enrollment:")
+            print("Note: In a production environment, this would capture a photo via webcam.")
+            print("For CLI testing, provide a base64-encoded face template.")
+            data = input("Enter face template data (base64): ").strip()
+            if data:
+                result = auth.enroll_biometric('face', data)
+                if result.get('success'):
+                    print(f"Face enrolled successfully (ID: {result.get('enrollment_id')})")
+                else:
+                    print(f"Failed: {result.get('error')}")
+            else:
+                print("No data provided.")
+
+        elif choice == '3':
+            print("\nFingerprint Enrollment:")
+            print("Note: Requires a compatible fingerprint reader.")
+            data = input("Enter fingerprint template data (base64): ").strip()
+            if data:
+                result = auth.enroll_biometric('fingerprint', data)
+                if result.get('success'):
+                    print(f"Fingerprint enrolled successfully (ID: {result.get('enrollment_id')})")
+                else:
+                    print(f"Failed: {result.get('error')}")
+            else:
+                print("No data provided.")
+
+        elif choice == '4':
+            enrollment_id = input("Enter enrollment ID to revoke: ").strip()
+            try:
+                confirm = input("Are you sure? (y/n): ").lower()
+                if confirm == 'y':
+                    result = auth.revoke_biometric_enrollment(int(enrollment_id))
+                    if result.get('success'):
+                        print("Enrollment revoked.")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+            except ValueError:
+                print("Invalid enrollment ID.")
+
+        elif choice == '5':
+            return
+        else:
+            print("Invalid choice.")
+
+
+# ============================================================================
+# Delegated Access Menu
+# ============================================================================
+
+def _display_delegated_access_menu(auth):
+    """Display delegated access sub-menu"""
+    while True:
+        if not auth.check_session():
+            return
+
+        user = auth.current_user
+        role = user.get('role', '')
+
+        print("\nDelegated Access:")
+        print("=================")
+
+        if role == 'student':
+            print("1. View My Delegations (Granted)")
+            print("2. Grant Access to Someone")
+            print("3. Revoke a Delegation")
+            print("4. View Delegation Requests")
+            print("5. Back")
+
+            choice = input("\nEnter your choice (1-5): ")
+
+            if choice == '1':
+                delegations = auth.get_delegations_for_user(direction='granted')
+                if delegations:
+                    print("\nActive Delegations (you granted):")
+                    for d in delegations:
+                        print(f"  #{d.get('id')} -> User {d.get('delegate_user_id')} | Scopes: {d.get('scope_keys')} | Expires: {d.get('expires_at', 'Never')}")
+                else:
+                    print("No active delegations.")
+
+            elif choice == '2':
+                delegate_id = input("Enter user ID to grant access to: ").strip()
+                print("\nAvailable scopes: view_grades, view_finances, view_health, view_attendance, view_timetable, make_payments, communicate_staff")
+                scopes = input("Enter scope keys (comma-separated): ").strip()
+                relationship = input("Relationship (e.g., parent, guardian): ").strip() or None
+                expires = input("Expiry date (YYYY-MM-DD, blank for no expiry): ").strip() or None
+                try:
+                    scope_keys = [s.strip() for s in scopes.split(',') if s.strip()]
+                    result = auth.create_delegation(int(delegate_id), scope_keys, relationship, expires)
+                    if result.get('success'):
+                        print(f"Delegation created (ID: {result.get('delegation_id')})")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+                except ValueError:
+                    print("Invalid input.")
+
+            elif choice == '3':
+                delegation_id = input("Enter delegation ID to revoke: ").strip()
+                try:
+                    result = auth.revoke_delegation(int(delegation_id))
+                    if result.get('success'):
+                        print("Delegation revoked.")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+                except ValueError:
+                    print("Invalid delegation ID.")
+
+            elif choice == '4':
+                requests = auth.get_delegation_requests(direction='incoming')
+                if requests:
+                    print("\nPending Delegation Requests:")
+                    for r in requests:
+                        print(f"  #{r.get('id')} from User {r.get('requester_user_id')} | Relationship: {r.get('relationship')} | Scopes: {r.get('requested_scope_keys')}")
+                    action = input("\nApprove or Reject? (a/r/n): ").strip().lower()
+                    if action in ('a', 'r'):
+                        req_id = input("Request ID: ").strip()
+                        try:
+                            if action == 'a':
+                                result = auth.approve_delegation_request(int(req_id))
+                            else:
+                                reason = input("Reason (optional): ").strip() or None
+                                result = auth.reject_delegation_request(int(req_id), reason)
+                            print(f"Result: {'Success' if result.get('success') else result.get('error')}")
+                        except ValueError:
+                            print("Invalid ID.")
+                else:
+                    print("No pending requests.")
+
+            elif choice == '5':
+                return
+
+        elif role == 'parent':
+            print("1. View My Delegations (Received)")
+            print("2. Request Access to a Student")
+            print("3. View My Requests")
+            print("4. Act as Delegate")
+            print("5. Stop Acting as Delegate")
+            print("6. Back")
+
+            choice = input("\nEnter your choice (1-6): ")
+
+            if choice == '1':
+                delegations = auth.get_delegations_for_user(direction='received')
+                if delegations:
+                    print("\nActive Delegations (granted to you):")
+                    for d in delegations:
+                        print(f"  #{d.get('id')} from User {d.get('grantor_user_id')} | Scopes: {d.get('scope_keys')} | Expires: {d.get('expires_at', 'Never')}")
+                else:
+                    print("No active delegations.")
+
+            elif choice == '2':
+                target_id = input("Enter student user ID: ").strip()
+                relationship = input("Relationship (parent/guardian): ").strip()
+                print("\nAvailable scopes: view_grades, view_finances, view_health, view_attendance, view_timetable, make_payments, communicate_staff")
+                scopes = input("Enter requested scope keys (comma-separated): ").strip()
+                reason = input("Reason for request: ").strip() or None
+                try:
+                    scope_keys = [s.strip() for s in scopes.split(',') if s.strip()]
+                    result = auth.create_delegation_request(int(target_id), relationship, scope_keys, reason)
+                    if result.get('success'):
+                        print(f"Request submitted (ID: {result.get('request_id')})")
+                    else:
+                        print(f"Failed: {result.get('error')}")
+                except ValueError:
+                    print("Invalid input.")
+
+            elif choice == '3':
+                requests = auth.get_delegation_requests(direction='outgoing')
+                if requests:
+                    print("\nMy Delegation Requests:")
+                    for r in requests:
+                        print(f"  #{r.get('id')} to User {r.get('target_user_id')} | Status: {r.get('status')}")
+                else:
+                    print("No requests found.")
+
+            elif choice == '4':
+                delegations = auth.get_delegations_for_user(direction='received')
+                if delegations:
+                    for d in delegations:
+                        print(f"  #{d.get('id')} from User {d.get('grantor_user_id')} | Scopes: {d.get('scope_keys')}")
+                    target_id = input("Enter grantor user ID to act on behalf of: ").strip()
+                    try:
+                        auth.session_manager.current_user['acting_as_delegate_for'] = int(target_id)
+                        print(f"Now acting as delegate for user {target_id}. Your permissions are scoped.")
+                    except (ValueError, TypeError):
+                        print("Invalid user ID.")
+                else:
+                    print("No delegations available.")
+
+            elif choice == '5':
+                if user.get('acting_as_delegate_for'):
+                    auth.session_manager.current_user['acting_as_delegate_for'] = None
+                    print("Stopped acting as delegate.")
+                else:
+                    print("You are not currently acting as a delegate.")
+
+            elif choice == '6':
+                return
+
+        else:
+            # Admin or other roles
+            print("1. View All Delegations")
+            print("2. View Delegation Requests")
+            print("3. Expire Overdue Delegations")
+            print("4. Back")
+
+            choice = input("\nEnter your choice (1-4): ")
+
+            if choice == '1':
+                user_id_input = input("Enter user ID (blank for all): ").strip()
+                user_id = int(user_id_input) if user_id_input else None
+                delegations = auth.get_delegations_for_user(user_id, direction='granted')
+                if delegations:
+                    print("\nDelegations:")
+                    for d in delegations:
+                        print(f"  #{d.get('id')} | Grantor: {d.get('grantor_user_id')} -> Delegate: {d.get('delegate_user_id')} | Active: {d.get('is_active')}")
+                else:
+                    print("No delegations found.")
+
+            elif choice == '2':
+                requests = auth.get_delegation_requests(status='pending')
+                if requests:
+                    print("\nPending Delegation Requests:")
+                    for r in requests:
+                        print(f"  #{r.get('id')} | Requester: {r.get('requester_user_id')} -> Target: {r.get('target_user_id')}")
+                else:
+                    print("No pending requests.")
+
+            elif choice == '3':
+                result = auth.expire_delegations()
+                if result.get('success'):
+                    print(f"Expired {result.get('expired_count', 0)} delegation(s).")
+                else:
+                    print(f"Failed: {result.get('error')}")
+
+            elif choice == '4':
+                return
 
 
 # ============================================================================

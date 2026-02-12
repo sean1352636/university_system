@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 
 # Mock matplotlib and tkinter before importing the module
@@ -29,7 +29,6 @@ except ImportError as e:
 
 pytestmark = pytest.mark.skipif(not IMPORT_SUCCESS, reason="Finance GUI modules not available in headless environment")
 
-
 class MockGUI:
     """Mock GUI for testing"""
     def __init__(self):
@@ -37,19 +36,16 @@ class MockGUI:
         self.conn = None
         self.finance_system = None
 
-
 @pytest.fixture
 def mock_gui():
     """Create mock GUI"""
     gui = MockGUI()
     yield gui
 
-
 @pytest.fixture
 def db_manager(mock_gui):
     """Create DatabaseManager instance"""
     return DatabaseManager(mock_gui)
-
 
 class TestDatabaseManagerInit:
     """Test DatabaseManager initialization"""
@@ -72,7 +68,6 @@ class TestDatabaseManagerInit:
         delattr(mock_gui, 'finance_system')
         manager = DatabaseManager(mock_gui)
         assert manager.finance_system is None
-
 
 class TestDatabaseInitialization:
     """Test database initialization methods"""
@@ -126,7 +121,6 @@ class TestDatabaseInitialization:
         mock_conn.commit.assert_called()
         mock_conn.close.assert_called_once()
 
-
 class TestDatabaseCleaning:
     """Test database cleaning operations"""
 
@@ -158,7 +152,6 @@ class TestDatabaseCleaning:
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
         mock_msgbox.showinfo.assert_called_once()
-
 
 class TestDatabaseBackup:
     """Test database backup operations"""
@@ -207,7 +200,6 @@ class TestDatabaseBackup:
 
         # Should return without error
 
-
 class TestDatabaseStats:
     """Test database statistics display"""
 
@@ -232,7 +224,6 @@ class TestDatabaseStats:
         db_manager.show_database_stats()
 
         mock_conn.close.assert_called_once()
-
 
 class TestDatabaseFix:
     """Test database fix operations"""
@@ -263,7 +254,6 @@ class TestDatabaseFix:
         db_manager.gui_quick_fix_database()
         mock_msgbox.askyesno.assert_called_once()
 
-
 class TestHelperMethods:
     """Test helper methods"""
 
@@ -293,7 +283,6 @@ class TestHelperMethods:
             # If we get here, window was created successfully
         except Exception as e:
             pytest.fail(f"show_text_window raised exception: {e}")
-
 
 class TestDatabaseVerification:
     """Test database verification operations"""

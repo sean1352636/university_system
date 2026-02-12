@@ -12,7 +12,7 @@ This module tests the ConnectionPool class under high concurrency scenarios to e
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -20,7 +20,6 @@ from pathlib import Path
 
 from university_system.infrastructure.database.db import ConnectionPool
 from university_system.infrastructure.exceptions import DatabaseConnectionError
-
 
 @pytest.fixture
 def temp_db():
@@ -54,7 +53,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestConnectionPoolConcurrency:
     """Test connection pool behavior under concurrent access."""
@@ -412,7 +410,6 @@ class TestConnectionPoolConcurrency:
 
         assert final_pool_size <= 5, f"Connection leak detected: {final_pool_size} connections"
 
-
 class TestConnectionPoolDeadlockPrevention:
     """Test deadlock prevention in connection pool."""
 
@@ -492,7 +489,6 @@ class TestConnectionPoolDeadlockPrevention:
         assert len(results) == 2
         assert "B-success" in results or "B-timeout" in results
 
-
 class TestConnectionPoolPerformance:
     """Test connection pool performance characteristics."""
 
@@ -559,7 +555,6 @@ class TestConnectionPoolPerformance:
 
         # Should complete in reasonable time (less than 10 seconds for 200 ops)
         assert elapsed < 10.0, f"Throughput too low: {operations / elapsed:.1f} ops/sec"
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

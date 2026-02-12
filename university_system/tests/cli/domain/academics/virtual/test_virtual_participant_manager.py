@@ -13,13 +13,12 @@ Tests all classes, functions, and functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.services.virtual_classroom.participant_manager import (
     ParticipantManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -84,12 +83,10 @@ def temp_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a ParticipantManager instance with temp database."""
     return ParticipantManager(db_path=temp_db)
-
 
 class TestParticipantManagerInit:
     """Test ParticipantManager initialization."""
@@ -103,7 +100,6 @@ class TestParticipantManagerInit:
         """Test initialization with custom database path."""
         manager = ParticipantManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestAddParticipant:
     """Test adding participants to sessions."""
@@ -163,7 +159,6 @@ class TestAddParticipant:
 
         assert join_time is not None
 
-
 class TestRecordLeave:
     """Test recording when participants leave."""
 
@@ -209,7 +204,6 @@ class TestRecordLeave:
         result = manager.record_leave(participant_id)
         assert result is False
 
-
 class TestUpdateAttendanceStatus:
     """Test updating attendance status."""
 
@@ -246,7 +240,6 @@ class TestUpdateAttendanceStatus:
         result = manager.update_attendance_status(99999, 'present')
         assert result is False
 
-
 class TestRaiseHand:
     """Test hand raising functionality."""
 
@@ -277,7 +270,6 @@ class TestRaiseHand:
         """Test raising hand for non-existent participant."""
         result = manager.raise_hand(99999)
         assert result is False
-
 
 class TestToggleMute:
     """Test mute toggle functionality."""
@@ -315,7 +307,6 @@ class TestToggleMute:
         result = manager.toggle_mute(99999, True)
         assert result is False
 
-
 class TestToggleVideo:
     """Test video toggle functionality."""
 
@@ -351,7 +342,6 @@ class TestToggleVideo:
         """Test toggling video for non-existent participant."""
         result = manager.toggle_video(99999, True)
         assert result is False
-
 
 class TestGetSessionParticipants:
     """Test retrieving session participants."""
@@ -391,7 +381,6 @@ class TestGetSessionParticipants:
         participants = manager.get_session_participants(1)
         assert participants == []
 
-
 class TestGetParticipantByUser:
     """Test getting specific participant records."""
 
@@ -416,7 +405,6 @@ class TestGetParticipantByUser:
         participant = manager.get_participant_by_user(999, 101)
         assert participant is None
 
-
 class TestGetAttendanceSummary:
     """Test attendance summary statistics."""
 
@@ -440,7 +428,6 @@ class TestGetAttendanceSummary:
         """Test attendance summary for session with no participants."""
         summary = manager.get_attendance_summary(1)
         assert summary == {}
-
 
 class TestGetUserAttendanceHistory:
     """Test retrieving user attendance history."""
@@ -521,7 +508,6 @@ class TestGetUserAttendanceHistory:
         history = manager.get_user_attendance_history(999)
         assert history == []
 
-
 class TestDatabaseConnection:
     """Test database connection handling."""
 
@@ -537,7 +523,6 @@ class TestDatabaseConnection:
         assert result[0] == 1
 
         conn.close()
-
 
 class TestErrorHandling:
     """Test error handling in various scenarios."""
@@ -557,7 +542,6 @@ class TestErrorHandling:
 
         history = manager.get_user_attendance_history(101)
         assert history == []
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

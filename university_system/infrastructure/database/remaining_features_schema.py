@@ -3,8 +3,8 @@ Consolidated schema for remaining features 4-8
 Creates all tables for: Mobile App, Accessibility, Parent Portal, Transportation, Blockchain
 """
 
-import sqlite3
-from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from university_system.infrastructure.database.db import sqlite3
+from university_system.core.paths import DEFAULT_DB_PATH
 
 # Feature 4: Mobile App (PWA) Infrastructure
 MOBILE_APP_SCHEMA = """
@@ -624,7 +624,6 @@ def create_all_remaining_tables():
     except Exception as e:
         print(f"Error creating tables: {e}")
         return False
-
 
 if __name__ == "__main__":
     create_all_remaining_tables()

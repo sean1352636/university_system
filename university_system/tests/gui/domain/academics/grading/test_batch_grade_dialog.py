@@ -9,13 +9,12 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.batch_grade_dialog import (
     BatchGradeDialog, percentage_to_letter
 )
-
 
 @pytest.fixture
 def root_window():
@@ -27,7 +26,6 @@ def root_window():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_connection():
     """Create a mock database connection and cursor"""
@@ -36,7 +34,6 @@ def mock_connection():
     conn.cursor.return_value = cursor
     conn.commit = Mock()
     return conn, cursor
-
 
 class TestBatchGradeDialog:
     """Test suite for BatchGradeDialog"""
@@ -344,7 +341,6 @@ class TestBatchGradeDialog:
         values = dialog.students_tree.item(dialog.students_tree.get_children()[0], 'values')
         assert values[2] == 85.0  # Current score
 
-
 class TestBatchGradeDialogIntegration:
     """Integration tests for BatchGradeDialog"""
 
@@ -406,7 +402,6 @@ class TestBatchGradeDialogIntegration:
 
         # Verify complete workflow
         assert dialog.result is True
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

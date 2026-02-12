@@ -106,7 +106,7 @@ def playMusic(music):
 		winsound.PlaySound(music, winsound.SND_ASYNC)
 	except FileNotFoundError:
 		print('The required music file does not exist.')
-	except:
+	except Exception:
 		print('winsound module only works on windows.')
 		print('try playing the sound with os module')
 

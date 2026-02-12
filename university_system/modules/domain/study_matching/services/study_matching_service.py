@@ -4,7 +4,7 @@ Peer Study Matching Service
 Connects students for collaborative learning with intelligent matching algorithms.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple, Set
 import json
@@ -12,7 +12,7 @@ import hashlib
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 class StudyMatchingService:
     """Service for peer study matching and virtual study rooms."""
@@ -934,18 +934,20 @@ class StudyMatchingService:
                 # Decrement old vote count
                 if target_type == 'question':
                     field = 'upvotes' if old_vote == 'upvote' else 'downvotes'
-                    conn.execute(f"""
-                        UPDATE qa_board
-                        SET {field} = {field} - 1
-                        WHERE question_id = ?
-                    """, (target_id,))
+                    safe_field = validate_identifier(field, "column")
+                    conn.execute(
+                        "UPDATE qa_board"
+                        " SET " + safe_field + " = " + safe_field + " - 1"
+                        " WHERE question_id = ?",
+                        (target_id,))
                 else:
                     field = 'upvotes' if old_vote == 'upvote' else 'downvotes'
-                    conn.execute(f"""
-                        UPDATE qa_answers
-                        SET {field} = {field} - 1
-                        WHERE answer_id = ?
-                    """, (target_id,))
+                    safe_field = validate_identifier(field, "column")
+                    conn.execute(
+                        "UPDATE qa_answers"
+                        " SET " + safe_field + " = " + safe_field + " - 1"
+                        " WHERE answer_id = ?",
+                        (target_id,))
 
                 # If same vote type, just remove (toggle off)
                 if old_vote == vote_type:
@@ -961,18 +963,20 @@ class StudyMatchingService:
             # Increment vote count
             if target_type == 'question':
                 field = 'upvotes' if vote_type == 'upvote' else 'downvotes'
-                conn.execute(f"""
-                    UPDATE qa_board
-                    SET {field} = {field} + 1
-                    WHERE question_id = ?
-                """, (target_id,))
+                safe_field = validate_identifier(field, "column")
+                conn.execute(
+                    "UPDATE qa_board"
+                    " SET " + safe_field + " = " + safe_field + " + 1"
+                    " WHERE question_id = ?",
+                    (target_id,))
             else:
                 field = 'upvotes' if vote_type == 'upvote' else 'downvotes'
-                conn.execute(f"""
-                    UPDATE qa_answers
-                    SET {field} = {field} + 1
-                    WHERE answer_id = ?
-                """, (target_id,))
+                safe_field = validate_identifier(field, "column")
+                conn.execute(
+                    "UPDATE qa_answers"
+                    " SET " + safe_field + " = " + safe_field + " + 1"
+                    " WHERE answer_id = ?",
+                    (target_id,))
 
             log_activity('create', 'qa_vote', details={
                 'target_type': target_type,

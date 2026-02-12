@@ -1042,7 +1042,7 @@ class PaymentMethodDialog:
                         ttk.Label(frame, text=f"Student Account Balance: £{balance:.2f}",
                                 font=('Arial', 9),
                                 foreground=balance_color).pack(pady=5)
-            except:
+            except Exception:
                 pass
 
         # Buttons

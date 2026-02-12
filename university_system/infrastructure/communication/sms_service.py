@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 
 from university_system.infrastructure.database.db import get_connection, transaction
-from university_system.modules.shared.constants import paths
+from university_system.core import paths
 
 logger = logging.getLogger(__name__)
 

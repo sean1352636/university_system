@@ -8,6 +8,7 @@ from university_system.infrastructure.email import (
 )
 
 from university_system.infrastructure.database.db import get_connection
+from university_system.core.sql_safety import validate_identifier
 
 # Global variable to store the auth object from main.py
 # Import auth instance management from user_authentication
@@ -1049,11 +1050,10 @@ def edit_internship():
             return
         
         # Update the field
-        cursor.execute(f'''
-        UPDATE internships
-        SET {field_name} = ?
-        WHERE internship_id = ?
-        ''', (new_value, internship_id))
+        safe_field = validate_identifier(field_name, "column")
+        cursor.execute(
+            'UPDATE internships SET ' + safe_field + ' = ? WHERE internship_id = ?',
+            (new_value, internship_id))
         
         conn.commit()
         

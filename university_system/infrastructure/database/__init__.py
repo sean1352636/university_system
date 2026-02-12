@@ -25,6 +25,7 @@ _LAZY_MODULES = {
     'EXPORTS_DIR': 'db',
     'transaction': 'db',
     'atomic_operation': 'db',
+    'savepoint': 'db',
     'ConnectionPool': 'db',
     'get_connection_pool': 'db',
     # Query monitoring

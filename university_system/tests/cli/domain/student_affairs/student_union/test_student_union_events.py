@@ -4,11 +4,10 @@ Tests event management and virtual event functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import events
-
 
 @pytest.fixture
 def mock_cursor():
@@ -18,7 +17,6 @@ def mock_cursor():
     cursor.fetchone = Mock(return_value=None)
     cursor.execute = Mock()
     return cursor
-
 
 class TestManageLiveStreaming:
     """Tests for manage_live_streaming function."""
@@ -43,7 +41,6 @@ class TestManageLiveStreaming:
         assert any('RTMP' in str(call) for call in mock_print.call_args_list)
         assert any('Custom stream configured' in str(call) for call in mock_print.call_args_list)
 
-
 class TestInteractiveVirtualFeatures:
     """Tests for interactive_virtual_features function."""
 
@@ -54,7 +51,6 @@ class TestInteractiveVirtualFeatures:
         
         # Verify interactive features shown
         assert any('Interactive' in str(call) for call in mock_print.call_args_list)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

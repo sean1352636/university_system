@@ -9,13 +9,12 @@ This module tests complete workflows across multiple system components:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
 
 @pytest.mark.integration
 class TestEnrollmentToTranscriptWorkflow:
@@ -143,7 +142,6 @@ class TestEnrollmentToTranscriptWorkflow:
             """, (student_pk, course_pk)).fetchone()[0]
             assert status == "withdrawn"
 
-
 @pytest.mark.integration
 class TestFinancialTransactionWorkflow:
     """Test complete financial transaction workflows"""
@@ -213,7 +211,6 @@ class TestFinancialTransactionWorkflow:
 
             assert total_paid == total_tuition
 
-
 @pytest.mark.integration
 class TestStudentSupportWorkflow:
     """Test student support ticket lifecycle"""
@@ -282,7 +279,6 @@ class TestStudentSupportWorkflow:
             assert ticket['status'] == "resolved"
             assert ticket['assigned_to'] == "staff001"
             assert ticket['resolved_date'] is not None
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

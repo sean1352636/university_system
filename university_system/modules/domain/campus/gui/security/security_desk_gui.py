@@ -535,9 +535,16 @@ class TicketDetailsDialog(tk.Toplevel):
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
                 'text': note_text
             })
+            # Also persist to admin_notes for DB storage
+            existing_notes = self.ticket.get('admin_notes') or ''
+            author = self.current_user.get('name') or self.current_user.get('username', 'Admin')
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            new_note = f"[{timestamp}] {author}: {note_text}"
+            self.ticket['admin_notes'] = f"{existing_notes}\n{new_note}".strip()
 
-        # Send email notification
-        if self.email_notify_var.get() and self.ticket.get('requester_email'):
+        # Send email notification (use requester_email or user_email from DB)
+        recipient_email = self.ticket.get('requester_email') or self.ticket.get('user_email')
+        if self.email_notify_var.get() and recipient_email:
             # Use email template
             try:
                 from university_system.infrastructure.email.template_utils import render_template
@@ -552,6 +559,8 @@ class TicketDetailsDialog(tk.Toplevel):
                     "security_message": security_message,
                     "security_message_html": security_message_html
                 })
+                if not subject or not body:
+                    raise ValueError("Template returned empty subject/body")
             except Exception as template_error:
                 # Fallback to hardcoded email
                 subject = f"Security Ticket {self.ticket['id']} - Status Update"
@@ -567,7 +576,7 @@ Status: {old_status} -> {new_status}
 
                 body += "If you have any questions, please reply to this email or contact the Security Desk."
 
-            send_ticket_email(self.ticket['requester_email'], subject, body, self.ticket['id'])
+            send_ticket_email(recipient_email, subject, body, self.ticket['id'])
 
         if self.on_update:
             self.on_update()

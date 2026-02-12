@@ -24,9 +24,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, mock_open
-import sqlite3
-
-# Import the module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.shared.utils.simple_activity_logger import (
     LogLevel,
     OutputFormat,
@@ -67,7 +65,6 @@ from university_system.modules.shared.utils.simple_activity_logger import (
     create_default_config,
 )
 
-
 class TestEnums:
     """Test all enum classes"""
 
@@ -93,7 +90,6 @@ class TestEnums:
         assert SecurityLevel.MEDIUM.value == 2
         assert SecurityLevel.HIGH.value == 3
         assert SecurityLevel.CRITICAL.value == 4
-
 
 class TestLogEntry:
     """Test LogEntry dataclass"""
@@ -182,7 +178,6 @@ class TestLogEntry:
         parsed = json.loads(json_str)
         assert parsed['user_id'] == "user123"
 
-
 class TestPIIDetector:
     """Test PIIDetector class"""
 
@@ -228,7 +223,6 @@ class TestPIIDetector:
         matches = detector.patterns['ip_address'].findall(test_text)
         assert len(matches) > 0
 
-
 class TestSecurityMonitor:
     """Test SecurityMonitor class"""
 
@@ -246,7 +240,6 @@ class TestSecurityMonitor:
         """Test SecurityMonitor with default configuration"""
         monitor = SecurityMonitor({})
         assert monitor is not None
-
 
 class TestLogRotationManager:
     """Test LogRotationManager class"""
@@ -266,7 +259,6 @@ class TestLogRotationManager:
         manager = LogRotationManager({})
         assert manager is not None
 
-
 class TestDatabaseManager:
     """Test DatabaseManager class"""
 
@@ -278,7 +270,6 @@ class TestDatabaseManager:
             assert manager is not None
             assert manager.db_path == db_path
 
-
 class TestDatabaseLogger:
     """Test DatabaseLogger class"""
 
@@ -289,7 +280,6 @@ class TestDatabaseLogger:
             logger = DatabaseLogger(db_path)
             assert logger is not None
             assert os.path.exists(db_path)
-
 
 class TestCloudIntegration:
     """Test CloudIntegration class"""
@@ -312,7 +302,6 @@ class TestCloudIntegration:
         integration = CloudIntegration(config)
         assert integration is not None
 
-
 class TestAnalyticsEngine:
     """Test AnalyticsEngine class"""
 
@@ -328,7 +317,6 @@ class TestAnalyticsEngine:
         """Test AnalyticsEngine initialization with None"""
         analytics = AnalyticsEngine(None)
         assert analytics is not None
-
 
 class TestEnhancedActivityLogger:
     """Test EnhancedActivityLogger class"""
@@ -380,7 +368,6 @@ class TestEnhancedActivityLogger:
             if logger.processing_thread:
                 logger.processing_thread.join(timeout=2)
 
-
 class TestLoggerPlugin:
     """Test LoggerPlugin base class"""
 
@@ -419,7 +406,6 @@ class TestLoggerPlugin:
         assert result is not None
         plugin.after_log(log_entry, True)
 
-
 class TestPluginManager:
     """Test PluginManager class"""
 
@@ -428,7 +414,6 @@ class TestPluginManager:
         manager = PluginManager()
         assert manager is not None
         assert hasattr(manager, 'plugins')
-
 
 class TestSlackNotificationPlugin:
     """Test SlackNotificationPlugin class"""
@@ -441,7 +426,6 @@ class TestSlackNotificationPlugin:
         assert plugin.enabled is True
         assert plugin.webhook_url == 'https://hooks.slack.com/test'
 
-
 class TestMetricsCollectionPlugin:
     """Test MetricsCollectionPlugin class"""
 
@@ -451,7 +435,6 @@ class TestMetricsCollectionPlugin:
         plugin = MetricsCollectionPlugin(config)
         assert plugin.__class__.__name__ == "MetricsCollectionPlugin"
         assert plugin.enabled is True
-
 
 class TestEmailNotificationPlugin:
     """Test EmailNotificationPlugin class"""
@@ -467,7 +450,6 @@ class TestEmailNotificationPlugin:
         assert plugin.__class__.__name__ == "EmailNotificationPlugin"
         assert plugin.enabled is True
 
-
 class TestAuditTrailPlugin:
     """Test AuditTrailPlugin class"""
 
@@ -478,7 +460,6 @@ class TestAuditTrailPlugin:
             plugin = AuditTrailPlugin(config)
             assert plugin.__class__.__name__ == "AuditTrailPlugin"
             assert plugin.enabled is True
-
 
 class TestHelperFunctions:
     """Test helper functions"""
@@ -661,7 +642,6 @@ class TestHelperFunctions:
                 config = json.load(f)
             assert isinstance(config, dict)
 
-
 class TestIntegration:
     """Integration tests for complex workflows"""
 
@@ -695,7 +675,6 @@ class TestIntegration:
             logger.shutdown_event.set()
             if logger.processing_thread:
                 logger.processing_thread.join(timeout=2)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

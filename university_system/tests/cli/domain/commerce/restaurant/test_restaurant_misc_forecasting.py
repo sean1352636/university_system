@@ -3,14 +3,13 @@ Tests for university_system/modules/core/services/restaurant_misc/forecasting.py
 """
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from io import StringIO
 from unittest import mock
 
 import pytest
 
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import forecasting
-
 
 @pytest.fixture
 def mock_db_connection():
@@ -19,7 +18,6 @@ def mock_db_connection():
     cursor = mock.MagicMock(spec=sqlite3.Cursor)
     conn.cursor.return_value = cursor
     return conn, cursor
-
 
 class TestRevenueForecast:
     """Tests for revenue_forecast function"""
@@ -98,7 +96,6 @@ class TestRevenueForecast:
                     assert 'An error occurred' in output
                     mock_log.assert_called_once()
 
-
 class TestExpenseForecast:
     """Tests for expense_forecast function"""
 
@@ -173,7 +170,6 @@ class TestExpenseForecast:
                     assert 'An error occurred' in output
                     mock_log.assert_called_once()
 
-
 class TestCashFlowProjection:
     """Tests for cash_flow_projection function"""
 
@@ -247,7 +243,6 @@ class TestCashFlowProjection:
                     assert 'An error occurred' in output
                     mock_log.assert_called_once()
 
-
 class TestSeasonalAnalysis:
     """Tests for seasonal_analysis function"""
 
@@ -320,7 +315,6 @@ class TestSeasonalAnalysis:
                     output = fake_out.getvalue()
                     assert 'An error occurred' in output
                     mock_log.assert_called_once()
-
 
 class TestGrowthProjections:
     """Tests for growth_projections function"""

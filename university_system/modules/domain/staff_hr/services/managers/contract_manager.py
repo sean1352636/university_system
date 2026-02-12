@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.core.sql_safety import validate_identifier
 
 
 class ContractManager:
@@ -112,7 +113,7 @@ class ContractManager:
         values = []
         for key, value in data.items():
             if key not in ('contract_id', 'created_at', 'user_id'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -123,11 +124,9 @@ class ContractManager:
         values.append(contract_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE staff_contracts
-                SET {', '.join(fields)}
-                WHERE contract_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE staff_contracts SET ' + ', '.join(fields) + ' WHERE contract_id = ?',
+                values)
             log_activity('update', 'staff_contract', details={
                 'contract_id': contract_id, 'updated_fields': list(data.keys())
             })

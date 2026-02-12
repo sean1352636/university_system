@@ -21,7 +21,7 @@ Functions:
 """
 
 import logging
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -42,7 +42,6 @@ except ImportError:
 
 # Import PERMISSIONS constant - will be populated by core module
 PERMISSIONS = {}
-
 
 def initialize_complete_system():
     """Initialize the complete system with chatbot integration
@@ -96,7 +95,6 @@ def initialize_complete_system():
     except (ImportError, AttributeError) as e:
         print(f"❌ System initialization failed (module error): {e}")
         return None
-
 
 def init_trip_db():
     """Initialize trip management database tables
@@ -165,7 +163,6 @@ def init_trip_db():
     except sqlite3.Error as e:
         logging.error(f"Error initializing trip database: {e}")
         return False
-
 
 def setup_trip_permissions(auth=None):
     """Setup trip management permissions
@@ -248,7 +245,6 @@ def setup_trip_permissions(auth=None):
         logging.error(f"Error setting up trip permissions: {e}")
         return False
 
-
 def set_trip_auth(auth_instance):
     """Set the authentication instance for trip management
     
@@ -258,7 +254,6 @@ def set_trip_auth(auth_instance):
     global _trip_auth_instance
     _trip_auth_instance = auth_instance
     logging.info("Trip management authentication configured")
-
 
 def integrate_trip_management_with_main():
     """Integrate trip management with the main system
@@ -287,10 +282,8 @@ def integrate_trip_management_with_main():
         logging.error(f"Auth error integrating trip management: {e}")
         return False
 
-
 # Global variable for trip auth instance
 _trip_auth_instance = None
-
 
 def add_finance_permissions(auth=None):
     """Add finance-related permissions to the database
@@ -329,7 +322,6 @@ def add_finance_permissions(auth=None):
 
     conn.close()
     return created_permissions
-
 
 def fix_alumni_permissions():
     """Fix alumni permissions for existing database"""
@@ -416,7 +408,6 @@ def fix_alumni_permissions():
     print("\nAlumni permissions have been fixed!")
     print("Please restart your application and try logging in as admin again.")
 
-
 def get_health_role_permissions() -> Dict[str, List[str]]:
     """Return a dictionary of health-related permissions for different roles.
     This can be used when creating new roles in the system.
@@ -461,7 +452,6 @@ def get_health_role_permissions() -> Dict[str, List[str]]:
         ]
     }
 
-
 def add_calendar_permissions():
     """Add calendar-related permissions to the database"""
     from university_system.infrastructure.auth.core import UserAuth
@@ -503,7 +493,6 @@ def add_calendar_permissions():
         
     except sqlite3.Error as e:
         logger.error(f"Error adding calendar permissions: {e}")
-
 
 def setup_ai_detector_permissions():
     """Setup AI detector permissions in the database
@@ -578,7 +567,6 @@ def setup_ai_detector_permissions():
         print(f"❌ Error setting up AI permissions: {e}")
         return False
 
-
 def verify_ai_detector_setup():
     """Verify that the AI detector is properly set up
     
@@ -636,7 +624,6 @@ def verify_ai_detector_setup():
     except (KeyError, TypeError) as e:
         print(f"❌ Data error verifying AI detector setup: {e}")
         return False
-
 
 def add_ai_detector_permissions_to_database(auth_instance):
     """Add AI detector permissions to the database during initialization
@@ -746,7 +733,6 @@ def add_ai_detector_permissions_to_database(auth_instance):
         logging.debug(traceback.format_exc())
         return False
 
-
 def add_plagiarism_permissions(auth_instance=None):
     """Add plagiarism-related permissions to the database
     
@@ -847,7 +833,6 @@ def add_plagiarism_permissions(auth_instance=None):
 
     return created_permissions
 
-
 def fix_library_permissions():
     """Fix library permissions for existing database"""
     conn = get_connection()
@@ -931,7 +916,6 @@ def fix_library_permissions():
     conn.commit()
     conn.close()
     print("\nLibrary permissions have been fixed!")
-
 
 # Export public functions
 __all__ = [

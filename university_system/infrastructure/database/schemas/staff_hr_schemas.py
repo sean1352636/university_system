@@ -12,11 +12,10 @@ Creates tables for:
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.infrastructure.database.db import get_connection
-
 
 def init_staff_hr_schemas():
     """Initialize all Staff HR Management tables."""
@@ -396,7 +395,6 @@ def init_staff_hr_schemas():
         print(f"Error initializing Staff HR schemas: {e}")
         raise
 
-
 def _insert_default_leave_types(cursor):
     """Insert default leave types if they don't exist."""
     default_types = [
@@ -417,7 +415,6 @@ def _insert_default_leave_types(cursor):
             VALUES (?, ?, ?, ?, ?, ?)
         ''', leave_type)
 
-
 def _insert_default_training_courses(cursor):
     """Insert default training courses if they don't exist."""
     default_courses = [
@@ -437,7 +434,6 @@ def _insert_default_training_courses(cursor):
             (name, description, category, duration_hours, is_mandatory)
             VALUES (?, ?, ?, ?, ?)
         ''', course)
-
 
 if __name__ == '__main__':
     init_staff_hr_schemas()

@@ -4,7 +4,7 @@ Tests risk assessment, early warning systems, and dropout prediction
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 import numpy as np
@@ -35,7 +35,6 @@ from university_system.modules.domain.academics.grading.predictive_analytics imp
     generate_comprehensive_risk_report
 )
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def test_db(tmp_path):
@@ -157,7 +156,6 @@ def test_db(tmp_path):
         with patch('university_system.modules.domain.academics.grading.predictive_analytics.get_connection', mock_get_connection):
             yield mock_get_connection
 
-
 @pytest.fixture
 def sample_data(test_db):
     """Insert sample data for testing"""
@@ -235,7 +233,6 @@ def sample_data(test_db):
 
     return test_db
 
-
 class TestPredictiveAnalyticsMenu:
     """Tests for predictive analytics menu"""
 
@@ -256,7 +253,6 @@ class TestPredictiveAnalyticsMenu:
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'Invalid choice' in printed_output
-
 
 class TestIdentifyAtRiskStudents:
     """Tests for identify_at_risk_students function"""
@@ -291,7 +287,6 @@ class TestIdentifyAtRiskStudents:
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'ST001' in printed_output or 'at-risk' in printed_output.lower()
-
 
 class TestCalculateRiskFactors:
     """Tests for calculate_risk_factors function"""
@@ -328,7 +323,6 @@ class TestCalculateRiskFactors:
 
         conn.close()
 
-
 class TestEarlyWarningSystem:
     """Tests for early warning system functions"""
 
@@ -359,7 +353,6 @@ class TestEarlyWarningSystem:
         assert len(alert['recommended_actions']) > 0
 
         conn.close()
-
 
 class TestDropoutRiskAnalysis:
     """Tests for dropout risk analysis functions"""
@@ -426,7 +419,6 @@ class TestDropoutRiskAnalysis:
 
         conn.close()
 
-
 class TestInterventionGeneration:
     """Tests for intervention generation functions"""
 
@@ -476,7 +468,6 @@ class TestInterventionGeneration:
         # Should print intervention plans
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'dropout' in printed_output.lower() or 'intervention' in printed_output.lower()
-
 
 class TestRiskReporting:
     """Tests for risk reporting functions"""
@@ -555,7 +546,6 @@ class TestRiskReporting:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'report' in printed_output.lower() or 'saved' in printed_output.lower()
 
-
 class TestExportFunctions:
     """Tests for export functions"""
 
@@ -623,7 +613,6 @@ class TestExportFunctions:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'exported' in printed_output
 
-
 class TestPredictionModels:
     """Tests for prediction model building"""
 
@@ -644,7 +633,6 @@ class TestPredictionModels:
         assert 'Insufficient data' in printed_output or 'model' in printed_output.lower()
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -11,6 +11,15 @@ import logging
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(__file__))
 
+# Load environment variables from .env file (passwords, API keys, etc.)
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(os.path.dirname(__file__), 'university_system', '.env')
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path)
+except ImportError:
+    pass
+
 # Import error logging utilities
 from university_system.utils import log_error, log_critical_error
 from university_system.tests.run_all_tests import main as run_all_tests
@@ -172,6 +181,10 @@ def main():
         set_auth(auth_instance)
         logger.info("Auth system initialized successfully")
 
+        # Display any auto-generated passwords (when env vars were missing)
+        from university_system.core.defaults import print_generated_passwords
+        print_generated_passwords()
+
         # Initialize database on startup
         logger.info("Initializing database")
         print(_("startup.initializing_db"))
@@ -187,6 +200,12 @@ def main():
                 return run_cli_mode()
             elif mode in ['--gui', '-g', 'gui']:
                 return run_gui_mode()
+            elif mode in ['--api', '-a', 'api']:
+                logger.info("Starting API server")
+                print("Starting API server...")
+                from university_system.api.api_server import run_api_server
+                run_api_server()
+                return True
             elif mode in ['--test', '-t', 'test']:
                 logger.info("Running all tests")
                 print(f"\n  {_('startup.running_tests')}")
@@ -201,6 +220,7 @@ def main():
                 print(_("help.mode_cli"))
                 print(_("help.mode_gui"))
                 print(_("help.mode_test"))
+                print("  --api, -a     Start the REST API server")
                 print(_("help.mode_lang"))
                 print(_("help.mode_help"))
                 print(f"\n{_('help.interactive_note')}")

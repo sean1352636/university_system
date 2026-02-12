@@ -676,7 +676,7 @@ def analyze_provider_workload(auth):
         table = "health_appointments" if c.fetchone() else "appointments"
 
         # Introspect columns
-        c.execute(f"PRAGMA table_info({table})")
+        c.execute("PRAGMA table_info([" + table + "])")
         cols = [row[1] for row in c.fetchall()]
 
         provider_col = next((x for x in ("provider", "provider_id", "practitioner_id", "staff_id") if x in cols), None)
@@ -684,13 +684,13 @@ def analyze_provider_workload(auth):
 
         # Datetime expression (prefer date+time, else appointment_datetime, else date only)
         if "appointment_date" in cols and "appointment_time" in cols:
-            dt_expr = f"{table}.appointment_date||' '||{table}.appointment_time"
+            dt_expr = table + ".appointment_date||' '||" + table + ".appointment_time"
         elif "appointment_datetime" in cols:
-            dt_expr = f"{table}.appointment_datetime"
+            dt_expr = table + ".appointment_datetime"
         elif "date" in cols:
-            dt_expr = f"{table}.date"
+            dt_expr = table + ".date"
         elif "scheduled_time" in cols:
-            dt_expr = f"{table}.scheduled_time"
+            dt_expr = table + ".scheduled_time"
         else:
             dt_expr = None  # fall back to whole-table counts
 
@@ -700,13 +700,13 @@ def analyze_provider_workload(auth):
             return
 
         # Last 30 days per provider
-        where_30 = f"WHERE datetime({dt_expr}) >= datetime('now','localtime','-30 day')" if dt_expr else ""
-        c.execute(f"""
-            SELECT {provider_col} AS provider, COUNT(*) AS n
-            FROM {table} {where_30}
-            GROUP BY {provider_col}
-            ORDER BY n DESC
-        """)
+        where_30 = "WHERE datetime(" + dt_expr + ") >= datetime('now','localtime','-30 day')" if dt_expr else ""
+        c.execute(
+            "SELECT [" + provider_col + "] AS provider, COUNT(*) AS n"
+            " FROM [" + table + "] " + where_30 +
+            " GROUP BY [" + provider_col + "]"
+            " ORDER BY n DESC"
+        )
         rows_30 = c.fetchall()
         if rows_30:
             print("\nLast 30 days (booked/completed/cancelled mixed):")
@@ -716,15 +716,15 @@ def analyze_provider_workload(auth):
         # Upcoming 7 days (scheduled/pending only)
         where_up = "WHERE 1=1"
         if dt_expr:
-            where_up += f" AND datetime({dt_expr}) >= datetime('now','localtime') AND datetime({dt_expr}) < datetime('now','localtime','+7 day')"
+            where_up += " AND datetime(" + dt_expr + ") >= datetime('now','localtime') AND datetime(" + dt_expr + ") < datetime('now','localtime','+7 day')"
         if status_col:
-            where_up += f" AND ({status_col} IN ('scheduled','booked','pending') OR {status_col} IS NULL)"
-        c.execute(f"""
-            SELECT {provider_col} AS provider, COUNT(*) AS n
-            FROM {table} {where_up}
-            GROUP BY {provider_col}
-            ORDER BY n DESC
-        """)
+            where_up += " AND ([" + status_col + "] IN ('scheduled','booked','pending') OR [" + status_col + "] IS NULL)"
+        c.execute(
+            "SELECT [" + provider_col + "] AS provider, COUNT(*) AS n"
+            " FROM [" + table + "] " + where_up +
+            " GROUP BY [" + provider_col + "]"
+            " ORDER BY n DESC"
+        )
         rows_up = c.fetchall()
         print("\nUpcoming 7 days (scheduled/pending):")
         if rows_up:
@@ -735,12 +735,12 @@ def analyze_provider_workload(auth):
 
         # Status mix (last 30d)
         if status_col:
-            c.execute(f"""
-                SELECT {provider_col} AS provider, {status_col} AS status, COUNT(*) AS n
-                FROM {table} {where_30}
-                GROUP BY {provider_col}, {status_col}
-                ORDER BY {provider_col}, n DESC
-            """)
+            c.execute(
+                "SELECT [" + provider_col + "] AS provider, [" + status_col + "] AS status, COUNT(*) AS n"
+                " FROM [" + table + "] " + where_30 +
+                " GROUP BY [" + provider_col + "], [" + status_col + "]"
+                " ORDER BY [" + provider_col + "], n DESC"
+            )
             rows_mix = c.fetchall()
             if rows_mix:
                 print("\nStatus breakdown (last 30 days):")
@@ -755,12 +755,12 @@ def analyze_provider_workload(auth):
 
         # Average/day per provider (last 30d)
         if dt_expr and rows_30:
-            c.execute(f"""
-                SELECT {provider_col} AS provider, ROUND(COUNT(*)/30.0, 2) AS per_day
-                FROM {table} {where_30}
-                GROUP BY {provider_col}
-                ORDER BY per_day DESC
-            """)
+            c.execute(
+                "SELECT [" + provider_col + "] AS provider, ROUND(COUNT(*)/30.0, 2) AS per_day"
+                " FROM [" + table + "] " + where_30 +
+                " GROUP BY [" + provider_col + "]"
+                " ORDER BY per_day DESC"
+            )
             rows_avg = c.fetchall()
             print("\nAverage appointments per day (last 30 days):")
             for prov, per_day in rows_avg[:10]:
@@ -779,12 +779,12 @@ def analyze_provider_workload(auth):
             cap = {row[0]: row[1] for row in c.fetchall()}
 
             # Last 28 days workload by provider
-            c.execute(f"""
-                SELECT {provider_col} AS provider, COUNT(*) AS n
-                FROM {table}
-                WHERE datetime({dt_expr}) >= datetime('now','localtime','-28 day')
-                GROUP BY {provider_col}
-            """)
+            c.execute(
+                "SELECT [" + provider_col + "] AS provider, COUNT(*) AS n"
+                " FROM [" + table + "]"
+                " WHERE datetime(" + dt_expr + ") >= datetime('now','localtime','-28 day')"
+                " GROUP BY [" + provider_col + "]"
+            )
             util = {}
             for prov, n in c.fetchall():
                 weekly = cap.get(prov, 0)
@@ -1175,12 +1175,20 @@ def show_appointment_utilization_stats(auth):
         c.execute("PRAGMA table_info(appointments)")
         cols = [row[1] for row in c.fetchall()]
 
-        status_col   = next((x for x in ("status", "appointment_status") if x in cols), None)
-        provider_col = next((x for x in ("provider_id", "practitioner_id", "staff_id") if x in cols), None)
+        VALID_STATUS_COLS = {"status", "appointment_status"}
+        VALID_PROVIDER_COLS = {"provider_id", "practitioner_id", "staff_id"}
+        VALID_DT_COLS = {
+            "start_time", "scheduled_time", "appointment_datetime", "appointment_time",
+            "appointment_date", "date", "datetime", "start_at", "created_at",
+        }
+        VALID_MODIFIERS = {"-30 day", "-7 day", "start of day"}
+
+        status_col   = next((x for x in ("status", "appointment_status") if x in cols and x in VALID_STATUS_COLS), None)
+        provider_col = next((x for x in ("provider_id", "practitioner_id", "staff_id") if x in cols and x in VALID_PROVIDER_COLS), None)
         dt_candidates = [x for x in (
             "start_time", "scheduled_time", "appointment_datetime", "appointment_time",
             "appointment_date", "date", "datetime", "start_at", "created_at"
-        ) if x in cols]
+        ) if x in cols and x in VALID_DT_COLS]
         dt_col = dt_candidates[0] if dt_candidates else None
 
         print("\n===== Appointment Utilization =====")
@@ -1193,10 +1201,12 @@ def show_appointment_utilization_stats(auth):
                 ("Today",        "start of day"),
             ]
             for label, mod in windows:
+                if mod not in VALID_MODIFIERS:
+                    continue
                 if mod == "start of day":
-                    c.execute(f"SELECT COUNT(*) FROM appointments WHERE datetime({dt_col}) >= datetime('now','localtime','start of day')")
+                    c.execute("SELECT COUNT(*) FROM appointments WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','start of day')")
                 else:
-                    c.execute(f"SELECT COUNT(*) FROM appointments WHERE datetime({dt_col}) >= datetime('now','localtime','{mod}')")
+                    c.execute("SELECT COUNT(*) FROM appointments WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','" + mod + "')")
                 total = c.fetchone()[0]
                 print(f"{label}: {total} appointments")
         else:
@@ -1206,7 +1216,7 @@ def show_appointment_utilization_stats(auth):
 
         # Status breakdown
         if status_col:
-            c.execute(f"SELECT {status_col}, COUNT(*) FROM appointments GROUP BY {status_col} ORDER BY COUNT(*) DESC")
+            c.execute("SELECT [" + status_col + "], COUNT(*) FROM appointments GROUP BY [" + status_col + "] ORDER BY COUNT(*) DESC")
             rows = c.fetchall()
             if rows:
                 print("\nBy status:")
@@ -1218,22 +1228,22 @@ def show_appointment_utilization_stats(auth):
         # Top providers (last 30d if datetime available)
         if provider_col:
             if dt_col:
-                c.execute(f"""
-                    SELECT {provider_col}, COUNT(*) AS n
-                    FROM appointments
-                    WHERE datetime({dt_col}) >= datetime('now','localtime','-30 day')
-                    GROUP BY {provider_col}
-                    ORDER BY n DESC
-                    LIMIT 5
-                """)
+                c.execute(
+                    "SELECT [" + provider_col + "], COUNT(*) AS n"
+                    " FROM appointments"
+                    " WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','-30 day')"
+                    " GROUP BY [" + provider_col + "]"
+                    " ORDER BY n DESC"
+                    " LIMIT 5"
+                )
             else:
-                c.execute(f"""
-                    SELECT {provider_col}, COUNT(*) AS n
-                    FROM appointments
-                    GROUP BY {provider_col}
-                    ORDER BY n DESC
-                    LIMIT 5
-                """)
+                c.execute(
+                    "SELECT [" + provider_col + "], COUNT(*) AS n"
+                    " FROM appointments"
+                    " GROUP BY [" + provider_col + "]"
+                    " ORDER BY n DESC"
+                    " LIMIT 5"
+                )
             rows = c.fetchall()
             if rows:
                 print("\nTop providers (by booked count):")
@@ -1244,26 +1254,26 @@ def show_appointment_utilization_stats(auth):
 
         # Hour-of-day and weekday distributions
         if dt_col:
-            c.execute(f"""
-                SELECT strftime('%H', datetime({dt_col})) AS hh, COUNT(*)
-                FROM appointments
-                WHERE {dt_col} IS NOT NULL
-                GROUP BY hh
-                ORDER BY hh
-            """)
+            c.execute(
+                "SELECT strftime('%H', datetime([" + dt_col + "])) AS hh, COUNT(*)"
+                " FROM appointments"
+                " WHERE [" + dt_col + "] IS NOT NULL"
+                " GROUP BY hh"
+                " ORDER BY hh"
+            )
             hours = c.fetchall()
             if hours:
                 print("\nBy hour of day:")
                 for hh, n in hours:
                     print(f" {hh}:00 -> {n}")
 
-            c.execute(f"""
-                SELECT strftime('%w', datetime({dt_col})) AS dow, COUNT(*)
-                FROM appointments
-                WHERE {dt_col} IS NOT NULL
-                GROUP BY dow
-                ORDER BY dow
-            """)
+            c.execute(
+                "SELECT strftime('%w', datetime([" + dt_col + "])) AS dow, COUNT(*)"
+                " FROM appointments"
+                " WHERE [" + dt_col + "] IS NOT NULL"
+                " GROUP BY dow"
+                " ORDER BY dow"
+            )
             dows = {'0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat'}
             rows = c.fetchall()
             if rows:
@@ -3472,6 +3482,8 @@ def generate_health_report(auth):
     elif selected_report == 'Quality Metrics Dashboard':
         from university_system.modules.domain.health.records.quality_assurance import generate_quality_metrics_report
         generate_quality_metrics_report(auth, start_date, end_date)
+    elif selected_report == 'Student Health Summary':
+        generate_student_health_summary_report(auth, start_date, end_date)
     else:
         print("Report type not yet implemented.")
     
@@ -3618,6 +3630,147 @@ def generate_population_health_report(auth, start_date, end_date):
         print(f"Report saved to: {filename}")
         log_audit_event(auth.current_user['id'], 'generate_population_health_report', 'report', filename)
     
+    conn.close()
+
+def generate_student_health_summary_report(auth, start_date, end_date):
+    """Generate a health summary report for an individual student"""
+    student_id = input("Enter student ID: ").strip()
+    if not student_id:
+        print("Student ID is required.")
+        return
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    report_content = []
+    report_content.append("STUDENT HEALTH SUMMARY REPORT")
+    report_content.append("=" * 40)
+    report_content.append(f"Student ID: {student_id}")
+    report_content.append(f"Period: {start_date} to {end_date}")
+    report_content.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report_content.append("")
+
+    # Student demographics
+    cursor.execute('''
+        SELECT first_name, last_name, date_of_birth, gender, email_address
+        FROM students WHERE student_id = ?
+    ''', (student_id,))
+    student = cursor.fetchone()
+
+    if not student:
+        print(f"Student with ID {student_id} not found.")
+        conn.close()
+        return
+
+    report_content.append("STUDENT INFORMATION")
+    report_content.append("-" * 20)
+    report_content.append(f"Name: {student[0]} {student[1]}")
+    report_content.append(f"Date of Birth: {student[2] or 'N/A'}")
+    report_content.append(f"Gender: {student[3] or 'N/A'}")
+    report_content.append(f"Email: {student[4] or 'N/A'}")
+    report_content.append("")
+
+    # Health records in date range
+    cursor.execute('''
+        SELECT record_type, record_date, provider, description
+        FROM health_records
+        WHERE student_id = ? AND record_date BETWEEN ? AND ?
+        ORDER BY record_date DESC
+    ''', (student_id, start_date, end_date))
+    records = cursor.fetchall()
+
+    report_content.append("HEALTH RECORDS")
+    report_content.append("-" * 20)
+    report_content.append(f"Total Records in Period: {len(records)}")
+
+    if records:
+        for record in records:
+            report_content.append(f"\n  Date: {record[1]}")
+            report_content.append(f"  Type: {record[0]}")
+            report_content.append(f"  Provider: {record[2] or 'N/A'}")
+            desc = (record[3] or 'N/A')[:100]
+            report_content.append(f"  Description: {desc}")
+    else:
+        report_content.append("  No health records found in this period.")
+
+    report_content.append("")
+
+    # Active medical conditions
+    cursor.execute('''
+        SELECT condition_name, diagnosis_date, status, severity
+        FROM medical_conditions
+        WHERE student_id = ?
+        ORDER BY diagnosis_date DESC
+    ''', (student_id,))
+    conditions = cursor.fetchall()
+
+    report_content.append("MEDICAL CONDITIONS")
+    report_content.append("-" * 20)
+    if conditions:
+        for cond in conditions:
+            status_str = f" [{cond[2]}]" if cond[2] else ""
+            severity_str = f" (Severity: {cond[3]})" if cond[3] else ""
+            report_content.append(f"  {cond[0]}{status_str}{severity_str} - Diagnosed: {cond[1] or 'N/A'}")
+    else:
+        report_content.append("  No medical conditions on record.")
+
+    report_content.append("")
+
+    # Vaccination records
+    cursor.execute('''
+        SELECT vaccine_name, vaccination_date, dose_number, administered_by
+        FROM vaccinations
+        WHERE student_id = ?
+        ORDER BY vaccination_date DESC
+    ''', (student_id,))
+    vaccinations = cursor.fetchall()
+
+    report_content.append("VACCINATION HISTORY")
+    report_content.append("-" * 20)
+    if vaccinations:
+        for vax in vaccinations:
+            dose_str = f" (Dose {vax[2]})" if vax[2] else ""
+            report_content.append(f"  {vax[0]}{dose_str} - {vax[1] or 'N/A'} by {vax[3] or 'N/A'}")
+    else:
+        report_content.append("  No vaccination records found.")
+
+    report_content.append("")
+
+    # Appointments in date range
+    cursor.execute('''
+        SELECT appointment_date, appointment_type, provider, status
+        FROM appointments
+        WHERE student_id = ? AND appointment_date BETWEEN ? AND ?
+        ORDER BY appointment_date DESC
+    ''', (student_id, start_date, end_date))
+    appointments = cursor.fetchall()
+
+    report_content.append("APPOINTMENTS IN PERIOD")
+    report_content.append("-" * 20)
+    if appointments:
+        for apt in appointments:
+            report_content.append(f"  {apt[0]} - {apt[1]} with {apt[2] or 'N/A'} [{apt[3] or 'N/A'}]")
+    else:
+        report_content.append("  No appointments in this period.")
+
+    # Display and save report
+    print("\n" + "=" * 60)
+    for line in report_content:
+        print(line)
+    print("=" * 60)
+
+    save_report = input("\nSave report to file? (y/n): ").lower()
+    if save_report == 'y':
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"student_health_summary_{student_id}_{timestamp}.txt"
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            for line in report_content:
+                f.write(line + '\n')
+
+        print(f"Report saved to: {filename}")
+        log_audit_event(auth.current_user['id'], 'generate_student_health_summary', 'report', filename)
+
     conn.close()
 
 def screening_recommendations(auth):

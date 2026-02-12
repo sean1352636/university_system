@@ -8,6 +8,7 @@ from university_system.modules.shared.utils.i18n import get_text as _t
 
 # Import database connection
 from university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -466,7 +467,8 @@ def export_data_dialog(self):
 
                                     # Validate join_key against whitelist before using in query
                                     if join_key and join_key in ALLOWED_COLUMNS:
-                                        cursor.execute(f"SELECT {join_key}, module_name FROM modules")
+                                        safe_join_key = validate_identifier(join_key, "column")
+                                        cursor.execute("SELECT " + safe_join_key + ", module_name FROM modules")
                                         module_lookup = {
                                             row[0]: row[1] for row in cursor.fetchall() if row[0] is not None
                                         }
@@ -477,8 +479,9 @@ def export_data_dialog(self):
 
                             # Validate all columns against whitelist before building query
                             if all(col in ALLOWED_COLUMNS for col in select_cols):
-                                column_clause = ", ".join(select_cols)
-                                cursor.execute(f"SELECT {column_clause} FROM student_modules")
+                                validated_cols = [validate_identifier(col, "column") for col in select_cols]
+                                column_clause = ", ".join(validated_cols)
+                                cursor.execute("SELECT " + column_clause + " FROM student_modules")
 
                                 for module_row in cursor.fetchall():
                                     student_id = module_row[0]

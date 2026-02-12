@@ -8,7 +8,12 @@ either infrastructure or modules, preventing circular imports.
 Contents:
     - exceptions: Custom exception hierarchy
     - paths: Centralized file path definitions
-    - types: Common type definitions
+    - defaults: System default values
+    - i18n: Internationalization support
+    - sql_safety: SQL identifier validation
+    - activity_logger: Centralized activity logging
+    - institution_settings: Institution contact configuration
+    - logs: Logging utilities
 """
 
 from university_system.core.exceptions import (

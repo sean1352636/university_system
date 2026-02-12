@@ -820,7 +820,7 @@ class OrderItemDialog:
         try:
             total = self.quantity_var.get() * self.cost_var.get()
             self.total_label.config(text=f"£{total:.2f}")
-        except:
+        except (ValueError, TypeError):
             pass
 
     def add(self):

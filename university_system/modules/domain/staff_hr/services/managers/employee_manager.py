@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 try:
     from university_system.modules.shared.utils.activity_logger import log_activity
@@ -83,7 +84,7 @@ class EmployeeManager:
         values = []
         for key, value in data.items():
             if key not in ('user_id', 'profile_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -94,11 +95,9 @@ class EmployeeManager:
         values.append(user_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE staff_profiles
-                SET {', '.join(fields)}
-                WHERE user_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE staff_profiles SET ' + ', '.join(fields) + ' WHERE user_id = ?',
+                values)
             log_activity('update', 'staff_profile', user_id=user_id,
                         details={'updated_fields': list(data.keys())})
             return True
@@ -175,7 +174,7 @@ class EmployeeManager:
         values = []
         for key, value in data.items():
             if key not in ('document_id', 'user_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -184,11 +183,9 @@ class EmployeeManager:
         values.append(document_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE staff_documents
-                SET {', '.join(fields)}
-                WHERE document_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE staff_documents SET ' + ', '.join(fields) + ' WHERE document_id = ?',
+                values)
             log_activity('update', 'staff_document',
                         details={'document_id': document_id})
             return True

@@ -17,7 +17,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -32,7 +32,6 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
-
 
 TAXI_BOOKING_SCHEMA = """
 CREATE TABLE IF NOT EXISTS taxi_booking_services (
@@ -62,7 +61,6 @@ CREATE TABLE IF NOT EXISTS taxi_booking_tickets (
     FOREIGN KEY (service_id) REFERENCES taxi_booking_services (id)
 );
 """
-
 
 def init_taxi_database():
     """Initialize taxi booking database tables."""
@@ -94,7 +92,6 @@ def init_taxi_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -103,11 +100,9 @@ def get_current_user():
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
 
-
 def generate_ticket_number():
     """Generate unique ticket number."""
     return "TXI-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-
 
 # ==================== SERVICE MANAGEMENT ====================
 
@@ -132,7 +127,6 @@ def get_all_services():
         print(f"Error getting services: {e}")
         return []
 
-
 def get_service_by_id(service_id):
     """Get a specific service by ID."""
     try:
@@ -151,7 +145,6 @@ def get_service_by_id(service_id):
     except Exception as e:
         print(f"Error getting service: {e}")
     return None
-
 
 # ==================== TICKET BOOKING ====================
 
@@ -179,7 +172,6 @@ def create_ticket(service_id, customer_name, pickup, dropoff, distance, total_fa
         print(f"Error creating ticket: {e}")
         return None, None
 
-
 def get_all_tickets():
     """Get all tickets with service details."""
     try:
@@ -204,7 +196,6 @@ def get_all_tickets():
     except Exception as e:
         print(f"Error getting tickets: {e}")
         return []
-
 
 def get_ticket_by_id(ticket_id):
     """Get a specific ticket with full details."""
@@ -231,7 +222,6 @@ def get_ticket_by_id(ticket_id):
         print(f"Error getting ticket: {e}")
     return None
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -239,7 +229,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def print_service_details(service):
     """Print service details."""
@@ -250,7 +239,6 @@ def print_service_details(service):
     print(f"  Base Fare: £{service['base_fare']:.2f}")
     print(f"  Price per km: £{service['price_per_km']:.2f}")
     print(f"  Description: {service['description']}")
-
 
 def print_ticket_details(ticket):
     """Print ticket details."""
@@ -263,7 +251,6 @@ def print_ticket_details(ticket):
     print(f"  Total Fare: £{ticket['total_fare']:.2f}")
     print(f"  Payment Method: {ticket['payment_method']}")
     print(f"  Booking Date: {ticket['booking_date']} at {ticket['booking_time']}")
-
 
 def list_services_menu():
     """List all available taxi services."""
@@ -280,7 +267,6 @@ def list_services_menu():
     for service in services:
         print_service_details(service)
         print("  " + "-" * 70)
-
 
 def book_taxi_menu():
     """Book a taxi."""
@@ -369,7 +355,6 @@ def book_taxi_menu():
     else:
         print("\n  ❌ Failed to create booking.")
 
-
 def view_bookings_menu():
     """View all bookings."""
     print_header("All Taxi Bookings")
@@ -390,7 +375,6 @@ def view_bookings_menu():
         print(f"  {ticket['ticket_number']:<15} {customer:<20} {service:<20} £{ticket['total_fare']:<9.2f} {ticket['booking_date']:<12}")
 
     print()
-
 
 def view_ticket_menu():
     """View ticket details."""
@@ -420,7 +404,6 @@ def view_ticket_menu():
 
     print_header(f"Ticket Details")
     print_ticket_details(ticket)
-
 
 def statistics_menu():
     """Show booking statistics."""
@@ -464,7 +447,6 @@ def statistics_menu():
 
     print()
 
-
 def taxi_booking_menu():
     """Main taxi booking CLI menu."""
     init_taxi_database()
@@ -498,7 +480,6 @@ def taxi_booking_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     taxi_booking_menu()

@@ -73,17 +73,39 @@ class MFAManager:
             codes.append(f"{code[:4]}-{code[4:]}")
         return codes
 
-    def _hash_recovery_code(self, code: str) -> str:
+    def _hash_recovery_code(self, code: str, salt: str = None) -> str:
         """
-        Hash a recovery code for secure storage.
+        Hash a recovery code for secure storage using salted SHA256.
 
         Parameters:
             code: Recovery code to hash
+            salt: Optional salt (generated if not provided)
 
         Returns:
-            str: SHA256 hexadecimal hash of the code
+            str: Salt and hash in format 'salt$hash'
         """
-        return hashlib.sha256(code.encode()).hexdigest()
+        if salt is None:
+            salt = secrets.token_hex(16)
+        code_hash = hashlib.sha256((salt + code).encode()).hexdigest()
+        return f"{salt}${code_hash}"
+
+    def _verify_recovery_code(self, code: str, stored_hash: str) -> bool:
+        """
+        Verify a recovery code against a stored salted hash.
+
+        Parameters:
+            code: Recovery code to verify
+            stored_hash: Stored hash in format 'salt$hash'
+
+        Returns:
+            bool: True if code matches
+        """
+        if '$' in stored_hash:
+            salt, _ = stored_hash.split('$', 1)
+            return secrets.compare_digest(self._hash_recovery_code(code, salt), stored_hash)
+        else:
+            # Legacy unsalted hash fallback
+            return secrets.compare_digest(hashlib.sha256(code.encode()).hexdigest(), stored_hash)
 
     def enable_two_fa(self, user_id: int) -> Dict[str, any]:
         """
@@ -296,21 +318,21 @@ class MFAManager:
             with self.db_manager.get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Hash the provided code
-                code_hash = self._hash_recovery_code(code)
-
-                # Check if code exists and is unused
+                # Fetch all unused codes for user and verify against each (salted hashes)
                 cursor.execute(
-                    'SELECT id FROM two_fa_recovery_codes WHERE user_id = ? AND code_hash = ? AND is_used = 0',
-                    (user_id, code_hash)
+                    'SELECT id, code_hash FROM two_fa_recovery_codes WHERE user_id = ? AND is_used = 0',
+                    (user_id,)
                 )
 
-                result = cursor.fetchone()
+                rows = cursor.fetchall()
+                code_id = None
+                for row in rows:
+                    if self._verify_recovery_code(code, row[1]):
+                        code_id = row[0]
+                        break
 
-                if not result:
+                if code_id is None:
                     return False
-
-                code_id = result[0]
 
                 # Mark code as used
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

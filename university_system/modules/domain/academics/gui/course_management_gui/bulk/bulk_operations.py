@@ -185,62 +185,76 @@ class BulkUpdateDialog:
         ttk.Button(button_frame, text="Update", command=self.perform_update).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
+    _ALLOWED_SELECTION_COLUMNS = frozenset({'department', 'level', 'status'})
+    _ALLOWED_UPDATE_COLUMNS = frozenset({'status', 'max_enrollment', 'course_fee', 'course_type'})
+
     def preview_update(self):
         selection_method = self.selection_method.get()
         criteria_value = self.criteria_value_var.get().strip()
-        
+
         if not criteria_value:
             messagebox.showwarning(_("common.input_required"), "Please enter a value for the selection criteria.")
             return
-        
+
+        if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
+            messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+            return
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
             cursor.execute(query, (criteria_value,))
             courses = cursor.fetchall()
             conn.close()
-            
+
             if courses:
                 preview_text = f"Courses that will be updated ({len(courses)}):\n\n"
                 for code, name in courses:
                     preview_text += f"• {code} - {name}\n"
-                
+
                 messagebox.showinfo("Update Preview", preview_text)
             else:
                 messagebox.showinfo("No Matches", "No courses match the specified criteria.")
-                
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Preview failed: {e}")
-    
+
     def perform_update(self):
         try:
             selection_method = self.selection_method.get()
             criteria_value = self.criteria_value_var.get().strip()
             update_field = self.update_field.get()
             new_value = self.new_value_var.get().strip()
-            
+
             if not criteria_value or not new_value:
                 messagebox.showwarning(_("common.input_required"), "Please fill in all fields.")
                 return
-            
-            if not messagebox.askyesno("Confirm Update", 
+
+            if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
+                messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+                return
+            if update_field not in self._ALLOWED_UPDATE_COLUMNS:
+                messagebox.showerror("Error", f"Invalid update field: {update_field}")
+                return
+
+            if not messagebox.askyesno("Confirm Update",
                 f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"
             cursor.execute(update_query, (new_value, criteria_value))
-            
+
             updated_count = cursor.rowcount
             conn.commit()
             conn.close()
-            
+
             messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
             self.result = True
             self.dialog.destroy()
@@ -309,54 +323,68 @@ class BulkUpdateDialog:
         ttk.Button(button_frame, text="Update", command=self.perform_update).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
+    _ALLOWED_SELECTION_COLUMNS = frozenset({'department', 'level', 'status'})
+    _ALLOWED_UPDATE_COLUMNS = frozenset({'status', 'max_enrollment', 'course_fee', 'course_type'})
+
     def preview_update(self):
         # Show preview of courses that will be affected
         try:
             selection_method = self.selection_method.get()
             criteria_value = self.criteria_value_var.get().strip()
-            
+
             if not criteria_value:
                 messagebox.showwarning(_("common.input_required"), "Please enter a value for the selection criteria.")
                 return
-            
+
+            if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
+                messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+                return
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
             cursor.execute(query, (criteria_value,))
             courses = cursor.fetchall()
             conn.close()
-            
+
             if courses:
                 preview_text = f"Courses that will be updated ({len(courses)}):\n\n"
                 for code, name in courses:
                     preview_text += f"• {code} - {name}\n"
-                
+
                 messagebox.showinfo("Update Preview", preview_text)
             else:
                 messagebox.showinfo("No Matches", "No courses match the specified criteria.")
-                
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Preview failed: {e}")
-    
+
     def perform_update(self):
         try:
             selection_method = self.selection_method.get()
             criteria_value = self.criteria_value_var.get().strip()
             update_field = self.update_field.get()
             new_value = self.new_value_var.get().strip()
-            
+
             if not criteria_value or not new_value:
                 messagebox.showwarning(_("common.input_required"), "Please fill in all fields.")
                 return
-            
+
+            if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
+                messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+                return
+            if update_field not in self._ALLOWED_UPDATE_COLUMNS:
+                messagebox.showerror("Error", f"Invalid update field: {update_field}")
+                return
+
             # Confirm update
             if not messagebox.askyesno("Confirm Update", f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"

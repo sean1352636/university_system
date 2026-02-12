@@ -11,7 +11,7 @@ from collections import deque
 
 # i18n support
 try:
-    from university_system.modules.shared.utils.i18n import get_text as _t
+    from university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, **kwargs):
         return key
@@ -24,7 +24,7 @@ _email_queue: deque[dict[str, Any]] = deque(maxlen=1000)
 
 try:
     # Reuse the handle_exception decorator from the shared logging utils if available
-    from university_system.modules.shared.utils.logs import handle_exception as _shared_handle_exception
+    from university_system.core.logs import handle_exception as _shared_handle_exception
 except Exception:
     # Fallback: define a no-op decorator
     def _shared_handle_exception(func):  # type: ignore[no-redef]

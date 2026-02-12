@@ -286,10 +286,12 @@ class AcademicCalendarManager:
                 '''
             }
 
+            from university_system.core.sql_safety import validate_identifier
             for table_name, create_sql in required_tables.items():
                 try:
                     # Test if table exists by querying it
-                    self.db_manager.execute_query(f"SELECT COUNT(*) FROM {table_name} LIMIT 1")
+                    safe_table = validate_identifier(table_name, "table")
+                    self.db_manager.execute_query("SELECT COUNT(*) FROM [" + safe_table + "] LIMIT 1")
                     logger.debug(f"Table {table_name} exists")
                 except Exception:
                     # Table doesn't exist, create it
@@ -733,10 +735,12 @@ class AcademicCalendarManager:
                 'academic_years', 'semesters', 'events', 'event_categories'
             ]
 
+            from university_system.core.sql_safety import validate_identifier
             missing_tables = []
             for table in required_tables:
                 try:
-                    self.db_manager.execute_query(f"SELECT COUNT(*) FROM {table} LIMIT 1")
+                    safe_table = validate_identifier(table, "table")
+                    self.db_manager.execute_query("SELECT COUNT(*) FROM [" + safe_table + "] LIMIT 1")
                 except Exception:
                     missing_tables.append(table)
 
@@ -1111,15 +1115,17 @@ class AcademicCalendarManager:
                 set_clauses = []
                 params = []
 
+                from university_system.core.sql_safety import validate_identifier
                 for field, value in sanitized_updates.items():
-                    set_clauses.append(f"{field} = ?")
+                    safe_field = validate_identifier(field, "column")
+                    set_clauses.append("[" + safe_field + "] = ?")
                     params.append(value)
 
-                set_clauses.append("last_modified = ?")
+                set_clauses.append("[last_modified] = ?")
                 params.append(datetime.now().isoformat())
                 params.append(event_id)
 
-                query = f"UPDATE academic_calendar_events SET {', '.join(set_clauses)} WHERE id = ?"
+                query = "UPDATE [academic_calendar_events] SET " + ", ".join(set_clauses) + " WHERE id = ?"
                 self.db_manager.execute_update(query, tuple(params))
 
                 # Log the action

@@ -1525,7 +1525,7 @@ class EventsGUI:
         try:
             dt = datetime.fromisoformat(dt_str)
             return dt.strftime("%a, %b %d at %I:%M %p")
-        except:
+        except (ValueError, TypeError):
             return dt_str
 
     def format_date(self, dt_str: str) -> str:
@@ -1533,7 +1533,7 @@ class EventsGUI:
         try:
             dt = datetime.fromisoformat(dt_str)
             return dt.strftime("%b %d, %Y")
-        except:
+        except (ValueError, TypeError):
             return dt_str[:10]
 
     def close_window(self):

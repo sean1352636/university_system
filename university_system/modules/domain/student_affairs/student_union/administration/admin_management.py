@@ -7,6 +7,7 @@ from typing import Optional
 
 # Database imports
 from university_system.infrastructure.database.db import DatabaseManager, get_connection
+from university_system.core.sql_safety import validate_table_name
 
 # Service imports  
 from university_system.infrastructure.email import send_confirmation_email
@@ -970,7 +971,8 @@ def database_security_scan(cursor):
         
         for table_name in [t[0] for t in tables]:
             if table_name in security_critical_tables:
-                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                safe_table = validate_table_name(table_name, conn=conn)
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 print(f"  ✓ {table_name}: {count} records")
             else:

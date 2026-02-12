@@ -29,6 +29,21 @@ from university_system.modules.shared.gui.batch_operations.models import (
     ProgressTracker,
     OriginalBatchOperationManager,
 )
+from university_system.core.sql_safety import validate_field_for_query, validate_identifier
+
+_VALID_MODULE_TYPES = frozenset({
+    'compulsory_module_1', 'compulsory_module_2',
+    'optional_module_1', 'optional_module_2', 'optional_module_3', 'optional_module_4',
+})
+
+_VALID_STUDENT_UPDATE_FIELDS = frozenset({
+    'first_name', 'middle_name', 'last_name', 'email', 'email_address',
+    'phone_number', 'address', 'course', 'gender', 'dob', 'status',
+})
+
+def _validate_module_type(module_type: str) -> str:
+    """Validate module_type is an allowed column name."""
+    return validate_field_for_query(module_type, _VALID_MODULE_TYPES, "module type")
 
 class EnhancedBatchOperationManager(OriginalBatchOperationManager):
     """Enhanced backend manager with GUI-specific methods"""
@@ -207,7 +222,12 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
                     title = {'male': 'Mr', 'female': 'Miss'}.get(gender, '?')
                     
                     # Calculate age
-                    dob = datetime.datetime.strptime(str(record['dob']), "%Y-%m-%d")
+                    dob_value = record.get('dob')
+                    if not dob_value or str(dob_value).strip().lower() in ('none', ''):
+                        result.failed_imports += 1
+                        result.errors.append({'row': i + 2, 'error': 'Missing date of birth'})
+                        continue
+                    dob = datetime.datetime.strptime(str(dob_value).strip(), "%Y-%m-%d")
                     now = datetime.datetime.now()
                     age = now.year - dob.year - ((now.month, now.day) < (dob.month, dob.day))
                     
@@ -455,6 +475,11 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
             logger.error(f"Error finding duplicates: {e}")
             raise
     
+    def clean_and_fix_data(self, progress_callback=None) -> int:
+        """Clean and fix common data issues. Returns the number of issues fixed."""
+        issues = self.validate_and_clean_data(progress_callback)
+        return len(issues)
+
     def validate_and_clean_data(self, progress_callback: Optional[Callable[[int, str], None]] = None) -> List[Dict]:
         """Validate and clean data in the database with comprehensive validation and reporting.
 
@@ -1066,12 +1091,12 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
     def resume_failed_import(self, progress_callback=None):
         """Resume previously failed import operations - GUI version with progress tracking"""
         try:
-            resume_file = DATA_DIR / "import_resume.pkl"
+            resume_file = DATA_DIR / "import_resume.json"
             if not resume_file.exists():
                 raise FileNotFoundError("No failed import found to resume")
 
-            with open(resume_file, 'rb') as f:
-                resume_data = pickle.load(f)
+            with open(resume_file, 'r') as f:
+                resume_data = json.load(f)
 
             remaining_records = resume_data['remaining_records']
             original_total = resume_data['original_total']
@@ -1489,9 +1514,9 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
                 'timestamp': datetime.datetime.now().isoformat()
             }
 
-            resume_file = DATA_DIR / "import_resume.pkl"
-            with open(resume_file, 'wb') as f:
-                pickle.dump(resume_data, f)
+            resume_file = DATA_DIR / "import_resume.json"
+            with open(resume_file, 'w') as f:
+                json.dump(resume_data, f, default=str)
 
             logger.info(f"Saved import progress: {len(remaining_records)}/{original_total} remaining")
 
@@ -1643,6 +1668,8 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
                         progress_callback=None) -> int:
         """Add module to multiple students - GUI version with progress tracking
 
+        Note: module_type is validated against _VALID_MODULE_TYPES before SQL use.
+
         Args:
             module_code: Module code to add
             module_name: Module name
@@ -1654,6 +1681,7 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
         Returns:
             Number of students updated
         """
+        _validate_module_type(module_type)
         try:
             updated_count = 0
 
@@ -1719,6 +1747,7 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
         Returns:
             Number of students updated
         """
+        _validate_module_type(module_type)
         try:
             updated_count = 0
 
@@ -1789,6 +1818,7 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
         Returns:
             Number of students updated
         """
+        _validate_module_type(module_type)
         try:
             updated_count = 0
 
@@ -1904,6 +1934,8 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
                         continue
 
                     try:
+                        # Validate module_type from CSV input
+                        _validate_module_type(module_type)
                         # Update module enrollment
                         cursor.execute(
                             f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
@@ -1940,6 +1972,18 @@ class EnhancedBatchOperationManager(OriginalBatchOperationManager):
     # ========================================
     # GRADE MANAGEMENT - GUI WRAPPERS
     # ========================================
+
+    def import_grade_data_from_file(self, file_path: str, progress_callback=None) -> ImportResult:
+        """Import grade data from a CSV file and process it."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                grades = list(reader)
+            return self.process_grade_data(grades, progress_callback)
+        except Exception as e:
+            result = ImportResult()
+            result.errors.append({'error': str(e)})
+            return result
 
     def process_grade_data(self, grades: List[Dict], progress_callback=None) -> ImportResult:
         """Process and validate grade data - GUI version with progress tracking
@@ -3081,6 +3125,8 @@ Validation Rules:
                         continue
 
                     try:
+                        # Validate module_type before SQL use
+                        _validate_module_type(module_type)
                         # Update enrollment
                         cursor.execute(
                             f"UPDATE students SET {module_type} = ? WHERE student_id = ?",
@@ -3149,6 +3195,7 @@ Validation Rules:
 
                 for field, value in new_data.items():
                     if field != 'student_id' and value is not None:  # Don't update student_id
+                        validate_field_for_query(field, _VALID_STUDENT_UPDATE_FIELDS, "student field")
                         update_fields.append(f"{field} = ?")
                         update_values.append(value)
 

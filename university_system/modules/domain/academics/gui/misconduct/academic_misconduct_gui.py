@@ -8,9 +8,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
 import json
-import sqlite3
-
-# Internationalization import
+from university_system.infrastructure.database.db import sqlite3
 try:
     from university_system.modules.shared.utils.i18n import get_text as _t
 except ImportError:
@@ -58,7 +56,6 @@ except ImportError:
     class _DummyAuth:
         """Dummy auth class used when auth is not available"""
         pass
-
 
 def init_misconduct_tables():
     """Create the academic misconduct tables if they don't exist."""
@@ -118,7 +115,6 @@ def init_misconduct_tables():
 
     conn.commit()
     conn.close()
-
 
 class AcademicMisconductPanel:
     """Main application class for the Academic Misconduct Panel."""
@@ -383,7 +379,7 @@ class AcademicMisconductPanel:
             conn.close()
             year = datetime.now().year
             return f"AMC-{year}-{str(count + 1).zfill(3)}"
-        except:
+        except Exception:
             year = datetime.now().year
             return f"AMC-{year}-{str(len(self.cases) + 1).zfill(3)}"
         
@@ -1921,7 +1917,7 @@ class AcademicMisconductPanel:
                 ''', (student_id,))
                 modules = cursor.fetchall()
                 modules_list = [m['module_code'] for m in modules]
-            except:
+            except Exception:
                 pass
 
             conn.close()
@@ -3645,7 +3641,7 @@ Office of Academic Integrity"""
                         try:
                             if os.path.exists(result[0]):
                                 os.remove(result[0])
-                        except:
+                        except (OSError, IOError):
                             pass
 
                     # Delete from database
@@ -4457,13 +4453,11 @@ This report was generated on {datetime.now().strftime('%Y-%m-%d at %H:%M:%S')}
         except Exception as e:
             messagebox.showerror(_t("misconduct.msg_titles.report_error"), f"Failed to generate report: {str(e)}")
 
-
 def main():
     """Main entry point."""
     root = tk.Tk()
     app = AcademicMisconductPanel(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

@@ -15,10 +15,10 @@ functions from core business logic.
 import logging
 import re
 import secrets
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from typing import Optional, Tuple
 
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core.sql_safety import (
     validate_column_definition,
     SQLIdentifierError,
 )
@@ -34,7 +34,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
 
 def validate_username(username: str) -> bool:
     """
@@ -72,7 +71,6 @@ def validate_username(username: str) -> bool:
 
     return True
 
-
 def validate_password(password: str) -> bool:
     """
     Validate password strength.
@@ -108,7 +106,6 @@ def validate_password(password: str) -> bool:
         return False
 
     return True
-
 
 def validate_email(email: str) -> bool:
     """
@@ -146,7 +143,6 @@ def validate_email(email: str) -> bool:
 
     return True
 
-
 def generate_temp_password() -> str:
     """
     Generate a secure temporary password.
@@ -171,7 +167,6 @@ def generate_temp_password() -> str:
     """
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
     return ''.join(secrets.choice(chars) for _ in range(12))
-
 
 def ensure_students_table(cursor: sqlite3.Cursor) -> None:
     """
@@ -255,7 +250,6 @@ def ensure_students_table(cursor: sqlite3.Cursor) -> None:
         logging.error(f"Failed to ensure students table exists: {e}")
         raise
 
-
 def infer_role_for_username(username: str) -> str:
     """
     Best-effort role inference when a user profile is missing.
@@ -311,7 +305,6 @@ def infer_role_for_username(username: str) -> str:
     # Default to student
     return 'student'
 
-
 def get_default_password(config: dict, key: str, fallback: str) -> str:
     """
     Fetch default password overrides from config if present.
@@ -352,7 +345,6 @@ def get_default_password(config: dict, key: str, fallback: str) -> str:
         logger.debug(f"Failed to get default password from config for key '{key}': {e}")
     return fallback
 
-
 def create_default_student_if_needed(cursor: sqlite3.Cursor, conn: sqlite3.Connection) -> None:
     """
     Ensure the students table exists and report if it is empty.
@@ -386,7 +378,6 @@ def create_default_student_if_needed(cursor: sqlite3.Cursor, conn: sqlite3.Conne
         logging.info(
             "Students table is present but empty. Import student records to enable student-facing workflows."
         )
-
 
 def check_role_coverage(cursor: sqlite3.Cursor, conn: sqlite3.Connection) -> None:
     """
@@ -428,7 +419,6 @@ def check_role_coverage(cursor: sqlite3.Cursor, conn: sqlite3.Connection) -> Non
         )
     else:
         logging.info("Core role coverage detected: %s", role_counts)
-
 
 def derive_name_from_username(username: str) -> Tuple[str, str]:
     """

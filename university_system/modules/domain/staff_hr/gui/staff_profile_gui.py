@@ -548,7 +548,7 @@ class StaffProfileGUI:
                                 tag = 'expired'
                             elif (expiry - today).days <= 30:
                                 tag = 'expiring'
-                        except:
+                        except (ValueError, TypeError):
                             pass
 
                     self.docs_tree.insert('', 'end', values=(
@@ -642,7 +642,11 @@ class StaffProfileGUI:
                 if row and row[0]:
                     import os
                     if os.path.exists(row[0]):
-                        os.startfile(row[0]) if os.name == 'nt' else os.system(f'xdg-open "{row[0]}"')
+                        if os.name == 'nt':
+                            os.startfile(row[0])
+                        else:
+                            import subprocess
+                            subprocess.run(['xdg-open', row[0]], check=False)
                     else:
                         messagebox.showinfo(_t("staff_profile.common.info", default="Info"),
                                           _t("staff_profile.documents.messages.file_path", default="File path: {path}\n\nFile not found on disk.", path=row[0]))
@@ -843,7 +847,7 @@ class StaffProfileGUI:
                 float(self.service_hours_var.get() or 0)
             )
             self.workload_summary_label.config(text=_t("staff_profile.workload.summary_text", default="Total: {total} hours per week", total=f"{total:.1f}"))
-        except:
+        except (ValueError, TypeError):
             self.workload_summary_label.config(text=_t("staff_profile.workload.summary_default", default="Total: 0 hours"))
 
     # ================================================================

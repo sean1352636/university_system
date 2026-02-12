@@ -7,11 +7,11 @@ from datetime import datetime, timedelta
 
 from university_system.infrastructure.email.config import config
 from university_system.infrastructure.email.email_db_utilities import execute_db_operation
-from university_system.modules.shared.utils.logs import handle_exception, log_event
+from university_system.core.logs import handle_exception, log_event
 
 # i18n support
 try:
-    from university_system.modules.shared.utils.i18n import get_text as _t
+    from university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, **kwargs):
         return key

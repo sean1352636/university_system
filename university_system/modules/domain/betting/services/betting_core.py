@@ -5,7 +5,7 @@ Provides manager classes for sports betting, prediction markets,
 casino games, and account management with database operations.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -14,7 +14,7 @@ import hashlib
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
+from university_system.core.sql_safety import validate_identifier
 
 # Betting configuration
 MIN_BET = 1.00
@@ -34,7 +34,6 @@ CASINO_GAMES = ['slots', 'blackjack', 'roulette', 'poker']
 
 # Prediction categories
 PREDICTION_CATEGORIES = ['sports', 'politics', 'entertainment', 'academic', 'other']
-
 
 def init_betting_db():
     """Initialize betting database tables"""
@@ -204,13 +203,11 @@ def init_betting_db():
         print(f"Error initializing betting database: {e}")
         return False
 
-
 def generate_reference() -> str:
     """Generate unique transaction reference"""
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     unique_id = uuid.uuid4().hex[:8].upper()
     return f"BET-{timestamp}-{unique_id}"
-
 
 class AccountManager:
     """Manager for betting account operations"""
@@ -414,7 +411,6 @@ class AccountManager:
         except sqlite3.Error as e:
             print(f"Error getting transaction history: {e}")
             return []
-
 
 class SportsBettingManager:
     """Manager for sports betting operations"""
@@ -651,7 +647,6 @@ class SportsBettingManager:
             print(f"Error settling event: {e}")
             return False
 
-
 class PredictionMarketManager:
     """Manager for prediction market operations"""
 
@@ -753,11 +748,12 @@ class PredictionMarketManager:
 
                 # Update pool
                 pool_column = 'pool_a' if selection == 'outcome_a' else 'pool_b'
-                cursor.execute(f'''
-                    UPDATE prediction_markets
-                    SET total_pool = total_pool + ?, {pool_column} = {pool_column} + ?
-                    WHERE market_id = ?
-                ''', (stake, stake, market_id))
+                safe_col = validate_identifier(pool_column, "column")
+                cursor.execute(
+                    "UPDATE prediction_markets"
+                    " SET total_pool = total_pool + ?, " + safe_col + " = " + safe_col + " + ?"
+                    " WHERE market_id = ?",
+                    (stake, stake, market_id))
 
                 # Recalculate probabilities
                 cursor.execute('SELECT pool_a, pool_b, total_pool FROM prediction_markets WHERE market_id = ?', (market_id,))
@@ -851,7 +847,6 @@ class PredictionMarketManager:
         except sqlite3.Error as e:
             print(f"Error getting user predictions: {e}")
             return []
-
 
 class CasinoManager:
     """Manager for casino game operations"""
@@ -1150,7 +1145,6 @@ class CasinoManager:
         except sqlite3.Error as e:
             print(f"Error getting game history: {e}")
             return []
-
 
 class ReportManager:
     """Manager for betting reports and statistics"""

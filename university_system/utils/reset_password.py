@@ -17,7 +17,7 @@ Usage:
 import hashlib
 import os
 import secrets
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import argparse
 from datetime import datetime
@@ -91,7 +91,6 @@ except ImportError:
 
     paths = _SafePathsClass()
 
-
 def hash_password(password, salt=None):
     """
     Hash a password with PBKDF2-SHA256 (1,000,000 iterations).
@@ -115,7 +114,6 @@ def hash_password(password, salt=None):
     )
 
     return salt, key.hex()
-
 
 def reset_user_password(username, new_password, db_path=None):
     """
@@ -173,7 +171,6 @@ def reset_user_password(username, new_password, db_path=None):
         print(f"❌ {_t('reset_password.unexpected_error', error=str(e))}")
         return False
 
-
 def reset_default_passwords(db_path=None):
     """
     Reset passwords for default development/test accounts.
@@ -192,34 +189,18 @@ def reset_default_passwords(db_path=None):
     Returns:
         int: Number of accounts updated
     """
-    # Get passwords from environment variables with development fallbacks
-    # SECURITY WARNING: Never use default passwords in production!
+    # Get passwords from centralized defaults (no hardcoded fallbacks).
+    # If env vars are missing, core.defaults generates secure random passwords.
+    from university_system.core.defaults import (
+        DEFAULT_ADMIN_PASSWORD, DEFAULT_STAFF_PASSWORD, DEFAULT_STUDENT_PASSWORD,
+    )
     default_passwords = {
-        'admin': os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123'),
-        'staff': os.environ.get('DEFAULT_STAFF_PASSWORD', 'staff123'),
-        'student': os.environ.get('DEFAULT_STUDENT_PASSWORD', 'student123'),
-        'instructor': os.environ.get('DEFAULT_INSTRUCTOR_PASSWORD', 'instructor123'),
-        'teacher': os.environ.get('DEFAULT_TEACHER_PASSWORD', 'teacher123'),
+        'admin': DEFAULT_ADMIN_PASSWORD,
+        'staff': DEFAULT_STAFF_PASSWORD,
+        'student': DEFAULT_STUDENT_PASSWORD,
+        'instructor': os.environ.get('DEFAULT_INSTRUCTOR_PASSWORD', DEFAULT_STAFF_PASSWORD),
+        'teacher': os.environ.get('DEFAULT_TEACHER_PASSWORD', DEFAULT_STAFF_PASSWORD),
     }
-
-    # Log security warning if using default passwords
-    using_defaults = []
-    if not os.environ.get('DEFAULT_ADMIN_PASSWORD'):
-        using_defaults.append('admin')
-    if not os.environ.get('DEFAULT_STAFF_PASSWORD'):
-        using_defaults.append('staff')
-    if not os.environ.get('DEFAULT_STUDENT_PASSWORD'):
-        using_defaults.append('student')
-    if not os.environ.get('DEFAULT_INSTRUCTOR_PASSWORD'):
-        using_defaults.append('instructor')
-    if not os.environ.get('DEFAULT_TEACHER_PASSWORD'):
-        using_defaults.append('teacher')
-
-    if using_defaults:
-        logging.warning(
-            f"SECURITY WARNING: Using default passwords for accounts: {', '.join(using_defaults)}. "
-            "Set DEFAULT_*_PASSWORD environment variables for production use."
-        )
         print(f"⚠️  {_t('reset_password.warning_default_passwords', accounts=', '.join(using_defaults))}")
         print(f"   {_t('reset_password.set_env_vars')}\n")
 
@@ -238,7 +219,6 @@ def reset_default_passwords(db_path=None):
 
     print(f"\n✅ {_t('reset_password.reset_complete', count=updated_count)}")
     return updated_count
-
 
 def interactive_mode(db_path=None):
     """Run in interactive mode"""
@@ -267,7 +247,6 @@ def interactive_mode(db_path=None):
         break
 
     return reset_user_password(username, password, db_path)
-
 
 def main():
     """Main entry point"""
@@ -351,7 +330,6 @@ Examples:
 
     # Interactive mode (default)
     interactive_mode(db_path)
-
 
 if __name__ == '__main__':
     main()

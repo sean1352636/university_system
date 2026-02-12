@@ -7,7 +7,7 @@ revenue reports including charts, CSV/TXT exports, and email delivery.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import csv
 from datetime import datetime, timedelta
 
@@ -37,7 +37,6 @@ except ImportError:
     EMAIL_AVAILABLE = False
     def send_email(*args, **kwargs):
         return False
-
 
 def show_reports_page(self):
     """Display reports and analytics page."""
@@ -111,7 +110,6 @@ def show_reports_page(self):
 
     generate_report()
 
-
 def generate_sales_summary(self, from_date, to_date):
     """Generate sales summary report."""
     conn = sqlite3.connect(DB_FILE)
@@ -171,7 +169,6 @@ def generate_sales_summary(self, from_date, to_date):
         tk.Label(stat_box, text=label, font=("Helvetica", 10),
                 bg="#ffffff", fg="#7f8c8d").pack()
 
-
 def generate_revenue_by_movie(self, from_date, to_date):
     """Generate revenue by movie report with chart."""
     conn = sqlite3.connect(DB_FILE)
@@ -216,7 +213,6 @@ def generate_revenue_by_movie(self, from_date, to_date):
             "Revenue (\u00a3)"
         )
 
-
 def generate_daily_sales(self, from_date, to_date):
     """Generate daily sales report with chart."""
     conn = sqlite3.connect(DB_FILE)
@@ -256,7 +252,6 @@ def generate_daily_sales(self, from_date, to_date):
             "Date",
             "Revenue (\u00a3)"
         )
-
 
 def generate_occupancy_report(self, from_date, to_date):
     """Generate seat occupancy report."""
@@ -303,7 +298,6 @@ def generate_occupancy_report(self, from_date, to_date):
             "Occupancy (%)"
         )
 
-
 def generate_payment_methods_report(self, from_date, to_date):
     """Generate payment methods report with pie chart."""
     conn = sqlite3.connect(DB_FILE)
@@ -342,7 +336,6 @@ def generate_payment_methods_report(self, from_date, to_date):
             "Payment Methods Distribution"
         )
 
-
 def generate_booking_status_report(self, from_date, to_date):
     """Generate booking status report with pie chart."""
     conn = sqlite3.connect(DB_FILE)
@@ -378,7 +371,6 @@ def generate_booking_status_report(self, from_date, to_date):
             "Booking Status Distribution"
         )
 
-
 def create_bar_chart(self, labels, values, title, xlabel, ylabel):
     """Create a bar chart."""
     chart_frame = ttk.Frame(self.report_display, style="Card.TFrame")
@@ -405,7 +397,6 @@ def create_bar_chart(self, labels, values, title, xlabel, ylabel):
     canvas = FigureCanvasTkAgg(fig, chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
-
 
 def create_line_chart(self, labels, values, title, xlabel, ylabel):
     """Create a line chart."""
@@ -437,7 +428,6 @@ def create_line_chart(self, labels, values, title, xlabel, ylabel):
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-
 def create_pie_chart(self, labels, values, title):
     """Create a pie chart."""
     chart_frame = ttk.Frame(self.report_display, style="Card.TFrame")
@@ -462,7 +452,6 @@ def create_pie_chart(self, labels, values, title):
     canvas = FigureCanvasTkAgg(fig, chart_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill="both", expand=True)
-
 
 def export_report_csv(self, report_type, from_date, to_date):
     """Export report data to CSV."""
@@ -534,7 +523,6 @@ def export_report_csv(self, report_type, from_date, to_date):
         messagebox.showinfo(_t("cinema.common.success"), f"Report exported to:\n{filename}")
     except Exception as e:
         messagebox.showerror(_t("cinema.common.error"), f"Export failed: {str(e)}")
-
 
 def save_report_txt(self, report_type, from_date, to_date):
     """Save report as TXT file."""
@@ -644,7 +632,6 @@ def save_report_txt(self, report_type, from_date, to_date):
     except Exception as e:
         messagebox.showerror(_t("cinema.common.error"), f"Save failed: {str(e)}")
 
-
 def email_report_to_admin(self, report_type, from_date, to_date):
     """Email report to admin."""
     conn = sqlite3.connect(DB_FILE)
@@ -675,7 +662,7 @@ def email_report_to_admin(self, report_type, from_date, to_date):
                 cursor.execute("""INSERT OR REPLACE INTO cinema_settings (key, value)
                                 VALUES ('admin_email', ?)""", (admin_email,))
                 conn.commit()
-            except:
+            except Exception:
                 pass
 
     # If still not found, prompt for it
@@ -790,7 +777,6 @@ def email_report_to_admin(self, report_type, from_date, to_date):
             messagebox.showerror(_t("cinema.common.error"), f"Email failed: {str(e)}")
     else:
         messagebox.showerror(_t("cinema.common.error"), _t("cinema.messages.errors.email_not_available"))
-
 
 def open_report_in_window(self, report_type, from_date, to_date):
     """Open report in a new window with save options."""
@@ -968,7 +954,7 @@ def open_report_in_window(self, report_type, from_date, to_date):
                     cursor.execute("""INSERT OR REPLACE INTO cinema_settings (key, value)
                                     VALUES ('admin_email', ?)""", (admin_email,))
                     conn.commit()
-                except:
+                except Exception:
                     pass
 
         # If still not found, prompt for it

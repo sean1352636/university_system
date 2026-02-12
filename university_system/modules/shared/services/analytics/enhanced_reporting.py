@@ -1,7 +1,8 @@
 from university_system.infrastructure.database.db import get_db_connection
 from university_system.modules.shared.constants import paths
 from university_system.modules.shared.utils.i18n import get_text, _
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
+from university_system.core.sql_safety import validate_table_name
 import os
 import csv
 # The following third-party modules are optional. They may not be installed in
@@ -16,6 +17,7 @@ import threading
 # reportlab imports will be attempted later with fallbacks
 import hashlib
 import logging
+import secrets
 # flask imports will be attempted later with fallbacks
 # sklearn imports will be attempted later with fallbacks
 import warnings
@@ -988,7 +990,7 @@ CONFIG = {
     'logs_dir': str(paths.LOG_DIR),
     'scheduled_reports_file': str(paths.REPORTS_DIR / 'scheduled_reports.json'),
     'config_file': str(paths.DATA_DIR / 'system_config.json'),
-    'secret_key': 'your-secret-key-change-this',
+    'secret_key': os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)),
     'cache_expiry_hours': 24,
     'max_cache_size_mb': 500
 }
@@ -4000,7 +4002,8 @@ def show_performance_monitor():
                 if table not in ALLOWED_TABLES:
                     continue
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    safe_table = validate_table_name(table)
+                    cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                     count = cursor.fetchone()[0]
                     table_name = table.replace('_', ' ').title()
                     print(f"📚 {table_name}: {count}")

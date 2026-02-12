@@ -5,7 +5,7 @@ Tests plagiarism detection system including document management, text processing
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from datetime import datetime
@@ -17,7 +17,6 @@ from university_system.modules.domain.academics.services.plagiarism.plagiarism_m
     FileProcessingError,
     IntegrationError
 )
-
 
 class TestPlagiarismCheckerInitialization:
     """Test suite for PlagiarismChecker initialization"""
@@ -57,7 +56,6 @@ class TestPlagiarismCheckerInitialization:
             assert table in tables, f"Table {table} not found"
 
         conn.close()
-
 
 class TestPlagiarismCheckerDatabaseSchema:
     """Test suite for plagiarism checker database schema"""
@@ -131,7 +129,6 @@ class TestPlagiarismCheckerDatabaseSchema:
             assert index in indexes, f"Index {index} not found"
 
         conn.close()
-
 
 class TestTextProcessing:
     """Test suite for text processing functions"""
@@ -255,7 +252,6 @@ class TestTextProcessing:
 
         assert hash1 != hash2
 
-
 class TestFileExtraction:
     """Test suite for file extraction"""
 
@@ -311,7 +307,6 @@ class TestFileExtraction:
         """Test extracting text from empty file"""
         with pytest.raises(FileProcessingError):
             checker.extract_text_from_file(temp_empty_file)
-
 
 class TestDocumentRepository:
     """Test suite for document repository operations"""
@@ -462,7 +457,6 @@ class TestDocumentRepository:
         assert isinstance(matches, list)
         assert len(matches) == 0
 
-
 class TestPlagiarismDetection:
     """Test suite for plagiarism detection"""
 
@@ -526,7 +520,6 @@ class TestPlagiarismDetection:
             # Some exceptions are acceptable (e.g., document not found in certain states)
             assert isinstance(e, (PlagiarismCheckerError, ValueError))
 
-
 class TestExceptionClasses:
     """Test suite for exception classes"""
 
@@ -555,7 +548,6 @@ class TestExceptionClasses:
         assert issubclass(DatabaseError, PlagiarismCheckerError)
         assert issubclass(FileProcessingError, PlagiarismCheckerError)
         assert issubclass(IntegrationError, PlagiarismCheckerError)
-
 
 class TestEdgeCases:
     """Test suite for edge cases"""

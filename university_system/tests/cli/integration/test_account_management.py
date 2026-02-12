@@ -5,13 +5,12 @@ Tests fee assignment, payment recording, invoices, refunds, and credits
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.core import account_management
-
 
 @pytest.fixture
 def temp_db():
@@ -130,7 +129,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth():
     """Mock authentication object"""
@@ -138,7 +136,6 @@ def mock_auth():
     auth.current_user = {"username": "test_admin"}
     auth.check_permission = MagicMock(return_value=True)
     return auth
-
 
 @pytest.fixture
 def sample_data(temp_db):
@@ -174,7 +171,6 @@ def sample_data(temp_db):
 
     return temp_db
 
-
 class TestFeeAssignment:
     """Test fee assignment functionality"""
 
@@ -197,7 +193,6 @@ class TestFeeAssignment:
             assert count == 1, "Fee should be assigned"
 
             conn.close()
-
 
 class TestPaymentRecording:
     """Test payment recording functionality"""
@@ -269,7 +264,6 @@ class TestPaymentRecording:
 
             conn.close()
 
-
 class TestInvoiceGeneration:
     """Test invoice generation functionality"""
 
@@ -288,7 +282,6 @@ class TestInvoiceGeneration:
 
             # Verify invoice was generated (file created)
             conn.close()
-
 
 class TestRefundProcessing:
     """Test refund processing functionality"""
@@ -321,7 +314,6 @@ class TestRefundProcessing:
 
             conn.close()
 
-
 class TestFinancialStatements:
     """Test financial statement functionality"""
 
@@ -339,7 +331,6 @@ class TestFinancialStatements:
             # Should display statement without errors
             conn.close()
 
-
 class TestCreditManagement:
     """Test student credit management"""
 
@@ -349,7 +340,6 @@ class TestCreditManagement:
              patch('builtins.input', side_effect=['5']):
 
             account_management.manage_student_credits()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

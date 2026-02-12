@@ -12,13 +12,12 @@ This test suite validates:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, call
 from pathlib import Path
-
 
 @pytest.fixture
 def temp_db():
@@ -31,13 +30,11 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_db_connection(temp_db):
     """Mock database connection"""
     with patch('university_system.modules.domain.housing.services.accommodation.DB_PATH', temp_db):
         yield temp_db
-
 
 class TestDatabaseInitialization:
     """Test database initialization functions"""
@@ -79,7 +76,6 @@ class TestDatabaseInitialization:
 
         assert required_columns.issubset(columns)
         conn.close()
-
 
 class TestValidationFunctions:
     """Test validation helper functions"""
@@ -150,7 +146,6 @@ class TestValidationFunctions:
             assert is_valid is False
             assert error is not None
 
-
 class TestAuditLogging:
     """Test audit logging functionality"""
 
@@ -194,7 +189,6 @@ class TestAuditLogging:
 
         assert len(logs) > 0
 
-
 class TestAccommodationTypes:
     """Test accommodation type functions"""
 
@@ -214,7 +208,6 @@ class TestAccommodationTypes:
 
         # Should contain common accommodation types
         assert any('dorm' in t.lower() or 'residence' in t.lower() for t in types)
-
 
 class TestConflictChecking:
     """Test conflict checking functionality"""
@@ -254,7 +247,6 @@ class TestConflictChecking:
         # Check for conflict with overlapping dates
         has_conflict = check_conflict('S12345', '2024-06-01', '2024-08-31', exclude_id=None)
         assert has_conflict is True
-
 
 class TestTemplateManagement:
     """Test template save and apply functions"""
@@ -307,7 +299,6 @@ class TestTemplateManagement:
         assert loaded_data.get('accommodation_type') == 'Apartment'
         assert 'description' in loaded_data
 
-
 class TestStatisticsReporting:
     """Test statistics and reporting functions"""
 
@@ -336,7 +327,6 @@ class TestStatisticsReporting:
 
         assert stats is not None
         assert isinstance(stats, dict)
-
 
 class TestBulkImport:
     """Test bulk import functionality"""
@@ -371,7 +361,6 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 
         assert success is False
         assert error is not None
-
 
 class TestNotificationSystem:
     """Test notification functions"""
@@ -415,7 +404,6 @@ class TestNotificationSystem:
 
         assert isinstance(expiring, (list, type(None)))
 
-
 class TestAuthIntegration:
     """Test authentication integration"""
 
@@ -444,7 +432,6 @@ class TestAuthIntegration:
         # Verify get_current_user was called
         assert mock_user.called
 
-
 class TestDatabaseBackup:
     """Test database backup integration"""
 
@@ -457,7 +444,6 @@ class TestDatabaseBackup:
 
         # Should call backup or handle gracefully
         assert True
-
 
 class TestErrorHandling:
     """Test error handling across module"""
@@ -483,7 +469,6 @@ class TestErrorHandling:
         # Should handle None gracefully
         assert isinstance(is_valid, bool)
 
-
 class TestModuleConstants:
     """Test module constants and configuration"""
 
@@ -500,7 +485,6 @@ class TestModuleConstants:
 
         assert isinstance(NOTIFICATION_THRESHOLD_DAYS, int)
         assert NOTIFICATION_THRESHOLD_DAYS > 0
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

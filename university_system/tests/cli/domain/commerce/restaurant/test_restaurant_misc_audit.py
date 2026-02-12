@@ -4,7 +4,7 @@ Tests for university_system/modules/core/services/restaurant_misc/audit.py
 from __future__ import annotations
 
 import json
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from io import StringIO
 from unittest import mock
@@ -13,7 +13,6 @@ import pytest
 
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import audit
 
-
 @pytest.fixture
 def mock_db_connection():
     """Mock database connection"""
@@ -21,7 +20,6 @@ def mock_db_connection():
     cursor = mock.MagicMock(spec=sqlite3.Cursor)
     conn.cursor.return_value = cursor
     return conn, cursor
-
 
 class TestLogAuditAction:
     """Tests for log_audit_action function"""
@@ -94,7 +92,6 @@ class TestLogAuditAction:
                     action='CREATE'
                 )
                 mock_log.assert_called_once()
-
 
 class TestViewUserActivityLogs:
     """Tests for view_user_activity_logs function"""
@@ -178,7 +175,6 @@ class TestViewUserActivityLogs:
 
                         output = fake_out.getvalue()
                         assert 'An error occurred' in output
-
 
 class TestViewAuditLogs:
     """Tests for view_audit_logs function"""

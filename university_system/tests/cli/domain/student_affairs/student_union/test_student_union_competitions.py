@@ -4,11 +4,10 @@ Tests competition viewing and management functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import competitions
-
 
 @pytest.fixture
 def mock_cursor():
@@ -19,7 +18,6 @@ def mock_cursor():
     cursor.execute = Mock()
     return cursor
 
-
 @pytest.fixture
 def sample_competitions():
     """Sample competition data."""
@@ -27,7 +25,6 @@ def sample_competitions():
         (1, 'Hackathon 2024', 'coding', '2024-12-01', '2024-12-03', '2024-11-28', 5, 'registration_open', 3),
         (2, 'Sports Tournament', 'sports', '2024-12-10', '2024-12-12', '2024-12-05', 10, 'upcoming', 5),
     ]
-
 
 @pytest.fixture
 def sample_results():
@@ -37,7 +34,6 @@ def sample_results():
         ('Science Club', 88.0, 2, 8),
         ('Engineering Club', 82.5, 3, 9),
     ]
-
 
 class TestViewActiveCompetitions:
     """Tests for view_active_competitions function."""
@@ -98,7 +94,6 @@ class TestViewActiveCompetitions:
         assert any('Start Date:' in str(call) for call in mock_print.call_args_list)
         assert any('Registration Deadline:' in str(call) for call in mock_print.call_args_list)
 
-
 class TestViewCompetitionResults:
     """Tests for view_competition_results function."""
 
@@ -151,7 +146,6 @@ class TestViewCompetitionResults:
         # Verify invalid message
         assert any('Invalid' in str(call)
                   for call in mock_print.call_args_list)
-
 
 class TestIntegrationCompetitions:
     """Integration tests using real database."""
@@ -236,7 +230,6 @@ class TestIntegrationCompetitions:
         assert len(comps) == 1
         assert comps[0][1] == 'Hackathon'
         assert comps[0][8] == 2  # registered clubs
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

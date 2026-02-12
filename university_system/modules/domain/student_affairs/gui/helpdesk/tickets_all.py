@@ -694,7 +694,7 @@ def get_all_tickets(self):
         where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
 
         # Use COALESCE for column compatibility between old and new schema
-        cursor.execute(f'''
+        cursor.execute('''
         SELECT t.ticket_id,
                COALESCE(t.subject, t.title, 'No Subject') as subject,
                COALESCE(t.category, 'General') as category,
@@ -707,7 +707,7 @@ def get_all_tickets(self):
         FROM support_tickets t
         LEFT JOIN users u1 ON t.user_id = u1.id
         LEFT JOIN users u2 ON t.assigned_to = u2.id
-        WHERE {where_clause}
+        WHERE ''' + where_clause + '''
         ORDER BY COALESCE(t.updated_at, t.last_updated_datetime) DESC
         ''', params)
 
@@ -1094,7 +1094,7 @@ def view_all_tickets_enhanced_gui(self):
 
             where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
 
-            cursor.execute(f'''
+            cursor.execute('''
                 SELECT t.ticket_id,
                        COALESCE(t.subject, t.title, 'No Subject') as subject,
                        COALESCE(t.category, 'General') as category,
@@ -1107,7 +1107,7 @@ def view_all_tickets_enhanced_gui(self):
                 FROM support_tickets t
                 LEFT JOIN users u1 ON t.user_id = u1.id
                 LEFT JOIN users u2 ON t.assigned_to = u2.id
-                WHERE {where_clause}
+                WHERE ''' + where_clause + '''
                 ORDER BY COALESCE(t.created_at, t.created_datetime) DESC
             ''', params)
 

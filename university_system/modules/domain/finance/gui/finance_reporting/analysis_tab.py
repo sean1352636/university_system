@@ -366,7 +366,9 @@ def run_performance_optimization(self):
             tables = ['students', 'student_fees', 'payments', 'fee_types']
             table_info = []
             for table in tables:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                from university_system.core.sql_safety import validate_table_name
+                validated_table = validate_table_name(table, conn=conn)
+                cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                 count = cursor.fetchone()[0]
                 table_info.append(f"{table}: {count:,} records")
 

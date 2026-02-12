@@ -52,7 +52,8 @@ from university_system.infrastructure.repositories.base import (
     QueryableRepository,
     BatchRepository,
 )
-from university_system.modules.shared.constants import paths
+from university_system.core import paths
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -482,13 +483,14 @@ class SQLiteStudentRepository(StudentRepository):
         values = []
         for field, value in criteria.items():
             if value is not None:
-                conditions.append(f"{field} = ?")
+                safe_field = validate_identifier(field, "column")
+                conditions.append(safe_field + " = ?")
                 values.append(value)
 
         if not conditions:
             return self.get_all()
 
-        query = f"SELECT * FROM students WHERE {' AND '.join(conditions)}"
+        query = "SELECT * FROM students WHERE " + " AND ".join(conditions)
 
         with get_connection(db_path=self.db_path) as conn:
             rows = conn.execute(query, values).fetchall()
@@ -611,7 +613,7 @@ class SQLiteStudentRepository(StudentRepository):
         if not conditions:
             return []
 
-        query = f"SELECT * FROM students WHERE {' AND '.join(conditions)}"
+        query = "SELECT * FROM students WHERE " + " AND ".join(conditions)
 
         with get_connection(db_path=self.db_path) as conn:
             rows = conn.execute(query, values).fetchall()

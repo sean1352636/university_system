@@ -234,18 +234,18 @@ def init_accommodation_db():
             ''')
             
             # Create templates table
-            cursor.execute(f'''
-                CREATE TABLE IF NOT EXISTS {TEMPLATES_TABLE} (
-                    name TEXT PRIMARY KEY,
-                    accommodation_type TEXT NOT NULL,
-                    description TEXT,
-                    start_offset_days INTEGER,
-                    duration_days INTEGER,
-                    created_by TEXT,
-                    created_at TEXT,
-                    updated_at TEXT
-                )
-            ''')
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS [" + TEMPLATES_TABLE + "] ("
+                " name TEXT PRIMARY KEY,"
+                " accommodation_type TEXT NOT NULL,"
+                " description TEXT,"
+                " start_offset_days INTEGER,"
+                " duration_days INTEGER,"
+                " created_by TEXT,"
+                " created_at TEXT,"
+                " updated_at TEXT"
+                ")"
+            )
             
             # Create accommodation types table for standardized types
             cursor.execute('''
@@ -366,10 +366,10 @@ def check_conflict(student_id, accommodation_type, start_date, end_date, exclude
             if excluded_id:
                 params.append(excluded_id)
                 
-            cursor.execute(f'''
-                SELECT id, start_date, end_date FROM accommodations
-                WHERE student_id=? AND accommodation_type=? AND status='active' {exclude_clause}
-            ''', params)
+            cursor.execute(
+                "SELECT id, start_date, end_date FROM accommodations"
+                " WHERE student_id=? AND accommodation_type=? AND status='active' " + exclude_clause,
+                params)
             
             rows = cursor.fetchall()
             if not rows:
@@ -870,7 +870,7 @@ def save_template():
             # Check if template already exists
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'SELECT name FROM {TEMPLATES_TABLE} WHERE name = ?', (name,))
+                cursor.execute("SELECT name FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (name,))
                 if cursor.fetchone():
                     overwrite = input(get_text("housing.accommodation.input.template_overwrite", "Template '{name}' already exists. Overwrite? (y/n): ").format(name=name))
                     if overwrite.lower() != 'y':
@@ -925,11 +925,11 @@ def save_template():
         
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-            cursor.execute(f'''
-                INSERT OR REPLACE INTO {TEMPLATES_TABLE}
-                (name, accommodation_type, description, start_offset_days, duration_days, created_by, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (name, typ, desc, offset, duration, user, now, now))
+            cursor.execute(
+                "INSERT OR REPLACE INTO [" + TEMPLATES_TABLE + "]"
+                " (name, accommodation_type, description, start_offset_days, duration_days, created_by, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (name, typ, desc, offset, duration, user, now, now))
             conn.commit()
             
         print(get_text("housing.accommodation.success.template_saved", "Template '{name}' saved successfully.").format(name=name))
@@ -961,7 +961,7 @@ def apply_template():
         # List available templates
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-            cursor.execute(f'SELECT name, accommodation_type FROM {TEMPLATES_TABLE} ORDER BY name')
+            cursor.execute("SELECT name, accommodation_type FROM [" + TEMPLATES_TABLE + "] ORDER BY name")
             templates = cursor.fetchall()
             
         if not templates:
@@ -981,7 +981,7 @@ def apply_template():
             else:
                 # Check if they entered the name directly
                 name = choice
-                cursor.execute(f'SELECT COUNT(*) FROM {TEMPLATES_TABLE} WHERE name = ?', (name,))
+                cursor.execute("SELECT COUNT(*) FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (name,))
                 if cursor.fetchone()[0] > 0:
                     break
                 print(get_text("housing.accommodation.error.invalid_template_selection", "Error: Invalid template selection."))
@@ -1004,10 +1004,10 @@ def apply_template():
         # Get the template details
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-            cursor.execute(f'''
-                SELECT accommodation_type, description, start_offset_days, duration_days
-                FROM {TEMPLATES_TABLE} WHERE name = ?
-            ''', (name,))
+            cursor.execute(
+                "SELECT accommodation_type, description, start_offset_days, duration_days"
+                " FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
+                (name,))
             
             template = cursor.fetchone()
             if not template:
@@ -3296,7 +3296,9 @@ def fix_accommodation_db_schema():
             for col_name, col_def in required_acc_columns:
                 if col_name not in acc_columns:
                     print(get_text("housing.accommodation.db.adding_column_to_table", "Adding missing column {column} to accommodations table...").format(column=col_name))
-                    cursor.execute(f'ALTER TABLE accommodations ADD COLUMN {col_name} {col_def}')
+                    from university_system.core.sql_safety import validate_identifier
+                    validate_identifier(col_name, "column")
+                    cursor.execute("ALTER TABLE accommodations ADD COLUMN [" + col_name + "] " + col_def)
             
             # Check if accommodation_types table exists
             cursor.execute("""
@@ -3399,7 +3401,9 @@ def verify_database_schema():
 
             # Check each table's schema
             for table in tables:
-                cursor.execute(f"PRAGMA table_info({table})")
+                from university_system.core.sql_safety import validate_table_name
+                validated_table = validate_table_name(table, conn=conn)
+                cursor.execute("PRAGMA table_info([" + validated_table + "])")
                 columns = cursor.fetchall()
                 print(f"\n{table} " + get_text("housing.accommodation.db.table_columns", "table columns:"))
                 for col in columns:

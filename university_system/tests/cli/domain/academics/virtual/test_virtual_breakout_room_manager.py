@@ -13,13 +13,12 @@ import pytest
 import os
 import json
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 from university_system.modules.domain.academics.services.virtual_classroom.breakout_room_manager import (
     BreakoutRoomManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -74,12 +73,10 @@ def temp_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a BreakoutRoomManager instance with temp database."""
     return BreakoutRoomManager(db_path=temp_db)
-
 
 class TestBreakoutRoomManagerInit:
     """Test BreakoutRoomManager initialization."""
@@ -93,7 +90,6 @@ class TestBreakoutRoomManagerInit:
         """Test initialization with custom database path."""
         manager = BreakoutRoomManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestCreateBreakoutRoom:
     """Test breakout room creation."""
@@ -166,7 +162,6 @@ class TestCreateBreakoutRoom:
         room = manager.get_breakout_room(room_id)
         assert room['participants'] == []
 
-
 class TestStartBreakoutRoom:
     """Test starting breakout rooms."""
 
@@ -190,7 +185,6 @@ class TestStartBreakoutRoom:
         """Test starting a non-existent room."""
         result = manager.start_breakout_room(99999)
         assert result is False
-
 
 class TestEndBreakoutRoom:
     """Test ending breakout rooms."""
@@ -216,7 +210,6 @@ class TestEndBreakoutRoom:
         """Test ending a non-existent room."""
         result = manager.end_breakout_room(99999)
         assert result is False
-
 
 class TestAddParticipantToRoom:
     """Test adding participants to rooms."""
@@ -273,7 +266,6 @@ class TestAddParticipantToRoom:
         result = manager.add_participant_to_room(99999, 101)
         assert result is False
 
-
 class TestRemoveParticipantFromRoom:
     """Test removing participants from rooms."""
 
@@ -310,7 +302,6 @@ class TestRemoveParticipantFromRoom:
         result = manager.remove_participant_from_room(99999, 101)
         assert result is False
 
-
 class TestGetBreakoutRoom:
     """Test retrieving breakout room details."""
 
@@ -338,7 +329,6 @@ class TestGetBreakoutRoom:
         """Test getting a non-existent room."""
         room = manager.get_breakout_room(99999)
         assert room is None
-
 
 class TestGetSessionBreakoutRooms:
     """Test retrieving all rooms for a session."""
@@ -383,7 +373,6 @@ class TestGetSessionBreakoutRooms:
         rooms = manager.get_session_breakout_rooms(99999)
         assert rooms == []
 
-
 class TestGetUserBreakoutRoom:
     """Test finding which room a user is in."""
 
@@ -415,7 +404,6 @@ class TestGetUserBreakoutRoom:
 
         user_room = manager.get_user_breakout_room(1, 101)
         assert user_room is None
-
 
 class TestAutoAssignBreakoutRooms:
     """Test automatic room assignment."""
@@ -514,7 +502,6 @@ class TestAutoAssignBreakoutRooms:
             room = manager.get_breakout_room(room_id)
             assert room['participants'] == []
 
-
 class TestDatabaseConnection:
     """Test database connection handling."""
 
@@ -530,7 +517,6 @@ class TestDatabaseConnection:
         assert result[0] == 1
 
         conn.close()
-
 
 class TestErrorHandling:
     """Test error handling in various scenarios."""
@@ -558,7 +544,6 @@ class TestErrorHandling:
 
         rooms = manager.get_session_breakout_rooms(1)
         assert rooms == []
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

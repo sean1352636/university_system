@@ -84,21 +84,14 @@ def __getattr__(name):
         'UserAuth', 'require_permission', 'require_role',
         'get_auth', 'set_auth',
         'SECURITY_AVAILABLE', 'VALIDATION_AVAILABLE', 'CACHE_AVAILABLE',
-        'ASYNC_UTILS_AVAILABLE', 'REALTIME_AVAILABLE', 'ML_AVAILABLE',
+        'ASYNC_UTILS_AVAILABLE', 'ML_AVAILABLE',
     }
 
-    realtime_exports = {'get_websocket_manager', 'get_notification_service', 'get_chat_service'}
     ml_exports = {'get_course_recommender', 'get_essay_grader', 'get_plagiarism_detector'}
 
     if name in infrastructure_exports:
         from university_system import infrastructure
         return getattr(infrastructure, name)
-
-    if name in realtime_exports:
-        realtime_funcs = _get_realtime_exports()
-        if name in realtime_funcs:
-            return realtime_funcs[name]
-        raise AttributeError(f"Realtime feature '{name}' not available")
 
     if name in ml_exports:
         ml_funcs = _get_ml_exports()
@@ -110,22 +103,6 @@ def __getattr__(name):
 
 # Conditional imports moved to lazy loading to prevent circular dependencies
 # These will be available via __getattr__ when accessed
-
-def _get_realtime_exports():
-    """Lazy load realtime exports."""
-    from university_system.infrastructure import REALTIME_AVAILABLE
-    if REALTIME_AVAILABLE:
-        from university_system.infrastructure.realtime import (
-            get_websocket_manager,
-            get_notification_service,
-            get_chat_service,
-        )
-        return {
-            'get_websocket_manager': get_websocket_manager,
-            'get_notification_service': get_notification_service,
-            'get_chat_service': get_chat_service,
-        }
-    return {}
 
 def _get_ml_exports():
     """Lazy load ML exports."""
@@ -192,16 +169,11 @@ __all__ = [
     'VALIDATION_AVAILABLE',
     'CACHE_AVAILABLE',
     'ASYNC_UTILS_AVAILABLE',
-    'REALTIME_AVAILABLE',
     'ML_AVAILABLE',
 ]
 
 # Conditional exports added to __all__ (available via lazy loading)
 __all__.extend([
-    # Realtime exports (if available)
-    'get_websocket_manager',
-    'get_notification_service',
-    'get_chat_service',
     # ML exports (if available)
     'get_course_recommender',
     'get_essay_grader',

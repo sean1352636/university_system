@@ -9,7 +9,7 @@ This module provides:
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import shutil
 import pytest
@@ -19,7 +19,6 @@ from unittest.mock import MagicMock, patch
 # Add the project root to the path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
-
 
 def pytest_configure(config):
     """Configure pytest before test collection begins."""
@@ -33,7 +32,6 @@ def pytest_configure(config):
 
     # Initialize authentication system before any imports that might need it
     _initialize_test_auth()
-
 
 def _initialize_test_auth():
     """Initialize the authentication system for test collection.
@@ -119,7 +117,6 @@ def _initialize_test_auth():
         print(f"Warning: Could not initialize test auth: {e}")
         _setup_mock_auth()
 
-
 def _setup_mock_auth():
     """Set up a mock authentication system as fallback."""
     try:
@@ -136,7 +133,6 @@ def _setup_mock_auth():
         set_auth(mock_auth)
     except Exception as e:
         print(f"Warning: Could not set up mock auth: {e}")
-
 
 # ============================================================================
 # Fixtures
@@ -159,7 +155,6 @@ def test_db_path():
     except Exception:
         pass
 
-
 @pytest.fixture
 def temp_db():
     """Create a temporary database for a single test."""
@@ -176,7 +171,6 @@ def temp_db():
     except Exception:
         pass
 
-
 @pytest.fixture
 def db_connection(temp_db):
     """Provide a database connection for tests."""
@@ -184,7 +178,6 @@ def db_connection(temp_db):
     conn.row_factory = sqlite3.Row
     yield conn
     conn.close()
-
 
 def _create_test_database(db_path):
     """Create a test database with full schema."""
@@ -365,7 +358,6 @@ def _create_test_database(db_path):
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Provide a mock authentication object."""
@@ -384,7 +376,6 @@ def mock_auth():
     auth.has_permission.return_value = True
     return auth
 
-
 @pytest.fixture
 def mock_student_auth():
     """Provide a mock authentication object for a student."""
@@ -401,7 +392,6 @@ def mock_student_auth():
     auth.check_permission.side_effect = lambda p: p in ['view_own_grades', 'view_courses']
     auth.get_current_user.return_value = auth.current_user
     return auth
-
 
 @pytest.fixture
 def mock_instructor_auth():
@@ -422,7 +412,6 @@ def mock_instructor_auth():
     auth.get_current_user.return_value = auth.current_user
     return auth
 
-
 @pytest.fixture
 def mock_tk():
     """Mock tkinter modules for GUI tests."""
@@ -439,7 +428,6 @@ def mock_tk():
         },
     ):
         yield
-
 
 @pytest.fixture
 def mock_root():
@@ -459,7 +447,6 @@ def mock_root():
     root.after = MagicMock()
     return root
 
-
 @pytest.fixture
 def temp_file():
     """Create a temporary file for testing."""
@@ -471,7 +458,6 @@ def temp_file():
     except Exception:
         pass
 
-
 @pytest.fixture
 def temp_dir():
     """Create a temporary directory for testing."""
@@ -481,7 +467,6 @@ def temp_dir():
         shutil.rmtree(path)
     except Exception:
         pass
-
 
 @pytest.fixture
 def sample_student_data():
@@ -498,7 +483,6 @@ def sample_student_data():
         'status': 'active'
     }
 
-
 @pytest.fixture
 def sample_course_data():
     """Provide sample course data for testing."""
@@ -514,7 +498,6 @@ def sample_course_data():
         'status': 'active'
     }
 
-
 @pytest.fixture
 def sample_grade_data():
     """Provide sample grade data for testing."""
@@ -526,7 +509,6 @@ def sample_grade_data():
         'weight': 0.3,
         'comments': 'Good work'
     }
-
 
 # ============================================================================
 # Test helpers
@@ -553,7 +535,6 @@ def insert_test_student(conn, student_data):
     conn.commit()
     return cursor.lastrowid
 
-
 def insert_test_course(conn, course_data):
     """Helper to insert a test course."""
     cursor = conn.cursor()
@@ -574,7 +555,6 @@ def insert_test_course(conn, course_data):
     ))
     conn.commit()
     return cursor.lastrowid
-
 
 def insert_test_user(conn, user_data, password='TestPassword123'):
     """Helper to insert a test user with account."""

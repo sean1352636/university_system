@@ -11,12 +11,11 @@ Tests:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-
 
 @pytest.fixture
 def test_db():
@@ -29,7 +28,6 @@ def test_db():
     # Cleanup
     if os.path.exists(path):
         os.remove(path)
-
 
 # ============================================================================
 # Table Creation Tests
@@ -301,7 +299,6 @@ class TestTableCreation:
 
         assert expected_tables.issubset(tables)
 
-
 # ============================================================================
 # Schema Tests
 # ============================================================================
@@ -363,7 +360,6 @@ class TestTableSchemas:
 
         assert required_columns.issubset(columns)
 
-
 # ============================================================================
 # Index Tests
 # ============================================================================
@@ -419,7 +415,6 @@ class TestIndexCreation:
 
         assert index is not None
 
-
 # ============================================================================
 # Idempotency Tests
 # ============================================================================
@@ -460,7 +455,6 @@ class TestIdempotency:
         conn.close()
 
         assert count == 1
-
 
 # ============================================================================
 # Constraint Tests
@@ -541,7 +535,6 @@ class TestConstraints:
 
         conn.close()
 
-
 # ============================================================================
 # Default Values Tests
 # ============================================================================
@@ -607,7 +600,6 @@ class TestDefaultValues:
 
         assert is_active == 1
 
-
 # ============================================================================
 # Integration Tests
 # ============================================================================
@@ -663,7 +655,6 @@ class TestTableIntegration:
         assert cursor.fetchone()[0] == 1
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

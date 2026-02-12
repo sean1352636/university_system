@@ -70,7 +70,7 @@ class HealthChecker:
                     wal_enabled = wal_check and wal_check[0] == 'wal'
 
                     # Get database size
-                    from university_system.modules.shared.constants import paths
+                    from university_system.core import paths
                     db_size = os.path.getsize(paths.DEFAULT_DB_PATH) / (1024 * 1024)  # MB
 
                     return {
@@ -97,7 +97,7 @@ class HealthChecker:
     def _check_disk_space(self) -> Dict[str, Any]:
         """Check available disk space"""
         try:
-            from university_system.modules.shared.constants import paths
+            from university_system.core import paths
 
             # Check data directory disk space
             data_dir = os.path.dirname(paths.DEFAULT_DB_PATH)
@@ -166,7 +166,7 @@ class HealthChecker:
     def _check_critical_files(self) -> Dict[str, Any]:
         """Check existence of critical files"""
         try:
-            from university_system.modules.shared.constants import paths
+            from university_system.core import paths
 
             critical_paths = {
                 'database': paths.DEFAULT_DB_PATH,

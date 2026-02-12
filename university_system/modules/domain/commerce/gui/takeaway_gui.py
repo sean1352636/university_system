@@ -6,8 +6,7 @@ Campus food ordering and delivery interface
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.infrastructure.auth import UserAuth, get_global_auth
 from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection
@@ -49,7 +48,6 @@ from university_system.modules.shared.utils.finance_integration import (
 
 # Housing integration for delivery address
 from university_system.modules.shared.constants import paths
-
 
 class TakeawayGUI:
     """Takeaway ordering system GUI"""
@@ -1000,7 +998,7 @@ class TakeawayGUI:
             try:
                 if 'conn' in locals():
                     conn.close()
-            except:
+            except Exception:
                 pass
 
     def process_takeaway_refund(self):
@@ -1142,7 +1140,7 @@ class TakeawayGUI:
             try:
                 if 'conn' in locals():
                     conn.close()
-            except:
+            except Exception:
                 pass
 
     def show_takeaway_refund_method_dialog(self, amount, order_id, user_id):
@@ -1276,7 +1274,7 @@ class TakeawayGUI:
             try:
                 if 'conn' in locals():
                     conn.close()
-            except:
+            except Exception:
                 pass
             return False
 
@@ -1307,7 +1305,7 @@ class TakeawayGUI:
                     new_balance = get_student_finance_account_balance(student_id)
                     if new_balance is not None:
                         balance_text = f"\n\nYour updated account balance is: £{new_balance:.2f}"
-                except:
+                except Exception:
                     pass
 
             # Prepare template variables
@@ -1412,7 +1410,7 @@ class TakeawayGUI:
             try:
                 if 'conn' in locals():
                     conn.close()
-            except:
+            except Exception:
                 pass
 
     def view_order_details_for_refund(self):

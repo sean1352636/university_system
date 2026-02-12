@@ -48,24 +48,9 @@ DATABASE_FILE = str(DEFAULT_DB_PATH)
 logger = configure_logging(name=__name__)
 
 def get_db_connection() -> Optional[sqlite3.Connection]:
-    """
-    Get database connection using the consolidated database file.
-
-    Returns
-    -------
-    Optional[sqlite3.Connection]
-        A connection to the library database with foreign keys enabled,
-        or None if connection fails.
-
-    Notes
-    -----
-    Enables foreign key constraints on the connection to ensure
-    referential integrity for library operations.
-    """
+    """Get database connection using the consolidated database file."""
     try:
-        conn = sqlite3.connect(DATABASE_FILE)
-        conn.execute("PRAGMA foreign_keys = ON")
-        return conn
+        return get_db_conn(db_path=DATABASE_FILE, row_factory=False)
     except sqlite3.Error as e:
         logging.error(f"Database connection error: {e}")
         return None

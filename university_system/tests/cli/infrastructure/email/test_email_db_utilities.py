@@ -7,7 +7,7 @@ import sys
 import os
 import tempfile
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from unittest.mock import Mock, patch, MagicMock, call, PropertyMock
@@ -16,7 +16,6 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from university_system.infrastructure.email import email_db_utilities
-
 
 class TestModuleConstants:
     """Test suite for module-level constants and configuration"""
@@ -44,7 +43,6 @@ class TestModuleConstants:
         """Test that _DB_READY flag exists"""
         assert hasattr(email_db_utilities, '_DB_READY')
         assert isinstance(email_db_utilities._DB_READY, bool)
-
 
 class TestEnsureDbDirectory:
     """Test suite for ensure_db_directory() function"""
@@ -77,7 +75,6 @@ class TestEnsureDbDirectory:
         mock_makedirs.assert_not_called()
         assert result == '/path/to/db'
 
-
 class TestEnsureParentDir:
     """Test suite for ensure_parent_dir() function"""
 
@@ -100,7 +97,6 @@ class TestEnsureParentDir:
         email_db_utilities.ensure_parent_dir('file.db')
 
         mock_makedirs.assert_not_called()
-
 
 class TestGetUnifiedConnection:
     """Test suite for get_unified_connection() function"""
@@ -171,7 +167,6 @@ class TestGetUnifiedConnection:
         # Should log error
         error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
         assert len(error_calls) > 0
-
 
 class TestSimpleDBManager:
     """Test suite for SimpleDBManager class"""
@@ -315,7 +310,6 @@ class TestSimpleDBManager:
         manager._lock.release()
         manager._lock.release()
 
-
 class TestGetDbManager:
     """Test suite for get_db_manager() function"""
 
@@ -359,7 +353,6 @@ class TestGetDbManager:
                 manager = email_db_utilities.get_db_manager()
 
                 assert isinstance(manager, email_db_utilities.SimpleDBManager)
-
 
 class TestExecuteDbOperation:
     """Test suite for execute_db_operation() function"""
@@ -524,7 +517,6 @@ class TestExecuteDbOperation:
         info_calls = [call for call in mock_logger.info.call_args_list if 'locked' in str(call)]
         assert len(info_calls) > 0
 
-
 class TestSafeDbOperation:
     """Test suite for safe_db_operation() function"""
 
@@ -553,7 +545,6 @@ class TestSafeDbOperation:
         call_args = mock_execute.call_args
         assert call_args[0][0] == test_op
         assert call_args[0][1] == 42
-
 
 class TestInitializeEmailDb:
     """Test suite for initialize_email_db() function"""
@@ -712,7 +703,6 @@ class TestInitializeEmailDb:
         # Check for index creation
         assert any('CREATE INDEX' in call for call in create_calls)
 
-
 class TestMigrateEmailLogTable:
     """Test suite for migrate_email_log_table() function"""
 
@@ -764,7 +754,6 @@ class TestMigrateEmailLogTable:
         if captured_func:
             result = captured_func(mock_cursor)
             assert result is True
-
 
 class TestOptimizeDatabase:
     """Test suite for optimize_database() function"""
@@ -862,7 +851,6 @@ class TestOptimizeDatabase:
         error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
         assert len(error_calls) > 0
 
-
 class TestScheduleDatabaseMaintenance:
     """Test suite for schedule_database_maintenance() function"""
 
@@ -883,7 +871,6 @@ class TestScheduleDatabaseMaintenance:
 
             mock_every.assert_called_once()
             mock_day.at.assert_called_once_with("02:00")
-
 
 class TestHelperFunctions:
     """Test suite for internal helper functions"""
@@ -939,7 +926,6 @@ class TestHelperFunctions:
 
         assert result == 789
 
-
 class TestDbReadyInitialization:
     """Test suite for _ensure_db_ready() and _sync_inbox_messages()"""
 
@@ -990,7 +976,6 @@ class TestDbReadyInitialization:
         # Should log warning
         assert mock_logger.warning.called
 
-
 class TestModuleIntegration:
     """Test suite for module-level integration"""
 
@@ -1024,7 +1009,6 @@ class TestModuleIntegration:
         """Test that SimpleDBManager class is accessible"""
         assert hasattr(email_db_utilities, 'SimpleDBManager')
         assert isinstance(email_db_utilities.SimpleDBManager, type)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short', '--cov=university_system.infrastructure.email.email_db_utilities', '--cov-report=term-missing'])

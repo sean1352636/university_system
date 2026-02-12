@@ -198,7 +198,7 @@ class ParkingManagementGUI:
             # Add payment_status column to parking_violations if it doesn't exist
             try:
                 cursor.execute("SELECT payment_status FROM parking_violations LIMIT 1")
-            except:
+            except Exception:
                 cursor.execute("ALTER TABLE parking_violations ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
 
             # Create finance_payments table if it doesn't exist
@@ -1505,7 +1505,7 @@ University Parking Management
                         SET notes = notes || ' [REFUNDED: ' || ? || ']'
                         WHERE payment_id = ?
                     """, (refund_ref, dialog.result['payment_id']))
-                except:
+                except Exception:
                     pass
 
                 # If student account, add refund amount

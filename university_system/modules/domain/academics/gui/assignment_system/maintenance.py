@@ -17,6 +17,7 @@ import seaborn as sns
 from university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from university_system.infrastructure.auth import UserAuth
 from university_system.modules.shared.constants import paths
+from university_system.core.sql_safety import validate_table_name
 from collections import deque
 
 
@@ -148,7 +149,8 @@ class MaintenanceManager:
             stats = []
             
             for table in tables:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                safe_table = validate_table_name(table)
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 stats.append(f"{table}: {count} records")
             

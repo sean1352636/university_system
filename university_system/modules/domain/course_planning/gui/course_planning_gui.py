@@ -114,7 +114,7 @@ class CoursePlanningGUI:
                         """, (self.student_id,)).fetchone()
 
                     student_name = f"{student['first_name']} {student['last_name']}" if student else self.student_id
-                except:
+                except Exception:
                     student_name = self.student_id
 
                 user_info = f"Admin: {self.current_user.get('username', 'Unknown')} | Viewing: {student_name} ({self.student_id})"
@@ -306,13 +306,13 @@ class CoursePlanningGUI:
         try:
             plans = self.planning_service.get_student_plans(self.student_id)
             active_plans = [p for p in plans if p['status'] == 'Active']
-        except:
+        except Exception:
             plans = []
             active_plans = []
 
         try:
             recommendations_count = len(self.planning_service.get_student_recommendations(self.student_id))
-        except:
+        except Exception:
             recommendations_count = 0
 
         self._create_stat_card(stats_grid, "Total Plans", len(plans), 0, 0)
@@ -1608,7 +1608,7 @@ class CoursePlanningGUI:
             try:
                 from university_system.infrastructure.email.email_service import queue_email
                 EMAIL_AVAILABLE = True
-            except:
+            except ImportError:
                 EMAIL_AVAILABLE = False
 
             if not EMAIL_AVAILABLE:

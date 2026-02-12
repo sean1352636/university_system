@@ -4,7 +4,7 @@ Cinema Booking System - Promo Code Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_promo_management(self):
     """Display promo code management page."""
@@ -58,7 +57,6 @@ def show_promo_management(self):
     ttk.Button(action_frame, text=_t("cinema.buttons.deactivate_selected"), style="Danger.TButton",
               command=self.deactivate_selected_promo).pack(side="left", padx=5)
 
-
 def refresh_promo_list(self):
     """Refresh promo codes list."""
     for item in self.promo_tree.get_children():
@@ -75,7 +73,6 @@ def refresh_promo_list(self):
             f"\u00a3{row[4]:.2f}", row[6], row[5] or "\u221e", row[8] or "No limit", row[9].upper()
         ))
     conn.close()
-
 
 def show_add_promo_form(self):
     """Show form to add promo code."""
@@ -136,7 +133,7 @@ def show_add_promo_form(self):
             value = float(value_entry.get())
             min_purchase = float(min_entry.get() or 0)
             max_uses = int(max_entry.get()) if max_entry.get() else None
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), _t("cinema.messages.errors.invalid_values"))
             return
 
@@ -163,7 +160,6 @@ def show_add_promo_form(self):
     ttk.Button(btn_frame, text=_t("cinema.buttons.save"), style="Success.TButton", command=save_promo).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.buttons.cancel"), style="Secondary.TButton", command=form_window.destroy).pack(side="left", padx=5)
 
-
 def edit_selected_promo(self):
     """Edit selected promo code."""
     selected = self.promo_tree.selection()
@@ -172,7 +168,6 @@ def edit_selected_promo(self):
         return
     # Similar to add form but pre-filled - simplified for brevity
     messagebox.showinfo(_t("cinema.common.info"), _t("cinema.messages.info.edit_note"))
-
 
 def deactivate_selected_promo(self):
     """Deactivate selected promo code."""

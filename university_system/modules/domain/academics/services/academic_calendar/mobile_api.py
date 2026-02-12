@@ -20,7 +20,9 @@ class MobileAPIManager:
         self.calendar_manager = calendar_manager
         if FLASK_AVAILABLE:
             self.app = Flask(__name__)
-            CORS(self.app)
+            import os
+            allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+            CORS(self.app, origins=allowed_origins, supports_credentials=True)
             self._setup_mobile_routes()
 
     def _setup_mobile_routes(self):

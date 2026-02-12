@@ -6,7 +6,7 @@ This module tests competency management and student competency recording functio
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest import mock
 
@@ -17,7 +17,6 @@ from university_system.modules.domain.academics.grading.competency import (
     manage_competencies,
     record_student_competencies,
 )
-
 
 @pytest.fixture
 def setup_competency_tables():
@@ -83,7 +82,6 @@ def setup_competency_tables():
         cursor.execute("DELETE FROM competency_levels WHERE competency_id IN (SELECT competency_id FROM competencies WHERE name LIKE 'Test%')")
         cursor.execute("DELETE FROM competencies WHERE name LIKE 'Test%'")
 
-
 @pytest.fixture
 def setup_test_data(setup_competency_tables):
     """Set up test data for competency tests"""
@@ -118,7 +116,6 @@ def setup_test_data(setup_competency_tables):
     with transaction() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM students WHERE student_id LIKE 'COMP%'")
-
 
 class TestManageCompetencies:
     """Test competency management functions"""
@@ -268,7 +265,6 @@ class TestManageCompetencies:
 
         captured = capsys.readouterr()
         assert "Invalid choice" in captured.out
-
 
 class TestRecordStudentCompetencies:
     """Test recording student competency assessments"""
@@ -436,7 +432,6 @@ class TestRecordStudentCompetencies:
         captured = capsys.readouterr()
         assert "No level found" in captured.out or "level" in captured.out.lower()
 
-
 class TestDatabaseErrors:
     """Test error handling"""
 
@@ -459,7 +454,6 @@ class TestDatabaseErrors:
 
             captured = capsys.readouterr()
             assert "Database error" in captured.out
-
 
 class TestEdgeCases:
     """Test edge cases"""
@@ -497,7 +491,6 @@ class TestEdgeCases:
             manage_competencies()
 
         # Should handle special characters
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

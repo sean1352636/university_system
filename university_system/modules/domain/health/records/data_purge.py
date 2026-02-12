@@ -331,7 +331,9 @@ def purge_expired_data(auth):
             purge_tables = [t for t in tables if t not in keep]
 
             for t in purge_tables:
-                cur.execute(f"DELETE FROM {t}")
+                from university_system.core.sql_safety import validate_table_name
+                validated_t = validate_table_name(t, conn=conn)
+                cur.execute("DELETE FROM [" + validated_t + "]")
 
             conn.commit()
             conn.execute("PRAGMA foreign_keys = ON")

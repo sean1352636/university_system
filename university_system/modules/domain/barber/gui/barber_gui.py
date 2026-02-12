@@ -1227,14 +1227,14 @@ class BarberGUI:
                         try:
                             date_obj = dt.strptime(new_date, '%Y-%m-%d')
                             formatted_date = date_obj.strftime('%A, %B %d, %Y')
-                        except:
+                        except (ValueError, TypeError):
                             formatted_date = new_date
 
                         # Get old date/time for reference
                         try:
                             old_date_obj = dt.strptime(appt['appointment_date'], '%Y-%m-%d')
                             old_formatted_date = old_date_obj.strftime('%A, %B %d, %Y')
-                        except:
+                        except (ValueError, TypeError):
                             old_formatted_date = appt['appointment_date']
 
                         # Render email from template

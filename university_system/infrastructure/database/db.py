@@ -22,6 +22,7 @@ from university_system.core.exceptions import (
     QueryError,
     TransactionError
 )
+from university_system.core.sql_safety import validate_identifier
 
 # Import database constants normally (within same package)
 from university_system.infrastructure.database.constants import (
@@ -829,6 +830,54 @@ def atomic_operation(
 
 
 
+@contextmanager
+def savepoint(
+    conn: _sqlite3.Connection, name: Optional[str] = None
+) -> Generator[_sqlite3.Connection, None, None]:
+    """Context manager for savepoint-based nested transactions.
+
+    Savepoints allow nested transactional blocks within an already-active
+    transaction.  If the inner block raises an exception, only the work
+    done since the savepoint is rolled back – the outer transaction stays
+    intact.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An **open** database connection (the caller is responsible for
+        managing the connection lifecycle).
+    name : str or None, optional
+        An explicit savepoint name.  If *None*, a unique name is
+        generated automatically.
+
+    Yields
+    ------
+    sqlite3.Connection
+        The same *conn* that was passed in, so callers can issue queries
+        inside the ``with`` block.
+
+    Example
+    -------
+    >>> with transaction() as conn:
+    ...     conn.execute("INSERT INTO t VALUES (1)")
+    ...     with savepoint(conn) as sp_conn:
+    ...         sp_conn.execute("INSERT INTO t VALUES (2)")
+    ...         raise ValueError("oops")  # only row 2 is rolled back
+    """
+    import uuid as _uuid
+
+    sp_name = name or f"sp_{_uuid.uuid4().hex[:8]}"
+    # Validate savepoint name to prevent SQL injection via the 'name' parameter
+    validate_identifier(sp_name, "savepoint name")
+    conn.execute(f"SAVEPOINT {sp_name}")
+    try:
+        yield conn
+        conn.execute(f"RELEASE SAVEPOINT {sp_name}")
+    except Exception:
+        conn.execute(f"ROLLBACK TO SAVEPOINT {sp_name}")
+        raise
+
+
 class _SQLiteProxy:
     """Proxy object that delegates attribute access to :mod:`sqlite3`.
 
@@ -1004,4 +1053,5 @@ __all__ = [
     # Transaction Management
     "transaction",
     "atomic_operation",
+    "savepoint",
 ]

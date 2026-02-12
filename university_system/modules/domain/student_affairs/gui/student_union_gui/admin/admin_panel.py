@@ -14,6 +14,7 @@ import queue
 from university_system.infrastructure.email.template_utils import render_template
 from university_system.infrastructure.auth import UserAuth
 from university_system.infrastructure.shared_context import get_auth
+from university_system.core.sql_safety import validate_table_name
 
 # Import i18n for multi-language support
 from university_system.modules.shared.utils.i18n import (
@@ -487,10 +488,11 @@ def refresh_system_info(self):
         
         for table in tables:
             try:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                safe_table = validate_table_name(table, conn=conn)
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 info += f"{table}: {count} records\n"
-            except sqlite3.Error:
+            except Exception:
                 info += f"{table}: Table not found\n"
         
         info += "\n"

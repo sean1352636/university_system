@@ -4,7 +4,7 @@ Tests all functionality in university_system/modules/domain/health/gui/health_po
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
@@ -18,7 +18,6 @@ from university_system.modules.domain.health.gui.health_portal_gui import (
 )
 from university_system.infrastructure.auth import UserAuth
 
-
 @pytest.fixture
 def temp_db_path():
     """Create a temporary database file"""
@@ -28,7 +27,6 @@ def temp_db_path():
     # Cleanup
     if os.path.exists(db_path):
         os.unlink(db_path)
-
 
 @pytest.fixture
 def mock_auth():
@@ -44,7 +42,6 @@ def mock_auth():
     auth.has_permission = Mock(return_value=True)
     return auth
 
-
 @pytest.fixture
 def root_window():
     """Create a Tk root window for testing"""
@@ -54,7 +51,6 @@ def root_window():
         root.destroy()
     except (OSError, IOError):
         pass
-
 
 class TestHealthPortalGUIInit:
     """Test HealthPortalGUI initialization"""
@@ -99,7 +95,6 @@ class TestHealthPortalGUIInit:
                 except Exception:
                     pytest.fail("Generated encryption key is not a valid Fernet key")
 
-
 class TestEncryptionMethods:
     """Test encryption and decryption methods"""
 
@@ -143,7 +138,6 @@ class TestEncryptionMethods:
 
         # Should return original data on decrypt failure
         assert result == invalid_data
-
 
 class TestRoleChecking:
     """Test role checking methods"""
@@ -198,7 +192,6 @@ class TestRoleChecking:
 
         assert gui.get_user_role() == 'health_provider'
 
-
 class TestDatabaseOperations:
     """Test database initialization and operations"""
 
@@ -238,7 +231,6 @@ class TestDatabaseOperations:
             assert isinstance(conn, sqlite3.Connection)
             conn.close()
 
-
 class TestAuditLogging:
     """Test audit logging functionality"""
 
@@ -262,7 +254,6 @@ class TestAuditLogging:
         assert 'view' in call_args
         assert 'health_record' in call_args
         assert '12345' in call_args
-
 
 class TestLaunchFunction:
     """Test launch_health_portal_gui function"""
@@ -298,7 +289,6 @@ class TestLaunchFunction:
         # Verify it used the global auth
         mock_get_auth.assert_called()
 
-
 class TestErrorHandling:
     """Test error handling scenarios"""
 
@@ -333,7 +323,6 @@ class TestErrorHandling:
         result = gui2.decrypt_sensitive_data(encrypted)
         assert result is not None  # Should not crash
 
-
 class TestSecurityFeatures:
     """Test security-related features"""
 
@@ -359,7 +348,6 @@ class TestSecurityFeatures:
                 key2 = gui2.encryption_key
 
                 assert key1 == key2
-
 
 class TestDataEncryptionIntegration:
     """Integration tests for data encryption workflows"""
@@ -408,7 +396,6 @@ class TestDataEncryptionIntegration:
 
         # Verify all events were logged
         assert gui.audit_logger.info.call_count == len(events)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

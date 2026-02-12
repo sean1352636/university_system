@@ -4,14 +4,13 @@ Mental Health & Wellness Service
 Provides comprehensive wellness tracking and mental health support.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import json
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
 
 class WellnessService:
     """Service for mental health and wellness tracking."""

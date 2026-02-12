@@ -35,6 +35,7 @@ from io import BytesIO
 import base64
 from university_system.infrastructure.email import send_email
 from university_system.infrastructure.auth import UserAuth
+from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import get_connection
 from university_system.utils.logging.log_config import configure_logging
 from university_system.modules.shared.utils.i18n import get_text
@@ -43,10 +44,7 @@ from university_system.modules.shared.utils.i18n import get_text
 logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
-# Dummy auth setup to bypass JWT
-auth = type("Auth", (), {})()
-auth.current_user = {"username": "admin"}
-auth.check_permission = lambda p: True
+auth = get_auth()
 app = Flask(__name__)
 
 # Initialize security headers for all responses

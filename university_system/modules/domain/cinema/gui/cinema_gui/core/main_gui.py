@@ -5,7 +5,7 @@ Core CinemaApp class with method attachments from submodules.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import random
 import string
@@ -84,7 +84,6 @@ except ImportError:
     import hashlib
     def hash_password(password):
         return hashlib.sha256(password.encode()).hexdigest()
-
 
 class CinemaApp:
     def __init__(self, root):
@@ -377,7 +376,6 @@ University Cinema
         """Clear the content frame."""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
-
 
 # ==================== METHOD ATTACHMENTS ====================
 # Import functions from submodules and attach to CinemaApp class

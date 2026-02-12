@@ -3,12 +3,11 @@ Scholarship Manager
 Handles scholarship opportunities, applications, and awards
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, date
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 class ScholarshipManager:
     """Manager for scholarship operations"""

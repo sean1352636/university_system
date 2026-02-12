@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.core.sql_safety import validate_identifier
 
 
 class ExpenseManager:
@@ -153,7 +154,7 @@ class ExpenseManager:
         values = []
         for key, value in data.items():
             if key not in ('claim_id', 'created_at', 'user_id'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -164,11 +165,9 @@ class ExpenseManager:
         values.append(claim_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE expense_claims
-                SET {', '.join(fields)}
-                WHERE claim_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE expense_claims SET ' + ', '.join(fields) + ' WHERE claim_id = ?',
+                values)
             log_activity('update', 'expense_claim', details={
                 'claim_id': claim_id, 'updated_fields': list(data.keys())
             })
@@ -467,31 +466,32 @@ class ExpenseManager:
                 params.append(f'{period}%')
 
             # Total claimed
-            row = conn.execute(f'''
-                SELECT SUM(amount) as total, COUNT(*) as count
-                FROM expense_claims WHERE {where_clause}
-            ''', params).fetchone()
+            row = conn.execute(
+                'SELECT SUM(amount) as total, COUNT(*) as count'
+                ' FROM expense_claims WHERE ' + where_clause,
+                params).fetchone()
             stats['total_claimed'] = row['total'] or 0
             stats['claim_count'] = row['count'] or 0
 
             # By status
-            rows = conn.execute(f'''
-                SELECT status, SUM(amount) as total, COUNT(*) as count
-                FROM expense_claims WHERE {where_clause}
-                GROUP BY status
-            ''', params).fetchall()
+            rows = conn.execute(
+                'SELECT status, SUM(amount) as total, COUNT(*) as count'
+                ' FROM expense_claims WHERE ' + where_clause +
+                ' GROUP BY status',
+                params).fetchall()
             stats['by_status'] = {row['status']: {
                 'total': row['total'], 'count': row['count']
             } for row in rows}
 
             # By category
-            rows = conn.execute(f'''
-                SELECT cat.name, SUM(c.amount) as total, COUNT(*) as count
-                FROM expense_claims c
-                JOIN expense_categories cat ON c.category_id = cat.category_id
-                WHERE {where_clause.replace('user_id', 'c.user_id').replace('expense_date', 'c.expense_date')}
-                GROUP BY cat.name
-            ''', params).fetchall()
+            cat_where = where_clause.replace('user_id', 'c.user_id').replace('expense_date', 'c.expense_date')
+            rows = conn.execute(
+                'SELECT cat.name, SUM(c.amount) as total, COUNT(*) as count'
+                ' FROM expense_claims c'
+                ' JOIN expense_categories cat ON c.category_id = cat.category_id'
+                ' WHERE ' + cat_where +
+                ' GROUP BY cat.name',
+                params).fetchall()
             stats['by_category'] = {row['name']: {
                 'total': row['total'], 'count': row['count']
             } for row in rows}
@@ -584,7 +584,7 @@ class ExpenseManager:
         values = []
         for key, value in data.items():
             if key not in ('category_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -593,9 +593,9 @@ class ExpenseManager:
         values.append(category_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE expense_categories SET {', '.join(fields)} WHERE category_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE expense_categories SET ' + ', '.join(fields) + ' WHERE category_id = ?',
+                values)
             log_activity('update', 'expense_category', details={'category_id': category_id})
             return True
 
@@ -689,7 +689,7 @@ class ExpenseManager:
         values = []
         for key, value in data.items():
             if key not in ('policy_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -698,9 +698,9 @@ class ExpenseManager:
         values.append(policy_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE expense_policies SET {', '.join(fields)} WHERE policy_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE expense_policies SET ' + ', '.join(fields) + ' WHERE policy_id = ?',
+                values)
             log_activity('update', 'expense_policy', details={'policy_id': policy_id})
             return True
 

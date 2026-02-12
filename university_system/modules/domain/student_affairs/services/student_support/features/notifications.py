@@ -2,7 +2,6 @@
 Notification system for support tickets.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from ..utils.audit import audit_action
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def get_user_notifications(user_id=None, unread_only=False):
     """Get notifications for a user"""
@@ -101,7 +97,6 @@ def mark_notification_read(notification_id, user_id=None):
         logger.error(f"Error marking notification as read: {e}")
         return False
 
-
 def _get_recent_notifications(user_id, cursor):
     """Get recent notifications for user"""
     cursor.execute('''
@@ -120,7 +115,6 @@ def _get_recent_notifications(user_id, cursor):
         ))
         for row in cursor.fetchall()
     ]
-
 
 def _create_ticket_notifications(ticket_id, student_id, assigned_to, action):
     """Create notifications for ticket events"""
@@ -198,7 +192,6 @@ def _trigger_satisfaction_survey(ticket_id, student_id):
     finally:
         if conn:
             conn.close()
-
 
 def view_notifications(support):
     """View user notifications"""

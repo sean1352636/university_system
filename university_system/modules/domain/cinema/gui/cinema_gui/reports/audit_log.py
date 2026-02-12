@@ -7,7 +7,7 @@ from both university system log files and the database.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import glob
 import csv
@@ -20,7 +20,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def load_audit_from_logs(self, action_filter="all"):
     """Load audit entries from university system log files."""
@@ -135,7 +134,6 @@ def load_audit_from_logs(self, action_filter="all"):
 
     return entries[:200]  # Return max 200 entries
 
-
 def show_audit_log_page(self):
     self.clear_content()
     ttk.Label(self.content_frame, text=_t("cinema.audit.title"), style="Subtitle.TLabel").pack(pady=10)
@@ -242,7 +240,6 @@ def show_audit_log_page(self):
     scrollbar.pack(side="right", fill="y")
 
     load()
-
 
 def export_audit(self):
     """Export current audit log view to CSV file."""

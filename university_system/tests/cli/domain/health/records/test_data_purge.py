@@ -3,14 +3,13 @@ Comprehensive tests for health records data purge and retention functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, call
 from io import StringIO
 
 from university_system.modules.domain.health.records import data_purge
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_auth():
@@ -25,7 +24,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     return auth
 
-
 @pytest.fixture
 def mock_non_admin_auth():
     """Create a mock non-admin authentication object."""
@@ -37,7 +35,6 @@ def mock_non_admin_auth():
     }
     auth.check_permission = Mock(return_value=False)
     return auth
-
 
 @pytest.fixture
 def setup_retention_db():
@@ -113,7 +110,6 @@ def setup_retention_db():
     conn.commit()
     conn.close()
 
-
 class TestUpdateRetentionPolicy:
     """Tests for update_retention_policy function."""
 
@@ -175,7 +171,6 @@ class TestUpdateRetentionPolicy:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('disabled' in str(call).lower() for call in print_calls)
 
-
 class TestArchiveOldData:
     """Tests for archive_old_data function."""
 
@@ -207,7 +202,6 @@ class TestArchiveOldData:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('cancelled' in str(call).lower() for call in print_calls)
 
-
 class TestViewPurgeableData:
     """Tests for view_purgeable_data function."""
 
@@ -232,7 +226,6 @@ class TestViewPurgeableData:
         print_calls = [str(call) for call in mock_print.call_args_list]
         # Check if health_records was mentioned
         assert any('health_records' in str(call).lower() for call in print_calls)
-
 
 class TestPurgeExpiredData:
     """Tests for purge_expired_data function."""
@@ -293,7 +286,6 @@ class TestPurgeExpiredData:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('admin' in str(call).lower() for call in print_calls)
 
-
 class TestRetentionComplianceReport:
     """Tests for retention_compliance_report function."""
 
@@ -317,7 +309,6 @@ class TestRetentionComplianceReport:
         # Should show non-compliant status for health_records with old data
         report_str = ' '.join([str(call) for call in print_calls])
         # The report should mention health_records
-
 
 class TestComplianceMonitoring:
     """Tests for compliance_monitoring function."""
@@ -356,7 +347,6 @@ class TestComplianceMonitoring:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('permission' in str(call).lower() for call in print_calls)
 
-
 class TestViewRetentionPolicies:
     """Tests for view_retention_policies function."""
 
@@ -383,7 +373,6 @@ class TestViewRetentionPolicies:
 
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('no' in str(call).lower() and 'polic' in str(call).lower() for call in print_calls)
-
 
 class TestCustomDataPurge:
     """Tests for custom_data_purge function."""
@@ -424,7 +413,6 @@ class TestCustomDataPurge:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('cancelled' in str(call).lower() for call in print_calls)
 
-
 class TestDataPurgeMenu:
     """Tests for data_purge_menu function."""
 
@@ -453,7 +441,6 @@ class TestDataPurgeMenu:
 
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('admin' in str(call).lower() for call in print_calls)
-
 
 class TestDataRetentionManagement:
     """Tests for data_retention_management function."""
@@ -492,7 +479,6 @@ class TestDataRetentionManagement:
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('invalid' in str(call).lower() for call in print_calls)
 
-
 class TestIntegration:
     """Integration tests for data purge functionality."""
 
@@ -511,7 +497,6 @@ class TestIntegration:
             print_calls = [str(call) for call in mock_print.call_args_list]
             # Should show updated retention period
             assert any('1000' in str(call) for call in print_calls)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

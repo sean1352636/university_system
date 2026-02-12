@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import shutil
 from typing import Any, Optional, Tuple, List, Dict
+from university_system.infrastructure.database.db import sqlite3
 from .exceptions import DatabaseError, ExportError
 from .utils import convert_to_user_error
 
@@ -30,7 +31,6 @@ class ConnectionPool:
 
     def __enter__(self):
         """Context manager entry - get connection"""
-        import sqlite3
         self._connection = sqlite3.connect(self.db_path)
         self._connection.row_factory = sqlite3.Row
         return self._connection
@@ -44,7 +44,6 @@ class ConnectionPool:
                 self._connection.rollback()
             self._connection.close()
         return False
-
 
 class DatabaseManager:
     """
@@ -85,11 +84,8 @@ class DatabaseManager:
             DatabaseError: If connection fails
         """
         try:
-            import sqlite3
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
-            # Enable foreign keys
-            conn.execute("PRAGMA foreign_keys = ON")
             return conn
         except Exception as e:
             raise DatabaseError.connection_failed(str(e))
@@ -210,9 +206,6 @@ class DatabaseManager:
             print(f"Backup created: {backup_file}")
         """
         try:
-            import shutil
-            from pathlib import Path
-
             if backup_path is None:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 backup_dir = Path(self.db_path).parent / "backups"
@@ -241,7 +234,6 @@ class DatabaseManager:
             self._connection.close()
             self._connection = None
         gui_logger.info("DatabaseManager closed")
-
 
 def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
     """

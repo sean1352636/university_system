@@ -7,7 +7,7 @@ with age verification, finance integration, and email receipts.
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from decimal import Decimal
 
 # Import centralized authentication and database
@@ -65,7 +65,6 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
     log_activity = lambda *args, **kwargs: None
 
-
 def get_db_connection():
     """Get database connection with proper error handling"""
     try:
@@ -74,7 +73,6 @@ def get_db_connection():
     except (sqlite3.Error, OSError) as e:
         print(f"Database connection error: {e}")
         return None
-
 
 def init_db():
     """Initialize bar database tables"""
@@ -201,7 +199,6 @@ def init_db():
     except Exception as e:
         print(f"Database initialization error: {e}")
         return False
-
 
 class BarGUI:
     """Main Bar GUI class for University Pub/Bar management"""
@@ -1562,7 +1559,6 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
         except Exception as e:
             messagebox.showerror(_t("common.error", default="Error"), f"Failed to generate report: {e}")
-
 
 # Module-level function for external access
 def open_bar_gui(root, auth):

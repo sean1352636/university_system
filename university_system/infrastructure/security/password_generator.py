@@ -10,7 +10,7 @@ import secrets
 import string
 from typing import Optional
 
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 
 # Character sets for password generation

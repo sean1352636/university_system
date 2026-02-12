@@ -887,13 +887,41 @@ class HealthPortalGUI:
     
     def create_placeholder(self, function_name):
         """Create a placeholder interface for functions not yet implemented"""
-        title = ttk.Label(self.content_frame, text=f"{function_name.replace('_', ' ').title()}",
-                         style='Title.TLabel')
+        display_name = function_name.replace('_', ' ').title()
+
+        title = ttk.Label(self.content_frame, text=display_name, style='Title.TLabel')
         title.grid(row=0, column=0, pady=10)
 
-        message = ttk.Label(self.content_frame,
-                           text=f"This feature ({function_name}) is available in the system.\nGUI interface can be expanded as needed!")
-        message.grid(row=1, column=0, pady=20)
+        info_frame = ttk.LabelFrame(self.content_frame, text=_t("health_portal.labels.feature_info", "Feature Information"), padding=15)
+        info_frame.grid(row=1, column=0, pady=20, padx=20, sticky='ew')
+
+        ttk.Label(info_frame,
+                 text=_t("health_portal.messages.feature_under_development",
+                         "The '{name}' interface is under development.").format(name=display_name),
+                 font=('Arial', 11)).pack(anchor='w', pady=5)
+
+        ttk.Label(info_frame,
+                 text=_t("health_portal.messages.backend_available",
+                         "The backend service for this feature is available. A full GUI interface\n"
+                         "will be added in a future update. In the meantime, you can access\n"
+                         "this functionality through the CLI interface."),
+                 foreground='gray').pack(anchor='w', pady=5)
+
+        # Available features list
+        features_frame = ttk.LabelFrame(self.content_frame, text=_t("health_portal.labels.available_features", "Available Features"), padding=15)
+        features_frame.grid(row=2, column=0, pady=10, padx=20, sticky='ew')
+
+        available = [
+            "Manage Health Records", "Schedule Appointments", "Record Vaccinations",
+            "Health Reports & Analytics", "Emergency Contacts", "Security Audit",
+            "Data Management", "Email Manager"
+        ]
+        ttk.Label(features_frame,
+                 text=_t("health_portal.messages.try_these", "Try one of these fully implemented features:"),
+                 font=('Arial', 10, 'bold')).pack(anchor='w')
+        ttk.Label(features_frame, text="  " + "  |  ".join(available), foreground='#555555').pack(anchor='w', pady=5)
+
+        self.content_frame.columnconfigure(0, weight=1)
 
     # ==================== INTEGRATION SERVICE INTERFACES ====================
 
@@ -3205,7 +3233,9 @@ Scheduled At:    {record[11] if record[11] else 'N/A'}
                 report.append("DATABASE SUMMARY")
                 report.append("-" * 20)
                 for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    from university_system.core.sql_safety import validate_table_name
+                    validated_table = validate_table_name(table, conn=conn)
+                    cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                     count = cursor.fetchone()[0]
                     report.append(f"{table.replace('_', ' ').title()}: {count} records")
                 
@@ -4283,7 +4313,7 @@ This report was automatically generated and sent from the Health Portal system.
         """Load and display vaccination records"""
         try:
             # Load real vaccination data from database
-            import sqlite3
+
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
@@ -4917,13 +4947,11 @@ button in this section."""
         except Exception as e:
             messagebox.showerror("Application Error", f"An error occurred: {str(e)}")
 
-
 def launch_health_portal_gui(auth=None):
     """Launch Health Portal GUI for integration with university system"""
     root = tk.Tk()
     app = HealthPortalGUI(root, auth_system=auth)
     app.run()
-
 
 # Main execution
 if __name__ == "__main__":

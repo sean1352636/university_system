@@ -2,7 +2,6 @@
 Dashboard data and display for support system.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from .notifications import _get_recent_notifications
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def get_dashboard_data(user_role, user_id):
     """Get dashboard data based on user role"""
@@ -64,7 +60,6 @@ def get_dashboard_data(user_role, user_id):
     except Exception as e:
         logger.error(f"Error getting dashboard data: {e}")
         raise
-
 
 def _get_student_dashboard(user_id, cursor):
     """Get dashboard data for students"""
@@ -108,7 +103,6 @@ def _get_student_dashboard(user_id, cursor):
             {'name': 'Search Resources', 'action': 'search_resources'}
         ]
     }
-
 
 def _get_staff_dashboard(user_id, cursor):
     """Get dashboard data for staff"""
@@ -192,7 +186,6 @@ def _get_staff_dashboard(user_id, cursor):
         ]
     }
 
-
 def _get_system_status():
     """Get current system status"""
     return {
@@ -201,7 +194,6 @@ def _get_system_status():
         'next_maintenance': '2024-02-15 02:00:00',
         'active_incidents': 0
     }
-
 
 def display_dashboard(support):
     """Display user dashboard"""
@@ -248,7 +240,6 @@ def display_dashboard(support):
         print(f"Error loading dashboard: {e}")
     
     input("\nPress Enter to continue...")
-
 
 def display_support_menu():
     """Enhanced version of the support menu with new features"""

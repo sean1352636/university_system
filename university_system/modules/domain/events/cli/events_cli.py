@@ -623,7 +623,7 @@ class EventsCLI:
         try:
             dt = datetime.fromisoformat(dt_str)
             return dt.strftime("%a, %b %d, %Y at %I:%M %p")
-        except:
+        except (ValueError, TypeError):
             return dt_str
 
     def _format_date(self, date_str: str) -> str:
@@ -631,7 +631,7 @@ class EventsCLI:
         try:
             dt = datetime.fromisoformat(date_str)
             return dt.strftime("%A, %B %d, %Y")
-        except:
+        except (ValueError, TypeError):
             return date_str
 
 

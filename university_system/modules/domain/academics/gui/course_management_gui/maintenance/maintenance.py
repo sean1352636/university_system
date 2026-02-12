@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
 from tkinter.scrolledtext import ScrolledText
 from university_system.infrastructure.database.db import sqlite3
+from university_system.core.sql_safety import validate_table_name
 from university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 init_i18n()
 import os
@@ -336,7 +337,8 @@ class MaintenanceDialog:
             tables = ['courses', 'course_prerequisites', 'course_schedule', 'instructors']
             for table in tables:
                 if self.table_exists(cursor, table):
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    safe_table = validate_table_name(table)
+                    cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                     count = cursor.fetchone()[0]
                     results += f"{table}: {count} records\n"
                 else:

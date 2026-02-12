@@ -7,13 +7,11 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog import (
     ModuleEnrollmentDialog,
     safe_grab_set
 )
-
 
 @pytest.fixture
 def root():
@@ -25,7 +23,6 @@ def root():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_connection():
     """Mock database connection and cursor"""
@@ -33,7 +30,6 @@ def mock_connection():
     mock_cursor = Mock()
     mock_conn.commit = Mock()
     return mock_conn, mock_cursor
-
 
 class TestModuleEnrollmentDialog:
     """Test ModuleEnrollmentDialog class"""
@@ -328,7 +324,6 @@ class TestModuleEnrollmentDialog:
         assert "John Doe" in first_item['values'][1]
 
         dialog.dialog.destroy()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

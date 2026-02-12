@@ -1,5 +1,5 @@
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
@@ -11,7 +11,6 @@ from university_system.modules.domain.academics.grading.common_utilities import 
     _first_col,
     select_assessment
 )
-
 
 class TestTableExists:
     """Test the _table_exists function"""
@@ -43,7 +42,6 @@ class TestTableExists:
         result = _table_exists(cursor, 'students')
 
         assert result is False
-
 
 class TestCols:
     """Test the _cols function"""
@@ -78,7 +76,6 @@ class TestCols:
         result = _cols(cursor, 'students')
 
         assert result == set()
-
 
 class TestFirstTable:
     """Test the _first_table function"""
@@ -123,7 +120,6 @@ class TestFirstTable:
         assert result is None
         mock_exists.assert_not_called()
 
-
 class TestFirstCol:
     """Test the _first_col function"""
 
@@ -166,7 +162,6 @@ class TestFirstCol:
         result = _first_col(cursor, 'assessments', [])
 
         assert result is None
-
 
 class TestSelectAssessment:
     """Test the select_assessment function"""
@@ -357,7 +352,6 @@ class TestSelectAssessment:
         assert result is not None
         conn.close.assert_called_once()
 
-
 class TestIntegration:
     """Integration tests for common utilities"""
 
@@ -444,7 +438,6 @@ class TestIntegration:
         assert result['table'] == 'assessments'
         assert result['id_col'] == 'assessment_id'
         assert result['name_col'] == 'assessment_name'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

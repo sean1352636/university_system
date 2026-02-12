@@ -11,6 +11,8 @@ from typing import Optional, List, Dict, Tuple
 import random
 import string
 
+from university_system.core.sql_safety import validate_identifier
+
 # Import centralized database and authentication
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.shared_context import get_auth
@@ -2294,13 +2296,12 @@ def admin_booking_reports():
 
         choice = input("\nEnter choice: ").strip()
 
-        date_filter = ""
-        if choice == "1":
-            date_filter = "AND DATE(booking_date) = DATE('now')"
-        elif choice == "2":
-            date_filter = "AND DATE(booking_date) >= DATE('now', '-7 days')"
-        elif choice == "3":
-            date_filter = "AND DATE(booking_date) >= DATE('now', 'start of month')"
+        _DATE_FILTERS = {
+            "1": "AND DATE(booking_date) = DATE('now')",
+            "2": "AND DATE(booking_date) >= DATE('now', '-7 days')",
+            "3": "AND DATE(booking_date) >= DATE('now', 'start of month')",
+        }
+        date_filter = _DATE_FILTERS.get(choice, "")
 
         with get_connection() as conn:
             cursor = conn.execute(f'''

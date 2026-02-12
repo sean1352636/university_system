@@ -4,7 +4,7 @@ Tests all functionality in university_system/modules/domain/health/appointments/
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
@@ -36,7 +36,6 @@ from university_system.modules.domain.health.appointments.appointment_booking im
 )
 from university_system.infrastructure.database.db import get_connection
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def test_db():
@@ -165,7 +164,6 @@ def test_db():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object with permissions"""
@@ -177,7 +175,6 @@ def mock_auth():
     }
     auth.check_permission = Mock(return_value=True)
     return auth
-
 
 class TestProviderScheduleManagement:
     """Test provider schedule management functions"""
@@ -258,7 +255,6 @@ class TestProviderScheduleManagement:
         captured = capsys.readouterr()
         assert 'Dr. Available' in captured.out
         assert 'Total Weekly Hours' in captured.out
-
 
 class TestAppointmentManagement:
     """Test appointment management functions"""
@@ -353,7 +349,6 @@ class TestAppointmentManagement:
             captured = capsys.readouterr()
             assert 'Upcoming Appointments' in captured.out or 'No upcoming appointments' in captured.out
 
-
 class TestScreeningSchedules:
     """Test screening schedule functions"""
 
@@ -396,7 +391,6 @@ class TestScreeningSchedules:
 
         assert result[0] == 'scheduled'
 
-
 class TestProviderDashboard:
     """Test provider dashboard functions"""
 
@@ -433,7 +427,6 @@ class TestProviderDashboard:
 
         captured = capsys.readouterr()
         assert 'Statistics' in captured.out
-
 
 class TestReportGeneration:
     """Test report generation functions"""
@@ -491,7 +484,6 @@ class TestReportGeneration:
         captured = capsys.readouterr()
         assert 'Provider Workload Analysis' in captured.out
 
-
 class TestPermissions:
     """Test permission checks"""
 
@@ -519,7 +511,6 @@ class TestPermissions:
 
         captured = capsys.readouterr()
         assert "don't have permission" in captured.out
-
 
 class TestEdgeCases:
     """Test edge cases and error handling"""
@@ -565,7 +556,6 @@ class TestEdgeCases:
 
         captured = capsys.readouterr()
         assert 'Schedule not found' in captured.out or 'No provider schedules found' in captured.out
-
 
 class TestIntegration:
     """Integration tests for complete workflows"""
@@ -621,7 +611,6 @@ class TestIntegration:
         cursor.execute("SELECT status FROM screening_schedules WHERE id = ?", (screening_id,))
         result = cursor.fetchone()
         assert result[0] == 'scheduled'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

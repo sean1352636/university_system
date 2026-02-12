@@ -9,12 +9,11 @@ Provides comprehensive feedback and suggestion management with:
 - Public suggestion board with trending ideas
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
 
 class FeedbackService:
     """Service for managing feedback and suggestions"""

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from university_system.modules.shared.utils.i18n import init_i18n
+from university_system.core.i18n import init_i18n
 init_i18n()
 
 from .core_schemas import init_grade_system_db, init_academics_tables, init_courses_tables

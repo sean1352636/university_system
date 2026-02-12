@@ -5,7 +5,7 @@ Tests GUI initialization, components, dialogs, and user interactions
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import sys
@@ -184,7 +184,6 @@ except ImportError as e:
 
 pytestmark = pytest.mark.skipif(not IMPORT_SUCCESS, reason="Email GUI modules not available in headless environment")
 
-
 @pytest.fixture
 def temp_db():
     """Create a temporary database for testing"""
@@ -262,7 +261,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth(temp_db):
     """Create a mock auth manager"""
@@ -278,7 +276,6 @@ def mock_auth(temp_db):
     auth.get_current_user.return_value = auth.current_user
     return auth
 
-
 @pytest.fixture
 def mock_root():
     """Create a mock Tkinter root window for testing"""
@@ -286,7 +283,6 @@ def mock_root():
     root.winfo_screenwidth.return_value = 1920
     root.winfo_screenheight.return_value = 1080
     return root
-
 
 class TestEmailManagerGUIInitialization:
     """Test EmailManagerGUI initialization"""
@@ -320,7 +316,6 @@ class TestEmailManagerGUIInitialization:
             except Exception:
                 pass
 
-
 class TestComposeEmailDialog:
     """Test ComposeEmailDialog"""
 
@@ -345,7 +340,6 @@ class TestComposeEmailDialog:
             except Exception:
                 pass
 
-
 class TestTemplateManagerDialog:
     """Test TemplateManagerDialog"""
 
@@ -366,7 +360,6 @@ class TestTemplateManagerDialog:
                 # Should load templates from database
             except Exception:
                 pass
-
 
 class TestBulkEmailDialog:
     """Test BulkEmailDialog"""
@@ -392,7 +385,6 @@ class TestBulkEmailDialog:
             except Exception:
                 pass
 
-
 class TestScheduleEmailDialog:
     """Test ScheduleEmailDialog"""
 
@@ -413,7 +405,6 @@ class TestScheduleEmailDialog:
                 # Should have date/time selection widgets
             except Exception:
                 pass
-
 
 class TestEmailConfigDialog:
     """Test EmailConfigDialog"""
@@ -436,7 +427,6 @@ class TestEmailConfigDialog:
             except Exception:
                 pass
 
-
 class TestEmailDetailsDialog:
     """Test EmailDetailsDialog"""
 
@@ -457,7 +447,6 @@ class TestEmailDetailsDialog:
                 assert dialog is not None
             except Exception:
                 pass
-
 
 class TestNotificationDialogs:
     """Test various notification dialogs"""
@@ -497,7 +486,6 @@ class TestNotificationDialogs:
             except Exception:
                 pass
 
-
 class TestHealthNotificationDialogs:
     """Test health-related notification dialogs"""
 
@@ -516,7 +504,6 @@ class TestHealthNotificationDialogs:
                 dialog = HealthNotificationDialog(mock_root)
             except Exception:
                 pass
-
 
 class TestLibraryNotificationDialogs:
     """Test library-related notification dialogs"""
@@ -545,7 +532,6 @@ class TestLibraryNotificationDialogs:
             except Exception:
                 pass
 
-
 class TestTicketDialogs:
     """Test helpdesk ticket dialogs"""
 
@@ -572,7 +558,6 @@ class TestTicketDialogs:
                 dialog = SLAAlertDialog(mock_root)
             except Exception:
                 pass
-
 
 class TestUtilityDialogs:
     """Test utility dialogs"""
@@ -617,7 +602,6 @@ class TestUtilityDialogs:
             except Exception:
                 pass
 
-
 class TestSystemDialogs:
     """Test system dialogs"""
 
@@ -636,7 +620,6 @@ class TestSystemDialogs:
                 dialog = DatabaseCleanupDialog(mock_root)
             except Exception:
                 pass
-
 
 class TestChatRoomComponents:
     """Test chat room related components"""
@@ -672,7 +655,6 @@ class TestChatRoomComponents:
                 )
             except Exception:
                 pass
-
 
 class TestAnnouncementComponents:
     """Test announcement components"""
@@ -717,7 +699,6 @@ class TestAnnouncementComponents:
                 )
             except Exception:
                 pass
-
 
 class TestHelperFunctions:
     """Test helper functions in the module"""
@@ -771,7 +752,6 @@ class TestHelperFunctions:
         except Exception:
             pass  # Error should be caught by decorator
 
-
 class TestIntegration:
     """Integration tests for email manager GUI"""
 
@@ -786,7 +766,6 @@ class TestIntegration:
                 assert gui is not None
             except Exception:
                 pass  # May fail in headless environment
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

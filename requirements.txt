@@ -29,8 +29,6 @@ PyPDF2==3.0.1                  # PDF file processing and manipulation
 requests==2.32.5               # HTTP library for API calls
 Flask==3.1.1                   # Web framework (used by finance, attendance, calendar APIs)
 flask-cors==5.0.1              # CORS support for Flask APIs
-FastAPI==0.115.12              # Async web framework (used by realtime/websocket modules)
-uvicorn==0.34.0                # ASGI server for FastAPI
 Jinja2==3.1.6                  # Template engine for email templates
 Werkzeug==3.1.3                # WSGI utilities
 urllib3==2.5.0                 # HTTP client library
@@ -52,6 +50,13 @@ qrcode==8.2                    # QR code generation for 2FA
 cryptography==46.0.3           # Cryptographic functions and data encryption
 bcrypt==5.0.0                  # Password hashing
 PyJWT==2.10.1                  # JSON Web Token authentication
+
+# OPTIONAL: SSO/Federated Authentication
+# python3-saml>=1.16.0           # SAML 2.0 SSO support (optional)
+# authlib>=1.3.0                 # OpenID Connect / OAuth 2.0 SSO support (optional)
+
+# OPTIONAL: Passwordless Authentication (WebAuthn/FIDO2)
+# py-webauthn>=2.0.0             # WebAuthn/FIDO2 passwordless authentication (optional)
 
 # ===============================
 # IMAGE PROCESSING & BARCODES

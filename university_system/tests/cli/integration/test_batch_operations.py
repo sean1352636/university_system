@@ -18,7 +18,7 @@ import pytest
 import os
 import csv
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
 from pathlib import Path
@@ -32,7 +32,6 @@ from university_system.modules.shared.utils.batch_operations import (
     ProgressTracker,
     BatchOperationManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -92,12 +91,10 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def batch_manager(temp_db):
     """Create a BatchOperationManager instance with test database."""
     return BatchOperationManager(db_path=temp_db)
-
 
 @pytest.fixture
 def temp_csv_file():
@@ -132,7 +129,6 @@ def temp_csv_file():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def temp_excel_file():
     """Create a temporary Excel file with test data."""
@@ -155,7 +151,6 @@ def temp_excel_file():
         os.unlink(excel_path)
     except (OSError, IOError):
         pass
-
 
 class TestImportResult:
     """Test ImportResult dataclass."""
@@ -197,7 +192,6 @@ class TestImportResult:
         result = ImportResult(total_records=10)
         assert result.errors is not None
         assert isinstance(result.errors, list)
-
 
 class TestProgressTracker:
     """Test ProgressTracker class."""
@@ -241,7 +235,6 @@ class TestProgressTracker:
         tracker.display_progress()
         # Should not crash
 
-
 class TestBatchOperationManagerInit:
     """Test BatchOperationManager initialization."""
 
@@ -263,7 +256,6 @@ class TestBatchOperationManagerInit:
         # Should create directory without error
         batch_manager.ensure_backup_directory()
         assert os.path.exists(batch_manager.backup_dir)
-
 
 class TestValidationAndCleaning:
     """Test data validation and cleaning methods."""
@@ -394,7 +386,6 @@ class TestValidationAndCleaning:
         cleaned = batch_manager.clean_student_data(student_data)
         assert cleaned['middle_name'] == ''
 
-
 class TestImportOperations:
     """Test import operations."""
 
@@ -452,7 +443,6 @@ class TestImportOperations:
         batch_manager.display_validation_errors(error_records)
         assert mock_print.called
 
-
 class TestDuplicateDetection:
     """Test duplicate detection functionality."""
 
@@ -485,7 +475,6 @@ class TestDuplicateDetection:
         assert isinstance(confidence, float)
         assert 0 <= confidence <= 100
 
-
 class TestUpdateOperations:
     """Test update operations."""
 
@@ -511,7 +500,6 @@ class TestUpdateOperations:
         ]
         result = batch_manager.update_batch_records(records)
         assert result.total_records == 1
-
 
 class TestExportOperations:
     """Test export operations."""
@@ -552,7 +540,6 @@ class TestExportOperations:
             except (OSError, IOError):
                 pass
 
-
 class TestReportGeneration:
     """Test report generation methods."""
 
@@ -566,7 +553,6 @@ class TestReportGeneration:
         # Should not raise exception
         batch_manager.save_import_history(result, '/tmp/test.csv', 'CSV Import')
 
-
 class TestBackupOperations:
     """Test backup operations."""
 
@@ -574,7 +560,6 @@ class TestBackupOperations:
         """Test creating database backup."""
         backup_path = batch_manager.create_database_backup(auto=True)
         assert backup_path is not None
-
 
 class TestBulkModuleOperations:
     """Test bulk module operations."""
@@ -608,7 +593,6 @@ class TestBulkModuleOperations:
         conn.close()
         assert count >= 0
 
-
 class TestMenuSystem:
     """Test menu system."""
 
@@ -625,7 +609,6 @@ class TestMenuSystem:
         """Test batch menu handles invalid choice."""
         batch_manager.display_batch_menu()
         assert any('Invalid choice' in str(call) for call in mock_print.call_args_list)
-
 
 class TestIntegration:
     """Integration tests for complex workflows."""
@@ -665,7 +648,6 @@ class TestIntegration:
 
         assert len(errors) > 0
 
-
 class TestErrorHandling:
     """Test error handling."""
 
@@ -688,7 +670,6 @@ class TestErrorHandling:
         cleaned = batch_manager.clean_student_data(data)
         assert cleaned['first_name'] is None
 
-
 class TestProgressTracking:
     """Test progress tracking throughout operations."""
 
@@ -709,7 +690,6 @@ class TestProgressTracking:
 
         # Check internal state
         assert tracker.current_item == 50
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

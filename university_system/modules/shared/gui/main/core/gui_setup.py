@@ -311,6 +311,8 @@ def create_navigation_panel(self, parent):
         ('academic_progress', _t("nav.buttons.academic_progress"), self.show_academic_progress_gui),
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
+        ('office_hours', "Office Hours", self.show_office_hours_gui),
+        ('ta_management', "TA Management", self.show_ta_management_gui),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
         academic_buttons_data.append(('virtual_classroom', _t("nav.buttons.virtual_classroom"), self.show_virtual_classroom_gui))
@@ -735,7 +737,8 @@ def get_visible_buttons_for_role(self, role=None):
     if is_student:
         visible.update({
             'student_records', 'grade_tracking_gui', 'library',
-            'scheduling', 'trip_management', 'communication_hub'
+            'scheduling', 'trip_management', 'communication_hub',
+            'office_hours',
         })
 
     # Instructor additions (includes students' features)
@@ -745,7 +748,8 @@ def get_visible_buttons_for_role(self, role=None):
             'grade_tracking_gui', 'library', 'virtual_classroom',
             'scheduling', 'attendance', 'analytics',
             'enhanced_reporting_dashboard', 'predictive_analytics',
-            'export', 'early_warning_system', 'communication_hub'
+            'export', 'early_warning_system', 'communication_hub',
+            'office_hours', 'ta_management',
         })
 
     # Staff additions (includes instructors' features)
@@ -762,7 +766,9 @@ def get_visible_buttons_for_role(self, role=None):
             # Staff HR management
             'staff_hr',
             # Staff CRUD management
-            'view_staff', 'create_staff', 'search_staff'
+            'view_staff', 'create_staff', 'search_staff',
+            # Office hours and TA management
+            'office_hours', 'ta_management',
         })
 
     # Admin-only additions (full access)
@@ -854,8 +860,8 @@ def show_main_interface(self):
 
     self.update_login_logout_button()
 
-    # Show welcome screen immediately
-    self.show_welcome()
+    # Show role-based dashboard immediately on login
+    self.show_integrated_dashboard()
 
     # Defer navigation panel rebuild to allow GUI to respond
     # This prevents the freeze during login

@@ -5,7 +5,7 @@ Tests user search, communication dashboard, system notifications, and integratio
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import tkinter as tk
@@ -16,7 +16,6 @@ from datetime import datetime
 # Import the module under test
 from university_system.infrastructure.email import admin
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def temp_db():
@@ -125,7 +124,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def mock_auth(temp_db):
     """Create a mock auth manager"""
@@ -139,7 +137,6 @@ def mock_auth(temp_db):
             'permissions': ['view_messages', 'send_emails']
         }
         return auth
-
 
 class TestSearchUsers:
     """Test user search functionality"""
@@ -170,7 +167,6 @@ class TestSearchUsers:
         with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.search_users(mock_auth, '')
             assert isinstance(results, list)
-
 
 class TestListAllUsers:
     """Test user listing functionality"""
@@ -203,7 +199,6 @@ class TestListAllUsers:
             results = admin.list_all_users(mock_auth, page=2, limit=1)
             assert isinstance(results, list)
 
-
 class TestCommunicationDashboard:
     """Test CommunicationDashboard class"""
 
@@ -229,7 +224,6 @@ class TestCommunicationDashboard:
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             # Call a method that would send a message
             # This test structure depends on actual dashboard methods
-
 
 class TestSystemNotifications:
     """Test system notification functionality"""
@@ -261,7 +255,6 @@ class TestSystemNotifications:
                     message=f'Test {notif_type} message',
                     notification_type=notif_type
                 )
-
 
 class TestDisplayMenus:
     """Test menu display functions"""
@@ -298,7 +291,6 @@ class TestDisplayMenus:
                 admin.display_admin_message_management_menu(dashboard)
             except Exception:
                 pass
-
 
 class TestCommunicationIntegration:
     """Test communication system integration functions"""
@@ -338,7 +330,6 @@ class TestCommunicationIntegration:
         except Exception:
             pass
 
-
 class TestEmailSystem:
     """Test email system functions"""
 
@@ -350,7 +341,6 @@ class TestEmailSystem:
             result = admin.test_email_system()
             # Should run test without crashing
 
-
 class TestCommunicationDashboardMethods:
     """Test communication dashboard specific methods"""
 
@@ -358,7 +348,6 @@ class TestCommunicationDashboardMethods:
         """Test dashboard methods"""
         with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = admin.test_communication_dashboard_methods(auth=mock_auth)
-
 
 class TestIntegration:
     """Integration tests for admin module"""
@@ -396,7 +385,6 @@ class TestIntegration:
             # Both should return valid lists
             assert isinstance(search_results, list)
             assert isinstance(all_users, list)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

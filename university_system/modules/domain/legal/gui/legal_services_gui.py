@@ -2275,7 +2275,7 @@ By Payment Method:
                         try:
                             date_obj = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                             formatted_date = date_obj.strftime('%Y-%m-%d %H:%M')
-                        except:
+                        except (ValueError, TypeError):
                             formatted_date = date
                     else:
                         formatted_date = ''
@@ -2325,7 +2325,7 @@ By Payment Method:
         # Parse amount
         try:
             amount = float(amount_str.replace('£', '').replace(',', ''))
-        except:
+        except (ValueError, TypeError):
             messagebox.showerror(_t("common.error", default="Error"),
                                _t("common.invalid_amount", default="Invalid amount format."))
             return

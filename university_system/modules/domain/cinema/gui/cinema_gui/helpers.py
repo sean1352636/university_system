@@ -2,7 +2,7 @@
 Cinema Booking System - Helper Functions
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from .database import DB_FILE
@@ -11,11 +11,10 @@ from .constants import (
     MEMBERSHIP_TIERS, AGE_RESTRICTED_RATINGS
 )
 
-
 def calculate_dynamic_price(self, base_price, show_datetime_str):
     try:
         show_dt = datetime.strptime(show_datetime_str, "%Y-%m-%d %H:%M")
-    except:
+    except (ValueError, TypeError):
         return base_price
     is_weekend = show_dt.weekday() >= 5
     is_matinee = show_dt.hour < 17
@@ -25,7 +24,6 @@ def calculate_dynamic_price(self, base_price, show_datetime_str):
         mult = DYNAMIC_PRICING['weekday_matinee'] if is_matinee else DYNAMIC_PRICING['weekday_evening']
     return base_price * mult
 
-
 def calculate_group_discount(self, num_seats):
     discount = 0
     for threshold, disc in sorted(GROUP_DISCOUNTS.items(), reverse=True):
@@ -34,7 +32,6 @@ def calculate_group_discount(self, num_seats):
             break
     return discount
 
-
 def calculate_early_bird_discount(self, show_date_str):
     try:
         show_date = datetime.strptime(show_date_str, "%Y-%m-%d")
@@ -42,10 +39,9 @@ def calculate_early_bird_discount(self, show_date_str):
         for days, discount in sorted(EARLY_BIRD_DISCOUNTS.items(), reverse=True):
             if days_ahead >= days:
                 return discount
-    except:
+    except (ValueError, TypeError):
         pass
     return 0
-
 
 def get_member_discount(self, email):
     conn = sqlite3.connect(DB_FILE)
@@ -56,7 +52,6 @@ def get_member_discount(self, email):
     if result:
         return MEMBERSHIP_TIERS.get(result[0], {}).get('discount', 0)
     return 0
-
 
 def verify_age(self, rating):
     return rating in AGE_RESTRICTED_RATINGS

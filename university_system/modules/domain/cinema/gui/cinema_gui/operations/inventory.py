@@ -4,7 +4,7 @@ Cinema Booking System - Inventory Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_inventory_page(self):
     self.clear_content()
@@ -55,7 +54,6 @@ def show_inventory_page(self):
     else:
         tk.Label(alert, text=_t("cinema.status.all_stocked"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
 
-
 def add_inv_item(self):
     form = tk.Toplevel(self.root)
     form.title("Add Item")
@@ -83,7 +81,7 @@ def add_inv_item(self):
             stock = int(entries['stock'].get() or 0)
             min_l = int(entries['min'].get() or 20)
             cost = float(entries['cost'].get() or 0)
-        except:
+        except (ValueError, TypeError):
             stock, min_l, cost = 0, 20, 0
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
@@ -95,7 +93,6 @@ def add_inv_item(self):
         form.destroy()
         self.show_inventory_page()
     ttk.Button(frame, text=_t("cinema.buttons.add"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
-
 
 def restock_inv(self):
     selected = self.inv_tree.selection()
@@ -118,7 +115,7 @@ def restock_inv(self):
     def restock():
         try:
             qty = int(qty_e.get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid qty")
             return
         conn = sqlite3.connect(DB_FILE)

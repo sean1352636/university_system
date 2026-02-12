@@ -66,7 +66,7 @@ def _load_i18n():
     global _i18n_loaded, _get_text_func, _translate_func
     if not _i18n_loaded:
         try:
-            from university_system.modules.shared.utils.i18n import get_text as gt, _ as t
+            from university_system.core.i18n import get_text as gt, _ as t
             _get_text_func = gt
             _translate_func = t
         except ImportError:

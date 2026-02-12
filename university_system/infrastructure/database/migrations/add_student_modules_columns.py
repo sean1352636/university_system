@@ -13,16 +13,15 @@ These columns were missing from the original schema but are required
 by the advanced search and analytics features.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from university_system.modules.shared.constants import paths
-from university_system.modules.shared.utils.i18n import get_text
-
+from university_system.core import paths
+from university_system.core.i18n import get_text
 
 def run_migration():
     """Run the migration to add missing columns to student_modules"""
@@ -111,7 +110,6 @@ def run_migration():
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}")
         return False
-
 
 if __name__ == "__main__":
     print("=" * 60)

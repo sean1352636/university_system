@@ -9,12 +9,10 @@ import pytest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog import (
     AddLearningOutcomeDialog
 )
-
 
 @pytest.fixture
 def root_window():
@@ -26,12 +24,10 @@ def root_window():
     except Exception:
         pass
 
-
 @pytest.fixture
 def mock_callback():
     """Create a mock callback function"""
     return Mock()
-
 
 class TestAddLearningOutcomeDialog:
     """Test suite for AddLearningOutcomeDialog"""
@@ -264,7 +260,6 @@ class TestAddLearningOutcomeDialog:
 
         mock_error.assert_called_once()
 
-
 class TestDialogIntegration:
     """Integration tests for AddLearningOutcomeDialog"""
 
@@ -302,7 +297,6 @@ class TestDialogIntegration:
 
         # Verify both callbacks were called
         assert len(outcomes_added) == 2
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -7,6 +7,7 @@ when they should reference users(id).
 """
 
 from university_system.infrastructure.database.db import transaction, get_connection
+from university_system.core.sql_safety import validate_identifier
 import sys
 
 def fix_foreign_keys():
@@ -126,6 +127,9 @@ def fix_foreign_keys():
             for table_name, new_schema in tables_to_fix.items():
                 print(f"\nProcessing {table_name}...")
 
+                # Validate table name for defense-in-depth
+                validate_identifier(table_name, "table name")
+
                 # Check if table exists
                 cursor.execute("""
                     SELECT name FROM sqlite_master
@@ -137,13 +141,13 @@ def fix_foreign_keys():
                     continue
 
                 # Backup data
-                cursor.execute(f"SELECT * FROM {table_name}")
+                cursor.execute(f"SELECT * FROM [{table_name}]")
                 backup_data = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
                 print(f"  📦 Backed up {len(backup_data)} row(s)")
 
                 # Drop table
-                cursor.execute(f"DROP TABLE {table_name}")
+                cursor.execute(f"DROP TABLE [{table_name}]")
                 print(f"  🗑️  Dropped table")
 
                 # Recreate with correct schema
@@ -152,8 +156,11 @@ def fix_foreign_keys():
 
                 # Restore data
                 if backup_data:
+                    # Validate column names for defense-in-depth
+                    for col in columns:
+                        validate_identifier(col, "column name")
                     placeholders = ','.join(['?' for _ in columns])
-                    insert_sql = f"INSERT INTO {table_name} ({','.join(columns)}) VALUES ({placeholders})"
+                    insert_sql = f"INSERT INTO [{table_name}] ({','.join(columns)}) VALUES ({placeholders})"
                     cursor.executemany(insert_sql, backup_data)
                     print(f"  💾 Restored {len(backup_data)} row(s)")
                 else:

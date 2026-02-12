@@ -55,38 +55,29 @@ class HelperManager:
 
             # Get current user info
             username = self.gui.current_user.get('username', 'Unknown') if self.gui.current_user else 'Unknown'
+            user_id = self.gui.current_user.get('id', None) if self.gui.current_user else None
             user_role = self.gui.current_user.get('role', 'user') if self.gui.current_user else 'user'
 
-            # Convert details to JSON string if it's a dict
-            details_str = json.dumps(details) if isinstance(details, dict) else str(details) if details else None
+            # Pack role, entity_type, and entity_id into the details JSON
+            detail_parts = {}
+            if user_role:
+                detail_parts['user_role'] = user_role
+            if entity_type:
+                detail_parts['entity_type'] = entity_type
+            if entity_id:
+                detail_parts['entity_id'] = entity_id
+            if isinstance(details, dict):
+                detail_parts.update(details)
+            elif details:
+                detail_parts['message'] = str(details)
+            details_str = json.dumps(detail_parts) if detail_parts else None
 
-            # Insert into activity_log table if it exists, otherwise create a log entry
-            try:
-                cursor.execute('''
-                INSERT INTO activity_log (username, user_role, action, entity_type, entity_id, details, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (username, user_role, action, entity_type, entity_id, details_str, datetime.now().isoformat()))
-                conn.commit()
-            except Exception:
-                # Table might not exist, create it
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS activity_log (
-                    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT,
-                    user_role TEXT,
-                    action TEXT,
-                    entity_type TEXT,
-                    entity_id TEXT,
-                    details TEXT,
-                    timestamp TEXT
-                )
-                ''')
-                cursor.execute('''
-                INSERT INTO activity_log (username, user_role, action, entity_type, entity_id, details, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (username, user_role, action, entity_type, entity_id, details_str, datetime.now().isoformat()))
-                conn.commit()
-
+            # Use the existing activity_log schema: user_id, username, action, details, timestamp
+            cursor.execute('''
+                INSERT INTO activity_log (user_id, username, action, details, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, username, action, details_str, datetime.now().isoformat()))
+            conn.commit()
             conn.close()
         except Exception as e:
             print(f"Error logging event: {e}")

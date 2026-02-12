@@ -1068,7 +1068,7 @@ class BulkOperationsManager:
                         if update_parts:
                             update_parts.append("updated_at = CURRENT_TIMESTAMP")
                             params.append(doc_id)
-                            query = f"UPDATE documents SET {', '.join(update_parts)} WHERE id = ?"
+                            query = "UPDATE documents SET " + ", ".join(update_parts) + " WHERE id = ?"
                             cursor.execute(query, params)
                             updated_count += 1
 

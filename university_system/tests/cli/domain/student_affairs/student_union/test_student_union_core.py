@@ -10,9 +10,7 @@ Tests cover:
 
 import pytest
 from unittest.mock import Mock, patch
-import sqlite3
-
-
+from university_system.infrastructure.database.db import sqlite3
 @pytest.fixture
 def mock_cursor():
     """Create a mock database cursor."""
@@ -24,7 +22,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -34,7 +31,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -43,7 +39,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestDatabaseInitialization:
     """Test database initialization functionality."""
@@ -58,7 +53,6 @@ class TestDatabaseInitialization:
         # Test would verify error handling during initialization
         assert True
 
-
 class TestPermissionSetup:
     """Test permission setup functionality."""
 
@@ -71,7 +65,6 @@ class TestPermissionSetup:
         """Test that permission setup is idempotent."""
         # Test would verify setup can be run multiple times safely
         assert True
-
 
 class TestMenuDisplay:
     """Test menu display functionality."""
@@ -91,7 +84,6 @@ class TestMenuDisplay:
         mock_auth.check_permission.return_value = False
         # Test would verify limited menu options
         assert True
-
 
 class TestCoreIntegration:
     """Test core integration functionality."""

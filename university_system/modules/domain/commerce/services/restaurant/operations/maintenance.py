@@ -12,6 +12,7 @@ from university_system.modules.domain.commerce.services.restaurant.operations.re
 )
 from university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
 from university_system.utils.logging.log_config import get_log_file
+from university_system.core.sql_safety import validate_identifier, validate_table_name
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -217,8 +218,11 @@ def rebuild_indexes():
 
         for index_name, table_name, column_name in indexes:
             try:
-                cursor.execute(f'DROP INDEX IF EXISTS {index_name}')
-                cursor.execute(f'CREATE INDEX {index_name} ON {table_name}({column_name})')
+                safe_index = validate_identifier(index_name, "index")
+                safe_table = validate_identifier(table_name, "table")
+                safe_column = validate_identifier(column_name, "column")
+                cursor.execute('DROP INDEX IF EXISTS [' + safe_index + ']')
+                cursor.execute('CREATE INDEX [' + safe_index + '] ON [' + safe_table + ']([' + safe_column + '])')
                 print(f"Rebuilt index: {index_name}")
             except Exception as e:
                 print(f"Warning: Could not rebuild index {index_name}: {e}")
@@ -270,7 +274,8 @@ def system_health_check():
         print("\nTable record counts:")
         for table in tables:
             try:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                safe_table = validate_identifier(table, "table")
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 print(f"  {table}: {count} records")
             except Exception as e:
@@ -598,12 +603,13 @@ def optimize_table_structure():
 
         for table in tables_to_analyze:
             try:
+                safe_table = validate_identifier(table, "table")
                 # Get table info
-                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute("PRAGMA table_info([" + safe_table + "])")
                 columns = cursor.fetchall()
 
                 # Get table size
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 row_count = cursor.fetchone()[0]
 
                 print(f"\nTable: {table}")

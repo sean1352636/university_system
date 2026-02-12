@@ -5,7 +5,7 @@ Tests core database functions and re-exported functions.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -13,7 +13,6 @@ import tempfile
 
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.operations import miscellaneous
-
 
 @pytest.fixture
 def test_db():
@@ -42,7 +41,6 @@ def test_db():
     # Cleanup
     os.unlink(db_path)
 
-
 class TestGetDBConnection:
     """Test database connection function"""
 
@@ -62,7 +60,6 @@ class TestGetDBConnection:
         # This test verifies the function exists and is callable
         assert callable(miscellaneous.get_db_connection)
 
-
 class TestSetAuth:
     """Test authentication setup"""
 
@@ -79,7 +76,6 @@ class TestSetAuth:
         assert hasattr(miscellaneous, 'set_auth')
         assert callable(miscellaneous.set_auth)
 
-
 class TestLogAuditAction:
     """Test audit logging function"""
 
@@ -87,7 +83,6 @@ class TestLogAuditAction:
         """Test that log_audit_action function is available"""
         assert hasattr(miscellaneous, 'log_audit_action')
         assert callable(miscellaneous.log_audit_action)
-
 
 class TestBackupFunctions:
     """Test backup-related functions"""
@@ -106,7 +101,6 @@ class TestBackupFunctions:
         """Test that system_backup function is available"""
         assert hasattr(miscellaneous, 'system_backup')
         assert callable(miscellaneous.system_backup)
-
 
 class TestFinancialFunctions:
     """Test financial management functions"""
@@ -136,7 +130,6 @@ class TestFinancialFunctions:
         assert hasattr(miscellaneous, 'profit_loss_statement')
         assert callable(miscellaneous.profit_loss_statement)
 
-
 class TestPayrollFunctions:
     """Test payroll calculation functions"""
 
@@ -154,7 +147,6 @@ class TestPayrollFunctions:
         """Test that calculate_monthly_payroll function is available"""
         assert hasattr(miscellaneous, 'calculate_monthly_payroll')
         assert callable(miscellaneous.calculate_monthly_payroll)
-
 
 class TestMaintenanceFunctions:
     """Test system maintenance functions"""
@@ -184,7 +176,6 @@ class TestMaintenanceFunctions:
         assert hasattr(miscellaneous, 'database_optimization')
         assert callable(miscellaneous.database_optimization)
 
-
 class TestNotificationFunctions:
     """Test notification management functions"""
 
@@ -202,7 +193,6 @@ class TestNotificationFunctions:
         """Test that view_notifications function is available"""
         assert hasattr(miscellaneous, 'view_notifications')
         assert callable(miscellaneous.view_notifications)
-
 
 class TestForecastingFunctions:
     """Test financial forecasting functions"""
@@ -227,7 +217,6 @@ class TestForecastingFunctions:
         assert hasattr(miscellaneous, 'seasonal_analysis')
         assert callable(miscellaneous.seasonal_analysis)
 
-
 class TestExportFunctions:
     """Test export functions"""
 
@@ -241,7 +230,6 @@ class TestExportFunctions:
         assert hasattr(miscellaneous, 'export_tax_data')
         assert callable(miscellaneous.export_tax_data)
 
-
 class TestUserManagement:
     """Test user management functions"""
 
@@ -254,7 +242,6 @@ class TestUserManagement:
         """Test that view_audit_logs function is available"""
         assert hasattr(miscellaneous, 'view_audit_logs')
         assert callable(miscellaneous.view_audit_logs)
-
 
 class TestSettingsFunctions:
     """Test system settings functions"""
@@ -274,7 +261,6 @@ class TestSettingsFunctions:
         assert hasattr(miscellaneous, 'update_system_settings')
         assert callable(miscellaneous.update_system_settings)
 
-
 class TestDatabaseFile:
     """Test DATABASE_FILE constant"""
 
@@ -283,7 +269,6 @@ class TestDatabaseFile:
         assert hasattr(miscellaneous, 'DATABASE_FILE')
         assert miscellaneous.DATABASE_FILE is not None
 
-
 class TestMainFunction:
     """Test main CLI function"""
 
@@ -291,7 +276,6 @@ class TestMainFunction:
         """Test that main function is available"""
         assert hasattr(miscellaneous, 'main')
         assert callable(miscellaneous.main)
-
 
 class TestAllExports:
     """Test that __all__ is properly defined"""
@@ -313,7 +297,6 @@ class TestAllExports:
         for func_name in expected_functions:
             assert hasattr(misc_module, func_name), f"{func_name} should be available"
 
-
 class TestInitDB:
     """Test database initialization"""
 
@@ -326,7 +309,6 @@ class TestInitDB:
         """Test that initialize_default_data function is available"""
         assert hasattr(miscellaneous, 'initialize_default_data')
         assert callable(miscellaneous.initialize_default_data)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

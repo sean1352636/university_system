@@ -592,7 +592,7 @@ class PhoneShopGUI:
         if hasattr(self, 'temp_shipping_entry') and self.temp_shipping_entry:
             try:
                 shipping_address = self.temp_shipping_entry.get()
-            except:
+            except Exception:
                 pass
 
         # Create payment dialog
@@ -1491,8 +1491,8 @@ Low Stock Items: {summary['low_stock_count']}
                     new_balance = get_student_finance_account_balance(customer_id)
                     if new_balance is not None:
                         balance_text = f"Your updated account balance is: £{new_balance:.2f}"
-                except:
-                    pass
+                except Exception:
+                    logger.debug("Could not retrieve updated student finance balance")
 
             # Use JSON template for email
             subject, body = render_template('commerce/phoneshop/refund_receipt', {

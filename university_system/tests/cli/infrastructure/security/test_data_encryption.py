@@ -14,7 +14,7 @@ Tests:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import json
@@ -23,7 +23,6 @@ from cryptography.fernet import Fernet
 
 from university_system.infrastructure.security.data_encryption import EncryptionManager
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-
 
 @pytest.fixture
 def test_db():
@@ -60,7 +59,6 @@ def test_db():
     if os.path.exists(master_key_path):
         os.remove(master_key_path)
 
-
 @pytest.fixture
 def temp_file():
     """Create a temporary test file"""
@@ -75,7 +73,6 @@ def temp_file():
         file_path = path + suffix if suffix else path
         if os.path.exists(file_path):
             os.remove(file_path)
-
 
 # ============================================================================
 # Master Key Tests
@@ -122,7 +119,6 @@ class TestMasterKeyManagement:
 
             # On Unix systems, should be 0o600
             assert permissions == 0o600 or permissions == 0o666  # Windows may differ
-
 
 # ============================================================================
 # Encryption Key Management Tests
@@ -230,7 +226,6 @@ class TestEncryptionKeyManagement:
 
         assert new_version == old_version + 1
 
-
 # ============================================================================
 # Value Encryption Tests
 # ============================================================================
@@ -313,7 +308,6 @@ class TestValueEncryption:
         decrypted = manager.decrypt_value(encrypted, key_id)
 
         assert decrypted == plaintext
-
 
 # ============================================================================
 # Field Encryption Tests
@@ -404,7 +398,6 @@ class TestFieldEncryption:
         assert ('test_users', 'ssn') in field_names
         assert ('test_users', 'email') in field_names
 
-
 # ============================================================================
 # File Encryption Tests
 # ============================================================================
@@ -474,7 +467,6 @@ class TestFileEncryption:
         assert not os.path.exists(temp_file)
         assert os.path.exists(result['encrypted_path'])
 
-
 # ============================================================================
 # Backup Tests
 # ============================================================================
@@ -527,7 +519,6 @@ class TestEncryptedBackup:
                 if os.path.exists(path):
                     os.remove(path)
 
-
 # ============================================================================
 # Key Rotation Status Tests
 # ============================================================================
@@ -574,7 +565,6 @@ class TestKeyRotationStatus:
         assert old_key['age_days'] >= 90
         assert old_key['needs_rotation'] is True
 
-
 # ============================================================================
 # Error Handling Tests
 # ============================================================================
@@ -606,7 +596,6 @@ class TestEncryptionErrorHandling:
 
         assert result['success'] is False
         assert 'error' in result
-
 
 # ============================================================================
 # Integration Tests
@@ -663,7 +652,6 @@ class TestEncryptionIntegration:
         field = rotation_result['fields_to_reencrypt'][0]
         assert field['table'] == 'test_users'
         assert field['column'] == 'ssn'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

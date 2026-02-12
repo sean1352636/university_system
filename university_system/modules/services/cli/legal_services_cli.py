@@ -7,6 +7,8 @@ Features: Case management, consultations, document tracking, billing
 from datetime import datetime
 from pathlib import Path
 
+from university_system.core.sql_safety import validate_identifier
+
 try:
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 except ImportError:
@@ -15,7 +17,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -30,7 +32,6 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
-
 
 # Case types
 CASE_TYPES = [
@@ -47,7 +48,6 @@ CONSULTATION_STATUSES = ["Scheduled", "Completed", "Cancelled", "No-Show"]
 
 # Payment statuses
 PAYMENT_STATUSES = ["Pending", "Paid", "Partial", "Waived"]
-
 
 LEGAL_SERVICES_SCHEMA = """
 CREATE TABLE IF NOT EXISTS legal_cases (
@@ -103,7 +103,6 @@ CREATE TABLE IF NOT EXISTS legal_payments (
 );
 """
 
-
 def init_legal_database():
     """Initialize legal services database tables."""
     try:
@@ -115,7 +114,6 @@ def init_legal_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -124,11 +122,9 @@ def get_current_user():
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
 
-
 def generate_case_number():
     """Generate unique case number."""
     return f"LEGAL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
 
 # ==================== CASE MANAGEMENT ====================
 
@@ -154,7 +150,6 @@ def create_case(case_data):
         print(f"Error creating case: {e}")
         return False
 
-
 def get_all_cases():
     """Get all legal cases."""
     try:
@@ -176,7 +171,6 @@ def get_all_cases():
     except Exception as e:
         print(f"Error getting cases: {e}")
         return []
-
 
 def get_case_by_id(case_id):
     """Get specific case by ID."""
@@ -200,6 +194,10 @@ def get_case_by_id(case_id):
         print(f"Error getting case: {e}")
     return None
 
+_CASE_ALLOWED_COLUMNS = frozenset({
+    'case_number', 'client_name', 'client_email', 'client_phone', 'student_id',
+    'case_type', 'status', 'description', 'assigned_attorney', 'closed_date',
+})
 
 def update_case(case_id, updates):
     """Update case fields."""
@@ -207,6 +205,9 @@ def update_case(case_id, updates):
         fields = []
         values = []
         for key, value in updates.items():
+            if key not in _CASE_ALLOWED_COLUMNS:
+                raise ValueError(f"Invalid column name: {key}")
+            validate_identifier(key, "column")
             fields.append(f"{key} = ?")
             values.append(value)
 
@@ -225,7 +226,6 @@ def update_case(case_id, updates):
     except Exception as e:
         print(f"Error updating case: {e}")
         return False
-
 
 # ==================== CONSULTATIONS ====================
 
@@ -251,7 +251,6 @@ def schedule_consultation(consult_data):
         print(f"Error scheduling consultation: {e}")
         return False
 
-
 def get_all_consultations():
     """Get all consultations."""
     try:
@@ -274,7 +273,6 @@ def get_all_consultations():
         print(f"Error getting consultations: {e}")
         return []
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -283,7 +281,6 @@ def print_header(title):
     print(f"  {title}")
     print("=" * 80)
 
-
 def print_case_summary(case):
     """Print case summary."""
     print(f"\n  Case #: {case['case_number']}")
@@ -291,7 +288,6 @@ def print_case_summary(case):
     print(f"  Type: {case['case_type']} | Status: {case['status']}")
     print(f"  Attorney: {case['assigned_attorney']}")
     print(f"  Date: {case['created_date']}")
-
 
 def print_case_details(case):
     """Print full case details."""
@@ -307,7 +303,6 @@ def print_case_details(case):
     print(f"\n  Created: {case['created_date']}")
     if case.get('closed_date'):
         print(f"  Closed: {case['closed_date']}")
-
 
 def list_cases_menu():
     """List all cases."""
@@ -330,7 +325,6 @@ def list_cases_menu():
 
     print()
 
-
 def view_case_menu():
     """View case details."""
     print_header("View Case")
@@ -346,7 +340,6 @@ def view_case_menu():
         return
 
     print_case_details(case)
-
 
 def create_case_menu():
     """Create new case."""
@@ -392,7 +385,6 @@ def create_case_menu():
         print(f"\n  ✅ Case {case_data['case_number']} created successfully!")
     else:
         print("\n  ❌ Failed to create case.")
-
 
 def update_case_menu():
     """Update case status."""
@@ -444,7 +436,6 @@ def update_case_menu():
             if update_case(int(case_id), updates):
                 print("\n  ✅ Case closed.")
 
-
 def schedule_consultation_menu():
     """Schedule a consultation."""
     print_header("Schedule Consultation")
@@ -480,7 +471,6 @@ def schedule_consultation_menu():
     else:
         print("\n  ❌ Failed to schedule consultation.")
 
-
 def view_consultations_menu():
     """View all consultations."""
     print_header("Scheduled Consultations")
@@ -501,7 +491,6 @@ def view_consultations_menu():
         print(f"  {consult['consultation_id']:<5} {client:<25} {consult['consultation_date']:<12} {consult['consultation_time']:<8} {consult['status']:<12} {attorney:<15}")
 
     print()
-
 
 def statistics_menu():
     """Show legal services statistics."""
@@ -536,7 +525,6 @@ def statistics_menu():
         print(f"    {case_type}: {count}")
 
     print()
-
 
 def legal_services_menu():
     """Main legal services CLI menu."""
@@ -577,7 +565,6 @@ def legal_services_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     legal_services_menu()

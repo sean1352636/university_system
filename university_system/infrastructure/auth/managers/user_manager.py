@@ -9,9 +9,6 @@ Classes:
 """
 
 from typing import Optional, Dict, List, Any
-import os
-import secrets
-import string
 import logging
 from datetime import datetime
 
@@ -20,7 +17,7 @@ from university_system.infrastructure.exceptions import (
     InvalidInputError,
     DatabaseError,
 )
-from university_system.modules.shared.constants import defaults
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -83,178 +80,6 @@ class UserManager:
         self.password_validator = password_validator
         self.email_validator = email_validator
         self.get_current_user = current_user_getter
-
-    def _create_default_accounts_if_needed(self, cursor, conn, target_usernames: Optional[set] = None):
-        """
-        Ensure baseline system accounts exist, creating them when missing.
-
-        Creates default admin, staff, and student accounts if they don't exist.
-        Uses environment variables for passwords in production.
-
-        Parameters:
-            cursor: Database cursor
-            conn: Database connection
-            target_usernames: Optional set of specific usernames to create
-
-        Side Effects:
-            - Creates default user accounts if missing
-            - Fixes role inconsistencies in existing accounts
-            - Prints warnings for dev passwords
-            - Prints success messages for created accounts
-
-        Security:
-            - Reads passwords from environment variables
-            - Falls back to dev passwords with warnings
-            - Logs warnings for insecure defaults
-        """
-        def generate_secure_password(length=16):
-            """Generate a cryptographically secure random password."""
-            alphabet = string.ascii_letters + string.digits + string.punctuation
-            return ''.join(secrets.choice(alphabet) for _ in range(length))
-
-        # Get passwords from environment variables or use simple defaults for development
-        admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD') or os.getenv('INITIAL_ADMIN_PASSWORD')
-        if not admin_password:
-            admin_password = 'admin123'
-            logging.warning(
-                "SECURITY WARNING: No DEFAULT_ADMIN_PASSWORD environment variable set. "
-                "Using default password for development. NEVER use this in production!"
-            )
-            print("⚠️  Admin account using default dev password (set DEFAULT_ADMIN_PASSWORD in production)")
-
-        staff_password = os.getenv('DEFAULT_STAFF_PASSWORD') or os.getenv('INITIAL_STAFF_PASSWORD')
-        if not staff_password:
-            staff_password = 'staff123'
-            logging.info("Using default password for staff account (development only)")
-            print("⚠️  Staff account using default dev password (set DEFAULT_STAFF_PASSWORD in production)")
-
-        student_password = os.getenv('DEFAULT_STUDENT_PASSWORD') or os.getenv('INITIAL_STUDENT_PASSWORD')
-        if not student_password:
-            student_password = 'student123'
-            logging.info("Using default password for student account (development only)")
-            print("⚠️  Student account using default dev password (set DEFAULT_STUDENT_PASSWORD in production)")
-
-        default_accounts = [
-            {
-                'username': 'admin',
-                'password': admin_password,
-                'role': 'admin',
-                'email': 'admin@example.com',
-                'first_name': 'System',
-                'last_name': 'Administrator',
-                'student_id': None,
-            },
-            {
-                'username': 'staff',
-                'password': staff_password,
-                'role': 'staff',
-                'email': 'staff@example.com',
-                'first_name': 'Staff',
-                'last_name': 'User',
-                'student_id': None,
-            },
-            {
-                'username': defaults.DEFAULT_STUDENT_USERNAME,
-                'password': student_password,
-                'role': 'student',
-                'email': 'student@example.com',
-                'first_name': 'Demo',
-                'last_name': 'Student',
-                'student_id': defaults.DEFAULT_STUDENT_ID,
-            },
-        ]
-
-        created_accounts = []
-
-        for account in default_accounts:
-            if target_usernames and account['username'] not in target_usernames:
-                logging.debug(f"Skipping {account['username']} - not in target list")
-                continue
-
-            cursor.execute('SELECT id FROM user_accounts WHERE username = ?', (account['username'],))
-            existing_account = cursor.fetchone()
-
-            # Check and fix role inconsistencies for existing accounts
-            if existing_account:
-                cursor.execute(
-                    'SELECT id, role FROM users WHERE username = ?',
-                    (account['username'],),
-                )
-                user_row = cursor.fetchone()
-                if user_row:
-                    user_id, existing_role = user_row
-                    if existing_role != account['role']:
-                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        logging.warning(
-                            f"Fixing role for '{account['username']}': '{existing_role}' -> '{account['role']}'"
-                        )
-                        try:
-                            cursor.execute(
-                                'UPDATE users SET role = ?, updated_at = ? WHERE id = ?',
-                                (account['role'], timestamp, user_id)
-                            )
-                            print(f"✅ Fixed {account['username']} user role to {account['role']}")
-                        except sqlite3.Error as exc:
-                            logging.error(f"Failed to update role for user '{account['username']}': {exc}")
-                else:
-                    # User record missing but account exists - create user
-                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    try:
-                        cursor.execute(
-                            '''INSERT INTO users (username, first_name, last_name, email, role, student_id, created_at, updated_at)
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                            (account['username'], account['first_name'], account['last_name'],
-                             account['email'], account['role'], account['student_id'], timestamp, timestamp)
-                        )
-                        new_user_id = cursor.lastrowid
-                        cursor.execute(
-                            'UPDATE user_accounts SET user_id = ? WHERE username = ?',
-                            (new_user_id, account['username'])
-                        )
-                        print(f"✅ Created missing user record for {account['username']}")
-                    except sqlite3.Error as exc:
-                        logging.error(f"Failed to create user record for '{account['username']}': {exc}")
-                logging.debug(f"Account {account['username']} already exists, skipping creation")
-                continue
-
-            logging.info(f"Creating default account: {account['username']}")
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            # Create user in users table
-            cursor.execute(
-                'SELECT id FROM users WHERE username = ?',
-                (account['username'],),
-            )
-            user_row = cursor.fetchone()
-
-            if not user_row:
-                # Create new user
-                cursor.execute(
-                    '''INSERT INTO users
-                       (username, first_name, last_name, email, role, student_id, created_at, updated_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                    (account['username'], account['first_name'], account['last_name'],
-                     account['email'], account['role'], account['student_id'], timestamp, timestamp)
-                )
-                user_id = cursor.lastrowid
-            else:
-                user_id = user_row[0]
-
-            # Hash password and create account
-            salt, password_hash = self.password_hasher(account['password'])
-            cursor.execute(
-                '''INSERT INTO user_accounts
-                   (username, password_hash, salt, user_id, created_at, updated_at, password_reset_required)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                (account['username'], password_hash, salt, user_id, timestamp, timestamp, 0)
-            )
-
-            created_accounts.append(account['username'])
-            print(f"✅ Created {account['username']} account ({account['role']})")
-
-        if created_accounts:
-            conn.commit()
-            logging.info(f"Created default accounts: {', '.join(created_accounts)}")
 
     def create_user(self, username: str, password: str, email: str, first_name: str,
                     last_name: str, role: str, student_id: Optional[str] = None,
@@ -472,23 +297,23 @@ class UserManager:
 
                 # Update users table
                 if user_updates:
-                    update_fields = [f"{key} = ?" for key in user_updates.keys()]
+                    update_fields = [validate_identifier(key, "column") + " = ?" for key in user_updates.keys()]
                     update_fields.append("updated_at = ?")
                     update_values = list(user_updates.values()) + [timestamp, user_id]
 
                     cursor.execute(
-                        f'UPDATE users SET {", ".join(update_fields)} WHERE id = ?',
+                        'UPDATE users SET ' + ", ".join(update_fields) + ' WHERE id = ?',
                         update_values
                     )
 
                 # Update user_accounts table
                 if account_updates:
-                    update_fields = [f"{key} = ?" for key in account_updates.keys()]
+                    update_fields = [validate_identifier(key, "column") + " = ?" for key in account_updates.keys()]
                     update_fields.append("updated_at = ?")
                     update_values = list(account_updates.values()) + [timestamp, user_id]
 
                     cursor.execute(
-                        f'UPDATE user_accounts SET {", ".join(update_fields)} WHERE user_id = ?',
+                        'UPDATE user_accounts SET ' + ", ".join(update_fields) + ' WHERE user_id = ?',
                         update_values
                     )
 
@@ -616,7 +441,12 @@ class UserManager:
     def delete_user(self, user_id: int) -> bool:
         """Delete a user from the system."""
         current_user = self.get_current_user()
-        if not current_user or 'manage_users' not in current_user.get('permissions', []):
+        if not current_user:
+            print("You don't have permission to delete users.")
+            return False
+        is_admin = current_user.get('role', '').lower() == 'admin'
+        has_perm = 'manage_users' in current_user.get('permissions', [])
+        if not is_admin and not has_perm:
             print("You don't have permission to delete users.")
             return False
 

@@ -15,7 +15,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -31,7 +31,6 @@ except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
 
-
 # Equipment categories
 EQUIPMENT_CATEGORIES = ["Camera", "Laptop", "Projector", "Audio", "Lab Equipment", "Sports", "Tools", "Other"]
 
@@ -40,7 +39,6 @@ RENTAL_STATUSES = ["Active", "Returned", "Overdue", "Cancelled"]
 
 # Equipment conditions
 EQUIPMENT_CONDITIONS = ["Excellent", "Good", "Fair", "Needs Repair"]
-
 
 EQUIPMENT_RENTAL_SCHEMA = """
 CREATE TABLE IF NOT EXISTS equipment_inventory (
@@ -85,7 +83,6 @@ CREATE TABLE IF NOT EXISTS equipment_transactions (
 );
 """
 
-
 def init_equipment_database():
     """Initialize equipment rental database tables."""
     try:
@@ -122,7 +119,6 @@ def init_equipment_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -130,7 +126,6 @@ def get_current_user():
         if user:
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
-
 
 # ==================== EQUIPMENT MANAGEMENT ====================
 
@@ -165,7 +160,6 @@ def get_all_equipment(category=None):
         print(f"Error getting equipment: {e}")
         return []
 
-
 def get_equipment_by_id(equipment_id):
     """Get specific equipment by ID."""
     try:
@@ -185,7 +179,6 @@ def get_equipment_by_id(equipment_id):
     except Exception as e:
         print(f"Error getting equipment: {e}")
     return None
-
 
 # ==================== RENTAL MANAGEMENT ====================
 
@@ -222,7 +215,6 @@ def create_rental(rental_data):
         print(f"Error creating rental: {e}")
         return False
 
-
 def get_all_rentals(status=None):
     """Get all rentals, optionally filtered by status."""
     try:
@@ -256,7 +248,6 @@ def get_all_rentals(status=None):
     except Exception as e:
         print(f"Error getting rentals: {e}")
         return []
-
 
 def return_equipment(rental_id):
     """Process equipment return."""
@@ -294,7 +285,6 @@ def return_equipment(rental_id):
         print(f"Error returning equipment: {e}")
         return False
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -302,7 +292,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def list_equipment_menu():
     """List all equipment."""
@@ -337,7 +326,6 @@ def list_equipment_menu():
         print(f"  {item['equipment_id']:<5} {item['equipment_code']:<10} {name:<30} {item['category']:<15} £{item['daily_rate']:<9.2f} {availability:<10}")
 
     print()
-
 
 def book_rental_menu():
     """Create a new rental booking."""
@@ -416,7 +404,6 @@ def book_rental_menu():
     else:
         print("\n  ❌ Failed to create rental.")
 
-
 def view_rentals_menu():
     """View all rentals."""
     print_header("Equipment Rental - All Rentals")
@@ -451,7 +438,6 @@ def view_rentals_menu():
 
     print()
 
-
 def return_equipment_menu():
     """Process equipment return."""
     print_header("Return Equipment")
@@ -470,7 +456,6 @@ def return_equipment_menu():
         print("\n  ✅ Equipment returned successfully!")
     else:
         print("\n  ❌ Failed to process return.")
-
 
 def statistics_menu():
     """Show rental statistics."""
@@ -505,7 +490,6 @@ def statistics_menu():
 
     print()
 
-
 def equipment_rental_menu():
     """Main equipment rental CLI menu."""
     init_equipment_database()
@@ -539,7 +523,6 @@ def equipment_rental_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     equipment_rental_menu()

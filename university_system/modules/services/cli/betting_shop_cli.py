@@ -10,6 +10,8 @@ import random
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
+from university_system.core.sql_safety import validate_identifier
+
 # Import centralized database and authentication
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.shared_context import get_auth
@@ -1916,6 +1918,7 @@ def place_prediction_bet():
 
             # Update pool
             pool_column = 'pool_a' if selected_outcome == 'outcome_a' else 'pool_b'
+            validate_identifier(pool_column, "column")
             conn_tx.execute(f'''
                 UPDATE prediction_markets
                 SET total_pool = total_pool + ?, {pool_column} = {pool_column} + ?
@@ -2850,8 +2853,8 @@ def betting_shop_menu():
                         row = cursor.fetchone()
                         if row:
                             print(f"Balance: GBP {float(row[0]):.2f}")
-                except:
-                    pass
+                except Exception:
+                    logger.debug("Could not retrieve betting account balance")
 
             print("\n💰 ACCOUNT:")
             print("1. Account Management")

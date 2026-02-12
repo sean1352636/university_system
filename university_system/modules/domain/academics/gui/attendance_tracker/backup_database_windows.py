@@ -18,6 +18,7 @@ import csv
 import re
 import shutil
 from collections import deque
+from university_system.core.sql_safety import validate_identifier
 
 # Import internationalization support
 from university_system.modules.shared.utils.i18n import get_text as _, init_i18n
@@ -516,7 +517,8 @@ class DatabaseMaintenanceWindow:
             tables = [row[0] for row in cursor.fetchall()]
             for table in sorted(tables):
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    safe_table = validate_identifier(table, "table")
+                    cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
                     count = cursor.fetchone()[0]
                     info["tables"].append((table, count))
                 except Exception:

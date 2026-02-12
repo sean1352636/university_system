@@ -4,7 +4,7 @@ Tests all functionality in university_system/modules/domain/health/portal/data_p
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
@@ -50,7 +50,6 @@ from university_system.modules.domain.health.portal.data_privacy import (
 )
 from university_system.infrastructure.database.db import get_connection
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def test_db():
@@ -134,7 +133,6 @@ def test_db():
     finally:
         conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object with admin permissions"""
@@ -146,7 +144,6 @@ def mock_auth():
     }
     auth.check_permission = Mock(return_value=True)
     return auth
-
 
 class TestSchemaManagement:
     """Test database schema management functions"""
@@ -192,7 +189,6 @@ class TestSchemaManagement:
         column = _first_existing_column(test_db, 'students', ['nonexistent1', 'nonexistent2'])
         assert column is None
 
-
 class TestEncryptionManagement:
     """Test encryption key management"""
 
@@ -224,7 +220,6 @@ class TestEncryptionManagement:
         finally:
             os.unlink(key_file)
 
-
 class TestAuditLogging:
     """Test audit logging functionality"""
 
@@ -255,7 +250,6 @@ class TestAuditLogging:
 
         captured = capsys.readouterr()
         assert 'Audit Log' in captured.out or 'audit' in captured.out.lower()
-
 
 class TestSecurityPolicies:
     """Test security policy management"""
@@ -304,7 +298,6 @@ class TestSecurityPolicies:
         captured = capsys.readouterr()
         assert 'Encryption Keys' in captured.out or 'keys' in captured.out.lower()
 
-
 class TestIntegrationManagement:
     """Test integration management functions"""
 
@@ -349,7 +342,6 @@ class TestIntegrationManagement:
         # Should display sync status or message about no pending items
         assert captured.out != ''
 
-
 class TestSecurityIncidents:
     """Test security incident management"""
 
@@ -372,7 +364,6 @@ class TestSecurityIncidents:
 
         captured = capsys.readouterr()
         assert 'Incidents' in captured.out or 'incident' in captured.out.lower()
-
 
 class TestRiskAssessment:
     """Test risk assessment functions"""
@@ -472,7 +463,6 @@ class TestRiskAssessment:
 
         assert risk in ['Low', 'Moderate', 'High']
 
-
 class TestSecurityReports:
     """Test security report generation"""
 
@@ -493,7 +483,6 @@ class TestSecurityReports:
 
         captured = capsys.readouterr()
         assert 'SECURITY REPORT' in captured.out or 'Security' in captured.out
-
 
 class TestSessionManagement:
     """Test user session management"""
@@ -516,7 +505,6 @@ class TestSessionManagement:
         captured = capsys.readouterr()
         assert 'Session' in captured.out or 'session' in captured.out.lower()
 
-
 class TestIPRestrictionManagement:
     """Test IP restriction management"""
 
@@ -530,7 +518,6 @@ class TestIPRestrictionManagement:
         captured = capsys.readouterr()
         assert 'IP Restriction' in captured.out or 'IP' in captured.out
 
-
 class Test2FAManagement:
     """Test two-factor authentication management"""
 
@@ -543,7 +530,6 @@ class Test2FAManagement:
 
         captured = capsys.readouterr()
         assert '2FA' in captured.out or 'Two-Factor' in captured.out or 'Authentication' in captured.out
-
 
 class TestSecuritySettings:
     """Test security settings management"""
@@ -566,7 +552,6 @@ class TestSecuritySettings:
         update_security_settings(mock_auth)
 
         # Should not crash
-
 
 class TestPopulationAnalysis:
     """Test population risk analysis"""
@@ -620,7 +605,6 @@ class TestPopulationAnalysis:
         captured = capsys.readouterr()
         assert 'Population Risk' in captured.out or 'Risk' in captured.out
 
-
 class TestPermissions:
     """Test permission checks"""
 
@@ -648,7 +632,6 @@ class TestPermissions:
 
         captured = capsys.readouterr()
         assert "don't have permission" in captured.out
-
 
 class TestIntegration:
     """Integration tests for complete workflows"""
@@ -703,7 +686,6 @@ class TestIntegration:
         assert isinstance(score, int)
         assert isinstance(factors, list)
         assert isinstance(recommendations, list)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

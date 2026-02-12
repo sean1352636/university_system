@@ -6,7 +6,7 @@ class bookings, equipment tracking, and personal training with
 email and finance integration.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -33,21 +33,17 @@ PT_SESSION_FEES = {
     'package_10': 280.00
 }
 
-
 def generate_membership_id() -> str:
     """Generate a unique membership ID."""
     return f"GYM-{datetime.now().strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
-
 
 def generate_booking_ref() -> str:
     """Generate a unique booking reference."""
     return f"BK-{uuid.uuid4().hex[:8].upper()}"
 
-
 def generate_reference() -> str:
     """Generate a unique reference number."""
     return f"REF-{uuid.uuid4().hex[:12].upper()}"
-
 
 def init_gym_db():
     """Initialize gym database tables."""
@@ -207,7 +203,6 @@ def init_gym_db():
         print(f"Error initializing gym database: {e}")
         return False
 
-
 class MembershipManager:
     """Manages gym memberships."""
 
@@ -365,7 +360,6 @@ class MembershipManager:
             print(f"Error checking out: {e}")
             return False
 
-
 class ClassManager:
     """Manages fitness classes."""
 
@@ -481,7 +475,6 @@ class ClassManager:
             print(f"Error getting bookings: {e}")
             return []
 
-
 class PTSessionManager:
     """Manages personal training sessions."""
 
@@ -542,7 +535,6 @@ class PTSessionManager:
             print(f"Error cancelling session: {e}")
             return False
 
-
 class EquipmentManager:
     """Manages gym equipment."""
 
@@ -579,7 +571,6 @@ class EquipmentManager:
         except Exception as e:
             print(f"Error reporting issue: {e}")
             return False
-
 
 class TransactionManager:
     """Manages gym transactions."""
@@ -626,7 +617,6 @@ class TransactionManager:
         except Exception as e:
             print(f"Error getting transactions: {e}")
             return []
-
 
 class ReportManager:
     """Manages gym reporting."""

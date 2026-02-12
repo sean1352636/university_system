@@ -4,7 +4,7 @@ Quick test script for Staff CRUD functionality
 Tests database schema and basic operations
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import hashlib
 import secrets
 from datetime import datetime
@@ -51,7 +51,6 @@ def test_database_schema():
     conn.close()
     print("\n✅ Database schema validation passed!")
     return True
-
 
 def test_create_staff():
     """Test creating a staff member"""
@@ -143,7 +142,6 @@ def test_create_staff():
         conn.close()
         return False
 
-
 def test_query_staff():
     """Test querying existing staff members"""
     print("\n" + "=" * 60)
@@ -187,7 +185,6 @@ def test_query_staff():
         conn.close()
         return False
 
-
 def main():
     """Run all tests"""
     print("\n" + "=" * 60)
@@ -225,7 +222,6 @@ def main():
         print(f"\n⚠️  {failed} test(s) failed. Please check the errors above.")
 
     print("=" * 60)
-
 
 if __name__ == "__main__":
     main()

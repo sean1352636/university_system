@@ -251,7 +251,7 @@ Details:
     def _log_alert(self, level: str, title: str, details: Dict):
         """Log alert to activity logger."""
         try:
-            from university_system.modules.shared.utils.activity_logger import log_activity
+            from university_system.core.activity_logger import log_activity
             log_activity('security_alert', 'alert', details={
                 'level': level,
                 'title': title,

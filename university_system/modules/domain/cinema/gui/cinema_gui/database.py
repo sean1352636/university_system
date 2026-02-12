@@ -2,11 +2,12 @@
 Cinema Booking System - Database initialization and utilities
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import random
 import string
 from datetime import datetime, timedelta
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 # Database setup - use centralized university system database
 try:
@@ -18,7 +19,6 @@ except ImportError:
 
 # Logs directory for audit
 LOGS_DIR = os.path.join(os.path.dirname(__file__), "../../../../../logs")
-
 
 def init_database():
     """Initialize the database with required tables."""
@@ -777,8 +777,10 @@ def init_database():
 
     for table, column, col_type in new_columns:
         try:
-            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
-        except:
+            safe_table = validate_table_name(table)
+            safe_column = validate_identifier(column, "column")
+            cursor.execute("ALTER TABLE [" + safe_table + "] ADD COLUMN [" + safe_column + "] " + col_type)
+        except Exception:
             pass
 
     # Insert sample promo codes if empty
@@ -838,7 +840,6 @@ def init_database():
 
     conn.commit()
     conn.close()
-
 
 def generate_booking_ref():
     """Generate a unique booking reference."""

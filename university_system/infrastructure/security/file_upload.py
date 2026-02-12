@@ -277,7 +277,7 @@ class SecureFileUpload:
         """
         if upload_dir is None:
             try:
-                from university_system.modules.shared.constants import paths
+                from university_system.core import paths
                 upload_dir = paths.UPLOAD_DIR
             except ImportError:
                 upload_dir = '/tmp/uploads'
@@ -481,7 +481,7 @@ class SecureFileUpload:
 
             # Log the upload for audit trail
             try:
-                from university_system.modules.shared.utils.activity_logger import log_activity
+                from university_system.core.activity_logger import log_activity
                 log_activity('upload', 'file', details={
                     'original_name': validation['safe_filename'],
                     'stored_name': unique_name,
@@ -550,7 +550,7 @@ class SecureFileUpload:
 
             # Log deletion
             try:
-                from university_system.modules.shared.utils.activity_logger import log_activity
+                from university_system.core.activity_logger import log_activity
                 log_activity('delete', 'file', details={
                     'path': file_path,
                     'user_id': user_id

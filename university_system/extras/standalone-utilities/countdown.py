@@ -229,7 +229,7 @@ class CountdownTimer:
                 # Play a beep (if available)
                 try:
                     self.root.bell()
-                except:
+                except Exception:
                     pass
     
     def flash_display(self, count=0):

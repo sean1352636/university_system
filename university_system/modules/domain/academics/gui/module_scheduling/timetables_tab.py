@@ -41,8 +41,7 @@ import threading
 import subprocess
 import webbrowser
 from pathlib import Path
-import sqlite3
-# Import the original module scheduling functionality
+
 # This ensures full backward compatibility
 try:
     from university_system.modules.domain.academics.services.module_scheduling import (
@@ -61,7 +60,6 @@ except ImportError:
         from university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
     except Exception:
         class ModuleScheduler: pass
-
 
 from .main_gui import ModuleSchedulingGUI
 from .dialogs import GridViewWindow

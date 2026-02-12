@@ -11,7 +11,7 @@ Features:
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import secrets
 import json
 import logging
@@ -24,7 +24,7 @@ import base64
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.database.db import get_connection
-from university_system.modules.shared.utils.i18n import get_text, _
+from university_system.core.i18n import get_text, _
 
 # Import KMS integration for secure master key storage
 from university_system.infrastructure.security.kms_integration import (
@@ -37,7 +37,7 @@ from university_system.infrastructure.security.kms_integration import (
 )
 
 # Import SQL safety utilities to prevent SQL injection in dynamic queries
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core.sql_safety import (
     validate_table_name,
     validate_column_name,
     SQLIdentifierError,
@@ -52,7 +52,6 @@ try:
     IMMUTABLE_AUDIT_AVAILABLE = True
 except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
-
 
 class EncryptionManager:
     """Manages encryption keys and data encryption/decryption"""
@@ -776,19 +775,16 @@ class EncryptionManager:
         finally:
             conn.close()
 
-
 # Convenience functions
 def encrypt_sensitive_data(user_id: int, field_name: str, value: str) -> Dict:
     """Quick encrypt sensitive user data"""
     manager = EncryptionManager()
     return manager.encrypt_field('users', field_name, user_id, value)
 
-
 def decrypt_sensitive_data(user_id: int, field_name: str) -> str:
     """Quick decrypt sensitive user data"""
     manager = EncryptionManager()
     return manager.decrypt_field('users', field_name, user_id)
-
 
 if __name__ == '__main__':
     print("Data Encryption System initialized")

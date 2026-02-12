@@ -236,7 +236,6 @@ CREATE INDEX IF NOT EXISTS idx_disbursements_student ON disbursements(student_id
 CREATE INDEX IF NOT EXISTS idx_disbursements_date ON disbursements(disbursement_date);
 """
 
-
 def create_financial_aid_tables(conn):
     """Create all financial aid tables"""
     cursor = conn.cursor()
@@ -244,9 +243,8 @@ def create_financial_aid_tables(conn):
     conn.commit()
     print("Financial Aid & Scholarship Management tables created successfully")
 
-
 if __name__ == "__main__":
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
     with sqlite3.connect(DEFAULT_DB_PATH) as conn:

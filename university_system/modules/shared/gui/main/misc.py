@@ -148,10 +148,8 @@ def main():
         print("STUDENT RECORD MANAGEMENT SYSTEM")
         print("Advanced Academic Management Suite")
         print("="*60)
-        print("\nDefault Login Credentials:")
-        print(f"- Admin: username='admin', password='{os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')}'")
-        print(f"- Staff: username='staff', password='{os.getenv('DEFAULT_STAFF_PASSWORD', 'staff123')}'")
-        print(f"- Student: username='{os.getenv('DEFAULT_STUDENT_USERNAME', 'S12345')}', password='{os.getenv('DEFAULT_STUDENT_PASSWORD', 'student123')}'")
+        print("\nDefault login credentials are configured via environment variables.")
+        print("See documentation or .env.example for default credential setup.")
 
         # Start the CLI interface directly (run.py will handle interface choice)
         print("Starting console interface...")

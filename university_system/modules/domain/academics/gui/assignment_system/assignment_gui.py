@@ -25,7 +25,6 @@ from university_system.modules.domain.academics.gui.assignment_system.rubric_man
 from university_system.modules.domain.academics.gui.assignment_system.peer_review import PeerReviewManager
 from university_system.modules.domain.academics.gui.assignment_system.maintenance import MaintenanceManager
 
-
 class AssignmentGUI:
     """Main GUI class that coordinates all managers"""
 
@@ -295,7 +294,7 @@ class AssignmentGUI:
             ]
 
             # Add permissions to database
-            import sqlite3
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
@@ -363,7 +362,7 @@ class AssignmentGUI:
     def _update_existing_tables(self):
         """Update existing database tables"""
         try:
-            import sqlite3
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
@@ -399,7 +398,7 @@ class AssignmentGUI:
     def _get_student_modules(self, student_id):
         """Get modules for student"""
         try:
-            import sqlite3
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
@@ -493,7 +492,7 @@ class AssignmentGUI:
     def _send_notification(self, user_id, notification_type, title, message, related_id=None):
         """Send notification to user"""
         try:
-            import sqlite3
+            from university_system.infrastructure.database.db import sqlite3
             from datetime import datetime
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -518,8 +517,7 @@ class AssignmentGUI:
     def _check_and_send_email(self, user_id, email_type, subject, body):
         """Check preferences and send email"""
         try:
-            import sqlite3
-
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
@@ -545,9 +543,7 @@ class AssignmentGUI:
     def _send_email(self, user_id, subject, body):
         """Send email message"""
         try:
-            import sqlite3
-
-            # Get user email
+            from university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
@@ -575,19 +571,16 @@ class AssignmentGUI:
             print(_("assignment.errors.send_email").format(error=str(e)))
             return False
 
-
 def launch_gui(assignment_system, auth):
     """Launch the assignment GUI"""
     gui = AssignmentGUI(assignment_system, auth)
     gui.run()
-
 
 def display_assignment_menu_gui(auth):
     """Display assignment menu in GUI mode"""
     from university_system.modules.academics.services.assignment_submission import AssignmentSubmission
     assignment_system = AssignmentSubmission()
     launch_gui(assignment_system, auth)
-
 
 def display_assignment_menu(auth):
     """Wrapper for backward compatibility"""

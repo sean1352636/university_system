@@ -21,7 +21,11 @@ __all__ = [
     'DEFAULT_LOCKOUT_TIME',
     'PBKDF2_ITERATIONS',
     'PASSWORD_MIN_LENGTH',
+    'AUTH_METHODS',
 ]
+
+# Supported authentication methods
+AUTH_METHODS = ('password', 'sso', 'webauthn', 'biometric')
 
 # Role Definitions
 ROLES: Dict[str, str] = {
@@ -125,7 +129,25 @@ PERMISSIONS: Dict[str, List[str]] = {
         'manage_job_postings', 'manage_career_events', 'career_analytics',
         # Parent Portal permissions (admin - system management)
         'parent_admin_panel', 'manage_parent_accounts', 'link_students_to_parents',
-        'view_any_parent_dashboard', 'parent_account_reports'
+        'view_any_parent_dashboard', 'parent_account_reports',
+        # Office Hours permissions (admin - full access)
+        'manage_office_hours', 'book_office_hours', 'view_office_hours',
+        # TA Management permissions (admin - full access)
+        'manage_tas', 'view_ta_assignments', 'assign_tas',
+        # Account Linking permissions (admin - full management)
+        'manage_account_links', 'approve_link_requests', 'view_all_linked_accounts',
+        'link_own_accounts', 'switch_active_role', 'view_own_linked_accounts',
+        # SSO permissions (admin - full management)
+        'manage_sso_providers', 'configure_sso', 'view_sso_identities',
+        'link_sso_identity', 'unlink_sso_identity', 'view_own_sso_identities',
+        # WebAuthn permissions (admin - full management)
+        'manage_webauthn_keys', 'register_webauthn_key', 'view_own_webauthn_keys',
+        # Biometric permissions (admin - full management)
+        'manage_biometric_auth', 'enroll_biometric', 'view_own_biometrics',
+        # Delegated Access permissions (admin - full management)
+        'manage_delegated_access', 'approve_delegation_requests', 'view_all_delegations',
+        'grant_delegated_access', 'revoke_delegated_access', 'view_own_delegations',
+        'request_delegated_access', 'use_delegated_access', 'view_received_delegations',
     ],
     'staff': [
         'create_student', 'view_any_student', 'update_any_student',
@@ -188,7 +210,19 @@ PERMISSIONS: Dict[str, List[str]] = {
         'view_all_applications', 'create_internship', 'edit_internship',
         'manage_placements', 'view_internship_reports',
         # Career Services permissions (staff - career management)
-        'manage_job_postings', 'manage_career_events', 'career_analytics'
+        'manage_job_postings', 'manage_career_events', 'career_analytics',
+        # Office Hours permissions (staff - view only)
+        'view_office_hours',
+        # TA Management permissions (staff - view only)
+        'view_ta_assignments',
+        # Account Linking permissions (staff)
+        'link_own_accounts', 'switch_active_role', 'view_own_linked_accounts',
+        # SSO permissions (staff)
+        'link_sso_identity', 'unlink_sso_identity', 'view_own_sso_identities',
+        # WebAuthn permissions (staff)
+        'register_webauthn_key', 'view_own_webauthn_keys',
+        # Biometric permissions (staff)
+        'enroll_biometric', 'view_own_biometrics',
     ],
     'student': [
         'view_own_record', 'update_own_profile',
@@ -233,7 +267,21 @@ PERMISSIONS: Dict[str, List[str]] = {
         'view_internships', 'apply_for_internship', 'view_own_applications',
         # Career Services permissions (student - career development)
         'view_job_postings', 'apply_for_jobs', 'manage_resume', 'schedule_career_interviews',
-        'attend_career_events', 'access_mentorship', 'develop_skills'
+        'attend_career_events', 'access_mentorship', 'develop_skills',
+        # Office Hours permissions (student - book and view)
+        'book_office_hours', 'view_office_hours',
+        # TA Management permissions (student - view own assignments)
+        'view_ta_assignments',
+        # Account Linking permissions (student)
+        'link_own_accounts', 'switch_active_role', 'view_own_linked_accounts',
+        # SSO permissions (student)
+        'link_sso_identity', 'unlink_sso_identity', 'view_own_sso_identities',
+        # WebAuthn permissions (student)
+        'register_webauthn_key', 'view_own_webauthn_keys',
+        # Biometric permissions (student)
+        'enroll_biometric', 'view_own_biometrics',
+        # Delegated Access permissions (student - grant access to parents)
+        'grant_delegated_access', 'revoke_delegated_access', 'view_own_delegations',
     ],
     'instructor': [
         'view_assigned_modules', 'manage_module_grades', 'view_module_students',
@@ -272,7 +320,19 @@ PERMISSIONS: Dict[str, List[str]] = {
         'view_all_applications', 'create_internship', 'edit_internship',
         'view_internship_reports',
         # Career Services permissions (instructor - career guidance)
-        'manage_job_postings', 'manage_career_events'
+        'manage_job_postings', 'manage_career_events',
+        # Office Hours permissions (instructor - manage own hours)
+        'manage_office_hours', 'view_office_hours',
+        # TA Management permissions (instructor - manage TAs for own courses)
+        'manage_tas', 'view_ta_assignments', 'assign_tas',
+        # Account Linking permissions (instructor)
+        'link_own_accounts', 'switch_active_role', 'view_own_linked_accounts',
+        # SSO permissions (instructor)
+        'link_sso_identity', 'unlink_sso_identity', 'view_own_sso_identities',
+        # WebAuthn permissions (instructor)
+        'register_webauthn_key', 'view_own_webauthn_keys',
+        # Biometric permissions (instructor)
+        'enroll_biometric', 'view_own_biometrics',
     ],
     'parent': [
         'view_child_records', 'view_academic_calendar', 'view_child_grades',
@@ -285,7 +345,17 @@ PERMISSIONS: Dict[str, List[str]] = {
         'access_academic_support', 'manage_parent_settings', 'view_notifications',
         'update_emergency_contacts', 'manage_transportation', 'set_pickup_permissions',
         'manage_medical_info', 'report_student_absence', 'request_parent_teacher_meeting',
-        'view_documents', 'upload_documents', 'manage_meal_plans'
+        'view_documents', 'upload_documents', 'manage_meal_plans',
+        # Account Linking permissions (parent)
+        'link_own_accounts', 'switch_active_role', 'view_own_linked_accounts',
+        # SSO permissions (parent)
+        'link_sso_identity', 'unlink_sso_identity', 'view_own_sso_identities',
+        # WebAuthn permissions (parent)
+        'register_webauthn_key', 'view_own_webauthn_keys',
+        # Biometric permissions (parent)
+        'enroll_biometric', 'view_own_biometrics',
+        # Delegated Access permissions (parent - request and use delegated access)
+        'request_delegated_access', 'use_delegated_access', 'view_received_delegations',
     ]
 }
 

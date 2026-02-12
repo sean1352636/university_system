@@ -915,7 +915,7 @@ Created: {row[13]}
         try:
             from university_system.infrastructure.database.schemas.staff_hr_schemas_v2 import get_departments
             return get_departments()
-        except:
+        except ImportError:
             return [
                 "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology",
                 "Engineering", "Business", "Economics", "Psychology", "Sociology",
@@ -1111,7 +1111,7 @@ Created: {row[13]}
                     if buildings:
                         try:
                             buildings = ", ".join(json.loads(buildings))
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             pass
 
                     self.card_detail_text.config(state=tk.NORMAL)

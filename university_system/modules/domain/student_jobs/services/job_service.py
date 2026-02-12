@@ -15,14 +15,14 @@ Features:
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.infrastructure.exceptions import DatabaseError, ValidationError
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.infrastructure.shared_context import get_auth
-
+from university_system.core.sql_safety import validate_identifier
 
 class JobPostingManager:
     """Manages on-campus job postings"""
@@ -327,11 +327,11 @@ class JobPostingManager:
                 if not update_fields:
                     return False
 
-                set_clause = ", ".join([f"{k} = ?" for k in update_fields.keys()])
+                set_clause = ", ".join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
                 set_clause += ", updated_at = CURRENT_TIMESTAMP"
                 values = list(update_fields.values()) + [job_id]
 
-                conn.execute(f"UPDATE campus_job_postings SET {set_clause} WHERE job_id = ?", values)
+                conn.execute("UPDATE campus_job_postings SET " + set_clause + " WHERE job_id = ?", values)
                 log_activity('update', 'campus_job_posting', job_id=job_id, details={'updates': list(update_fields.keys())})
                 return True
 
@@ -342,7 +342,6 @@ class JobPostingManager:
     def deactivate_job(job_id: int) -> bool:
         """Deactivate a job posting"""
         return JobPostingManager.update_job(job_id, is_active=0)
-
 
 class JobApplicationManager:
     """Manages student job applications"""
@@ -459,7 +458,6 @@ class JobApplicationManager:
             application_id, 'interview', f"Interview scheduled for {interview_date}"
         )
 
-
 class EmploymentManager:
     """Manages student employment records"""
 
@@ -547,7 +545,6 @@ class EmploymentManager:
 
         except sqlite3.Error as e:
             raise DatabaseError(f"Error ending employment: {e}") from e
-
 
 class WorkHoursManager:
     """Manages work hour tracking and timesheets"""
@@ -718,7 +715,6 @@ class WorkHoursManager:
             summary['week_end'] = week_end_date
             return summary
 
-
 class SkillMatchingManager:
     """Manages student skills and job matching"""
 
@@ -845,7 +841,6 @@ class SkillMatchingManager:
         except sqlite3.Error as e:
             raise DatabaseError(f"Error verifying skill: {e}") from e
 
-
 class PerformanceManager:
     """Manages employee performance reviews"""
 
@@ -926,7 +921,6 @@ class PerformanceManager:
                 WHERE student_id = ?
             ''', (student_id,))
             return dict(cursor.fetchone())
-
 
 # Initialize tables on module import
 try:

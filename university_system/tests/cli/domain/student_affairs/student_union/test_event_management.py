@@ -14,11 +14,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
-# Import module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.student_affairs.student_union.events import event_management
-
 
 @pytest.fixture
 def mock_cursor():
@@ -31,7 +28,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -41,7 +37,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -50,7 +45,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestViewEvents:
     """Test viewing events functionality."""
@@ -87,7 +81,6 @@ class TestViewEvents:
         event_management.view_events(mock_cursor)
 
         mock_cursor.execute.assert_called()
-
 
 class TestRegisterForEvent:
     """Test event registration functionality."""
@@ -151,7 +144,6 @@ class TestRegisterForEvent:
             event_management.register_for_event(mock_cursor, mock_conn)
             assert any('no events' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestCreateEvent:
     """Test event creation functionality."""
 
@@ -201,7 +193,6 @@ class TestCreateEvent:
             event_management.create_event(mock_cursor, mock_conn)
             assert any('not an officer' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestEventAttendance:
     """Test event attendance management."""
 
@@ -238,7 +229,6 @@ class TestEventAttendance:
         event_management.manage_event_attendance(mock_cursor, mock_conn)
 
         assert mock_cursor.execute.call_count >= 3
-
 
 class TestFinancialTracking:
     """Test event financial tracking."""
@@ -293,7 +283,6 @@ class TestFinancialTracking:
 
         assert mock_cursor.execute.call_count >= 4
 
-
 class TestRecurringEvents:
     """Test recurring events functionality."""
 
@@ -341,7 +330,6 @@ class TestRecurringEvents:
             event_management.create_recurring_event(mock_cursor, mock_conn)
             assert any('permission' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestEventAnalytics:
     """Test event analytics functionality."""
 
@@ -373,7 +361,6 @@ class TestEventAnalytics:
 
         mock_cursor.execute.assert_called()
 
-
 class TestEventMenu:
     """Test event menu display."""
 
@@ -390,7 +377,6 @@ class TestEventMenu:
         # Test should reach menu display
         assert True
 
-
 class TestAuthSetup:
     """Test authentication setup."""
 
@@ -399,7 +385,6 @@ class TestAuthSetup:
         event_management.set_auth(mock_auth)
 
         assert event_management.auth == mock_auth
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

@@ -51,7 +51,6 @@ except ImportError:
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
-
 # Import attendance notification service
 try:
     from university_system.modules.domain.academics.services.attendance.attendance_notifications import (
@@ -64,7 +63,6 @@ except ImportError:
 # Feature flags
 GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
-
 
 class FaceRecognitionAttendanceWindow:
     """Window for face recognition-based attendance with live camera feed"""
@@ -818,7 +816,7 @@ class BiometricsManagementWindow:
         # Sample data or real data from database
         # Load real enrollment data from database
         try:
-            import sqlite3
+
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 

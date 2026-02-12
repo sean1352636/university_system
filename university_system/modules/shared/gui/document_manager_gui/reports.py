@@ -235,7 +235,16 @@ class ReportsManager:
 
             tree.pack(fill='both', expand=True)
 
-            ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=(10, 0))
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill='x', pady=(10, 0))
+
+            report_columns = ('Status', 'Count')
+            ttk.Button(button_frame, text="📧 Email Report to Admin",
+                      command=lambda: self.gui.send_report_to_admin(
+                          "Document Status Report", report_columns, results
+                      )).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=report_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate status report: {e}")
@@ -305,11 +314,24 @@ class ReportsManager:
             tree.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
 
-            # Summary label
-            summary_text = f"Total: {len(results)} document(s) expiring soon"
-            ttk.Label(report_window, text=summary_text, font=('Arial', 10)).pack(pady=10)
+            # Summary and buttons
+            bottom_frame = ttk.Frame(report_window, padding=(20, 10))
+            bottom_frame.pack(fill='x')
 
-            ttk.Button(report_window, text="Close", command=report_window.destroy).pack(pady=(0, 10))
+            summary_text = f"Total: {len(results)} document(s) expiring soon"
+            ttk.Label(bottom_frame, text=summary_text, font=('Arial', 10)).pack(anchor='w')
+
+            button_frame = ttk.Frame(bottom_frame)
+            button_frame.pack(fill='x', pady=(5, 0))
+
+            report_columns = ('Doc ID', 'Student ID', 'Student Name',
+                              'Document Type', 'Upload Date', 'Expiry Date', 'Days Left')
+            ttk.Button(button_frame, text="📧 Email Report to Admin",
+                      command=lambda: self.gui.send_report_to_admin(
+                          "Document Expiry Report", report_columns, results
+                      )).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=report_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate expiry report: {e}")
@@ -417,8 +439,26 @@ class ReportsManager:
             button_frame = ttk.Frame(report_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Export to CSV", command=export_summary).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+            def email_monthly_summary():
+                report_columns = ('Metric', 'Value')
+                report_data = [
+                    ('Total Uploads This Month', stats[0]),
+                    ('Verified', stats[1]),
+                    ('Pending', stats[2]),
+                    ('Rejected', stats[3]),
+                ]
+                for row in monthly_data:
+                    report_data.append((f"Month {row[0]}", row[1]))
+                self.gui.send_report_to_admin(
+                    "Monthly Summary Report", report_columns, report_data
+                )
+
+            ttk.Button(button_frame, text="📧 Email Report to Admin",
+                      command=email_monthly_summary).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Export to CSV",
+                      command=export_summary).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=report_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate monthly summary: {e}")
@@ -571,7 +611,7 @@ class ReportsManager:
 
                     # Get student info
                     cursor.execute('''
-                    SELECT first_name, last_name, email, course, year, enrollment_date, status
+                    SELECT first_name, last_name, email_address, course, year, enrollment_date, status
                     FROM students WHERE student_id = ?
                     ''', (student_id,))
                     student_info = cursor.fetchone()
@@ -736,9 +776,25 @@ class ReportsManager:
             action_frame = ttk.Frame(main_frame)
             action_frame.pack(fill='x')
 
-            ttk.Button(action_frame, text="Generate Report", command=generate_report).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Export Report", command=export_report).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            def email_progress_report():
+                content = preview_text.get('1.0', tk.END).strip()
+                if not content:
+                    messagebox.showwarning("Warning", "Please generate report first")
+                    return
+                report_columns = ('Report Content',)
+                report_data = [(line,) for line in content.split('\n') if line.strip()]
+                self.gui.send_report_to_admin(
+                    "Student Progress Report", report_columns, report_data
+                )
+
+            ttk.Button(action_frame, text="Generate Report",
+                      command=generate_report).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Export Report",
+                      command=export_report).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="📧 Email Report to Admin",
+                      command=email_progress_report).pack(side='left', padx=5)
+            ttk.Button(action_frame, text="Close",
+                      command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open report generator: {e}")
@@ -897,12 +953,15 @@ class ReportsManager:
                         messagebox.showinfo("Info", "Custom query mode - enter SQL manually")
                         return
 
-                    # Apply status filter
+                    # Apply filters using parameterized queries
+                    params = []
+
                     if status_filter.get() != 'All':
                         if 'WHERE' in query:
-                            query += f" AND status = '{status_filter.get()}'"
+                            query += " AND status = ?"
                         else:
-                            query += f" WHERE status = '{status_filter.get()}'"
+                            query += " WHERE status = ?"
+                        params.append(status_filter.get())
 
                     # Apply date filter
                     date_range_val = date_range.get()
@@ -912,13 +971,14 @@ class ReportsManager:
                         if days:
                             cutoff = (datetime.now() - timedelta(days=days)).isoformat()
                             if 'WHERE' in query:
-                                query += f" AND upload_date >= '{cutoff}'"
+                                query += " AND upload_date >= ?"
                             else:
-                                query += f" WHERE upload_date >= '{cutoff}'"
+                                query += " WHERE upload_date >= ?"
+                            params.append(cutoff)
 
                     query += " LIMIT 1000"
 
-                    cursor.execute(query)
+                    cursor.execute(query, params)
                     results = cursor.fetchall()
                     conn.close()
 
@@ -976,9 +1036,27 @@ class ReportsManager:
             button_frame = ttk.Frame(config_panel)
             button_frame.pack(fill='x', pady=(10, 0))
 
-            ttk.Button(button_frame, text="Generate", command=generate_custom_report).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Export", command=export_custom_report).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            def email_custom_report():
+                if len(preview_tree.get_children()) == 0:
+                    messagebox.showwarning("Warning", "Please generate report first")
+                    return
+                report_columns = tuple(preview_tree['columns'])
+                report_data = [
+                    tuple(preview_tree.item(item)['values'])
+                    for item in preview_tree.get_children()
+                ]
+                self.gui.send_report_to_admin(
+                    "Custom Report", report_columns, report_data
+                )
+
+            ttk.Button(button_frame, text="Generate",
+                      command=generate_custom_report).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Export",
+                      command=export_custom_report).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="📧 Email to Admin",
+                      command=email_custom_report).pack(side='left', padx=5)
+            ttk.Button(button_frame, text="Close",
+                      command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open custom report builder: {e}")

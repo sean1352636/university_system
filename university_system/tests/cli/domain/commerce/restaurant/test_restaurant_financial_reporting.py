@@ -4,7 +4,7 @@ Tests daily sales reports, monthly summaries, tax reports, and financial exports
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -13,7 +13,6 @@ import tempfile
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.operations import financial_reporting
 from university_system.modules.shared.constants import paths
-
 
 @pytest.fixture
 def test_db():
@@ -145,7 +144,6 @@ def test_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -154,7 +152,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
     return auth
-
 
 class TestDailySalesReport:
     """Test daily sales report generation"""
@@ -193,7 +190,6 @@ class TestDailySalesReport:
         assert test_date in captured.out
         assert '£' in captured.out  # Check for currency formatting
 
-
 class TestMonthlySummary:
     """Test monthly financial summary"""
 
@@ -228,7 +224,6 @@ class TestMonthlySummary:
 
         captured = capsys.readouterr()
         assert 'Invalid month' in captured.out
-
 
 class TestTaxReports:
     """Test tax reporting functions"""
@@ -266,7 +261,6 @@ class TestTaxReports:
 
         captured = capsys.readouterr()
         assert 'SALES TAX SUMMARY' in captured.out
-
 
 class TestFinancialExports:
     """Test financial data export functions"""
@@ -309,7 +303,6 @@ class TestFinancialExports:
 
         captured = capsys.readouterr()
         assert 'sales data exported' in captured.out.lower()
-
 
 class TestPayrollExport:
     """Test payroll export functionality"""
@@ -371,7 +364,6 @@ class TestPayrollExport:
         captured = capsys.readouterr()
         assert 'payroll' in captured.out.lower()
 
-
 class TestSetAuth:
     """Test authentication setup"""
 
@@ -385,7 +377,6 @@ class TestSetAuth:
         financial_reporting.set_auth(None)
         assert financial_reporting.auth is None
 
-
 class TestFinancialReportsMenu:
     """Test financial reports menu"""
 
@@ -398,7 +389,6 @@ class TestFinancialReportsMenu:
             financial_reporting.display_financial_reports()
 
         mock_daily_sales.assert_called_once()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

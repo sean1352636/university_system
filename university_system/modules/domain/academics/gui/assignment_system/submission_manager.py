@@ -27,8 +27,6 @@ from collections import deque
 
 logger = logging.getLogger(__name__)
 
-
-
 class SubmissionManager:
     """Assignment submission handling"""
 
@@ -85,51 +83,93 @@ class SubmissionManager:
     def show_submit_assignment(self):
         """Show assignment submission form"""
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="Submit Assignment", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Create submission form
         form_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Assignment Submission", padding=20)
         form_frame.pack(fill='x', pady=(0, 20))
-        
+
+        current_row = 0
+
+        # Admin: show student selector for testing
+        current_user_role = self.auth.current_user.get('role', '') if self.auth.current_user else ''
+        self._admin_student_var = None
+        self._admin_student_map = {}
+        if current_user_role == 'admin':
+            ttk.Label(form_frame, text="[ADMIN] Submit as Student:").grid(row=current_row, column=0, sticky='w', pady=5)
+            self._admin_student_var = tk.StringVar()
+            student_combo = ttk.Combobox(form_frame, textvariable=self._admin_student_var, width=50, state='readonly')
+            student_combo.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+            self._load_students_for_admin(student_combo)
+            current_row += 1
+
         # Assignment selection
-        ttk.Label(form_frame, text="Select Assignment:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text="Select Assignment:").grid(row=current_row, column=0, sticky='w', pady=5)
         self.assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(form_frame, textvariable=self.assignment_var, width=50)
-        assignment_combo.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+        assignment_combo.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+        current_row += 1
+
         # Load available assignments
         self.load_available_assignments(assignment_combo)
-        
+
         # File selection
-        ttk.Label(form_frame, text="Select File:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text="Select File:").grid(row=current_row, column=0, sticky='w', pady=5)
         self.file_var = tk.StringVar()
         file_frame = ttk.Frame(form_frame)
-        file_frame.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+        file_frame.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+        current_row += 1
+
         file_entry = ttk.Entry(file_frame, textvariable=self.file_var, width=40)
         file_entry.pack(side='left', fill='x', expand=True)
-        
-        ttk.Button(file_frame, text="Browse", 
+
+        ttk.Button(file_frame, text="Browse",
                   command=self.browse_file).pack(side='right', padx=(10, 0))
-        
+
         # Comments
-        ttk.Label(form_frame, text="Comments (optional):").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text="Comments (optional):").grid(row=current_row, column=0, sticky='nw', pady=5)
         self.comments_text = scrolledtext.ScrolledText(form_frame, height=4, width=50)
-        self.comments_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+        self.comments_text.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+        current_row += 1
+
         # Configure grid weights
         form_frame.grid_columnconfigure(1, weight=1)
-        
+
         # Submit button
-        submit_btn = ttk.Button(form_frame, text="Submit Assignment", 
+        submit_btn = ttk.Button(form_frame, text="Submit Assignment",
                                command=self.submit_assignment_gui)
-        submit_btn.grid(row=3, column=1, sticky='e', pady=(20, 0))
-        
+        submit_btn.grid(row=current_row, column=1, sticky='e', pady=(20, 0))
+
         # Status frame for feedback
         self.status_frame = ttk.Frame(self.gui.layout.content_area)
         self.status_frame.pack(fill='x', pady=(10, 0))
+
+    def _load_students_for_admin(self, combo):
+        """Load student list for admin testing dropdown"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT student_id, first_name, last_name, course
+                FROM students ORDER BY last_name, first_name
+            ''')
+            students = cursor.fetchall()
+            conn.close()
+
+            self._admin_student_map = {}
+            display_list = []
+            for sid, fname, lname, course in students:
+                label = f"{sid} - {fname} {lname} ({course})"
+                display_list.append(label)
+                self._admin_student_map[label] = sid
+
+            combo['values'] = display_list
+            if display_list:
+                combo.current(0)
+        except Exception as e:
+            logger.error(f"Failed to load students for admin: {e}")
     
 
     def load_available_assignments(self, combo):
@@ -223,45 +263,37 @@ class SubmissionManager:
         # Clear previous status messages
         for widget in self.status_frame.winfo_children():
             widget.destroy()
-    
-        # Check if user is admin
+
+        # For admin users, validate that a student is selected
         current_user_role = self.auth.current_user.get('role', '') if self.auth.current_user else ''
-    
         if current_user_role == 'admin':
-            # Warning for admin users
-            result = messagebox.askyesno(
-                "Admin Submission Warning",
-                "You are logged in as an administrator.\n\n"
-                "Admins can view all assignments but should not normally submit assignments.\n"
-                "This feature is intended for testing purposes only.\n\n"
-                "Do you want to continue with the submission?"
-            )
-            if not result:
+            if not self._admin_student_var or not self._admin_student_var.get():
+                self.show_status_message("Please select a student to submit on behalf of", "error")
                 return
-    
+
         # Validate inputs
         if not self.assignment_var.get():
             self.show_status_message("Please select an assignment", "error")
             return
-    
+
         if not self.file_var.get():
             self.show_status_message("Please select a file", "error")
             return
-    
+
         if not os.path.exists(self.file_var.get()):
             self.show_status_message("Selected file does not exist", "error")
             return
-    
+
         # Get assignment ID
         assignment_id = self.assignment_map.get(self.assignment_var.get())
         if not assignment_id:
             self.show_status_message("Invalid assignment selection", "error")
             return
-    
+
         # Show progress
         self.show_status_message("Submitting assignment...", "info")
         self.root.update()
-    
+
         # Submit in background thread to prevent GUI freezing
         threading.Thread(target=self.perform_submission,
                         args=(assignment_id, self.file_var.get(), self.comments_text.get(1.0, tk.END).strip()),
@@ -370,8 +402,12 @@ class SubmissionManager:
                 self.root.after(0, lambda: self.show_status_message("Please select a file to submit", "error"))
                 return
 
-            # Use the existing assignment system logic
-            student_id = self._get_student_id_safe()
+            # Use admin-selected student or look up from auth
+            current_user_role = self.auth.current_user.get('role', '') if self.auth.current_user else ''
+            if current_user_role == 'admin' and self._admin_student_var:
+                student_id = self._admin_student_map.get(self._admin_student_var.get())
+            else:
+                student_id = self._get_student_id_safe()
             if not student_id:
                 self.root.after(0, lambda: self.show_status_message("No student ID found", "error"))
                 return
@@ -1091,7 +1127,6 @@ class SubmissionManager:
             stats_label = ttk.Label(stats_frame, text=f"Total Graded Assignments: {total}")
             stats_label.pack(pady=5)
 
-
         except Exception as e:
             messagebox.showerror("Error", f"Operation failed: {e}")
 
@@ -1410,14 +1445,15 @@ class SubmissionManager:
         try:
             import os
             import platform
-            
+            import subprocess
+
             if platform.system() == 'Darwin':  # macOS
-                os.system(f'open "{file_path}"')
+                subprocess.run(['open', file_path], check=False)
             elif platform.system() == 'Windows':  # Windows
-                os.system(f'start "" "{file_path}"')
+                os.startfile(file_path)
             else:  # Linux
-                os.system(f'xdg-open "{file_path}"')
-                
+                subprocess.run(['xdg-open', file_path], check=False)
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open file: {e}")
     
@@ -1444,7 +1480,6 @@ class SubmissionManager:
         """Send email notifications for assignment submission"""
         try:
             from university_system.infrastructure.email.email_service import send_email
-            import sqlite3
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
@@ -1478,6 +1513,8 @@ class SubmissionManager:
                         "late_text": late_text,
                         "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     })
+                    if not student_subject or not student_body:
+                        raise ValueError("Template returned empty subject/body")
                 except Exception as template_error:
                     # Fallback to hardcoded email
                     student_subject = f"Assignment Submission Confirmed: {assignment_title}"
@@ -1545,6 +1582,8 @@ Academic Administration Team
                         "late_text": late_text,
                         "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     })
+                    if not instructor_subject or not instructor_body:
+                        raise ValueError("Template returned empty subject/body")
                 except Exception as template_error:
                     # Fallback to hardcoded email
                     instructor_subject = f"New Assignment Submission: {assignment_title}"
@@ -1590,6 +1629,8 @@ Assignment Management System
                                 "submission_status": 'Late Submission' if late_submission else 'On Time',
                                 "late_text": late_text
                             })
+                            if not admin_subject or not admin_body:
+                                raise ValueError("Template returned empty subject/body")
                         except Exception as template_error:
                             # Fallback to hardcoded email
                             admin_subject = f"Assignment Submission Notification: {assignment_title}"

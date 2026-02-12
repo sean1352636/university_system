@@ -6,14 +6,13 @@ Verifies that email addresses and phone numbers can only be linked to one user a
 
 import os
 import sys
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from university_system.infrastructure.auth.mfa_service import MFAService
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
 
 def test_unique_email_enforcement():
     """Test that email addresses must be unique across users"""
@@ -68,7 +67,6 @@ def test_unique_email_enforcement():
     print("\n✅ Email uniqueness test PASSED")
     return True
 
-
 def test_unique_phone_enforcement():
     """Test that phone numbers must be unique across users"""
     print("\n" + "="*80)
@@ -112,7 +110,6 @@ def test_unique_phone_enforcement():
     print("\n✅ Phone uniqueness test PASSED")
     return True
 
-
 def test_update_mfa_method_uniqueness():
     """Test that update_mfa_method also enforces uniqueness"""
     print("\n" + "="*80)
@@ -145,7 +142,6 @@ def test_update_mfa_method_uniqueness():
 
     print("\n✅ Update method uniqueness test PASSED")
     return True
-
 
 def test_cross_user_scenario():
     """Test realistic cross-user scenario"""
@@ -210,7 +206,6 @@ def test_cross_user_scenario():
     print("\n✅ Cross-user scenario test PASSED")
     return True
 
-
 def cleanup_test_data():
     """Clean up test MFA records"""
     print("\n" + "="*80)
@@ -239,7 +234,6 @@ def cleanup_test_data():
         return False
     finally:
         conn.close()
-
 
 def main():
     """Run all tests"""
@@ -296,7 +290,6 @@ def main():
     else:
         print("\n⚠️  SOME TESTS FAILED! Please review the output above.")
         return False
-
 
 if __name__ == '__main__':
     success = main()

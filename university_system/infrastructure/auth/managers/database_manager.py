@@ -19,7 +19,7 @@ connection concerns from business logic.
 
 import contextlib
 import logging
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from typing import Dict, Any
@@ -29,7 +29,6 @@ from university_system.infrastructure.exceptions import DatabaseError
 __all__ = ['DatabaseConnectionManager']
 
 logger = logging.getLogger(__name__)
-
 
 class DatabaseConnectionManager:
     """Thread-safe database connection manager to prevent locking issues"""

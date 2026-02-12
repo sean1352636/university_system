@@ -5,7 +5,7 @@ Run this script to populate the menu_items table with sample food items
 for testing the order placement system.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 
 # Database path - use absolute from current working directory
@@ -14,7 +14,6 @@ if os.path.exists('university_system/data/db_files/student_records.db'):
     DB_PATH = 'university_system/data/db_files/student_records.db'
 else:
     DB_PATH = Path(__file__).parents[5] / 'university_system' / 'data' / 'db_files' / 'student_records.db'
-
 
 def add_sample_menu_items():
     """Add sample menu items to the database"""
@@ -107,7 +106,6 @@ def add_sample_menu_items():
         print(f"✗ Database error: {e}")
     except Exception as e:
         print(f"✗ Error: {e}")
-
 
 if __name__ == "__main__":
     print("=" * 60)

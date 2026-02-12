@@ -15,7 +15,7 @@ import json
 import time
 import random
 import datetime
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -34,7 +34,6 @@ from .constants import (
     get_log_file,
 )
 
-
 class ReportManager:
     """Manages reporting operations for BatchOperationsGUI."""
 
@@ -46,10 +45,46 @@ class ReportManager:
         self.gui.validate_data()
 
     def show_dashboard(self):
-        """Show main dashboard"""
-        # Switch to first tab and refresh quality dashboard
-        self.gui.notebook.select(0)
-        self.gui.refresh_quality_dashboard()
+        """Show main dashboard in a new window"""
+        dialog = tk.Toplevel(self.gui.root)
+        dialog.title(_t("batch_ops.menu.dashboard"))
+        dialog.geometry("600x550")
+        dialog.transient(self.gui.root)
+
+        header = ttk.Label(dialog, text=_t("batch_ops.menu.dashboard"), font=("Arial", 14, "bold"))
+        header.pack(pady=10)
+
+        text_widget = scrolledtext.ScrolledText(dialog, height=25, width=70)
+        text_widget.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 10))
+        text_widget.insert(tk.END, "Loading dashboard data...")
+        text_widget.config(state='disabled')
+
+        def load_dashboard():
+            try:
+                data = self.gui.get_quality_dashboard_data()
+                from .quality_manager import QualityManager
+                content = self.gui.quality_mgr.format_quality_dashboard(data)
+                text_widget.config(state='normal')
+                text_widget.delete(1.0, tk.END)
+                text_widget.insert(tk.END, content)
+                text_widget.config(state='disabled')
+            except Exception as e:
+                text_widget.config(state='normal')
+                text_widget.delete(1.0, tk.END)
+                text_widget.insert(tk.END, f"Error loading dashboard: {e}")
+                text_widget.config(state='disabled')
+
+        import threading
+        thread = threading.Thread(target=load_dashboard)
+        thread.daemon = True
+        thread.start()
+
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=(0, 10))
+        ttk.Button(btn_frame, text=_t("batch_ops.buttons.refresh_dashboard"),
+                   command=load_dashboard).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("batch_ops.buttons.cancel"),
+                   command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def show_import_history(self):
         """Show import history tab"""
@@ -1608,8 +1643,20 @@ SYSTEM OPTIMIZATION PRIORITIES:
             button_frame = tk.Frame(result_dialog)
             button_frame.pack(pady=15)
 
+            def _open_report(path=filename):
+                import subprocess, platform
+                try:
+                    if platform.system() == 'Windows':
+                        os.startfile(path)
+                    elif platform.system() == 'Darwin':
+                        subprocess.run(['open', path], check=False)
+                    else:
+                        subprocess.run(['xdg-open', path], check=False)
+                except Exception:
+                    pass
+
             tk.Button(button_frame, text=_t("batch_ops.buttons.open_report"),
-                     command=lambda: os.system(f"xdg-open {filename}") if os.name != 'nt' else os.system(f"start {filename}"),
+                     command=_open_report,
                      bg='#4CAF50', fg='white', padx=20, pady=5).pack(side=tk.LEFT, padx=10)
 
             tk.Button(button_frame, text=_t("batch_ops.buttons.close"), command=result_dialog.destroy,

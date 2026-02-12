@@ -4,7 +4,7 @@ Tests staff CRUD, schedules, performance tracking, and analytics.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
@@ -13,7 +13,6 @@ import csv
 
 # Import the module to test
 from university_system.modules.domain.commerce.services.restaurant.staff import staff_administration
-
 
 @pytest.fixture
 def test_db():
@@ -128,7 +127,6 @@ def test_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -137,7 +135,6 @@ def mock_auth():
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
     return auth
-
 
 class TestViewAllStaff:
     """Test viewing staff members"""
@@ -171,7 +168,6 @@ class TestViewAllStaff:
 
         captured = capsys.readouterr()
         assert 'John Doe' in captured.out
-
 
 class TestAddNewStaff:
     """Test adding staff members"""
@@ -213,7 +209,6 @@ class TestAddNewStaff:
         captured = capsys.readouterr()
         assert "don't have permission" in captured.out
 
-
 class TestUpdateStaffInfo:
     """Test updating staff information"""
 
@@ -247,7 +242,6 @@ class TestUpdateStaffInfo:
 
         captured = capsys.readouterr()
         assert 'not found' in captured.out
-
 
 class TestDeleteStaff:
     """Test deleting/terminating staff"""
@@ -283,7 +277,6 @@ class TestDeleteStaff:
         captured = capsys.readouterr()
         assert 'cancelled' in captured.out
 
-
 class TestViewStaffSchedules:
     """Test viewing staff schedules"""
 
@@ -300,7 +293,6 @@ class TestViewStaffSchedules:
 
         captured = capsys.readouterr()
         assert 'STAFF SCHEDULES' in captured.out
-
 
 class TestCreateStaffSchedule:
     """Test creating staff schedules"""
@@ -331,7 +323,6 @@ class TestCreateStaffSchedule:
         captured = capsys.readouterr()
         assert 'Schedule created successfully' in captured.out
 
-
 class TestUpdateStaffSchedule:
     """Test updating staff schedules"""
 
@@ -350,7 +341,6 @@ class TestUpdateStaffSchedule:
 
         captured = capsys.readouterr()
         assert 'updated successfully' in captured.out
-
 
 class TestDeleteStaffSchedule:
     """Test deleting staff schedules"""
@@ -371,7 +361,6 @@ class TestDeleteStaffSchedule:
         captured = capsys.readouterr()
         assert 'deleted successfully' in captured.out
 
-
 class TestViewScheduleConflicts:
     """Test viewing schedule conflicts"""
 
@@ -387,7 +376,6 @@ class TestViewScheduleConflicts:
 
         captured = capsys.readouterr()
         assert 'SCHEDULE CONFLICTS' in captured.out
-
 
 class TestPerformanceManagement:
     """Test performance tracking functions"""
@@ -421,7 +409,6 @@ class TestPerformanceManagement:
         captured = capsys.readouterr()
         assert 'Performance score updated' in captured.out
 
-
 class TestExportPerformanceReport:
     """Test performance report export"""
 
@@ -444,7 +431,6 @@ class TestExportPerformanceReport:
         csv_files = list(tmp_path.glob('*.csv'))
         assert len(csv_files) > 0
 
-
 class TestSupplierPerformance:
     """Test supplier performance tracking"""
 
@@ -461,14 +447,12 @@ class TestSupplierPerformance:
         captured = capsys.readouterr()
         assert 'SUPPLIER PERFORMANCE' in captured.out or 'performance' in captured.out.lower()
 
-
 class TestStaffAnalytics:
     """Test staff analytics function"""
 
     def test_staff_analytics_available(self):
         """Test that staff_analytics function exists"""
         assert hasattr(staff_administration, 'staff_analytics')
-
 
 class TestQueryPerformance:
     """Test query performance analysis"""
@@ -486,7 +470,6 @@ class TestQueryPerformance:
         captured = capsys.readouterr()
         assert 'QUERY PERFORMANCE' in captured.out or 'performance' in captured.out.lower()
 
-
 class TestSetAuth:
     """Test authentication setup"""
 
@@ -494,7 +477,6 @@ class TestSetAuth:
         """Test setting authentication instance"""
         staff_administration.set_auth(mock_auth)
         assert staff_administration.auth == mock_auth
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

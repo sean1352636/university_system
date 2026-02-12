@@ -34,10 +34,14 @@ from university_system.infrastructure.email.email_db_utilities import (
 )
 
 # Health database backup utilities
-from university_system.modules.domain.health.services.health_db_backup import (
-    create_sqlite_backup,
-    ensure_templates_schema,
-)
+try:
+    from university_system.modules.domain.health.services.health_db_backup import (
+        create_sqlite_backup,
+        ensure_templates_schema,
+    )
+except ImportError:
+    create_sqlite_backup = None
+    ensure_templates_schema = None
 
 # Schema initialization functions
 try:

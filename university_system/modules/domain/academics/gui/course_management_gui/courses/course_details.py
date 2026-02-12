@@ -274,7 +274,10 @@ def load_course_selector_options(self):
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
             cursor = conn.cursor()
 
-            cursor.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
+            cursor.execute(
+                "SELECT id, COALESCE(course_code, code) as cc, COALESCE(course_name, name) as cn "
+                "FROM courses WHERE COALESCE(status, 'Active') = 'Active' ORDER BY cc"
+            )
             courses = cursor.fetchall()
 
             course_options = [f"{course[1]} - {course[2]}" for course in courses]

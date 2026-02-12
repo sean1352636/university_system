@@ -15,7 +15,7 @@ Tests all classes, functions, and functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 from io import StringIO
@@ -30,7 +30,6 @@ from university_system.modules.shared.services.integrations.integration_marketpl
     display_integration_marketplace_menu,
     launch_integration_marketplace_gui
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -132,7 +131,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestIntegrationCatalogManager:
     """Test IntegrationCatalogManager class."""
@@ -275,7 +273,6 @@ class TestIntegrationCatalogManager:
         assert len(integrations) == 0
         mock_conn.close()
 
-
 class TestInstallationManager:
     """Test InstallationManager class."""
 
@@ -379,7 +376,6 @@ class TestInstallationManager:
 
         assert "Error uninstalling integration:" in str(exc_info.value)
 
-
 class TestCredentialManager:
     """Test CredentialManager class."""
 
@@ -466,7 +462,6 @@ class TestCredentialManager:
             )
 
         assert "Error storing credentials:" in str(exc_info.value)
-
 
 class TestSyncManager:
     """Test SyncManager class."""
@@ -624,7 +619,6 @@ class TestSyncManager:
 
         assert "Error completing sync:" in str(exc_info.value)
 
-
 class TestDataMappingManager:
     """Test DataMappingManager class."""
 
@@ -711,7 +705,6 @@ class TestDataMappingManager:
             )
 
         assert "Error creating mapping:" in str(exc_info.value)
-
 
 class TestWebhookManager:
     """Test WebhookManager class."""
@@ -800,7 +793,6 @@ class TestWebhookManager:
 
         assert "Error registering webhook:" in str(exc_info.value)
 
-
 class TestDisplayIntegrationMarketplaceMenu:
     """Test display_integration_marketplace_menu function."""
 
@@ -842,7 +834,6 @@ class TestDisplayIntegrationMarketplaceMenu:
         display_integration_marketplace_menu(mock_auth)
         # Should exit gracefully
 
-
 class TestLaunchIntegrationMarketplaceGui:
     """Test launch_integration_marketplace_gui function."""
 
@@ -859,7 +850,6 @@ class TestLaunchIntegrationMarketplaceGui:
 
         # Verify message was printed
         assert mock_print.called
-
 
 class TestIntegration:
     """Integration tests for complex workflows."""
@@ -931,7 +921,6 @@ class TestIntegration:
         assert result is True
 
         mock_conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

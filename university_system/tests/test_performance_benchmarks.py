@@ -10,7 +10,7 @@ This module contains performance tests for:
 
 import pytest
 import time
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import psutil
 import os
 import gc
@@ -33,13 +33,11 @@ except ImportError:
         return lambda f: f
     settings = lambda **kwargs: lambda f: f
 
-
 @contextmanager
 def measure_time():
     """Context manager to measure execution time"""
     start = time.perf_counter()
     yield lambda: time.perf_counter() - start
-
 
 @contextmanager
 def measure_memory():
@@ -55,7 +53,6 @@ def measure_memory():
     mem_after = process.memory_info().rss / 1024 / 1024  # MB
     yield_data['after'] = mem_after
     yield_data['delta'] = mem_after - mem_before
-
 
 @pytest.mark.slow
 @pytest.mark.performance
@@ -242,7 +239,6 @@ class TestQueryPerformanceBenchmarks:
 
         print(f"\n✓ Enrollment search across 5000 records: {elapsed:.3f}s")
 
-
 @pytest.mark.slow
 @pytest.mark.performance
 class TestConnectionPoolPerformance:
@@ -300,7 +296,6 @@ class TestConnectionPoolPerformance:
 
         print(f"\n✓ Transaction throughput: {transactions_per_sec:.1f} tx/s")
 
-
 @pytest.mark.slow
 @pytest.mark.performance
 class TestMemoryUsage:
@@ -355,7 +350,6 @@ class TestMemoryUsage:
 
         print(f"\n✓ Fetched {len(results)} records: {memory_used:.1f}MB")
 
-
 @pytest.mark.slow
 @pytest.mark.performance
 class TestIndexPerformance:
@@ -408,7 +402,6 @@ class TestIndexPerformance:
 
         # Index should provide some improvement
         assert time_with_index <= time_without_index
-
 
 @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
 @pytest.mark.slow
@@ -570,7 +563,6 @@ class TestPropertyBasedTesting:
             # Constraint violations are acceptable
             pass
 
-
 @pytest.mark.performance
 class TestReportPerformance:
     """Test performance of report generation"""
@@ -634,7 +626,6 @@ class TestReportPerformance:
         assert elapsed < 2.0, f"Report generation took {elapsed:.3f}s, should be < 2.0s"
 
         print(f"\n✓ Grade report for 200 students: {elapsed:.3f}s")
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short", "-m", "performance"])

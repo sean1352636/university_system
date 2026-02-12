@@ -179,7 +179,6 @@ CREATE INDEX IF NOT EXISTS idx_emergency_alerts_active ON emergency_alerts(is_ac
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON notification_subscriptions(user_id);
 """
 
-
 def create_communication_tables(conn):
     """Create all communication hub tables"""
     cursor = conn.cursor()
@@ -187,9 +186,8 @@ def create_communication_tables(conn):
     conn.commit()
     print("Unified Communication Hub tables created successfully")
 
-
 if __name__ == "__main__":
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
     with sqlite3.connect(DEFAULT_DB_PATH) as conn:

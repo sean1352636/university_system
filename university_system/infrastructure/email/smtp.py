@@ -19,7 +19,7 @@ from typing import Callable, Optional, Protocol
 
 from university_system.infrastructure.email.config import config
 from university_system.infrastructure.email.email_db_utilities import execute_db_operation
-from university_system.modules.shared.utils.logs import log_event
+from university_system.core.logs import log_event
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,8 @@ class SMTPClient:
 
             context = ssl.create_default_context()
             with smtplib.SMTP(self.config.smtp_server, self.config.smtp_port) as server:
-                if self.config.use_tls:
+                # Always use TLS when available (STARTTLS on port 587)
+                if self.config.use_tls or self.config.smtp_port in (587, 465):
                     server.starttls(context=context)
                 if self.config.use_authentication and self.config.username and self.config.password:
                     server.login(self.config.username, self.config.password)

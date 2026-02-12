@@ -1109,7 +1109,7 @@ class StudentManager:
                 return
     
             placeholders = ",".join("?" for _ in latest_ids)
-            cursor.execute(f'''
+            cursor.execute('''
             SELECT s.student_id,
                    s.first_name || ' ' || COALESCE(s.last_name, '') AS name,
                    s.course,
@@ -1118,7 +1118,7 @@ class StudentManager:
                    COALESCE(ra.assessment_date, 'Unknown')
             FROM student_risk_assessment ra
             JOIN students s ON ra.student_id = s.student_id
-            WHERE ra.id IN ({placeholders})
+            WHERE ra.id IN (''' + placeholders + ''')
             ORDER BY ra.risk_score DESC
             ''', latest_ids)
             risk_rows = cursor.fetchall()

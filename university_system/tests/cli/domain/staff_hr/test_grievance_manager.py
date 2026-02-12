@@ -4,14 +4,13 @@ Tests grievance filing, investigation, disciplinary actions, and appeals.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 import os
 import tempfile
 
 from university_system.modules.domain.staff_hr.services.managers.grievance_manager import GrievanceManager
-
 
 @pytest.fixture
 def test_db():
@@ -207,7 +206,6 @@ def test_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 class TestGrievanceCreation:
     """Test grievance filing functionality."""
 
@@ -291,7 +289,6 @@ class TestGrievanceCreation:
         assert grievance['category_id'] == 1  # Harassment category ID
         conn.close()
 
-
 class TestGrievanceRetrieval:
     """Test grievance retrieval functionality."""
 
@@ -345,7 +342,6 @@ class TestGrievanceRetrieval:
         assert len(grievances) == 1
         assert grievances[0]['reference_number'] == 'GRV-001'
         conn.close()
-
 
 class TestGrievanceActions:
     """Test grievance action functionality."""
@@ -418,7 +414,6 @@ class TestGrievanceActions:
         assert grievance['priority'] == 'high'
         conn.close()
 
-
 class TestGrievanceResolution:
     """Test grievance resolution functionality."""
 
@@ -458,7 +453,6 @@ class TestGrievanceResolution:
         assert grievance['resolution_type'] == 'mediation'
         assert grievance['outcome'] == 'upheld'
         conn.close()
-
 
 class TestDisciplinaryRecords:
     """Test disciplinary record functionality."""
@@ -518,7 +512,6 @@ class TestDisciplinaryRecords:
         assert len(records) == 2
         conn.close()
 
-
 class TestDisciplinaryActions:
     """Test disciplinary action functionality."""
 
@@ -556,7 +549,6 @@ class TestDisciplinaryActions:
 
         assert action['action_type'] == 'written_warning'
         conn.close()
-
 
 class TestAppeals:
     """Test appeal functionality."""
@@ -630,7 +622,6 @@ class TestAppeals:
 
         assert len(appeals) == 1
         conn.close()
-
 
 class TestGrievanceStatistics:
     """Test grievance statistics functionality."""

@@ -16,7 +16,7 @@ import pytest
 import os
 import json
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
@@ -24,7 +24,6 @@ from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.shared.services.communication.communication_manager import (
     CommunicationManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -156,12 +155,10 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def comm_manager(temp_db):
     """Create a CommunicationManager instance with test database."""
     return CommunicationManager(db_path=temp_db)
-
 
 class TestCommunicationManagerInit:
     """Test CommunicationManager initialization."""
@@ -183,7 +180,6 @@ class TestCommunicationManagerInit:
         assert conn is not None
         assert isinstance(conn, sqlite3.Connection)
         conn.close()
-
 
 class TestEmailManagement:
     """Test email management functionality."""
@@ -287,7 +283,6 @@ class TestEmailManagement:
         )
         assert count == 0
 
-
 class TestSMSManagement:
     """Test SMS management functionality."""
 
@@ -320,7 +315,6 @@ class TestSMSManagement:
         assert result is None
         captured = capsys.readouterr()
         assert "Error queuing SMS:" in captured.out
-
 
 class TestPushNotifications:
     """Test push notification functionality."""
@@ -366,7 +360,6 @@ class TestPushNotifications:
         assert result is None
         captured = capsys.readouterr()
         assert "Error sending push notification:" in captured.out
-
 
 class TestAnnouncements:
     """Test announcement functionality."""
@@ -488,7 +481,6 @@ class TestAnnouncements:
         captured = capsys.readouterr()
         assert "Error getting announcements:" in captured.out
 
-
 class TestEmergencyAlerts:
     """Test emergency alert functionality."""
 
@@ -526,7 +518,6 @@ class TestEmergencyAlerts:
         assert result is None
         captured = capsys.readouterr()
         assert "Error sending emergency alert:" in captured.out
-
 
 class TestMessageTemplates:
     """Test message template functionality."""
@@ -630,7 +621,6 @@ class TestMessageTemplates:
         captured = capsys.readouterr()
         assert "Error rendering template:" in captured.out
 
-
 class TestCommunicationPreferences:
     """Test communication preferences functionality."""
 
@@ -728,7 +718,6 @@ class TestCommunicationPreferences:
         captured = capsys.readouterr()
         assert "Error getting preferences:" in captured.out
 
-
 class TestIntegration:
     """Integration tests for complex workflows."""
 
@@ -807,7 +796,6 @@ class TestIntegration:
         assert ann_id is not None
         assert len(announcements) > 0
         assert prefs is not None
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

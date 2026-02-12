@@ -19,10 +19,11 @@ Usage:
     )
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
+from university_system.core.sql_safety import validate_identifier
 from decimal import Decimal
 
 # Import database connection from finance module
@@ -38,7 +39,6 @@ from university_system.infrastructure.database.db import transaction
 from university_system.modules.shared.constants import paths
 
 logger = logging.getLogger(__name__)
-
 
 def _ensure_finance_tables_exist():
     """
@@ -106,7 +106,6 @@ def _ensure_finance_tables_exist():
     except sqlite3.Error as e:
         logger.error(f"Error creating finance tables: {e}")
         return False
-
 
 def record_payment_to_finance(
     student_id: str,
@@ -182,7 +181,6 @@ def record_payment_to_finance(
     except Exception as e:
         logger.error(f"Unexpected error in record_payment_to_finance: {e}")
         return None
-
 
 def record_refund_to_finance(
     student_id: str,
@@ -265,7 +263,6 @@ def record_refund_to_finance(
         traceback.print_exc()
         return None
 
-
 def record_revenue_to_finance(
     student_id: str,
     amount: float,
@@ -306,7 +303,6 @@ def record_revenue_to_finance(
         status="completed",
         notes=full_notes
     )
-
 
 def get_student_financial_summary(student_id: str) -> Dict[str, Any]:
     """
@@ -393,7 +389,6 @@ def get_student_financial_summary(student_id: str) -> Dict[str, Any]:
         logger.error(f"Error getting financial summary: {e}")
         return {}
 
-
 def get_finance_report_by_source(
     transaction_source: str,
     start_date: Optional[str] = None,
@@ -453,10 +448,8 @@ def get_finance_report_by_source(
         logger.error(f"Error generating finance report: {e}")
         return {}
 
-
 # Low Balance Threshold (in GBP)
 LOW_BALANCE_THRESHOLD = 20.00
-
 
 def get_student_email(student_id: str) -> Optional[str]:
     """
@@ -480,7 +473,8 @@ def get_student_email(student_id: str) -> Optional[str]:
             # Try column names in order of likelihood (email_address is most common)
             for email_col in ['email_address', 'email', 'student_email']:
                 if email_col in columns:
-                    cursor.execute(f'SELECT {email_col} FROM students WHERE student_id = ?', (student_id,))
+                    safe_col = validate_identifier(email_col, "column")
+                    cursor.execute('SELECT ' + safe_col + ' FROM students WHERE student_id = ?', (student_id,))
                     result = cursor.fetchone()
                     if result and result[0]:
                         return result[0]
@@ -497,7 +491,6 @@ def get_student_email(student_id: str) -> Optional[str]:
     except sqlite3.Error as e:
         logger.error(f"Error getting student email: {e}")
         return None
-
 
 def get_student_info(student_id: str) -> Optional[Dict[str, Any]]:
     """
@@ -522,6 +515,7 @@ def get_student_info(student_id: str) -> Optional[Dict[str, Any]]:
             email_col = 'email_address' if 'email_address' in columns else 'email' if 'email' in columns else None
 
             if email_col:
+                validate_identifier(email_col, "column")
                 cursor.execute(f'''
                     SELECT student_id, first_name, last_name, {email_col}
                     FROM students WHERE student_id = ?
@@ -565,7 +559,6 @@ def get_student_info(student_id: str) -> Optional[Dict[str, Any]]:
         logger.error(f"Error getting student info: {e}")
         return None
 
-
 def get_student_finance_account_balance(student_id: str) -> Optional[float]:
     """
     Get student's finance account balance.
@@ -596,7 +589,6 @@ def get_student_finance_account_balance(student_id: str) -> Optional[float]:
         logger.error(f"Error getting student finance account balance: {e}")
         return None
 
-
 def ensure_student_finance_account_exists(student_id: str) -> bool:
     """
     Ensure a finance account exists for the student, creating one if needed.
@@ -625,7 +617,6 @@ def ensure_student_finance_account_exists(student_id: str) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error ensuring student account exists: {e}")
         return False
-
 
 def send_payment_receipt_email(
     student_id: str,
@@ -718,7 +709,6 @@ This is an automated receipt. Please do not reply to this email.
         logger.error(f"Error sending payment receipt email: {e}")
         return False
 
-
 def send_topup_confirmation_email(
     student_id: str,
     amount: float,
@@ -808,7 +798,6 @@ This is an automated confirmation. Please do not reply to this email.
         logger.error(f"Error sending top-up confirmation email: {e}")
         return False
 
-
 def send_low_balance_email(student_id: str, current_balance: float, threshold: float = LOW_BALANCE_THRESHOLD) -> bool:
     """
     Send a low balance notification email to the student.
@@ -876,7 +865,6 @@ This is an automated message. Please do not reply to this email.
     except Exception as e:
         logger.error(f"Error sending low balance email: {e}")
         return False
-
 
 def process_student_finance_account_payment(
     student_id: str,
@@ -1014,7 +1002,6 @@ def process_student_finance_account_payment(
         logger.error(f"Error processing finance account payment: {e}")
         result['message'] = f"Error: {e}"
         return result
-
 
 def top_up_student_finance_account(
     student_id: str,

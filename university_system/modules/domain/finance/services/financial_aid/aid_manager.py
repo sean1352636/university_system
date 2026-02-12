@@ -3,13 +3,12 @@ Comprehensive Financial Aid Manager
 Handles financial aid applications, FAFSA data, aid packages, and disbursements
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, date
 from typing import Dict, List, Optional, Any
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.modules.shared.utils.i18n import get_text
-
 
 class FinancialAidManager:
     """Comprehensive manager for financial aid operations"""
@@ -219,12 +218,15 @@ class FinancialAidManager:
                       disbursement_json, 1 if is_need_based else 0, 1 if is_renewable else 0))
 
                 # Update package totals
-                cursor.execute(f"""
-                    UPDATE aid_packages
-                    SET total_{aid_type}s = total_{aid_type}s + ?,
-                        total_aid_amount = total_aid_amount + ?
-                    WHERE package_id = ?
-                """, (amount, amount, package_id))
+                from university_system.core.sql_safety import validate_identifier
+                total_col = "total_" + aid_type + "s"
+                validate_identifier(total_col, "column")
+                cursor.execute(
+                    "UPDATE aid_packages"
+                    " SET [" + total_col + "] = [" + total_col + "] + ?,"
+                    " total_aid_amount = total_aid_amount + ?"
+                    " WHERE package_id = ?",
+                    (amount, amount, package_id))
 
                 conn.commit()
                 return cursor.lastrowid

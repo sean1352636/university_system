@@ -2,7 +2,6 @@
 Report generation for support analytics.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def generate_reports(report_type, date_range, filters=None):
     """Generate various types of reports"""
@@ -65,7 +61,6 @@ def generate_reports(report_type, date_range, filters=None):
     except Exception as e:
         logger.error(f"Error generating report: {e}")
         raise
-
 
 def _generate_ticket_summary_report(cursor, date_range, filters):
     """Generate ticket summary report"""
@@ -105,7 +100,6 @@ def _generate_ticket_summary_report(cursor, date_range, filters):
         'daily_creation': daily_creation,
         'date_range': date_range
     }
-
 
 def _generate_performance_report(cursor, date_range, filters):
     """Generate performance metrics report"""
@@ -160,7 +154,6 @@ def _generate_performance_report(cursor, date_range, filters):
         'date_range': date_range
     }
 
-
 def _generate_satisfaction_report(cursor, date_range, filters):
     """Generate satisfaction survey report"""
     date_params = (date_range['start'], date_range['end'])
@@ -195,7 +188,6 @@ def _generate_satisfaction_report(cursor, date_range, filters):
         'rating_distribution': rating_distribution,
         'date_range': date_range
     }
-
 
 def _generate_category_analysis_report(cursor, date_range, filters):
     """Generate category analysis report"""
@@ -234,7 +226,6 @@ def _generate_category_analysis_report(cursor, date_range, filters):
         'date_range': date_range
     }
 
-
 def _log_report_generation(report_type, user_id):
     """Log report generation for audit"""
     try:
@@ -256,7 +247,6 @@ def _log_report_generation(report_type, user_id):
         
     except Exception as e:
         logger.error(f"Error logging report generation: {e}")
-
 
 def generate_reports_menu(support):
     """Generate reports menu"""

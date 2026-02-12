@@ -14,7 +14,7 @@ This module tests WAL mode configuration and behavior:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from pathlib import Path
@@ -31,7 +31,6 @@ from university_system.infrastructure.database.constants import (
     PRAGMA_SYNCHRONOUS,
     PRAGMA_FOREIGN_KEYS
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -64,7 +63,6 @@ def temp_db():
         os.unlink(f"{db_path}-shm")
     except (OSError, IOError):
         pass
-
 
 class TestWALModeConfiguration:
     """Test WAL mode configuration and activation."""
@@ -143,7 +141,6 @@ class TestWALModeConfiguration:
         conn.close()
 
         assert fk_enabled == 1, "Foreign keys should be enabled"
-
 
 class TestWALConcurrentReads:
     """Test WAL mode's concurrent read capabilities."""
@@ -231,7 +228,6 @@ class TestWALConcurrentReads:
         assert len(results["readers"]) == 5
         assert results["writer"] == "done"
 
-
 class TestWALConcurrentWrites:
     """Test WAL mode's handling of concurrent writes."""
 
@@ -303,7 +299,6 @@ class TestWALConcurrentWrites:
         # (In rollback mode, this would have many more)
         lock_error_rate = len(lock_errors) / 50
         assert lock_error_rate < 0.3, f"Too many lock errors: {lock_error_rate:.1%}"
-
 
 class TestWALCheckpointing:
     """Test WAL checkpointing behavior."""
@@ -393,7 +388,6 @@ class TestWALCheckpointing:
 
         conn.close()
 
-
 class TestWALPerformance:
     """Test performance characteristics of WAL mode."""
 
@@ -455,7 +449,6 @@ class TestWALPerformance:
         # 10 threads * 20 reads = 200 total reads
         # Should benefit from WAL concurrency
         assert elapsed < 5.0, f"Concurrent reads too slow: {elapsed:.2f}s"
-
 
 class TestWALReliability:
     """Test WAL mode reliability and crash recovery."""
@@ -522,7 +515,6 @@ class TestWALReliability:
 
         assert mode.upper() == "WAL"
 
-
 class TestWALFileManagement:
     """Test WAL file management and cleanup."""
 
@@ -566,7 +558,6 @@ class TestWALFileManagement:
 
         # WAL should be smaller after truncate checkpoint
         assert size_after <= size_before
-
 
 class TestWALIntegration:
     """Test WAL integration with other database features."""
@@ -617,7 +608,6 @@ class TestWALIntegration:
         conn.close()
 
         assert count == 20
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

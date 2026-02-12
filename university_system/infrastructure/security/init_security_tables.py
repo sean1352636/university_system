@@ -4,15 +4,14 @@ Security Database Schema Initialization
 Creates all necessary tables for security features
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from modules.shared.constants.paths import DEFAULT_DB_PATH
 from university_system.infrastructure.database.db import get_connection
-from university_system.modules.shared.utils.i18n import get_text, _
-
+from university_system.core.i18n import get_text, _
 
 def init_security_tables(db_path=None):
     """Initialize all security-related database tables"""
@@ -339,7 +338,6 @@ def init_security_tables(db_path=None):
 
     finally:
         conn.close()
-
 
 if __name__ == '__main__':
     init_security_tables()

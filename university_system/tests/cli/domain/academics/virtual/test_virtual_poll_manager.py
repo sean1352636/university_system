@@ -13,12 +13,10 @@ import pytest
 import os
 import json
 import tempfile
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.services.virtual_classroom.poll_manager import (
     PollManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -73,12 +71,10 @@ def temp_db():
     yield db_path
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a PollManager instance with temp database."""
     return PollManager(db_path=temp_db)
-
 
 class TestPollManagerInit:
     """Test PollManager initialization."""
@@ -90,7 +86,6 @@ class TestPollManagerInit:
     def test_init_custom_db_path(self, temp_db):
         manager = PollManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestCreatePoll:
     """Test poll creation."""
@@ -157,7 +152,6 @@ class TestCreatePoll:
         )
         assert poll_id is None
 
-
 class TestSubmitResponse:
     """Test submitting poll responses."""
 
@@ -208,7 +202,6 @@ class TestSubmitResponse:
         result = manager.submit_response(99999, 101, 'Answer')
         assert result is False
 
-
 class TestClosePoll:
     """Test closing polls."""
 
@@ -223,7 +216,6 @@ class TestClosePoll:
     def test_close_nonexistent_poll(self, manager):
         result = manager.close_poll(99999)
         assert result is False
-
 
 class TestGetPoll:
     """Test retrieving poll details."""
@@ -243,7 +235,6 @@ class TestGetPoll:
     def test_get_nonexistent_poll(self, manager):
         poll = manager.get_poll(99999)
         assert poll is None
-
 
 class TestGetSessionPolls:
     """Test retrieving polls for a session."""
@@ -267,7 +258,6 @@ class TestGetSessionPolls:
     def test_get_polls_for_empty_session(self, manager):
         polls = manager.get_session_polls(1)
         assert polls == []
-
 
 class TestGetPollResults:
     """Test retrieving poll results."""
@@ -301,7 +291,6 @@ class TestGetPollResults:
         results = manager.get_poll_results(99999)
         assert results == {}
 
-
 class TestGetUserResponse:
     """Test retrieving user responses."""
 
@@ -318,7 +307,6 @@ class TestGetUserResponse:
         response = manager.get_user_response(poll_id, 999)
         assert response is None
 
-
 class TestDeletePoll:
     """Test deleting polls."""
 
@@ -334,7 +322,6 @@ class TestDeletePoll:
         result = manager.delete_poll(99999)
         assert result is False
 
-
 class TestErrorHandling:
     """Test error handling."""
 
@@ -346,7 +333,6 @@ class TestErrorHandling:
 
         result = manager.submit_response(1, 101, 'Answer')
         assert result is False
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

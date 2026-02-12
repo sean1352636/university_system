@@ -7,6 +7,8 @@ Features: Help requests, issue reporting, ticket tracking, status monitoring
 from datetime import datetime
 from pathlib import Path
 
+from university_system.core.sql_safety import validate_identifier
+
 try:
     from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 except ImportError:
@@ -15,7 +17,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -30,7 +32,6 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
-
 
 SECURITY_DESK_SCHEMA = """
 CREATE TABLE IF NOT EXISTS security_desk_tickets (
@@ -58,7 +59,6 @@ CREATE TABLE IF NOT EXISTS security_desk_counter (
 INSERT OR IGNORE INTO security_desk_counter (id, counter) VALUES (1, 1000);
 """
 
-
 def init_security_desk_database():
     """Initialize security desk database tables."""
     try:
@@ -70,7 +70,6 @@ def init_security_desk_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -78,7 +77,6 @@ def get_current_user():
         if user:
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
-
 
 def get_next_ticket_id():
     """Generate next ticket ID."""
@@ -93,7 +91,6 @@ def get_next_ticket_id():
     except Exception as e:
         print(f"Error generating ticket ID: {e}")
         return f"SD-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
 
 def create_ticket(ticket_data):
     """Create a new ticket."""
@@ -116,7 +113,6 @@ def create_ticket(ticket_data):
     except Exception as e:
         print(f"Error creating ticket: {e}")
         return False
-
 
 def get_all_tickets():
     """Get all tickets."""
@@ -141,7 +137,6 @@ def get_all_tickets():
         print(f"Error getting tickets: {e}")
         return []
 
-
 def get_ticket_by_id(ticket_id):
     """Get specific ticket by ID."""
     try:
@@ -163,6 +158,10 @@ def get_ticket_by_id(ticket_id):
         print(f"Error getting ticket: {e}")
     return None
 
+_TICKET_ALLOWED_COLUMNS = frozenset({
+    'type', 'category', 'priority', 'status', 'subject', 'description',
+    'location', 'user_id', 'user_name', 'user_email', 'admin_notes',
+})
 
 def update_ticket(ticket_id, updates):
     """Update ticket fields."""
@@ -170,6 +169,9 @@ def update_ticket(ticket_id, updates):
         fields = []
         values = []
         for key, value in updates.items():
+            if key not in _TICKET_ALLOWED_COLUMNS:
+                raise ValueError(f"Invalid column name: {key}")
+            validate_identifier(key, "column")
             fields.append(f"{key} = ?")
             values.append(value)
 
@@ -189,7 +191,6 @@ def update_ticket(ticket_id, updates):
         print(f"Error updating ticket: {e}")
         return False
 
-
 def delete_ticket(ticket_id):
     """Delete a ticket."""
     try:
@@ -201,7 +202,6 @@ def delete_ticket(ticket_id):
         print(f"Error deleting ticket: {e}")
         return False
 
-
 # ==================== CLI Interface ====================
 
 def print_header(title):
@@ -210,7 +210,6 @@ def print_header(title):
     print(f"  {title}")
     print("=" * 80)
 
-
 def print_ticket_summary(ticket):
     """Print ticket summary."""
     print(f"\n  ID: {ticket['id']}")
@@ -218,7 +217,6 @@ def print_ticket_summary(ticket):
     print(f"  Priority: {ticket['priority']} | Status: {ticket['status']}")
     print(f"  Subject: {ticket['subject']}")
     print(f"  Created: {ticket['created_at']}")
-
 
 def print_ticket_details(ticket):
     """Print full ticket details."""
@@ -237,7 +235,6 @@ def print_ticket_details(ticket):
 
     if ticket['admin_notes']:
         print(f"\n  Admin Notes: {ticket['admin_notes']}")
-
 
 def list_tickets_menu():
     """List all tickets."""
@@ -259,7 +256,6 @@ def list_tickets_menu():
 
     print()
 
-
 def view_ticket_menu():
     """View ticket details."""
     print_header("View Ticket")
@@ -275,7 +271,6 @@ def view_ticket_menu():
         return
 
     print_ticket_details(ticket)
-
 
 def create_ticket_menu():
     """Create new ticket."""
@@ -350,7 +345,6 @@ def create_ticket_menu():
     else:
         print("\n  ❌ Failed to create ticket.")
 
-
 def update_ticket_menu():
     """Update ticket status/notes."""
     print_header("Update Ticket")
@@ -408,7 +402,6 @@ def update_ticket_menu():
         if update_ticket(ticket_id, {'admin_notes': notes}):
             print("\n  ✅ Notes updated.")
 
-
 def delete_ticket_menu():
     """Delete a ticket."""
     print_header("Delete Ticket")
@@ -431,7 +424,6 @@ def delete_ticket_menu():
             print(f"\n  ✅ Ticket {ticket_id} deleted.")
         else:
             print("\n  ❌ Failed to delete ticket.")
-
 
 def statistics_menu():
     """Show ticket statistics."""
@@ -474,7 +466,6 @@ def statistics_menu():
 
     print()
 
-
 def security_desk_menu():
     """Main security desk CLI menu."""
     init_security_desk_database()
@@ -511,7 +502,6 @@ def security_desk_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     security_desk_menu()

@@ -8,7 +8,7 @@ standalone snack orders.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 import string
 
@@ -21,7 +21,6 @@ except ImportError:
 
 from ..database import DB_FILE
 from ..constants import SNACKS_MENU, SNACK_DIETARY, SNACK_COMBOS
-
 
 def show_snacks_page(self, screening, movie):
     """Display snacks ordering page."""
@@ -92,7 +91,6 @@ def show_snacks_page(self, screening, movie):
     ttk.Button(btn_frame, text=_t("cinema.booking.continue_to_payment_arrow"), style="Primary.TButton",
               command=lambda: self.show_payment_page(screening, movie)).pack(side="left", padx=5)
 
-
 def update_snacks_total(self):
     """Update snacks total display."""
     total = 0
@@ -105,7 +103,6 @@ def update_snacks_total(self):
             del self.selected_snacks[item]
 
     self.snacks_total_label.config(text=f"Snacks Total: £{total:.2f}")
-
 
 def show_snacks_only_page(self):
     self.clear_content()
@@ -140,7 +137,6 @@ def show_snacks_only_page(self):
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.snack_tree.yview)
     self.snack_tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
-
 
 def create_snack_order(self):
     form = tk.Toplevel(self.root)

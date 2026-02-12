@@ -3,14 +3,13 @@ Comprehensive tests for medical records management functionality.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import time
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from university_system.modules.domain.health.records import medical_records
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def clean_db():
@@ -44,7 +43,6 @@ def clean_db():
         cursor.execute(f'DROP TABLE IF EXISTS {table}')
     conn.commit()
     conn.close()
-
 
 class TestLogAuditEvent:
     """Tests for log_audit_event function."""
@@ -151,7 +149,6 @@ class TestLogAuditEvent:
 
                 # Should print warning but not crash
                 assert mock_print.called
-
 
 class TestInitEnhancedHealthDB:
     """Tests for init_enhanced_health_db function."""
@@ -292,7 +289,6 @@ class TestInitEnhancedHealthDB:
         # Should now have correct column name
         assert 'retention_period_days' in columns
 
-
 class TestDatabaseIntegrity:
     """Tests for database integrity and foreign key constraints."""
 
@@ -333,7 +329,6 @@ class TestDatabaseIntegrity:
 
         # Confidential should default to 0
         assert result[0] == 0
-
 
 class TestComplexScenarios:
     """Tests for complex scenarios involving multiple tables."""
@@ -417,7 +412,6 @@ class TestComplexScenarios:
         assert count == 3
         assert actions == ['create', 'update', 'delete']
 
-
 class TestErrorHandling:
     """Tests for error handling in medical records module."""
 
@@ -447,7 +441,6 @@ class TestErrorHandling:
             conn.commit()
 
         conn.close()
-
 
 class TestDataRetentionPolicies:
     """Tests specific to data retention policies."""
@@ -491,7 +484,6 @@ class TestDataRetentionPolicies:
 
         assert expected_types.issubset(data_types)
 
-
 class TestSecuritySettings:
     """Tests for security settings initialization."""
 
@@ -534,7 +526,6 @@ class TestSecuritySettings:
         }
 
         assert expected_settings.issubset(settings)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -18,6 +18,9 @@ from university_system.infrastructure.database.db import sqlite3, DatabaseManage
 # Local imports - Paths
 from university_system.modules.shared.constants import paths
 
+# SQL safety
+from university_system.core.sql_safety import validate_identifier
+
 # Local imports - Authentication
 from university_system.infrastructure.auth import UserAuth, get_current_user, set_auth_instance
 from university_system.infrastructure.shared_context import get_auth
@@ -458,9 +461,8 @@ class DocumentManager:
         cursor.execute('SELECT COUNT(*) FROM users')
         if cursor.fetchone()[0] == 0:
             # Create default admin user using centralized authentication
-            # WARNING: Change DEFAULT_ADMIN_PASSWORD environment variable in production!
-            # Load admin password from environment variable for security
-            admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD', 'admin123')
+            from university_system.core.defaults import DEFAULT_ADMIN_PASSWORD
+            admin_password = DEFAULT_ADMIN_PASSWORD
             admin_created = False
             user_id = None
 

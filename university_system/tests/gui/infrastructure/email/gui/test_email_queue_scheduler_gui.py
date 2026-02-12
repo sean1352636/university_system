@@ -5,7 +5,7 @@ Tests queue management, scheduling, worker control, and monitoring interfaces
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import tkinter as tk
@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 
 # Import the module under test
 from university_system.infrastructure.email.gui import email_queue_scheduler_gui
-
 
 @pytest.fixture
 def temp_db():
@@ -85,7 +84,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def root_window():
     """Create a Tkinter root window for testing"""
@@ -95,7 +93,6 @@ def root_window():
         root.destroy()
     except (OSError, IOError):
         pass
-
 
 class TestEmailQueueSchedulerGUIInitialization:
     """Test EmailQueueSchedulerGUI initialization"""
@@ -147,7 +144,6 @@ class TestEmailQueueSchedulerGUIInitialization:
             except (OSError, IOError):
                 pass
 
-
 class TestWorkerControlTab:
     """Test worker control tab functionality"""
 
@@ -186,7 +182,6 @@ class TestWorkerControlTab:
                     # Should update status labels
                 except (OSError, IOError):
                     pass
-
 
 class TestQueueEmailTab:
     """Test queue email tab functionality"""
@@ -240,7 +235,6 @@ class TestQueueEmailTab:
                         mock_info.assert_called_once()
                 except (OSError, IOError):
                     pass
-
 
 class TestScheduleEmailTab:
     """Test schedule email tab functionality"""
@@ -300,7 +294,6 @@ class TestScheduleEmailTab:
             except (OSError, IOError):
                 pass
 
-
 class TestMonitorTab:
     """Test monitor tab functionality"""
 
@@ -317,7 +310,6 @@ class TestMonitorTab:
                         # Should update monitoring labels
                     except (OSError, IOError):
                         pass
-
 
 class TestUtilitiesTab:
     """Test utilities tab functionality"""
@@ -365,7 +357,6 @@ class TestUtilitiesTab:
                 except (OSError, IOError):
                     pass
 
-
 class TestTemplateLoading:
     """Test template loading functionality"""
 
@@ -390,7 +381,6 @@ class TestTemplateLoading:
                     # Should populate schedule template dropdown
                 except (OSError, IOError):
                     pass
-
 
 class TestErrorHandling:
     """Test error handling"""
@@ -446,7 +436,6 @@ class TestErrorHandling:
             except (OSError, IOError):
                 pass
 
-
 class TestRunMethod:
     """Test run method"""
 
@@ -462,7 +451,6 @@ class TestRunMethod:
             except (OSError, IOError):
                 pass
 
-
 class TestMainFunction:
     """Test main entry point"""
 
@@ -477,7 +465,6 @@ class TestMainFunction:
                         mock_init.assert_called_once()
                     except (OSError, IOError):
                         pass
-
 
 class TestIntegration:
     """Integration tests"""
@@ -527,7 +514,6 @@ class TestIntegration:
                     except (OSError, IOError):
                         pass
 
-
 class TestUIComponents:
     """Test UI component creation"""
 
@@ -575,7 +561,6 @@ class TestUIComponents:
                 # Should have created utilities tab
             except (OSError, IOError):
                 pass
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

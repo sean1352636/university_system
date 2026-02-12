@@ -7,7 +7,7 @@ import threading
 import logging
 import random
 import csv
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 # Import authentication
@@ -100,14 +100,14 @@ except ImportError:
     DATA_ENCRYPTION_AVAILABLE = False
 
 try:
-    from university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
+    from university_system.modules.shared.gui.security.security_dashboard_gui import SecurityDashboard
     SECURITY_DASHBOARD_AVAILABLE = True
 except ImportError:
     SecurityDashboard = None
     SECURITY_DASHBOARD_AVAILABLE = False
 
 try:
-    from university_system.infrastructure.security.audit_log_viewer_gui import (
+    from university_system.modules.shared.gui.security.audit_log_viewer_gui import (
         AuditLogViewerGUI,
         show_audit_log_viewer
     )
@@ -188,8 +188,6 @@ except ImportError:
     set_shared_auth = lambda x: None
     get_auth = lambda: None
 
-
-
 def _safe_entry_insert(entry_widget, value, index=0) -> None:
     """
     Insert *value* into a Tk/ttk Entry-like widget without ever passing None to Tcl.
@@ -205,7 +203,6 @@ def _safe_entry_insert(entry_widget, value, index=0) -> None:
         # Widget might not support delete (e.g. not yet mapped); ignore silently.
         logger.debug(f"Widget delete operation failed: {e}")
     entry_widget.insert(index, text)
-
 
 def _safe_set_combobox(combobox: ttk.Combobox, value) -> None:
     """
@@ -750,6 +747,22 @@ except ImportError as e:
     launch_staff_hr_gui = None
     STAFF_HR_GUI_AVAILABLE = False
 
+# Office Hours Management GUI
+try:
+    from university_system.modules.domain.academics.gui.office_hours.office_hours_gui import OfficeHoursGUI
+    OFFICE_HOURS_GUI_AVAILABLE = True
+except ImportError as e:
+    OfficeHoursGUI = None
+    OFFICE_HOURS_GUI_AVAILABLE = False
+
+# TA Management GUI
+try:
+    from university_system.modules.domain.academics.gui.ta_management.ta_gui import TAManagementGUI
+    TA_MANAGEMENT_GUI_AVAILABLE = True
+except ImportError as e:
+    TAManagementGUI = None
+    TA_MANAGEMENT_GUI_AVAILABLE = False
+
 # Taxi Booking GUI
 try:
     from university_system.modules.domain.mobility.gui.taxi_booking_gui import TaxiBookingApp
@@ -896,7 +909,6 @@ def safe_auth_check(auth_obj):
         auth_obj.lockout_time = 15
 
     return True
-
 
 def _safe_entry_insert(entry_widget, value, index=0) -> None:
     """

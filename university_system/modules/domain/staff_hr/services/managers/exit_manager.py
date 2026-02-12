@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
+from university_system.core.sql_safety import validate_identifier
 
 
 class ExitManager:
@@ -128,7 +129,7 @@ class ExitManager:
         values = []
         for key, value in data.items():
             if key not in ('interview_id', 'created_at', 'user_id'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -139,9 +140,9 @@ class ExitManager:
         values.append(interview_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE exit_interviews SET {', '.join(fields)} WHERE interview_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE exit_interviews SET ' + ', '.join(fields) + ' WHERE interview_id = ?',
+                values)
             log_activity('update', 'exit_interview', details={
                 'interview_id': interview_id, 'updated_fields': list(data.keys())
             })
@@ -362,7 +363,7 @@ class ExitManager:
         values = []
         for key, value in data.items():
             if key not in ('checklist_id', 'created_at', 'user_id'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -370,9 +371,9 @@ class ExitManager:
         values.append(checklist_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE exit_checklist SET {', '.join(fields)} WHERE checklist_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE exit_checklist SET ' + ', '.join(fields) + ' WHERE checklist_id = ?',
+                values)
             log_activity('update', 'exit_checklist', details={'checklist_id': checklist_id})
             return True
 
@@ -987,29 +988,28 @@ class ExitManager:
                 params.append(f'{period}%')
 
             # Total interviews
-            row = conn.execute(f'''
-                SELECT COUNT(*) as total FROM exit_interviews WHERE {where}
-            ''', params).fetchone()
+            row = conn.execute(
+                'SELECT COUNT(*) as total FROM exit_interviews WHERE ' + where,
+                params).fetchone()
             total = row['total'] if row else 0
 
             # Reasons breakdown
-            rows = conn.execute(f'''
-                SELECT reason_for_leaving, COUNT(*) as count
-                FROM exit_interviews WHERE {where}
-                GROUP BY reason_for_leaving
-                ORDER BY count DESC
-            ''', params).fetchall()
+            rows = conn.execute(
+                'SELECT reason_for_leaving, COUNT(*) as count'
+                ' FROM exit_interviews WHERE ' + where +
+                ' GROUP BY reason_for_leaving ORDER BY count DESC',
+                params).fetchall()
             reasons = {row['reason_for_leaving'] or 'unspecified': row['count'] for row in rows}
 
             # Average ratings
-            row = conn.execute(f'''
-                SELECT
-                    AVG(job_satisfaction_rating) as job_satisfaction,
-                    AVG(manager_rating) as management,
-                    AVG(work_environment_rating) as work_environment,
-                    AVG(growth_opportunities_rating) as growth
-                FROM exit_interviews WHERE {where}
-            ''', params).fetchone()
+            row = conn.execute(
+                'SELECT'
+                ' AVG(job_satisfaction_rating) as job_satisfaction,'
+                ' AVG(manager_rating) as management,'
+                ' AVG(work_environment_rating) as work_environment,'
+                ' AVG(growth_opportunities_rating) as growth'
+                ' FROM exit_interviews WHERE ' + where,
+                params).fetchone()
 
             avg_ratings = {
                 'job_satisfaction': row['job_satisfaction'] or 0,
@@ -1019,14 +1019,14 @@ class ExitManager:
             }
 
             # Would recommend/return
-            row = conn.execute(f'''
-                SELECT
-                    SUM(CASE WHEN would_recommend = 1 THEN 1 ELSE 0 END) as rec_yes,
-                    SUM(CASE WHEN would_recommend = 0 THEN 1 ELSE 0 END) as rec_no,
-                    SUM(CASE WHEN would_return = 1 THEN 1 ELSE 0 END) as ret_yes,
-                    SUM(CASE WHEN would_return = 0 THEN 1 ELSE 0 END) as ret_no
-                FROM exit_interviews WHERE {where}
-            ''', params).fetchone()
+            row = conn.execute(
+                'SELECT'
+                ' SUM(CASE WHEN would_recommend = 1 THEN 1 ELSE 0 END) as rec_yes,'
+                ' SUM(CASE WHEN would_recommend = 0 THEN 1 ELSE 0 END) as rec_no,'
+                ' SUM(CASE WHEN would_return = 1 THEN 1 ELSE 0 END) as ret_yes,'
+                ' SUM(CASE WHEN would_return = 0 THEN 1 ELSE 0 END) as ret_no'
+                ' FROM exit_interviews WHERE ' + where,
+                params).fetchone()
 
             return {
                 'total_interviews': total,
@@ -1092,7 +1092,7 @@ class ExitManager:
         values = []
         for key, value in data.items():
             if key not in ('template_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -1101,9 +1101,9 @@ class ExitManager:
         values.append(template_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE exit_checklist_templates SET {', '.join(fields)} WHERE template_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE exit_checklist_templates SET ' + ', '.join(fields) + ' WHERE template_id = ?',
+                values)
             log_activity('update', 'exit_checklist_template', details={'template_id': template_id})
             return True
 

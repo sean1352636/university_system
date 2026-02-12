@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import font, filedialog, messagebox
+import ast
+import operator
 import os
 
 class Calculator:
@@ -124,6 +126,37 @@ class Calculator:
         for j in range(4):
             button_frame.grid_columnconfigure(j, weight=1)
             
+    @staticmethod
+    def _safe_eval(expression):
+        """Safely evaluate a math expression using AST parsing.
+        Only allows numbers and basic arithmetic operators."""
+        allowed_operators = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Mod: operator.mod,
+            ast.USub: operator.neg,
+            ast.UAdd: operator.pos,
+        }
+
+        def _eval_node(node):
+            if isinstance(node, ast.Expression):
+                return _eval_node(node.body)
+            elif isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                return node.value
+            elif isinstance(node, ast.BinOp) and type(node.op) in allowed_operators:
+                left = _eval_node(node.left)
+                right = _eval_node(node.right)
+                return allowed_operators[type(node.op)](left, right)
+            elif isinstance(node, ast.UnaryOp) and type(node.op) in allowed_operators:
+                return allowed_operators[type(node.op)](_eval_node(node.operand))
+            else:
+                raise ValueError(f"Unsupported expression")
+
+        tree = ast.parse(expression, mode='eval')
+        return _eval_node(tree)
+
     def on_button_click(self, value):
         """Handle button clicks"""
         if value == 'C':
@@ -134,14 +167,14 @@ class Calculator:
             self.result_var.set(self.expression if self.expression else "0")
         elif value == '=':
             try:
-                result = str(eval(self.expression))
+                result = str(self._safe_eval(self.expression))
                 self.result_var.set(result)
                 self.expression = result
-                
+
                 # Check if result is 104 - open secret menu
                 if result == "104":
                     self.open_secret_menu()
-            except:
+            except Exception:
                 self.result_var.set("Error")
                 self.expression = ""
         else:

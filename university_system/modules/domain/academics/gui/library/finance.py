@@ -1755,7 +1755,7 @@ SUMMARY:
             try:
                 cursor.execute('SELECT COALESCE(SUM(refund_amount), 0) FROM library_fine_payments WHERE refund_amount > 0')
                 total_refunds = cursor.fetchone()[0] or 0.0
-            except:
+            except Exception:
                 total_refunds = 0.0  # Table might not exist yet
 
             conn.close()

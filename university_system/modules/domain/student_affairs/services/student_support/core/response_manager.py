@@ -2,7 +2,6 @@
 Ticket response handling for Student Support.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from ..utils.audit import audit_action
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def add_ticket_response(ticket_id, response_text, template_id=None, is_internal=False, attachments=None):
     """Add a response to a support ticket with enhanced features."""
@@ -108,7 +104,6 @@ def add_ticket_response(ticket_id, response_text, template_id=None, is_internal=
         if conn:
             conn.close()
 
-
 def _check_response_permission(ticket, current_user):
     """Check if user can respond to ticket"""
     if current_user['role'] == 'student':
@@ -125,7 +120,6 @@ def _check_response_permission(ticket, current_user):
 
         if not result or result[0] != ticket[1]:  # ticket[1] is student_id
             raise PermissionError("You can only respond to your own support tickets")
-
 
 def _apply_response_template(template_id, ticket_id, response_text, cursor):
     """Apply response template with variable substitution"""
@@ -156,7 +150,6 @@ def _apply_response_template(template_id, ticket_id, response_text, cursor):
     
     return template_content
 
-
 def _update_ticket_on_response(ticket_id, ticket, response_time, cursor):
     """Update ticket status and metadata when response is added"""
     new_status = ticket[6]  # Current status
@@ -173,7 +166,6 @@ def _update_ticket_on_response(ticket_id, ticket, response_time, cursor):
     SET last_updated_datetime = ?, status = ?, assigned_to = ?
     WHERE ticket_id = ?
     ''', (response_time, new_status, assigned_to, ticket_id))
-
 
 def _create_response_notifications(ticket_id, student_id, responder):
     """Create notifications for ticket responses"""

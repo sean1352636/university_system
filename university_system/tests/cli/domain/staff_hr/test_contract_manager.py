@@ -4,14 +4,13 @@ Tests contract creation, amendments, probation tracking, and renewal alerts.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import os
 import tempfile
 
 from university_system.modules.domain.staff_hr.services.managers.contract_manager import ContractManager
-
 
 @pytest.fixture
 def test_db():
@@ -118,7 +117,6 @@ def test_db():
     if os.path.exists(db_path):
         os.unlink(db_path)
 
-
 @pytest.fixture
 def mock_db_connection(test_db):
     """Mock the database connection to use test database."""
@@ -128,7 +126,6 @@ def mock_db_connection(test_db):
         return conn
 
     return get_test_connection
-
 
 class TestContractCreation:
     """Test contract creation functionality."""
@@ -220,7 +217,6 @@ class TestContractCreation:
         assert contract['probation_end_date'] == '2026-04-15'
         conn.close()
 
-
 class TestContractRetrieval:
     """Test contract retrieval functionality."""
 
@@ -288,7 +284,6 @@ class TestContractRetrieval:
         assert len(contracts) == 2
         conn.close()
 
-
 class TestContractAmendments:
     """Test contract amendment functionality."""
 
@@ -333,7 +328,6 @@ class TestContractAmendments:
         assert amendment['change_type'] == 'salary'
         assert amendment['new_value'] == '55000'
         conn.close()
-
 
 class TestProbationManagement:
     """Test probation-related functionality."""
@@ -441,7 +435,6 @@ class TestProbationManagement:
         assert contract['probation_end_date'] == '2026-06-01'
         conn.close()
 
-
 class TestExpiringContracts:
     """Test contract expiry alert functionality."""
 
@@ -479,7 +472,6 @@ class TestExpiringContracts:
         assert len(expiring) == 1
         assert expiring[0]['user_id'] == 'EMP001'
         conn.close()
-
 
 class TestContractStatistics:
     """Test contract statistics functionality."""
@@ -525,7 +517,6 @@ class TestContractStatistics:
         assert stats['in_probation'] >= 1
         assert 'by_type' in stats
         conn.close()
-
 
 class TestContractTermination:
     """Test contract termination functionality."""

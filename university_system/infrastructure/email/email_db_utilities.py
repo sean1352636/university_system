@@ -25,10 +25,11 @@ from university_system.infrastructure.database.constants import (
     MAX_RETRY_ATTEMPTS,
     RETRY_DELAY,
 )
-from university_system.modules.shared.utils.logs import handle_exception, log_event, logger
-from university_system.modules.shared.constants import paths
-from university_system.modules.shared.utils.sql_safety import (
+from university_system.core.logs import handle_exception, log_event, logger
+from university_system.core import paths
+from university_system.core.sql_safety import (
     validate_column_definition,
+    safe_alter_table_add_column,
     SQLIdentifierError,
 )
 
@@ -261,9 +262,7 @@ def _migration_v2_add_tracking_columns(cursor):
     for col_name, col_type in new_columns:
         if col_name not in existing_columns:
             try:
-                # Validate column definition to prevent SQL injection
-                col_def = validate_column_definition(col_name, col_type)
-                cursor.execute(f'ALTER TABLE email_log ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                safe_alter_table_add_column("email_log", col_name, col_type, cursor.connection)
                 logger.info(f"Added column {col_name} to email_log")
             except SQLIdentifierError as e:
                 logger.warning(f"Invalid column definition for {col_name}: {e}")
@@ -681,9 +680,7 @@ def initialize_email_db():
         for column_name, definition in column_definitions:
             if column_name not in existing_columns:
                 try:
-                    # Validate column definition using SQL safety module
-                    col_def = validate_column_definition(column_name, definition)
-                    cursor.execute(f'ALTER TABLE messages ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                    safe_alter_table_add_column("messages", column_name, definition, cursor.connection)
                     existing_columns.add(column_name)
                 except SQLIdentifierError as e:
                     logger.warning(f"Invalid column definition for '{column_name}': {e}")
@@ -779,9 +776,7 @@ def initialize_email_db():
                 for column_name, definition in scheduled_column_definitions:
                     if column_name not in scheduled_columns:
                         try:
-                            # Validate column definition to prevent SQL injection
-                            col_def = validate_column_definition(column_name, definition)
-                            cursor.execute(f'ALTER TABLE scheduled_emails ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                            safe_alter_table_add_column("scheduled_emails", column_name, definition, cursor.connection)
                             log_event('info', f"Added missing column {column_name} to scheduled_emails")
                         except SQLIdentifierError as e:
                             log_event('warning', f"Invalid column definition for {column_name}: {e}")
@@ -867,9 +862,7 @@ def migrate_email_log_table():
             for column_name, column_type in required_columns:
                 if column_name not in existing_columns:
                     try:
-                        # Validate column definition to prevent SQL injection
-                        col_def = validate_column_definition(column_name, column_type)
-                        cursor.execute(f'ALTER TABLE email_log ADD COLUMN [{col_def.name}] {col_def.type_def}')
+                        safe_alter_table_add_column("email_log", column_name, column_type, cursor.connection)
                         log_event('info', f"Added column {column_name} to email_log table")
                     except SQLIdentifierError as e:
                         log_event('warning', f"Invalid column definition for {column_name}: {e}")

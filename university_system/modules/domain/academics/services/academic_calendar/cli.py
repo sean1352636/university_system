@@ -1,4 +1,4 @@
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime
 from university_system.utils.logging.log_config import configure_logging
@@ -1172,10 +1172,12 @@ def _verify_required_tables(self):
             'event_categories'
         ]
 
+        from university_system.core.sql_safety import validate_identifier
         for table in required_tables:
             try:
                 # Test if table exists by querying it
-                self.db_manager.execute_query(f"SELECT COUNT(*) FROM {table} LIMIT 1")
+                safe_table = validate_identifier(table, "table")
+                self.db_manager.execute_query("SELECT COUNT(*) FROM [" + safe_table + "] LIMIT 1")
                 logging.debug(f"Table {table} exists")
             except Exception:
                 # Table doesn't exist, create it

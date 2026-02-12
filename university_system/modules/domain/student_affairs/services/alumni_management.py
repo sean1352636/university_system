@@ -19,6 +19,7 @@ import time
 import threading
 from collections import defaultdict
 from university_system.modules.shared.utils.finance_integration import record_revenue_to_finance
+from university_system.core.sql_safety import validate_identifier
 
 # Import statements for external integrations (would need to be installed)
 try:
@@ -1465,10 +1466,18 @@ def update_alumni():
             return
 
         # Build update query safely
+        _ALLOWED_COLUMNS = frozenset({
+            'is_donor', 'is_mentor', 'is_board_member', 'is_ambassador',
+            'first_name', 'last_name', 'email', 'phone', 'address',
+            'city', 'state', 'country', 'graduation_year', 'degree',
+            'major', 'employer', 'job_title', 'industry', 'linkedin_url',
+        })
         set_clauses = []
         values = []
         for field, value in updates.items():
-            set_clauses.append(f"{field} = ?")
+            if field not in _ALLOWED_COLUMNS:
+                raise ValueError(f"Invalid column name: {field}")
+            set_clauses.append(f"{validate_identifier(field, 'column')} = ?")
             values.append(value)
         values.append(alumni_id)
         query = f"UPDATE alumni SET {', '.join(set_clauses)} WHERE alumni_id = ?"
@@ -2738,11 +2747,11 @@ def search_alumni_directory():
         skill_conditions = " OR ".join(["a.skills LIKE ?" for _ in skill_list])
         skill_params = [f'%{skill}%' for skill in skill_list]
         
-        cursor.execute(f'''
+        cursor.execute('''
             SELECT a.*, ads.* FROM alumni a
             LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
             WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-            AND ({skill_conditions})
+            AND (''' + skill_conditions + ''')
             ORDER BY a.last_name, a.first_name
         ''', skill_params)
         
@@ -3176,7 +3185,7 @@ def create_newsletter():
     
     if status == 'sending':
         # Send immediately
-        send_newsletter_now(newsletter_id, audience_filter, cursor)
+        send_newsletter_now(newsletter_id, audience_filter, cursor, filter_params)
         cursor.execute('UPDATE newsletters SET status = "sent" WHERE newsletter_id = ?', (newsletter_id,))
     
     conn.commit()
@@ -3188,7 +3197,7 @@ def create_newsletter():
     elif status == 'scheduled':
         print(f"Newsletter scheduled for: {send_date}")
 
-def send_newsletter_now(newsletter_id, audience_filter, cursor):
+def send_newsletter_now(newsletter_id, audience_filter, cursor, filter_params=None):
     """Send newsletter to target audience"""
     # Get newsletter content
     cursor.execute('SELECT title, content FROM newsletters WHERE newsletter_id = ?', (newsletter_id,))
@@ -3201,7 +3210,7 @@ def send_newsletter_now(newsletter_id, audience_filter, cursor):
     # Get recipient list
     if audience_filter:
         query = f"SELECT email_address, first_name, last_name FROM alumni WHERE {audience_filter}"
-        cursor.execute(query)
+        cursor.execute(query, filter_params or [])
     else:
         cursor.execute('SELECT email_address, first_name, last_name FROM alumni')
 

@@ -10,7 +10,7 @@ Tests the enhanced attendance tracking system including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -20,7 +20,6 @@ from university_system.modules.domain.academics.services.attendance import (
     attendance_tracker as tracker
 )
 from university_system.infrastructure.database.db import get_connection
-
 
 class TestDatabaseInitialization:
     """Test attendance database initialization"""
@@ -90,7 +89,6 @@ class TestDatabaseInitialization:
 
         # Should exist or be created
         conn.close()
-
 
 class TestQRAttendanceSystem:
     """Test QR code attendance system"""
@@ -202,7 +200,6 @@ class TestQRAttendanceSystem:
             if not success:
                 assert "already" in message.lower() or "duplicate" in message.lower()
 
-
 class TestGeofencingSystem:
     """Test geofencing attendance system"""
 
@@ -241,7 +238,6 @@ class TestGeofencingSystem:
 
             assert result is not None
 
-
 class TestSettingsManagement:
     """Test attendance settings management"""
 
@@ -279,7 +275,6 @@ class TestSettingsManagement:
 
         assert result[0] == '85'
 
-
 class TestGamificationSystem:
     """Test gamification features"""
 
@@ -315,7 +310,6 @@ class TestGamificationSystem:
             except Exception as e:
                 # Expected if student doesn't exist
                 pass
-
 
 class TestAttendancePolicies:
     """Test attendance policies management"""
@@ -361,7 +355,6 @@ class TestAttendancePolicies:
 
         assert result is not None
 
-
 class TestAttendanceAppeals:
     """Test attendance appeals system"""
 
@@ -385,7 +378,6 @@ class TestAttendanceAppeals:
 
         conn.close()
 
-
 class TestAuditLog:
     """Test audit logging system"""
 
@@ -406,7 +398,6 @@ class TestAuditLog:
         assert 'timestamp' in column_names
 
         conn.close()
-
 
 class TestPredictiveAnalytics:
     """Test predictive analytics features"""
@@ -429,7 +420,6 @@ class TestPredictiveAnalytics:
         assert 'confidence_score' in column_names
 
         conn.close()
-
 
 # Integration Tests
 class TestIntegration:
@@ -482,7 +472,6 @@ class TestIntegration:
 
         for table in required_tables:
             assert table in existing_tables, f"Table {table} not found"
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -261,8 +261,8 @@ def get_recent_activity(self):
         if has_success:
             select_fields += ", success"
 
-        cursor.execute(f'''
-            SELECT {select_fields}
+        cursor.execute('''
+            SELECT ''' + select_fields + '''
             FROM audit_log
             WHERE timestamp >= datetime('now', '-24 hours')
             ORDER BY timestamp DESC

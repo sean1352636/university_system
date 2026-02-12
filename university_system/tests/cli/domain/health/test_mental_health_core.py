@@ -11,7 +11,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
@@ -25,7 +25,6 @@ from university_system.modules.domain.student_affairs.services.mental_health.men
     MeditationManager,
     display_mental_health_menu,
 )
-
 
 @pytest.fixture
 def setup_database():
@@ -175,7 +174,6 @@ def setup_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def sample_student(setup_database):
     """Create a sample student for testing"""
@@ -191,7 +189,6 @@ def sample_student(setup_database):
     conn.close()
 
     return 'S001'
-
 
 class TestCounselorManager:
     """Tests for CounselorManager"""
@@ -246,7 +243,6 @@ class TestCounselorManager:
 
         assert len(specialists) >= 1
         assert any(c['specialization'] == 'Anxiety' for c in specialists)
-
 
 class TestAppointmentManager:
     """Tests for AppointmentManager"""
@@ -326,7 +322,6 @@ class TestAppointmentManager:
 
         assert status == 'cancelled'
 
-
 class TestResourceManager:
     """Tests for ResourceManager"""
 
@@ -382,7 +377,6 @@ class TestResourceManager:
         conn.close()
 
         assert count == 1
-
 
 class TestWellnessCheckInManager:
     """Tests for WellnessCheckInManager"""
@@ -445,7 +439,6 @@ class TestWellnessCheckInManager:
         assert 'avg_stress' in trends
         assert trends['total_checkins'] == 3
 
-
 class TestPeerSupportManager:
     """Tests for PeerSupportManager"""
 
@@ -500,7 +493,6 @@ class TestPeerSupportManager:
 
         assert count == 1
 
-
 class TestMeditationManager:
     """Tests for MeditationManager"""
 
@@ -554,7 +546,6 @@ class TestMeditationManager:
         breathing_sessions = MeditationManager.get_meditation_sessions(category='Breathing')
         assert len(breathing_sessions) >= 1
 
-
 class TestCLIMenu:
     """Tests for CLI menu"""
 
@@ -564,7 +555,6 @@ class TestCLIMenu:
             with patch('builtins.print'):
                 mock_auth = MagicMock()
                 display_mental_health_menu(mock_auth)
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -607,7 +597,6 @@ class TestIntegrationScenarios:
         # Verify trends show improvement
         trends = WellnessCheckInManager.get_wellness_trends(student_id)
         assert trends['total_checkins'] == 2
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

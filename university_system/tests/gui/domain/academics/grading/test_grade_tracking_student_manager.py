@@ -6,9 +6,8 @@ Tests all student management functionality
 import pytest
 import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
-
 
 @pytest.fixture
 def mock_root():
@@ -17,7 +16,6 @@ def mock_root():
     root.winfo_exists.return_value = True
     return root
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object"""
@@ -25,7 +23,6 @@ def mock_auth():
     auth.current_user = {'username': 'test_user', 'role': 'admin'}
     auth.is_logged_in.return_value = True
     return auth
-
 
 @pytest.fixture
 def mock_conn():
@@ -36,7 +33,6 @@ def mock_conn():
     cursor.fetchone.return_value = None
     conn.cursor.return_value = cursor
     return conn
-
 
 @pytest.fixture
 def mock_app(mock_root, mock_auth, mock_conn):
@@ -50,7 +46,6 @@ def mock_app(mock_root, mock_auth, mock_conn):
     app.layout.status_var = Mock()
     return app
 
-
 @pytest.fixture
 def student_manager(mock_app):
     """Create StudentManager instance with mocked dependencies"""
@@ -58,7 +53,6 @@ def student_manager(mock_app):
         from university_system.modules.domain.academics.gui.grade_tracking.student_manager import StudentManager
         manager = StudentManager(mock_app)
         return manager
-
 
 class TestStudentManagerInitialization:
     """Test StudentManager initialization"""
@@ -78,7 +72,6 @@ class TestStudentManagerInitialization:
         """Test content_frame property returns correct frame"""
         content_frame = student_manager.content_frame
         assert content_frame == mock_app.layout.content_frame
-
 
 class TestDatabaseOperations:
     """Test database operations"""
@@ -125,7 +118,6 @@ class TestDatabaseOperations:
         # Verify insert was called
         student_manager.student_tree.insert.assert_called()
 
-
 class TestStudentSearch:
     """Test student search functionality"""
 
@@ -170,7 +162,6 @@ class TestStudentSearch:
 
         # Verify query was executed (should return all students)
         cursor.execute.assert_called_once()
-
 
 class TestImportExport:
     """Test import and export functionality"""
@@ -227,7 +218,6 @@ class TestImportExport:
         # For now, we'll test that the file dialog is called
         assert mock_filedialog is not None
 
-
 class TestReportGeneration:
     """Test report generation functionality"""
 
@@ -267,7 +257,6 @@ class TestReportGeneration:
         # Verify database queries were executed
         assert cursor.execute.called
 
-
 class TestStatusUpdates:
     """Test status update functionality"""
 
@@ -284,7 +273,6 @@ class TestStatusUpdates:
 
         # Should not raise an error
         student_manager.update_status("Test message")
-
 
 class TestFilterFunctionality:
     """Test filter functionality"""
@@ -303,7 +291,6 @@ class TestFilterFunctionality:
         # This is currently a pass-through method
         student_manager.populate_filter_combos()
         # Should not raise an error
-
 
 class TestHelperFunctions:
     """Test helper functions"""

@@ -221,6 +221,9 @@ def display_staff_hr_menu() -> None:
         add_option("My Contract", "contract")
         add_option("Expense Claims", "expense")
         add_option("Grievances", "grievance")
+        add_option("My Schedule", "schedule")
+        add_option("My Documents", "documents")
+        add_option("Workload Overview", "workload")
 
         # Manager/Admin options
         if is_admin or is_manager:
@@ -327,11 +330,135 @@ def _handle_menu_selection(selected: str, user_id: str,
             display_grievance_menu(user_id, is_admin)
         elif selected == 'exit':
             display_exit_menu(user_id, is_admin)
+        elif selected == 'schedule':
+            _display_schedule_view(user_id)
+        elif selected == 'documents':
+            _display_documents_view(user_id)
+        elif selected == 'workload':
+            _display_workload_view(user_id)
         else:
-            print(f"\nFeature '{selected}' not yet implemented.")
+            print(f"\nFeature '{selected}' is not available.")
             input("Press Enter to continue...")
 
     except Exception as e:
         logger.error(f"Error handling menu selection '{selected}': {e}")
         print(f"\nError: {e}")
         input("Press Enter to continue...")
+
+
+def _display_schedule_view(user_id) -> None:
+    """Display staff schedule from staff_schedules table."""
+    day_names = {0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday',
+                 4: 'Thursday', 5: 'Friday', 6: 'Saturday'}
+
+    print("\n" + "=" * 60)
+    print(_t('staff_hr.schedule.title', default='MY SCHEDULE'))
+    print("=" * 60)
+
+    try:
+        with get_connection() as conn:
+            schedules = conn.execute('''
+                SELECT day_of_week, start_time, end_time, location,
+                       schedule_type, notes
+                FROM staff_schedules
+                WHERE user_id = ?
+                  AND is_recurring = 1
+                  AND (effective_to IS NULL OR effective_to >= date('now'))
+                ORDER BY day_of_week, start_time
+            ''', (str(user_id),)).fetchall()
+
+            if schedules:
+                for s in schedules:
+                    d = dict(s)
+                    day = day_names.get(d.get('day_of_week'), f"Day {d.get('day_of_week', '?')}")
+                    stype = (d.get('schedule_type') or 'general').replace('_', ' ').title()
+                    print(f"\n  {day} - {stype}")
+                    print(f"    Time: {d.get('start_time', 'N/A')} - {d.get('end_time', 'N/A')}")
+                    if d.get('location'):
+                        print(f"    Location: {d['location']}")
+                    if d.get('notes'):
+                        print(f"    Notes: {d['notes']}")
+            else:
+                print("\n  No schedule entries found.")
+    except Exception as e:
+        logger.error(f"Error loading schedule: {e}")
+        print(f"\n  Could not load schedule data: {e}")
+
+    input("\nPress Enter to continue...")
+
+
+def _display_documents_view(user_id) -> None:
+    """Display staff documents from staff_documents table."""
+    print("\n" + "=" * 60)
+    print(_t('staff_hr.documents.title', default='MY DOCUMENTS'))
+    print("=" * 60)
+
+    try:
+        with get_connection() as conn:
+            docs = conn.execute('''
+                SELECT document_name, document_type, status,
+                       issue_date, expiry_date, notes
+                FROM staff_documents
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+            ''', (str(user_id),)).fetchall()
+
+            if docs:
+                for d in docs:
+                    dd = dict(d)
+                    status_str = f" [{dd['status']}]" if dd.get('status') else ""
+                    expiry_str = f"  (Expires: {dd['expiry_date']})" if dd.get('expiry_date') else ""
+                    print(f"\n  {dd.get('document_name', 'Untitled')}{status_str}")
+                    print(f"    Type: {dd.get('document_type', 'N/A')}")
+                    if dd.get('issue_date'):
+                        print(f"    Issued: {dd['issue_date']}{expiry_str}")
+                    elif expiry_str:
+                        print(f"   {expiry_str.strip()}")
+                    if dd.get('notes'):
+                        print(f"    Notes: {dd['notes']}")
+            else:
+                print("\n  No documents on file.")
+    except Exception as e:
+        logger.error(f"Error loading documents: {e}")
+        print(f"\n  Could not load document data: {e}")
+
+    input("\nPress Enter to continue...")
+
+
+def _display_workload_view(user_id) -> None:
+    """Display workload allocation from staff_workload table."""
+    print("\n" + "=" * 60)
+    print(_t('staff_hr.workload.title', default='WORKLOAD OVERVIEW'))
+    print("=" * 60)
+
+    try:
+        with get_connection() as conn:
+            workload = conn.execute('''
+                SELECT academic_year, semester,
+                       teaching_hours, research_hours,
+                       admin_hours, service_hours, total_fte, notes
+                FROM staff_workload
+                WHERE user_id = ?
+                ORDER BY academic_year DESC, semester DESC
+                LIMIT 6
+            ''', (str(user_id),)).fetchall()
+
+            if workload:
+                for w in workload:
+                    wd = dict(w)
+                    semester = wd.get('semester') or 'Full Year'
+                    print(f"\n  {wd.get('academic_year', 'N/A')} - {semester}")
+                    print(f"    Teaching: {wd.get('teaching_hours', 0)}h  |  "
+                          f"Research: {wd.get('research_hours', 0)}h  |  "
+                          f"Admin: {wd.get('admin_hours', 0)}h  |  "
+                          f"Service: {wd.get('service_hours', 0)}h")
+                    print(f"    FTE: {wd.get('total_fte', 0)}")
+                    if wd.get('notes'):
+                        print(f"    Notes: {wd['notes']}")
+            else:
+                print("\n  No workload data found.")
+    except Exception as e:
+        logger.error(f"Error loading workload: {e}")
+        print(f"\n  Could not load workload data: {e}")
+
+    input("\nPress Enter to continue...")

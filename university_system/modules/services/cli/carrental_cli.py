@@ -15,7 +15,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -31,7 +31,6 @@ except ImportError:
     EMAIL_AVAILABLE = False
     send_email_as_system = None
 
-
 # Vehicle categories
 VEHICLE_CATEGORIES = ["Economy", "Compact", "Mid-Size", "Full-Size", "SUV", "Luxury", "Van"]
 
@@ -40,7 +39,6 @@ RENTAL_STATUSES = ["Active", "Returned", "Overdue", "Cancelled"]
 
 # Vehicle statuses
 VEHICLE_STATUSES = ["Available", "Rented", "Maintenance", "Unavailable"]
-
 
 CARRENTAL_SCHEMA = """
 CREATE TABLE IF NOT EXISTS carrental_vehicles (
@@ -86,7 +84,6 @@ CREATE TABLE IF NOT EXISTS carrental_transactions (
 );
 """
 
-
 def init_carrental_database():
     """Initialize car rental database tables."""
     try:
@@ -122,7 +119,6 @@ def init_carrental_database():
         print(f"Error initializing database: {e}")
         return False
 
-
 def get_current_user():
     """Get the current authenticated user."""
     if get_user:
@@ -130,7 +126,6 @@ def get_current_user():
         if user:
             return user
     return {"username": "guest", "role": "guest", "email": "", "id": None, "name": "Guest User"}
-
 
 # ==================== VEHICLE MANAGEMENT ====================
 
@@ -165,7 +160,6 @@ def get_all_vehicles(category=None):
         print(f"Error getting vehicles: {e}")
         return []
 
-
 def get_vehicle_by_id(vehicle_id):
     """Get specific vehicle by ID."""
     try:
@@ -186,7 +180,6 @@ def get_vehicle_by_id(vehicle_id):
     except Exception as e:
         print(f"Error getting vehicle: {e}")
     return None
-
 
 # ==================== RENTAL MANAGEMENT ====================
 
@@ -222,7 +215,6 @@ def create_rental(rental_data):
         print(f"Error creating rental: {e}")
         return False
 
-
 def get_all_rentals(status=None):
     """Get all rentals, optionally filtered by status."""
     try:
@@ -256,7 +248,6 @@ def get_all_rentals(status=None):
     except Exception as e:
         print(f"Error getting rentals: {e}")
         return []
-
 
 def return_vehicle(rental_id):
     """Process vehicle return."""
@@ -294,7 +285,6 @@ def return_vehicle(rental_id):
         print(f"Error returning vehicle: {e}")
         return False
 
-
 # ==================== CLI INTERFACE ====================
 
 def print_header(title):
@@ -302,7 +292,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 def list_vehicles_menu():
     """List all vehicles."""
@@ -335,7 +324,6 @@ def list_vehicles_menu():
         print(f"  {vehicle['vehicle_id']:<5} {vehicle['registration']:<12} {vehicle['make']:<12} {vehicle['model']:<15} {vehicle['category']:<12} £{vehicle['daily_rate']:<9.2f} {vehicle['status']:<12}")
 
     print()
-
 
 def book_rental_menu():
     """Create a new rental booking."""
@@ -414,7 +402,6 @@ def book_rental_menu():
     else:
         print("\n  ❌ Failed to create rental.")
 
-
 def view_rentals_menu():
     """View all rentals."""
     print_header("Car Rental - All Rentals")
@@ -450,7 +437,6 @@ def view_rentals_menu():
 
     print()
 
-
 def return_vehicle_menu():
     """Process vehicle return."""
     print_header("Return Vehicle")
@@ -469,7 +455,6 @@ def return_vehicle_menu():
         print("\n  ✅ Vehicle returned successfully!")
     else:
         print("\n  ❌ Failed to process return.")
-
 
 def statistics_menu():
     """Show rental statistics."""
@@ -509,7 +494,6 @@ def statistics_menu():
 
     print()
 
-
 def carrental_menu():
     """Main car rental CLI menu."""
     init_carrental_database()
@@ -543,7 +527,6 @@ def carrental_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 if __name__ == '__main__':
     carrental_menu()

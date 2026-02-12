@@ -465,14 +465,14 @@ def show_realtime_dashboard(self):
         except Exception as e:
             try:
                 activity_log.insert(tk.END, f"[ERROR] {e}\n")
-            except:
+            except Exception:
                 pass  # Window might be destroyed
 
         # Schedule next update only if window still exists
         try:
             if dashboard_window.winfo_exists():
                 after_id = dashboard_window.after(30000, update_realtime)  # Update every 30 seconds
-        except:
+        except Exception:
             pass  # Window destroyed
 
     # Cleanup function to cancel scheduled updates
@@ -481,7 +481,7 @@ def show_realtime_dashboard(self):
         if after_id is not None:
             try:
                 dashboard_window.after_cancel(after_id)
-            except:
+            except Exception:
                 pass
         dashboard_window.destroy()
 

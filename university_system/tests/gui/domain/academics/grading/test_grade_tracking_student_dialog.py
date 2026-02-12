@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
@@ -18,7 +18,6 @@ from university_system.modules.domain.academics.gui.grade_tracking.dialogs.stude
     letter_to_gpa,
     GRADE_SYSTEMS
 )
-
 
 class TestGradeConversionFunctions(unittest.TestCase):
     """Test grade conversion utility functions"""
@@ -67,7 +66,6 @@ class TestGradeConversionFunctions(unittest.TestCase):
         """Test invalid letter to GPA conversion"""
         self.assertEqual(letter_to_gpa('Z'), 0)
 
-
 class TestSafeGrabSet(unittest.TestCase):
     """Test safe_grab_set function"""
 
@@ -104,7 +102,6 @@ class TestSafeGrabSet(unittest.TestCase):
             safe_grab_set(dialog)
         except Exception as e:
             self.fail(f"safe_grab_set raised exception: {e}")
-
 
 class TestSafeComboUpdate(unittest.TestCase):
     """Test safe_combo_update function"""
@@ -151,7 +148,6 @@ class TestSafeComboUpdate(unittest.TestCase):
         result = safe_combo_update(obj, 'test_combo', ['Option 1'])
 
         self.assertFalse(result)
-
 
 class TestStudentDialog(unittest.TestCase):
     """Test StudentDialog class"""
@@ -247,7 +243,6 @@ class TestStudentDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-
 class TestGradeSystemConstants(unittest.TestCase):
     """Test GRADE_SYSTEMS constants"""
 
@@ -291,7 +286,6 @@ class TestGradeSystemConstants(unittest.TestCase):
         # Check A+ grade range
         self.assertIn((90, 100), conversion)
         self.assertEqual(conversion[(90, 100)], 'A+')
-
 
 if __name__ == '__main__':
     unittest.main()

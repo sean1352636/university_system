@@ -90,11 +90,11 @@ def view_child_assignments(self, child):
             placeholders = ','.join(['?' for _ in enrolled_modules])
 
             # Upcoming assignments (not submitted yet, due date in future)
-            cursor.execute(f"""
+            cursor.execute("""
                 SELECT a.module_code, a.title, a.due_date, 'Pending', a.max_marks
                 FROM assignments a
                 LEFT JOIN assignment_submissions sub ON a.id = sub.assignment_id AND sub.student_id = ?
-                WHERE a.module_code IN ({placeholders})
+                WHERE a.module_code IN (""" + placeholders + """)
                   AND a.is_active = 1
                   AND a.due_date >= ?
                   AND sub.id IS NULL
@@ -105,11 +105,11 @@ def view_child_assignments(self, child):
                 upcoming_tree.insert('', tk.END, values=assignment)
 
             # Overdue assignments (not submitted, due date passed)
-            cursor.execute(f"""
+            cursor.execute("""
                 SELECT a.module_code, a.title, a.due_date, 'Overdue', a.max_marks
                 FROM assignments a
                 LEFT JOIN assignment_submissions sub ON a.id = sub.assignment_id AND sub.student_id = ?
-                WHERE a.module_code IN ({placeholders})
+                WHERE a.module_code IN (""" + placeholders + """)
                   AND a.is_active = 1
                   AND a.due_date < ?
                   AND sub.id IS NULL
@@ -120,11 +120,11 @@ def view_child_assignments(self, child):
                 overdue_tree.insert('', tk.END, values=assignment)
 
             # Completed assignments (submitted)
-            cursor.execute(f"""
+            cursor.execute("""
                 SELECT a.module_code, a.title, a.due_date, sub.status, COALESCE(sub.grade, 'Pending')
                 FROM assignments a
                 INNER JOIN assignment_submissions sub ON a.id = sub.assignment_id AND sub.student_id = ?
-                WHERE a.module_code IN ({placeholders})
+                WHERE a.module_code IN (""" + placeholders + """)
                 ORDER BY sub.submission_date DESC
             """, (student_id, *enrolled_modules))
 

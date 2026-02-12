@@ -3,7 +3,7 @@ Cinema Booking System - Lost & Found Management
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 try:
@@ -13,7 +13,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_lost_found_page(self):
     """Display lost and found management page."""
@@ -63,7 +62,7 @@ def show_lost_found_page(self):
             try:
                 found_date = datetime.strptime(row[1], "%Y-%m-%d")
                 days_held = (datetime.now() - found_date).days
-            except:
+            except (ValueError, TypeError):
                 pass
         self.lf_tree.insert("", "end", values=(row[0], row[1], row[2][:30] if row[2] else "", row[3], row[4] or "-", row[5].upper(), days_held))
     conn.close()
@@ -94,12 +93,10 @@ def show_lost_found_page(self):
     tk.Label(stats_frame, text=f"Unclaimed: {unclaimed} | Claimed: {claimed} | Over 30 days: {over_30_days}",
             bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
-
 def set_lf_filter(self, filter_value):
     """Set the lost & found filter."""
     self.lf_filter = filter_value
     self.show_lost_found_page()
-
 
 def log_found_item(self):
     """Log a newly found item."""
@@ -172,7 +169,7 @@ def log_found_item(self):
         if fields['screen'].get().strip():
             try:
                 screen = int(fields['screen'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
@@ -191,7 +188,6 @@ def log_found_item(self):
         self.show_lost_found_page()
 
     ttk.Button(frame, text=_t("cinema.btn.log_item"), style="Success.TButton", command=save).grid(row=9, column=0, columnspan=2, pady=20)
-
 
 def search_lost_items(self):
     """Search for lost items."""
@@ -260,7 +256,6 @@ def search_lost_items(self):
     ttk.Button(search_frame, text=_t("cinema.buttons.search"), style="Primary.TButton", command=search).pack(side="left", padx=10)
 
     search()
-
 
 def process_claim(self):
     """Process a claim for a lost item."""
@@ -337,7 +332,6 @@ def process_claim(self):
 
     ttk.Button(frame, text=_t("cinema.btn.complete_claim"), style="Success.TButton", command=complete_claim).pack(pady=20)
 
-
 def view_lf_details(self):
     """View details of selected lost & found item."""
     selected = self.lf_tree.selection() if hasattr(self, 'lf_tree') else None
@@ -391,7 +385,6 @@ def view_lf_details(self):
         row.pack(fill="x", pady=2)
         tk.Label(row, text=label, bg="#ffffff", fg="#7f8c8d", width=15, anchor="w").pack(side="left")
         tk.Label(row, text=str(value), bg="#ffffff", fg="#333333", wraplength=200).pack(side="left")
-
 
 def dispose_lf_item(self):
     """Mark item as disposed after retention period."""

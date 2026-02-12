@@ -20,7 +20,7 @@ from pathlib import Path
 from university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
 # Import i18n for translations
-from university_system.modules.shared.utils.i18n import get_text as _t
+from university_system.core.i18n import get_text as _t
 
 class DatabaseManager:
     """

@@ -41,7 +41,7 @@ class NetworkScanner:
             result = subprocess.run(command, stdout=subprocess.PIPE, 
                                   stderr=subprocess.PIPE, timeout=2)
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     def scan_port(self, host, port, timeout=1):
@@ -52,7 +52,7 @@ class NetworkScanner:
             result = sock.connect_ex((host, port))
             sock.close()
             return result == 0
-        except:
+        except (OSError, IOError):
             return False
     
     def get_service_banner(self, host, port, timeout=2):
@@ -65,12 +65,12 @@ class NetworkScanner:
             # Try to receive banner
             try:
                 banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
-            except:
+            except (OSError, IOError):
                 banner = ""
             
             sock.close()
             return banner
-        except:
+        except (OSError, IOError):
             return ""
     
     def check_vulnerabilities(self, port, banner=""):
@@ -278,7 +278,7 @@ class NetworkScannerGUI:
             # Resolve hostname to IP
             try:
                 target_ip = socket.gethostbyname(target)
-            except:
+            except socket.gaierror:
                 self.log(f"[!] Could not resolve hostname: {target}", 'critical')
                 self.stop_scan()
                 return

@@ -5,7 +5,7 @@ Provides a complete command-line point-of-sale system for the university bar
 with age verification, menu management, order processing, and finance integration.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Tuple
@@ -40,14 +40,12 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
     log_activity = lambda *args, **kwargs: None
 
-
 def get_current_user():
     """Get current authenticated user"""
     auth = get_auth()
     if auth and hasattr(auth, 'current_user') and auth.current_user:
         return auth.current_user
     return None
-
 
 def init_bar_db():
     """Initialize bar database tables"""
@@ -159,17 +157,14 @@ def init_bar_db():
         print(f"❌ Database initialization error: {e}")
         return False
 
-
 def print_header(title: str):
     """Print formatted header"""
     print("\n" + "="*80)
     print(f"  {title}")
     print("="*80)
 
-
 # Current order (global shopping cart)
 current_order = []
-
 
 def view_menu():
     """View all menu items by category"""
@@ -206,7 +201,6 @@ def view_menu():
         print(f"❌ Error loading menu: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def browse_by_category():
     """Browse menu items by category"""
@@ -259,7 +253,6 @@ def browse_by_category():
         print(f"❌ Error browsing categories: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def add_to_order():
     """Add item to current order"""
@@ -320,7 +313,6 @@ def add_to_order():
 
     input("Press Enter to continue...")
 
-
 def view_current_order():
     """View current order"""
     print_header("CURRENT ORDER")
@@ -351,7 +343,6 @@ def view_current_order():
         print("\n⚠️  Order contains alcoholic items - age verification required")
 
     input("\nPress Enter to continue...")
-
 
 def checkout():
     """Process checkout"""
@@ -482,7 +473,6 @@ def checkout():
 
     input("\nPress Enter to continue...")
 
-
 def view_order_history():
     """View order history"""
     print_header("ORDER HISTORY")
@@ -517,7 +507,6 @@ def view_order_history():
         print(f"❌ Error loading order history: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def view_order_details(order_id: str):
     """View detailed order information"""
@@ -572,7 +561,6 @@ def view_order_details(order_id: str):
     except Exception as e:
         print(f"❌ Error loading order details: {e}")
 
-
 def manage_menu_items():
     """Manage menu items (admin)"""
     user = get_current_user()
@@ -607,7 +595,6 @@ def manage_menu_items():
         else:
             print("Invalid choice")
             input("Press Enter to continue...")
-
 
 def add_menu_item():
     """Add new menu item"""
@@ -645,7 +632,6 @@ def add_menu_item():
         print(f"❌ Error: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def update_menu_item():
     """Update existing menu item"""
@@ -688,7 +674,6 @@ def update_menu_item():
 
     input("\nPress Enter to continue...")
 
-
 def toggle_item_availability():
     """Toggle item availability"""
     print_header("TOGGLE AVAILABILITY")
@@ -716,7 +701,6 @@ def toggle_item_availability():
         print(f"❌ Error: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def update_stock():
     """Update item stock quantity"""
@@ -762,7 +746,6 @@ def update_stock():
 
     input("\nPress Enter to continue...")
 
-
 def view_all_items():
     """View all menu items including unavailable ones"""
     print_header("ALL MENU ITEMS")
@@ -789,7 +772,6 @@ def view_all_items():
         print(f"❌ Error: {e}")
 
     input("\nPress Enter to continue...")
-
 
 def view_sales_report():
     """View sales report"""
@@ -855,7 +837,6 @@ def view_sales_report():
 
     input("\nPress Enter to continue...")
 
-
 def bar_menu():
     """Main bar menu"""
     # Initialize database
@@ -908,7 +889,6 @@ def bar_menu():
         else:
             print("Invalid choice")
             input("Press Enter to continue...")
-
 
 if __name__ == "__main__":
     bar_menu()

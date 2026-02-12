@@ -12,6 +12,7 @@ from datetime import datetime, date
 from typing import Any, Dict, List, Optional
 
 from university_system.infrastructure.database.db import get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 try:
     from university_system.modules.shared.utils.activity_logger import log_activity
@@ -84,7 +85,7 @@ class LeaveManager:
         values = []
         for key, value in data.items():
             if key not in ('leave_type_id', 'created_at'):
-                fields.append(f'{key} = ?')
+                fields.append(validate_identifier(key, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -95,11 +96,9 @@ class LeaveManager:
         values.append(leave_type_id)
 
         with transaction() as conn:
-            conn.execute(f'''
-                UPDATE leave_types
-                SET {', '.join(fields)}
-                WHERE leave_type_id = ?
-            ''', values)
+            conn.execute(
+                'UPDATE leave_types SET ' + ', '.join(fields) + ' WHERE leave_type_id = ?',
+                values)
             log_activity('update', 'leave_type',
                         details={'leave_type_id': leave_type_id})
             return True

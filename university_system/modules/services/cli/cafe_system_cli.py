@@ -7,7 +7,7 @@ Features: Menu management, order processing, inventory tracking, and reporting.
 Integrated with the University Management System.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -75,7 +75,6 @@ auth = None
 # Categories for cafe menu items
 CATEGORIES = ["Hot Drinks", "Cold Drinks", "Pastries", "Food"]
 
-
 def set_auth(auth_instance: Any) -> None:
     """Set the global auth instance for cafe CLI."""
     global auth
@@ -87,7 +86,6 @@ def set_auth(auth_instance: Any) -> None:
         except Exception as e:
             logger.warning(f"Failed to set auth in shared_context: {e}")
 
-
 def get_db_connection():
     """Get database connection with proper error handling."""
     try:
@@ -96,7 +94,6 @@ def get_db_connection():
     except (sqlite3.Error, OSError) as e:
         print(f"Database connection error: {e}")
         return None
-
 
 def init_cafe_db() -> bool:
     """Initialize cafe database tables."""
@@ -205,7 +202,6 @@ def init_cafe_db() -> bool:
         print(f"Database error: {e}")
         return False
 
-
 def setup_cafe_permissions(auth_instance=None) -> None:
     """Setup permissions for the cafe module."""
     if auth_instance is None:
@@ -258,7 +254,6 @@ def setup_cafe_permissions(auth_instance=None) -> None:
     except Exception as e:
         logger.warning(f"Could not setup cafe permissions: {e}")
 
-
 # ============================================================================
 # Database Operations
 # ============================================================================
@@ -289,7 +284,6 @@ def get_all_menu_items(category: str = None, available_only: bool = False) -> Li
     conn.close()
     return results
 
-
 def get_menu_item(item_id: int) -> Optional[Tuple]:
     """Get a single menu item by ID."""
     conn = get_db_connection()
@@ -304,7 +298,6 @@ def get_menu_item(item_id: int) -> Optional[Tuple]:
     result = cursor.fetchone()
     conn.close()
     return result
-
 
 def add_menu_item(name: str, category: str, description: str, price: float, stock: int) -> bool:
     """Add a new menu item."""
@@ -329,7 +322,6 @@ def add_menu_item(name: str, category: str, description: str, price: float, stoc
         logger.error(f"Error adding menu item: {e}")
         return False
 
-
 def update_menu_item(item_id: int, name: str, category: str, price: float, stock: int, available: bool) -> bool:
     """Update an existing menu item."""
     try:
@@ -352,7 +344,6 @@ def update_menu_item(item_id: int, name: str, category: str, price: float, stock
     except sqlite3.Error as e:
         logger.error(f"Error updating menu item: {e}")
         return False
-
 
 def delete_menu_item(item_id: int) -> bool:
     """Delete a menu item."""
@@ -377,7 +368,6 @@ def delete_menu_item(item_id: int) -> bool:
     except sqlite3.Error as e:
         logger.error(f"Error deleting menu item: {e}")
         return False
-
 
 def create_order(student_id: str, customer_name: str, items: List[Dict], payment_method: str) -> Optional[int]:
     """Create a new order with items."""
@@ -428,7 +418,6 @@ def create_order(student_id: str, customer_name: str, items: List[Dict], payment
         logger.error(f"Error creating order: {e}")
         return None
 
-
 def get_orders(filter_type: str = "all") -> List[Tuple]:
     """Get order history with optional date filter."""
     conn = get_db_connection()
@@ -466,7 +455,6 @@ def get_orders(filter_type: str = "all") -> List[Tuple]:
     conn.close()
     return results
 
-
 def get_order_items(order_id: int) -> List[Tuple]:
     """Get items for a specific order."""
     conn = get_db_connection()
@@ -481,7 +469,6 @@ def get_order_items(order_id: int) -> List[Tuple]:
     results = cursor.fetchall()
     conn.close()
     return results
-
 
 def update_stock(item_id: int, quantity_change: int, transaction_type: str, notes: str = "") -> bool:
     """Update stock quantity for an item."""
@@ -506,7 +493,6 @@ def update_stock(item_id: int, quantity_change: int, transaction_type: str, note
         logger.error(f"Error updating stock: {e}")
         return False
 
-
 def get_inventory_transactions(limit: int = 100) -> List[Tuple]:
     """Get recent inventory transactions."""
     conn = get_db_connection()
@@ -525,7 +511,6 @@ def get_inventory_transactions(limit: int = 100) -> List[Tuple]:
     conn.close()
     return results
 
-
 def get_sales_summary(period: str = "day") -> Dict:
     """Get sales summary for a period."""
     conn = get_db_connection()
@@ -534,14 +519,12 @@ def get_sales_summary(period: str = "day") -> Dict:
 
     cursor = conn.cursor()
 
-    if period == "day":
-        date_filter = "DATE(order_date) = DATE('now')"
-    elif period == "week":
-        date_filter = "DATE(order_date) >= DATE('now', '-7 days')"
-    elif period == "month":
-        date_filter = "DATE(order_date) >= DATE('now', 'start of month')"
-    else:
-        date_filter = "1=1"
+    _PERIOD_FILTERS = {
+        "day": "DATE(order_date) = DATE('now')",
+        "week": "DATE(order_date) >= DATE('now', '-7 days')",
+        "month": "DATE(order_date) >= DATE('now', 'start of month')",
+    }
+    date_filter = _PERIOD_FILTERS.get(period, "1=1")
 
     cursor.execute(f'''
         SELECT COUNT(*), COALESCE(SUM(total_amount), 0)
@@ -568,7 +551,6 @@ def get_sales_summary(period: str = "day") -> Dict:
         'payment_breakdown': payment_breakdown
     }
 
-
 def get_popular_items(limit: int = 20) -> List[Tuple]:
     """Get most popular items by quantity sold."""
     conn = get_db_connection()
@@ -587,7 +569,6 @@ def get_popular_items(limit: int = 20) -> List[Tuple]:
     conn.close()
     return results
 
-
 def get_low_stock_items(threshold: int = 20) -> List[Tuple]:
     """Get items with low stock."""
     conn = get_db_connection()
@@ -604,7 +585,6 @@ def get_low_stock_items(threshold: int = 20) -> List[Tuple]:
     results = cursor.fetchall()
     conn.close()
     return results
-
 
 # ============================================================================
 # CLI Menu Functions
@@ -737,7 +717,6 @@ def display_cafe_menu() -> None:
                 break
             print(get_text('cafe.invalid_input', default='Invalid input. Please enter a number.'))
 
-
 def view_menu_cli() -> None:
     """View the cafe menu."""
     print("\n--- Cafe Menu ---")
@@ -780,7 +759,6 @@ def view_menu_cli() -> None:
 
     print(f"{'=' * 80}")
     input("\nPress Enter to continue...")
-
 
 def point_of_sale_cli() -> None:
     """Process a new order via CLI."""
@@ -954,7 +932,6 @@ def point_of_sale_cli() -> None:
                 print("Order cancelled.")
                 return
 
-
 def menu_management_cli() -> None:
     """Menu management submenu."""
     while True:
@@ -1070,7 +1047,6 @@ def menu_management_cli() -> None:
         elif choice == '5':
             break
 
-
 def order_history_cli() -> None:
     """View order history."""
     while True:
@@ -1127,7 +1103,6 @@ def order_history_cli() -> None:
 
         elif choice == '6':
             break
-
 
 def inventory_management_cli() -> None:
     """Inventory management submenu."""
@@ -1232,7 +1207,6 @@ def inventory_management_cli() -> None:
         elif choice == '6':
             break
 
-
 def reports_cli() -> None:
     """View reports."""
     while True:
@@ -1308,7 +1282,6 @@ def reports_cli() -> None:
 
         elif choice == '6':
             break
-
 
 # Export functions for use in cli_main.py
 __all__ = [

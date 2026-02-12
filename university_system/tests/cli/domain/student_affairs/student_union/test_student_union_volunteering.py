@@ -4,12 +4,11 @@ Tests volunteer opportunity management and community service tracking.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 from university_system.modules.domain.student_affairs.student_union.services import volunteering
-
 
 @pytest.fixture
 def mock_cursor():
@@ -22,7 +21,6 @@ def mock_cursor():
     cursor.rowcount = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -31,7 +29,6 @@ def mock_conn():
     conn.rollback = Mock()
     conn.close = Mock()
     return conn
-
 
 @pytest.fixture
 def sample_opportunities():
@@ -42,7 +39,6 @@ def sample_opportunities():
         (2, 'Beach Cleanup', 'Clean local beach', 'Seaside', '2024-12-05',
          '2024-12-05', 3, 'None', 20, 15, 'open'),
     ]
-
 
 class TestBrowseVolunteerOpportunities:
     """Tests for browse_volunteer_opportunities function."""
@@ -71,7 +67,6 @@ class TestBrowseVolunteerOpportunities:
 
         # Should indicate no opportunities
         assert any('No volunteer opportunities' in str(call) for call in mock_print.call_args_list)
-
 
 class TestSignupForVolunteerOpportunity:
     """Tests for signup_for_volunteer_opportunity function."""
@@ -146,7 +141,6 @@ class TestSignupForVolunteerOpportunity:
         # Should indicate already signed up
         assert any('already signed up' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestViewMyVolunteerActivities:
     """Tests for view_my_volunteer_activities function."""
 
@@ -179,7 +173,6 @@ class TestViewMyVolunteerActivities:
 
         # Should indicate no activities
         assert any('no volunteer activities' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestTrackCommunityServiceHours:
     """Tests for track_community_service_hours function."""
@@ -259,7 +252,6 @@ class TestTrackCommunityServiceHours:
         assert any('Goal' in str(call) or 'progress' in str(call).lower()
                   for call in mock_print.call_args_list)
 
-
 class TestIntegrationVolunteering:
     """Integration tests using real database."""
 
@@ -336,7 +328,6 @@ class TestIntegrationVolunteering:
         opportunities = cursor.fetchall()
         assert len(opportunities) >= 1
         assert opportunities[0][1] == 'Food Bank'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

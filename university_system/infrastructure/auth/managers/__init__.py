@@ -14,6 +14,10 @@ Managers (Classes)
 - RoleManager: Role management
 - MFAManager: Multi-factor authentication
 - AccountSecurityManager: Account lockout and security
+- SSOManager: Single Sign-On provider management
+- WebAuthnManager: WebAuthn/FIDO2 credential management
+- BiometricManager: Biometric authentication enrollment and verification
+- DelegatedAccessManager: Delegated access and power of attorney management
 
 Managers (Function Modules)
 ----------------------------
@@ -30,6 +34,10 @@ from .permission_manager import PermissionManager
 from .role_manager import RoleManager
 from .mfa_manager import MFAManager
 from .account_security import AccountSecurityManager
+from .sso_manager import SSOManager
+from .webauthn_manager import WebAuthnManager
+from .biometric_manager import BiometricManager
+from .delegated_access_manager import DelegatedAccessManager
 
 # Import function-based managers as modules
 from . import password_manager
@@ -45,6 +53,10 @@ __all__ = [
     'RoleManager',
     'MFAManager',
     'AccountSecurityManager',
+    'SSOManager',
+    'WebAuthnManager',
+    'BiometricManager',
+    'DelegatedAccessManager',
 
     # Function-based modules
     'password_manager',

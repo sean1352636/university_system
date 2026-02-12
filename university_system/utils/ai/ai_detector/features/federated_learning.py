@@ -1,5 +1,6 @@
 """Federated learning for AI detection models."""
 
+import io
 import pickle
 from datetime import datetime
 from typing import Dict, Optional
@@ -10,6 +11,40 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+
+# Safe types allowed for unpickling federated learning model weights
+_SAFE_NUMPY_CLASSES = {
+    ('numpy', 'ndarray'),
+    ('numpy', 'dtype'),
+    ('numpy.core.multiarray', '_reconstruct'),
+    ('numpy.core.multiarray', 'scalar'),
+    ('numpy', 'float64'),
+    ('numpy', 'float32'),
+    ('numpy', 'int64'),
+    ('numpy', 'int32'),
+    ('builtins', 'bytes'),
+    ('builtins', 'set'),
+}
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that only allows safe numpy types for model weight deserialization."""
+
+    def find_class(self, module, name):
+        if (module, name) in _SAFE_NUMPY_CLASSES:
+            return super().find_class(module, name)
+        # Allow numpy sub-modules for dtype reconstruction
+        if module.startswith('numpy') and name in ('dtype', '_reconstruct', 'scalar'):
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Restricted unpickler refused to load '{module}.{name}'"
+        )
+
+
+def _safe_loads(data: bytes):
+    """Safely deserialize pickle data, only allowing numpy types."""
+    return _RestrictedUnpickler(io.BytesIO(data)).load()
 
 
 class FederatedLearning:
@@ -107,7 +142,7 @@ class FederatedLearning:
             total_budget = 0
 
             for update_blob, budget in updates:
-                weights = pickle.loads(update_blob)
+                weights = _safe_loads(update_blob)
 
                 if total_weights is None:
                     total_weights = weights * budget

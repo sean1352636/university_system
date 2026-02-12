@@ -15,7 +15,7 @@ except ImportError:
 try:
     from university_system.infrastructure.database.db import get_connection
 except ImportError:
-    import sqlite3
+    from university_system.infrastructure.database.db import sqlite3
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
@@ -24,7 +24,6 @@ try:
     EMAIL_AVAILABLE = True
 except ImportError:
     EMAIL_AVAILABLE = False
-
 
 CHURCH_SCHEMA = """
 CREATE TABLE IF NOT EXISTS church_members (
@@ -103,7 +102,6 @@ CREATE TABLE IF NOT EXISTS church_attendance (
 );
 """
 
-
 def init_church_database():
     """Initialize church database tables."""
     try:
@@ -114,7 +112,6 @@ def init_church_database():
     except Exception as e:
         print(f"Error initializing database: {e}")
         return False
-
 
 # ==================== Members ====================
 
@@ -132,7 +129,6 @@ def add_member(name, email='', phone='', address=''):
         print(f"Error adding member: {e}")
         return False
 
-
 def list_members():
     """List all church members."""
     try:
@@ -146,7 +142,6 @@ def list_members():
         print(f"Error listing members: {e}")
         return []
 
-
 def get_member(member_id):
     """Get member details."""
     try:
@@ -159,7 +154,6 @@ def get_member(member_id):
     except Exception as e:
         print(f"Error getting member: {e}")
         return None
-
 
 # ==================== Donations ====================
 
@@ -182,7 +176,6 @@ def record_donation(donor_name, amount, donation_type='Tithe', payment_method='C
         print(f"Error recording donation: {e}")
         return None
 
-
 def list_donations(limit=50):
     """List recent donations."""
     try:
@@ -195,7 +188,6 @@ def list_donations(limit=50):
     except Exception as e:
         print(f"Error listing donations: {e}")
         return []
-
 
 def get_donation_stats():
     """Get donation statistics."""
@@ -221,7 +213,6 @@ def get_donation_stats():
         print(f"Error getting donation stats: {e}")
         return {'total_amount': 0, 'total_count': 0, 'by_type': []}
 
-
 # ==================== Events ====================
 
 def create_event(title, event_date, event_time='', location='', description=''):
@@ -239,7 +230,6 @@ def create_event(title, event_date, event_time='', location='', description=''):
         print(f"Error creating event: {e}")
         return False
 
-
 def list_events():
     """List upcoming events."""
     try:
@@ -252,7 +242,6 @@ def list_events():
     except Exception as e:
         print(f"Error listing events: {e}")
         return []
-
 
 # ==================== Prayer Requests ====================
 
@@ -271,7 +260,6 @@ def add_prayer_request(requester_name, request_text, request_type='General'):
     except Exception as e:
         print(f"Error adding prayer request: {e}")
         return False
-
 
 def list_prayer_requests(status='Active'):
     """List prayer requests."""
@@ -292,7 +280,6 @@ def list_prayer_requests(status='Active'):
         print(f"Error listing prayer requests: {e}")
         return []
 
-
 def mark_prayer_answered(prayer_id):
     """Mark prayer request as answered."""
     try:
@@ -307,7 +294,6 @@ def mark_prayer_answered(prayer_id):
     except Exception as e:
         print(f"Error marking prayer answered: {e}")
         return False
-
 
 # ==================== Sermons ====================
 
@@ -326,7 +312,6 @@ def add_sermon(title, preacher, sermon_date, scripture='', notes=''):
         print(f"Error adding sermon: {e}")
         return False
 
-
 def list_sermons(limit=20):
     """List recent sermons."""
     try:
@@ -340,7 +325,6 @@ def list_sermons(limit=20):
         print(f"Error listing sermons: {e}")
         return []
 
-
 # ==================== CLI Interface ====================
 
 def print_header(title):
@@ -348,7 +332,6 @@ def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
     print("=" * 80)
-
 
 # Members Menu
 def members_menu():
@@ -406,7 +389,6 @@ def members_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 # Donations Menu
 def donations_menu():
@@ -484,7 +466,6 @@ def donations_menu():
         if choice != '0':
             input("\n  Press Enter to continue...")
 
-
 # Events Menu
 def events_menu():
     """Church events management."""
@@ -528,7 +509,6 @@ def events_menu():
 
         if choice != '0':
             input("\n  Press Enter to continue...")
-
 
 # Prayer Requests Menu
 def prayer_menu():
@@ -589,7 +569,6 @@ def prayer_menu():
         if choice != '0':
             input("\n  Press Enter to continue...")
 
-
 # Sermons Menu
 def sermons_menu():
     """Sermons management."""
@@ -634,7 +613,6 @@ def sermons_menu():
         if choice != '0':
             input("\n  Press Enter to continue...")
 
-
 def church_menu():
     """Main church management CLI menu."""
     init_church_database()
@@ -665,7 +643,6 @@ def church_menu():
             break
         else:
             print("\n  ❌ Invalid choice.")
-
 
 if __name__ == '__main__':
     church_menu()

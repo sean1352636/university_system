@@ -15,7 +15,7 @@ Features:
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import random
 import string
 import logging
@@ -61,7 +61,6 @@ except ImportError:
     FINANCE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
-
 
 class Database:
     """Handle all database operations using university system database"""
@@ -253,7 +252,6 @@ class Database:
     def close(self):
         """Close database connection (no-op for connection-per-query pattern)"""
         pass
-
 
 class TrainStationApp:
     """Main application class"""
@@ -1219,7 +1217,7 @@ class TrainStationApp:
         # Parse amount
         try:
             amount = float(amount_str.replace('£', '').replace(',', ''))
-        except:
+        except (ValueError, TypeError):
             messagebox.showerror(_t("common.error", default="Error"),
                                _t("common.invalid_amount", default="Invalid amount format."))
             return
@@ -1375,7 +1373,7 @@ class TrainStationApp:
             # Add status column if it doesn't exist (optional - status is now derived from train_refunds)
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
-            except:
+            except Exception:
                 pass
 
             # Update status if column exists (optional - status is now derived from train_refunds)
@@ -1385,7 +1383,7 @@ class TrainStationApp:
                     SET status = 'refunded'
                     WHERE ticket_number = ?
                 """, (ticket_number,))
-            except:
+            except Exception:
                 pass  # Column doesn't exist, status will be derived from train_refunds table
 
             # Get processed_by info
@@ -1436,7 +1434,7 @@ class TrainStationApp:
             if hasattr(self, 'refunds_tree'):
                 try:
                     self.refresh_refunds_list()
-                except:
+                except Exception:
                     pass  # Refunds view not currently active
 
             messagebox.showinfo(_t("common.success", default="Success"),
@@ -1475,7 +1473,7 @@ class TrainStationApp:
             # Add status column if it doesn't exist (optional - status is now derived from train_refunds)
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
-            except:
+            except Exception:
                 pass
 
             # Update status if column exists (optional - status is now derived from train_refunds)
@@ -1485,7 +1483,7 @@ class TrainStationApp:
                     SET status = 'refunded'
                     WHERE ticket_number = ?
                 """, (ticket_number,))
-            except:
+            except Exception:
                 pass  # Column doesn't exist, status will be derived from train_refunds table
 
             # Get processed_by info
@@ -1561,7 +1559,7 @@ class TrainStationApp:
             if hasattr(self, 'refunds_tree'):
                 try:
                     self.refresh_refunds_list()
-                except:
+                except Exception:
                     pass  # Refunds view not currently active
 
             messagebox.showinfo(_t("common.success", default="Success"),
@@ -1904,13 +1902,11 @@ FINANCIAL DETAILS
         self.db.close()
         self.root.destroy()
 
-
 def main():
     root = tk.Tk()
     app = TrainStationApp(root)
     root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

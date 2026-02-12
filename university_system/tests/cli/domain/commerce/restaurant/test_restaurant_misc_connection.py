@@ -3,7 +3,7 @@ Tests for university_system/modules/core/services/restaurant_misc/connection.py
 """
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 from io import StringIO
 from unittest import mock
@@ -11,7 +11,6 @@ from unittest import mock
 import pytest
 
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import connection
-
 
 @pytest.fixture
 def temp_db():
@@ -22,7 +21,6 @@ def temp_db():
     import os
     if os.path.exists(temp_file.name):
         os.unlink(temp_file.name)
-
 
 class TestSetAuth:
     """Tests for set_auth function"""
@@ -48,7 +46,6 @@ class TestSetAuth:
                 connection.set_auth(mock_auth)
 
                 assert mock_ctx.auth == mock_auth
-
 
 class TestGetDbConnection:
     """Tests for get_db_connection function"""
@@ -90,7 +87,6 @@ class TestGetDbConnection:
 
             assert result[0] == 1
             conn.close()
-
 
 class TestSafeDbOperation:
     """Tests for safe_db_operation function"""
@@ -138,7 +134,6 @@ class TestSafeDbOperation:
 
         result = connection.safe_db_operation(test_func, 1, 2, c=5)
         assert result == 8
-
 
 class TestInitDb:
     """Tests for init_db function"""
@@ -276,7 +271,6 @@ class TestInitDb:
             assert result[0] == 1
 
             conn.close()
-
 
 class TestInitializeDefaultData:
     """Tests for initialize_default_data function"""

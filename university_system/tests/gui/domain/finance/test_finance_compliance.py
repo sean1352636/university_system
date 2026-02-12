@@ -13,11 +13,9 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_gui():
@@ -43,12 +41,10 @@ def mock_gui():
 
     return gui
 
-
 @pytest.fixture
 def compliance_manager(mock_gui):
     """Create a ComplianceManager instance for testing"""
     return ComplianceManager(mock_gui)
-
 
 @pytest.fixture
 def test_db_with_collection_data():
@@ -113,7 +109,6 @@ def test_db_with_collection_data():
     conn.commit()
     conn.close()
 
-
 class TestComplianceManagerInit:
     """Test ComplianceManager initialization"""
 
@@ -135,7 +130,6 @@ class TestComplianceManagerInit:
         manager = ComplianceManager(mock_gui)
         assert manager.finance_system is None
 
-
 class TestCollectionManagement:
     """Test collection case management"""
 
@@ -150,7 +144,6 @@ class TestCollectionManagement:
         # Test that the method exists and can be called
         assert hasattr(compliance_manager, 'create_collection_case')
 
-
 class TestAgencyManagement:
     """Test collection agency management"""
 
@@ -162,7 +155,6 @@ class TestAgencyManagement:
 
         # Verify dialog was created
         mock_toplevel.assert_called()
-
 
 class TestGUIWrappers:
     """Test GUI wrapper methods"""
@@ -224,7 +216,6 @@ class TestGUIWrappers:
         # Verify dialog was created
         mock_toplevel.assert_called()
 
-
 class TestAuditLogs:
     """Test audit log functionality"""
 
@@ -259,7 +250,6 @@ class TestAuditLogs:
         count = cursor.fetchone()[0]
         assert count == 1
 
-
 class TestErrorHandling:
     """Test error handling in compliance manager"""
 
@@ -291,7 +281,6 @@ class TestErrorHandling:
 
         # Should handle error gracefully
         compliance_manager.gui_track_collection_progress()
-
 
 class TestReportingWrappers:
     """Test reporting wrapper methods"""
@@ -332,7 +321,6 @@ class TestReportingWrappers:
         # Should not crash
         assert True
 
-
 class TestWorkflowManagement:
     """Test workflow management"""
 
@@ -355,7 +343,6 @@ class TestWorkflowManagement:
         # Verify status was updated
         compliance_manager.gui.layout.update_status.assert_called()
 
-
 class TestViewStudentCollectionDetail:
     """Test student collection detail viewing"""
 
@@ -366,7 +353,6 @@ class TestViewStudentCollectionDetail:
 
         # Verify dialog was created
         mock_toplevel.assert_called()
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

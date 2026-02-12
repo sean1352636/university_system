@@ -209,7 +209,8 @@ from .students.student_records_gui import (
     on_student_double_click,
     on_student_double_click_window,
     show_student_details,
-    search_students_dialog
+    search_students_dialog,
+    _load_academic_data
 )
 from .students.student_crud_gui import (
     create_student_dialog,
@@ -272,7 +273,8 @@ from .admin.database_admin_gui import (
     run_integrity_check,
     show_db_statistics,
     show_db_performance,
-    show_active_connections
+    show_active_connections,
+    wipe_database
 )
 from .admin.config_gui import (
     edit_system_settings,
@@ -297,7 +299,9 @@ from .features.academic_launchers_gui import (
     show_ai_detector,
     open_ai_detector_window,
     open_attendance_gui,
-    show_virtual_classroom_gui
+    show_virtual_classroom_gui,
+    show_office_hours_gui,
+    show_ta_management_gui,
 )
 from .features.student_affairs_gui import (
     show_student_union_portal,
@@ -476,6 +480,7 @@ UnifiedManagementGUI.view_students_in_window = view_students_in_window
 UnifiedManagementGUI.on_student_double_click = on_student_double_click
 UnifiedManagementGUI.on_student_double_click_window = on_student_double_click_window
 UnifiedManagementGUI.show_student_details = show_student_details
+UnifiedManagementGUI._load_academic_data = _load_academic_data
 UnifiedManagementGUI.search_students_dialog = search_students_dialog
 UnifiedManagementGUI.create_student_dialog = create_student_dialog
 UnifiedManagementGUI.update_student_dialog = update_student_dialog
@@ -528,6 +533,7 @@ UnifiedManagementGUI.run_integrity_check = run_integrity_check
 UnifiedManagementGUI.show_db_statistics = show_db_statistics
 UnifiedManagementGUI.show_db_performance = show_db_performance
 UnifiedManagementGUI.show_active_connections = show_active_connections
+UnifiedManagementGUI.wipe_database = wipe_database
 UnifiedManagementGUI.edit_system_settings = edit_system_settings
 UnifiedManagementGUI.configure_email = configure_email
 UnifiedManagementGUI.configure_backup = configure_backup
@@ -549,6 +555,8 @@ UnifiedManagementGUI.show_ai_detector = show_ai_detector
 UnifiedManagementGUI.open_ai_detector_window = open_ai_detector_window
 UnifiedManagementGUI.open_attendance_gui = open_attendance_gui
 UnifiedManagementGUI.show_virtual_classroom_gui = show_virtual_classroom_gui
+UnifiedManagementGUI.show_office_hours_gui = show_office_hours_gui
+UnifiedManagementGUI.show_ta_management_gui = show_ta_management_gui
 UnifiedManagementGUI.show_student_union_portal = show_student_union_portal
 UnifiedManagementGUI.open_student_union_portal_gui = open_student_union_portal_gui
 UnifiedManagementGUI.open_parent_portal_gui = open_parent_portal_gui

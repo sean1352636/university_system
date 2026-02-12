@@ -8,11 +8,10 @@ Tests complete user journeys through the system:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 from university_system.infrastructure.database.db import get_connection, transaction
-
 
 @pytest.mark.integration
 @pytest.mark.slow
@@ -131,7 +130,6 @@ class TestStudentJourneys:
             assert result['status'] == 'completed'
             assert result['assignments'] == 3
 
-
 @pytest.mark.integration
 @pytest.mark.slow
 class TestInstructorJourneys:
@@ -196,7 +194,6 @@ class TestInstructorJourneys:
                 WHERE course_id = ? AND status = 'completed'
             """, (course_pk,)).fetchone()[0]
             assert completed_count == 3
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

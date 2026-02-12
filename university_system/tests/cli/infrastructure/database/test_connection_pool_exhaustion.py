@@ -13,14 +13,13 @@ This module tests ConnectionPool behavior when connection limits are reached:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 
 from university_system.infrastructure.database.db import ConnectionPool
 from university_system.infrastructure.exceptions import DatabaseConnectionError
-
 
 @pytest.fixture
 def temp_db():
@@ -45,7 +44,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestConnectionPoolExhaustion:
     """Test connection pool behavior when limits are reached."""
@@ -410,7 +408,6 @@ class TestConnectionPoolExhaustion:
 
         pool.close_all()
 
-
 class TestConnectionPoolLimitEnforcement:
     """Test strict enforcement of connection limits."""
 
@@ -502,7 +499,6 @@ class TestConnectionPoolLimitEnforcement:
         pool.release_connection(conn)
         pool.close_all()
 
-
 class TestConnectionPoolErrorHandling:
     """Test error handling in pool exhaustion scenarios."""
 
@@ -592,7 +588,6 @@ class TestConnectionPoolErrorHandling:
         pool.release_connection(new_conn)
         pool.close_all()
 
-
 class TestConnectionPoolBackpressure:
     """Test pool behavior under sustained high load (backpressure)."""
 
@@ -666,7 +661,6 @@ class TestConnectionPoolBackpressure:
         success_count = all_results.count("success")
         total = len(all_results)
         assert success_count / total > 0.6, f"Too many failures: {success_count}/{total}"
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

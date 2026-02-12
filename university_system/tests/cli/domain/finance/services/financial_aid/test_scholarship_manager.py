@@ -10,13 +10,12 @@ This module tests the ScholarshipManager class including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import json
 from datetime import datetime, date, timedelta
 from university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
-
 
 @pytest.fixture
 def temp_db():
@@ -159,12 +158,10 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def scholarship_manager(temp_db):
     """Create ScholarshipManager instance with test database"""
     return ScholarshipManager(db_path=temp_db)
-
 
 class TestScholarshipCreation:
     """Test suite for scholarship creation"""
@@ -208,7 +205,6 @@ class TestScholarshipCreation:
         )
 
         assert scholarship_id is not None
-
 
 class TestScholarshipApplications:
     """Test suite for scholarship applications"""
@@ -308,7 +304,6 @@ class TestScholarshipApplications:
 
         assert result is False
 
-
 class TestScholarshipAwards:
     """Test suite for scholarship awards"""
 
@@ -355,7 +350,6 @@ class TestScholarshipAwards:
         assert total_awarded > 0
 
         conn.close()
-
 
 class TestScholarshipRetrieval:
     """Test suite for retrieving scholarship data"""
@@ -407,7 +401,6 @@ class TestScholarshipRetrieval:
         assert isinstance(awards, list)
         assert len(awards) == 0
 
-
 class TestExternalScholarships:
     """Test suite for external scholarship management"""
 
@@ -446,7 +439,6 @@ class TestExternalScholarships:
         )
 
         assert external_id is not None
-
 
 class TestRenewalEligibility:
     """Test suite for scholarship renewal eligibility"""
@@ -541,7 +533,6 @@ class TestRenewalEligibility:
         assert result['eligible'] is True
         assert 'No specific requirements' in result['reason']
 
-
 class TestErrorHandling:
     """Test suite for error handling"""
 
@@ -582,7 +573,6 @@ class TestErrorHandling:
 
         assert award_id is None
 
-
 class TestDatabaseIntegrity:
     """Test database operations and integrity"""
 
@@ -608,7 +598,6 @@ class TestDatabaseIntegrity:
         assert result[0] == 1
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

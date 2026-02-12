@@ -4,7 +4,7 @@ Cinema Booking System - Coming Soon Movies
 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import webbrowser
 
@@ -15,7 +15,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_coming_soon_page(self):
     """Display coming soon movies page."""
@@ -51,7 +50,7 @@ def show_coming_soon_page(self):
                 try:
                     days = (datetime.strptime(release, "%Y-%m-%d") - datetime.now()).days
                     countdown = f"{days} days" if days > 0 else "Released!"
-                except:
+                except (ValueError, TypeError):
                     countdown = "TBA"
             else:
                 countdown = "TBA"
@@ -74,7 +73,6 @@ def show_coming_soon_page(self):
     ttk.Button(action_frame, text=_t("cinema.buttons.delete"), style="Danger.TButton",
               command=self.delete_coming).pack(side="left", padx=5)
     load_coming_soon()
-
 
 def add_coming_soon(self):
     form = tk.Toplevel(self.root)
@@ -109,7 +107,6 @@ def add_coming_soon(self):
         self.show_coming_soon_page()
     ttk.Button(frame, text=_t("cinema.buttons.save"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
 
-
 def watch_trailer(self):
     selected = self.coming_tree.selection()
     if not selected:
@@ -126,7 +123,6 @@ def watch_trailer(self):
     else:
         messagebox.showinfo(_t("cinema.common.info"), "No trailer available")
 
-
 def notify_me(self):
     selected = self.coming_tree.selection()
     if not selected:
@@ -140,7 +136,6 @@ def notify_me(self):
     conn.close()
     messagebox.showinfo(_t("cinema.common.success"), "You'll be notified!")
     self.show_coming_soon_page()
-
 
 def activate_movie(self):
     selected = self.coming_tree.selection()
@@ -175,7 +170,6 @@ def activate_movie(self):
         messagebox.showinfo(_t("cinema.common.success"), f"Movie activated with {duration} min duration!")
     conn.close()
     self.show_coming_soon_page()
-
 
 def delete_coming(self):
     selected = self.coming_tree.selection()

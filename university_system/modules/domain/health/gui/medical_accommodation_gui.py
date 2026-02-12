@@ -11,7 +11,7 @@ import threading
 from datetime import datetime, timedelta
 import json
 import csv
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
 
@@ -658,12 +658,12 @@ class AccommodationGUI:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT name, accommodation_type, description, duration_days,
-                           created_by, created_at
-                    FROM {TEMPLATES_TABLE}
-                    ORDER BY name
-                ''')
+                cursor.execute(
+                    "SELECT name, accommodation_type, description, duration_days,"
+                    " created_by, created_at"
+                    " FROM [" + TEMPLATES_TABLE + "]"
+                    " ORDER BY name"
+                )
                 
                 templates = cursor.fetchall()
                 
@@ -720,17 +720,16 @@ class AccommodationGUI:
                         duration_days = template_data.get('duration_days', 365)
 
                         # Check if template already exists
-                        cursor.execute(f"SELECT COUNT(*) FROM {TEMPLATES_TABLE} WHERE name = ?", (template_name,))
+                        cursor.execute("SELECT COUNT(*) FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                         if cursor.fetchone()[0] > 0:
                             skipped_count += 1
                             continue
 
                         # Insert template into database
-                        cursor.execute(f'''
-                            INSERT INTO {TEMPLATES_TABLE}
-                            (name, accommodation_type, description, start_offset_days, duration_days, created_by, created_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (
+                        cursor.execute(
+                            "INSERT INTO [" + TEMPLATES_TABLE + "]"
+                            " (name, accommodation_type, description, start_offset_days, duration_days, created_by, created_at)"
+                            " VALUES (?, ?, ?, ?, ?, ?, ?)", (
                             template_name,
                             accommodation_type,
                             description,
@@ -899,13 +898,13 @@ class AccommodationGUI:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT name, COUNT(*) as usage_count
-                    FROM accommodations a
-                    JOIN {TEMPLATES_TABLE} t ON a.notes LIKE '%Applied from template: ' || t.name || '%'
-                    GROUP BY t.name
-                    ORDER BY usage_count DESC
-                ''')
+                cursor.execute(
+                    "SELECT name, COUNT(*) as usage_count"
+                    " FROM accommodations a"
+                    " JOIN [" + TEMPLATES_TABLE + "] t ON a.notes LIKE '%Applied from template: ' || t.name || '%'"
+                    " GROUP BY t.name"
+                    " ORDER BY usage_count DESC"
+                )
                 usage_stats = cursor.fetchall()
             
             # Create dialog to show usage
@@ -1092,16 +1091,16 @@ class AccommodationGUI:
             # Get template details
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT accommodation_type, description, start_offset_days, duration_days
-                    FROM {TEMPLATES_TABLE} WHERE name = ?
-                ''', (template_data['template_name'],))
-                
+                cursor.execute(
+                    "SELECT accommodation_type, description, start_offset_days, duration_days"
+                    " FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
+                    (template_data['template_name'],))
+
                 template = cursor.fetchone()
                 if not template:
                     messagebox.showerror("Error", "Template not found")
                     return
-                
+
                 typ, desc, offset, duration = template
                 
                 # Calculate dates
@@ -1244,7 +1243,6 @@ class AccommodationGUI:
                 return False
         return True
 
-
     def create_tooltip(widget, text):
         """Create a tooltip for a widget"""
         def on_enter(event):
@@ -1266,7 +1264,6 @@ class AccommodationGUI:
         widget.bind("<Enter>", on_enter)
         widget.bind("<Leave>", on_leave)
 
-
     def format_date_display(date_str):
         """Format date for display"""
         if not date_str:
@@ -1276,7 +1273,6 @@ class AccommodationGUI:
             return date_obj.strftime('%Y-%m-%d')
         except (ValueError, TypeError):
             return date_str
-
 
     def get_status_color(status):
         """Get color for status display"""
@@ -1288,7 +1284,6 @@ class AccommodationGUI:
             'rejected': 'darkred'
         }
         return colors.get(status, 'black')
-
 
     # Configuration and constants for GUI
     GUI_CONFIG = {
@@ -1302,7 +1297,6 @@ class AccommodationGUI:
         'date_format': '%Y-%m-%d',
         'datetime_format': '%Y-%m-%d %H:%M:%S'
     }
-
 
     # Error handling and logging for GUI
     def gui_error_handler(func):
@@ -1363,7 +1357,6 @@ class AccommodationGUI:
                     display_accommodation_menu()
                 else:
                     print("CLI mode also not available.")
-
 
     # Additional CLI integration functions
     def integrate_with_original_cli():
@@ -1520,7 +1513,6 @@ class AccommodationGUI:
 
         logging.info("Accommodation GUI data exported for CLI import: %s", output_path)
         return export_records, os.fspath(output_path)
-
 
     # Version and compatibility information
     GUI_VERSION = "1.0.0"
@@ -1904,7 +1896,7 @@ class AccommodationGUI:
                 # Check if template exists
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(f'SELECT name FROM {TEMPLATES_TABLE} WHERE name = ?', 
+                    cursor.execute("SELECT name FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
                                  (dialog.result['name'],))
                     if cursor.fetchone():
                         if not messagebox.askyesno("Template Exists", 
@@ -1917,12 +1909,11 @@ class AccommodationGUI:
 
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(f'''
-                        INSERT OR REPLACE INTO {TEMPLATES_TABLE}
-                        (name, accommodation_type, description, start_offset_days, 
-                         duration_days, created_by, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO [" + TEMPLATES_TABLE + "]"
+                        " (name, accommodation_type, description, start_offset_days,"
+                        " duration_days, created_by, created_at, updated_at)"
+                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
                         dialog.result['name'],
                         dialog.result['accommodation_type'],
                         dialog.result['description'],
@@ -1949,10 +1940,10 @@ class AccommodationGUI:
                 # Get template details
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(f'''
-                        SELECT accommodation_type, description, start_offset_days, duration_days
-                        FROM {TEMPLATES_TABLE} WHERE name = ?
-                    ''', (dialog.result['template_name'],))
+                    cursor.execute(
+                        "SELECT accommodation_type, description, start_offset_days, duration_days"
+                        " FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
+                        (dialog.result['template_name'],))
                     
                     template = cursor.fetchone()
                     if not template:
@@ -2021,13 +2012,13 @@ class AccommodationGUI:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute(f'SELECT * FROM {TEMPLATES_TABLE} WHERE name = ?', (template_name,))
+                cursor.execute("SELECT * FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                 template_data = cursor.fetchone()
-            
+
             if not template_data:
                 messagebox.showerror("Error", "Template not found")
                 return
-            
+
             # Show edit dialog
             dialog = TemplateDialog(self.root, "Edit Template", template_data)
             if dialog.result:
@@ -2036,12 +2027,11 @@ class AccommodationGUI:
                 
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(f'''
-                        UPDATE {TEMPLATES_TABLE} SET
-                        accommodation_type = ?, description = ?, start_offset_days = ?,
-                        duration_days = ?, updated_at = ?
-                        WHERE name = ?
-                    ''', (
+                    cursor.execute(
+                        "UPDATE [" + TEMPLATES_TABLE + "] SET"
+                        " accommodation_type = ?, description = ?, start_offset_days = ?,"
+                        " duration_days = ?, updated_at = ?"
+                        " WHERE name = ?", (
                         dialog.result['accommodation_type'],
                         dialog.result['description'],
                         dialog.result['start_offset_days'],
@@ -2073,9 +2063,9 @@ class AccommodationGUI:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'DELETE FROM {TEMPLATES_TABLE} WHERE name = ?', (template_name,))
+                cursor.execute("DELETE FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                 conn.commit()
-            
+
             messagebox.showinfo("Success", f"Template '{template_name}' deleted successfully")
             self.refresh_templates()
             
@@ -2722,7 +2712,6 @@ class AccommodationGUI:
             "with features for registration, tracking, reporting,\n"
             "and template management.")
 
-
 # Dialog classes for various functions
 
 class AccommodationDialog:
@@ -2864,7 +2853,6 @@ class AccommodationDialog:
         """Cancel the dialog"""
         self.dialog.destroy()
 
-
 class TemplateDialog:
     """Dialog for creating/editing templates"""
     
@@ -2971,7 +2959,6 @@ class TemplateDialog:
         """Cancel the dialog"""
         self.dialog.destroy()
 
-
 class ApplyTemplateDialog:
     """Dialog for applying templates"""
     
@@ -3030,7 +3017,7 @@ class ApplyTemplateDialog:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'SELECT name FROM {TEMPLATES_TABLE} ORDER BY name')
+                cursor.execute("SELECT name FROM [" + TEMPLATES_TABLE + "] ORDER BY name")
                 templates = [row[0] for row in cursor.fetchall()]
                 self.template_combo['values'] = templates
         except Exception as e:
@@ -3061,7 +3048,6 @@ class ApplyTemplateDialog:
     def cancel(self):
         """Cancel the dialog"""
         self.dialog.destroy()
-
 
 class ExportFilterDialog:
     """Dialog for export filters"""
@@ -3135,7 +3121,6 @@ class ExportFilterDialog:
         """Cancel export"""
         self.dialog.destroy()
 
-
 # Additional dialog classes...
 
 class DetailsDialog:
@@ -3207,7 +3192,6 @@ Last Updated: {accommodation['updated_at']}
         # Close button
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
 
-
 # Import result dialogs and other utility dialogs...
 
 class ImportResultDialog:
@@ -3228,7 +3212,6 @@ class ImportResultDialog:
         result_text_widget.config(state=tk.DISABLED)
         
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
-
 
 class ApprovalDialog:
     """Dialog for approval management"""
@@ -3433,7 +3416,6 @@ class ApprovalDialog:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to {action} accommodation: {str(e)}")
 
-
 class TemplateManagerDialog:
     """Dialog for managing templates"""
     
@@ -3503,11 +3485,11 @@ class TemplateManagerDialog:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    SELECT name, accommodation_type, description, duration_days, created_by
-                    FROM {TEMPLATES_TABLE}
-                    ORDER BY name
-                ''')
+                cursor.execute(
+                    "SELECT name, accommodation_type, description, duration_days, created_by"
+                    " FROM [" + TEMPLATES_TABLE + "]"
+                    " ORDER BY name"
+                )
                 
                 templates = cursor.fetchall()
                 
@@ -3543,7 +3525,7 @@ class TemplateManagerDialog:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute(f'SELECT * FROM {TEMPLATES_TABLE} WHERE name = ?', (template_name,))
+                cursor.execute("SELECT * FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                 template_data = cursor.fetchone()
             
             if template_data:
@@ -3567,9 +3549,9 @@ class TemplateManagerDialog:
             try:
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(f'DELETE FROM {TEMPLATES_TABLE} WHERE name = ?', (template_name,))
+                    cursor.execute("DELETE FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                     conn.commit()
-                
+
                 messagebox.showinfo("Success", f"Template '{template_name}' deleted")
                 self.load_templates()
                 self.gui_parent.refresh_templates()
@@ -3610,12 +3592,11 @@ class TemplateManagerDialog:
 
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    INSERT OR REPLACE INTO {TEMPLATES_TABLE}
-                    (name, accommodation_type, description, start_offset_days, 
-                     duration_days, created_by, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
+                cursor.execute(
+                    "INSERT OR REPLACE INTO [" + TEMPLATES_TABLE + "]"
+                    " (name, accommodation_type, description, start_offset_days,"
+                    " duration_days, created_by, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
                     template_data['name'],
                     template_data['accommodation_type'],
                     description,
@@ -3644,12 +3625,11 @@ class TemplateManagerDialog:
             
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(f'''
-                    UPDATE {TEMPLATES_TABLE} SET
-                    accommodation_type = ?, description = ?, start_offset_days = ?,
-                    duration_days = ?, updated_at = ?
-                    WHERE name = ?
-                ''', (
+                cursor.execute(
+                    "UPDATE [" + TEMPLATES_TABLE + "] SET"
+                    " accommodation_type = ?, description = ?, start_offset_days = ?,"
+                    " duration_days = ?, updated_at = ?"
+                    " WHERE name = ?", (
                     template_data['accommodation_type'],
                     description,
                     int(start_offset_days) if start_offset_days is not None else None,
@@ -3665,7 +3645,6 @@ class TemplateManagerDialog:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update template: {str(e)}")
-
 
 class StatisticsDialog:
     """Dialog for statistics report"""
@@ -3737,7 +3716,6 @@ class StatisticsDialog:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export report: {str(e)}")
 
-
 class ExpiryResultDialog:
     """Dialog for expiry check results"""
     
@@ -3756,7 +3734,6 @@ class ExpiryResultDialog:
         result_text_widget.config(state=tk.DISABLED)
         
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
-
 
 class DatabaseInfoDialog:
     """Dialog for database information"""
@@ -3811,15 +3788,18 @@ class DatabaseInfoDialog:
                 info_text += f"Tables: {len(tables)}\n\n"
                 
                 for table in tables:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    from university_system.core.sql_safety import validate_table_name
+                    validated_table = validate_table_name(table, conn=conn)
+                    cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
                     count = cursor.fetchone()[0]
                     info_text += f"{table}: {count:,} records\n"
-                
+
                 info_text += "\n"
-                
+
                 # Schema information
                 for table in tables:
-                    cursor.execute(f"PRAGMA table_info({table})")
+                    validated_table = validate_table_name(table, conn=conn)
+                    cursor.execute("PRAGMA table_info([" + validated_table + "])")
                     columns = cursor.fetchall()
                     
                     info_text += f"\n{table.upper()} TABLE SCHEMA:\n"
@@ -3832,7 +3812,6 @@ class DatabaseInfoDialog:
             
         except Exception as e:
             self.info_text.insert(tk.END, f"Error loading database info: {str(e)}")
-
 
 class SettingsDialog:
     """Dialog for application settings"""
@@ -3887,7 +3866,6 @@ class SettingsDialog:
         # In a real application, you would save these to a config file
         messagebox.showinfo("Settings", "Settings saved successfully")
         self.dialog.destroy()
-
 
 class HelpDialog:
     """Dialog for help information"""
@@ -3998,10 +3976,10 @@ def apply_template_with_data(self, template_data):
         # Get template details
         with get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(f'''
-                SELECT accommodation_type, description, start_offset_days, duration_days
-                FROM {TEMPLATES_TABLE} WHERE name = ?
-            ''', (template_data['template_name'],))
+            cursor.execute(
+                "SELECT accommodation_type, description, start_offset_days, duration_days"
+                " FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
+                (template_data['template_name'],))
             
             template = cursor.fetchone()
             if not template:

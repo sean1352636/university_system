@@ -15,11 +15,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
-# Import module under test
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.student_affairs.student_union.facilities import facility_management
-
 
 @pytest.fixture
 def mock_cursor():
@@ -32,7 +29,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -42,7 +38,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -51,7 +46,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestBrowseEquipment:
     """Test browsing equipment functionality."""
@@ -92,7 +86,6 @@ class TestBrowseEquipment:
         facility_management.browse_available_equipment(mock_cursor)
 
         assert mock_cursor.execute.call_count >= 2
-
 
 class TestEquipmentCheckout:
     """Test equipment checkout functionality."""
@@ -150,7 +143,6 @@ class TestEquipmentCheckout:
             facility_management.check_out_equipment('S123', mock_cursor, mock_conn)
             assert any('invalid' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestEquipmentReturn:
     """Test equipment return functionality."""
 
@@ -201,7 +193,6 @@ class TestEquipmentReturn:
             facility_management.return_equipment('S123', mock_cursor, mock_conn)
             assert any('invalid' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestViewEquipmentCheckouts:
     """Test viewing equipment checkouts."""
 
@@ -235,7 +226,6 @@ class TestViewEquipmentCheckouts:
         # Should display statistics
         mock_cursor.fetchall.assert_called_once()
 
-
 class TestSearchEquipment:
     """Test equipment search functionality."""
 
@@ -266,7 +256,6 @@ class TestSearchEquipment:
         with patch('builtins.print') as mock_print:
             facility_management.search_equipment(mock_cursor)
             assert any('cannot be empty' in str(call).lower() for call in mock_print.call_args_list)
-
 
 class TestAddNewEquipment:
     """Test adding new equipment (admin only)."""
@@ -299,7 +288,6 @@ class TestAddNewEquipment:
         facility_management.add_new_equipment(mock_cursor, mock_conn)
 
         mock_cursor.execute.assert_called()
-
 
 class TestUpdateEquipmentStatus:
     """Test updating equipment status (admin only)."""
@@ -339,7 +327,6 @@ class TestUpdateEquipmentStatus:
             facility_management.update_equipment_status(mock_cursor, mock_conn)
             assert any('invalid' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestMaintenanceTracking:
     """Test equipment maintenance tracking."""
 
@@ -369,7 +356,6 @@ class TestMaintenanceTracking:
 
         mock_cursor.execute.assert_called()
         mock_conn.commit.assert_called()
-
 
 class TestEquipmentReports:
     """Test equipment reporting functionality."""
@@ -417,7 +403,6 @@ class TestEquipmentReports:
         facility_management.generate_equipment_reports(mock_cursor)
 
         mock_cursor.execute.assert_called()
-
 
 class TestFacilityBooking:
     """Test facility booking functionality."""
@@ -472,7 +457,6 @@ class TestFacilityBooking:
 
         mock_conn.commit.assert_called()
 
-
 class TestAuthSetup:
     """Test authentication setup."""
 
@@ -481,7 +465,6 @@ class TestAuthSetup:
         facility_management.set_auth(mock_auth)
 
         assert facility_management.auth == mock_auth
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

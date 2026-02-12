@@ -62,7 +62,7 @@ def warn_if_table_empty(cursor, table_name: str, warning_message: str) -> None:
     try:
         # Validate table name to prevent SQL injection
         validated_table = validate_table_name(table_name, conn=cursor.connection)
-        cursor.execute(f'SELECT COUNT(*) FROM [{validated_table}]')
+        cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
         result = cursor.fetchone()
         if result and result[0] == 0:
             logger.warning(warning_message)
@@ -100,7 +100,7 @@ def seed_table_from_json(cursor, table_name: str, json_file: str, columns_map: d
         logger.error(f"Invalid table name in seed_table_from_json: {e}")
         return False
 
-    cursor.execute(f'SELECT COUNT(*) FROM [{validated_table}]')
+    cursor.execute("SELECT COUNT(*) FROM [" + validated_table + "]")
     result = cursor.fetchone()
 
     if result and result[0] > 0:
@@ -153,8 +153,8 @@ def seed_table_from_json(cursor, table_name: str, json_file: str, columns_map: d
                     validated_columns.append(validated_col)
 
                 placeholders = ', '.join(['?' for _ in values])
-                col_names = ', '.join([f'[{col}]' for col in validated_columns])
-                cursor.execute(f'INSERT INTO [{validated_table}] ({col_names}) VALUES ({placeholders})', values)
+                col_names = ', '.join(['[' + col + ']' for col in validated_columns])
+                cursor.execute("INSERT INTO [" + validated_table + "] (" + col_names + ") VALUES (" + placeholders + ")", values)
             except SQLIdentifierError as e:
                 logger.error(f"Invalid column name in seed_table_from_json: {e}")
                 continue

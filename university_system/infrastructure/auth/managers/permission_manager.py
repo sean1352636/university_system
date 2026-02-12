@@ -37,22 +37,84 @@ class PermissionManager:
         self.check_session = session_checker
 
     def check_permission(self, permission: str, raise_exception: bool = False, current_user: dict = None):
-        """Check if current user has a specific permission."""
+        """Check if current user has a specific permission.
+
+        Also checks delegated permissions when the user is acting as a delegate.
+        """
         if not current_user:
             current_user = self.get_current_user()
         if not current_user:
             return False
-        return permission in current_user.get('permissions', [])
+
+        # Direct permission check
+        if permission in current_user.get('permissions', []):
+            return True
+
+        # Check delegated permissions when acting as a delegate
+        acting_as_delegate_for = current_user.get('acting_as_delegate_for')
+        if acting_as_delegate_for:
+            return self._check_delegated_permission(
+                current_user.get('id'), acting_as_delegate_for, permission
+            )
+
+        return False
 
     def has_permission(self, permission: str, current_user: dict = None) -> bool:
-        """Check if user has permission without raising exceptions."""
+        """Check if user has permission without raising exceptions.
+
+        Also checks delegated permissions when the user is acting as a delegate.
+        """
         try:
             if not current_user:
                 current_user = self.get_current_user()
             if not current_user or not self.check_session():
                 return False
-            return permission in current_user.get('permissions', [])
+
+            # Direct permission check
+            if permission in current_user.get('permissions', []):
+                return True
+
+            # Check delegated permissions
+            acting_as_delegate_for = current_user.get('acting_as_delegate_for')
+            if acting_as_delegate_for:
+                return self._check_delegated_permission(
+                    current_user.get('id'), acting_as_delegate_for, permission
+                )
+
+            return False
         except Exception:
+            return False
+
+    def _check_delegated_permission(self, delegate_user_id: int, target_user_id: int, permission: str) -> bool:
+        """Check if delegate has a specific delegated permission for target user.
+
+        Looks up active delegated_access records and checks if the requested
+        permission falls within the granted scope.
+        """
+        try:
+            from university_system.infrastructure.auth.delegated_access_scopes import DELEGATION_SCOPES
+            import json
+
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT scope_json FROM delegated_access
+                       WHERE delegate_user_id = ? AND grantor_user_id = ?
+                       AND is_active = 1
+                       AND (expires_at IS NULL OR expires_at > datetime('now'))''',
+                    (delegate_user_id, target_user_id)
+                )
+                rows = cursor.fetchall()
+
+                for (scope_json,) in rows:
+                    scope_keys = json.loads(scope_json) if scope_json else []
+                    for key in scope_keys:
+                        scope = DELEGATION_SCOPES.get(key)
+                        if scope and permission in scope.get('permissions', []):
+                            return True
+            return False
+        except Exception as e:
+            logger.debug(f"Delegated permission check error: {e}")
             return False
 
     def get_user_permissions(self, user_id: int) -> List[str]:

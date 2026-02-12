@@ -1,13 +1,13 @@
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import uuid
 import threading
 import logging
 from typing import List, Tuple
 from university_system.utils.logging.log_config import configure_logging
+from university_system.core.sql_safety import validate_identifier
 from .exceptions import DatabaseError
 
 logger = configure_logging(name=__name__)
-
 
 # Database connection manager
 class DatabaseManager:
@@ -44,10 +44,10 @@ class DatabaseManager:
             self.cursor = self.conn.cursor()
 
             # Configure SQLite for better performance and security
+            # Note: foreign_keys, journal_mode=WAL, synchronous=NORMAL, and
+            # busy_timeout are already applied by the central database proxy
+            # (infrastructure/database/db.py) when sqlite3.connect() is called.
             pragma_commands = [
-                "PRAGMA foreign_keys = ON",
-                "PRAGMA journal_mode = WAL",
-                "PRAGMA synchronous = NORMAL",
                 "PRAGMA cache_size = 10000",
                 "PRAGMA temp_store = MEMORY"
             ]
@@ -121,7 +121,6 @@ class DatabaseManager:
                 self.conn = None
                 self.cursor = None
 
-
 class DatabaseTransaction:
     def __init__(self, db_manager):
         self.db_manager = db_manager
@@ -136,6 +135,7 @@ class DatabaseTransaction:
             self.db_manager._in_transaction = True
             # Use savepoints for nested transactions
             self.savepoint = f"sp_{uuid.uuid4().hex[:8]}"
+            validate_identifier(self.savepoint, "savepoint")
             self.connection.execute(f"SAVEPOINT {self.savepoint}")
             return self
         except Exception:
@@ -145,6 +145,7 @@ class DatabaseTransaction:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
+            validate_identifier(self.savepoint, "savepoint")
             if exc_type is None:
                 # Release savepoint and commit the transaction
                 self.connection.execute(f"RELEASE SAVEPOINT {self.savepoint}")

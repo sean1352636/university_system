@@ -4,7 +4,7 @@ Cinema Booking System - Polls and Voting
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_polls_page(self):
     self.clear_content()
@@ -42,7 +41,6 @@ def show_polls_page(self):
     action_frame.pack(fill="x", pady=10)
     ttk.Button(action_frame, text=_t("cinema.polls.view_results"), style="Primary.TButton", command=self.view_results).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.btn.cast_vote"), style="Success.TButton", command=self.cast_vote).pack(side="left", padx=5)
-
 
 def create_poll(self):
     form = tk.Toplevel(self.root)
@@ -84,7 +82,6 @@ def create_poll(self):
         self.show_polls_page()
     ttk.Button(frame, text=_t("cinema.btn.create"), style="Success.TButton", command=save).pack(pady=10)
 
-
 def view_results(self):
     selected = self.poll_tree.selection()
     if not selected:
@@ -108,7 +105,6 @@ def view_results(self):
     for opt, votes in options:
         pct = (votes / total * 100) if total > 0 else 0
         tk.Label(frame, text=f"{opt}: {votes} votes ({pct:.1f}%)", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
-
 
 def cast_vote(self):
     selected = self.poll_tree.selection()

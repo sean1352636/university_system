@@ -2,7 +2,6 @@
 Audit logging utilities.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -29,10 +28,7 @@ from ..config import (
 from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def _log_audit(audit_data: Dict[str, Any]):
     """Log audit trail information"""
@@ -66,7 +62,6 @@ def _log_audit(audit_data: Dict[str, Any]):
     finally:
         if conn:
             conn.close()
-
 
 def audit_action(action_type: str):
     """

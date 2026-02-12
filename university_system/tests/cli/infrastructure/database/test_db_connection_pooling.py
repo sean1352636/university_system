@@ -12,14 +12,13 @@ Tests the core db.py module including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from university_system.infrastructure.database import db as db_module
-
 
 @pytest.fixture
 def temp_db():
@@ -47,7 +46,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestSQLite3Proxy:
     """Test the SQLite3 proxy wrapper."""
 
@@ -69,7 +67,6 @@ class TestSQLite3Proxy:
     def test_sqlite3_proxy_row(self):
         """Test that sqlite3.Row is available."""
         assert hasattr(db_module.sqlite3, 'Row')
-
 
 class TestGetConnection:
     """Test get_connection function."""
@@ -135,7 +132,6 @@ class TestGetConnection:
         conn = db_module.get_connection(db_path=temp_db, timeout=5.0)
         assert conn is not None
         conn.close()
-
 
 class TestConnectionPool:
     """Test ConnectionPool class."""
@@ -256,7 +252,6 @@ class TestConnectionPool:
         # Pool should be empty
         assert len(pool._pool) == 0
 
-
 class TestGetConnectionPool:
     """Test get_connection_pool function."""
 
@@ -272,7 +267,6 @@ class TestGetConnectionPool:
 
         if pool1:
             pool1.close_all()
-
 
 class TestTransaction:
     """Test transaction context manager."""
@@ -325,7 +319,6 @@ class TestTransaction:
 
         assert result is not None
 
-
 class TestAtomicOperation:
     """Test atomic_operation context manager."""
 
@@ -357,7 +350,6 @@ class TestAtomicOperation:
 
         conn.close()
         assert result is not None
-
 
 class TestDatabaseManager:
     """Test DatabaseManager context manager."""
@@ -439,7 +431,6 @@ class TestDatabaseManager:
         assert db_manager.max_retries == 3
         assert db_manager.retry_delay == 0.1
 
-
 class TestConnectionAliases:
     """Test connection utility aliases."""
 
@@ -448,7 +439,6 @@ class TestConnectionAliases:
         conn = db_module.get_db_connection(db_path=temp_db)
         assert conn is not None
         conn.close()
-
 
 class TestPragmaSettings:
     """Test that PRAGMA settings are applied."""
@@ -476,7 +466,6 @@ class TestPragmaSettings:
         if result:
             assert isinstance(result[0], str)
 
-
 class TestModuleExports:
     """Test that module exports all required symbols."""
 
@@ -501,7 +490,6 @@ class TestModuleExports:
         for name in essential:
             assert hasattr(db_module, name), f"Essential export {name} not available"
             assert name in db_module.__all__, f"Essential export {name} not in __all__"
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

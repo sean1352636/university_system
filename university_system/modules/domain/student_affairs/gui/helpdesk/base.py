@@ -9,6 +9,7 @@ import threading
 from functools import partial
 import webbrowser
 from university_system.infrastructure.email.template_utils import render_template
+from university_system.core.sql_safety import validate_identifier
 
 # Import authentication - REQUIRED (no fallback for security)
 from university_system.infrastructure.auth import UserAuth, get_global_auth
@@ -516,7 +517,8 @@ class HelpdeskGUI:
             for col_name, col_def in required_columns:
                 if col_name not in columns:
                     try:
-                        cursor.execute(f"ALTER TABLE support_tickets ADD COLUMN {col_name} {col_def}")
+                        safe_col = validate_identifier(col_name, "column")
+                        cursor.execute('ALTER TABLE support_tickets ADD COLUMN ' + safe_col + ' ' + col_def)
                         conn.commit()
                         print(f"Added {col_name} column to support_tickets table")
                     except Exception as col_err:

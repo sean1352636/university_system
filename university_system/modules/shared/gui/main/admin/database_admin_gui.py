@@ -1,10 +1,11 @@
 # Auto-generated module
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, messagebox, filedialog, scrolledtext, simpledialog
 import logging
 
 # Alias for translation function
 from university_system.modules.shared.utils.i18n import get_text as _t
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 
 # Import GUI availability flags and classes
 from university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -283,6 +284,102 @@ def show_db_performance(self):
 
     except Exception as e:
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.show_performance_failed", error=str(e)))
+
+def wipe_database(self):
+    """Wipe all data from the database, preserving only default accounts and module definitions"""
+    if not self.auth.current_user:
+        messagebox.showerror("Error", "You must be logged in to perform database operations.")
+        return
+
+    user_role = self.auth.current_user.get('role', '')
+    if user_role != 'admin':
+        messagebox.showerror("Error", "Only administrators can wipe the database.")
+        return
+
+    try:
+        # First confirmation
+        result = messagebox.askyesno(
+            "Confirm Database Wipe",
+            "WARNING: This will permanently delete ALL data from the database.\n\n"
+            "Only the 3 default accounts (admin, staff, student) and module definitions "
+            "will be preserved.\n\n"
+            "This action CANNOT be undone. Are you sure you want to continue?"
+        )
+        if not result:
+            return
+
+        # Second confirmation - require typing "WIPE"
+        confirmation = simpledialog.askstring(
+            "Final Confirmation",
+            'Type "WIPE" to confirm database wipe:',
+            parent=self.root
+        )
+        if confirmation != "WIPE":
+            messagebox.showinfo("Cancelled", "Database wipe cancelled.")
+            return
+
+        from university_system.infrastructure.auth.core import UserAuth
+        from university_system.infrastructure.database.db import get_connection
+        from university_system.modules.scripts.setup_database_complete import sync_modules_to_database
+
+        # Use the project's get_connection to ensure proper PRAGMAs (WAL, busy_timeout, etc.)
+        conn = get_connection(self.auth.db_path, row_factory=False)
+        try:
+            cursor = conn.cursor()
+
+            # Save CS and DS course records before wiping
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courses'")
+            has_courses = cursor.fetchone() is not None
+            preserved_courses = []
+            if has_courses:
+                cursor.execute("SELECT * FROM courses WHERE code IN ('CS', 'DS')")
+                preserved_courses = cursor.fetchall()
+                col_names = [desc[0] for desc in cursor.description]
+
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            tables = [row[0] for row in cursor.fetchall()]
+
+            cursor.execute("PRAGMA foreign_keys = OFF")
+            for table in tables:
+                safe_table = validate_table_name(table, conn=conn)
+                cursor.execute("DELETE FROM [" + safe_table + "]")
+
+            # Restore CS and DS courses
+            if preserved_courses:
+                safe_col_names = [validate_identifier(col, "column") for col in col_names]
+                placeholders = ', '.join('?' * len(col_names))
+                for row in preserved_courses:
+                    cursor.execute("INSERT INTO courses (" + ", ".join("[" + c + "]" for c in safe_col_names) + ") VALUES (" + placeholders + ")", row)
+
+            cursor.execute("PRAGMA foreign_keys = ON")
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Re-populate default accounts (opens its own connection internally)
+        UserAuth._db_initialized = False
+        self.auth._do_init_db()
+
+        # Sync modules with a fresh connection so it sees _do_init_db's writes
+        conn = get_connection(self.auth.db_path, row_factory=False)
+        try:
+            sync_modules_to_database(conn)
+        finally:
+            conn.close()
+
+        self.log_activity("Database wiped and reset to defaults", "warning", "database_maintenance")
+
+        messagebox.showinfo(
+            "Database Wiped",
+            "Database has been wiped successfully.\n\n"
+            "Default accounts and module definitions have been restored.\n"
+            "The system will now restart."
+        )
+
+        self.restart_gui()
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to wipe database: {e}")
 
 def show_active_connections(self):
     """Show active database connections"""

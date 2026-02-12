@@ -3,12 +3,11 @@
 import unittest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
 from university_system.modules.domain.academics.gui.grade_tracking.grade_tracking_app import GradeTrackingApp
-
 
 class TestGradeTrackingApp(unittest.TestCase):
     """Test GradeTrackingApp class"""
@@ -191,7 +190,6 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-
 class TestGradeTrackingAppNoAuth(unittest.TestCase):
     """Test GradeTrackingApp without authentication"""
 
@@ -236,7 +234,6 @@ class TestGradeTrackingAppNoAuth(unittest.TestCase):
         self.assertFalse(app.is_student())
 
         app.root.destroy()
-
 
 if __name__ == '__main__':
     unittest.main()

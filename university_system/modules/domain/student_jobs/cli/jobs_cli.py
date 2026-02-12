@@ -1117,15 +1117,74 @@ class StudentJobsCLI:
             print(f"Applied: {app['application_date']}")
 
     def view_app_details_admin(self):
-        """View application details"""
+        """View application details (admin view)"""
         application_id = input("\nEnter Application ID: ").strip()
 
         if not application_id.isdigit():
             print("\n❌ Invalid Application ID.")
             return
 
-        # Would need to implement get_application_details
-        print("\n❌ Feature not yet implemented.")
+        try:
+            from university_system.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                row = conn.execute('''
+                    SELECT ja.*, jp.job_title, jp.employer_name, jp.hourly_rate, jp.location,
+                           s.first_name, s.last_name, s.email_address, s.major, s.gpa
+                    FROM campus_job_applications ja
+                    JOIN campus_job_postings jp ON ja.job_id = jp.job_id
+                    JOIN students s ON ja.student_id = s.student_id
+                    WHERE ja.application_id = ?
+                ''', (int(application_id),)).fetchone()
+
+            if not row:
+                print("\n❌ Application not found.")
+                return
+
+            app = dict(row)
+
+            print("\n" + "=" * 60)
+            print("APPLICATION DETAILS (Admin View)")
+            print("=" * 60)
+
+            print(f"\nApplication ID: {app['application_id']}")
+            print(f"Status: {app['status'].upper()}")
+            print(f"Applied: {app['application_date']}")
+
+            print(f"\n--- Job Information ---")
+            print(f"Job ID: {app['job_id']}")
+            print(f"Title: {app['job_title']}")
+            print(f"Employer: {app['employer_name']}")
+            print(f"Location: {app.get('location', 'N/A')}")
+            print(f"Rate: ${app.get('hourly_rate', 0):.2f}/hour")
+
+            print(f"\n--- Applicant Information ---")
+            print(f"Student ID: {app['student_id']}")
+            print(f"Name: {app.get('first_name', '')} {app.get('last_name', '')}")
+            print(f"Email: {app.get('email_address', 'N/A')}")
+            print(f"Major: {app.get('major', 'N/A')}")
+            print(f"GPA: {app.get('gpa', 'N/A')}")
+
+            if app.get('expected_hours_per_week'):
+                print(f"\nExpected hours/week: {app['expected_hours_per_week']}")
+            if app.get('availability'):
+                print(f"Availability: {app['availability']}")
+            if app.get('cover_letter'):
+                print(f"\n--- Cover Letter ---\n{app['cover_letter']}")
+            if app.get('resume_url'):
+                print(f"\nResume: {app['resume_url']}")
+            if app.get('reference_contacts'):
+                print(f"\nReferences:\n{app['reference_contacts']}")
+            if app.get('notes'):
+                print(f"\nReview Notes: {app['notes']}")
+            if app.get('reviewed_by'):
+                print(f"Reviewed by: {app['reviewed_by']} on {app.get('reviewed_date', 'N/A')}")
+            if app.get('interview_date'):
+                print(f"Interview scheduled: {app['interview_date']}")
+
+            print("=" * 60)
+
+        except Exception as e:
+            print(f"\n❌ Error retrieving application details: {e}")
 
     def update_app_status(self):
         """Update application status"""

@@ -8,7 +8,7 @@ This script:
 3. Verifies the setup
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 import os
 from datetime import datetime
@@ -117,7 +117,7 @@ def migrate_existing_payments():
                 if amount_match:
                     try:
                         payment_amount = float(amount_match.group(1))
-                    except:
+                    except (ValueError, TypeError):
                         payment_amount = 5.0  # Default fine amount
 
                 # Try to parse date from notes

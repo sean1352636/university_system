@@ -9,12 +9,11 @@ Tests the database schema initialization for degree audit system including:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.academics.services.degree_audit.db_schema import (
     initialize_degree_audit_database
 )
 from university_system.infrastructure.database.db import get_connection
-
 
 class TestDatabaseInitialization:
     """Test degree audit database initialization"""
@@ -56,7 +55,6 @@ class TestDatabaseInitialization:
 
         for table in required_tables:
             assert table in existing_tables, f"Table {table} not created"
-
 
 class TestDegreeProgramsTable:
     """Test degree_programs table structure"""
@@ -140,7 +138,6 @@ class TestDegreeProgramsTable:
 
         conn.close()
 
-
 class TestDegreeRequirementsTable:
     """Test degree_requirements table structure"""
 
@@ -201,7 +198,6 @@ class TestDegreeRequirementsTable:
 
         conn.close()
 
-
 class TestRequirementCoursesTable:
     """Test requirement_courses table structure"""
 
@@ -228,7 +224,6 @@ class TestRequirementCoursesTable:
             assert col in column_names, f"Column {col} not found in requirement_courses"
 
         conn.close()
-
 
 class TestDegreePrerequisitesTable:
     """Test degree_course_prerequisites table structure"""
@@ -281,7 +276,6 @@ class TestDegreePrerequisitesTable:
             conn.commit()
 
         conn.close()
-
 
 class TestStudentDegreeProgressTable:
     """Test student_degree_progress table structure"""
@@ -346,7 +340,6 @@ class TestStudentDegreeProgressTable:
 
         conn.close()
 
-
 class TestRequirementCompletionTable:
     """Test requirement_completion table structure"""
 
@@ -375,7 +368,6 @@ class TestRequirementCompletionTable:
 
         conn.close()
 
-
 class TestWhatIfScenariosTable:
     """Test degree_what_if_scenarios table structure"""
 
@@ -403,7 +395,6 @@ class TestWhatIfScenariosTable:
             assert col in column_names, f"Column {col} not found in degree_what_if_scenarios"
 
         conn.close()
-
 
 class TestAdvisingAppointmentsTable:
     """Test advising_appointments table structure"""
@@ -437,7 +428,6 @@ class TestAdvisingAppointmentsTable:
             assert col in column_names, f"Column {col} not found in advising_appointments"
 
         conn.close()
-
 
 class TestGraduationChecklistTable:
     """Test graduation_checklist table structure"""
@@ -504,7 +494,6 @@ class TestGraduationChecklistTable:
 
         conn.close()
 
-
 class TestIndexes:
     """Test database indexes"""
 
@@ -532,7 +521,6 @@ class TestIndexes:
 
         conn.close()
 
-
 class TestReinitialization:
     """Test that reinitialization doesn't cause errors"""
 
@@ -554,7 +542,6 @@ class TestReinitialization:
         assert count > 0
 
         conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

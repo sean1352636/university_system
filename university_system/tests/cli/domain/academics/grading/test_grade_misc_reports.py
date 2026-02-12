@@ -1,6 +1,6 @@
 import pytest
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 import tempfile
@@ -15,7 +15,6 @@ from university_system.modules.domain.academics.grading.reports import (
     generate_all_courses_stats_report,
     generate_comprehensive_stats_report
 )
-
 
 class TestGenerateStatisticalReport:
     """Test the generate_statistical_report function"""
@@ -83,7 +82,6 @@ class TestGenerateStatisticalReport:
 
         conn.close.assert_called_once()
 
-
 class TestGenerateModuleStatsReport:
     """Test the generate_module_stats_report function"""
 
@@ -147,7 +145,6 @@ class TestGenerateModuleStatsReport:
 
         assert any('No grades found' in str(call) for call in mock_print.call_args_list)
 
-
 class TestGenerateCourseStatsReport:
     """Test the generate_course_stats_report function"""
 
@@ -204,7 +201,6 @@ class TestGenerateCourseStatsReport:
         generate_course_stats_report(cursor, 'InvalidCourse', 'reports', '20250101')
 
         assert any('No students found' in str(call) for call in mock_print.call_args_list)
-
 
 class TestGenerateComprehensiveStatsReport:
     """Test the generate_comprehensive_stats_report function"""
@@ -290,7 +286,6 @@ class TestGenerateComprehensiveStatsReport:
         # Should handle error gracefully
         assert mock_print.called
 
-
 class TestGenerateAllModulesStatsReport:
     """Test the generate_all_modules_stats_report function"""
 
@@ -329,7 +324,6 @@ class TestGenerateAllModulesStatsReport:
             'letter': {'A+': 4.3, 'A': 4.0, 'B+': 3.3, 'B': 3.0, 'C+': 2.3, 'C': 2.0}
         }):
             generate_all_modules_stats_report(cursor, modules_data, 'reports', '20250101')
-
 
 class TestGenerateAllCoursesStatsReport:
     """Test the generate_all_courses_stats_report function"""
@@ -375,9 +369,6 @@ class TestGenerateAllCoursesStatsReport:
 
         courses = ['Computer Science', 'Data Science']
         generate_all_courses_stats_report(cursor, courses, 'reports', '20250101')
-
-
-
 
 class TestReportIntegration:
     """Integration tests for report generation"""
@@ -469,7 +460,6 @@ class TestReportIntegration:
 
             # This would typically create the directory
             # generate_module_stats_report(cursor, 'CS101', reports_dir, '20250101')
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

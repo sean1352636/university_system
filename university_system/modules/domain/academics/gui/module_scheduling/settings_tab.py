@@ -41,8 +41,7 @@ import threading
 import subprocess
 import webbrowser
 from pathlib import Path
-import sqlite3
-# Import the original module scheduling functionality
+
 # This ensures full backward compatibility
 try:
     from university_system.modules.domain.academics.services.module_scheduling import (
@@ -61,7 +60,6 @@ except ImportError:
         from university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
     except Exception:
         class ModuleScheduler: pass
-
 
 from .main_gui import ModuleSchedulingGUI
 from .dialogs import AddHolidayDialog
@@ -534,7 +532,6 @@ def save_schedule_template(self):
     ttk.Button(dialog, text="Save", command=save_template).pack(pady=10)
 
 ModuleSchedulingGUI.save_schedule_template = save_schedule_template
-
 
 def _save_template_json_file(template_name, description, schedules):
     """Save a schedule template as a JSON file in templates/scheduling/"""

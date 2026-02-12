@@ -11,14 +11,13 @@ Tests:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock
 
 from university_system.infrastructure.security.security_dashboard_cli import SecurityDashboardCLI
 from university_system.infrastructure.security.init_security_tables import init_security_tables
-
 
 @pytest.fixture
 def test_db():
@@ -39,7 +38,6 @@ def test_db():
     master_key_path = os.path.join(os.path.dirname(path), '.encryption_master_key')
     if os.path.exists(master_key_path):
         os.remove(master_key_path)
-
 
 # ============================================================================
 # Dashboard Initialization Tests
@@ -96,7 +94,6 @@ class TestDashboardInitialization:
 
             assert dashboard1.admin_user_id == 1
             assert dashboard2.admin_user_id == 999
-
 
 # ============================================================================
 # Manager Access Tests
@@ -168,7 +165,6 @@ class TestManagerAccess:
 
             assert dashboard.vuln_scanner is not None
             assert hasattr(dashboard.vuln_scanner, 'scan_sql_injection')
-
 
 # ============================================================================
 # Integration Tests
@@ -301,7 +297,6 @@ class TestCLIIntegration:
 
             assert result['vulnerable'] is True
 
-
 # ============================================================================
 # Multiple Dashboard Instances Tests
 # ============================================================================
@@ -340,7 +335,6 @@ class TestMultipleDashboards:
             conn.close()
 
             assert count == 1
-
 
 # ============================================================================
 # Tabulate Helper Tests
@@ -383,7 +377,6 @@ class TestTabulateHelper:
 
         assert result == "No data"
 
-
 # ============================================================================
 # Error Handling Tests
 # ============================================================================
@@ -414,7 +407,6 @@ class TestCLIErrorHandling:
                 # Acceptable to raise exception for invalid DB
                 pass
 
-
 # ============================================================================
 # Module Import Tests
 # ============================================================================
@@ -442,7 +434,6 @@ class TestModuleImports:
 
         # Should be boolean
         assert isinstance(AUTH_MODULE_AVAILABLE, bool)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

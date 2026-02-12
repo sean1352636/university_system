@@ -1,4 +1,5 @@
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
+from university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta
 import os
 import sys
 import shutil
-import sqlite3
+
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -315,7 +316,6 @@ except ImportError as e:
 
 SEARCH_ANALYTICS_COLUMNS_CACHE: Optional[List[str]] = None
 
-
 def refresh_search_analytics_columns(cursor) -> List[str]:
     """Refresh and return the column names for search_analytics."""
     global SEARCH_ANALYTICS_COLUMNS_CACHE
@@ -323,13 +323,11 @@ def refresh_search_analytics_columns(cursor) -> List[str]:
     SEARCH_ANALYTICS_COLUMNS_CACHE = [row[1] for row in cursor.fetchall()]
     return SEARCH_ANALYTICS_COLUMNS_CACHE
 
-
 def get_search_analytics_columns(cursor) -> List[str]:
     """Get cached column list for search_analytics, refreshing if required."""
     if SEARCH_ANALYTICS_COLUMNS_CACHE is None:
         return refresh_search_analytics_columns(cursor)
     return SEARCH_ANALYTICS_COLUMNS_CACHE
-
 
 def ensure_search_analytics_schema(cursor) -> List[str]:
     """Ensure the analytics table has the columns expected by various modules."""
@@ -352,14 +350,15 @@ def ensure_search_analytics_schema(cursor) -> List[str]:
             "UPDATE search_analytics SET search_query = CASE WHEN search_query IS NULL OR search_query = '' THEN COALESCE(search_criteria, search_type, 'N/A') ELSE search_query END"
         )
 
+    _VALID_TIME_COLUMNS = {'timestamp', 'search_datetime'}
     time_column = 'timestamp' if 'timestamp' in columns else 'search_datetime' if 'search_datetime' in columns else None
     if time_column:
+        validate_field_for_query(time_column, _VALID_TIME_COLUMNS, "time column")
         cursor.execute(
             f"UPDATE search_analytics SET {time_column} = COALESCE({time_column}, datetime('now'))"
         )
 
     return list(columns)
-
 
 def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[str], search_type: str,
                                   criteria: Any, results_count: int, execution_time: float = 0.0,
@@ -395,13 +394,15 @@ def build_search_analytics_record(columns: Iterable[str], *, user_id: Optional[s
 
     return record
 
-
 def insert_search_analytics_record(cursor, **kwargs):
     """Insert an analytics entry while adapting to the table schema."""
     columns = ensure_search_analytics_schema(cursor)
     record = build_search_analytics_record(columns, **kwargs)
     if not record:
         return
+    # Validate all column names before SQL interpolation
+    for key in record.keys():
+        validate_column_name(key)
     placeholders = ', '.join('?' for _ in record)
     cursor.execute(
         f"INSERT INTO search_analytics ({', '.join(record.keys())}) VALUES ({placeholders})",
@@ -790,7 +791,8 @@ def data_quality_reports():
         report += "MISSING DATA ANALYSIS:\n"
 
         for field, label in fields:
-            cursor.execute(f"SELECT COUNT(*) FROM students WHERE {field} IS NULL OR {field} = ''")
+            safe_field = validate_identifier(field, "column")
+            cursor.execute("SELECT COUNT(*) FROM students WHERE [" + safe_field + "] IS NULL OR [" + safe_field + "] = ''")
             missing = cursor.fetchone()[0]
             percentage = (missing / total * 100) if total > 0 else 0
             report += f"  {label}: {missing} missing ({percentage:.1f}%)\n"
@@ -870,8 +872,6 @@ def get_connection():
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
-
-
 
 from .base import AdvancedSearchGUI
 
@@ -1854,14 +1854,16 @@ def perform_text_search(self, pattern, search_type, field):
         if search_type == "wildcard":
             # Convert wildcard to SQL LIKE pattern
             sql_pattern = pattern.replace('*', '%').replace('?', '_')
-            query = f"SELECT * FROM students WHERE {field} LIKE ?"
+            safe_field = validate_identifier(field, "column")
+            query = "SELECT * FROM students WHERE [" + safe_field + "] LIKE ?"
             cursor.execute(query, (sql_pattern,))
-            
+
         elif search_type == "regex":
             # For SQLite, we'll use LIKE with basic pattern conversion
             # In a full implementation, you'd need a regex extension
             sql_pattern = f"%{pattern}%"
-            query = f"SELECT * FROM students WHERE {field} LIKE ?"
+            safe_field = validate_identifier(field, "column")
+            query = "SELECT * FROM students WHERE [" + safe_field + "] LIKE ?"
             cursor.execute(query, (sql_pattern,))
             
         elif search_type == "all_fields":

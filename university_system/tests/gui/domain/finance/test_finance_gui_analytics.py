@@ -13,11 +13,9 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.modules.domain.finance.gui.finance.analytics import AnalyticsManager
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_gui():
@@ -29,12 +27,10 @@ def mock_gui():
     gui.finance_system = Mock()
     return gui
 
-
 @pytest.fixture
 def analytics_manager(mock_gui):
     """Create an AnalyticsManager instance for testing"""
     return AnalyticsManager(mock_gui)
-
 
 class TestAnalyticsManagerInit:
     """Test AnalyticsManager initialization"""
@@ -60,7 +56,6 @@ class TestAnalyticsManagerInit:
         del mock_gui.finance_system
         manager = AnalyticsManager(mock_gui)
         assert manager.finance_system is None
-
 
 class TestDashboardCharts:
     """Test dashboard chart updates"""
@@ -90,7 +85,6 @@ class TestDashboardCharts:
         # Verify axes were cleared
         analytics_manager.ax1.clear.assert_called()
 
-
 class TestRevenueForecast:
     """Test revenue forecasting"""
 
@@ -118,7 +112,6 @@ class TestRevenueForecast:
         # Should use defaults and not crash
         analytics_manager.run_forecast()
 
-
 class TestScenarioPlanning:
     """Test scenario planning"""
 
@@ -131,7 +124,6 @@ class TestScenarioPlanning:
         assert "Conservative Scenario" in output
         assert "Baseline Scenario" in output
         assert "Optimistic Scenario" in output
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

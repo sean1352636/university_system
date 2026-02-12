@@ -11,14 +11,13 @@ Tests all functionality including:
 import pytest
 import os
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import patch, MagicMock
 
 from university_system.modules.shared.services.communication.schema import (
     COMMUNICATION_SCHEMA,
     create_communication_tables
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -32,7 +31,6 @@ def temp_db():
         os.unlink(db_path)
     except (OSError, IOError):
         pass
-
 
 class TestCommunicationSchema:
     """Test the COMMUNICATION_SCHEMA constant."""
@@ -78,7 +76,6 @@ class TestCommunicationSchema:
 
         for index in indexes:
             assert f"CREATE INDEX IF NOT EXISTS {index}" in COMMUNICATION_SCHEMA
-
 
 class TestCreateCommunicationTables:
     """Test the create_communication_tables function."""
@@ -416,7 +413,6 @@ class TestCreateCommunicationTables:
         for col_name in expected_columns:
             assert col_name in columns
 
-
 class TestIndexes:
     """Test that indexes are created correctly."""
 
@@ -445,7 +441,6 @@ class TestIndexes:
 
         for index in expected_indexes:
             assert index in indexes
-
 
 class TestDefaultValues:
     """Test that default values are set correctly."""
@@ -538,7 +533,6 @@ class TestDefaultValues:
         assert emergency_only == 0
         assert preferred_method == 'email'
 
-
 class TestIntegration:
     """Integration tests for schema functionality."""
 
@@ -583,21 +577,19 @@ class TestIntegration:
         assert announcement_count == 1
         assert prefs_count == 1
 
-
 class TestMainExecution:
     """Test the __main__ execution block."""
 
     def test_main_execution(self):
         """Test that schema module can be imported without errors."""
         # Simply verify that importing required modules works
-        import sqlite3
+
         from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
         from university_system.modules.shared.services.communication.schema import create_communication_tables
 
         # Verify functions exist
         assert DEFAULT_DB_PATH is not None
         assert callable(create_communication_tables)
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

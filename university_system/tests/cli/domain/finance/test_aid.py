@@ -5,13 +5,12 @@ Tests aid application approval, aid types, loan tracking, and aid effectiveness
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from university_system.modules.domain.finance.core import aid
-
 
 @pytest.fixture
 def temp_db():
@@ -142,7 +141,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 @pytest.fixture
 def sample_data(temp_db):
     """Insert sample data for testing"""
@@ -221,7 +219,6 @@ def sample_data(temp_db):
 
     return temp_db
 
-
 class TestAidApplicationApproval:
     """Test aid application approval functionality"""
 
@@ -286,7 +283,6 @@ class TestAidApplicationApproval:
 
             conn.close()
 
-
 class TestAidTypeManagement:
     """Test aid type management"""
 
@@ -338,7 +334,6 @@ class TestAidTypeManagement:
 
             conn.close()
 
-
 class TestLoanTracking:
     """Test loan repayment tracking"""
 
@@ -386,7 +381,6 @@ class TestLoanTracking:
 
             conn.close()
 
-
 class TestAidReporting:
     """Test aid reporting functionality"""
 
@@ -426,7 +420,6 @@ class TestAidReporting:
             # Should display analysis without errors
             conn.close()
 
-
 class TestAidApplication:
     """Test aid application to fees"""
 
@@ -452,7 +445,6 @@ class TestAidApplication:
             assert status in ['paid', 'partial'], "Fee status should be updated"
 
             conn.close()
-
 
 class TestPaymentArrangement:
     """Test payment arrangement creation"""
@@ -483,7 +475,6 @@ class TestPaymentArrangement:
             assert 'PAYMENT ARRANGEMENT' in notes, "Arrangement should be in notes"
 
             conn.close()
-
 
 class TestEdgeCases:
     """Test edge cases and error handling"""
@@ -524,7 +515,6 @@ class TestEdgeCases:
 
             # Should handle gracefully
             conn.close()
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

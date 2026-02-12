@@ -260,11 +260,11 @@ class RiskAssessmentManager:
             else:
                 condition = "1=1"
 
-            cursor.execute(f'''
+            cursor.execute('''
                 SELECT p.*, s.first_name, s.last_name, s.email_address, s.course
                 FROM early_warning_profiles p
                 JOIN students s ON p.student_id = s.student_id
-                WHERE {condition}
+                WHERE ''' + condition + '''
                 ORDER BY p.overall_risk_score DESC
             ''')
 

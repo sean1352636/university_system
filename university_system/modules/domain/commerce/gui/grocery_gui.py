@@ -6,8 +6,7 @@ Campus convenience store interface
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.infrastructure.auth import UserAuth, get_global_auth
 from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection
@@ -51,7 +50,6 @@ from university_system.modules.shared.utils.finance_integration import (
 
 # For database path
 from university_system.modules.shared.constants import paths
-
 
 class GroceryGUI:
     """Grocery shop GUI"""
@@ -710,7 +708,6 @@ class GroceryGUI:
     def open_management_interface(self):
         """Open the management interface - to be overridden by GroceryManagementGUI"""
         messagebox.showinfo("Management", "Management features are not available in this view.")
-
 
 class GroceryManagementGUI(GroceryGUI):
     """Extended GUI with management features for staff/admin"""

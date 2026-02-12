@@ -87,9 +87,16 @@ from university_system.infrastructure.auth.managers import (
     RoleManager,
     MFAManager,
     AccountSecurityManager,
+    SSOManager,
+    WebAuthnManager,
+    BiometricManager,
+    DelegatedAccessManager,
     password_manager,  # Function-based module
     activity_logger,   # Function-based module
 )
+
+# Account Linking Manager
+from university_system.infrastructure.auth.managers.account_linking_manager import AccountLinkingManager
 
 # Integration modules
 from university_system.infrastructure.auth.integrations import (
@@ -231,6 +238,11 @@ __all__ = [
     'RoleManager',
     'MFAManager',
     'AccountSecurityManager',
+    'AccountLinkingManager',
+    'SSOManager',
+    'WebAuthnManager',
+    'BiometricManager',
+    'DelegatedAccessManager',
 
     # Function-based manager modules
     'password_manager',

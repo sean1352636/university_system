@@ -21,7 +21,9 @@ class CalendarWebAPI:
 
         self.calendar_manager = calendar_manager
         self.app = Flask(__name__)
-        CORS(self.app)
+        import os
+        allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+        CORS(self.app, origins=allowed_origins, supports_credentials=True)
         self.host = host
         self.port = port
         self._setup_routes()

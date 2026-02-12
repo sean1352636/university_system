@@ -1143,10 +1143,10 @@ def view_kb_articles_gui(self):
                 where_clause += " AND category = ?"
                 params.append(category_var.get())
 
-            cursor.execute(f'''
+            cursor.execute('''
                 SELECT article_id, title, category, views, helpful_votes, unhelpful_votes
                 FROM knowledge_base
-                {where_clause}
+                ''' + where_clause + '''
                 ORDER BY helpful_votes DESC, views DESC
             ''', params)
 
@@ -1541,10 +1541,10 @@ def display_kb_suggestions_gui(self, ticket):
         article_ids = ticket['knowledge_base_articles'].split(',')
         placeholders = ','.join(['?' for _ in article_ids])
 
-        cursor.execute(f'''
+        cursor.execute('''
             SELECT article_id, title, category, helpful_votes, unhelpful_votes
             FROM knowledge_base
-            WHERE article_id IN ({placeholders}) AND status = 'published'
+            WHERE article_id IN (''' + placeholders + ''') AND status = 'published'
         ''', article_ids)
 
         articles = cursor.fetchall()

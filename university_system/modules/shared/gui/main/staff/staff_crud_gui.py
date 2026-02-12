@@ -656,7 +656,7 @@ def view_staff(self):
                         from datetime import datetime
                         date_obj = datetime.fromisoformat(created_at.replace(' ', 'T'))
                         formatted_date = date_obj.strftime('%Y-%m-%d %H:%M')
-                    except:
+                    except (ValueError, TypeError):
                         formatted_date = created_at
 
                     staff_tree.insert('', 'end', values=(

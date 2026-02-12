@@ -1,8 +1,7 @@
 """CLI interface and initialization functions for the AI Detector."""
 
 from datetime import datetime
-import sqlite3
-
+from university_system.infrastructure.database.db import sqlite3
 from university_system.utils.ai.ai_detector.core.constants import logger
 from university_system.infrastructure.shared_context import get_auth
 from university_system.infrastructure.database.db import DatabaseManager
@@ -29,7 +28,6 @@ from university_system.utils.ai.ai_detector.cli.analytics import (
     cluster_similar_submissions_cli, generate_department_comparison_cli,
     show_weekly_trends_cli, export_visualization_pack_cli,
 )
-
 
 # Global AI detector instance for CLI functions
 ai_detector = None
@@ -81,7 +79,6 @@ def integrate_ai_detector_with_main():
             logger.error(f"Even fallback AI detector failed: {fallback_error}")
             print(f"\u274c Complete AI detector failure: {fallback_error}")
             return False
-
 
 def create_minimal_ai_detector():
     """Create a minimal AI detector that won't crash"""
@@ -232,7 +229,6 @@ def create_minimal_ai_detector():
 
     return MinimalAIDetector()
 
-
 def display_ai_detector_menu_from_main(auth_obj):
     """Display AI detector menu with comprehensive error handling"""
     global ai_detector
@@ -375,7 +371,6 @@ def display_ai_detector_menu_from_main(auth_obj):
         except Exception as e:
             print(f"\u274c Error: {e}")
             print("Please try again or return to main menu.")
-
 
 def fix_ai_detector_database_schema():
     """Fix AI detector database schema by creating proper tables"""

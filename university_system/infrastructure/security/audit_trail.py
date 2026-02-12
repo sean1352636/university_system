@@ -12,7 +12,7 @@ import hashlib
 import inspect
 import json
 import logging
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import traceback
 from contextlib import contextmanager
@@ -22,9 +22,9 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
 from university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
+from university_system.core.sql_safety import validate_table_name
 
 logger = logging.getLogger(__name__)
-
 
 class AuditAction(Enum):
     """Types of auditable actions."""
@@ -39,7 +39,6 @@ class AuditAction(Enum):
     LOGOUT = 'logout'
     PERMISSION_CHANGE = 'permission_change'
     CONFIG_CHANGE = 'config_change'
-
 
 @dataclass
 class AuditEntry:
@@ -75,7 +74,6 @@ class AuditEntry:
             'data_hash': self.data_hash,
         }
 
-
 class AuditLogger:
     """
     Thread-safe audit logger with database persistence.
@@ -97,6 +95,7 @@ class AuditLogger:
         if hasattr(self, '_initialized') and self._initialized:
             return
 
+        validate_table_name(self.TABLE_NAME)
         self.db_path = db_path or DEFAULT_DB_PATH
         self._user_context = threading.local()
         self._init_db()
@@ -403,10 +402,8 @@ class AuditLogger:
             since = datetime.now() - timedelta(days=7)
         return self.query(success_only=False, since=since, limit=limit)
 
-
 # Global audit logger instance
 _audit_logger: Optional[AuditLogger] = None
-
 
 def get_audit_logger() -> AuditLogger:
     """Get or create the global audit logger."""
@@ -415,10 +412,8 @@ def get_audit_logger() -> AuditLogger:
         _audit_logger = AuditLogger()
     return _audit_logger
 
-
 # Type variable for decorator
 F = TypeVar('F', bound=Callable[..., Any])
-
 
 def audit_data_access(
     resource_type: str,
@@ -514,7 +509,6 @@ def audit_data_access(
         return wrapper  # type: ignore
     return decorator
 
-
 def log_activity(
     action: Union[AuditAction, str],
     resource: str,
@@ -541,7 +535,6 @@ def log_activity(
         details=details,
     )
 
-
 def get_current_user() -> Optional[Dict[str, Any]]:
     """
     Get current user from shared context.
@@ -556,7 +549,6 @@ def get_current_user() -> Optional[Dict[str, Any]]:
     except (ImportError, Exception):
         pass
     return None
-
 
 __all__ = [
     'AuditLogger',

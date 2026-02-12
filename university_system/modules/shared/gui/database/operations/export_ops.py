@@ -29,7 +29,8 @@ def export_to_csv(backup_path, output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
         for table in tables:
-            cursor = conn.execute(f"SELECT * FROM {table}")
+            safe_table = validate_table_name(table, conn=conn)
+            cursor = conn.execute("SELECT * FROM [" + safe_table + "]")
             with open(os.path.join(output_dir, f"{table}.csv"), 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 # Write headers
@@ -52,7 +53,8 @@ def export_to_json(backup_path, output_file):
 
         data = {}
         for table in tables:
-            cursor = conn.execute(f"SELECT * FROM {table}")
+            safe_table = validate_table_name(table, conn=conn)
+            cursor = conn.execute("SELECT * FROM [" + safe_table + "]")
             columns = [description[0] for description in cursor.description]
             rows = cursor.fetchall()
             data[table] = [dict(zip(columns, row)) for row in rows]
@@ -77,7 +79,8 @@ def export_to_xml(backup_path, output_file):
 
         for table in tables:
             table_elem = ET.SubElement(root, "table", name=table)
-            cursor = conn.execute(f"SELECT * FROM {table}")
+            safe_table = validate_table_name(table, conn=conn)
+            cursor = conn.execute("SELECT * FROM [" + safe_table + "]")
             columns = [description[0] for description in cursor.description]
 
             for row in cursor.fetchall():
@@ -133,7 +136,7 @@ def export_to_pdf(backup_path, output_file):
             elements.append(Spacer(1, 0.1*inch))
 
             # Get table data (validated table name with bracket quoting)
-            cursor = conn.execute(f"SELECT * FROM [{validated_table}] LIMIT 100")  # Limit rows for PDF
+            cursor = conn.execute("SELECT * FROM [" + validated_table + "] LIMIT 100")  # Limit rows for PDF
             columns = [description[0] for description in cursor.description]
             rows = cursor.fetchall()
 
@@ -188,7 +191,8 @@ def export_to_txt(backup_path, output_file):
                 f.write(f"\nTABLE: {table}\n")
                 f.write("-" * 80 + "\n")
 
-                cursor = conn.execute(f"SELECT * FROM {table}")
+                safe_table = validate_table_name(table, conn=conn)
+                cursor = conn.execute("SELECT * FROM [" + safe_table + "]")
                 columns = [description[0] for description in cursor.description]
                 rows = cursor.fetchall()
 

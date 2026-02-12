@@ -4,7 +4,7 @@ Academic Progress Dashboard Service
 Provides visual degree tracking, GPA simulation, and early warning systems.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -12,7 +12,6 @@ from decimal import Decimal
 
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
-
 
 class ProgressService:
     """Service for academic progress tracking and forecasting."""
@@ -1044,18 +1043,18 @@ class ProgressService:
                 module_codes = tuple(m['module_code'] for m in student_modules)
                 placeholders = ','.join('?' * len(module_codes))
 
-                assignment_stats = conn.execute(f"""
-                    SELECT
-                        COUNT(DISTINCT a.id) as total_assignments,
-                        COUNT(DISTINCT CASE WHEN asub.status IS NOT NULL THEN a.id END) as submitted,
-                        COUNT(DISTINCT CASE WHEN asub.late_submission = 1 THEN a.id END) as late
-                    FROM assignments a
-                    LEFT JOIN assignment_submissions asub
-                        ON a.id = asub.assignment_id AND asub.student_id = ?
-                    WHERE a.module_code IN ({placeholders})
-                    AND a.due_date >= date('now', '-60 days')
-                    AND a.is_active = 1
-                """, (student_id, *module_codes)).fetchone()
+                assignment_stats = conn.execute(
+                    "SELECT"
+                    "    COUNT(DISTINCT a.id) as total_assignments,"
+                    "    COUNT(DISTINCT CASE WHEN asub.status IS NOT NULL THEN a.id END) as submitted,"
+                    "    COUNT(DISTINCT CASE WHEN asub.late_submission = 1 THEN a.id END) as late"
+                    " FROM assignments a"
+                    " LEFT JOIN assignment_submissions asub"
+                    "    ON a.id = asub.assignment_id AND asub.student_id = ?"
+                    " WHERE a.module_code IN (" + placeholders + ")"
+                    " AND a.due_date >= date('now', '-60 days')"
+                    " AND a.is_active = 1",
+                    (student_id, *module_codes)).fetchone()
 
                 if assignment_stats and assignment_stats['total_assignments'] > 0:
                     completion_rate = assignment_stats['submitted'] / assignment_stats['total_assignments']

@@ -30,7 +30,7 @@ from university_system.infrastructure.database.db import get_connection, transac
 
 # i18n support
 try:
-    from university_system.modules.shared.utils.i18n import get_text as _t
+    from university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, **kwargs):
         return key
@@ -40,7 +40,7 @@ from university_system.infrastructure.email.email_service import (
     send_overdue_notification,
 )
 from university_system.infrastructure.email.email_manager import send_sla_alert
-from university_system.modules.shared.utils.logs import log_event
+from university_system.core.logs import log_event
 
 # Configure logging
 logger = logging.getLogger(__name__)

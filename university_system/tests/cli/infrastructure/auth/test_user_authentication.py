@@ -5,13 +5,12 @@ Tests user creation, login, logout, password reset, and MFA integration
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, PropertyMock
 from university_system.infrastructure.auth import UserAuth
-
 
 @pytest.fixture
 def temp_db():
@@ -93,7 +92,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestUserAuthInitialization:
     """Test UserAuth initialization"""
 
@@ -143,7 +141,6 @@ class TestUserAuthInitialization:
             hash2 = auth._hash_password('password2', salt='salt')
 
             assert hash1 != hash2
-
 
 class TestUserCreation:
     """Test user creation functionality"""
@@ -239,7 +236,6 @@ class TestUserCreation:
 
         assert result['success'] is True
 
-
 class TestUserLogin:
     """Test user login functionality"""
 
@@ -318,7 +314,6 @@ class TestUserLogin:
         # This test documents the actual behavior
         assert 'success' in result
 
-
 class TestUserLogout:
     """Test user logout functionality"""
 
@@ -353,7 +348,6 @@ class TestUserLogout:
 
         # Should handle gracefully
         assert 'success' in result
-
 
 class TestUserUpdate:
     """Test user update functionality"""
@@ -418,7 +412,6 @@ class TestUserUpdate:
 
         assert result['success'] is True
 
-
 class TestUserDeletion:
     """Test user deletion functionality"""
 
@@ -465,7 +458,6 @@ class TestUserDeletion:
         # Should handle gracefully
         assert 'success' in result
 
-
 class TestPasswordReset:
     """Test password reset functionality"""
 
@@ -499,7 +491,6 @@ class TestPasswordReset:
         result = auth.reset_password('nonexistent')
 
         assert result['success'] is False or 'error' in result
-
 
 class TestTwoFactorAuthentication:
     """Test two-factor authentication functionality"""
@@ -556,7 +547,6 @@ class TestTwoFactorAuthentication:
 
         assert 'success' in result or 'valid' in result
 
-
 class TestCurrentUser:
     """Test current user functionality"""
 
@@ -593,7 +583,6 @@ class TestCurrentUser:
         # Should return None when not logged in
         assert current_user is None or isinstance(current_user, dict)
 
-
 class TestActivityLogging:
     """Test activity logging"""
 
@@ -617,7 +606,6 @@ class TestActivityLogging:
             pass
 
         conn.close()
-
 
 class TestEdgeCases:
     """Test edge cases and error handling"""
@@ -676,7 +664,6 @@ class TestEdgeCases:
         except (TypeError, AttributeError):
             # Some implementations may not handle None
             pass
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

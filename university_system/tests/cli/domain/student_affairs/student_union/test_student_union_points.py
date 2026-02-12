@@ -4,14 +4,13 @@ Tests points tracking, leaderboards, and automatic point awarding.
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
 
 from university_system.modules.domain.student_affairs.student_union.services import points
 from university_system.infrastructure.database.db import get_connection
-
 
 @pytest.fixture
 def mock_cursor():
@@ -24,7 +23,6 @@ def mock_cursor():
     cursor.rowcount = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -34,7 +32,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def sample_checkouts():
     """Sample equipment checkout data."""
@@ -42,7 +39,6 @@ def sample_checkouts():
         (1, 'Projector', 'John', 'Doe', '2024-01-01', '2024-01-07', None, 'checked_out', 'Drama Club'),
         (2, 'Camera', 'Jane', 'Smith', '2024-01-02', '2024-01-09', '2024-01-08', 'returned', 'Photo Society'),
     ]
-
 
 @pytest.fixture
 def sample_leaderboard():
@@ -52,7 +48,6 @@ def sample_leaderboard():
         ('Jane', 'Smith', 180, 2),
         ('Bob', 'Johnson', 150, 1),
     ]
-
 
 class TestViewAllCheckouts:
     """Tests for view_all_checkouts function."""
@@ -106,7 +101,6 @@ class TestViewAllCheckouts:
         # Should print error message
         assert any('Database error' in str(call) for call in mock_print.call_args_list)
 
-
 class TestViewLeaderboard:
     """Tests for view_leaderboard function."""
 
@@ -148,7 +142,6 @@ class TestViewLeaderboard:
         # Should show monthly section
         assert any('Month' in str(call) for call in mock_print.call_args_list)
 
-
 class TestViewPointOpportunities:
     """Tests for view_point_opportunities function."""
 
@@ -179,7 +172,6 @@ class TestViewPointOpportunities:
 
         # Should show upcoming events
         assert any('Upcoming' in str(call) for call in mock_print.call_args_list)
-
 
 class TestAwardPointsToStudent:
     """Tests for award_points_to_student function."""
@@ -247,7 +239,6 @@ class TestAwardPointsToStudent:
         # Should indicate ID cannot be empty
         assert any('cannot be empty' in str(call).lower() for call in mock_print.call_args_list)
 
-
 class TestAutoAwardPoints:
     """Tests for auto_award_points function."""
 
@@ -303,7 +294,6 @@ class TestAutoAwardPoints:
                       if 'INSERT' in str(call)][0]
         args = insert_call[0][1]
         assert args[2] == 225  # new_balance parameter
-
 
 class TestIntegrationPoints:
     """Integration tests using real database."""
@@ -400,7 +390,6 @@ class TestIntegrationPoints:
             ('S12345',)
         )
         assert cursor.fetchone()[0] == 100
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

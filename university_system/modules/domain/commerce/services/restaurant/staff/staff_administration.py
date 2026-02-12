@@ -3,6 +3,7 @@ from university_system.infrastructure.database.data_backup import display_backup
 from university_system.infrastructure.email import send_confirmation_email
 from university_system.modules.domain.commerce.services.restaurant.operations.connection import get_db_connection
 from university_system.infrastructure.database.db import sqlite3, DatabaseManager
+from university_system.core.sql_safety import validate_identifier
 import random
 import re
 import os
@@ -1320,7 +1321,8 @@ def analyze_query_performance():
 
         for table in tables:
             try:
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                safe_table = validate_identifier(table, "table")
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 print(f"{table:<25} {count:<12,}")
             except Exception:

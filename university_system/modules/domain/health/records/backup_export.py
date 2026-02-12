@@ -264,7 +264,9 @@ def export_custom_dataset(auth):
     print(f"\nExporting from table: {selected_table}")
     
     # Get table structure
-    cursor.execute(f"PRAGMA table_info({selected_table})")
+    from university_system.core.sql_safety import validate_table_name
+    validated_selected_table = validate_table_name(selected_table, conn=conn)
+    cursor.execute("PRAGMA table_info([" + validated_selected_table + "])")
     columns = cursor.fetchall()
     
     print(f"Available columns:")
@@ -284,21 +286,22 @@ def export_custom_dataset(auth):
             print("Invalid limit value. Exporting all records.")
             limit_num = None
 
-    # Construct query
+    # Construct query (selected_table already validated above)
+    safe_table = "[" + validated_selected_table + "]"
     if selected_table in ['health_records', 'vaccination_records', 'health_appointments',
                          'medical_conditions', 'allergies', 'prescriptions', 'vital_signs',
                          'lab_results', 'emergency_contacts']:
         # Join with students table for name information
-        query = f'''
-        SELECT {selected_table}.*, s.first_name, s.last_name
-        FROM {selected_table}
-        JOIN students s ON {selected_table}.student_id = s.student_id
-        '''
+        query = (
+            "SELECT " + safe_table + ".*, s.first_name, s.last_name"
+            " FROM " + safe_table +
+            " JOIN students s ON " + safe_table + ".student_id = s.student_id"
+        )
     else:
-        query = f"SELECT * FROM {selected_table}"
+        query = "SELECT * FROM " + safe_table
 
     if limit_num:
-        query += f" LIMIT {limit_num}"
+        query += " LIMIT " + str(int(limit_num))
     
     print(f"\nExecuting query: {query}")
     

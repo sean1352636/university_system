@@ -4,7 +4,7 @@ Cinema Booking System - Equipment Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
 try:
@@ -14,7 +14,6 @@ except ImportError:
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
 from ..database import DB_FILE
-
 
 def show_equipment_page(self):
     """Display equipment management page."""
@@ -93,7 +92,6 @@ def show_equipment_page(self):
     ttk.Button(action_frame, text=_t("cinema.btn.edit_equipment"), style="Secondary.TButton", command=self.edit_equipment).pack(side="left", padx=5)
     ttk.Button(action_frame, text=_t("cinema.btn.mark_out_of_service"), style="Danger.TButton", command=self.mark_equipment_out_of_service).pack(side="left", padx=5)
 
-
 def add_equipment(self):
     """Add new equipment to the system."""
     form = tk.Toplevel(self.root)
@@ -140,13 +138,13 @@ def add_equipment(self):
         if fields['screen'].get().strip():
             try:
                 screen = int(fields['screen'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         max_hours = 2000
         try:
             max_hours = int(fields['max_hours'].get())
-        except:
+        except (ValueError, TypeError):
             pass
 
         conn = sqlite3.connect(DB_FILE)
@@ -166,7 +164,6 @@ def add_equipment(self):
         self.show_equipment_page()
 
     ttk.Button(frame, text="Add Equipment", style="Success.TButton", command=save).grid(row=len(labels)+1, column=0, columnspan=2, pady=20)
-
 
 def log_equipment_maintenance(self):
     """Log maintenance performed on equipment."""
@@ -255,21 +252,21 @@ def log_equipment_maintenance(self):
         cost = 0
         try:
             cost = float(fields['cost'].get())
-        except:
+        except (ValueError, TypeError):
             pass
 
         hours_at = None
         if fields['hours'].get().strip():
             try:
                 hours_at = int(fields['hours'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         next_hours = None
         if fields['next_hours'].get().strip():
             try:
                 next_hours = int(fields['next_hours'].get())
-            except:
+            except (ValueError, TypeError):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
@@ -304,7 +301,6 @@ def log_equipment_maintenance(self):
 
     ttk.Button(frame, text=_t("cinema.btn.log_maintenance"), style="Success.TButton", command=save).grid(row=9, column=0, columnspan=2, pady=20)
 
-
 def update_equipment_hours(self):
     """Update usage hours for equipment."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
@@ -337,7 +333,7 @@ def update_equipment_hours(self):
     def update():
         try:
             new_hours = int(hours_e.get())
-        except:
+        except (ValueError, TypeError):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid hours value")
             return
 
@@ -352,7 +348,6 @@ def update_equipment_hours(self):
         self.show_equipment_page()
 
     ttk.Button(frame, text=_t("cinema.btn.update"), style="Success.TButton", command=update).pack(pady=15)
-
 
 def view_equipment_history(self):
     """View maintenance history for selected equipment."""
@@ -401,7 +396,6 @@ def view_equipment_history(self):
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
-
 
 def edit_equipment(self):
     """Edit selected equipment details."""
@@ -469,7 +463,6 @@ def edit_equipment(self):
 
     ttk.Button(frame, text=_t("cinema.buttons.save_changes"), style="Success.TButton", command=save).pack(pady=20)
 
-
 def mark_equipment_out_of_service(self):
     """Mark selected equipment as out of service."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
@@ -491,7 +484,6 @@ def mark_equipment_out_of_service(self):
 
     messagebox.showinfo(_t("cinema.common.success"), "Equipment marked as out of service")
     self.show_equipment_page()
-
 
 def show_maintenance_schedule(self):
     """Show preventive maintenance schedule."""

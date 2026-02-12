@@ -7,7 +7,7 @@ This migration fixes the following issues:
 3. maintenance_requests foreign key referencing non-existent rooms.room_id
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import sys
 from pathlib import Path
 
@@ -15,8 +15,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(project_root))
 
-from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-
+from university_system.core.paths import DEFAULT_DB_PATH
 
 def migrate():
     """Run the migration"""
@@ -144,7 +143,6 @@ def migrate():
     finally:
         cursor.execute("PRAGMA foreign_keys = ON")
         conn.close()
-
 
 if __name__ == "__main__":
     migrate()

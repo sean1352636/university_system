@@ -9,14 +9,13 @@ This module tests revenue reporting functions by transaction source:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 import csv
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from university_system.modules.domain.finance.reporting import revenue_by_source_report
-
 
 @pytest.fixture
 def temp_db():
@@ -108,7 +107,6 @@ def temp_db():
     except (OSError, IOError):
         pass
 
-
 class TestRevenueBySource:
     """Test suite for revenue by source functions"""
 
@@ -175,7 +173,6 @@ class TestRevenueBySource:
             # Should return empty dict on error
             assert result == {}
 
-
 class TestRevenueBySourceReport:
     """Test suite for formatted report output"""
 
@@ -220,7 +217,6 @@ class TestRevenueBySourceReport:
             captured = capsys.readouterr()
             assert "No revenue data found" in captured.out
 
-
 class TestSourceRevenueTrend:
     """Test suite for revenue trend analysis"""
 
@@ -259,7 +255,6 @@ class TestSourceRevenueTrend:
 
             # Should return empty list for non-existent source
             assert result == []
-
 
 class TestPeriodComparison:
     """Test suite for period comparison"""
@@ -304,7 +299,6 @@ class TestPeriodComparison:
             assert 'transaction_pct' in result['changes']
             assert 'revenue_amount' in result['changes']
             assert 'revenue_pct' in result['changes']
-
 
 class TestCSVExport:
     """Test suite for CSV export functionality"""
@@ -358,7 +352,6 @@ class TestCSVExport:
 
             assert result is False
 
-
 class TestCLIMenu:
     """Test suite for CLI menu interface"""
 
@@ -380,7 +373,6 @@ class TestCLIMenu:
 
         captured = capsys.readouterr()
         assert "Invalid option" in captured.out
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

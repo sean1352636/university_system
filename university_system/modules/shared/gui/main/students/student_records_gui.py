@@ -14,6 +14,7 @@ from university_system.modules.shared.utils.i18n import get_text as _t
 
 # Import database connection
 from university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
+from university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -125,8 +126,10 @@ def create_student_treeview(self, parent):
 def view_students(self):
     """Load and display student data in treeview"""
     try:
-        # Check if student_tree exists
+        # Check if student_tree exists and is still valid
         if not hasattr(self, 'student_tree') or not self.student_tree:
+            return
+        if not self.student_tree.winfo_exists():
             return
 
         # Clear existing data
@@ -156,11 +159,17 @@ def view_students(self):
 
             conn.close()
 
+    except tk.TclError:
+        pass  # Widget was destroyed, ignore
     except Exception as e:
         messagebox.showerror(_t("common.error"), _t("student.failed_load_student_data", error=str(e)))
 def view_students_in_window(self, tree):
     """Load and display student data in a specific treeview widget"""
     try:
+        # Check if tree widget is still valid
+        if not tree.winfo_exists():
+            return
+
         # Clear existing data
         for item in tree.get_children():
             tree.delete(item)
@@ -188,6 +197,8 @@ def view_students_in_window(self, tree):
 
             conn.close()
 
+    except tk.TclError:
+        pass  # Widget was destroyed, ignore
     except Exception as e:
         messagebox.showerror(_t("common.error"), _t("student.failed_load_student_data", error=str(e)))
 def on_student_double_click(self, event):
@@ -313,14 +324,77 @@ def show_student_details(self, student_id):
         academic_tab = ttk.Frame(notebook)
         notebook.add(academic_tab, text=_t("student_details.tab_academic_records"))
 
-        academic_frame = ttk.LabelFrame(academic_tab, text=_t("student_details.modules_academic_data"), padding=20)
-        academic_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Refresh button at the top
+        btn_frame = ttk.Frame(academic_tab)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
+        ttk.Button(btn_frame, text=_t("common.refresh", default="Refresh"),
+                   command=lambda: self._load_academic_data(student_id, academic_text, na)).pack(side=tk.RIGHT)
 
-        academic_text = scrolledtext.ScrolledText(academic_frame, wrap=tk.WORD, height=25, 
+        academic_frame = ttk.LabelFrame(academic_tab, text=_t("student_details.modules_academic_data"), padding=20)
+        academic_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
+
+        academic_text = scrolledtext.ScrolledText(academic_frame, wrap=tk.WORD, height=25,
                                                  font=('Courier', 11))
         academic_text.pack(fill=tk.BOTH, expand=True)
 
-        # Get modules
+        self._load_academic_data(student_id, academic_text, na)
+
+        # Actions Tab
+        actions_tab = ttk.Frame(notebook)
+        notebook.add(actions_tab, text=_t("student_details.tab_actions"))
+
+        actions_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.available_actions"), padding=20)
+        actions_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Action buttons
+        if self.auth.check_permission('update_any_student'):
+            ttk.Button(actions_frame, text=_t("student_details.btn_edit_student"),
+                      command=lambda: self.update_student_dialog(student_id),
+                      width=30).pack(pady=10)
+
+        if self.auth.check_permission('manage_grades'):
+            ttk.Button(actions_frame, text=_t("student_details.btn_manage_grades"),
+                      command=lambda: self.manage_student_grades(student_id, student[3], student[5]),
+                      width=30).pack(pady=5)
+
+        # Show attendance button for staff with manage_attendance, or students viewing their own record
+        own_record = self.auth.current_user and self.auth.current_user.get('student_id') == student_id
+        if self.auth.check_permission('manage_attendance') or own_record:
+            ttk.Button(actions_frame, text=_t("student_details.btn_view_attendance"),
+                      command=lambda: self.view_student_attendance(student_id, student[1], student[3], student[5]),
+                      width=30).pack(pady=5)
+
+        # View Timetable button (available to all users)
+        ttk.Button(actions_frame, text=_t("student_details.btn_view_timetable"),
+                  command=lambda: self.view_student_timetable(student_id, student[3], student[5]),
+                  width=30).pack(pady=5)
+
+        if self.auth.check_permission('export_data'):
+            ttk.Button(actions_frame, text=_t("student_details.btn_export_data"),
+                      command=lambda: self.export_individual_student_data(student_id, student[3], student[5]),
+                      width=30).pack(pady=5)
+
+        # Contact information if available
+        contact_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.contact_information"), padding=20)
+        contact_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
+
+        ttk.Label(contact_frame, text=f"{_t('student_details.label_email')} {student[1]}").pack(anchor=tk.W)
+        ttk.Button(contact_frame, text=_t("student_details.btn_send_email"),
+                  command=lambda: self.send_email_to_student(student[1], student[3], student[5]),
+                  width=20).pack(pady=5)
+
+        conn.close()
+
+    except Exception as e:
+        messagebox.showerror(_t("common.error"), _t("student_details.error_load_details", error=str(e)))
+        detail_window.destroy()
+
+def _load_academic_data(self, student_id, academic_text, na):
+    """Load (or refresh) academic data into the text widget."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
         cursor.execute('''
             SELECT m.module_type, sm.module_code, m.module_name
             FROM student_modules sm
@@ -330,7 +404,6 @@ def show_student_details(self, student_id):
         ''', (student_id,))
         modules = cursor.fetchall()
 
-        # Get grades if available (from assignments and assessments)
         cursor.execute('''
             SELECT a.module_code, a.title as assessment_name,
                    s.grade, s.submission_date as grade_date
@@ -348,7 +421,6 @@ def show_student_details(self, student_id):
         ''', (student_id, student_id))
         grades = cursor.fetchall()
 
-        # Get attendance if available
         cursor.execute('''
             SELECT module_code, date, status, notes
             FROM attendance_records
@@ -357,6 +429,8 @@ def show_student_details(self, student_id):
             LIMIT 10
         ''', (student_id,))
         attendance = cursor.fetchall()
+
+        conn.close()
 
         academic_info = f"""{_t("student_details.header_academic_records")}
 {'='*80}
@@ -403,56 +477,17 @@ def show_student_details(self, student_id):
 
         academic_info += f"\n{'='*80}"
 
+        academic_text.config(state=tk.NORMAL)
+        academic_text.delete('1.0', tk.END)
         academic_text.insert(tk.END, academic_info)
         academic_text.config(state=tk.DISABLED)
 
-        # Actions Tab
-        actions_tab = ttk.Frame(notebook)
-        notebook.add(actions_tab, text=_t("student_details.tab_actions"))
-
-        actions_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.available_actions"), padding=20)
-        actions_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Action buttons
-        if self.auth.check_permission('update_any_student'):
-            ttk.Button(actions_frame, text=_t("student_details.btn_edit_student"),
-                      command=lambda: self.update_student_dialog(student_id),
-                      width=30).pack(pady=10)
-
-        if self.auth.check_permission('manage_grades'):
-            ttk.Button(actions_frame, text=_t("student_details.btn_manage_grades"),
-                      command=lambda: self.manage_student_grades(student_id, student[3], student[5]),
-                      width=30).pack(pady=5)
-
-        if self.auth.check_permission('manage_attendance'):
-            ttk.Button(actions_frame, text=_t("student_details.btn_view_attendance"),
-                      command=lambda: self.view_student_attendance(student_id, student[1], student[3], student[5]),
-                      width=30).pack(pady=5)
-
-        # View Timetable button (available to all users)
-        ttk.Button(actions_frame, text=_t("student_details.btn_view_timetable"),
-                  command=lambda: self.view_student_timetable(student_id, student[3], student[5]),
-                  width=30).pack(pady=5)
-
-        if self.auth.check_permission('export_data'):
-            ttk.Button(actions_frame, text=_t("student_details.btn_export_data"),
-                      command=lambda: self.export_individual_student_data(student_id, student[3], student[5]),
-                      width=30).pack(pady=5)
-
-        # Contact information if available
-        contact_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.contact_information"), padding=20)
-        contact_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
-
-        ttk.Label(contact_frame, text=f"{_t('student_details.label_email')} {student[1]}").pack(anchor=tk.W)
-        ttk.Button(contact_frame, text=_t("student_details.btn_send_email"),
-                  command=lambda: self.send_email_to_student(student[1], student[3], student[5]),
-                  width=20).pack(pady=5)
-
-        conn.close()
-
     except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("student_details.error_load_details", error=str(e)))
-        detail_window.destroy()
+        academic_text.config(state=tk.NORMAL)
+        academic_text.delete('1.0', tk.END)
+        academic_text.insert(tk.END, f"Error loading academic data: {e}")
+        academic_text.config(state=tk.DISABLED)
+
 def search_students_dialog(self):
     """Create search dialog"""
     dialog = self.create_themed_toplevel(_t("student.search_students"), "400x300")
@@ -509,11 +544,12 @@ def search_students_dialog(self):
 
                 field = search_field_map.get(search_type.get(), 'first_name')
 
+                safe_field = validate_identifier(field, "column")
                 if field == 'student_id':
-                    query = f'SELECT * FROM students WHERE {field} = ?'
+                    query = 'SELECT * FROM students WHERE [' + safe_field + '] = ?'
                     cursor.execute(query, (term,))
                 else:
-                    query = f'SELECT * FROM students WHERE LOWER({field}) LIKE LOWER(?)'
+                    query = 'SELECT * FROM students WHERE LOWER([' + safe_field + ']) LIKE LOWER(?)'
                     cursor.execute(query, (f'%{term}%',))
 
                 results = cursor.fetchall()

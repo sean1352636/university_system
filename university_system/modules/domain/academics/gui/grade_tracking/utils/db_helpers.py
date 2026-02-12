@@ -4,7 +4,7 @@ Database helper utilities for grade tracking GUI.
 Provides secure SQL operations with SQL injection prevention.
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from university_system.modules.shared.utils.sql_safety import (
     validate_table_name,
@@ -13,7 +13,6 @@ from university_system.modules.shared.utils.sql_safety import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 def ensure_column_exists_safe(cursor, table_name, column_name, column_def):
     """
@@ -73,7 +72,6 @@ def ensure_column_exists_safe(cursor, table_name, column_name, column_def):
         logger.error(f"Unexpected error in ensure_column_exists: {exc}")
         print(f"Warning: could not ensure column {column_name} on {table_name}: {exc}")
         return False
-
 
 # Alias for backward compatibility - allows drop-in replacement
 ensure_column_exists = ensure_column_exists_safe

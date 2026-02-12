@@ -14,13 +14,12 @@ import pytest
 import os
 import json
 import tempfile
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 from university_system.modules.domain.academics.services.virtual_classroom.classroom_manager import (
     VirtualClassroomManager
 )
-
 
 @pytest.fixture
 def temp_db():
@@ -97,12 +96,10 @@ def temp_db():
     # Cleanup
     os.unlink(db_path)
 
-
 @pytest.fixture
 def manager(temp_db):
     """Create a VirtualClassroomManager instance with temp database."""
     return VirtualClassroomManager(db_path=temp_db)
-
 
 class TestVirtualClassroomManagerInit:
     """Test VirtualClassroomManager initialization."""
@@ -116,7 +113,6 @@ class TestVirtualClassroomManagerInit:
         """Test initialization with custom database path."""
         manager = VirtualClassroomManager(db_path=temp_db)
         assert manager.db_path == temp_db
-
 
 class TestCreateClassroom:
     """Test virtual classroom creation."""
@@ -230,7 +226,6 @@ class TestCreateClassroom:
         classroom = manager.get_classroom(classroom_id)
         assert classroom['platform'] == "zoom"  # Should be lowercased
 
-
 class TestGetClassroom:
     """Test retrieving classroom details."""
 
@@ -254,7 +249,6 @@ class TestGetClassroom:
         """Test getting a non-existent classroom."""
         classroom = manager.get_classroom(99999)
         assert classroom is None
-
 
 class TestGetClassroomsByInstructor:
     """Test retrieving classrooms by instructor."""
@@ -299,7 +293,6 @@ class TestGetClassroomsByInstructor:
         classrooms = manager.get_classrooms_by_instructor(999)
         assert classrooms == []
 
-
 class TestGetClassroomsByCourse:
     """Test retrieving classrooms by course."""
 
@@ -328,7 +321,6 @@ class TestGetClassroomsByCourse:
         """Test getting classrooms for course with no classrooms."""
         classrooms = manager.get_classrooms_by_course(999)
         assert classrooms == []
-
 
 class TestUpdateClassroom:
     """Test updating classroom details."""
@@ -426,7 +418,6 @@ class TestUpdateClassroom:
         result = manager.update_classroom(99999, session_name="Test")
         assert result is False
 
-
 class TestDeactivateClassroom:
     """Test deactivating classrooms."""
 
@@ -444,7 +435,6 @@ class TestDeactivateClassroom:
         """Test deactivating a non-existent classroom."""
         result = manager.deactivate_classroom(99999)
         assert result is False
-
 
 class TestDeleteClassroom:
     """Test deleting classrooms."""
@@ -490,7 +480,6 @@ class TestDeleteClassroom:
 
         assert count == 0
 
-
 class TestListClassrooms:
     """Test listing all classrooms."""
 
@@ -526,7 +515,6 @@ class TestListClassrooms:
         """Test listing when no classrooms exist."""
         classrooms = manager.list_classrooms()
         assert classrooms == []
-
 
 class TestGetClassroomStats:
     """Test retrieving classroom statistics."""
@@ -609,7 +597,6 @@ class TestGetClassroomStats:
         assert stats is not None
         assert stats['total_sessions'] == 0
 
-
 class TestRowToDict:
     """Test row to dictionary conversion."""
 
@@ -638,7 +625,6 @@ class TestRowToDict:
         # Should default to empty dict on JSON parse error
         assert classroom['features'] == {}
 
-
 class TestDatabaseConnection:
     """Test database connection handling."""
 
@@ -654,7 +640,6 @@ class TestDatabaseConnection:
         assert result[0] == 1
 
         conn.close()
-
 
 class TestErrorHandling:
     """Test error handling in various scenarios."""
@@ -674,7 +659,6 @@ class TestErrorHandling:
 
         stats = manager.get_classroom_stats(1)
         assert stats is None
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

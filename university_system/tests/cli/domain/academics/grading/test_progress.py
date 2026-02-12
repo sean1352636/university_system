@@ -7,7 +7,7 @@ This module tests progress tracking and success probability functions.
 from __future__ import annotations
 
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from unittest import mock
 
@@ -26,7 +26,6 @@ from university_system.modules.domain.academics.grading.progress import (
     student_progress_tracking,
     success_probability_calculator,
 )
-
 
 @pytest.fixture
 def setup_intervention_tables():
@@ -79,7 +78,6 @@ def setup_intervention_tables():
         cursor = conn.cursor()
         cursor.execute("DELETE FROM recommended_interventions")
         cursor.execute("DELETE FROM student_risk_assessment WHERE student_id LIKE 'PROG%'")
-
 
 @pytest.fixture
 def setup_progress_data(setup_intervention_tables):
@@ -153,7 +151,6 @@ def setup_progress_data(setup_intervention_tables):
         cursor.execute("DELETE FROM modules WHERE module_code = 'PROG101'")
         cursor.execute("DELETE FROM students WHERE student_id LIKE 'PROG%'")
 
-
 class TestStudentProgressTracking:
     """Test student progress tracking functions"""
 
@@ -209,7 +206,6 @@ class TestStudentProgressTracking:
 
             captured = capsys.readouterr()
             assert "Database error" in captured.out
-
 
 class TestAnalyzeStudentProgress:
     """Test progress analysis functions"""
@@ -270,7 +266,6 @@ class TestAnalyzeStudentProgress:
         captured = capsys.readouterr()
         assert "Progress Analysis" in captured.out
 
-
 class TestSuccessProbabilityCalculator:
     """Test success probability calculation"""
 
@@ -299,7 +294,6 @@ class TestSuccessProbabilityCalculator:
 
             captured = capsys.readouterr()
             assert "Database error" in captured.out
-
 
 class TestCalculateIndividualSuccessProbability:
     """Test individual success probability calculation"""
@@ -336,7 +330,6 @@ class TestCalculateIndividualSuccessProbability:
         captured = capsys.readouterr()
         assert "Student not found" in captured.out
 
-
 class TestCalculateAllStudentsSuccessProbability:
     """Test calculating success probability for all students"""
 
@@ -365,7 +358,6 @@ class TestCalculateAllStudentsSuccessProbability:
         finally:
             conn.rollback()
 
-
 class TestCalculateStudentSuccessProbability:
     """Test student success probability calculation helper"""
 
@@ -387,7 +379,6 @@ class TestCalculateStudentSuccessProbability:
             probability = calculate_student_success_probability(cursor, 'NONEXISTENT')
 
             assert probability is None
-
 
 class TestCollectDashboardData:
     """Test dashboard data collection"""
@@ -439,7 +430,6 @@ class TestCollectDashboardData:
             with transaction() as conn:
                 conn.rollback()
 
-
 class TestCreateProgressVisualization:
     """Test progress visualization creation"""
 
@@ -471,7 +461,6 @@ class TestCreateProgressVisualization:
         viz_dir = tmp_path / "student_progress"
         assert viz_dir.exists()
         assert len(list(viz_dir.glob("*.png"))) > 0
-
 
 class TestSaveInterventionRecommendations:
     """Test saving intervention recommendations"""
@@ -525,7 +514,6 @@ class TestSaveInterventionRecommendations:
             finally:
                 conn.rollback()
 
-
 class TestEdgeCases:
     """Test edge cases and boundary conditions"""
 
@@ -572,7 +560,6 @@ class TestEdgeCases:
                 probability = calculate_student_success_probability(cursor, student_id)
                 if probability is not None:
                     assert 0 <= probability <= 1.0
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -2,7 +2,6 @@
 Template management for tickets and responses.
 """
 
-import sqlite3
 import datetime
 import json
 import logging
@@ -30,10 +29,7 @@ from .. import auth as _auth_mod
 from ..auth import get_current_user_safe, require_auth, has_staff_permissions
 from ..utils.audit import audit_action
 
-
-
 logger = logging.getLogger(__name__)
-
 
 def get_ticket_templates():
     """Get all active ticket templates from database and JSON files"""
@@ -84,7 +80,6 @@ def get_ticket_templates():
 
     return templates
 
-
 def get_response_templates(category=None):
     """Get response templates, optionally filtered by category"""
     try:
@@ -105,8 +100,6 @@ def get_response_templates(category=None):
     except Exception as e:
         logger.error(f"Error getting response templates: {e}")
         return []
-
-
 
 def create_ticket_template(name, title_template, description_template, category, priority):
     """Create a new ticket template"""
@@ -210,7 +203,6 @@ def _create_auto_response(ticket_id, template_name, cursor):
     except Exception as e:
         logger.error(f"Error creating auto response: {e}")
 
-
 def manage_templates_menu(support):
     """Manage ticket and response templates (staff only)"""
     try:
@@ -246,7 +238,6 @@ def manage_templates_menu(support):
     
     input("\nPress Enter to continue...")
 
-
 def view_ticket_templates(support):
     """View all ticket templates"""
     try:
@@ -268,7 +259,6 @@ def view_ticket_templates(support):
             print()
     except Exception as e:
         print(f"❌ Error viewing templates: {e}")
-
 
 def create_ticket_template_interactive(support):
     """Interactive ticket template creation"""
@@ -330,7 +320,6 @@ def create_ticket_template_interactive(support):
     except Exception as e:
         print(f"❌ Error creating template: {e}")
 
-
 def view_response_templates(support):
     """View all response templates"""
     try:
@@ -355,7 +344,6 @@ def view_response_templates(support):
             print()
     except Exception as e:
         print(f"❌ Error viewing templates: {e}")
-
 
 def create_response_template_interactive(support):
     """Interactive response template creation"""
@@ -394,7 +382,6 @@ def create_response_template_interactive(support):
     
     except Exception as e:
         print(f"❌ Error creating template: {e}")
-
 
 def show_template_statistics(support):
     """Show template usage statistics"""

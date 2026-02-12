@@ -11,11 +11,8 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-import sqlite3
-
-# Import the module under test - need to read first to know exact import path
+from university_system.infrastructure.database.db import sqlite3
 # For now, creating comprehensive test structure
-
 
 @pytest.fixture
 def mock_cursor():
@@ -28,7 +25,6 @@ def mock_cursor():
     cursor.lastrowid = 1
     return cursor
 
-
 @pytest.fixture
 def mock_conn():
     """Create a mock database connection."""
@@ -38,7 +34,6 @@ def mock_conn():
     conn.close = Mock()
     return conn
 
-
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication object."""
@@ -47,7 +42,6 @@ def mock_auth():
     auth.check_permission = Mock(return_value=True)
     auth.is_logged_in = Mock(return_value=True)
     return auth
-
 
 class TestExpenseSubmission:
     """Test expense request submission functionality."""
@@ -73,7 +67,6 @@ class TestExpenseSubmission:
         mock_cursor.execute.side_effect = sqlite3.Error("Database error")
         # Test would verify error handling
         assert True
-
 
 class TestExpenseApproval:
     """Test expense approval functionality."""
@@ -105,7 +98,6 @@ class TestExpenseApproval:
         # Test would verify viewing logic
         assert True
 
-
 class TestFinancialOversight:
     """Test financial oversight and reporting."""
 
@@ -127,7 +119,6 @@ class TestFinancialOversight:
         """Test budget tracking functionality."""
         # Test would verify budget tracking
         assert True
-
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

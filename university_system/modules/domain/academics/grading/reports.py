@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 import matplotlib.pyplot as plt

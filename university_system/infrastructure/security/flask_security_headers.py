@@ -38,8 +38,8 @@ def get_default_csp() -> str:
     """
     return (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; "
+        "style-src 'self'; "
         "img-src 'self' data: https:; "
         "font-src 'self' data:; "
         "connect-src 'self'; "
@@ -143,6 +143,14 @@ def add_security_headers(
     return response
 
 
+def init_cookie_security(app):
+    """Configure secure cookie settings for a Flask application."""
+    app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
+    app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
+    if os.getenv('APP_ENV', 'production').lower() not in ('development', 'dev', 'local', 'test'):
+        app.config.setdefault('SESSION_COOKIE_SECURE', True)
+
+
 def init_security_headers(
     app,
     enable_hsts: bool = None,
@@ -186,6 +194,9 @@ def init_security_headers(
             referrer_policy=referrer_policy,
             is_authenticated=is_authenticated,
         )
+
+    # Also configure secure cookie settings
+    init_cookie_security(app)
 
     app_env = os.getenv("APP_ENV", "production").lower()
     is_dev = app_env in ("development", "dev", "local", "test")

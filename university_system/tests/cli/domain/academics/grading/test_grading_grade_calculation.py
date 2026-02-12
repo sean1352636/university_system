@@ -1,5 +1,5 @@
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
@@ -17,7 +17,6 @@ from university_system.modules.domain.academics.grading.grade_calculation import
     export_batch_predictions,
     extract_student_features
 )
-
 
 class TestGradeConstants:
     """Test the GRADE_SYSTEMS constant"""
@@ -48,7 +47,6 @@ class TestGradeConstants:
 
         # F should be lowest
         assert GRADE_SYSTEMS['letter']['F'] == 0.0
-
 
 class TestPercentageToLetter:
     """Test the percentage_to_letter function"""
@@ -91,7 +89,6 @@ class TestPercentageToLetter:
         assert percentage_to_letter(96.9) == 'A'
         assert percentage_to_letter(97.0) == 'A+'
 
-
 class TestLetterToPercentage:
     """Test the letter_to_percentage function"""
 
@@ -112,7 +109,6 @@ class TestLetterToPercentage:
         """Test with invalid letter grade"""
         result = letter_to_percentage('Z')
         assert result == 0
-
 
 class TestInitEnhancedGradesDb:
     """Test the init_enhanced_grades_db function"""
@@ -156,7 +152,6 @@ class TestInitEnhancedGradesDb:
         assert result is False
         mock_print.assert_called()
 
-
 class TestDisplayEnhancedGradeMenu:
     """Test the display_enhanced_grade_menu function"""
 
@@ -192,7 +187,6 @@ class TestDisplayEnhancedGradeMenu:
             display_enhanced_grade_menu()
 
         assert any('Failed' in str(call) for call in mock_print.call_args_list)
-
 
 class TestSelectStudent:
     """Test the select_student function"""
@@ -247,7 +241,6 @@ class TestSelectStudent:
         assert result is None
         mock_print.assert_any_call("No students found.")
 
-
 class TestCalculateTrendSlope:
     """Test the calculate_trend_slope function"""
 
@@ -285,7 +278,6 @@ class TestCalculateTrendSlope:
         slope = calculate_trend_slope(values)
 
         assert slope == 0
-
 
 class TestCreateTrendVisualization:
     """Test the create_trend_visualization function"""
@@ -326,7 +318,6 @@ class TestCreateTrendVisualization:
 
         assert any('Error' in str(call) for call in mock_print.call_args_list)
 
-
 class TestExportBatchPredictions:
     """Test the export_batch_predictions function"""
 
@@ -365,7 +356,6 @@ class TestExportBatchPredictions:
 
         assert any('Error' in str(call) for call in mock_print.call_args_list)
 
-
 class TestExtractStudentFeatures:
     """Test the extract_student_features function"""
 
@@ -401,7 +391,6 @@ class TestExtractStudentFeatures:
             assert True
         except Exception:
             pytest.skip("extract_student_features implementation incomplete")
-
 
 class TestGradeCalculationIntegration:
     """Integration tests for grade calculation"""
@@ -485,7 +474,6 @@ class TestGradeCalculationIntegration:
             result = percentage_to_letter(percentage)
             assert result == expected_letter, f"Failed for {percentage}%"
 
-
 class TestEdgeCases:
     """Test edge cases and error conditions"""
 
@@ -519,7 +507,6 @@ class TestEdgeCases:
                 result = select_student(cursor)
 
         assert result == 'S001'
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

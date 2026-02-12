@@ -13,6 +13,7 @@ import hashlib
 import logging
 from datetime import datetime, timedelta
 from university_system.modules.shared.constants.paths import QR_CODES_DIR
+from university_system.core.sql_safety import validate_identifier
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -1210,12 +1211,13 @@ def optimize_table_structure():
 
         for table in tables_to_analyze:
             try:
+                safe_table = validate_identifier(table, "table")
                 # Get table info
-                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute("PRAGMA table_info([" + safe_table + "])")
                 columns = cursor.fetchall()
-                
+
                 # Get table size
-                cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 row_count = cursor.fetchone()[0]
                 
                 print(f"\nTable: {table}")

@@ -2,6 +2,7 @@ from university_system.infrastructure.database.db import sqlite3, DatabaseManage
 from university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, SUBMISSIONS_DIR
 from university_system.infrastructure.auth import UserAuth
 from university_system.infrastructure.shared_context import get_auth
+from university_system.core.sql_safety import validate_table_name, validate_identifier
 import os
 import shutil
 from datetime import datetime, timedelta
@@ -424,7 +425,9 @@ class AssignmentSubmission:
         
         for table, column, definition in updates:
             try:
-                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+                safe_table = validate_table_name(table)
+                safe_column = validate_identifier(column, "column")
+                cursor.execute("ALTER TABLE [" + safe_table + "] ADD COLUMN [" + safe_column + "] " + definition)
             except sqlite3.Error:
                 # Column might already exist
                 pass
@@ -3109,7 +3112,7 @@ class AssignmentSubmission:
                 if key in ['title', 'description', 'due_date', 'max_marks', 'instructions',
                           'file_types_allowed', 'max_file_size_mb', 'allow_late_submission',
                           'late_penalty_per_day', 'assignment_type']:
-                    update_fields.append(f"{key} = ?")
+                    update_fields.append(f"{validate_identifier(key, 'column')} = ?")
                     values.append(value)
 
             if not update_fields:
@@ -3380,7 +3383,7 @@ class AssignmentSubmission:
             cursor = conn.cursor()
 
             placeholders = ','.join('?' * len(assignment_ids))
-            cursor.execute(f'UPDATE assignments SET is_active = 0 WHERE id IN ({placeholders})', assignment_ids)
+            cursor.execute('UPDATE assignments SET is_active = 0 WHERE id IN (' + placeholders + ')', assignment_ids)
 
             conn.commit()
             conn.close()
@@ -3405,11 +3408,11 @@ class AssignmentSubmission:
             placeholders = ','.join('?' * len(assignment_ids))
 
             # Delete related data
-            cursor.execute(f'DELETE FROM assignment_submissions WHERE assignment_id IN ({placeholders})', assignment_ids)
-            cursor.execute(f'DELETE FROM assignment_groups WHERE assignment_id IN ({placeholders})', assignment_ids)
-            cursor.execute(f'DELETE FROM peer_review_assignments WHERE assignment_id IN ({placeholders})', assignment_ids)
-            cursor.execute(f'DELETE FROM extension_requests WHERE assignment_id IN ({placeholders})', assignment_ids)
-            cursor.execute(f'DELETE FROM assignments WHERE id IN ({placeholders})', assignment_ids)
+            cursor.execute('DELETE FROM assignment_submissions WHERE assignment_id IN (' + placeholders + ')', assignment_ids)
+            cursor.execute('DELETE FROM assignment_groups WHERE assignment_id IN (' + placeholders + ')', assignment_ids)
+            cursor.execute('DELETE FROM peer_review_assignments WHERE assignment_id IN (' + placeholders + ')', assignment_ids)
+            cursor.execute('DELETE FROM extension_requests WHERE assignment_id IN (' + placeholders + ')', assignment_ids)
+            cursor.execute('DELETE FROM assignments WHERE id IN (' + placeholders + ')', assignment_ids)
 
             conn.commit()
             conn.close()
@@ -3433,7 +3436,7 @@ class AssignmentSubmission:
 
             placeholders = ','.join('?' * len(assignment_ids))
             params = list(assignment_ids) + [new_due_date]
-            cursor.execute(f'UPDATE assignments SET due_date = ? WHERE id IN ({placeholders})', [new_due_date] + assignment_ids)
+            cursor.execute('UPDATE assignments SET due_date = ? WHERE id IN (' + placeholders + ')', [new_due_date] + assignment_ids)
 
             conn.commit()
             conn.close()
@@ -3862,7 +3865,7 @@ class AssignmentSubmission:
         """Calculate grade as percentage"""
         try:
             return (float(grade) / float(max_marks)) * 100
-        except:
+        except (ValueError, TypeError, ZeroDivisionError):
             return 0.0
 
     def release_grade(self, submission_id):
@@ -4561,7 +4564,7 @@ class AssignmentSubmission:
             values = []
             for key, value in kwargs.items():
                 if key in ['rubric_name', 'description', 'total_points']:
-                    update_fields.append(f"{key} = ?")
+                    update_fields.append(f"{validate_identifier(key, 'column')} = ?")
                     values.append(value)
 
             if not update_fields:
@@ -5251,7 +5254,8 @@ class AssignmentSubmission:
                      'peer_review_assignments', 'notifications', 'messages']
 
             for table in tables:
-                cursor.execute(f'SELECT * FROM {table}')
+                safe_table = validate_table_name(table)
+                cursor.execute('SELECT * FROM [' + safe_table + ']')
                 columns = [desc[0] for desc in cursor.description]
                 rows = cursor.fetchall()
                 export_data[table] = [dict(zip(columns, row)) for row in rows]

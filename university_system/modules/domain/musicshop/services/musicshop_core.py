@@ -1,6 +1,6 @@
 """Music Shop Core Service Module"""
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -15,11 +15,9 @@ GENRES = ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip-Hop', 'Electronic', 'Country'
 ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
 CONDITION_TYPES = ['new', 'mint', 'excellent', 'good', 'fair', 'poor']
 
-
 def get_musicshop_db_path():
     """Get the music shop database path"""
     return str(paths.DEFAULT_DB_PATH)
-
 
 def init_musicshop_db():
     """Initialize the music shop database tables"""
@@ -125,7 +123,6 @@ def init_musicshop_db():
     conn.commit()
     conn.close()
     logger.info("Music shop database initialized")
-
 
 class ProductManager:
     """Manage music shop products"""
@@ -237,9 +234,9 @@ class ProductManager:
         values.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         values.append(product_id)
 
-        cursor.execute(f'''
-        UPDATE musicshop_products SET {", ".join(updates)} WHERE product_id = ?
-        ''', values)
+        cursor.execute(
+            "UPDATE musicshop_products SET " + ", ".join(updates) + " WHERE product_id = ?",
+            values)
 
         conn.commit()
         success = cursor.rowcount > 0
@@ -311,7 +308,6 @@ class ProductManager:
         conn.close()
 
         return [dict(row) for row in rows]
-
 
 class OrderManager:
     """Manage music shop orders"""
@@ -469,7 +465,6 @@ class OrderManager:
         finally:
             conn.close()
 
-
 class TransactionManager:
     """Manage music shop transactions"""
 
@@ -537,7 +532,6 @@ class TransactionManager:
         finally:
             conn.close()
 
-
 class WishlistManager:
     """Manage customer wishlists"""
 
@@ -591,7 +585,6 @@ class WishlistManager:
         conn.close()
 
         return [dict(row) for row in rows]
-
 
 class ReportManager:
     """Generate music shop reports"""

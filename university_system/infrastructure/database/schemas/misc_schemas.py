@@ -1,7 +1,8 @@
 from __future__ import annotations
 from datetime import datetime
 from university_system.infrastructure.database.db import get_connection, sqlite3
-from university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from university_system.core.i18n import get_text as _t, init_i18n
+from university_system.core.sql_safety import validate_identifier
 
 # Initialize i18n
 init_i18n()
@@ -207,6 +208,11 @@ def create_performance_indexes():
 
         for index_name, table_name, columns, is_unique in indexes:
             try:
+                # Validate identifiers for defense-in-depth
+                validate_identifier(index_name, "index name")
+                validate_identifier(table_name, "table name")
+                for col in columns.split(', '):
+                    validate_identifier(col.strip(), "column name")
                 unique_clause = "UNIQUE " if is_unique else ""
                 cursor.execute(f"""
                     CREATE {unique_clause}INDEX IF NOT EXISTS {index_name}

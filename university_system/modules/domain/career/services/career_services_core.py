@@ -7,7 +7,7 @@ alumni mentorship, and skills tracking.
 
 from __future__ import annotations
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from university_system.infrastructure.database.db import get_connection, transaction
@@ -19,7 +19,6 @@ from university_system.modules.shared.utils.i18n import (
 from university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
-
 
 class JobManager:
     """Manages job postings and applications"""
@@ -75,7 +74,6 @@ class JobManager:
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-
 class ResumeManager:
     """Manages student resumes and CVs"""
 
@@ -112,7 +110,6 @@ class ResumeManager:
             ''', (student_id,))
             return [dict(row) for row in cursor.fetchall()]
 
-
 class InterviewManager:
     """Manages interview scheduling"""
 
@@ -140,7 +137,6 @@ class InterviewManager:
                 return interview_id
         except sqlite3.Error as e:
             raise DatabaseError(f"Error scheduling interview: {e}") from e
-
 
 class CareerEventManager:
     """Manages career fairs and events"""
@@ -175,7 +171,6 @@ class CareerEventManager:
                 return registration_id
         except sqlite3.Error as e:
             raise DatabaseError(f"Error registering for event: {e}") from e
-
 
 class MentorshipManager:
     """Manages alumni mentorship program"""
@@ -213,7 +208,6 @@ class MentorshipManager:
         except sqlite3.Error as e:
             raise DatabaseError(f"Error creating mentorship match: {e}") from e
 
-
 class SkillsManager:
     """Manages student skills tracking"""
 
@@ -241,7 +235,6 @@ class SkillsManager:
                 ORDER BY skill_category, skill_name
             ''', (student_id,))
             return [dict(row) for row in cursor.fetchall()]
-
 
 def display_career_services_menu(auth):
     """Display the Career Services Platform CLI menu"""
@@ -277,11 +270,8 @@ def display_career_services_menu(auth):
         except Exception as e:
             print(get_text('career.error', default='Error: {error}').format(error=e))
 
-
 # Import GUI launcher
 from university_system.modules.domain.career.gui.career_services_gui import launch_career_services_gui
-
-
 
 __all__ = [
     'JobManager', 'ResumeManager', 'InterviewManager',

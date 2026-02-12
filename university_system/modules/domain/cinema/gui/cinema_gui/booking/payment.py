@@ -7,7 +7,7 @@ processing bookings, and generating printable tickets.
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 import json
 
@@ -44,7 +44,6 @@ try:
     QR_AVAILABLE = True
 except ImportError:
     QR_AVAILABLE = False
-
 
 def show_payment_page(self, screening, movie):
     """Display payment form with promo code."""
@@ -456,7 +455,6 @@ def show_payment_page(self, screening, movie):
 
     ttk.Button(self.content_frame, text=_t("cinema.booking.complete_payment"), style="Primary.TButton",
               command=process_payment).pack(pady=20)
-
 
 def print_ticket(self, booking_ref):
     """Generate and display printable ticket."""

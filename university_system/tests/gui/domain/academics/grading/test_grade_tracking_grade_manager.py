@@ -4,12 +4,11 @@ import unittest
 import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
 
 from university_system.modules.domain.academics.gui.grade_tracking.grade_manager import GradeManager
-
 
 class TestGradeManager(unittest.TestCase):
     """Test GradeManager class"""
@@ -241,7 +240,6 @@ class TestGradeManager(unittest.TestCase):
         with patch('tkinter.Toplevel'):
             self.grade_manager.show_grade_statistics()
 
-
 class TestGradeManagerEdgeCases(unittest.TestCase):
     """Test edge cases for GradeManager"""
 
@@ -281,7 +279,6 @@ class TestGradeManagerEdgeCases(unittest.TestCase):
 
         # Should return None
         self.assertIsNone(grade_manager.content_frame)
-
 
 if __name__ == '__main__':
     unittest.main()

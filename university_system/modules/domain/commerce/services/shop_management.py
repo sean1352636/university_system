@@ -6542,7 +6542,7 @@ def test_shop_system():
         tables = ['shop_products', 'shop_inventory', 'shop_transactions', 'shop_transaction_items', 'shop_discounts', 'shop_cart']
         
         for table in tables:
-            cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
             if not cursor.fetchone():
                 print(f"❌ Table {table} not found")
                 conn.close()

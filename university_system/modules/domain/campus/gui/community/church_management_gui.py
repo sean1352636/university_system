@@ -2018,7 +2018,7 @@ Grace Community Church Management System
                     if group.get('members') and isinstance(group['members'], str):
                         try:
                             group['members'] = json.loads(group['members'])
-                        except:
+                        except (ValueError, json.JSONDecodeError):
                             group['members'] = []
                     self.small_groups.append(group)
 

@@ -123,6 +123,32 @@ class SessionManager:
 
         return session_token
 
+    def create_chatbot_session(self, username: str, current_user: dict, permission_checker) -> Optional[str]:
+        """
+        Create a chatbot session token and store it for later validation.
+
+        Parameters:
+            username: Username to create session for
+            current_user: Current user dictionary
+            permission_checker: Function/method to check permissions
+
+        Returns:
+            str: Session token if created, None if unauthorized
+        """
+        if not current_user or current_user.get('username') != username:
+            return None
+        if not permission_checker('access_chatbot'):
+            return None
+
+        token = secrets.token_hex(32)
+        if not hasattr(self, '_chatbot_sessions'):
+            self._chatbot_sessions = {}
+        self._chatbot_sessions[token] = {
+            'username': username,
+            'created_at': datetime.now()
+        }
+        return token
+
     def validate_chatbot_session(self, session_token: str, username: str, current_user: dict, permission_checker) -> bool:
         """
         Validate a chatbot session token.
@@ -137,12 +163,6 @@ class SessionManager:
 
         Returns:
             bool: True if session is valid, False otherwise
-
-        Notes:
-            - Currently does simple validation (checks user and permission)
-            - In production, should validate actual stored tokens
-            - Requires user to be logged in and match username
-            - Requires 'access_chatbot' permission
         """
         if not current_user or current_user.get('username') != username:
             return False
@@ -150,7 +170,22 @@ class SessionManager:
         if not permission_checker('access_chatbot'):
             return False
 
-        # Simple validation - in production, store and validate actual tokens
+        # Validate against stored tokens
+        if not hasattr(self, '_chatbot_sessions'):
+            self._chatbot_sessions = {}
+
+        session_data = self._chatbot_sessions.get(session_token)
+        if not session_data:
+            return False
+
+        if session_data['username'] != username:
+            return False
+
+        # Check token expiry (1 hour)
+        if datetime.now() - session_data['created_at'] > timedelta(hours=1):
+            del self._chatbot_sessions[session_token]
+            return False
+
         return True
 
     def update_last_activity(self):
@@ -161,9 +196,22 @@ class SessionManager:
         """
         Set the current user and initialize activity tracking.
 
+        The user_dict may contain these optional fields for extended auth:
+            - auth_method: 'password' | 'sso' | 'webauthn' | 'biometric'
+            - active_linked_account_id: int or None
+            - original_role: str or None (set during account role switching)
+            - acting_as_delegate_for: int or None (target user_id when using delegated access)
+            - sso_provider_id: str or None
+
         Parameters:
             user_dict: Dictionary containing user information
         """
+        # Ensure extended auth fields have defaults
+        user_dict.setdefault('auth_method', 'password')
+        user_dict.setdefault('active_linked_account_id', None)
+        user_dict.setdefault('original_role', None)
+        user_dict.setdefault('acting_as_delegate_for', None)
+        user_dict.setdefault('sso_provider_id', None)
         self.current_user = user_dict
         self.last_activity = datetime.now()
 
@@ -197,6 +245,8 @@ def save_cli_remember_token(username: str, token: str, device_fingerprint: str):
     """
     try:
         import json
+        import os
+        import stat
         from pathlib import Path
 
         token_file = Path.home() / '.university_system' / 'cli_remember_me.json'
@@ -210,6 +260,9 @@ def save_cli_remember_token(username: str, token: str, device_fingerprint: str):
 
         with open(token_file, 'w') as f:
             json.dump(data, f)
+
+        # Set restrictive file permissions (owner read/write only)
+        os.chmod(token_file, stat.S_IRUSR | stat.S_IWUSR)
 
         print(f"✅ Remember me token saved. You'll be automatically logged in next time.")
 

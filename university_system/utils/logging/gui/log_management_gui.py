@@ -4693,7 +4693,7 @@ Success rate: {((checked_count - corrupted_count) / max(checked_count, 1)) * 100
             import platform
             
             if platform.system() == "Windows":
-                subprocess.Popen(f'explorer "{os.path.abspath(archive_dir)}"')
+                subprocess.Popen(["explorer", os.path.abspath(archive_dir)])
             elif platform.system() == "Darwin":  # macOS
                 subprocess.Popen(["open", archive_dir])
             else:  # Linux

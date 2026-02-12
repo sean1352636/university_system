@@ -13,7 +13,7 @@ Features:
 - Accommodation renewal tracking
 """
 
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import os
@@ -22,7 +22,6 @@ import shutil
 from university_system.infrastructure.database.db import get_connection, transaction
 from university_system.modules.shared.utils.activity_logger import log_activity
 from university_system.modules.shared.constants import paths
-
 
 class AccessibilityService:
     """Service class for managing accessibility accommodations and services."""

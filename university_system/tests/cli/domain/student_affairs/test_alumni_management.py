@@ -12,7 +12,7 @@ Tests cover:
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock, mock_open
@@ -26,7 +26,6 @@ from university_system.modules.domain.student_affairs.services.alumni_management
     safe_execute,
     set_auth,
 )
-
 
 @pytest.fixture
 def setup_alumni_database():
@@ -57,7 +56,6 @@ def setup_alumni_database():
     conn.commit()
     conn.close()
 
-
 @pytest.fixture
 def mock_auth():
     """Create mock authentication object"""
@@ -71,7 +69,6 @@ def mock_auth():
     auth.check_permission = MagicMock(return_value=True)
     auth.is_logged_in = MagicMock(return_value=True)
     return auth
-
 
 class TestAlumniClass:
     """Tests for Alumni data class"""
@@ -109,7 +106,6 @@ class TestAlumniClass:
         assert alumni.graduation_year == 2020
         assert alumni.is_mentor is True
         assert alumni.is_donor is False
-
 
 class TestDatabaseSetup:
     """Tests for database initialization"""
@@ -157,7 +153,6 @@ class TestDatabaseSetup:
             # Might fail if permissions/roles tables don't exist
             pytest.skip(f"Permissions setup skipped: {e}")
 
-
 class TestAlumniRegistration:
     """Tests for alumni registration functionality"""
 
@@ -204,7 +199,6 @@ class TestAlumniRegistration:
                     assert result is not None
                 except Exception as e:
                     pytest.skip(f"Registration test skipped: {e}")
-
 
 class TestAlumniEvents:
     """Tests for alumni events functionality"""
@@ -278,7 +272,6 @@ class TestAlumniEvents:
         assert registration is not None
         assert registration['event_id'] == event_id
 
-
 class TestDonations:
     """Tests for donation functionality"""
 
@@ -350,7 +343,6 @@ class TestDonations:
         assert donations[0]['donation_amount'] == 50.00
         assert donations[2]['donation_amount'] == 150.00
 
-
 class TestMentorship:
     """Tests for mentorship functionality"""
 
@@ -395,7 +387,6 @@ class TestMentorship:
         assert mentorship is not None
         assert mentorship['status'] == 'active'
         assert mentorship['focus_area'] == 'Career Development'
-
 
 class TestJobBoard:
     """Tests for job board functionality"""
@@ -476,7 +467,6 @@ class TestJobBoard:
 
         assert len(london_jobs) == 2
 
-
 class TestAlumniForum:
     """Tests for alumni forum functionality"""
 
@@ -549,7 +539,6 @@ class TestAlumniForum:
         assert len(replies) == 1
         assert replies[0]['reply_content'] == 'Test Reply'
 
-
 class TestUtilityFunctions:
     """Tests for utility functions"""
 
@@ -594,7 +583,6 @@ class TestUtilityFunctions:
 
         assert result is not None
         assert result['alumni_id'] == 'ALU_SAFE'
-
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -649,7 +637,6 @@ class TestIntegrationScenarios:
         assert alumni['is_donor'] == 1
         assert donation_count == 1
         assert event_count == 1
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

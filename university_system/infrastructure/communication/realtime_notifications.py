@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import queue
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -24,9 +24,9 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
+from university_system.core.sql_safety import validate_table_name
 
 logger = logging.getLogger(__name__)
-
 
 class NotificationType(Enum):
     """Types of notifications."""
@@ -40,14 +40,12 @@ class NotificationType(Enum):
     COURSE_UPDATE = 'course_update'
     SCHEDULE_CHANGE = 'schedule_change'
 
-
 class NotificationPriority(Enum):
     """Priority levels for notifications."""
     LOW = 1
     NORMAL = 2
     HIGH = 3
     URGENT = 4
-
 
 @dataclass
 class Notification:
@@ -93,7 +91,6 @@ class Notification:
             expires_at=datetime.fromisoformat(data['expires_at']) if data.get('expires_at') else None,
         )
 
-
 class NotificationHandler(ABC):
     """Abstract base class for notification handlers."""
 
@@ -102,7 +99,6 @@ class NotificationHandler(ABC):
         """Send a notification."""
         pass
 
-
 class DatabaseNotificationHandler(NotificationHandler):
     """Stores notifications in the database for later retrieval."""
 
@@ -110,6 +106,7 @@ class DatabaseNotificationHandler(NotificationHandler):
     TABLE_NAME = 'realtime_notifications'
 
     def __init__(self, db_path: Optional[str] = None):
+        validate_table_name(self.TABLE_NAME)
         self.db_path = db_path or DEFAULT_DB_PATH
         self._init_db()
 
@@ -159,7 +156,6 @@ class DatabaseNotificationHandler(NotificationHandler):
         except Exception as e:
             logger.error(f"Failed to store notification: {e}")
             return False
-
 
 class InMemoryNotificationHandler(NotificationHandler):
     """In-memory notification queue for real-time delivery."""
@@ -213,7 +209,6 @@ class InMemoryNotificationHandler(NotificationHandler):
             return self._queues[user_id].get(timeout=timeout)
         except queue.Empty:
             return None
-
 
 class NotificationService:
     """
@@ -591,11 +586,9 @@ class NotificationService:
             return self.realtime_handler.wait_for_notification(user_id, timeout)
         return None
 
-
 # Global service instance
 _notification_service: Optional[NotificationService] = None
 _service_lock = threading.Lock()
-
 
 def get_notification_service() -> NotificationService:
     """Get or create the global notification service."""
@@ -608,18 +601,15 @@ def get_notification_service() -> NotificationService:
 
     return _notification_service
 
-
 # Convenience functions
 
 def notify_grade_posted(student_id: int, course_id: str, grade: str, course_name: Optional[str] = None) -> bool:
     """Send grade posted notification."""
     return get_notification_service().notify_grade_posted(student_id, course_id, grade, course_name)
 
-
 def notify_message_received(recipient_id: int, sender_name: str, subject: str, message_id: Optional[int] = None) -> bool:
     """Send message received notification."""
     return get_notification_service().notify_message_received(recipient_id, sender_name, subject, message_id)
-
 
 __all__ = [
     'NotificationService',

@@ -4,7 +4,7 @@ Cinema Booking System - Staff Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import hashlib
 from datetime import datetime
 
@@ -27,7 +27,6 @@ except ImportError:
     def send_email(*args, **kwargs):
         pass
     render_template = None
-
 
 def show_staff_page(self):
     self.clear_content()
@@ -57,7 +56,6 @@ def show_staff_page(self):
     self.staff_tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
 
-
 def _hash_staff_password(self, password, salt=None):
     """
     Hash a password with a salt using PBKDF2.
@@ -76,7 +74,6 @@ def _hash_staff_password(self, password, salt=None):
         dklen=64
     )
     return salt, key.hex()
-
 
 def _send_staff_welcome_email(self, name, email, username, role):
     """Send welcome email to new staff member."""
@@ -121,7 +118,6 @@ University Cinema Management
         return True
     except Exception:
         return False
-
 
 def add_staff(self):
     form = tk.Toplevel(self.root)

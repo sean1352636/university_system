@@ -1,9 +1,10 @@
 # Auto-generated module
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
 import random
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
 # Import utility functions
@@ -219,66 +220,42 @@ def create_student_dialog(self):
                 last_name, gender, dob.strftime('%Y-%m-%d'), age, course, registration_time, 'Active', registration_time
             ))
 
-            # Add modules based on the assigned course from database
-            current_date = datetime.now().strftime('%Y-%m-%d')
+            # Add modules: 2 compulsory, 2 optional, 2 course-specific
+            from university_system.modules.domain.academics.services.modules import (
+                compulsory_module_1, compulsory_module_2,
+                optional_module_1, optional_module_2, optional_module_3, optional_module_4,
+                CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
+                DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
+            )
 
-            # Get modules by type: 2 compulsory, 2 optional, 2 course-specific
-            selected_modules = []
+            # 2 compulsory modules
+            selected_modules = [compulsory_module_1['code'], compulsory_module_2['code']]
 
-            # 1. Get 2 compulsory modules (module_type = 'compulsory')
-            cursor.execute('''
-                SELECT module_code FROM modules
-                WHERE module_type = 'compulsory' AND is_active = 1
-                ORDER BY module_code
-            ''')
-            compulsory_modules = [row[0] for row in cursor.fetchall()]
-            if len(compulsory_modules) >= 2:
-                selected_modules.extend(compulsory_modules[:2])
-            else:
-                print(f"Warning: Found only {len(compulsory_modules)} compulsory modules, need 2")
-                selected_modules.extend(compulsory_modules)
+            # 2 random optional modules
+            optional_pool = [optional_module_1, optional_module_2, optional_module_3, optional_module_4]
+            opt_picks = random.sample(optional_pool, 2)
+            selected_modules.extend([m['code'] for m in opt_picks])
 
-            # 2. Get 2 optional modules (module_type = 'optional')
-            cursor.execute('''
-                SELECT module_code FROM modules
-                WHERE module_type = 'optional' AND is_active = 1
-                ORDER BY module_code
-            ''')
-            optional_modules = [row[0] for row in cursor.fetchall()]
-            if len(optional_modules) >= 2:
-                selected_modules.extend(optional_modules[:2])
-            else:
-                print(f"Warning: Found only {len(optional_modules)} optional modules, need 2")
-                selected_modules.extend(optional_modules)
+            # 2 random course-specific modules
+            course_pool = {
+                'CS': [CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4],
+                'DS': [DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4],
+            }.get(course, [])
+            if len(course_pool) >= 2:
+                course_picks = random.sample(course_pool, 2)
+                selected_modules.extend([m['code'] for m in course_picks])
 
-            # 3. Get 2 course-specific modules (module_type = 'CS' or 'DS')
-            cursor.execute('''
-                SELECT module_code FROM modules
-                WHERE module_type = ? AND is_active = 1
-                ORDER BY module_code
-            ''', (course,))
-            course_specific_modules = [row[0] for row in cursor.fetchall()]
-            if len(course_specific_modules) >= 2:
-                selected_modules.extend(course_specific_modules[:2])
-            else:
-                print(f"Warning: Found only {len(course_specific_modules)} {course} modules, need 2")
-                selected_modules.extend(course_specific_modules)
+            # Insert modules
+            module_data = [
+                (student_id, module_code)
+                for module_code in selected_modules
+            ]
+            cursor.executemany(
+                'INSERT INTO student_modules (student_id, module_code) VALUES (?, ?)',
+                module_data
+            )
 
-            # Insert selected modules
-            if selected_modules:
-                module_data = [
-                    (student_id, module_code, current_date, 'enrolled')
-                    for module_code in selected_modules
-                ]
-
-                cursor.executemany('''
-                    INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
-                    VALUES (?, ?, ?, ?)
-                ''', module_data)
-
-                print(f"Assigned {len(selected_modules)} modules to student {student_id} for course {course}: {selected_modules}")
-            else:
-                print(f"Warning: No modules assigned to student {student_id}")
+            print(f"Assigned {len(selected_modules)} modules to student {student_id} for course {course}: {selected_modules}")
 
             # Update course enrollment count
             cursor.execute('''
@@ -604,11 +581,12 @@ def update_student_dialog(self, student_id):
                     new_dob = None
 
                 # Determine new course
+                current_course = student[9]
                 if reassign_course_var.get():
-                    new_course = random.choice(['CS', 'DS'])
+                    new_course = 'DS' if current_course == 'CS' else 'CS'
                     course_changed = True
                 else:
-                    new_course = student[9]  # Keep current course
+                    new_course = current_course
                     course_changed = False
 
                 # Calculate new age if DOB changed
@@ -667,20 +645,26 @@ def update_student_dialog(self, student_id):
                         ''', (password_hash, salt, timestamp, user_id))
 
                 # Handle course change - reassign course-specific modules
-                if course_changed or new_course != student[9]:
-                    # Remove old course modules and add new ones
-                    update_cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (student_id,))
+                if course_changed:
+                    # Remove old course-specific modules and add new ones
+                    old_course = current_course
+                    update_cursor.execute('''
+                        DELETE FROM student_modules
+                        WHERE student_id = ? AND module_code IN (
+                            SELECT module_code FROM modules WHERE module_type = ?
+                        )
+                    ''', (student_id, old_course))
 
-                    # Get available modules for the new course
+                    # Get available modules for the new course by module_type
                     update_cursor.execute('''
                         SELECT module_code FROM modules
-                        WHERE department = ? AND is_active = 1
+                        WHERE module_type = ?
                         ORDER BY module_code
                     ''', (new_course,))
                     course_modules = [row[0] for row in update_cursor.fetchall()]
 
                     if course_modules:
-                        num_modules = min(random.randint(3, 6), len(course_modules))
+                        num_modules = min(random.randint(2, len(course_modules)), len(course_modules))
                         selected_modules = random.sample(course_modules, num_modules)
 
                         current_date = datetime.now().strftime('%Y-%m-%d')
@@ -976,7 +960,7 @@ Registration Date: {student[10]}"""
                         # Validate table and column names to prevent SQL injection
                         validated_table = validate_table_name(table_name, conn=conn)
                         validated_column = validate_column_name(column_name, table_name=validated_table, conn=conn)
-                        cursor.execute(f'DELETE FROM [{validated_table}] WHERE [{validated_column}] = ?', (student_id,))
+                        cursor.execute('DELETE FROM [' + validated_table + '] WHERE [' + validated_column + '] = ?', (student_id,))
                         deleted_count = cursor.rowcount
                         if deleted_count > 0:
                             deletion_log.append(f"Deleted {deleted_count} records from {table_name}")
@@ -1049,11 +1033,18 @@ Registration Date: {student[10]}"""
                 messagebox.showinfo(_t("student.deletion_complete"), summary)
 
                 # Refresh student list and close dialog
-                if hasattr(self, 'view_students'):
-                    self.view_students()
-                self.refresh_advanced_search()
+                try:
+                    if hasattr(self, 'view_students'):
+                        self.view_students()
+                    self.refresh_advanced_search()
+                except Exception:
+                    pass
 
-                dialog.destroy()
+                try:
+                    if dialog.winfo_exists():
+                        dialog.destroy()
+                except tk.TclError:
+                    pass
 
             except Exception as e:
                 if cursor:
@@ -1409,7 +1400,7 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
                 from university_system.modules.shared.constants.paths import TEMPLATES_DIR
 
                 # Load email template
-                template_path = os.path.join(TEMPLATES_DIR, 'email', 'low_attendance_alert.json')
+                template_path = os.path.join(TEMPLATES_DIR, 'email', 'academics', 'low_attendance_alert.json')
                 with open(template_path, 'r') as f:
                     template = json.load(f)
 

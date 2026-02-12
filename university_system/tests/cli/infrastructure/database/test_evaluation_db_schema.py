@@ -5,13 +5,12 @@ Tests database schema initialization for Course Evaluation System
 """
 
 import pytest
-import sqlite3
+from university_system.infrastructure.database.db import sqlite3
 import os
 import tempfile
 from university_system.modules.domain.academics.services.evaluation.db_schema import (
     initialize_evaluation_database
 )
-
 
 class TestEvaluationDatabaseSchema:
     """Test suite for evaluation database schema initialization"""
@@ -363,7 +362,6 @@ class TestEvaluationDatabaseSchema:
                     assert row[5] == 1, f"Column {pk_column} should be primary key"
 
         conn.close()
-
 
 class TestEvaluationDatabaseIntegration:
     """Integration tests for evaluation database"""

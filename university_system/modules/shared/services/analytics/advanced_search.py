@@ -20,6 +20,8 @@ from typing import Any, Dict, Iterable, List, Optional
 from university_system.modules.shared.utils.sql_safety import (
     validate_column_name,
     validate_field_for_query,
+    validate_table_name,
+    validate_identifier,
     SQLIdentifierError,
 )
 from university_system.modules.shared.utils.i18n import get_text, _
@@ -73,8 +75,9 @@ def ensure_search_analytics_schema(cursor) -> List[str]:
 
     time_column = 'timestamp' if 'timestamp' in columns else 'search_datetime' if 'search_datetime' in columns else None
     if time_column:
+        validated_time_col = validate_identifier(time_column, 'column')
         cursor.execute(
-            f"UPDATE search_analytics SET {time_column} = COALESCE({time_column}, datetime('now'))"
+            f"UPDATE search_analytics SET {validated_time_col} = COALESCE({validated_time_col}, datetime('now'))"
         )
 
     return list(columns)
@@ -339,7 +342,8 @@ def check_database_status():
             return
         
         for (table_name,) in tables:
-            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            safe_table = validate_table_name(table_name, conn=conn)
+            cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
             count = cursor.fetchone()[0]
             print(f"  {table_name}: {count} records")
         
@@ -523,14 +527,15 @@ def search_analytics_dashboard():
         
         # Search trends by date
         if time_column:
-            cursor.execute(f'''
-            SELECT DATE({time_column}) as search_date, COUNT(*) as searches
-            FROM search_analytics
-            WHERE {time_column} >= date('now', '-30 days')
-            GROUP BY DATE({time_column})
-            ORDER BY search_date DESC
-            LIMIT 10
-            ''')
+            safe_time_col = validate_identifier(time_column, "column")
+            cursor.execute(
+            "SELECT DATE([" + safe_time_col + "]) as search_date, COUNT(*) as searches"
+            " FROM search_analytics"
+            " WHERE [" + safe_time_col + "] >= date('now', '-30 days')"
+            " GROUP BY DATE([" + safe_time_col + "])"
+            " ORDER BY search_date DESC"
+            " LIMIT 10"
+            )
             daily_trends = cursor.fetchall()
         else:
             daily_trends = []
@@ -819,14 +824,17 @@ def wildcard_search():
     # Convert wildcard to SQL LIKE pattern
     sql_pattern = pattern.replace('*', '%').replace('?', '_')
     
-    if field not in ['first_name', 'last_name', 'email', 'student_id']:
+    VALID_WILDCARD_FIELDS = {'first_name', 'last_name', 'email', 'student_id'}
+    try:
+        field = validate_field_for_query(field, VALID_WILDCARD_FIELDS, field_type="search field")
+    except SQLIdentifierError:
         print("Invalid field name.")
         return
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         query = f"SELECT * FROM students WHERE {field} LIKE ?"
         cursor.execute(query, (sql_pattern,))
         results = cursor.fetchall()
@@ -927,116 +935,131 @@ def conditional_logic_search():
     print("Example: (age > 20 AND course = 'CS') OR (gender = 'female' AND age < 25)")
     
     conditions = []
-    
+    condition_params = []
+
     while True:
         print(f"\nCurrent conditions: {len(conditions)}")
         for i, cond in enumerate(conditions):
             print(f"{i+1}. {cond}")
-        
+
         print("\nOptions:")
         print("1. Add condition")
         print("2. Remove condition")
         print("3. Execute search")
         print("4. Cancel")
-        
+
         choice = input("Select option: ").strip()
-        
+
         if choice == '1':
-            add_condition(conditions)
+            add_condition(conditions, condition_params)
         elif choice == '2':
-            remove_condition(conditions)
+            remove_condition(conditions, condition_params)
         elif choice == '3':
-            execute_conditional_search(conditions)
+            execute_conditional_search(conditions, condition_params)
             break
         elif choice == '4':
             break
         else:
             print("Invalid choice.")
 
-def add_condition(conditions):
+def add_condition(conditions, condition_params):
     """Add a condition to the conditional search"""
+    VALID_OPERATORS = {'>', '<', '=', '>=', '<='}
+
     print("\nAdd Condition:")
     print("1. Age condition")
     print("2. Course condition")
     print("3. Gender condition")
     print("4. Registration date condition")
-    
+
     ctype = input("Select condition type (1-4): ").strip()
-    
+
     if ctype == '1':
         operator = input("Operator (>, <, =, >=, <=): ").strip()
+        if operator not in VALID_OPERATORS:
+            print("Invalid operator.")
+            return
         value = input("Age value: ").strip()
         try:
             int(value)  # Validate
-            conditions.append(f"age {operator} {value}")
+            conditions.append(f"age {operator} ?")
+            condition_params.append(int(value))
         except ValueError:
             print("Invalid age value.")
-    
+
     elif ctype == '2':
         course = input("Course (CS/DS): ").strip().upper()
         if course in ['CS', 'DS']:
-            conditions.append(f"course = '{course}'")
+            conditions.append("course = ?")
+            condition_params.append(course)
         else:
             print("Invalid course.")
-    
+
     elif ctype == '3':
         gender = input("Gender (male/female/other): ").strip().lower()
         if gender in ['male', 'female', 'other']:
-            conditions.append(f"gender = '{gender}'")
+            conditions.append("gender = ?")
+            condition_params.append(gender)
         else:
             print("Invalid gender.")
-    
+
     elif ctype == '4':
         operator = input("Operator (>, <, =, >=, <=): ").strip()
+        if operator not in VALID_OPERATORS:
+            print("Invalid operator.")
+            return
         date = input("Date (YYYY-MM-DD): ").strip()
         try:
             datetime.strptime(date, "%Y-%m-%d")
-            conditions.append(f"DATE(registration_datetime) {operator} '{date}'")
+            conditions.append(f"DATE(registration_datetime) {operator} ?")
+            condition_params.append(date)
         except ValueError:
             print("Invalid date format.")
 
-def remove_condition(conditions):
+def remove_condition(conditions, condition_params=None):
     """Remove a condition from the list"""
     if not conditions:
         print("No conditions to remove.")
         return
-    
+
     try:
         index = int(input(f"Enter condition number to remove (1-{len(conditions)}): ")) - 1
         if 0 <= index < len(conditions):
             removed = conditions.pop(index)
+            if condition_params is not None and index < len(condition_params):
+                condition_params.pop(index)
             print(f"Removed: {removed}")
         else:
             print("Invalid condition number.")
     except ValueError:
         print("Invalid input.")
 
-def execute_conditional_search(conditions):
+def execute_conditional_search(conditions, condition_params):
     """Execute the conditional search"""
     if not conditions:
         print("No conditions specified.")
         return
-    
+
     # Get logical operators between conditions
     if len(conditions) > 1:
         print("\nCombine conditions with:")
         print("1. AND (all conditions must be true)")
         print("2. OR (any condition can be true)")
-        
+
         logic = input("Select logic (1-2): ").strip()
         operator = " AND " if logic == '1' else " OR "
         where_clause = operator.join(conditions)
     else:
         where_clause = conditions[0]
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         query = f"SELECT * FROM students WHERE {where_clause}"
         print(f"\nExecuting query: {query}")
-        
-        cursor.execute(query)
+
+        cursor.execute(query, condition_params)
         results = cursor.fetchall()
         
         log_search("conditional_logic", {"conditions": conditions}, len(results))
@@ -1640,7 +1663,7 @@ def data_quality_reports():
             except SQLIdentifierError as e:
                 logger.warning(f"Skipping invalid field: {field} - {e}")
                 continue
-            cursor.execute(f"SELECT COUNT(*) FROM students WHERE [{validated_field}] IS NULL OR [{validated_field}] = ''")
+            cursor.execute("SELECT COUNT(*) FROM students WHERE [" + validated_field + "] IS NULL OR [" + validated_field + "] = ''")
             missing = cursor.fetchone()[0]
             percentage = (missing / total_students) * 100 if total_students > 0 else 0
 
@@ -1678,7 +1701,7 @@ def data_quality_reports():
         
         # Data completeness score
         total_fields = len(fields_to_check)
-        cursor.execute(f"""
+        cursor.execute("""
         SELECT AVG(
             CASE WHEN email IS NOT NULL AND email != '' THEN 1 ELSE 0 END +
             CASE WHEN first_name IS NOT NULL AND first_name != '' THEN 1 ELSE 0 END +
@@ -1686,9 +1709,9 @@ def data_quality_reports():
             CASE WHEN gender IS NOT NULL AND gender != '' THEN 1 ELSE 0 END +
             CASE WHEN date_of_birth IS NOT NULL AND date_of_birth != '' THEN 1 ELSE 0 END +
             CASE WHEN course IS NOT NULL AND course != '' THEN 1 ELSE 0 END
-        ) * 100.0 / {total_fields} as completeness
+        ) * 100.0 / ? as completeness
         FROM students
-        """)
+        """, (total_fields,))
         
         completeness = cursor.fetchone()[0] or 0
         
@@ -1987,7 +2010,7 @@ def auto_complete_search():
                     print(f"\nSearching for {validated_field} = '{selected}'...")
 
                     # Execute search with selected suggestion (using validated field name)
-                    cursor.execute(f"SELECT * FROM students WHERE [{validated_field}] = ?", (selected,))
+                    cursor.execute("SELECT * FROM students WHERE [" + validated_field + "] = ?", (selected,))
                     results = cursor.fetchall()
 
                     log_search("auto_complete", {validated_field: selected}, len(results))

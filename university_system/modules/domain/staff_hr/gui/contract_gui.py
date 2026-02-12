@@ -251,7 +251,7 @@ class ContractGUI:
                 end_date = datetime.fromisoformat(contract['probation_end_date'])
                 days = (end_date - datetime.now()).days
                 self.probation_labels['days_remaining'].config(text=str(max(0, days)))
-            except:
+            except (ValueError, TypeError):
                 self.probation_labels['days_remaining'].config(text='-')
         else:
             self.probation_labels['status'].config(text="Not on Probation", foreground='green')
@@ -487,7 +487,7 @@ class ContractGUI:
 
         try:
             days = int(self.expiry_days.get())
-        except:
+        except (ValueError, TypeError):
             days = 90
 
         contracts = ContractManager.get_expiring_contracts(days)
@@ -497,7 +497,7 @@ class ContractGUI:
             try:
                 end_date = datetime.fromisoformat(c.get('end_date', '')).date()
                 days_left = (end_date - today).days
-            except:
+            except (ValueError, TypeError):
                 days_left = '-'
 
             tag = ''
