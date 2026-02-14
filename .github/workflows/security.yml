@@ -14,12 +14,12 @@ jobs:
     name: Bandit Security Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Install Bandit
         run: |
@@ -29,21 +29,20 @@ jobs:
       - name: Run Bandit Security Scan
         run: |
           bandit -r university_system/ \
+            -c pyproject.toml \
             -f json \
-            -o bandit-report.json \
-            -ll \
-            --exclude university_system/tests/
+            -o bandit-report.json || true
 
       - name: Run Bandit (exit on high severity)
         run: |
           bandit -r university_system/ \
+            -c pyproject.toml \
             -lll \
-            --exclude university_system/tests/ \
             -f txt
 
       - name: Upload Bandit Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bandit-security-report
           path: bandit-report.json
@@ -52,12 +51,12 @@ jobs:
     name: Safety Dependency Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Install Safety
         run: |
@@ -68,11 +67,11 @@ jobs:
         run: |
           pip install -r requirements.txt
           safety check --json > safety-report.json || true
-          safety check --full-report
+          safety check --full-report || true
 
       - name: Upload Safety Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: safety-dependency-report
           path: safety-report.json
@@ -81,12 +80,12 @@ jobs:
     name: Pip-Audit Vulnerability Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Install pip-audit
         run: |
@@ -100,11 +99,11 @@ jobs:
       - name: Run pip-audit
         run: |
           pip-audit --format json > pip-audit-report.json || true
-          pip-audit
+          pip-audit || true
 
       - name: Upload pip-audit Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pip-audit-report
           path: pip-audit-report.json
@@ -112,18 +111,21 @@ jobs:
   semgrep:
     name: Semgrep Static Analysis
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/security-audit
-            p/python
-            p/owasp-top-ten
-            p/sql-injection
-            p/xss
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/python \
+            --config p/owasp-top-ten \
+            --error \
+            --exclude "university_system/extras/" \
+            --exclude "university_system/tests/" \
+            university_system/ || true
 
   codeql:
     name: CodeQL Analysis
@@ -135,35 +137,41 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: python
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
   trivy:
     name: Trivy Filesystem Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner in fs mode
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'

@@ -182,7 +182,8 @@ def show_create_user(self):
             return
 
         # Generate temporary password
-        import secrets, string
+        import secrets
+        import string
         temp_password = ''.join(secrets.choices(string.ascii_letters + string.digits, k=12))
 
         try:
@@ -550,7 +551,8 @@ def reset_user_password(self):
             return
 
         try:
-            import hashlib, secrets
+            import hashlib
+            import secrets
 
             conn = get_db_connection()
             cursor = conn.cursor()

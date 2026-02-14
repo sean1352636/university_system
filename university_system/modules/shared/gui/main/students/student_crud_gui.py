@@ -633,7 +633,8 @@ def update_student_dialog(self, student_id):
                         new_password = f"{new_first_name.lower()}123456"
 
                         # Update password in user_accounts table
-                        import hashlib, secrets
+                        import hashlib
+                        import secrets
                         salt = secrets.token_hex(16)
                         key = hashlib.pbkdf2_hmac('sha256', new_password.encode(), salt.encode(), 100000, dklen=64)
                         password_hash = key.hex()

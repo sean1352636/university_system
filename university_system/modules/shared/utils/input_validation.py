@@ -326,9 +326,9 @@ def validate_numeric(
         value = value.strip().replace(',', '')  # Remove commas
 
     try:
-        if return_type == int:
+        if return_type is int:
             num = int(float(value))
-        elif return_type == Decimal:
+        elif return_type is Decimal:
             num = Decimal(str(value))
         else:
             num = float(value)

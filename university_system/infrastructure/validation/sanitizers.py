@@ -394,7 +394,7 @@ class Sanitizers:
         # Basic URL validation
         if not re.match(r'^https?://', url, re.IGNORECASE):
             # Relative URL - should be safe
-            if url.startswith('/') or not '://' in url:
+            if url.startswith('/') or '://' not in url:
                 return url
             return None
 

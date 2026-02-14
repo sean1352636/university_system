@@ -1644,7 +1644,8 @@ SYSTEM OPTIMIZATION PRIORITIES:
             button_frame.pack(pady=15)
 
             def _open_report(path=filename):
-                import subprocess, platform
+                import subprocess
+                import platform
                 try:
                     if platform.system() == 'Windows':
                         os.startfile(path)

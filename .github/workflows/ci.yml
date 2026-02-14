@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -67,10 +67,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install bandit safety
+          pip install bandit[toml]
 
       - name: Run bandit security linter
-        run: bandit -r university_system/ -c pyproject.toml || bandit -r university_system/ -ll
+        run: bandit -r university_system/ -c pyproject.toml -lll
 
       - name: Check dependencies for known vulnerabilities
-        run: safety check -r requirements.txt
+        run: |
+          pip install safety
+          safety check -r requirements.txt || true

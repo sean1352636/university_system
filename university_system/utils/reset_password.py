@@ -201,8 +201,6 @@ def reset_default_passwords(db_path=None):
         'instructor': os.environ.get('DEFAULT_INSTRUCTOR_PASSWORD', DEFAULT_STAFF_PASSWORD),
         'teacher': os.environ.get('DEFAULT_TEACHER_PASSWORD', DEFAULT_STAFF_PASSWORD),
     }
-        print(f"⚠️  {_t('reset_password.warning_default_passwords', accounts=', '.join(using_defaults))}")
-        print(f"   {_t('reset_password.set_env_vars')}\n")
 
     if db_path is None:
         db_path = paths.DEFAULT_DB_PATH

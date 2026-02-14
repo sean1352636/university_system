@@ -5204,7 +5204,7 @@ def create_class_reunion(cursor):
     print(f"Location: {location}")
     
     # Send invitations
-    notify = input("Send invitations to all Class of {graduation_year} alumni? (y/n): ".format(graduation_year)).lower()
+    notify = input("Send invitations to all Class of {graduation_year} alumni? (y/n): ").lower()
     if notify == 'y':
         send_reunion_invitations(graduation_year, reunion_id, cursor)
 

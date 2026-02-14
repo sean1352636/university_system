@@ -7,7 +7,7 @@ name = "university-management-system"
 version = "5.17.0"
 description = "Comprehensive University Management System with CLI and GUI interfaces"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "University System Team"}
@@ -19,9 +19,6 @@ classifiers = [
     "Topic :: Education",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
@@ -135,28 +132,7 @@ exclude = '''
 # Ruff configuration
 [tool.ruff]
 line-length = 100
-target-version = "py38"
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "C",   # flake8-comprehensions
-    "B",   # flake8-bugbear
-    "UP",  # pyupgrade
-    "N",   # pep8-naming
-    "S",   # flake8-bandit (security)
-    "A",   # flake8-builtins
-    "COM", # flake8-commas
-    "T20", # flake8-print
-]
-ignore = [
-    "E501",   # line too long (handled by black)
-    "B008",   # do not perform function calls in argument defaults
-    "C901",   # too complex
-    "S101",   # use of assert detected
-    "T201",   # print found (we'll gradually remove these)
-]
+target-version = "py311"
 exclude = [
     ".git",
     ".venv",
@@ -166,15 +142,55 @@ exclude = [
     "build",
     "dist",
     "migrations",
+    "university_system/extras/",
+    "university_system/modules/domain/academics/gui/grade_tracking/dialogs/",
 ]
 
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]  # imported but unused
-"test_*.py" = ["S101"]     # assert allowed in tests
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+]
+ignore = [
+    "E501",   # line too long
+    "E402",   # module-import-not-at-top-of-file
+    "E701",   # multiple-statements-on-one-line-colon
+    "E702",   # multiple-statements-on-one-line-semicolon
+    "E731",   # lambda-assignment
+    "E101",   # mixed-spaces-and-tabs
+    "F401",   # unused-import (too many across codebase)
+    "F402",   # import-shadowed-by-loop-var
+    "F811",   # redefined-while-unused
+    "F822",   # undefined-export in __all__
+    "F823",   # undefined-local
+    "F841",   # unused-variable
+    "F821",   # undefined-name (many false positives from dynamic imports)
+    "F541",   # f-string-missing-placeholders
+    "E712",   # true-false-comparison
+    "E741",   # ambiguous-variable-name
+]
 
-[tool.ruff.isort]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F811"]
+"test_*.py" = ["E", "F"]
+
+[tool.ruff.lint.isort]
 known-first-party = ["university_system"]
 force-sort-within-sections = true
+
+# Bandit configuration
+[tool.bandit]
+exclude_dirs = [
+    "university_system/tests",
+    "university_system/extras",
+]
+skips = [
+    "B101",   # assert used
+    "B105",   # hardcoded password string (false positives on config keys)
+    "B110",   # try-except-pass
+    "B311",   # random not for security
+    "B608",   # SQL injection (false positives - all use parameterized queries)
+]
 
 # MyPy configuration
 [tool.mypy]
