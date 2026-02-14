@@ -644,35 +644,41 @@ def update_student_dialog(self, student_id):
                             WHERE user_id = ?
                         ''', (password_hash, salt, timestamp, user_id))
 
-                # Handle course change - reassign course-specific modules
+                # Handle course change - reassign all modules (2 compulsory, 2 optional, 2 course-specific)
                 if course_changed:
-                    # Remove old course-specific modules and add new ones
-                    old_course = current_course
-                    update_cursor.execute('''
-                        DELETE FROM student_modules
-                        WHERE student_id = ? AND module_code IN (
-                            SELECT module_code FROM modules WHERE module_type = ?
-                        )
-                    ''', (student_id, old_course))
+                    from university_system.modules.domain.academics.services.modules import (
+                        compulsory_module_1, compulsory_module_2,
+                        optional_module_1, optional_module_2, optional_module_3, optional_module_4,
+                        CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
+                        DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
+                    )
 
-                    # Get available modules for the new course by module_type
-                    update_cursor.execute('''
-                        SELECT module_code FROM modules
-                        WHERE module_type = ?
-                        ORDER BY module_code
-                    ''', (new_course,))
-                    course_modules = [row[0] for row in update_cursor.fetchall()]
+                    # Remove all existing modules for this student
+                    update_cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (student_id,))
 
-                    if course_modules:
-                        num_modules = min(random.randint(2, len(course_modules)), len(course_modules))
-                        selected_modules = random.sample(course_modules, num_modules)
+                    # 2 compulsory modules
+                    selected_modules = [compulsory_module_1['code'], compulsory_module_2['code']]
 
-                        current_date = datetime.now().strftime('%Y-%m-%d')
-                        for module_code in selected_modules:
-                            update_cursor.execute('''
-                                INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
-                                VALUES (?, ?, ?, ?)
-                            ''', (student_id, module_code, current_date, 'enrolled'))
+                    # 2 random optional modules
+                    optional_pool = [optional_module_1, optional_module_2, optional_module_3, optional_module_4]
+                    opt_picks = random.sample(optional_pool, 2)
+                    selected_modules.extend([m['code'] for m in opt_picks])
+
+                    # 2 random course-specific modules
+                    course_pool = {
+                        'CS': [CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4],
+                        'DS': [DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4],
+                    }.get(new_course, [])
+                    if len(course_pool) >= 2:
+                        course_picks = random.sample(course_pool, 2)
+                        selected_modules.extend([m['code'] for m in course_picks])
+
+                    current_date = datetime.now().strftime('%Y-%m-%d')
+                    for module_code in selected_modules:
+                        update_cursor.execute('''
+                            INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
+                            VALUES (?, ?, ?, ?)
+                        ''', (student_id, module_code, current_date, 'enrolled'))
 
                 update_conn.commit()
 
@@ -1669,13 +1675,17 @@ def reassign_modules(self, student_id, module_type, cursor=None):
             DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4
         )
 
+        # Map module_type to the actual DB module_type value
+        db_type_map = {'optional': 'optional', 'CS': 'CS_optional', 'DS': 'DS_optional'}
+        db_module_type = db_type_map.get(module_type, module_type)
+
         # Delete existing modules of this type
         cursor.execute('''
             DELETE FROM student_modules
             WHERE student_id = ? AND module_code IN (
                 SELECT module_code FROM modules WHERE module_type = ?
             )
-        ''', (student_id, module_type))
+        ''', (student_id, db_module_type))
 
         # Select new modules
         if module_type == 'optional':

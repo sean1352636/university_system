@@ -224,6 +224,8 @@ def init_i18n(language_code: Optional[str] = None) -> str:
     """
     global _current_language, _loaded
 
+    first_init = not _loaded
+
     # Load all translation files
     if not _loaded:
         _load_all_translations()
@@ -239,7 +241,8 @@ def init_i18n(language_code: Optional[str] = None) -> str:
         logger.warning(f"Unsupported language '{_current_language}', defaulting to English")
         _current_language = "en"
 
-    logger.info(f"i18n initialized with language: {_current_language}")
+    if first_init:
+        logger.info(f"i18n initialized with language: {_current_language}")
     return _current_language
 
 
