@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-02-23 18:00:39.071",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "course_management",
+  "details": "Creating new course with enhanced features",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "78984a40-ba96-4f7e-91ea-1eecf1e83c46",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.00027060508728027344,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "361e62e0-0f27-47c9-99cd-45ac36b79eae",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_enhanced_course",
+    "function_module": "university_system.modules.domain.academics.services.course_management.courses",
+    "function_args_count": 1,
+    "execution_time": 0.00027060508728027344,
+    "memory_usage": 546623488
+  }
+}
+{
+  "timestamp": "2026-02-23 18:00:39.082",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "course_management",
+  "details": "Adding course prerequisite",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "856f4537-eb6c-460f-9ab3-45b4bdcaf9b5",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0002384185791015625,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "de59cfd0-e31c-4ad7-abf5-183f6ca19f34",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "add_prerequisite",
+    "function_module": "university_system.modules.domain.academics.services.course_management.prerequisites",
+    "function_args_count": 1,
+    "execution_time": 0.0002384185791015625,
+    "memory_usage": 546623488
+  }
+}

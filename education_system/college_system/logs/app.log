@@ -1,0 +1,129 @@
+2026-02-27 18:45:19,990 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-27 18:46:01,365 - education_system.college_system.infrastructure.auth.core - WARNING - Login failed: unknown user 'staff'
+2026-02-27 18:46:01,368 - education_system.college_system.modules.shared.gui.login_gui - WARNING - GUI login failed for 'staff': Invalid username or password.
+2026-02-27 18:46:40,324 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-27 18:46:47,912 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-27 18:46:47,913 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-27 18:48:45,448 - education_system.college_system.modules.domain.messaging.services.message_service - INFO - Message sent: sender=1 recipient=7 subject='test'
+2026-02-27 18:48:51,620 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-02-27 18:48:51,671 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI logout
+2026-02-27 18:49:05,249 - education_system.college_system.infrastructure.auth.core - INFO - User 'student' logged in (role=student)
+2026-02-27 18:49:05,269 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'student'
+2026-02-27 20:05:40,827 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-27 20:05:49,291 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-27 20:05:49,292 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-27 20:06:29,468 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=15 date=2026-02-27
+2026-02-27 20:06:32,435 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Bulk attendance recorded: session=1 count=1
+2026-02-27 20:07:42,045 - education_system.college_system.modules.domain.calendar.services.calendar_service - INFO - Calendar event created: id=1
+2026-02-28 09:19:28,632 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 09:19:39,195 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 09:19:39,196 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-28 09:21:23,798 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-02-28 09:22:10,061 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 09:22:21,392 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 09:22:21,392 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-28 09:22:33,993 - education_system.college_system.modules.domain.departments.services.department_service - INFO - Tutor group created: name=test
+2026-02-28 09:22:42,188 - education_system.college_system.modules.domain.departments.services.department_service - INFO - Teaching group created: name=test course=2
+2026-02-28 18:39:55,766 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 18:40:03,932 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 18:40:03,933 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-28 18:50:20,417 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 18:50:32,314 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 18:50:32,315 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-28 18:50:54,209 - education_system.college_system.modules.domain.staff.services.staff_service - INFO - Staff deleted: pk=1 (user_id=4)
+2026-02-28 18:53:13,680 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-02-28 19:35:15,263 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 19:35:59,733 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 19:36:10,964 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 19:36:10,965 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-02-28 19:36:20,916 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-02-28 19:44:34,432 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-02-28 19:45:16,419 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-02-28 19:45:16,420 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-02 08:12:09,169 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-02 08:12:24,056 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-02 08:12:24,058 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-02 19:55:29,317 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-02 19:55:44,718 - education_system.college_system.infrastructure.auth.core - WARNING - Login failed: wrong password for 'admin' (attempt 1)
+2026-03-02 19:55:44,732 - education_system.college_system.modules.shared.gui.login_gui - WARNING - GUI login failed for 'admin': Invalid username or password.
+2026-03-02 19:55:51,906 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-02 19:55:51,907 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-02 19:56:10,578 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=15 date=2026-03-02
+2026-03-02 19:56:13,484 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Bulk attendance recorded: session=2 count=1
+2026-03-02 19:56:23,711 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 201: session=3
+2026-03-02 19:56:23,747 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 206: session=4
+2026-03-02 19:56:23,784 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 211: session=5
+2026-03-02 19:56:23,812 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 216: session=6
+2026-03-02 19:56:23,835 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 221: session=7
+2026-03-02 19:56:23,855 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 226: session=8
+2026-03-02 19:56:23,873 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 231: session=9
+2026-03-02 19:56:23,892 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 236: session=10
+2026-03-02 19:56:23,912 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 241: session=11
+2026-03-02 19:56:23,930 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 246: session=12
+2026-03-02 19:56:23,950 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 251: session=13
+2026-03-02 19:56:23,969 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 256: session=14
+2026-03-02 19:56:23,986 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 261: session=15
+2026-03-02 19:56:24,005 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 266: session=16
+2026-03-02 19:56:24,023 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 271: session=17
+2026-03-02 19:56:24,042 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 276: session=18
+2026-03-02 19:56:24,061 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 281: session=19
+2026-03-02 19:56:24,079 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 286: session=20
+2026-03-02 19:56:24,097 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 291: session=21
+2026-03-02 19:56:24,115 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 296: session=22
+2026-03-02 19:56:24,125 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Generated 20 registers for 2026-03-02 (Mon)
+2026-03-02 19:56:36,783 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=5 date=2026-03-02
+2026-03-02 20:20:02,816 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-03-05 17:36:42,949 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-05 17:36:52,090 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-05 17:36:52,091 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-05 17:37:11,286 - education_system.college_system.modules.domain.quality_assurance.services.quality_assurance_service - INFO - Review created: id=1
+2026-03-05 17:37:19,781 - education_system.college_system.modules.domain.quality_assurance.services.quality_assurance_service - INFO - Review updated: pk=1
+2026-03-05 17:37:34,158 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-03-06 10:28:36,696 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-06 10:28:47,344 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-06 10:28:47,345 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-06 15:42:54,702 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-06 15:43:09,376 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-06 15:43:09,378 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-06 15:43:13,847 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 205: session=24
+2026-03-06 15:43:13,910 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 210: session=25
+2026-03-06 15:43:13,947 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 215: session=26
+2026-03-06 15:43:13,983 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 220: session=27
+2026-03-06 15:43:14,015 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 225: session=28
+2026-03-06 15:43:14,044 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 230: session=29
+2026-03-06 15:43:14,074 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 235: session=30
+2026-03-06 15:43:14,105 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 240: session=31
+2026-03-06 15:43:14,137 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 245: session=32
+2026-03-06 15:43:14,172 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 250: session=33
+2026-03-06 15:43:14,216 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 255: session=34
+2026-03-06 15:43:14,256 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 260: session=35
+2026-03-06 15:43:14,293 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 265: session=36
+2026-03-06 15:43:14,329 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 270: session=37
+2026-03-06 15:43:14,366 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 275: session=38
+2026-03-06 15:43:14,395 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 280: session=39
+2026-03-06 15:43:14,423 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 285: session=40
+2026-03-06 15:43:14,450 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 290: session=41
+2026-03-06 15:43:14,478 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 295: session=42
+2026-03-06 15:43:14,508 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Session created from slot 300: session=43
+2026-03-06 15:43:14,524 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Generated 20 registers for 2026-03-06 (Fri)
+2026-03-06 15:43:37,586 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=5 date=2026-03-06
+2026-03-06 15:43:44,035 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=4 date=2026-03-06
+2026-03-06 15:43:49,613 - education_system.college_system.modules.domain.attendance.services.attendance_service - INFO - Attendance session created: course=1 date=2026-03-06
+2026-03-06 15:44:03,011 - education_system.college_system.infrastructure.auth.core - INFO - User logged out: admin
+2026-03-07 17:50:18,335 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-07 17:50:34,397 - education_system.college_system.infrastructure.auth.core - WARNING - Login failed: wrong password for 'admin' (attempt 1)
+2026-03-07 17:50:34,410 - education_system.college_system.modules.shared.gui.login_gui - WARNING - GUI login failed for 'admin': Invalid username or password.
+2026-03-07 17:50:41,057 - education_system.college_system.infrastructure.auth.core - INFO - User 'admin' logged in (role=admin)
+2026-03-07 17:50:41,058 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin'
+2026-03-09 12:20:17,348 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-09 12:20:18,795 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'superadmin'
+2026-03-09 13:10:05,268 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-09 13:10:06,788 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'superadmin'
+2026-03-09 21:38:54,533 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI application starting
+2026-03-09 21:38:56,423 - education_system.college_system.modules.shared.gui.main_gui - INFO - GUI login: user 'admin1'
+2026-03-10 07:51:14,863 - education_system.college_system.infrastructure.database.schema - INFO - Database initialized successfully
+2026-03-10 07:51:14,930 - education_system.college_system.infrastructure.database.schema - INFO - Default data seeded successfully
+2026-03-10 08:07:19,502 - education_system.college_system.infrastructure.database.schema - INFO - Database initialized successfully
+2026-03-10 08:07:19,570 - education_system.college_system.infrastructure.database.schema - INFO - Default data seeded successfully
+2026-03-10 08:07:56,877 - education_system.college_system.infrastructure.database.schema - INFO - Database initialized successfully
+2026-03-10 08:07:56,926 - education_system.college_system.infrastructure.database.schema - INFO - Default data seeded successfully

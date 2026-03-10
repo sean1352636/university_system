@@ -1,0 +1,117 @@
+"""SettingsManager class composed from domain-specific mixins."""
+
+import os
+import warnings
+import logging
+
+from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
+from education_system.university_system.infrastructure.auth import UserAuth, get_global_auth
+from education_system.university_system.infrastructure.shared_context import get_auth
+from education_system.university_system.infrastructure.database.db import get_connection
+
+from cryptography.fernet import Fernet
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+except ImportError:
+    def configure_logging(name=None):
+        """Fallback logging configuration."""
+        return logging.getLogger(name or __name__)
+
+    def get_log_file(name):
+        """Fallback log file path resolution."""
+        from education_system.university_system.modules.shared.constants import paths
+        return str(paths.LOG_DIR / name)
+
+# ---------------------------------------------------------------------------
+# Module-level constants (preserved for backward compatibility)
+# ---------------------------------------------------------------------------
+
+# Global variables for backward compatibility
+auth = get_global_auth()  # Use centralized auth instance
+ENCRYPTION_KEY = Fernet.generate_key()
+cipher_suite = Fernet(ENCRYPTION_KEY)
+
+# Payment gateway configurations (from original file)
+PAYMENT_GATEWAYS = {
+    'stripe': {
+        'public_key': 'pk_test_...',
+        'secret_key': 'sk_test_...',
+        'webhook_secret': 'whsec_...'
+    },
+    'paypal': {
+        'client_id': 'your_paypal_client_id',
+        'client_secret': 'your_paypal_client_secret',
+        'environment': 'sandbox'
+    }
+}
+
+# WARNING: Never commit real API keys to version control!
+# Set these environment variables in your deployment environment
+from .currency import SUPPORTED_CURRENCIES  # noqa: E402 – re-export
+# Load exchange API key from environment variable
+EXCHANGE_API_KEY = os.getenv('EXCHANGE_API_KEY', '')
+
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
+
+log_path = get_log_file("analytics.log")
+os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_path),
+        logging.StreamHandler()
+    ]
+)
+
+logger = configure_logging(name=__name__)
+warnings.filterwarnings('ignore')
+
+# ---------------------------------------------------------------------------
+# Mixin imports
+# ---------------------------------------------------------------------------
+
+from .general_settings import GeneralSettingsMixin  # noqa: E402
+from .currency import CurrencyMixin  # noqa: E402
+from .notifications import NotificationsMixin  # noqa: E402
+from .financial_aid import FinancialAidMixin  # noqa: E402
+from .scholarships import ScholarshipsMixin  # noqa: E402
+from .admin import AdminMixin  # noqa: E402
+from .reports import ReportsMixin  # noqa: E402
+
+
+class SettingsManager(
+    GeneralSettingsMixin,
+    CurrencyMixin,
+    NotificationsMixin,
+    FinancialAidMixin,
+    ScholarshipsMixin,
+    AdminMixin,
+    ReportsMixin,
+):
+    """System settings and configuration"""
+
+    def __init__(self, gui):
+        """Initialize manager with reference to main GUI"""
+        self.gui = gui
+        self.root = gui.root
+        self.conn = gui.conn
+        self.auth = getattr(gui, 'auth', get_global_auth())
+        try:
+            self.finance_system = gui.finance_system
+        except Exception:
+            self.finance_system = None
+
+    def update_status(self, message):
+        """Update status bar message - delegates to GUI layout"""
+        try:
+            if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+                self.gui.layout.update_status(message)
+            elif hasattr(self.gui, 'update_status'):
+                self.gui.update_status(message)
+        except Exception:
+            pass  # Silently ignore if status update fails

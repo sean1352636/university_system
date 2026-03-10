@@ -1,17 +1,17 @@
-# University Management System
+# Education System
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-5.39.5-brightgreen)](https://github.com/sean1352636/university_system)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A comprehensive, enterprise-grade university management system designed to handle all aspects of higher education administration. This modular platform integrates academic, financial, student affairs, health services, and administrative operations into a unified, scalable solution with multiple interface options (CLI, GUI, REST API).
+A comprehensive, enterprise-grade education management platform spanning four distinct systems — **University**, **Sixth Form College**, **Secondary School**, and **Primary School** — designed to handle all aspects of educational administration. This modular platform integrates academic, financial, student affairs, health services, and administrative operations into a unified, scalable solution with multiple interface options (CLI, GUI, REST API), shared authentication, and a unified launcher with cross-system switching.
 
 ---
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Systems Overview](#systems-overview)
 - [What's New](#whats-new)
 - [Overview](#overview)
 - [Key Features](#key-features)
@@ -44,47 +44,148 @@ git clone https://github.com/sean1352636/university_system.git
 cd university_system
 pip install -r requirements.txt
 
-# Run the application
-python run.py              # Interactive menu (recommended)
-python run.py --cli        # Command-line interface
-python run.py --gui        # Graphical interface
-python run.py --api        # REST API server
-python run.py --test       # Run tests
+# Run the unified launcher (interactive system & mode selection)
+python run.py
+
+# Or specify system and mode directly
+python run.py --university --gui    # University GUI
+python run.py --college --gui       # Sixth Form College GUI
+python run.py --school --gui        # Secondary School GUI
+python run.py --primary --gui       # Primary School GUI
+python run.py --university --cli    # University CLI
+python run.py --college --cli       # College CLI
+python run.py --school --cli        # Secondary School CLI
+python run.py --primary --cli       # Primary School CLI
+python run.py --college --api       # College REST API
+python run.py --university --api    # University REST API
+python run.py --university --test   # University tests
+python run.py --college --test      # College tests
 
 # Common operations
 make test                  # Run all tests
 make format                # Format code
 make lint                  # Check code quality
-make db-backup             # Backup database
 ```
 
-**Default Login**: `admin` / `admin123` (change immediately in production!)
+**Default Login**: `superadmin` / `SuperAdmin@123` (access to all systems — change immediately in production!)
+
+---
+
+## Systems Overview
+
+The Education System is a unified platform containing four independently functional management systems, each tailored to a specific tier of education:
+
+### 1. University Management System
+
+A full-featured higher education platform with the most comprehensive feature set.
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | 3,420+ |
+| **Domain Modules** | 51 |
+| **API Route Files** | 64 |
+| **Test Files** | 465+ |
+| **Infrastructure Subsystems** | 22 |
+| **Interfaces** | CLI, GUI (tkinter), REST API (Flask), Web Portal (SPA) |
+| **i18n** | 10 languages (ar, de, en, es, fr, ja, ko, pt, ru, zh) |
+| **Authentication** | 7 methods (password, TOTP, email/SMS OTP, WebAuthn, biometric, SSO) |
+
+**Domain areas:** Academics, Finance, Student Affairs, Health Services, Housing, Commerce & Dining, Campus & Facilities, Mobility & Transport, Staff HR (31 managers), Student Success (23 modules), and 15+ business service modules (barber, cinema, gym, dentist, etc.).
+
+### 2. Sixth Form College System
+
+A Further Education (FE) college management system for 16-19 institutions, with 110 domain modules.
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | 930+ |
+| **Domain Modules** | 110 |
+| **API Route Files** | 59 |
+| **Test Files** | 59 |
+| **Service Files** | 221 |
+| **GUI Files** | 225 |
+| **Interfaces** | CLI, GUI (tkinter), REST API (Flask) |
+
+**Domain areas:** Academic & Learning (29 modules — apprenticeships, T-levels, functional skills, UCAS, value-added, study programmes, ILP, skills passport, etc.), Student Support & Welfare (15 — safeguarding, SEND, Prevent duty, wellbeing, counseling, peer mentoring), Staff Management (11 — appraisals, CPD, DBS checks, recruitment, staff wellbeing), Administration & Governance (15 — GDPR, quality assurance, self-assessment, KPI dashboard, risk management, compliance), Campus & Facilities (8), Communication & Engagement (7), Finance & Funding (6 — bursary, funding, print credits), and specialist services (marketing, destinations, onboarding, alumni).
+
+### 3. Secondary School Management System
+
+A secondary school management system for Years 7-11 (KS3/KS4, GCSE grades 9-1).
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | 290+ |
+| **Domain Categories** | 7 |
+| **Domain Modules** | 51 |
+| **Service Files** | 101 |
+| **GUI Files** | 101 |
+| **Interfaces** | CLI, GUI (tkinter) |
+
+**Domain areas:** Academics (12 — students, subjects, enrollment, grades, attendance, timetable, homework, exams, progress, interventions, reports), Pastoral Care (8 — behaviour, detentions, exclusions, rewards, safeguarding, SEND), Staff (5 — HR, CPD, cover, staff directory), Admin (9 — admissions, finance, audit log, policies, data export), Student Life (10 — clubs, meals, transport, trips, careers, library, medical, form groups, consent), Facilities (6 — room booking, assets, seating plans, visitors, incidents), and Communication (7 — email, notifications, announcements, calendar, parents' evening).
+
+### 4. Primary School Management System
+
+A primary school management system for Reception through Year 6 (EYFS, KS1, KS2).
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | 280+ |
+| **Domain Categories** | 7 |
+| **Domain Modules** | 46 |
+| **Service Files** | 92 |
+| **GUI Files** | 92 |
+| **Interfaces** | CLI, GUI (tkinter) |
+
+**Domain areas:** Academics (11 — pupils, subjects, classes, assessment, attendance, timetable, homework, SATs, phonics, reading records, progress), Pastoral Care (5 — behaviour, rewards, safeguarding, SEND, pastoral), Staff (4 — HR, CPD, cover, staff directory), Admin (8 — users, settings, admissions, finance, data export, audit log, policies, documents), Pupil Life (8 — clubs, meals, transport, trips, library, medical, class groups, consent), Facilities (4 — room booking, assets, visitors, incidents), and Communication (6 — email, notifications, announcements, calendar, parents' evening, communication log).
+
+### Unified Launcher
+
+All four systems are accessed through a single entry point (`run.py`) that provides both CLI and GUI system selection, with shared authentication (`education_system/shared/auth/`) and support for system/mode switching at runtime via `education_system/switch.py`. Users with access to multiple systems (e.g. superadmin) can switch between systems without re-authenticating.
 
 ---
 
 ## What's New
 
-### Version 5.39.5 (February 11, 2026)
+### Version 7.5.0 (March 2026)
 
-**Flask REST API, Security Audit, Role-Based Dashboards, Student Self-Service**
+**Cross-System CLI Switching & Shared Authentication Fixes**
 
-Major platform expansion since v5.17.0 with 20+ feature releases:
+- **System Switching in All CLIs**: All four system CLIs (University, College, Secondary School, Primary School) now support switching to any other system at runtime without re-authenticating
+- **University CLI Switch Menu**: Added Switch to College / Secondary School / Primary School options to the university CLI menu
+- **CLI Logout Fix**: Logging out and re-logging in via CLI now correctly returns to the universal system selection menu (previously locked users into the current system)
+- **Auth Sync Fix**: University CLI auth state now stays in sync after system switches, preventing spurious login prompts
+- **Switch Module Enhancement**: `switch.py` `request_logout()` now accepts a `mode` parameter for CLI/GUI-aware logout signalling
 
-- **Flask REST API** (v5.22.0-v5.26.0): Production-ready API server with JWT authentication, 60 route files covering 57+ endpoint groups (students, modules, enrollments, grades, finance, attendance, housing, library, health, career, HR, helpdesk, LMS, and more), pagination, input validation, rate limiting, CORS, and activity logging. Start with `python run.py --api`
-- **Major Security Audit** (v5.28.0): 25+ critical/high/medium fixes including removal of `eval()` and unsafe `pickle`, SQL injection parameterization, dummy auth bypass removal, hardcoded secret elimination, command injection fixes, CORS hardening, secure cookie configuration, and login rate limiting
-- **Role-Based Dashboards** (v5.29.0-v5.39.0): Admin, instructor, and student dashboards with live data — at-risk students, grading backlog, announcements, GPA tracking, enrolled modules, quick action buttons, system health monitoring, login analytics, and operational metrics
-- **Student Self-Service GUIs** (v5.39.0): 13 new student-facing features — Profile Center, Account Security, Notification Preferences, Grades Breakdown, Degree Progress Tracker, Course Catalog with self-registration, GPA Calculator, Messaging Hub, Discussion Forums, Student Finance Dashboard, Help Center, and Document Center
-- **Office Hours & TA Management** (v5.29.0): Full CRUD for instructor office hours with student booking, TA assignment with per-module permissions, workload tracking, CLI + GUI + REST API
-- **Admin Tools** (v5.36.0): Alert & notification configuration, department management with org hierarchy, institution branding & customization
-- **Instructor Tools** (v5.37.0): Class roster viewer with export, bulk grade import, course messaging, attendance-grade integration, course health dashboard, semester analytics, TA evaluation
-- **Seed Demo Data** (v5.38.0): Script populating 30 tables with 310+ realistic demo records across attendance, financial aid, housing, alumni, and health services
+### Version 5.47.0 (February 25, 2026)
 
-**Earlier Highlights (v5.12-v5.17):**
-- Observability & monitoring infrastructure (metrics, health checks, alerts)
-- Automated backup scheduling with retention policies
-- LRU cache with TTL for performance optimization
-- Remember Me authentication with 30-day persistent tokens
-- Quiet startup mode (verbose output moved to logs)
+**Full Web Portal UI for the REST API**
+
+- **Web Portal** (v5.47.0): Complete single-page application at `/portal` with login, dashboard, full CRUD for Students/Courses/Modules/Assignments/Grades/Enrollments/Finance/Users, and auto-detected list views for all other API sections. Dark sidebar navigation, responsive layout, JWT auth with auto-refresh, search/pagination, modal forms, toast notifications. Root `/` now redirects to the portal.
+
+**Previous: 20+ New Staff HR Modules, 5 Student Services, Academic Advising, Codebase Consolidation, Error Logging Overhaul**
+
+Major platform expansion since v5.42.54 across 30+ releases:
+
+- **Centralized Error Logging** (v5.46.3): Added `StreamHandler` to root logger so errors print to stderr and `logs/app.log`; lowered `ErrorLogger` console threshold from CRITICAL to ERROR; added `patch_messagebox_logging()` to auto-log ~4,350 GUI `showerror`/`showwarning` calls (with tracebacks) across ~690 files without per-file changes; fixed 4 Staff HR database schema mismatches (`ip_manager`, `equipment_manager`, `workload_manager`)
+- **Staff HR Expansion** (v5.44.0-v5.46.0): 20 new Staff HR modules — Payroll Management, Faculty Schedule Builder, Curriculum Design, Travel & Conference, Sabbatical/Study Leave, Committee Management, IP Management, Lab/Equipment Booking, Substitute Cover, Workload Dashboard, Staff Directory, Mentoring Programme, Grant Budget Tracking, Peer Review, Communication Hub, Teaching Load Management, and more. 75+ new database tables with full GUI integration
+- **Student Services** (v5.43.0): 5 new student-facing features — Academic Advising Portal, Digital Student ID Card, Study Room Booking, Printing Services, and Textbook & Course Materials Store
+- **Codebase Consolidation** (v5.46.1-v5.46.2): Merged fragmented versioned files — 7 Staff HR schema files into one consolidated module, admin tools GUI and locale files (4 → 2), using centralised path helpers
+- **Continued Refactoring** (v5.42.55-v5.42.64): Additional monolithic file decompositions maintaining backward compatibility via `__init__.py` re-exports
+
+**Earlier Highlights (v5.39.6-v5.42.54):**
+- Advanced Authentication System (v5.40.0): WebAuthn/FIDO2, SSO (SAML 2.0 & OIDC), biometric, account linking, delegated access
+- Massive Code Refactoring (v5.42.x): 54 monolithic files decomposed into focused modular packages
+- i18n Expansion (v5.41.x): 500+ hardcoded strings replaced with `_t()` translation calls
+- 50+ critical bug fixes, security hardening (removed hardcoded credentials, `secrets`-based password generation)
+
+**Earlier Highlights (v5.22-v5.39.5):**
+- Flask REST API with JWT authentication, 57+ endpoint groups across 60 route files
+- Major security audit: 25+ critical/high/medium fixes across 30+ files
+- Role-based dashboards (admin, instructor, student) with live data and system health monitoring
+- 13 student self-service GUIs (profile, security, grades, degree progress, GPA calculator, messaging, forums, etc.)
+- Office Hours & TA Management with full CLI + GUI + REST API support
+- Seed demo data script populating 30 tables with 310+ records
+- Observability & monitoring, automated backups, LRU caching, Remember Me auth
 - 10-language internationalization support (ar, de, en, es, fr, ja, ko, pt, ru, zh)
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history.
@@ -93,13 +194,14 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Overview
 
-The University Management System is a full-featured platform built with Python that provides:
+The Education System is a full-featured platform built with Python that provides:
 
+- **Multi-System Architecture**: Four complete management systems (University, Sixth Form College, Secondary School, Primary School) under a unified launcher with shared authentication and cross-system switching
 - **Modular Architecture**: Domain-driven design with clearly separated concerns across infrastructure, domain, service, and interface layers
-- **Multiple Interfaces**: Command-line (CLI), graphical (Tkinter), and REST API (Flask) interfaces for diverse user preferences
+- **Multiple Interfaces**: Command-line (CLI), graphical (Tkinter), REST API (Flask), and Web Portal (browser-based SPA) for diverse user preferences
 - **Comprehensive Coverage**: Academic management, financial services, health services, housing, student affairs, and commerce domains
 - **Scalable Design**: Thread-safe database connection pooling, Write-Ahead Logging (WAL), and infrastructure-agnostic architecture
-- **Secure by Default**: PBKDF2-SHA256 password hashing (1M iterations), multi-factor authentication, role-based access control, and comprehensive audit logging
+- **Secure by Default**: bcrypt password hashing (with legacy PBKDF2-SHA256 transparent migration), 7 authentication methods (including WebAuthn, biometric, SSO), role-based access control, and comprehensive audit logging
 - **Extensible**: Manager pattern for modular code organization, making it easy to extend and maintain
 
 ### Target Users
@@ -109,28 +211,47 @@ The University Management System is a full-featured platform built with Python t
 - **Students**: Course enrollment, assignment submission, grade viewing, service requests, and student union participation
 - **Staff**: Financial operations, health services, facility management, and student support services
 
-### Statistics
+### Statistics (All Systems Combined)
 
-- **Version**: 5.39.5 (February 11, 2026)
-- **Lines of Code**: 1,218,000+ across all modules
-- **Python Files**: 2,310+ files
-- **Core System**: 1,198,000+ lines across ~2,190 files
-- **Extras Module**: 19,710 lines across ~122 files
-- **Python Version**: 3.8+ (tested on 3.8-3.12)
-- **Modules**: 55+ major functional domains (18 student success modules)
-- **Test Coverage**: 85%+ for core functionality
+- **Total Python Files**: 4,920+ across all four systems
+- **Total Domain Modules**: 258 (51 university + 110 college + 51 secondary + 46 primary)
+- **Total API Route Files**: 123 (64 university + 59 college)
+- **Total Test Files**: 525+ (465 university + 59 college + 1 secondary)
+- **Python Version**: 3.11+ (tested on 3.11, 3.12)
+
+#### University System
+- **Python Files**: 3,420+
+- **Domain Modules**: 51 (including 23 student success modules)
+- **REST API Endpoints**: 57+ endpoint groups across 64 route files with JWT authentication
 - **Database Tables**: 160+ normalized tables (including 23 Staff HR + 40 Student Success tables)
-- **Permissions**: 330+ fine-grained RBAC permissions
-- **REST API Endpoints**: 57+ endpoint groups across 60 route files with JWT authentication
+- **Permissions**: 355+ fine-grained RBAC permissions
 - **Email Templates**: 358 templates in 40 categories
-- **Staff HR Managers**: 15 specialized manager classes (7,199 lines)
-- **Student Success Modules**: 18 comprehensive student-focused services
+- **Staff HR Managers**: 31 specialized manager classes
+- **Authentication Methods**: 7 (password, TOTP, email OTP, SMS OTP, WebAuthn, biometric, SSO)
 - **Internationalization**: 10 supported languages (ar, de, en, es, fr, ja, ko, pt, ru, zh)
 - **Extras**: 90+ games, utilities, and mini-projects included
+
+#### College System
+- **Python Files**: 930+
+- **Domain Modules**: 110
+- **REST API Route Files**: 59
+- **Service / GUI / CLI Files**: 221 / 225 / 221
+
+#### Secondary School System
+- **Python Files**: 290+
+- **Domain Modules**: 51 across 7 categories
+- **Service / GUI Files**: 101 / 101
+
+#### Primary School System
+- **Python Files**: 280+
+- **Domain Modules**: 46 across 7 categories
+- **Service / GUI Files**: 92 / 92
 
 ---
 
 ## Key Features
+
+> The features below primarily describe the **University System**, the most comprehensive of the four systems. The College, Secondary School, and Primary School systems share similar architectural patterns but are tailored to their respective educational contexts — see [Systems Overview](#systems-overview) for details.
 
 ### Academic Management
 - **Course Management**: Course creation, curriculum planning, prerequisites, and scheduling
@@ -398,7 +519,7 @@ A comprehensive human resources management system with 15 specialized managers +
   - Translation function `_t()` available across all GUI modules
   - Translations in `data/locales/` (ar, de, en, es, fr, ja, ko, pt, ru, zh)
   - GUI language selector for runtime language switching
-- **Authentication**: Centralized authentication with multi-factor authentication (TOTP, Email OTP, SMS OTP)
+- **Authentication**: Centralized authentication with multi-factor authentication (TOTP, Email OTP, SMS OTP, WebAuthn, Biometric, SSO)
 - **Authorization**: Role-based access control (RBAC) with fine-grained permissions
 - **Database**: SQLite (default) with connection pooling, WAL mode, and support for PostgreSQL/MySQL
 - **Backup System**: Comprehensive backup management with 6 pre-configured templates (daily, encrypted, incremental, cloud, selective, remote)
@@ -553,17 +674,47 @@ make test          # Run tests
 
 ### Default Login Credentials
 
-**Admin Account:**
-- Username: `admin`
-- Password: `admin123`
+All systems use a **unified authentication** system. Log in once and choose which system to access.
 
-**Test Student:**
-- Username: `student`
-- Password: `student123`
+**Super Admin** (all systems):
 
-**Test Staff:**
-- Username: `staff`
-- Password: `staff123`
+| Username | Password | Access |
+|----------|----------|--------|
+| `superadmin` | `SuperAdmin@123` | All 4 systems (admin) |
+
+**University System**:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin123` | Admin |
+| `staff` | `staff123` | Staff |
+| `S12345` | `student123` | Student |
+
+**College System** (Sixth Form):
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin1` | `admin1234` | Admin |
+| `staff1` | `staff1234` | Staff |
+| `student1` | `student1234` | Student |
+
+**Secondary School System**:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin2` | `admin1234` | Admin |
+| `staff2` | `staff1234` | Staff |
+| `student2` | `student1234` | Student |
+
+**Primary School System**:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin3` | `admin1234` | Admin |
+| `staff3` | `staff1234` | Staff |
+| `student3` | `student1234` | Student |
+
+> Password pattern: `<Role>@<System>123`
 
 ⚠️ **Security Warning**: Change all default passwords immediately after installation, especially in production environments.
 
@@ -628,30 +779,69 @@ The system uses a **single unified database** for all operations.
 
 ## Usage
 
-### Interactive Menu
+### Unified Launcher
 
 ```bash
 # Start with interactive menu (recommended for first-time users)
 python run.py
 ```
 
-Choose from:
-1. **CLI Interface** - Full-featured command-line interface
-2. **GUI Interface** - Tkinter-based graphical interface
-3. **Run Tests** - Execute test suite
-4. **Change Language** - Switch between 10 supported languages
+The launcher presents two menus:
+1. **Select Mode** — CLI, GUI, API, or Test
+2. **Select System** — University, Sixth Form College, Secondary School, or Primary School
 
-### REST API Server
+For GUI mode, a graphical system selector window appears instead of a text menu.
 
 ```bash
-# Start the API server
-python run.py --api
-
-# Or run directly
-python -m university_system.api.api_server
+# Direct launch examples
+python run.py --university --gui    # University GUI
+python run.py --college --gui       # College GUI
+python run.py --school --gui        # Secondary School GUI
+python run.py --primary --gui       # Primary School GUI
+python run.py --university --cli    # University CLI
+python run.py --college --cli       # College CLI
+python run.py --school --cli        # Secondary School CLI
+python run.py --primary --cli       # Primary School CLI
+python run.py --college --api       # College REST API
+python run.py --university --api    # University REST API
 ```
 
-The REST API provides:
+All four systems support both CLI and GUI modes. REST API is available for University and College systems. Within any CLI session, multi-system users can switch to another system without re-authenticating.
+
+### REST API Server & Web Portal (University)
+
+```bash
+# Start the University API server
+python run.py --university --api
+
+# Or run directly
+python -m education_system.university_system.api.api_server
+```
+
+Then open your browser:
+- **Web Portal**: `http://localhost:5000/portal` (or just `http://localhost:5000/` which redirects there)
+- **API Docs (Swagger UI)**: `http://localhost:5000/api/docs`
+- **JSON API Index**: `http://localhost:5000/api`
+
+**Default Login**: `superadmin` / `SuperAdmin@123`
+
+#### Web Portal
+
+The built-in web portal is a full single-page application served directly by the API server — no separate frontend build required. It includes:
+
+- **Login page** with JWT authentication
+- **Dashboard** with live system statistics (students, courses, enrollments, payments, and 20+ other counts)
+- **Full CRUD pages** for Students, Courses, Modules, Assignments — search, pagination, add/edit/delete
+- **Enrollment management** — enroll students, view active enrollments, drop with confirmation
+- **Grade management** — record, edit, and delete grades with letter-grade badges
+- **Finance** — view fees, record payments with method selection
+- **User management** — list and manage user accounts with role badges
+- **Auto-detected list views** for all other API sections (Housing, Library, Events, Dining, Facilities, Alumni, Clubs, Help Desk, etc.)
+- **Responsive design** — works on desktop, tablet, and mobile
+
+#### REST API
+
+The JSON API provides:
 - **JWT Authentication**: Login, logout, token refresh, and current-user endpoints
 - **57+ Endpoint Groups**: Full CRUD for students, modules, courses, enrollments, grades, finance, attendance, assignments, timetable, housing, library, health, career, research, admissions, alumni, events, dining, HR, helpdesk, LMS, chat, and more
 - **Pagination & Filtering**: Paginated responses with search, sort, and filter query parameters
@@ -661,6 +851,8 @@ The REST API provides:
 
 **API Endpoints Overview:**
 ```
+/portal              - Web Portal (full UI)
+/api/docs            - Swagger UI documentation
 /api/auth/*          - Authentication (login, logout, refresh, me)
 /api/students/*      - Student CRUD
 /api/modules/*       - Module CRUD
@@ -683,11 +875,11 @@ The REST API provides:
 ### Command-Line Interface (CLI)
 
 ```bash
-# Direct CLI mode
-python run.py --cli
+# University CLI
+python run.py --university --cli
 
-# Alternative
-python -m university_system.cli_main
+# College CLI
+python run.py --college --cli
 ```
 
 **Main Menu Options:**
@@ -702,13 +894,14 @@ python -m university_system.cli_main
 ### Graphical User Interface (GUI)
 
 ```bash
-# Direct GUI mode
-python run.py --gui
+# Launch via unified launcher
+python run.py --university --gui
+python run.py --college --gui
+python run.py --school --gui
 
-# Launch specific GUI applications
-python -m university_system.modules.shared.gui.main_gui
-python -m university_system.modules.domain.academics.gui.assignment_system.assignment_gui
-python -m university_system.modules.domain.finance.gui.finance_management_gui
+# Launch specific University GUI applications directly
+python -m education_system.university_system.modules.shared.gui.main.main_gui
+python -m education_system.university_system.modules.domain.academics.gui.assignment_system.assignment_gui
 ```
 
 ### Email Scheduler
@@ -789,7 +982,7 @@ python3 -m university_system.tests.test_console_output
 
 **Usage in Code:**
 ```python
-from university_system.modules.shared.utils.console_output import console
+from education_system.university_system.modules.shared.utils.console_output import console
 
 # Basic messages
 console.success("Operation completed successfully!")
@@ -822,7 +1015,32 @@ confirmed = console.confirm("Are you sure?")
 ## Project Structure
 
 ```
-university_system/
+education_system/                         # Root education platform
+├── university_system/                    # University Management System (3,420+ files)
+├── college_system/                       # Sixth Form College System (930+ files)
+├── secondary_school/                     # Secondary School System (290+ files)
+├── primary_school/                       # Primary School System (280+ files)
+├── shared/                              # Shared modules across all 4 systems
+│   ├── auth/                            # Unified authentication (bcrypt, MFA, sessions)
+│   ├── cli/                             # Universal CLI login & system selection
+│   ├── gui/                             # Universal GUI login window
+│   └── data/db_files/auth.db            # Central authentication database
+├── docs/                                # Centralised documentation
+│   ├── university_system/               # University system docs
+│   ├── college_system/                  # College system docs
+│   ├── secondary_school/               # Secondary school docs
+│   └── primary_school/                 # Primary school docs
+├── switch.py                             # Runtime system/mode switching
+└── __init__.py
+
+run.py                                    # Unified launcher (CLI & GUI system selector)
+pyproject.toml                            # Project configuration
+```
+
+### University System Structure
+
+```
+education_system/university_system/
 │
 ├── api/                               # REST API server (Flask)
 │   ├── api_server.py                  # App factory & runner
@@ -831,7 +1049,12 @@ university_system/
 │   ├── errors.py                      # Exception-to-HTTP status mapping
 │   ├── pagination.py                  # Pagination helpers
 │   ├── validators.py                  # Input validation (35+ validators)
-│   └── routes/                        # 60 route files (blueprint per domain)
+│   ├── static/                        # Web portal static assets
+│   │   ├── index.html                 # SPA HTML shell (login, app layout, modal, toasts)
+│   │   ├── css/style.css              # Full UI stylesheet (responsive, dark sidebar)
+│   │   └── js/app.js                  # SPA JavaScript (routing, auth, CRUD pages)
+│   └── routes/                        # 60+ route files (blueprint per domain)
+│       ├── web_routes.py              # Web portal (/portal)
 │       ├── auth_routes.py             # Login, logout, refresh, me
 │       ├── student_routes.py          # Student CRUD
 │       ├── finance_routes.py          # Financial services
@@ -847,17 +1070,23 @@ university_system/
 │   │   ├── cli/                       # Auth CLI components
 │   │   ├── core_utils/                # Core auth utilities
 │   │   ├── integrations/              # Auth integrations
-│   │   └── managers/                  # Auth manager classes
+│   │   ├── managers/                  # Auth manager classes
+│   │   ├── sso_providers/             # SSO provider configurations
+│   │   ├── biometric_service.py       # Face & fingerprint auth (v5.40.0)
+│   │   ├── sso_service.py            # SAML 2.0 & OIDC integration (v5.40.0)
+│   │   └── webauthn_service.py       # FIDO2/security key auth (v5.40.0)
 │   ├── cache/                         # LRU cache with TTL
 │   ├── communication/                 # Communication services (SMS, notifications)
 │   ├── database/                      # Database connection & management
 │   │   ├── db.py                      # Connection pooling, transactions
+│   │   ├── data_backup/               # Backup system (13 modules + storage/)
 │   │   ├── gui/                       # Database management GUI
 │   │   ├── migrations/                # Schema version migrations
 │   │   └── schemas/                   # Database schema definitions
 │   ├── data_management/               # Automated backup scheduling
 │   ├── email/                         # Email service integration
-│   │   ├── email_service.py           # Async queue, SMTP integration
+│   │   ├── admin/                     # Admin email tools (13 modules)
+│   │   ├── email_service/             # Async queue & SMTP (7 modules + notifications/)
 │   │   └── gui/                       # Email management GUI
 │   ├── ml/                            # Machine learning infrastructure
 │   ├── monitoring/                    # Observability (metrics, health checks, alerts)
@@ -889,25 +1118,36 @@ university_system/
 │   │   │   ├── cli/                   # Academic CLI modules
 │   │   │   │   ├── office_hours_cli.py # Office hours CLI
 │   │   │   │   └── ta_management_cli.py # TA management CLI
-│   │   │   ├── grading/               # Grading services (20 files)
+│   │   │   ├── grading/               # Grading services
+│   │   │   │   ├── grade_calculation/ # Grade calc package (16 modules)
+│   │   │   │   ├── learning_outcomes/ # Learning outcomes package (5 modules)
 │   │   │   ├── gui/
 │   │   │   │   ├── academic_calendar/  # Calendar GUI (10+ files)
 │   │   │   │   ├── ai_detector/        # AI detection GUI (16 views)
 │   │   │   │   ├── assignment_system/  # Assignment GUI (19 managers)
+│   │   │   │   │   ├── assignment_manager/ # Manager package (11 modules)
+│   │   │   │   │   └── group_manager/     # Group mgmt package (5 modules)
 │   │   │   │   ├── attendance_grade/   # Attendance-grade integration
 │   │   │   │   ├── attendance_tracker/ # Attendance GUI (11 files)
 │   │   │   │   ├── bulk_grade_import/  # Bulk grade import from CSV
 │   │   │   │   ├── course_catalog/     # Course catalog & self-registration
 │   │   │   │   ├── course_forums/      # Course discussion forums
 │   │   │   │   ├── course_health/      # Course health dashboard
-│   │   │   │   ├── course_management_gui/ # Course mgmt (14 submodules)
+│   │   │   │   ├── course_management_gui/ # Course mgmt (15 submodules)
+│   │   │   │   │   ├── core/             # Main GUI (11 mixin modules)
+│   │   │   │   │   ├── recommendations/  # Recommendations (12 modules)
+│   │   │   │   │   └── waitlists/        # Waitlist dialogs (7 modules)
 │   │   │   │   ├── course_messaging/   # Course-targeted messaging
 │   │   │   │   ├── degree_progress/    # Degree progress tracker
 │   │   │   │   ├── gpa_calculator/     # What-if GPA calculator
 │   │   │   │   ├── grade_tracking/     # Grade tracking (24 files)
+│   │   │   │   │   └── analytics_manager/ # Analytics package (12 modules)
 │   │   │   │   ├── grades_breakdown/   # Grades breakdown by module
+│   │   │   │   ├── exam_scheduler/     # Exam scheduler (7 modules + tabs/)
+│   │   │   │   ├── grade_tracking_management_gui/ # Grade mgmt (13 mixin modules)
 │   │   │   │   ├── library/            # Library GUI (17 components)
-│   │   │   │   ├── misconduct/         # Academic misconduct
+│   │   │   │   │   └── fines/          # Fines package (10 modules)
+│   │   │   │   ├── misconduct/         # Academic misconduct (18 modules)
 │   │   │   │   ├── module_scheduling/  # Scheduling (8 tabs)
 │   │   │   │   ├── office_hours/       # Office hours management
 │   │   │   │   ├── parent_portal/      # Parent portal (20+ files)
@@ -918,25 +1158,40 @@ university_system/
 │   │   │   │   ├── blockchain_credentials_gui.py
 │   │   │   │   ├── course_evaluation_gui.py
 │   │   │   │   ├── degree_audit_gui.py
-│   │   │   │   ├── exam_scheduler.py
-│   │   │   │   ├── grade_tracking_management_gui.py
 │   │   │   │   ├── lms_gui.py
 │   │   │   │   └── virtual_classroom_gui.py
 │   │   │   └── services/
 │   │   │       ├── academic_calendar/  # Calendar services (23 files)
 │   │   │       ├── assignments/        # Assignment services
-│   │   │       ├── attendance/         # Attendance services
+│   │   │       │   ├── assignment_submission.py # Core submission logic
+│   │   │       │   ├── analytics/      # Assignment analytics
+│   │   │       │   ├── assignments/    # CRUD & submissions
+│   │   │       │   ├── core/           # Database, permissions, utils
+│   │   │       │   ├── extensions/     # Extension requests
+│   │   │       │   ├── grading/        # Grading operations
+│   │   │       │   ├── groups/         # Group management
+│   │   │       │   ├── maintenance/    # System maintenance
+│   │   │       │   ├── notifications/  # Messaging
+│   │   │       │   ├── peer_review/    # Peer review system
+│   │   │       │   └── templates/      # Assignment templates
+│   │   │       ├── attendance/         # Attendance services (14+ modules)
+│   │   │       │   ├── cli/            # Attendance CLI (13 modules)
+│   │   │       │   ├── qr_system.py    # QR attendance
+│   │   │       │   ├── face_recognition_system.py
+│   │   │       │   ├── geofencing.py   # Location-based attendance
+│   │   │       │   └── gamification.py # Attendance rewards
+│   │   │       ├── course_management/  # Course mgmt package (16 modules)
 │   │   │       ├── degree_audit/       # Degree audit
 │   │   │       ├── evaluation/         # Course evaluation
 │   │   │       ├── library/            # Library services
 │   │   │       ├── lms/                # Learning management
+│   │   │       ├── module_scheduling/  # Module scheduling package (17 modules)
 │   │   │       ├── office_hours/       # Office hours services
-│   │   │       ├── plagiarism/         # Plagiarism detection
+│   │   │       ├── parent_portal/      # Parent portal package (15 modules)
+│   │   │       ├── plagiarism/         # Plagiarism detection (7 modules + cli/)
 │   │   │       ├── ta_management/      # TA management services
 │   │   │       ├── timetable/          # Timetable services
-│   │   │       ├── virtual_classroom/  # Virtual classroom
-│   │   │       ├── course_management.py
-│   │   │       └── module_scheduling.py
+│   │   │       └── virtual_classroom/  # Virtual classroom
 │   │   │
 │   │   ├── admissions/                # Admissions processing
 │   │   │   ├── gui/                   # Admissions CRM GUI
@@ -952,11 +1207,21 @@ university_system/
 │   │   │   ├── billing/               # Fee structure, payment plans
 │   │   │   ├── core/                  # Core finance (13 files)
 │   │   │   ├── gui/
-│   │   │   │   ├── finance/           # Finance mgmt GUI (13 managers)
+│   │   │   │   ├── finance/           # Finance mgmt GUI
+│   │   │   │   │   ├── budget_manager/    # Budget mgmt package (13 modules)
+│   │   │   │   │   ├── expense_manager/   # Expense mgmt package (6 modules)
+│   │   │   │   │   ├── layout/            # Layout mixins (24 modules)
+│   │   │   │   │   ├── settings/          # Settings package (9 modules)
+│   │   │   │   │   └── transaction_manager/ # Transactions package (12 modules)
 │   │   │   │   ├── finance_reporting/ # Reporting GUI (16 files)
+│   │   │   │   │   └── archive_backup/  # Archive & backup package (6 modules)
 │   │   │   │   ├── financial_aid/     # Aid portal GUI
+│   │   │   │   │   ├── admin_portal/  # Admin portal package (10 modules)
+│   │   │   │   │   └── student_portal/ # Student portal package (11 modules)
 │   │   │   │   └── student_finance/   # Student financial dashboard
 │   │   │   ├── reporting/             # Budget, revenue, reports
+│   │   │   │   ├── financial_reports/ # Reports package (12 modules)
+│   │   │   │   └── revenue_analytics/ # Revenue package (10 modules)
 │   │   │   ├── scholarships/          # Scholarship programs
 │   │   │   └── services/              # Financial aid services
 │   │   │
@@ -969,39 +1234,58 @@ university_system/
 │   │   │   │   ├── document_center/   # Personal document center
 │   │   │   │   ├── help_center/       # Integrated help center
 │   │   │   │   ├── helpdesk/          # Helpdesk GUI
+│   │   │   │   ├── internship_management/ # Internship GUI package (12 modules)
 │   │   │   │   ├── messaging_hub/     # Student messaging hub
 │   │   │   │   ├── notification_prefs/ # Notification preferences
 │   │   │   │   ├── student_profile/   # Student profile center
 │   │   │   │   ├── student_support/   # Support GUI (8 files)
 │   │   │   │   └── student_union_gui/ # Union GUI (26 subdirectories)
 │   │   │   ├── services/
+│   │   │   │   ├── alumni_management/ # Alumni package (19 modules)
 │   │   │   │   ├── early_warning/     # Early warning system
+│   │   │   │   ├── helpdesk/          # Helpdesk package (10 modules + 3 subdirs)
 │   │   │   │   ├── mental_health/     # Mental health services
 │   │   │   │   └── student_support/   # Support system (20+ files)
-│   │   │   └── student_union/         # Union services (12 files)
+│   │   │   └── student_union/         # Union services
+│   │   │       └── clubs/
+│   │   │           └── club_management/ # Club mgmt package (12 modules)
 │   │   │
 │   │   ├── housing/                   # Housing & accommodation
 │   │   │   ├── gui/
 │   │   │   │   └── housing_accommodation_gui/ # Housing GUI package
 │   │   │   └── services/
+│   │   │       ├── accommodation/     # Accommodation package (13 modules)
+│   │   │       └── housing_accommodation/ # Housing package (12 modules)
 │   │   │
 │   │   │  ── STAFF & HR DOMAINS ──
 │   │   │
 │   │   ├── staff_hr/                  # Staff HR management
 │   │   │   ├── cli/
 │   │   │   │   ├── staff_hr_cli.py    # Main CLI entry
-│   │   │   │   └── menus/             # 18 menu modules
-│   │   │   ├── gui/                   # 14 GUI windows
+│   │   │   │   └── menus/             # 19 menu modules
+│   │   │   ├── gui/                   # 29 GUI windows
 │   │   │   └── services/
-│   │   │       └── managers/          # 15 specialized managers
+│   │   │       └── managers/          # 31 specialized managers
 │   │   │
 │   │   │  ── HEALTH DOMAINS ──
 │   │   │
 │   │   ├── health/                    # Health services
 │   │   │   ├── appointments/          # Appointment booking
 │   │   │   ├── gui/                   # Health portal & management GUIs
+│   │   │   │   ├── health_portal/     # Portal package (14 modules + reports/)
+│   │   │   │   │   └── reports/       # Health reports package (5 modules)
+│   │   │   │   └── medical_accommodation/ # Accommodation GUI (12+ modules)
 │   │   │   ├── portal/                # Health portal services
-│   │   │   ├── records/               # Medical records management
+│   │   │   ├── records/               # Medical records (10 subpackages)
+│   │   │   │   ├── admin/             # Admin, permissions, advisories
+│   │   │   │   ├── analytics/         # Population, provider, trends
+│   │   │   │   ├── clinical/          # Allergies, care plans, prescriptions
+│   │   │   │   ├── db/                # Schema, audit
+│   │   │   │   ├── records/           # CRUD, reports, templates
+│   │   │   │   ├── screening/         # Schedules, results, reminders
+│   │   │   │   ├── student/           # Dashboard, insurance, wellness
+│   │   │   │   ├── vaccinations/      # Tracking, management, reports
+│   │   │   │   └── wellness/          # Programs, challenges, resources
 │   │   │   └── services/
 │   │   │
 │   │   │  ── CAMPUS & FACILITIES ──
@@ -1009,7 +1293,7 @@ university_system/
 │   │   ├── campus/                    # Campus services
 │   │   │   ├── gui/
 │   │   │   │   ├── community/         # Church management
-│   │   │   │   └── security/          # Police, security desk
+│   │   │   │   └── security/          # Police, security desk (dialogs/ + tabs/)
 │   │   │   └── services/              # Campus events
 │   │   │
 │   │   ├── facilities/                # Facility management
@@ -1027,47 +1311,55 @@ university_system/
 │   │   │   │   ├── restaurant_management_gui/ # Restaurant (35+ files)
 │   │   │   │   ├── shop_management_gui/       # Shop mgmt package
 │   │   │   │   ├── bar_gui.py
-│   │   │   │   ├── cafe_system_gui.py
+│   │   │   │   ├── cafe_system_gui.py         # Cafe GUI (+ 7 module files)
 │   │   │   │   ├── grocery_gui.py
 │   │   │   │   └── takeaway_gui.py
 │   │   │   └── services/
 │   │   │       ├── restaurant/        # Restaurant (25 files)
 │   │   │       ├── grocery/           # Grocery services
+│   │   │       ├── shop_management/   # Shop mgmt package (12 modules)
 │   │   │       ├── takeaway/          # Takeaway services
-│   │   │       ├── restaurant_management.py
-│   │   │       └── shop_management.py
+│   │   │       └── restaurant_management.py
 │   │   │
 │   │   │  ── MOBILITY & TRANSPORT ──
 │   │   │
 │   │   ├── mobility/                  # Transportation services
 │   │   │   ├── gui/
-│   │   │   │   ├── parking_management_gui.py
+│   │   │   │   ├── parking_management/ # Parking GUI package (4+ modules + dialogs/ + tabs/)
+│   │   │   │   ├── trip_management_gui/ # Trip GUI package (12 modules)
 │   │   │   │   ├── taxi_booking_gui.py
 │   │   │   │   ├── train_station_gui.py
-│   │   │   │   ├── trip_management_gui.py
 │   │   │   │   └── mobile_app_pwa_gui.py
 │   │   │   └── services/
+│   │   │       ├── parking_management/ # Parking service package (12 modules)
+│   │   │       └── trip_management/   # Trip service package (12 modules)
 │   │   │
 │   │   │  ── BUSINESS SERVICES ──
 │   │   │
-│   │   ├── barber/                    # Barber shop
+│   │   ├── barber/                    # Barber shop (features/ + tabs/ packages)
 │   │   ├── betting/                   # Betting shop
 │   │   ├── blockchain/                # Blockchain credentials
 │   │   ├── butcher/                   # Butcher shop
 │   │   ├── carrental/                 # Car rental
-│   │   ├── cinema/                    # Cinema (52-file package)
+│   │   ├── cinema/                    # Cinema (59-file package)
 │   │   │   └── gui/cinema_gui/        # Modular cinema GUI
+│   │   │       └── reports/           # Sales reports (6 split modules)
 │   │   ├── dentist/                   # Dental services
 │   │   ├── equipment/                 # Equipment rental
 │   │   ├── gym/                       # Gym & fitness
-│   │   ├── legal/                     # Legal services
+│   │   ├── legal/                     # Legal services (7 mixin modules)
 │   │   ├── mail/                      # Mail/post services
 │   │   ├── musicshop/                 # Music shop
 │   │   ├── nailbar/                   # Nail bar/salon
 │   │   ├── phoneshop/                 # Phone shop
 │   │   │
-│   │   │  ── STUDENT SUCCESS (18 modules) ──
+│   │   │  ── STUDENT SUCCESS (23 modules) ──
 │   │   │
+│   │   ├── advising/                  # Academic Advising Portal
+│   │   ├── student_id/                # Digital Student ID Card
+│   │   ├── study_rooms/               # Study Room Booking
+│   │   ├── printing/                  # Printing Services
+│   │   ├── textbooks/                 # Textbook & Course Materials Store
 │   │   ├── ai_study/                  # AI Study Companion
 │   │   ├── study_matching/            # Peer Study Matching
 │   │   ├── academic_progress/         # Academic Progress Dashboard
@@ -1076,13 +1368,13 @@ university_system/
 │   │   ├── budget/                    # Budget Tracker
 │   │   ├── scholarship_finder/        # Scholarship Finder
 │   │   ├── roommate_finder/           # Roommate Finder
-│   │   ├── campus_navigation/         # Campus Navigation
+│   │   ├── campus_navigation/         # Campus Navigation (gui/ split: 5 mixin modules + tabs/)
 │   │   ├── lost_found/                # Lost & Found System
 │   │   ├── marketplace/               # Student Marketplace
 │   │   ├── wellness/                  # Mental Health & Wellness Hub
 │   │   ├── accessibility/             # Accessibility Services Portal
 │   │   ├── events/                    # Event Discovery Engine
-│   │   ├── social_matching/           # Interest-Based Social Matching
+│   │   ├── social_matching/           # Interest-Based Social Matching (services/ split: 9 mixin modules)
 │   │   ├── portfolio/                 # Achievement & Portfolio System
 │   │   ├── notifications/             # Smart Notifications Hub
 │   │   ├── feedback/                  # Feedback & Suggestion Box
@@ -1094,16 +1386,18 @@ university_system/
 │   │   ├── cli/                       # 28 CLI service modules
 │   │   │   ├── academic_misconduct_cli.py
 │   │   │   ├── barber_cli.py          # Barber shop CLI
-│   │   │   ├── betting_shop_cli.py    # Betting shop CLI
+│   │   │   ├── betting_shop_cli/      # Betting shop CLI package (9 modules)
 │   │   │   ├── butcher_cli.py         # Butcher shop CLI
 │   │   │   ├── cafe_system_cli.py     # Cafe system CLI
-│   │   │   ├── charity_shop_cli.py    # Charity shop CLI
-│   │   │   ├── cinema_cli.py          # Cinema CLI
+│   │   │   ├── charity_shop_cli/      # Charity shop CLI package (12 modules)
+│   │   │   ├── cinema_cli/            # Cinema CLI package (11 modules + admin/)
 │   │   │   ├── degree_audit_cli.py    # Degree audit CLI
 │   │   │   ├── health_portal.py       # Health portal CLI
 │   │   │   ├── nailbar_cli.py         # Nail bar CLI
 │   │   │   └── ...                    # 18 more CLI modules
 │   │   └── gui/                       # GUI service components
+│   │       ├── charity_shop_gui/      # Charity shop GUI package (11 modules)
+│   │       └── integration_marketplace_gui/ # Marketplace GUI (17 modules)
 │   │
 │   └── shared/                        # Shared utilities & components
 │       ├── cli/                       # Main CLI application
@@ -1137,24 +1431,42 @@ university_system/
 │       │   ├── auth/                  # Authentication GUIs (MFA wizard)
 │       │   ├── advanced_search/       # Advanced search interface
 │       │   ├── batch_operations/      # Batch operations GUI
+│       │   │   └── mixins/            # Batch operation mixins (15 modules)
 │       │   ├── database/              # Database management GUI
 │       │   ├── document_manager_gui/  # Document management (26 files)
 │       │   ├── email/                 # Email management GUI
 │       │   ├── enhanced_reporting/    # Enhanced reporting (tabs, dialogs)
 │       │   ├── logic/                 # GUI logic layer
+│       │   ├── simple_activity_logger_gui/ # Activity logger (6 modules + tabs/)
+│       │   ├── student_analytics_gui/ # Student analytics (10 modules)
 │       │   └── tools/                 # Tool GUIs
 │       ├── services/                  # Shared services
 │       │   ├── ai_features/           # AI features (with GUI)
 │       │   ├── analytics/             # Analytics & advanced search
+│       │   │   ├── advanced_search/   # Search package (18 modules)
+│       │   │   ├── enhanced_reporting/ # Reporting package (14 modules)
+│       │   │   └── student_analytics/ # Analytics package (16 modules)
 │       │   ├── business_intelligence/ # BI services
 │       │   ├── communication/         # Communication services
 │       │   ├── dashboard/             # Dashboard data services
 │       │   ├── integrations/          # Integration services
+│       │   │   └── integration_marketplace_core/ # Marketplace (18 modules)
 │       │   └── pdf_export/            # PDF export (4 files)
 │       └── utils/                     # Utility functions
 │           ├── activity_logger.py     # Audit trail logging
+│           ├── batch_operations/      # Batch ops package (14 modules)
 │           ├── config.py              # Configuration management
+│           ├── document_manager/      # Doc manager package (22 modules)
+│           ├── simple_activity_logger/ # Logger package (9 modules + plugins/)
 │           └── validation.py          # Input validation
+│
+├── utils/                             # Cross-cutting utilities
+│   ├── ai/                            # AI & chatbot
+│   │   ├── university_chatbot/        # Chatbot package (17 modules)
+│   │   └── gui/                       # Chatbot GUI (11 modules + features/ + screens/)
+│   └── logging/                       # Logging infrastructure
+│       ├── log_management/            # Log mgmt package (9 modules + api/ + cli/)
+│       └── gui/                       # Log GUI (4 modules + features/ + tabs/)
 │
 ├── data/                              # Application data directory
 │   ├── analytics/                     # Analytics outputs
@@ -1200,14 +1512,6 @@ university_system/
 │   ├── test_performance_benchmarks.py
 │   ├── test_remember_me.py
 │   └── test_staff_crud.py
-│
-├── docs/                              # Documentation
-│   ├── ai/                            # AI feature documentation
-│   ├── development/                   # Developer documentation
-│   ├── guides/                        # User guides (20+)
-│   ├── infrastructure/                # Infrastructure guides
-│   ├── modules/                       # Module documentation
-│   └── security/                      # Security documentation
 │
 ├── templates/                         # All templates (consolidated)
 │   ├── assignments/                   # Assignment templates
@@ -1259,7 +1563,180 @@ university_system/
 ├── pyproject.toml                     # Project configuration
 ├── README.md                          # This file
 ├── requirements.txt                   # Python dependencies
-└── run.py                             # Main entry point
+└── run.py                             # Main entry point (legacy)
+```
+
+### College System Structure
+
+```
+education_system/college_system/
+│
+├── api/                               # REST API Layer (Flask)
+│   ├── api_server.py                  # Main API server
+│   ├── auth.py                        # Authentication handlers
+│   ├── config.py                      # API configuration
+│   ├── errors.py                      # Error handling
+│   ├── pagination.py                  # Pagination utilities
+│   ├── validators.py                  # Input validators
+│   └── routes/ (59 route files)       # API endpoints per domain
+│
+├── modules/
+│   ├── domain/                        # 110 domain modules
+│   │   ├── [Academic & Learning]      # 29 modules: apprenticeships, assignments,
+│   │   │                              #   attendance, courses, enrollment, exams,
+│   │   │                              #   functional_skills, grades, lesson_plans,
+│   │   │                              #   markbook, observations, study_programmes,
+│   │   │                              #   timetable, tlevel, tutorial, ucas,
+│   │   │                              #   value_added, work_journal, etc.
+│   │   ├── [Student Support]          # 15 modules: behaviour, counseling,
+│   │   │                              #   enrichment, safeguarding, send,
+│   │   │                              #   prevent_duty, peer_mentoring,
+│   │   │                              #   student_wellbeing, wellness, etc.
+│   │   ├── [Staff Management]         # 11 modules: appraisals, cpd, cover,
+│   │   │                              #   dbs_checks, recruitment, staff_hr,
+│   │   │                              #   staff_wellbeing, staff_absence, etc.
+│   │   ├── [Admin & Governance]       # 15 modules: compliance, gdpr,
+│   │   │                              #   quality_assurance, self_assessment,
+│   │   │                              #   kpi_dashboard, risk_management, etc.
+│   │   ├── [Campus & Facilities]      # 8 modules: assets, equipment, facilities,
+│   │   │                              #   lettings, resource_booking, visitors, etc.
+│   │   ├── [Communication]            # 7 modules: announcements, calendar,
+│   │   │                              #   feedback, messaging, notifications, etc.
+│   │   ├── [Finance & Funding]        # 6 modules: bursary, finance, funding,
+│   │   │                              #   meal_ordering, print_credits, etc.
+│   │   └── [Specialist Services]      # careers, destinations, marketing,
+│   │                                  #   onboarding, alumni, departments, etc.
+│   └── shared/
+│       ├── cli/                       # Shared CLI components
+│       └── gui/                       # Shared GUI (login, MFA, dashboard)
+│
+├── core/                              # Core utilities (exceptions, i18n, paths)
+├── infrastructure/                    # Auth, database, security, validation
+├── data/                              # Data and configuration files
+├── tests/ (59 test files)             # Test suite
+└── __init__.py
+```
+
+### Secondary School Structure
+
+```
+education_system/secondary_school/
+│
+├── modules/
+│   ├── domain/                        # 7 domain categories, 51 modules
+│   │   ├── academics/                 # 12 modules: students, subjects, enrollment,
+│   │   │                              #   grades, attendance, timetable, homework,
+│   │   │                              #   exams, progress, interventions, reports
+│   │   ├── pastoral_care/             # 8 modules: behaviour, detentions,
+│   │   │                              #   exclusions, rewards, pastoral,
+│   │   │                              #   safeguarding, send
+│   │   ├── staff/                     # 5 modules: hr, cpd, cover, staff_directory
+│   │   ├── admin/                     # 9 modules: users, settings, admissions,
+│   │   │                              #   finance, data_export, audit_log,
+│   │   │                              #   policies, documents
+│   │   ├── student_life/              # 10 modules: clubs, meals, transport, trips,
+│   │   │                              #   careers, library, medical, form_groups,
+│   │   │                              #   consent
+│   │   ├── facilities/                # 6 modules: room_booking, assets,
+│   │   │                              #   seating_plans, visitors, incidents
+│   │   └── communication/             # 7 modules: email, notifications,
+│   │                                  #   announcements, calendar,
+│   │                                  #   communication_log, parents_evening
+│   └── shared/
+│       └── gui/                       # Shared GUI components
+│
+├── core/                              # Core utilities (defaults, exceptions, paths)
+├── infrastructure/                    # Auth, database, validation
+├── main_gui.py                        # Entry point with login/tabbed interface
+├── seed_subjects.py                   # Subject seeding utility
+├── data/                              # Data files
+├── tests/                             # Test suite
+└── __init__.py
+```
+
+### Primary School Structure
+
+```
+education_system/primary_school/
+│
+├── modules/
+│   ├── domain/                        # 7 domain categories, 46 modules
+│   │   ├── academics/                 # 11 modules: pupils, subjects, classes,
+│   │   │                              #   assessment, attendance, timetable,
+│   │   │                              #   homework, sats, phonics,
+│   │   │                              #   reading_records, progress
+│   │   ├── pastoral_care/             # 5 modules: behaviour, rewards,
+│   │   │                              #   safeguarding, send, pastoral
+│   │   ├── staff/                     # 4 modules: hr, cpd, cover,
+│   │   │                              #   staff_directory
+│   │   ├── admin/                     # 8 modules: users, settings, admissions,
+│   │   │                              #   finance, data_export, audit_log,
+│   │   │                              #   policies, documents
+│   │   ├── pupil_life/                # 8 modules: clubs, meals, transport,
+│   │   │                              #   trips, library, medical,
+│   │   │                              #   class_groups, consent
+│   │   ├── facilities/                # 4 modules: room_booking, assets,
+│   │   │                              #   visitors, incidents
+│   │   └── communication/             # 6 modules: email, notifications,
+│   │                                  #   announcements, calendar,
+│   │                                  #   parents_evening, communication_log
+│   └── shared/
+│       └── gui/                       # Shared GUI components
+│
+├── cli/                               # CLI interface
+├── core/                              # Core utilities (defaults, exceptions, paths)
+├── infrastructure/                    # Auth, database, validation
+├── main_gui.py                        # GUI entry point with login/tabbed interface
+├── data/                              # Data files
+│   └── db_files/primary_school.db     # SQLite database
+├── tests/                             # Test suite
+└── __init__.py
+```
+
+### Documentation Structure
+
+```
+education_system/docs/
+│
+├── university_system/                    # University system documentation
+│   ├── README.md                        # Documentation index
+│   ├── QUICK_START.md                   # Get running in 5 minutes
+│   ├── TROUBLESHOOTING.md              # Common issues and solutions
+│   ├── ai/                             # AI feature documentation
+│   │   ├── AI_DEPENDENCIES.md
+│   │   └── VOICE_FEATURES.md
+│   ├── development/                     # Developer documentation
+│   │   ├── README.md                   # Development overview
+│   │   ├── API.md                      # REST API reference
+│   │   ├── EXCEPTION_HANDLING.md       # Error handling patterns
+│   │   ├── MIGRATION_GUIDE.md          # Module restructuring reference
+│   │   └── TESTING_GUIDE.md            # Testing framework guide
+│   ├── guides/                         # User guides (60+)
+│   │   ├── README.md                   # Guides index
+│   │   ├── academics/                  # Academic feature guides
+│   │   ├── administration/             # Admin & system guides
+│   │   ├── campus/                     # Campus service guides
+│   │   ├── commerce/                   # Commerce & dining guides
+│   │   ├── health/                     # Health service guides
+│   │   ├── student/                    # Student life guides
+│   │   └── technical/                  # Technical guides
+│   ├── infrastructure/                  # Infrastructure guides
+│   │   ├── DATABASE.md                 # Database schema and usage
+│   │   ├── EMAIL_SCHEDULER.md          # Automated email system
+│   │   ├── ENHANCEMENTS_GUIDE.md       # Enhancement documentation
+│   │   └── TRANSACTIONS.md            # Transaction safety guide
+│   ├── modules/                        # Module documentation
+│   │   └── README.md                  # Module overview
+│   └── security/                       # Security documentation
+│       ├── AUTHENTICATION.md           # Authentication guide
+│       ├── AUTH_QUICK_REFERENCE.md     # Quick auth reference
+│       ├── MFA_QUICK_START.md          # MFA setup guide
+│       ├── MFA_SYSTEM_DOCUMENTATION.md # Complete MFA guide
+│       └── SECURITY.md               # Security best practices
+│
+├── college_system/                      # College system documentation (planned)
+│
+└── secondary_school/                    # Secondary school documentation (planned)
 ```
 
 ### Directory Consolidation Notes (January-February 2026)
@@ -1300,7 +1777,7 @@ university_system/
 **Path Management**: All file paths are managed through `modules/shared/constants/paths.py` as the single source of truth. Always use these constants instead of hardcoded paths:
 
 ```python
-from university_system.modules.shared.constants import paths
+from education_system.university_system.modules.shared.constants import paths
 
 # Correct usage
 backup_dir = paths.BACKUP_DIR
@@ -1313,7 +1790,7 @@ db_path = paths.DEFAULT_DB_PATH
 **Internationalization (i18n)**: All user-facing strings should use the translation function for multi-language support:
 
 ```python
-from university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 # Correct usage - all UI text uses translation keys
 button_text = _t("common.save")           # "Save"
@@ -1620,7 +2097,7 @@ tests/
 ```python
 # Example test structure
 import pytest
-from university_system.infrastructure.auth.user_authentication import UserAuthentication
+from education_system.university_system.infrastructure.auth.user_authentication import UserAuthentication
 
 class TestAuthentication:
     """Test suite for authentication system."""
@@ -1649,7 +2126,8 @@ class TestAuthentication:
 The system implements comprehensive security measures following industry best practices:
 
 ### Password Security
-- **PBKDF2-SHA256 hashing** with unique salts per user (1,000,000 iterations - OWASP recommended)
+- **bcrypt hashing** as the standard password hash (with transparent migration from legacy PBKDF2-SHA256)
+- Legacy PBKDF2-SHA256 passwords (1,000,000 iterations) are automatically re-hashed to bcrypt on first successful login
 - Never stores plaintext passwords
 - Automatic salt generation and secure random number generation
 - Password complexity requirements enforced at registration
@@ -1659,7 +2137,13 @@ The system implements comprehensive security measures following industry best pr
 - **Email OTP**: One-time codes via email (sends to user's configured email)
 - **SMS OTP**: Text message verification (optional, via Twilio or free Email-to-SMS gateway)
 - **PIN Verification**: 4-digit on-screen PIN for users without MFA setup
+- **WebAuthn/FIDO2** (v5.40.0): Passwordless authentication with security keys and platform authenticators
+- **Biometric Authentication** (v5.40.0): Face and fingerprint enrollment with 128-D encoding
+- **SSO Integration** (v5.40.0): SAML 2.0 and OpenID Connect provider support
+- **Account Linking** (v5.40.0): Multi-account support with role switching and audit trails
+- **Delegated Access** (v5.40.0): Scoped, time-bound access delegation for parents/guardians
 - QR code generation for easy 2FA setup
+- Unified login dispatcher routing across all authentication methods
 
 ### Login Verification Options
 
@@ -1679,7 +2163,7 @@ The system offers flexible login security levels to balance security and conveni
 
 ```python
 # Check if verification is disabled for a user
-from university_system.infrastructure.auth.mfa_service import MFAService
+from education_system.university_system.infrastructure.auth.mfa_service import MFAService
 mfa_service = MFAService()
 
 if mfa_service.is_verification_disabled(user_id):
@@ -1799,7 +2283,7 @@ def is_student(self):
 - **Immutable audit trail** for forensic analysis
 
 ```python
-from university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
 # Log all data modifications
 log_activity('create', 'student', student_id='12345', details={'name': 'John Doe'})
@@ -1981,6 +2465,8 @@ python -m university_system.infrastructure.database.verify
 ---
 
 ## Documentation
+
+**[Documentation Hub](education_system/docs/README.md)** — Central index linking to all four systems' documentation (university, college, secondary school, primary school).
 
 ### Available Documentation
 
@@ -2165,7 +2651,7 @@ For more information, see [Documentation Index](university_system/docs/README.md
 
 #### 1. Import Errors After Refactoring
 
-The codebase was refactored in October 2025. If you see import errors:
+The codebase was refactored in October 2025 and again in February 2026 (v5.42.x — 54 monolithic files split into packages). All refactored modules maintain backward compatibility via `__init__.py` re-exports. If you still see import errors:
 
 ```python
 # Old import (deprecated):
@@ -2247,10 +2733,10 @@ The following limitations should be considered when deploying this system:
 
 | Limitation | Details |
 |------------|---------|
-| **Web Interface** | REST API available (57+ endpoints with JWT auth); full web UI planned for v6.0 |
-| **Multi-tenancy** | Single-tenant design; multi-institution hosting planned for v6.0 |
+| **Web Interface** | University has full Web Portal SPA + REST API (57+ endpoints with JWT auth); College has REST API (59 routes); Secondary School and Primary School are CLI+GUI only |
+| **Multi-tenancy** | Single-tenant design; multi-institution hosting planned for future release |
 | **SQLite Concurrency** | May have performance limits with high concurrent writes; use PostgreSQL for high-traffic deployments |
-| **i18n Coverage** | Some GUI modules have incomplete internationalization coverage |
+| **i18n Coverage** | Most GUI modules now have i18n support (500+ strings translated in v5.41.x); some modules still have incomplete coverage |
 | **Production Readiness** | Not recommended for production without implementing security recommendations (see [Security Documentation](university_system/docs/security/SECURITY.md)) |
 | **Mobile Support** | No native mobile app; web interface responsive but not mobile-optimized |
 | **Real-time Features** | WebSocket support planned but not yet implemented |
@@ -2286,7 +2772,12 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| **5.39.x** | Feb 11, 2026 | Student self-service GUIs (13 features), seed demo data, role-based dashboards with live data |
+| **7.5.0** | Mar 2026 | Cross-system CLI switching, shared authentication fixes, Primary School system (280+ files, 46 modules) |
+| **Multi-System** | Mar 2026 | Unified Education System: added Sixth Form College (930+ files, 110 modules), Secondary School (290+ files, 51 modules), and Primary School (280+ files, 46 modules) systems with shared launcher and authentication |
+| **5.47.0** | Feb 25, 2026 | Full Web Portal SPA at `/portal` with JWT auth, dashboard, CRUD for all major entities |
+| **5.42.x** | Feb 22, 2026 | Massive codebase refactoring: 54 monolithic files split into modular packages, i18n expansion (500+ strings) |
+| **5.40.0** | Feb 2026 | Advanced authentication: WebAuthn, SSO (SAML/OIDC), biometric, account linking, delegated access |
+| **5.39.x** | Feb 11, 2026 | Student self-service GUIs (13 features), seed demo data, role-based dashboards, 50+ bug fixes |
 | **5.36.0** | Feb 11, 2026 | Admin tools (alerts, departments, branding), batch user operations, compliance reporting |
 | **5.35.0** | Feb 11, 2026 | Login analytics, operations dashboards, real-time system health monitoring |
 | **5.34.0** | Feb 10, 2026 | Virtual classroom CLI, financial aid CLI, helpdesk ticket actions |
@@ -2306,7 +2797,29 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history with detailed rele
 
 ## Roadmap
 
-### Version 5.39.5 (February 11, 2026) - CURRENT
+### Multi-System Education Platform (March 2026) - CURRENT
+- [x] **Unified Launcher** (`run.py`): Single entry point for University, College, Secondary School, and Primary School systems with CLI & GUI system selection and runtime switching
+- [x] **Shared Authentication** (`education_system/shared/auth/`): Unified auth across all 4 systems with bcrypt hashing, MFA, sessions, and central auth.db
+- [x] **Cross-System CLI Switching** (v7.5.0): All 4 CLI systems support switching to any other system without re-authenticating
+- [x] **Sixth Form College System**: 930+ files, 110 domain modules, 59 API routes, 59 tests — apprenticeships, T-levels, UCAS, functional skills, safeguarding, Prevent duty, GDPR, quality assurance, bursary, funding, and more
+- [x] **Secondary School System**: 290+ files, 51 domain modules — Years 7-11, KS3/KS4, GCSE grades 9-1, pastoral care, behaviour/detentions/exclusions, form groups, seating plans, parents' evening
+- [x] **Primary School System**: 280+ files, 46 domain modules — Reception-Year 6, EYFS/KS1/KS2, phonics, reading records, SATs, safeguarding, SEND, pastoral care
+
+### Version 5.47.0 (February 25, 2026) - COMPLETED
+- [x] **Web Portal** (v5.47.0): Full SPA at `/portal` with JWT auth, dashboard, CRUD for all major entities
+- [x] **Staff HR Expansion** (v5.44.0-v5.46.0): 20 new modules — payroll, faculty scheduling, curriculum design, travel, sabbatical, committees, IP, equipment, cover, workload, directory, mentoring, grants, peer review, communication hub, teaching load; 75+ new database tables
+- [x] **Student Services** (v5.43.0): Academic advising, digital student ID, study room booking, printing services, textbook store
+- [x] **Codebase Consolidation** (v5.46.1-v5.46.2): Merged fragmented versioned files (HR schemas 7→1, admin tools GUI+locale 4→2), centralised path helpers
+- [x] **Continued Refactoring** (v5.42.55-v5.42.64): Additional monolithic file decompositions with backward compatibility
+
+### Version 5.42.54 (February 22, 2026) - COMPLETED
+- [x] **Advanced Authentication** (v5.40.0): WebAuthn/FIDO2, SSO (SAML 2.0 & OIDC), biometric, account linking, delegated access, 25 new permissions
+- [x] **Codebase Refactoring** (v5.42.x): 54 monolithic files decomposed into modular packages with full backward compatibility
+- [x] **i18n Expansion** (v5.41.x): 500+ hardcoded strings replaced with translation calls across 20+ GUI modules
+- [x] **Bug Fixes** (v5.39.6-v5.40.x): 50+ database schema fixes, GUI layout corrections, email integration fixes
+- [x] **Security Hardening** (v5.39.7): Removed hardcoded credentials, secure random password generation via `secrets` module
+
+### Version 5.39.5 (February 11, 2026) - COMPLETED
 - [x] **Flask REST API** (v5.22.0): 60 route files, JWT auth, 57+ endpoint groups, pagination, rate limiting
 - [x] **Major Security Audit** (v5.28.0): 25+ critical/high/medium fixes across 30+ files
 - [x] **Office Hours & TA Management** (v5.29.0): Full CRUD with CLI, GUI, and API
@@ -2340,7 +2853,10 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history with detailed rele
 
 ### Version 6.0 (Q2-Q3 2026)
 - [ ] Mobile application (React Native)
-- [ ] Full web UI frontend for the REST API
+- [x] ~~Full web UI frontend for the REST API~~ — Completed in v5.47.0 (Web Portal SPA)
+- [ ] REST API for Secondary School and Primary School systems
+- [x] ~~CLI for Secondary School system~~ — Completed
+- [x] ~~CLI for Primary School system~~ — Completed
 - [ ] Integration with external LMS systems (Canvas, Blackboard, Moodle)
 - [ ] Complete i18n support for all remaining GUI modules
 
@@ -2348,7 +2864,8 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history with detailed rele
 - [ ] Microservices architecture
 - [ ] GraphQL API alongside REST
 - [ ] Real-time collaboration features (live sessions, chat)
-- [ ] Advanced security features (biometric auth, blockchain credentials)
+- [x] ~~Advanced security features (biometric auth)~~ — Completed in v5.40.0
+- [ ] Blockchain credential verification
 
 ### Future Considerations
 - [ ] Multi-tenancy support for hosting multiple institutions
@@ -2384,28 +2901,37 @@ When reporting issues, please include:
 
 ## Project Status
 
-- **Version**: 5.39.5
+- **Platform**: Education System (University + College + Secondary School + Primary School)
 - **Status**: Active Development & Maintenance
-- **Total Lines of Code**: 1,218,000+
-- **Total Python Files**: 2,310+
-- **Core System**: 1,198,000+ lines across ~2,190 files
-- **Extras Module**: 19,710 lines across ~122 files
-- **REST API**: 57+ endpoint groups across 60 route files
-- **Python**: 3.8+ (tested on 3.8, 3.9, 3.10, 3.11, 3.12)
-- **Last Updated**: February 11, 2026
+- **Total Python Files**: 4,920+ across all four systems
+- **Total Domain Modules**: 258 (51 university + 110 college + 51 secondary + 46 primary)
+- **Total API Route Files**: 123 (64 university + 59 college)
+- **Total Test Files**: 525+
+- **Python**: 3.11+ (tested on 3.11, 3.12)
+- **Last Updated**: March 2026
 - **Actively Maintained**: Yes
 - **Production Ready**: Yes (with appropriate security configuration)
-- **Test Coverage**: 85%+ for core functionality (Staff HR: 90%+, Student Success: 80%+)
 - **Code Quality**: Black formatted, Ruff linted, mypy type-checked
-- **Database Tables**: 120+ (including 23 Staff HR + 40 Student Success tables)
-- **Major Functional Domains**: 53+ (18 student success modules)
+
+#### University System
+- **Python Files**: 3,420+
+- **REST API**: 57+ endpoint groups across 64 route files
+- **Database Tables**: 160+ (including 23 Staff HR + 40 Student Success tables)
+- **Authentication Methods**: 7 (password, TOTP, email OTP, SMS OTP, WebAuthn, biometric, SSO)
 - **Internationalization**: 10 languages (ar, de, en, es, fr, ja, ko, pt, ru, zh)
-- **Student Success Modules**: AI Study, Peer Matching, Progress Tracking, Job Board, Budget, Scholarships, Roommate Finder, Navigation, Lost & Found, Marketplace, Wellness, Accessibility, Events, Social Matching, Portfolio, Notifications, Feedback
-- **Staff HR Managers**: 15 specialized managers with full input validation
 - **Extras Included**: 90+ games, utilities, and mini-projects
+
+#### College System
+- **Python Files**: 930+, 110 domain modules, 59 API routes, 59 tests
+
+#### Secondary School System
+- **Python Files**: 290+, 51 domain modules, CLI + GUI interface
+
+#### Primary School System
+- **Python Files**: 280+, 46 domain modules, CLI + GUI interface
 
 ---
 
-**Made with dedication for educational institutions worldwide**
+**Made with dedication for educational institutions worldwide — from secondary schools to universities**
 
 For questions, suggestions, or support, please [open an issue](https://github.com/sean1352636/university_system/issues) or contact the development team.

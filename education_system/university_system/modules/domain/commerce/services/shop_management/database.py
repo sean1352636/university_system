@@ -1,0 +1,288 @@
+from datetime import datetime
+from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
+from .config import auth
+
+
+def init_shop_db() -> bool:
+    """Initialize the shop database tables"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Create products table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_products (
+            product_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            price REAL NOT NULL,
+            category TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            tax_rate REAL DEFAULT 0.2,
+            is_active BOOLEAN DEFAULT 1
+        )
+        ''')
+
+        # Create inventory table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_inventory (
+            inventory_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 0,
+            last_restock_date TEXT,
+            restock_threshold INTEGER DEFAULT 5,
+            FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+        )
+        ''')
+
+        # Create transactions table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_transactions (
+            transaction_id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            student_id TEXT,
+            total_amount REAL NOT NULL,
+            transaction_date TEXT NOT NULL,
+            payment_method TEXT,
+            status TEXT NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        # Create transaction items table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_transaction_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            transaction_id TEXT NOT NULL,
+            product_id TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            price_per_item REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            FOREIGN KEY (transaction_id) REFERENCES shop_transactions (transaction_id),
+            FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+        )
+        ''')
+
+        # Create discounts table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_discounts (
+            discount_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            discount_type TEXT NOT NULL,
+            discount_value REAL NOT NULL,
+            start_date TEXT,
+            end_date TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            applicable_products TEXT,
+            min_purchase_amount REAL DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+        ''')
+
+        # Create shopping cart table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_cart (
+            cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            product_id TEXT NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            added_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (product_id) REFERENCES shop_products (product_id),
+            UNIQUE(user_id, product_id)
+        )
+        ''')
+
+        # Sample products (if no products exist)
+        cursor.execute("SELECT COUNT(*) FROM shop_products")
+        if cursor.fetchone()[0] == 0:
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            products = [
+                ('P001', 'University Hoodie', 'Comfortable hoodie with university logo', 29.99, 'Clothing', now, now, 0.2, 1),
+                ('P002', 'University T-Shirt', 'Cotton t-shirt with university logo', 19.99, 'Clothing', now, now, 0.2, 1),
+                ('P003', 'Notebook Pack', 'Set of 3 university branded notebooks', 12.99, 'Stationery', now, now, 0.2, 1),
+                ('P004', 'Water Bottle', 'Stainless steel water bottle with university logo', 14.99, 'Accessories', now, now, 0.2, 1),
+                ('P005', 'Coffee Mug', 'Ceramic mug with university logo', 9.99, 'Accessories', now, now, 0.2, 1),
+                ('P006', 'Pen Set', 'Set of 5 high-quality pens', 7.99, 'Stationery', now, now, 0.2, 1),
+                ('P007', 'Laptop Bag', 'Padded laptop bag with university logo', 34.99, 'Accessories', now, now, 0.2, 1),
+                ('P008', 'USB Drive', '32GB USB flash drive with university logo', 15.99, 'Electronics', now, now, 0.2, 1),
+                ('P009', 'Keychain', 'Metal keychain with university logo', 4.99, 'Accessories', now, now, 0.2, 1),
+                ('P010', 'Baseball Cap', 'Adjustable cap with university logo', 16.99, 'Clothing', now, now, 0.2, 1)
+            ]
+            cursor.executemany(
+                'INSERT INTO shop_products VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                products
+            )
+
+            # Add inventory for sample products (batch insert to avoid N+1)
+            inventory_data = [
+                (product[0], 50, now, 10)  # product_id, quantity, last_restock_date, restock_threshold
+                for product in products
+            ]
+            cursor.executemany(
+                'INSERT INTO shop_inventory (product_id, quantity, last_restock_date, restock_threshold) VALUES (?, ?, ?, ?)',
+                inventory_data
+            )
+
+            # Add sample discounts
+            discounts = [
+                ('D001', 'Student Discount', '10% off for all students', 'percentage', 10.0,
+                 now, None, 1, 'all', 0.0, now),
+                ('D002', 'Bulk Purchase', '15% off when buying 5 or more items', 'percentage', 15.0,
+                 now, None, 1, 'all', 0.0, now),
+                ('D003', 'Clothing Sale', '20% off all clothing items', 'percentage', 20.0,
+                 now, datetime.now().replace(year=datetime.now().year + 1).strftime('%Y-%m-%d %H:%M:%S'),
+                 1, 'Clothing', 0.0, now)
+            ]
+            cursor.executemany(
+                'INSERT INTO shop_discounts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                discounts
+            )
+
+        conn.commit()
+        conn.close()
+        print("University shop database initialized successfully!")
+        return True
+
+    except sqlite3.Error as e:
+        print(f"An error occurred while initializing the shop database: {e}")
+        if 'conn' in locals():
+            conn.close()
+        return False
+    except Exception as e:
+        print(f"Unexpected error during shop database initialization: {e}")
+        if 'conn' in locals():
+            conn.close()
+        return False
+
+def setup_shop_permissions(auth_instance=None):
+    """Setup permissions for the shop module"""
+    from . import config
+
+    if auth_instance:
+        config.auth = auth_instance
+
+    if not config.auth:
+        print("Authentication system not initialized.")
+        return False
+
+    try:
+        # Connect to the database directly
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Define permissions
+        shop_permissions = [
+            # Customer permissions
+            ('view_products', 'View available products in the shop'),
+            ('make_purchase', 'Purchase items from the shop'),
+            ('view_own_purchase_history', 'View own purchase history'),
+
+            # Admin permissions
+            ('manage_products', 'Add, update, or delete products'),
+            ('manage_inventory', 'Manage product inventory levels'),
+            ('view_all_transactions', 'View all shop transactions'),
+            ('manage_discounts', 'Manage shop discounts and promotions'),
+            ('generate_sales_reports', 'Generate and view sales reports')
+        ]
+
+        # Add permissions directly to the database if they don't exist
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Batch fetch existing permissions to avoid N+1 queries
+        perm_names = [p[0] for p in shop_permissions]
+        placeholders = ','.join('?' * len(perm_names))
+        cursor.execute(
+            f'SELECT permission_name FROM permissions WHERE permission_name IN ({placeholders})',
+            perm_names
+        )
+        existing_perms = {row[0] for row in cursor.fetchall()}
+
+        # Batch insert new permissions
+        new_perms = [
+            (perm_name, perm_desc, timestamp)
+            for perm_name, perm_desc in shop_permissions
+            if perm_name not in existing_perms
+        ]
+        if new_perms:
+            cursor.executemany(
+                'INSERT INTO permissions (permission_name, description, created_at) VALUES (?, ?, ?)',
+                new_perms
+            )
+
+        conn.commit()
+
+        # Define role-permission mapping
+        role_permissions = {
+            'student': ['view_products', 'make_purchase', 'view_own_purchase_history'],
+            'staff': ['view_products', 'make_purchase', 'view_own_purchase_history',
+                      'view_all_transactions', 'generate_sales_reports'],
+            'admin': ['view_products', 'make_purchase', 'view_own_purchase_history',
+                      'manage_products', 'manage_inventory', 'view_all_transactions',
+                      'manage_discounts', 'generate_sales_reports'],
+            'shop_manager': ['view_products', 'make_purchase', 'view_own_purchase_history',
+                            'manage_products', 'manage_inventory', 'view_all_transactions',
+                            'manage_discounts', 'generate_sales_reports']
+        }
+
+        # Batch fetch all roles to avoid N+1 queries
+        role_names = list(role_permissions.keys())
+        placeholders = ','.join('?' * len(role_names))
+        cursor.execute(
+            f'SELECT id, role_name FROM roles WHERE role_name IN ({placeholders})',
+            role_names
+        )
+        role_id_map = {row['role_name']: row['id'] for row in cursor.fetchall()}
+
+        # Create shop_manager role if it doesn't exist
+        if 'shop_manager' not in role_id_map:
+            cursor.execute(
+                'INSERT INTO roles (role_name, description, created_at, updated_at) VALUES (?, ?, ?, ?)',
+                ('shop_manager', 'Shop Manager role', timestamp, timestamp)
+            )
+            conn.commit()
+            role_id_map['shop_manager'] = cursor.lastrowid
+
+        # Batch fetch all permissions to avoid N+1 queries
+        perm_placeholders = ','.join('?' * len(perm_names))
+        cursor.execute(
+            f'SELECT id, permission_name FROM permissions WHERE permission_name IN ({perm_placeholders})',
+            perm_names
+        )
+        perm_id_map = {row['permission_name']: row['id'] for row in cursor.fetchall()}
+
+        # Batch fetch existing role-permission combinations
+        cursor.execute('SELECT role_id, permission_id FROM role_permissions')
+        existing_role_perms = {(row['role_id'], row['permission_id']) for row in cursor.fetchall()}
+
+        # Prepare batch insert for new role-permission mappings
+        new_role_perms = []
+        for role_name, permissions in role_permissions.items():
+            role_id = role_id_map.get(role_name)
+            if role_id:
+                for perm_name in permissions:
+                    perm_id = perm_id_map.get(perm_name)
+                    if perm_id and (role_id, perm_id) not in existing_role_perms:
+                        new_role_perms.append((role_id, perm_id))
+
+        if new_role_perms:
+            cursor.executemany(
+                'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+                new_role_perms
+            )
+
+        conn.commit()
+        conn.close()
+
+        print("Shop permissions setup successfully!")
+        return True
+
+    except Exception as e:
+        if 'conn' in locals():
+            conn.close()
+        print(f"Error setting up shop permissions: {e}")
+        return False

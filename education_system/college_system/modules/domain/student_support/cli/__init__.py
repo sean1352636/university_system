@@ -1,0 +1,1 @@
+"""Student support CLI commands."""

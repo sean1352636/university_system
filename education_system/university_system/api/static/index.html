@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>University Management System</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- ============ Login Page ============ -->
+  <div class="login-page" id="login-page">
+    <div class="login-card">
+      <div class="brand">
+        <div class="brand-icon">U</div>
+        <h1>University Management System</h1>
+        <p class="subtitle">Sign in to access the portal</p>
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <form id="login-form" autocomplete="on">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input class="form-control" type="text" id="login-username"
+                 name="username" placeholder="Enter your username"
+                 autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input class="form-control" type="password" id="login-password"
+                 name="password" placeholder="Enter your password"
+                 autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit" id="login-btn">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ Main Application ============ -->
+  <div class="app" id="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <h2>UMS Portal</h2>
+        <small>University Management System</small>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Built by JavaScript -->
+      </nav>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <button class="sidebar-toggle" id="sidebar-toggle">&#9776;</button>
+          <span class="header-title" id="header-title">Dashboard</span>
+        </div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <span>Signed in as <strong id="header-user-name">User</strong></span>
+          </div>
+          <a href="#" class="btn btn-sm btn-secondary" id="logout-btn">Sign Out</a>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="content" id="content">
+        <!-- Rendered by JavaScript -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ============ Modal ============ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Modal</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Dynamic content -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Toast Container ============ -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ============ Application JavaScript ============ -->
+  <script src="/static/js/app.js"></script>
+
+</body>
+</html>

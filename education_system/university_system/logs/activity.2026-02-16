@@ -1,0 +1,53 @@
+admin - Logged in successfully - 2026-02-16 08:13:43
+admin - Create teaching_assistant - 2026-02-16 08:14:30
+admin - Closed Integration Marketplace - 2026-02-16 08:15:35
+admin - Logged in successfully - 2026-02-16 08:27:06
+admin - Logged in successfully - 2026-02-16 08:54:22
+admin - Logged in successfully - 2026-02-16 09:01:01
+admin - Logged in successfully - 2026-02-16 09:04:52
+admin - Logged in successfully - 2026-02-16 09:16:56
+admin - Logged in successfully - 2026-02-16 09:22:53
+admin - Logged in successfully - 2026-02-16 09:35:31
+admin - Created office hours 1 for instructor admin office_hours - 2026-02-16 09:35:49
+admin - Updated office hours 1: ['start_time', 'end_time', 'updated_at'] office_hours - 2026-02-16 09:36:02
+admin - Booked office hour 1 for student admin on 2026-03-01 office_hour_booking - 2026-02-16 09:36:17
+admin - Cancelled booking 1 for student admin office_hour_booking - 2026-02-16 09:36:52
+admin - Logged in successfully - 2026-02-16 09:45:41
+admin - Create teaching_assistant - 2026-02-16 09:46:08
+admin - Update ta_permissions - 2026-02-16 09:46:29
+admin - Logged in successfully - 2026-02-16 10:40:52
+admin - Logged in successfully - 2026-02-16 10:48:24
+admin - Create database_tables - 2026-02-16 10:50:41
+admin - Create database_tables - 2026-02-16 10:50:41
+admin - Logged in successfully - 2026-02-16 12:53:05
+admin - Logged in successfully - 2026-02-16 13:01:09
+admin - Logged in successfully - 2026-02-16 13:04:02
+admin - Logged in successfully - 2026-02-16 13:08:57
+admin - Logged in successfully - 2026-02-16 13:12:16
+admin - Logged in successfully - 2026-02-16 15:43:51
+admin - Logged in successfully - 2026-02-16 15:47:40
+admin - Logged in successfully - 2026-02-16 15:50:55
+admin - Logged in successfully - 2026-02-16 15:57:27
+admin - Logged in successfully - 2026-02-16 16:31:48
+admin - Logged in successfully - 2026-02-16 16:34:54
+admin - Logged in successfully - 2026-02-16 16:53:05
+admin - Logged in successfully - 2026-02-16 17:16:11
+admin - Logged in successfully - 2026-02-16 17:22:32
+admin - Logged in successfully - 2026-02-16 17:33:33
+admin - Export database_pdf_export - 2026-02-16 17:41:09
+admin - Logged in successfully - 2026-02-16 21:39:25
+admin - View staff_hr_gui - 2026-02-16 21:39:40
+admin - Logged in successfully - 2026-02-16 21:44:36
+admin - View staff_hr_gui - 2026-02-16 21:44:55
+admin - Create time_entry - 2026-02-16 21:45:33
+admin - Update time_entry - 2026-02-16 21:45:36
+admin - Logged in successfully - 2026-02-16 21:48:30
+admin - View staff_hr_gui - 2026-02-16 21:48:45
+admin - Logged in successfully - 2026-02-16 21:58:14
+admin - View staff_hr_gui - 2026-02-16 21:58:28
+admin - Logged in successfully - 2026-02-16 22:03:53
+admin - View staff_hr_gui - 2026-02-16 22:04:05
+admin - Create grievance - 2026-02-16 22:04:23
+admin - Create leave_request - 2026-02-16 22:04:44
+admin - Logged in successfully - 2026-02-16 22:09:14
+admin - View staff_hr_gui - 2026-02-16 22:09:44

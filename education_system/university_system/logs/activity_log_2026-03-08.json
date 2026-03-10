@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-03-08 19:59:04.629",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "course_management",
+  "details": "Creating new course with enhanced features",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "91f976b7-da53-41fd-a1af-18c1b3eeebe6",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 37.77876806259155,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "660c6518-3b62-4c9c-a5e6-7ca5c80384de",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_enhanced_course",
+    "function_module": "education_system.university_system.modules.domain.academics.services.course_management.courses",
+    "function_args_count": 1,
+    "execution_time": 37.77876806259155,
+    "memory_usage": 506171392
+  }
+}

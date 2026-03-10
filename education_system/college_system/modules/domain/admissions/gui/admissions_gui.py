@@ -1,0 +1,281 @@
+"""Admissions GUI for managing applications, inductions, and withdrawals."""
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+from education_system.college_system.modules.domain.admissions.services.admissions_service import AdmissionsService
+
+
+class AdmissionsFrame(tk.Frame):
+    def __init__(self, parent, db_path=None, auth=None, **kwargs):
+        super().__init__(parent, **kwargs)
+        self._db_path = db_path
+        self._auth = auth
+        self._svc = AdmissionsService(db_path)
+        self._build_ui()
+
+    def _build_ui(self):
+        self.configure(bg="#ecf0f1")
+
+        header = tk.Frame(self, bg="#2c3e50", height=50)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(header, text="Admissions", font=("Helvetica", 14, "bold"),
+                 bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
+
+        self._nb = ttk.Notebook(self)
+        self._nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Applications tab
+        self._apps_tab = tk.Frame(self._nb)
+        self._nb.add(self._apps_tab, text="Applications")
+        self._build_applications_tab()
+
+        # Inductions tab
+        self._ind_tab = tk.Frame(self._nb)
+        self._nb.add(self._ind_tab, text="Inductions")
+        self._build_inductions_tab()
+
+        # Withdrawals tab
+        self._wd_tab = tk.Frame(self._nb)
+        self._nb.add(self._wd_tab, text="Withdrawals")
+        self._build_withdrawals_tab()
+
+    def _build_applications_tab(self):
+        toolbar = tk.Frame(self._apps_tab)
+        toolbar.pack(fill="x", padx=5, pady=5)
+
+        tk.Label(toolbar, text="Status:").pack(side="left", padx=5)
+        self._app_status_var = tk.StringVar(value="All")
+        status_cb = ttk.Combobox(toolbar, textvariable=self._app_status_var,
+                                  values=["All", "submitted", "under_review", "interview",
+                                          "offered", "accepted", "rejected", "withdrawn"],
+                                  state="readonly", width=15)
+        status_cb.pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Filter", command=self._load_applications).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="New Application", command=self._new_application).pack(side="right", padx=5)
+
+        cols = ("id", "name", "dob", "course", "status", "date")
+        self._app_tree = ttk.Treeview(self._apps_tab, columns=cols, show="headings", height=15)
+        for c, w in zip(cols, (50, 150, 100, 150, 100, 100)):
+            self._app_tree.heading(c, text=c.replace("_", " ").title())
+            self._app_tree.column(c, width=w)
+        self._app_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+        btn_frame = tk.Frame(self._apps_tab)
+        btn_frame.pack(fill="x", padx=5, pady=5)
+        ttk.Button(btn_frame, text="Update Status", command=self._update_app_status).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="View Details", command=self._view_application).pack(side="left", padx=5)
+
+    def _build_inductions_tab(self):
+        toolbar = tk.Frame(self._ind_tab)
+        toolbar.pack(fill="x", padx=5, pady=5)
+        ttk.Button(toolbar, text="Schedule Induction", command=self._new_induction).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Refresh", command=self._load_inductions).pack(side="left", padx=5)
+
+        cols = ("id", "student_id", "date", "session_type", "status", "attended")
+        self._ind_tree = ttk.Treeview(self._ind_tab, columns=cols, show="headings", height=12)
+        for c, w in zip(cols, (50, 80, 100, 120, 100, 80)):
+            self._ind_tree.heading(c, text=c.replace("_", " ").title())
+            self._ind_tree.column(c, width=w)
+        self._ind_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+        btn_frame = tk.Frame(self._ind_tab)
+        btn_frame.pack(fill="x", padx=5, pady=5)
+        ttk.Button(btn_frame, text="Mark Attended", command=self._mark_attended).pack(side="left", padx=5)
+
+    def _build_withdrawals_tab(self):
+        toolbar = tk.Frame(self._wd_tab)
+        toolbar.pack(fill="x", padx=5, pady=5)
+        ttk.Button(toolbar, text="Record Withdrawal", command=self._new_withdrawal).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Refresh", command=self._load_withdrawals).pack(side="left", padx=5)
+
+        cols = ("id", "student_id", "reason", "date", "destination", "exit_completed")
+        self._wd_tree = ttk.Treeview(self._wd_tab, columns=cols, show="headings", height=12)
+        for c, w in zip(cols, (50, 80, 150, 100, 150, 100)):
+            self._wd_tree.heading(c, text=c.replace("_", " ").title())
+            self._wd_tree.column(c, width=w)
+        self._wd_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+    def refresh(self):
+        self._load_applications()
+        self._load_inductions()
+        self._load_withdrawals()
+
+    def _load_applications(self):
+        for item in self._app_tree.get_children():
+            self._app_tree.delete(item)
+        try:
+            status = self._app_status_var.get()
+            apps = self._svc.list_applications(status=None if status == "All" else status)
+            for a in apps:
+                self._app_tree.insert("", "end", values=(
+                    a["id"], a.get("applicant_name", ""), a.get("date_of_birth", ""),
+                    a.get("course_applied", ""), a.get("status", ""),
+                    a.get("application_date", "")))
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _load_inductions(self):
+        for item in self._ind_tree.get_children():
+            self._ind_tree.delete(item)
+        try:
+            inductions = self._svc.list_inductions()
+            for ind in inductions:
+                self._ind_tree.insert("", "end", values=(
+                    ind["id"], ind.get("student_id", ""),
+                    ind.get("induction_date", ""), ind.get("session_type", ""),
+                    ind.get("status", ""), "Yes" if ind.get("attended") else "No"))
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _load_withdrawals(self):
+        for item in self._wd_tree.get_children():
+            self._wd_tree.delete(item)
+        try:
+            wds = self._svc.list_withdrawals()
+            for w in wds:
+                self._wd_tree.insert("", "end", values=(
+                    w["id"], w.get("student_id", ""), w.get("reason", ""),
+                    w.get("withdrawal_date", ""), w.get("destination", ""),
+                    "Yes" if w.get("exit_completed") else "No"))
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _new_application(self):
+        win = tk.Toplevel(self)
+        win.title("New Application")
+        win.geometry("400x400")
+        fields = {}
+        for i, (label, key) in enumerate([
+            ("Applicant Name*:", "applicant_name"), ("Date of Birth*:", "date_of_birth"),
+            ("Email:", "email"), ("Phone:", "phone"),
+            ("Course Applied:", "course_applied"), ("Previous School:", "previous_school"),
+            ("Predicted Grades:", "predicted_grades")]):
+            tk.Label(win, text=label).grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            e = tk.Entry(win, width=30)
+            e.grid(row=i, column=1, padx=10, pady=5)
+            fields[key] = e
+
+        def save():
+            try:
+                self._svc.create_application(
+                    applicant_name=fields["applicant_name"].get().strip(),
+                    date_of_birth=fields["date_of_birth"].get().strip(),
+                    email=fields["email"].get().strip() or None,
+                    phone=fields["phone"].get().strip() or None,
+                    course_applied=fields["course_applied"].get().strip() or None,
+                    previous_school=fields["previous_school"].get().strip() or None,
+                    predicted_grades=fields["predicted_grades"].get().strip() or None)
+                messagebox.showinfo("Success", "Application created")
+                win.destroy()
+                self._load_applications()
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+
+        ttk.Button(win, text="Submit", command=save).grid(row=len(fields), column=0, columnspan=2, pady=15)
+
+    def _update_app_status(self):
+        sel = self._app_tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Select an application")
+            return
+        app_id = self._app_tree.item(sel[0], "values")[0]
+        win = tk.Toplevel(self)
+        win.title("Update Status")
+        win.geometry("300x150")
+        tk.Label(win, text="New Status:").pack(padx=10, pady=10)
+        status_var = tk.StringVar(value="under_review")
+        ttk.Combobox(win, textvariable=status_var,
+                      values=["submitted", "under_review", "interview", "offered",
+                              "accepted", "rejected", "withdrawn"],
+                      state="readonly").pack(padx=10)
+
+        def save():
+            try:
+                self._svc.update_application_status(int(app_id), status_var.get())
+                win.destroy()
+                self._load_applications()
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+        ttk.Button(win, text="Update", command=save).pack(pady=15)
+
+    def _view_application(self):
+        sel = self._app_tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Select an application")
+            return
+        app_id = self._app_tree.item(sel[0], "values")[0]
+        try:
+            app = self._svc.get_application(int(app_id))
+            details = "\n".join(f"{k}: {v}" for k, v in app.items())
+            messagebox.showinfo("Application Details", details)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _new_induction(self):
+        win = tk.Toplevel(self)
+        win.title("Schedule Induction")
+        win.geometry("350x250")
+        fields = {}
+        for i, (label, key) in enumerate([
+            ("Student ID*:", "student_id"), ("Date* (YYYY-MM-DD):", "induction_date"),
+            ("Session Type:", "session_type"), ("Location:", "location")]):
+            tk.Label(win, text=label).grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            e = tk.Entry(win, width=25)
+            e.grid(row=i, column=1, padx=10, pady=5)
+            fields[key] = e
+        fields["session_type"].insert(0, "full_day")
+
+        def save():
+            try:
+                self._svc.create_induction(
+                    student_id=int(fields["student_id"].get().strip()),
+                    induction_date=fields["induction_date"].get().strip(),
+                    session_type=fields["session_type"].get().strip() or "full_day",
+                    location=fields["location"].get().strip() or None)
+                messagebox.showinfo("Success", "Induction scheduled")
+                win.destroy()
+                self._load_inductions()
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+        ttk.Button(win, text="Save", command=save).grid(row=4, column=0, columnspan=2, pady=15)
+
+    def _mark_attended(self):
+        sel = self._ind_tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Select an induction")
+            return
+        ind_id = self._ind_tree.item(sel[0], "values")[0]
+        try:
+            self._svc.update_induction(int(ind_id), attended=1, status="completed")
+            self._load_inductions()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _new_withdrawal(self):
+        win = tk.Toplevel(self)
+        win.title("Record Withdrawal")
+        win.geometry("350x250")
+        fields = {}
+        for i, (label, key) in enumerate([
+            ("Student ID*:", "student_id"), ("Reason*:", "reason"),
+            ("Date (YYYY-MM-DD):", "withdrawal_date"), ("Destination:", "destination")]):
+            tk.Label(win, text=label).grid(row=i, column=0, padx=10, pady=5, sticky="e")
+            e = tk.Entry(win, width=25)
+            e.grid(row=i, column=1, padx=10, pady=5)
+            fields[key] = e
+
+        def save():
+            try:
+                self._svc.create_withdrawal(
+                    student_id=int(fields["student_id"].get().strip()),
+                    reason=fields["reason"].get().strip(),
+                    withdrawal_date=fields["withdrawal_date"].get().strip() or None,
+                    destination=fields["destination"].get().strip() or None)
+                messagebox.showinfo("Success", "Withdrawal recorded")
+                win.destroy()
+                self._load_withdrawals()
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+        ttk.Button(win, text="Save", command=save).grid(row=4, column=0, columnspan=2, pady=15)
